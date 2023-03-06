@@ -41,30 +41,18 @@ const moduleSettings = {
             // Upload windows.
             this.imagesUploaderWindow = null;
             this.imagesUploaderWindowTreeView = null;
-            this.imagesUploaderWindowTreeViewState = null;
-            this.imagesUploaderWindowTreeViewContextMenu = null;
             this.imagesUploaderWindowTreeViewContextMenuTarget = null;
             this.imagesUploaderWindowSplitter = null;
-            this.imagesUploaderWindowAddButton = null;
-            this.imagesUploaderSender = null;
 
             this.filesUploaderWindow = null;
             this.filesUploaderWindowTreeView = null;
-            this.filesUploaderWindowTreeViewState = null;
-            this.filesUploaderWindowTreeViewContextMenu = null;
             this.filesUploaderWindowTreeViewContextMenuTarget = null;
             this.filesUploaderWindowSplitter = null;
-            this.filesUploaderWindowAddButton = null;
-            this.filesUploaderSender = null;
 
             this.templatesUploaderWindow = null;
             this.templatesUploaderWindowTreeView = null;
-            this.templatesUploaderWindowTreeViewState = null;
-            this.templatesUploaderWindowTreeViewContextMenu = null;
             this.templatesUploaderWindowTreeViewContextMenuTarget = null;
             this.templatesUploaderWindowSplitter = null;
-            this.templatesUploaderWindowAddButton = null;
-            this.templatesUploaderSender = null;
 
             this.uploaderWindowTreeViewStateLoading = false;
             this.uploaderWindowTreeViewStates = {
@@ -85,15 +73,10 @@ const moduleSettings = {
             // Default settings
             this.settings = {
                 moduleId: 0,
-                encryptedModuleId: "",
-                customerId: 0,
-                initialItemId: null,
-                iframeMode: false,
-                gridViewMode: false,
-                openGridItemsInBlock: false,
                 username: "Onbekend",
                 userEmailAddress: "",
-                userType: ""
+                userType: "",
+                selectedText: ""
             };
             Object.assign(this.settings, settings);
 
@@ -183,6 +166,7 @@ const moduleSettings = {
                 title: "Afbeeldingen",
                 visible: false,
                 modal: true,
+                animation: false,
                 actions: [],
                 open: (event) => {
                     this.imagesUploaderWindowSplitter.resize(true);
@@ -206,43 +190,6 @@ const moduleSettings = {
                 }]
             }).data("kendoSplitter");
 
-            this.imagesUploaderWindowAddButton = $("#imagesUploaderWindow button[name=addImageToEditor]").kendoButton({
-                icon: "save",
-                click: async (event) => {
-                    if (!this.imagesUploaderSender) {
-                        kendo.alert("Er is geen HTML editor gevonden waar deze afbeelding toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                        return;
-                    }
-
-                    const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
-                    const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
-
-                    const imagePreviewUrl = this.generateImagePreviewUrl(extension);
-                    const html = `<figure>
-    <picture>
-        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
-        <source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />
-        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
-    </picture>
-</figure>`;
-                    if (this.imagesUploaderSender.kendoEditor) {
-                        this.imagesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
-                    }
-
-                    if (this.imagesUploaderSender.codeMirror) {
-                        const doc = this.imagesUploaderSender.codeMirror.getDoc();
-                        const cursor = doc.getCursor();
-                        doc.replaceRange(html, cursor);
-                    }
-
-                    if (this.imagesUploaderSender.contentbuilder) {
-                        $(this.imagesUploaderSender.contentbuilder.activeElement).replaceWith(html);
-                    }
-
-                    this.imagesUploaderWindow.close();
-                }
-            });
-
             // Window for viewing a all generic files and for adding them into an HTML editor.
             this.filesUploaderWindow = $("#filesUploaderWindow").kendoWindow({
                 width: "90%",
@@ -250,6 +197,7 @@ const moduleSettings = {
                 title: "Bestanden",
                 visible: false,
                 modal: true,
+                animation: false,
                 actions: [],
                 open: (event) => {
                     this.filesUploaderWindowSplitter.resize(true);
@@ -262,8 +210,8 @@ const moduleSettings = {
                         this.initializeFileUploader(event);
                     }
 
-                    if (this.filesUploaderSender && this.filesUploaderSender.kendoEditor) {
-                        this.filesUploaderWindow.element.find("#fileLinkText").val(this.filesUploaderSender.kendoEditor.getSelection().toString());
+                    if (this.settings.selectedText) {
+                        this.filesUploaderWindow.element.find("#fileLinkText").val(this.settings.selectedText);
                     }
                 }
             }).data("kendoWindow");
@@ -277,34 +225,6 @@ const moduleSettings = {
                 }]
             }).data("kendoSplitter");
 
-            this.filesUploaderWindowAddButton = $("#filesUploaderWindow button[name=addFileToEditor]").kendoButton({
-                icon: "save",
-                click: async (event) => {
-                    if (!this.filesUploaderSender) {
-                        kendo.alert("Er is geen HTML editor gevonden waar dit bestand toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                        return;
-                    }
-
-                    const fileUrl = this.generateFilePreviewUrl();
-                    const html = `<a href="${fileUrl}">${(this.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
-                    if (this.filesUploaderSender.kendoEditor) {
-                        this.filesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
-                    }
-
-                    if (this.filesUploaderSender.codeMirror) {
-                        const doc = this.filesUploaderSender.codeMirror.getDoc();
-                        const cursor = doc.getCursor();
-                        doc.replaceRange(html, cursor);
-                    }
-
-                    if (this.imagesUploaderSender.contentbuilder) {
-                        this.imagesUploaderSender.contentbuilder.addHtml(html);
-                    }
-
-                    this.filesUploaderWindow.close();
-                }
-            });
-
             // Window for viewing a all generic HTML templates and for adding them into an HTML editor.
             this.templatesUploaderWindow = $("#templatesUploaderWindow").kendoWindow({
                 width: "90%",
@@ -312,6 +232,7 @@ const moduleSettings = {
                 title: "Templates",
                 visible: false,
                 modal: true,
+                animation: false,
                 actions: [],
                 open: (event) => {
                     this.templatesUploaderWindowSplitter.resize(true);
@@ -334,38 +255,6 @@ const moduleSettings = {
                     collapsible: false
                 }]
             }).data("kendoSplitter");
-
-            this.templatesUploaderWindowAddButton = $("#templatesUploaderWindow button[name=addTemplateToEditor]").kendoButton({
-                icon: "save",
-                click: async (event) => {
-                    if (!this.templatesUploaderSender) {
-                        kendo.alert("Er is geen HTML editor gevonden waar deze template toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                        return;
-                    }
-
-                    const selectedItem = this.templatesUploaderWindowTreeView.dataItem(this.templatesUploaderWindowTreeView.select());
-                    if (this.templatesUploaderSender.kendoEditor) {
-                        const originalOptions = this.templatesUploaderSender.kendoEditor.options.pasteCleanup;
-                        this.templatesUploaderSender.kendoEditor.options.pasteCleanup.none = true;
-                        this.templatesUploaderSender.kendoEditor.options.pasteCleanup.span = false;
-                        this.templatesUploaderSender.kendoEditor.exec("inserthtml", { value: selectedItem.html });
-                        this.templatesUploaderSender.kendoEditor.options.pasteCleanup.none = originalOptions.none;
-                        this.templatesUploaderSender.kendoEditor.options.pasteCleanup.span = originalOptions.span;
-                    }
-
-                    if (this.templatesUploaderSender.codeMirror) {
-                        const doc = this.templatesUploaderSender.codeMirror.getDoc();
-                        const cursor = doc.getCursor();
-                        doc.replaceRange(selectedItem.html, cursor);
-                    }
-
-                    if (this.templatesUploaderSender.contentbuilder) {
-                        this.templatesUploaderSender.contentbuilder.addHtml(html);
-                    }
-
-                    this.templatesUploaderWindow.close();
-                }
-            });
             
             // Open the correct screen based on the selected mode.
             this.settings.mode = this.settings.mode || "";
@@ -1224,10 +1113,7 @@ const moduleSettings = {
 
             const newFileUrl = this.generateFilePreviewUrl();
             anchorElement.attr("href", newFileUrl);
-            let name = selectedItem.name;
-            if (this.filesUploaderSender && this.filesUploaderSender.kendoEditor) {
-                name = this.filesUploaderSender.kendoEditor.getSelection().toString() || selectedItem.name;
-            }
+            let name = this.settings.selectedText || selectedItem.name;
             this.filesUploaderWindow.element.find("#fileLinkText").val(name)
         }
 

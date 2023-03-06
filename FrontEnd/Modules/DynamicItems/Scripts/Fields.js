@@ -2832,8 +2832,9 @@ export class Fields {
          if (!this.base.settings.imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.imagesUploaderSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.imagesUploaderWindow.center().open();
+            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
+            this.base.windows.fileManagerWindow.center().open();
         }
     }
 
@@ -2849,8 +2850,9 @@ export class Fields {
         if (!this.base.settings.filesRootId) {
             kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.filesUploaderSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.filesUploaderWindow.center().open();
+            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.files;
+            this.base.windows.fileManagerWindow.center().open();
         }
     }
 
@@ -2866,8 +2868,9 @@ export class Fields {
         if (!this.base.settings.templatesRootId) {
             kendo.alert("Er is nog geen 'templatesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.templatesUploaderSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.templatesUploaderWindow.center().open();
+            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.templates;
+            this.base.windows.fileManagerWindow.center().open();
         }
     }
 

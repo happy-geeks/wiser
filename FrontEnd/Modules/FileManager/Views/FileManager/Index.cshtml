@@ -5,7 +5,7 @@
 <html>
 
 <head runat="server">
-    <title>Wiser 3 - Dynamic items</title>
+    <title>Wiser 3 - File manager</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -32,7 +32,8 @@
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret"
-      data-mode="@Model.Mode">
+      data-mode="@Model.Mode"
+      data-selected-text="@Model.SelectedText">
 
 <div id="ModeSelector">
     <p>Welke bestanden wilt u beheren?</p>

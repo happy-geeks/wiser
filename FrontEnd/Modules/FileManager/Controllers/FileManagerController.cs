@@ -27,6 +27,11 @@ public class FileManagerController : Controller
         viewModel.ApiAuthenticationUrl = defaultModel.ApiAuthenticationUrl;
         viewModel.ApiRoot = defaultModel.ApiRoot;
         viewModel.LoadPartnerStyle = defaultModel.LoadPartnerStyle;
+        
+        if (viewModel.Iframe)
+        {
+            viewModel.BodyCssClass = "iframe";
+        }
             
         return View(viewModel);
     }

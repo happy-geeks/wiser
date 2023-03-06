@@ -108,3 +108,7 @@ html, body {
 .k-splitter .k-scrollable.left-pane {
     overflow-x: hidden;
 }
+
+.iframe .k-window-titlebar {
+    display: none;
+}
