@@ -88,6 +88,11 @@ AND (checkedOn.value IS NULL OR checkedOn.value = '')");
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
+                if (dataRow.IsNull("createdOn"))
+                {
+                    continue;
+                }
+
                 var id = dataRow.Field<ulong>("id");
                 var linkedItemId = dataRow.Field<string>("linkedItemId");
                 var linkedItemModuleId = dataRow.Field<string>("linkedItemModuleId");
