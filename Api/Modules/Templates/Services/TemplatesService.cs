@@ -948,6 +948,75 @@ AND (({parentId:decrypt(true)} = 0 AND e.name = '') OR ({parentId:decrypt(true)}
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_LINK_TYPES", @"SELECT type AS id, `name`
 FROM wiser_link
 ORDER BY `name`");
+                TemplateQueryStrings.Add("SAVE_ENTITY_VALUES", @"
+SET @_id = {id};
+SET @_name = '{name}';
+SET @_module_id = {moduleId};
+SET @_accepted_childtypes = '{acceptedChildtypes}';
+SET @_icon = '{icon}';
+SET @_icon_add = '{iconAdd}';
+SET @_icon_expanded = '{iconExpanded}';
+SET @_show_in_tree_view = '{showInTreeView}';
+SET @_query_after_insert = '{queryAfterInsert}';
+SET @_query_after_update = '{queryAfterUpdate}';
+SET @_query_before_update = '{queryBeforeUpdate}';
+SET @_query_before_delete = '{queryBeforeDelete}';
+SET @_color = '{color}';
+SET @_show_in_search = '{showInSearch}';
+SET @_show_overview_tab = '{showOverviewTab}';
+SET @_save_title_as_seo = '{saveTitleAsSeo}';
+#SET @_api_after_insert = {apiAfterInsert};
+#SET @_api_after_update = {apiAfterUpdate};
+#SET @_api_before_update = {apiBeforeUpdate};
+#SET @_api_before_delete = {apiBeforeDelete};
+SET @_show_title_field = '{showTitleField}';
+SET @_friendly_name = IF('{friendlyName}' = '' OR '{friendlyName}' LIKE '{%}', NULL, '{friendlyName}');
+SET @_save_history = '{saveHistory}';
+SET @_default_ordering = '{defaultOrdering}';
+SET @_dedicated_table_prefix = '{dedicatedTablePrefix}';
+
+SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
+SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
+SET @_show_overview_tab = IF(@_show_overview_tab = TRUE OR @_show_overview_tab = 'true', 1, 0);
+SET @_save_title_as_seo = IF(@_save_title_as_seo = TRUE OR @_save_title_as_seo = 'true', 1, 0);
+SET @_show_title_field = IF(@_show_title_field = TRUE OR @_show_title_field = 'true', 1, 0);
+SET @_save_history = IF(@_save_history = TRUE OR @_save_history = 'true', 1, 0);
+
+SET @_name_changed = (SELECT `name` != @_name FROM wiser_entity WHERE id = @_id);
+SET @_name_old = (SELECT `name`  FROM wiser_entity WHERE id = @_id);
+
+UPDATE wiser_entity e
+LEFT JOIN wiser_entity accepted ON accepted.accepted_childtypes LIKE CONCAT('%',@_name_old,'%') AND @_name_changed
+LEFT JOIN wiser_entityproperty propertyOption ON REPLACE(`options` , ' ', '') LIKE CONCAT('%""entityType"":""',@_name_old,'""%') AND @_name_changed
+SET 
+     accepted.accepted_childtypes = REPLACE(accepted.accepted_childtypes, @_name_old, @_name),
+     propertyOption.`options` = REPLACE(propertyOption.`options`, @_name_old, @_name),
+	 e.module_id = @_module_id,
+	 e.name= @_name,
+	 e.accepted_childtypes = @_accepted_childtypes,
+	 e.icon = @_icon,
+	 e.icon_add = @_icon_add,
+	 e.icon_expanded = @_icon_expanded,
+	 e.show_in_tree_view = @_show_in_tree_view,
+	 e.query_after_insert = @_query_after_insert,
+	 e.query_after_update = @_query_after_update,
+	 e.query_before_update = @_query_before_update,
+	 e.query_before_delete = @_query_before_delete,
+	 e.color = @_color,
+	 e.show_in_search = @_show_in_search,
+	 e.show_overview_tab = @_show_overview_tab,
+	 e.save_title_as_seo = @_save_title_as_seo,
+	 #e.api_after_insert = @_api_after_insert,
+	 #e.api_after_update = @_api_after_update,
+	 #e.api_before_update = @_api_before_update,
+	 #e.api_before_delete = @_api_before_delete,
+	 e.show_title_field = @_show_title_field,
+	 e.friendly_name = @_friendly_name,
+	 e.save_history = @_save_history,
+	 e.default_ordering = @_default_ordering,
+     e.dedicated_table_prefix = @_dedicated_table_prefix
+WHERE e.id = @_id;
+");
                 TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
 SET @_tab_name = '{tabName}';
 SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
@@ -1392,6 +1461,31 @@ WHERE role.id = {role_id}");
                 TemplateQueryStrings.Add("DELETE_MODULE_RIGHT_ASSIGNMENT", @"DELETE FROM `wiser_system`.`wiser_permission`
 WHERE role_id = {role_id} AND module_id={module_id}");
 
+                TemplateQueryStrings.Add("IMPORTEXPORT_GET_ENTITY_PROPERTIES", @"SELECT property.`name`, property.`value`, property.languageCode, property.isImageField, property.allowMultipleImages
+FROM (
+    SELECT 'Item naam' AS `name`, 'itemTitle' AS `value`, '' AS languageCode, 0 AS isImageField, 0 AS allowMultipleImages, 0 AS baseOrder
+    FROM DUAL
+    WHERE '{entityName}' NOT LIKE '{%}' AND '{entityName}' <> ''
+    UNION
+    SELECT
+        CONCAT(
+            IF(display_name = '', property_name, display_name),
+            IF(
+                language_code <> '',
+                CONCAT(' (', language_code, ')'),
+                ''
+            )
+        ) AS `name`,
+        IF(property_name = '', display_name, property_name) AS `value`,
+        language_code AS languageCode,
+        inputtype = 'image-upload' AS isImageField,
+        IFNULL(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(`options`, ''), '$.multiple')), 'true') = 'true' AS allowMultipleImages,
+        1 AS baseOrder
+    FROM wiser_entityproperty
+    WHERE entity_name = '{entityName}'
+    OR ('{linkType}' > 0 AND link_type = '{linkType}')
+    ORDER BY baseOrder, `name`
+) AS property");
                 TemplateQueryStrings.Add("GET_ROLE_RIGHTS", @"SELECT
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
@@ -1954,6 +2048,10 @@ SET @querytext = (SELECT REPLACE(REPLACE(IFNULL(data_query, 'SELECT 0 AS id, "" 
 
 PREPARE stmt1 FROM @querytext;
 EXECUTE stmt1;");
+                TemplateQueryStrings.Add("GET_WISER_LINK_LIST", @"SELECT *,
+CONCAT(`name`, ' --> #', type, ' connected entity: ""', connected_entity_type ,'"" destination entity: ""', destination_entity_type, '""')AS formattedName
+FROM `wiser_link`
+ORDER BY type");
             }
         }
 
