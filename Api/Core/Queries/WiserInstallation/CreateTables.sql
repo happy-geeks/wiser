@@ -283,6 +283,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `itemlink_id` bigint NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   `ordering` int NOT NULL DEFAULT 0,
+  `extra_data` mediumtext,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_item_id`(`item_id`, `property_name`) USING BTREE,
   INDEX `idx_item_link_id`(`itemlink_id`, `property_name`) USING BTREE
