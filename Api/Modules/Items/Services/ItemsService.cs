@@ -2009,6 +2009,12 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
 
             var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
             var linkTypesToHideFromTreeView = allLinkTypeSettings.Where(x => !x.ShowInTreeView).Select(x => x.Type).ToList();
+            if (!linkTypesToHideFromTreeView.Any())
+            {
+                // Just to make it easier in the queries below.
+                linkTypesToHideFromTreeView.Add(-1);
+            }
+            
             var linkTypesToHideFromTreeViewList = String.Join(",", linkTypesToHideFromTreeView);
 
             // Inline function to convert a DataRow to a TreeViewItemModel and add it to the results list.
