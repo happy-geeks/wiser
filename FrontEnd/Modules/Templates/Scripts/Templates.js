@@ -598,8 +598,33 @@ const moduleSettings = {
                 ]
             }).data("kendoDropDownList");
 
-            this.grid = $("#wtsLinkedActions").kendoGrid({
+            this.wtsTimersGrid = $("#wtsTimers").kendoGrid({
                 resizable: true,
+                height: 280,
+                columns: [
+                    {
+                        field: "ID",
+                        title: "ID"
+                    }, {
+                        field: "Type",
+                        title: "Type"
+                    }, {
+                        field: "Moment",
+                        title: "Moment"
+                    }, {
+                        field: "LogLevel",
+                        title: "Log level"
+                    }, {
+                        command: "destroy",
+                        title: "&nbsp;",
+                        width: 120
+                    }
+                ],
+            }).data("kendoGrid");
+            
+            this.wtsLinkedActionsGrid = $("#wtsLinkedActions").kendoGrid({
+                resizable: true,
+                height: 280,
                 columns: [
                     {
                         field: "Type",
@@ -608,21 +633,41 @@ const moduleSettings = {
                         field: "Naam",
                         title: "Naam"
                     }, {
-                        field: "Laatste run",
-                        title: "Laatste run"
+                        field: "LaatsteRun",
+                        title: "Laatste Run"
                     }, {
-                        field: "Laatste run-tijd",
-                        title: "Laatste run-tijd"
+                        field: "LaatsteRunTijd",
+                        title: "Laatste Run-Tijd"
                     }, { 
                         command: "destroy", 
                         title: "&nbsp;", 
                         width: 120 
-                    },{
-                        command: "edit",
+                    }
+                ],
+            }).data("kendoGrid");
+
+            this.wtsServiceActions = $("#wtsServiceActions").kendoGrid({
+                resizable: true,
+                height: 280,
+                columns: [
+                    {
+                        field: "Type",
+                        title: "Type"
+                    }, {
+                        field: "Naam",
+                        title: "Naam"
+                    }, {
+                        field: "LaatsteRun",
+                        title: "Laatste Run"
+                    }, {
+                        field: "LaatsteRunTijd",
+                        title: "Laatste Run-Tijd"
+                    }, {
+                        command: "destroy",
                         title: "&nbsp;",
                         width: 120
                     }
-                ]
+                ],
             }).data("kendoGrid");
         }
 

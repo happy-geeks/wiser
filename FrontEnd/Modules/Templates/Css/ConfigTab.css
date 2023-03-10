@@ -7,6 +7,7 @@
     flex-wrap: wrap;
     gap: 1rem;
 }
+
 #configTab .formview.compact .item h4  {
     padding: 0.25em 0 0.25em 0;
 }
@@ -52,4 +53,20 @@
 #configTab .formview.compact .item .form-hint {
     flex-basis: 100%;
     line-height: 1.75rem;
+}
+#configTab .formview.compact .item > .k-button {
+    width: auto;
+    margin-left: 215px;
+}
+#configTab .formview.compact .item > .grid.k-grid{
+    padding-left: 0;
+    margin-left: 215px;
+    display: block;
+}
+#configTab .formview.compact .item.full > div {
+    padding-left: 0;
+}
+#configTab .formview.compact .item.full > .grid.k-grid,
+#configTab .formview.compact .item.full > .k-button {
+    margin-left: 0;
 }
