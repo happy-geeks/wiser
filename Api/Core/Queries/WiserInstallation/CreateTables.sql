@@ -699,6 +699,8 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `is_default_footer` tinyint(1) NOT NULL DEFAULT 0,
    `default_header_footer_regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `is_partial` tinyint(1) NOT NULL DEFAULT 0,
+   `widget_content` mediumtext,
+   `widget_location` tinyint(4) NOT NULL DEFAULT 1,
    PRIMARY KEY (`id`) USING BTREE,
    UNIQUE INDEX `idx_unique`(`template_id` ASC, `version` ASC) USING BTREE,
    INDEX `idx_removed`(`removed` ASC) USING BTREE,
