@@ -74,6 +74,11 @@ namespace Api.Core.Services
             instanceId = Guid.NewGuid();
         }
 
+        /// <inheritdoc />
+        public bool HasActiveTransaction()
+        {
+            return transaction != null;
+        }
 
         /// <inheritdoc />
         public string ConnectedDatabase { get; protected set; }
