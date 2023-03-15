@@ -968,9 +968,9 @@ export class Wiser {
      * @param {string} name Optional: The name of the new item.
      * @param {number} linkTypeNumber Optional: The type number of the link between the new item and it's parent.
      * @param {any} data Optional: The data to save with the new item.
-     * @param skipUpdate
-     * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
+     * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save). 
      * @param {number} moduleId Optional: The id of the module in which the item should be created.
+     * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
      */
     static async createItem(moduleSettings, entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
         try {
@@ -991,7 +991,7 @@ export class Wiser {
 
             // Call updateItem with only the title, to make sure the SEO value of the title gets saved if needed.
             let newItemDetails = [];
-            if (!skipUpdate) newItemDetails = await Wiser.updateItem(moduleSettings, createItemResult.newItemId, data || [], null, false, name, false, false, entityType);
+            if (!skipUpdate) newItemDetails = await Wiser.updateItem(moduleSettings, createItemResult.newItemId, data || [], false, name, false, entityType);
 
             const workflowResult = await Wiser.api({
                 url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
@@ -1097,8 +1097,6 @@ export class Wiser {
      * @returns {Promise} A promise with the result of the AJAX call.
      */
     static async deleteItem(moduleSettings, encryptedItemId, entityType) {
-        console.warn("deleteItem in dynamicItems.js called");
-
         try {
             const apiActionId = await Wiser.getApiAction(moduleSettings, "before_delete", entityType);
             if (apiActionId) {
@@ -1121,7 +1119,7 @@ export class Wiser {
     }
 
     /**
-     * Marks an item as deleted.
+     * Moves an item from archive back to the default tables again, so that it can be used again..
      * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
      * @param {string} encryptedItemId The encrypted item ID.
      * @param {string} entityType The entity type of the item to undelete.
