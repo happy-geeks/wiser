@@ -37,7 +37,8 @@ module.exports = {
         Base: "../../Modules/Base/Scripts/Base.js",
         VersionControl: "../../Modules/VersionControl/Scripts/VersionControl.js",
         CommunicationIndex: "../../Modules/Communication/Scripts/Index.js",
-        CommunicationSettings: "../../Modules/Communication/Scripts/Settings.js"
+        CommunicationSettings: "../../Modules/Communication/Scripts/Settings.js",
+        FileManager: "../../Modules/FileManager/Scripts/FileManager.js"
     },
     output: {
         path: path.join(__dirname, "wwwroot/scripts"),

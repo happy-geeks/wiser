@@ -48,46 +48,125 @@ export class Windows {
         this.historyGridWindow = null;
         this.historyGrid = null;
 
-        // Upload windows.
-        this.imagesUploaderWindow = null;
-        this.imagesUploaderWindowTreeView = null;
-        this.imagesUploaderWindowTreeViewState = null;
-        this.imagesUploaderWindowTreeViewContextMenu = null;
-        this.imagesUploaderWindowTreeViewContextMenuTarget = null;
-        this.imagesUploaderWindowSplitter = null;
-        this.imagesUploaderWindowAddButton = null;
-        this.imagesUploaderSender = null;
-
-        this.filesUploaderWindow = null;
-        this.filesUploaderWindowTreeView = null;
-        this.filesUploaderWindowTreeViewState = null;
-        this.filesUploaderWindowTreeViewContextMenu = null;
-        this.filesUploaderWindowTreeViewContextMenuTarget = null;
-        this.filesUploaderWindowSplitter = null;
-        this.filesUploaderWindowAddButton = null;
-        this.filesUploaderSender = null;
-
-        this.templatesUploaderWindow = null;
-        this.templatesUploaderWindowTreeView = null;
-        this.templatesUploaderWindowTreeViewState = null;
-        this.templatesUploaderWindowTreeViewContextMenu = null;
-        this.templatesUploaderWindowTreeViewContextMenuTarget = null;
-        this.templatesUploaderWindowSplitter = null;
-        this.templatesUploaderWindowAddButton = null;
-        this.templatesUploaderSender = null;
-
-        this.uploaderWindowTreeViewStateLoading = false;
-        this.uploaderWindowTreeViewStates = {
-            images: null,
-            files: null,
-            templates: null
-        };
+        this.fileManagerModes = Object.freeze({
+            images: "images",
+            files: "files",
+            templates: "templates"
+        });
+        
+        // File manager
+        this.fileManagerWindow = null;
+        this.fileManagerIframe = null;
+        this.fileManagerWindowSender = null;
+        this.fileManagerWindowMode = null;
+        this.fileManagerWindowAddButton = null;
     }
 
     /**
      * Do all initializations for the Windows class, such as adding bindings.
      */
     initialize() {
+        // Window for file managers.
+        this.fileManagerIframe = document.querySelector("#fileManagerFrame");
+        this.fileManagerWindow = $("#fileManagerWindow").kendoWindow({
+            width: "90%",
+            height: "90%",
+            title: "",
+            visible: false,
+            modal: true,
+            actions: ["Close"],
+            open: (event) => {
+                let selectedText = "";
+                if (this.fileManagerWindowSender && this.fileManagerWindowSender.kendoEditor) {
+                    selectedText = this.fileManagerWindowSender.kendoEditor.getSelection().toString();
+                }
+                this.fileManagerIframe.src = `/Modules/FileManager?mode=${this.fileManagerWindowMode}&iframe=true&selectedText=${encodeURIComponent(selectedText)}`;
+                
+                switch (this.fileManagerWindowMode) {
+                    case this.fileManagerModes.images:
+                        event.sender.title("Afbeelding invoegen");
+                        break;
+                    case this.fileManagerModes.files:
+                        event.sender.title("Link naar bestand invoegen");
+                        break;
+                    case this.fileManagerModes.templates:
+                        event.sender.title("Template invoegen");
+                        break;
+                }
+            }
+        }).data("kendoWindow");
+
+        this.fileManagerWindowAddButton = $("#fileManagerWindow button[name=addFileToEditor]").kendoButton({
+            icon: "save",
+            click: async (event) => {
+                if (!this.fileManagerWindowSender) {
+                    kendo.alert("Er is geen HTML editor gevonden waar dit bestand toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
+                    return;
+                }
+                
+                let html = "";
+
+                if (!this.fileManagerIframe || !this.fileManagerIframe.contentWindow || !this.fileManagerIframe.contentWindow.document) {
+                    kendo.alert("Het iframe voor bestandsbeheer kon niet gevonden worden of is leeg. Ververs a.u.b. de tab waar Wiser in draait en probeer het opnieuw, of neem contact op met ons.");
+                    return;
+                }
+                
+                const fileManagerClassFromIframe = this.fileManagerIframe.contentWindow.fileManager;
+                
+                switch (this.fileManagerWindowMode) {
+                    case this.fileManagerModes.images: {
+                        const selectedItem = fileManagerClassFromIframe.imagesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.imagesUploaderWindowTreeView.select());
+                        const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
+
+                        const imagePreviewUrl = fileManagerClassFromIframe.generateImagePreviewUrl(extension);
+                        html = `<figure>
+    <picture>
+        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
+        <source media="(min-width: 0px)" srcset="${fileManagerClassFromIframe.generateImagePreviewUrl('webp').url}" type="image/webp" />
+        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
+    </picture>
+</figure>`;
+                        break;
+                    }
+                    case this.fileManagerModes.files: {
+                        const fileUrl = fileManagerClassFromIframe.generateFilePreviewUrl();
+                        html = `<a href="${fileUrl}">${(fileManagerClassFromIframe.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
+                        
+                        break;
+                    }
+                    case this.fileManagerModes.templates: {
+                        const selectedItem = fileManagerClassFromIframe.templatesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.templatesUploaderWindowTreeView.select());
+                        html = selectedItem.html;
+                        break;
+                    }
+                    default: {
+                        kendo.alert(`Onbekende mode ('${this.fileManagerModes}') voor bestandsbeheer. Sluit a.u.b. dit scherm en probeer het opnieuw, of neem contact op met ons.`)
+                        return;
+                    }
+                }
+
+                if (this.fileManagerWindowSender.kendoEditor) {
+                    const originalOptions = this.fileManagerWindowSender.kendoEditor.options.pasteCleanup;
+                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.none = true;
+                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.span = false;
+                    this.fileManagerWindowSender.kendoEditor.exec("inserthtml", { value: html });
+                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.none = originalOptions.none;
+                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.span = originalOptions.span;
+                }
+
+                if (this.fileManagerWindowSender.codeMirror) {
+                    const doc = this.fileManagerWindowSender.codeMirror.getDoc();
+                    const cursor = doc.getCursor();
+                    doc.replaceRange(html, cursor);
+                }
+
+                if (this.fileManagerWindowSender.contentbuilder) {
+                    $(this.fileManagerWindowSender.contentbuilder.activeElement).replaceWith(html);
+                }
+
+                this.fileManagerWindow.close();
+            }
+        });
 
         // Window for searching for items to link to another item.
         this.historyGridWindow = $("#historyWindowGrid").kendoWindow({
@@ -109,195 +188,6 @@ export class Windows {
             actions: ["Close"]
         }).data("kendoWindow");
 
-        // Window for viewing a all generic images and for adding them into an HTML editor.
-        this.imagesUploaderWindow = $("#imagesUploaderWindow").kendoWindow({
-            width: "90%",
-            height: "90%",
-            title: "Afbeeldingen",
-            visible: false,
-            modal: true,
-            actions: ["Close"],
-            open: (event) => {
-                this.imagesUploaderWindowSplitter.resize(true);
-
-                if (this.imagesUploaderWindowTreeView) {
-                    this.imagesUploaderWindow.element.find(".popup-loader").addClass("loading");
-                    this.imagesUploaderWindowTreeView.dataSource.read();
-                    this.imagesUploaderWindow.element.find(".right-pane, footer").addClass("hidden");
-                } else {
-                    this.initializeImageUploader(event);
-                }
-            }
-        }).data("kendoWindow");
-
-        this.imagesUploaderWindowSplitter = $("#imagesUploaderWindow .horizontal").kendoSplitter({
-            panes: [{
-                collapsible: true,
-                size: "20%"
-            }, {
-                collapsible: false
-            }]
-        }).data("kendoSplitter");
-
-        this.imagesUploaderWindowAddButton = $("#imagesUploaderWindow button[name=addImageToEditor]").kendoButton({
-            icon: "save",
-            click: async (event) => {
-                if (!this.imagesUploaderSender) {
-                    kendo.alert("Er is geen HTML editor gevonden waar deze afbeelding toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                    return;
-                }
-                
-                const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
-                const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
-
-                const imagePreviewUrl = this.generateImagePreviewUrl(extension);
-                const html = `<figure>
-    <picture>
-        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
-        <source media="(min-width: 0px)" srcset="${this.generateImagePreviewUrl('webp').url}" type="image/webp" />
-        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
-    </picture>
-</figure>`;
-                if (this.imagesUploaderSender.kendoEditor) {
-                    this.imagesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
-                }
-
-                if (this.imagesUploaderSender.codeMirror) {
-                    const doc = this.imagesUploaderSender.codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(html, cursor);
-                }
-
-                if (this.imagesUploaderSender.contentbuilder) {
-                    $(this.imagesUploaderSender.contentbuilder.activeElement).replaceWith(html);
-                }
-
-                this.imagesUploaderWindow.close();
-            }
-        });
-
-        // Window for viewing a all generic files and for adding them into an HTML editor.
-        this.filesUploaderWindow = $("#filesUploaderWindow").kendoWindow({
-            width: "90%",
-            height: "90%",
-            title: "Bestanden",
-            visible: false,
-            modal: true,
-            actions: ["Maximize", "Close"],
-            open: (event) => {
-                this.filesUploaderWindowSplitter.resize(true);
-
-                if (this.filesUploaderWindowTreeView) {
-                    this.filesUploaderWindow.element.find(".popup-loader").addClass("loading");
-                    this.filesUploaderWindowTreeView.dataSource.read();
-                    this.filesUploaderWindow.element.find(".right-pane, footer").addClass("hidden");
-                } else {
-                    this.initializeFileUploader(event);
-                }
-
-                this.filesUploaderWindow.element.find("#fileLinkText").val(this.filesUploaderSender.kendoEditor.getSelection().toString());
-            }
-        }).data("kendoWindow");
-
-        this.filesUploaderWindowSplitter = $("#filesUploaderWindow .horizontal").kendoSplitter({
-            panes: [{
-                collapsible: true,
-                size: "20%"
-            }, {
-                collapsible: false
-            }]
-        }).data("kendoSplitter");
-
-        this.filesUploaderWindowAddButton = $("#filesUploaderWindow button[name=addFileToEditor]").kendoButton({
-            icon: "save",
-            click: async (event) => {
-                if (!this.filesUploaderSender) {
-                    kendo.alert("Er is geen HTML editor gevonden waar dit bestand toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                    return;
-                }
-
-                const fileUrl = this.generateFilePreviewUrl();
-                const html = `<a href="${fileUrl}">${(this.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
-                if (this.filesUploaderSender.kendoEditor) {
-                    this.filesUploaderSender.kendoEditor.exec("inserthtml", { value: html });
-                }
-
-                if (this.filesUploaderSender.codeMirror) {
-                    const doc = this.filesUploaderSender.codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(html, cursor);
-                }
-
-                if (this.imagesUploaderSender.contentbuilder) {
-                    this.imagesUploaderSender.contentbuilder.addHtml(html);
-                }
-
-                this.filesUploaderWindow.close();
-            }
-        });
-
-        // Window for viewing a all generic HTML templates and for adding them into an HTML editor.
-        this.templatesUploaderWindow = $("#templatesUploaderWindow").kendoWindow({
-            width: "90%",
-            height: "90%",
-            title: "Templates",
-            visible: false,
-            modal: true,
-            actions: ["Maximize", "Close"],
-            open: (event) => {
-                this.templatesUploaderWindowSplitter.resize(true);
-
-                if (this.templatesUploaderWindowTreeView) {
-                    this.templatesUploaderWindow.element.find(".popup-loader").addClass("loading");
-                    this.templatesUploaderWindowTreeView.dataSource.read();
-                    this.templatesUploaderWindow.element.find(".right-pane, footer").addClass("hidden");
-                } else {
-                    this.initializeTemplateUploader(event);
-                }
-            }
-        }).data("kendoWindow");
-
-        this.templatesUploaderWindowSplitter = $("#templatesUploaderWindow .horizontal").kendoSplitter({
-            panes: [{
-                collapsible: true,
-                size: "20%"
-            }, {
-                collapsible: false
-            }]
-        }).data("kendoSplitter");
-
-        this.templatesUploaderWindowAddButton = $("#templatesUploaderWindow button[name=addTemplateToEditor]").kendoButton({
-            icon: "save",
-            click: async (event) => {
-                if (!this.templatesUploaderSender) {
-                    kendo.alert("Er is geen HTML editor gevonden waar deze template toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                    return;
-                }
-
-                const selectedItem = this.templatesUploaderWindowTreeView.dataItem(this.templatesUploaderWindowTreeView.select());
-                if (this.templatesUploaderSender.kendoEditor) {
-                    const originalOptions = this.templatesUploaderSender.kendoEditor.options.pasteCleanup;
-                    this.templatesUploaderSender.kendoEditor.options.pasteCleanup.none = true;
-                    this.templatesUploaderSender.kendoEditor.options.pasteCleanup.span = false;
-                    this.templatesUploaderSender.kendoEditor.exec("inserthtml", { value: selectedItem.html });
-                    this.templatesUploaderSender.kendoEditor.options.pasteCleanup.none = originalOptions.none;
-                    this.templatesUploaderSender.kendoEditor.options.pasteCleanup.span = originalOptions.span;
-                }
-
-                if (this.templatesUploaderSender.codeMirror) {
-                    const doc = this.templatesUploaderSender.codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(selectedItem.html, cursor);
-                }
-
-                if (this.templatesUploaderSender.contentbuilder) {
-                    this.templatesUploaderSender.contentbuilder.addHtml(html);
-                }
-
-                this.templatesUploaderWindow.close();
-            }
-        });
-
         // Some things should not be done if we're in iframe mode.
         if (this.base.settings.iframeMode || this.base.settings.gridViewMode) {
             return;
@@ -312,866 +202,6 @@ export class Windows {
         this.mainWindow.wrapper.addClass("main-window");
 
         this.mainWindow.wrapper.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
-    }
-
-    /**
-     * Initializes all components in the image uploader window.
-     * @param {any} event The event of the open function of the imageUploaderWindow.
-     */
-    initializeImageUploader(event) {
-        // Setup the tree view.
-        this.imagesUploaderWindowTreeView = $("#imagesUploaderTreeView").kendoTreeView({
-            dragAndDrop: false,
-            dataSource: {
-                transport: {
-                    read: {
-                        url: `${this.base.settings.serviceRoot}/GET_ITEM_FILES_AND_DIRECTORIES?rootId=${encodeURIComponent(this.base.settings.imagesRootId)}`,
-                        dataType: "json"
-                    }
-                },
-                schema: {
-                    model: {
-                        id: "id",
-                        hasChildren: "childrenCount"
-                    }
-                }
-            },
-            dataBound: (dataBoundEvent) => {
-                if (!dataBoundEvent.node) {
-                    // If the node property is undefined, it means this is the initial load, so we want to load the state of the tree view.
-                    this.loadUploaderWindowTreeViewState("images", this.imagesUploaderWindowTreeView, this.imagesUploaderWindowTreeView.dataSource.data(), true);
-                } else {
-                    // If the node is not undefined, it means the user is expanding one of the nodes, so we want to save the state of the tree view.
-                    this.saveUploaderWindowTreeViewState("images", this.imagesUploaderWindowTreeView);
-                }
-
-                this.imagesUploaderWindow.element.find(".popup-loader").removeClass("loading");
-            },
-            change: this.updateImagePreview.bind(this),
-            collapse: (collapseEvent) => {
-                this.base.onTreeViewCollapseItem(collapseEvent);
-                // Timeout because the collapse event gets triggered before the collapse happens, but we need to save the state after it happened.
-                setTimeout(() => this.saveUploaderWindowTreeViewState("images", this.imagesUploaderWindowTreeView), 100);
-            },
-            expand: (expandEvent) => {
-                this.base.onTreeViewExpandItem(expandEvent);
-            },
-            dataValueField: "id",
-            dataTextField: "name"
-        }).data("kendoTreeView");
-
-        // Setup the number fields.
-        event.sender.element.find("#preferredWidth, #preferredHeight").kendoNumericTextBox({
-            culture: "nl-NL",
-            decimals: 0,
-            format: "#",
-            change: this.updateImagePreview.bind(this)
-        });
-
-        // Setup the dropdowns.
-        event.sender.element.find("#resizeMode").kendoDropDownList({
-            change: (resizeModeChangeEvent) => {
-                const value = resizeModeChangeEvent.sender.value();
-                event.sender.element.find(".item.anchorPosition").toggleClass("hidden", value !== "crop" && value !== "fill");
-                this.updateImagePreview();
-            }
-        });
-
-        event.sender.element.find("#anchorPosition").kendoDropDownList({
-            change: this.updateImagePreview.bind(this)
-        });
-
-        const fileUploader = event.sender.element.find("#newImageUpload");
-        fileUploader.change((fileChangeEvent) => {
-            const allowedExtensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg", ".webp"];
-            const selectedFiles = [...fileChangeEvent.currentTarget.files];
-            if (selectedFiles.length === 0) {
-                // No files selected, don't do anything.
-                return;
-            }
-
-            const invalidFiles = selectedFiles.filter(file => allowedExtensions.filter(extension => file.name.indexOf(extension) === file.name.length - extension.length).length === 0);
-            if (invalidFiles.length > 0) {
-                kendo.alert(`U heeft 1 of meer ongeldige bestanden toegevoegd. Alleen de volgende extensies worden toegestaan: ${allowedExtensions.join(", ")}`);
-                return;
-            }
-
-            const loader = this.imagesUploaderWindow.element.find(".popup-loader").addClass("loading");
-            try {
-                const selectedItem = this.imagesUploaderWindowTreeView.dataItem(fileUploader.data("source") === "contextMenu" ? this.imagesUploaderWindowTreeViewContextMenuTarget : this.imagesUploaderWindowTreeView.select());
-                const itemId = selectedItem ? selectedItem.id : this.base.settings.imagesRootId;
-                const promises = [];
-                for (let file of selectedFiles) {
-                    const formData = new FormData();
-                    formData.append(file.name, file);
-
-                    promises.push(Wiser.api({
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
-                        method: "POST",
-                        processData: false,
-                        contentType: false,
-                        data: formData
-                    }));
-                }
-
-                Promise.all(promises).then((results) => {
-                    this.base.notification.show({ message: "Afbeelding(en) succesvol toegevoegd" }, "success");
-                    this.imagesUploaderWindowTreeView.dataSource.read();
-                    // Clear the file input so that the user can upload the same file again if they want to. If we don't clear it, then the change event won't be triggered if they upload the same file twice in a row.
-                    fileUploader.val("");
-                }).catch((error) => {
-                    console.error(error);
-                    kendo.alert("Er is iets fout gegaan. Probeer het aub opnieuw of neem contact met ons op.");
-                    loader.removeClass("loading");
-                });
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan. Probeer het aub opnieuw of neem contact met ons op.");
-                loader.removeClass("loading");
-            }
-        });
-
-        // Setup the context menu for the tree view.
-        this.imagesUploaderWindowTreeViewContextMenu = $("#imagesUploaderTreeViewContextMenu").kendoContextMenu({
-            target: "#imagesUploaderTreeView",
-            filter: ".k-in",
-            open: (openEvent) => {
-                this.imagesUploaderWindowTreeViewContextMenuTarget = $(openEvent.target).closest("li.k-item");
-                const isDirectory = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeViewContextMenuTarget).isDirectory;
-                openEvent.sender.element.find("[data-action='add-directory'], [data-action='add-image']").toggleClass("hidden", !isDirectory);
-            },
-            select: (selectEvent) => {
-                const loader = this.imagesUploaderWindow.element.find(".popup-loader").addClass("loading");
-
-                try {
-                    const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeViewContextMenuTarget);
-                    const selectedAction = $(selectEvent.item).data("action");
-                    switch (selectedAction) {
-                        case "delete":
-                            if (selectedItem.isDirectory) {
-                                Wiser.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle afbeeldingen in deze map zullen dan ook verwijderd worden.`).then(() => {
-                                    this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
-                                        this.imagesUploaderWindowTreeView.remove(this.imagesUploaderWindowTreeViewContextMenuTarget);
-                                        this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
-                                        loader.removeClass("loading");
-                                    });
-                                }).catch(() => { loader.removeClass("loading"); });
-                            } else {
-                                Wiser.showConfirmDialog(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
-                                    Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
-                                        method: "DELETE",
-                                        contentType: "application/json",
-                                        dataType: "JSON"
-                                    }).then(() => {
-                                        this.imagesUploaderWindowTreeView.remove(this.imagesUploaderWindowTreeViewContextMenuTarget);
-                                        this.base.notification.show({ message: "Afbeelding succesvol verwijderd" }, "success");
-                                        loader.removeClass("loading");
-                                    }, (error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                }).catch(() => { loader.removeClass("loading"); });
-                            }
-                            break;
-                        case "rename":
-                            kendo.prompt("Geef een nieuwe naam op", selectedItem.name).then((newName) => {
-                                if (selectedItem.isDirectory) {
-                                    this.base.updateItem(selectedItem.itemId, [], null, false, newName, false, true, "filedirectory").then(() => {
-                                        this.imagesUploaderWindowTreeView.text(this.imagesUploaderWindowTreeViewContextMenuTarget, newName);
-                                        this.base.notification.show({ message: "Mapnaam is succesvol gewijzigd" }, "success");
-                                        loader.removeClass("loading");
-                                    }).catch((error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                } else {
-                                    Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
-                                        method: "PUT",
-                                        contentType: "application/json",
-                                        dataType: "JSON"
-                                    }).then(() => {
-                                        this.imagesUploaderWindowTreeView.dataSource.read();
-                                        this.base.notification.show({ message: "Bestandsnaam succesvol gewijzigd" }, "success");
-                                        loader.removeClass("loading");
-                                    }).catch((error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                }
-                            }).fail(() => { loader.removeClass("loading"); });
-                            break;
-                        case "add-directory":
-                            if (!selectedItem.isDirectory) {
-                                break;
-                            }
-
-                            this.createFileDirectory(selectedItem.id, this.imagesUploaderWindow, this.imagesUploaderWindowTreeView);
-                            break;
-                        case "add-image":
-                            if (!selectedItem.isDirectory) {
-                                break;
-                            }
-
-                            fileUploader.data("source", "contextMenu");
-                            fileUploader.trigger("click");
-                            break;
-                        default:
-                            loader.removeClass("loading");
-                            kendo.alert("Onbekende actie, probeer het a.u.b. opnieuw.");
-                            break;
-                    }
-                } catch (exception) {
-                    console.error(exception);
-                    loader.removeClass("loading");
-                    kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                }
-            }
-        }).data("kendoContextMenu");
-
-        // Setup the buttons.
-        event.sender.element.find("#addNewImageButton").kendoButton({
-            click: () => {
-                fileUploader.data("source", "button");
-                fileUploader.trigger("click");
-            },
-            icon: "image-insert"
-        });
-
-        event.sender.element.find("#addNewImageDirectoryButton").kendoButton({
-            click: () => {
-                const selectedItemTreeView = this.imagesUploaderWindowTreeView.select();
-                if (!selectedItemTreeView.length) {
-                    this.createFileDirectory(this.base.settings.imagesRootId, this.imagesUploaderWindow, this.imagesUploaderWindowTreeView);
-                } else {
-                    this.createFileDirectory(this.imagesUploaderWindowTreeView.dataItem(selectedItemTreeView).id, this.imagesUploaderWindow, this.imagesUploaderWindowTreeView);
-                }
-            },
-            icon: "folder-add"
-        });
-    }
-
-    /**
-     * Initializes all components in the file uploader window.
-     * @param {any} event The event of the open function of the fileUploaderWindow.
-     */
-    initializeFileUploader(event) {
-        // Setup the tree view.
-        this.filesUploaderWindowTreeView = $("#filesUploaderTreeView").kendoTreeView({
-            dragAndDrop: false,
-            dataSource: {
-                transport: {
-                    read: {
-                        url: `${this.base.settings.serviceRoot}/GET_ITEM_FILES_AND_DIRECTORIES?rootId=${encodeURIComponent(this.base.settings.filesRootId)}`,
-                        dataType: "json"
-                    }
-                },
-                schema: {
-                    model: {
-                        id: "id",
-                        hasChildren: "childrenCount"
-                    }
-                }
-            },
-            dataBound: (dataBoundEvent) => {
-                if (!dataBoundEvent.node) {
-                    // If the node property is undefined, it means this is the initial load, so we want to load the state of the tree view.
-                    this.loadUploaderWindowTreeViewState("files", this.filesUploaderWindowTreeView, this.filesUploaderWindowTreeView.dataSource.data(), true);
-                } else {
-                    // If the node is not undefined, it means the user is expanding one of the nodes, so we want to save the state of the tree view.
-                    this.saveUploaderWindowTreeViewState("files", this.filesUploaderWindowTreeView);
-                }
-
-                this.filesUploaderWindow.element.find(".popup-loader").removeClass("loading");
-            },
-            change: this.updateFilePreview.bind(this),
-            collapse: (collapseEvent) => {
-                this.base.onTreeViewCollapseItem(collapseEvent);
-                // Timeout because the collapse event gets triggered before the collapse happens, but we need to save the state after it happened.
-                setTimeout(() => this.saveUploaderWindowTreeViewState("files", this.filesUploaderWindowTreeView), 100);
-            },
-            expand: (expandEvent) => {
-                this.base.onTreeViewExpandItem(expandEvent);
-            },
-            dataValueField: "id",
-            dataTextField: "name"
-        }).data("kendoTreeView");
-
-        const fileUploader = event.sender.element.find("#newFileUpload");
-        fileUploader.change((fileChangeEvent) => {
-            const selectedFiles = [...fileChangeEvent.currentTarget.files];
-            if (selectedFiles.length === 0) {
-                // No files selected, don't do anything.
-                return;
-            }
-
-            const loader = this.filesUploaderWindow.element.find(".popup-loader").addClass("loading");
-            try {
-                const selectedItem = this.filesUploaderWindowTreeView.dataItem(fileUploader.data("source") === "contextMenu" ? this.filesUploaderWindowTreeViewContextMenuTarget : this.filesUploaderWindowTreeView.select());
-                const itemId = selectedItem ? selectedItem.id : this.base.settings.filesRootId;
-                const promises = [];
-                for (let file of selectedFiles) {
-                    const formData = new FormData();
-                    formData.append(file.name, file);
-
-                    promises.push(Wiser.api({
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
-                        method: "POST",
-                        processData: false,
-                        contentType: false,
-                        data: formData
-                    }));
-                }
-
-                Promise.all(promises).then((results) => {
-                    this.base.notification.show({ message: "Bestand(en) succesvol toegevoegd" }, "success");
-                    this.filesUploaderWindowTreeView.dataSource.read();
-                    // Clear the file input so that the user can upload the same file again if they want to. If we don't clear it, then the change event won't be triggered if they upload the same file twice in a row.
-                    fileUploader.val("");
-                }).catch((error) => {
-                    console.error(error);
-                    kendo.alert("Er is iets fout gegaan. Probeer het aub opnieuw of neem contact met ons op.");
-                    loader.removeClass("loading");
-                });
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan. Probeer het aub opnieuw of neem contact met ons op.");
-                loader.removeClass("loading");
-            }
-        });
-
-        // Setup the context menu for the tree view.
-        this.filesUploaderWindowTreeViewContextMenu = $("#filesUploaderTreeViewContextMenu").kendoContextMenu({
-            target: "#filesUploaderTreeView",
-            filter: ".k-in",
-            open: (openEvent) => {
-                this.filesUploaderWindowTreeViewContextMenuTarget = $(openEvent.target).closest("li.k-item");
-                const isDirectory = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeViewContextMenuTarget).isDirectory;
-                openEvent.sender.element.find("[data-action='add-directory'], [data-action='add-file']").toggleClass("hidden", !isDirectory);
-            },
-            select: (selectEvent) => {
-                const loader = this.filesUploaderWindow.element.find(".popup-loader").addClass("loading");
-
-                try {
-                    const selectedItem = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeViewContextMenuTarget);
-                    const selectedAction = $(selectEvent.item).data("action");
-                    switch (selectedAction) {
-                        case "delete":
-                            if (selectedItem.isDirectory) {
-                                Wiser.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle bestanden in deze map zullen dan ook verwijderd worden.`).then(() => {
-                                    this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
-                                        this.filesUploaderWindowTreeView.remove(this.filesUploaderWindowTreeViewContextMenuTarget);
-                                        this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
-                                        loader.removeClass("loading");
-                                    });
-                                }).catch(() => { loader.removeClass("loading"); });
-                            } else {
-                                Wiser.showConfirmDialog(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
-                                    Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
-                                        method: "DELETE",
-                                        contentType: "application/json",
-                                        dataType: "JSON"
-                                    }).then(() => {
-                                        this.filesUploaderWindowTreeView.remove(this.filesUploaderWindowTreeViewContextMenuTarget);
-                                        this.base.notification.show({ message: "Bestand succesvol verwijderd" }, "success");
-                                        loader.removeClass("loading");
-                                    }, (error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                }).catch(() => { loader.removeClass("loading"); });
-                            }
-                            break;
-                        case "rename":
-                            kendo.prompt("Geef een nieuwe naam op", selectedItem.name).then((newName) => {
-                                if (selectedItem.isDirectory) {
-                                    this.base.updateItem(selectedItem.itemId, [], null, false, newName, false, true, "filedirectory").then(() => {
-                                        this.filesUploaderWindowTreeView.text(this.filesUploaderWindowTreeViewContextMenuTarget, newName);
-                                        this.base.notification.show({ message: "Mapnaam is succesvol gewijzigd" }, "success");
-                                        loader.removeClass("loading");
-                                    }).catch((error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                } else {
-                                    Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
-                                        method: "PUT",
-                                        contentType: "application/json",
-                                        dataType: "JSON"
-                                    }).then(() => {
-                                        this.filesUploaderWindowTreeView.dataSource.read();
-                                        this.base.notification.show({ message: "Bestandsnaam succesvol gewijzigd" }, "success");
-                                        loader.removeClass("loading");
-                                    }, (error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                }
-                            }).fail(() => { loader.removeClass("loading"); });
-                            break;
-                        case "add-directory":
-                            if (!selectedItem.isDirectory) {
-                                break;
-                            }
-
-                            this.createFileDirectory(selectedItem.id, this.filesUploaderWindow, this.filesUploaderWindowTreeView);
-                            break;
-                        case "add-file":
-                            if (!selectedItem.isDirectory) {
-                                break;
-                            }
-
-                            fileUploader.data("source", "contextMenu");
-                            fileUploader.trigger("click");
-                            break;
-                        default:
-                            loader.removeClass("loading");
-                            kendo.alert("Onbekende actie, probeer het a.u.b. opnieuw.");
-                            break;
-                    }
-                } catch (exception) {
-                    console.error(exception);
-                    loader.removeClass("loading");
-                    kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                }
-            }
-        }).data("kendoContextMenu");
-
-        // Setup the buttons.
-        event.sender.element.find("#addNewFileButton").kendoButton({
-            click: () => {
-                fileUploader.data("source", "button");
-                fileUploader.trigger("click");
-            },
-            icon: "file-add"
-        });
-
-        event.sender.element.find("#addNewFileDirectoryButton").kendoButton({
-            click: () => {
-                const selectedItemTreeView = this.filesUploaderWindowTreeView.select();
-                if (!selectedItemTreeView.length) {
-                    this.createFileDirectory(this.base.settings.filesRootId, this.filesUploaderWindow, this.filesUploaderWindowTreeView);
-                } else {
-                    this.createFileDirectory(this.filesUploaderWindowTreeView.dataItem(selectedItemTreeView).id, this.filesUploaderWindow, this.filesUploaderWindowTreeView);
-                }
-            },
-            icon: "folder-add"
-        });
-    }
-
-    /**
-     * Initializes all components in the template uploader window.
-     * @param {any} event The event of the open function of the imageUploaderWindow.
-     */
-    initializeTemplateUploader(event) {
-        // Setup the tree view.
-        this.templatesUploaderWindowTreeView = $("#templatesUploaderTreeView").kendoTreeView({
-            dragAndDrop: false,
-            dataSource: {
-                transport: {
-                    read: {
-                        url: `${this.base.settings.serviceRoot}/GET_ITEM_FILES_AND_DIRECTORIES?rootId=${encodeURIComponent(this.base.settings.templatesRootId)}`,
-                        dataType: "json"
-                    }
-                },
-                schema: {
-                    model: {
-                        id: "id",
-                        hasChildren: "childrenCount"
-                    }
-                }
-            },
-            dataBound: (dataBoundEvent) => {
-                if (!dataBoundEvent.node) {
-                    // If the node property is undefined, it means this is the initial load, so we want to load the state of the tree view.
-                    this.loadUploaderWindowTreeViewState("templates", this.templatesUploaderWindowTreeView, this.templatesUploaderWindowTreeView.dataSource.data(), true);
-                } else {
-                    // If the node is not undefined, it means the user is expanding one of the nodes, so we want to save the state of the tree view.
-                    this.saveUploaderWindowTreeViewState("templates", this.templatesUploaderWindowTreeView);
-                }
-
-                this.templatesUploaderWindow.element.find(".popup-loader").removeClass("loading");
-            },
-            change: this.updateTemplatePreview.bind(this),
-            collapse: (collapseEvent) => {
-                this.base.onTreeViewCollapseItem(collapseEvent);
-                // Timeout because the collapse event gets triggered before the collapse happens, but we need to save the state after it happened.
-                setTimeout(() => this.saveUploaderWindowTreeViewState("templates", this.templatesUploaderWindowTreeView), 100);
-            },
-            expand: (expandEvent) => {
-                this.base.onTreeViewExpandItem(expandEvent);
-            },
-            dataValueField: "id",
-            dataTextField: "name"
-        }).data("kendoTreeView");
-
-        // Setup the number fields.
-        event.sender.element.find("#preferredWidth, #preferredHeight").kendoNumericTextBox({
-            culture: "nl-NL",
-            decimals: 0,
-            format: "#",
-            change: this.updateImagePreview.bind(this)
-        });
-
-        const fileUploader = event.sender.element.find("#newTemplateUpload");
-        fileUploader.change((fileChangeEvent) => {
-            const allowedExtensions = [".htm", ".html"];
-            const selectedFiles = [...fileChangeEvent.currentTarget.files];
-            if (selectedFiles.length === 0) {
-                // No files selected, don't do anything.
-                return;
-            }
-
-            const invalidFiles = selectedFiles.filter(file => allowedExtensions.filter(extension => file.name.indexOf(extension) === file.name.length - extension.length).length === 0);
-            if (invalidFiles.length > 0) {
-                kendo.alert(`U heeft 1 of meer ongeldige bestanden toegevoegd. Alleen de volgende extensies worden toegestaan: ${allowedExtensions.join(", ")}`);
-                return;
-            }
-
-            const loader = this.templatesUploaderWindow.element.find(".popup-loader").addClass("loading");
-            try {
-                const selectedItem = this.templatesUploaderWindowTreeView.dataItem(fileUploader.data("source") === "contextMenu" ? this.templatesUploaderWindowTreeViewContextMenuTarget : this.templatesUploaderWindowTreeView.select());
-                const itemId = selectedItem ? selectedItem.id : this.base.settings.templatesRootId;
-                const promises = [];
-                for (let file of selectedFiles) {
-                    const formData = new FormData();
-                    formData.append(file.name, file);
-
-                    promises.push(Wiser.api({
-                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=global_file&useTinyPng=false`,
-                        method: "POST",
-                        processData: false,
-                        contentType: false,
-                        data: formData 
-                    }));
-                }
-
-                Promise.all(promises).then((results) => {
-                    this.base.notification.show({ message: "Template(s) succesvol toegevoegd" }, "success");
-                    this.templatesUploaderWindowTreeView.dataSource.read();
-                    // Clear the file input so that the user can upload the same file again if they want to. If we don't clear it, then the change event won't be triggered if they upload the same file twice in a row.
-                    fileUploader.val("");
-                }).catch((error) => {
-                    console.error(error);
-                    kendo.alert("Er is iets fout gegaan. Probeer het aub opnieuw of neem contact met ons op.");
-                    loader.removeClass("loading");
-                });
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan. Probeer het aub opnieuw of neem contact met ons op.");
-                loader.removeClass("loading");
-            }
-        });
-
-        // Setup the context menu for the tree view.
-        this.templatesUploaderWindowTreeViewContextMenu = $("#templatesUploaderTreeViewContextMenu").kendoContextMenu({
-            target: "#templatesUploaderTreeView",
-            filter: ".k-in",
-            open: (openEvent) => {
-                this.templatesUploaderWindowTreeViewContextMenuTarget = $(openEvent.target).closest("li.k-item");
-                const isDirectory = this.templatesUploaderWindowTreeView.dataItem(this.templatesUploaderWindowTreeViewContextMenuTarget).isDirectory;
-                openEvent.sender.element.find("[data-action='add-directory'], [data-action='add-template']").toggleClass("hidden", !isDirectory);
-            },
-            select: (selectEvent) => {
-                const loader = this.templatesUploaderWindow.element.find(".popup-loader").addClass("loading");
-
-                try {
-                    const selectedItem = this.templatesUploaderWindowTreeView.dataItem(this.templatesUploaderWindowTreeViewContextMenuTarget);
-                    const selectedAction = $(selectEvent.item).data("action");
-                    switch (selectedAction) {
-                        case "delete":
-                            if (selectedItem.isDirectory) {
-                                Wiser.showConfirmDialog(`Weet u zeker dat u de map '${selectedItem.name}' wilt verwijderen? Alle templates in deze map zullen dan ook verwijderd worden.`).then(() => {
-                                    this.base.deleteItem(selectedItem.id, "filedirectory").then(() => {
-                                        this.templatesUploaderWindowTreeView.remove(this.templatesUploaderWindowTreeViewContextMenuTarget);
-                                        this.base.notification.show({ message: "Map succesvol verwijderd" }, "success");
-                                        loader.removeClass("loading");
-                                    });
-                                }).catch(() => { loader.removeClass("loading"); });
-                            } else {
-                                Wiser.showConfirmDialog(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
-                                    Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
-                                        method: "DELETE",
-                                        contentType: "application/json",
-                                        dataType: "JSON"
-                                    }).then(() => {
-                                        this.templatesUploaderWindowTreeView.remove(this.templatesUploaderWindowTreeViewContextMenuTarget);
-                                        this.base.notification.show({ message: "Template succesvol verwijderd" }, "success");
-                                        loader.removeClass("loading");
-                                    }, (error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                }).catch(() => { loader.removeClass("loading"); });
-                            }
-                            break;
-                        case "rename":
-                            kendo.prompt("Geef een nieuwe naam op", selectedItem.name).then((newName) => {
-                                if (selectedItem.isDirectory) {
-                                    this.base.updateItem(selectedItem.itemId, [], null, false, newName, false, true, "filedirectory").then(() => {
-                                        this.templatesUploaderWindowTreeView.text(this.templatesUploaderWindowTreeViewContextMenuTarget, newName);
-                                        this.base.notification.show({ message: "Mapnaam is succesvol gewijzigd" }, "success");
-                                        loader.removeClass("loading");
-                                    }).catch((error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                } else {
-                                    Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
-                                        method: "PUT",
-                                        contentType: "application/json",
-                                        dataType: "JSON"
-                                    }).then(() => {
-                                        this.templatesUploaderWindowTreeView.dataSource.read();
-                                        this.base.notification.show({ message: "Bestandsnaam succesvol gewijzigd" }, "success");
-                                        loader.removeClass("loading");
-                                    }, (error) => {
-                                        console.error(error);
-                                        loader.removeClass("loading");
-                                        kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                                    });
-                                }
-                            }).fail(() => { loader.removeClass("loading"); });
-                            break;
-                        case "add-directory":
-                            if (!selectedItem.isDirectory) {
-                                break;
-                            }
-
-                            this.createFileDirectory(selectedItem.id, this.templatesUploaderWindow, this.templatesUploaderWindowTreeView);
-                            break;
-                        case "add-image":
-                            if (!selectedItem.isDirectory) {
-                                break;
-                            }
-
-                            fileUploader.data("source", "contextMenu");
-                            fileUploader.trigger("click");
-                            break;
-                        default:
-                            loader.removeClass("loading");
-                            kendo.alert("Onbekende actie, probeer het a.u.b. opnieuw.");
-                            break;
-                    }
-                } catch (exception) {
-                    console.error(exception);
-                    loader.removeClass("loading");
-                    kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                }
-            }
-        }).data("kendoContextMenu");
-
-        // Setup the buttons.
-        event.sender.element.find("#addNewTemplateButton").kendoButton({
-            click: () => {
-                fileUploader.data("source", "button");
-                fileUploader.trigger("click");
-            },
-            icon: "document-insert"
-        });
-
-        event.sender.element.find("#addNewTemplateDirectoryButton").kendoButton({
-            click: () => {
-                const selectedItemTreeView = this.templatesUploaderWindowTreeView.select();
-                if (!selectedItemTreeView.length) {
-                    this.createFileDirectory(this.base.settings.templatesRootId, this.templatesUploaderWindow, this.templatesUploaderWindowTreeView);
-                } else {
-                    this.createFileDirectory(this.templatesUploaderWindowTreeView.dataItem(selectedItemTreeView).id, this.templatesUploaderWindow, this.templatesUploaderWindowTreeView);
-                }
-            },
-            icon: "folder-add"
-        });
-    }
-
-    createFileDirectory(parentId, window, treeView) {
-        try {
-            kendo.prompt("Vul een naam in").then((name) => {
-                // Using then instead of async/await, because kendo can't handle async events.
-                this.base.createItem("filedirectory", parentId, name, null, [], true).then((createItemResult) => {
-                    if (!createItemResult) {
-                        kendo.alert("Er iets iets fout gegaan tijdens het aanmaken van de map. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                    } else {
-                        this.base.notification.show({ message: "Map succesvol aangemaakt" }, "success");
-                        window.element.find(".popup-loader").addClass("loading");
-                        treeView.dataSource.read();
-                    }
-                });
-            });
-        } catch (exception) {
-            console.error(exception);
-            kendo.alert("Er iets iets fout gegaan tijdens het aanmaken van de map. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-        }
-    }
-
-    saveUploaderWindowTreeViewState(type, treeView) {
-        if (this.uploaderWindowTreeViewStateLoading) {
-            // Don't save the state while we're loading a state, otherwise things will get messed up.
-            return;
-        }
-
-        this.uploaderWindowTreeViewStates[type] = {};
-        treeView.element.find(".k-item").each((index, element) => {
-            const item = treeView.dataItem(element);
-            if (item && item.expanded) {
-                this.uploaderWindowTreeViewStates[type][item.plainId] = true;
-            }
-        });
-    }
-
-    async loadUploaderWindowTreeViewState(type, treeView, data, initial) {
-        if (!this.uploaderWindowTreeViewStates || !this.uploaderWindowTreeViewStates[type] || !data) {
-            return;
-        }
-
-        if (initial) {
-            this.uploaderWindowTreeViewStateLoading = true;
-        }
-
-        for (let i = 0; i < data.length; i++) {
-            if (this.uploaderWindowTreeViewStates[type][data[i].plainId]) {
-                await data[i].load();
-                treeView.expand(treeView.findByUid(data[i].uid));
-            }
-            if (data[i].items && data[i].items.length) {
-                await this.loadUploaderWindowTreeViewState(type, treeView, data[i].items, false);
-            }
-        }
-
-        if (initial) {
-            this.uploaderWindowTreeViewStateLoading = false;
-        }
-    }
-
-    /**
-     * Generates the URL for the image preview for the imagesUploaderWindow.
-     * @param extension The extension of the image file
-     * @returns {string} The URL for the preview image.
-     */
-    generateImagePreviewUrl(extension) {
-        const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
-        let resizeMode = this.imagesUploaderWindow.element.find("#resizeMode").data("kendoDropDownList").value() || "normal";
-        if (resizeMode === "crop" || resizeMode === "fill") {
-            const anchorPosition = this.imagesUploaderWindow.element.find("#anchorPosition").data("kendoDropDownList").value();
-            resizeMode += `-${anchorPosition || "center"}`;
-        }
-
-        const width = this.imagesUploaderWindow.element.find("#preferredWidth").val() || 0;
-        const height = this.imagesUploaderWindow.element.find("#preferredHeight").val() || 0;
-        const altText = this.imagesUploaderWindow.element.find("#altText").val() || "";
-
-        let fileName = selectedItem.name;
-        const dotIndex = fileName.lastIndexOf(".");
-        if (extension) {
-            fileName = dotIndex > -1 ? `${fileName.substr(0, dotIndex)}.${extension}` : `${fileName}.${extension}`;
-        } else if (!extension && dotIndex === -1) {
-            fileName = `${fileName}.png`;
-        }
-        
-        let domain = this.base.settings.mainDomain;
-        if (!domain.endsWith("/")) {
-            domain += "/";
-        }
-
-        return {
-            url: `${domain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName || "global_file"}/${resizeMode}/${width}/${height}/${fileName}`,
-            altText: altText
-        };
-    }
-
-    /**
-     * Generates the URL for the file preview for the imagesUploaderWindow.
-     * @returns {string} The URL for the preview image.
-     */
-    generateFilePreviewUrl() {
-        const selectedItem = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeView.select());
-        let result = `${this.base.settings.mainDomain}/file/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName || "global_file"}/${selectedItem.name}`;
-        return result.replace("//file", "/file");
-    }
-
-    /**
-     * Updates the preview image URL with all selected options.
-     * Hides the preview if no image is selected in the tree view.
-     */
-    updateImagePreview() {
-        const container = this.imagesUploaderWindow.element.find(".right-pane");
-        const footer = this.imagesUploaderWindow.element.find("footer");
-        const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
-        const anchorElement = this.imagesUploaderWindow.element.find(".image-preview a.image-preview-link");
-        const imagePreviewElement = anchorElement.find("img");
-        if (selectedItem.isDirectory) {
-            container.addClass("hidden");
-            footer.addClass("hidden");
-            return;
-        }
-
-        container.removeClass("hidden");
-        footer.removeClass("hidden");
-
-        const newImageUrl = this.generateImagePreviewUrl();
-        anchorElement.attr("href", newImageUrl.url);
-        imagePreviewElement.attr("src", newImageUrl.url);
-    }
-
-    /**
-     * Updates the preview file URL with all selected options.
-     * Hides the preview if no file is selected in the tree view.
-     */
-    updateFilePreview() {
-        const container = this.filesUploaderWindow.element.find(".right-pane");
-        const footer = this.filesUploaderWindow.element.find("footer");
-        const selectedItem = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeView.select());
-        const anchorElement = this.filesUploaderWindow.element.find(".file-preview a.file-preview-link");
-        if (selectedItem.isDirectory) {
-            container.addClass("hidden");
-            footer.addClass("hidden");
-            return;
-        }
-
-        container.removeClass("hidden");
-        footer.removeClass("hidden");
-
-        const newFileUrl = this.generateFilePreviewUrl();
-        anchorElement.attr("href", newFileUrl);
-        this.filesUploaderWindow.element.find("#fileLinkText").val(this.filesUploaderSender.kendoEditor.getSelection().toString() || selectedItem.name)
-    }
-
-    /**
-     * Updates the preview template.
-     * Hides the preview if no template is selected in the tree view.
-     */
-    updateTemplatePreview() {
-        const container = this.templatesUploaderWindow.element.find(".right-pane");
-        const footer = this.templatesUploaderWindow.element.find("footer");
-        const selectedItem = this.templatesUploaderWindowTreeView.dataItem(this.templatesUploaderWindowTreeView.select());
-        if (selectedItem.isDirectory) {
-            container.addClass("hidden");
-            footer.addClass("hidden");
-            return;
-        }
-
-        container.removeClass("hidden");
-        footer.removeClass("hidden");
-
-        const iframeElement = this.templatesUploaderWindow.element.find(".template-preview .template-preview-iframe");
-        let iframe = iframeElement[0];
-        iframe = iframe.contentWindow || (iframe.contentDocument.document || iframe.contentDocument);
-
-        iframe.document.open();
-        iframe.document.write(selectedItem.html);
-        iframe.document.close();
     }
 
     /**

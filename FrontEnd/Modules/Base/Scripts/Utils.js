@@ -959,6 +959,232 @@ export class Wiser {
             kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. nogmaals of neem contact op met ons.");
         }
     }
+
+    /**
+     * Creates a new item in the database and executes any workflow for creating an item.
+     * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
+     * @param {string} entityType The type of item to create.
+     * @param {string} parentId The (encrypted) ID of the parent to add the new item to.
+     * @param {string} name Optional: The name of the new item.
+     * @param {number} linkTypeNumber Optional: The type number of the link between the new item and it's parent.
+     * @param {any} data Optional: The data to save with the new item.
+     * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save). 
+     * @param {number} moduleId Optional: The id of the module in which the item should be created.
+     * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
+     */
+    static async createItem(moduleSettings, entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
+        try {
+            const newItem = {
+                entityType: entityType,
+                title: name,
+                moduleId: moduleId || moduleSettings.moduleId || 0
+            };
+
+            const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
+            const createItemResult = await Wiser.api({
+                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true`,
+                method: "POST",
+                contentType: "application/json",
+                dataType: "JSON",
+                data: JSON.stringify(newItem)
+            });
+
+            // Call updateItem with only the title, to make sure the SEO value of the title gets saved if needed.
+            let newItemDetails = [];
+            if (!skipUpdate) newItemDetails = await Wiser.updateItem(moduleSettings, createItemResult.newItemId, data || [], false, name, false, entityType);
+
+            const workflowResult = await Wiser.api({
+                url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
+                method: "POST",
+                contentType: "application/json",
+                dataType: "JSON",
+                data: JSON.stringify(newItem)
+            });
+            let apiActionResult = null;
+
+            // Check if we need to execute any API action and do that.
+            try {
+                const apiActionId = await Wiser.getApiAction(moduleSettings, "after_insert", entityType);
+                if (apiActionId) {
+                    apiActionResult = await Wiser.doApiCall(moduleSettings, apiActionId, newItemDetails);
+                }
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
+            }
+
+            return {
+                itemId: createItemResult.newItemId,
+                itemIdPlain: createItemResult.newItemIdPlain,
+                linkId: createItemResult.newLinkId,
+                icon: createItemResult.icon,
+                workflowResult: workflowResult,
+                apiActionResult: apiActionResult
+            };
+        } catch (exception) {
+            console.error(exception);
+            let error = exception;
+            if (exception.responseText) {
+                error = exception.responseText;
+            } else if (exception.statusText) {
+                error = exception.statusText;
+            }
+            kendo.alert(`Er is iets fout gegaan met het aanmaken van het item. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
+            return null;
+        }
+    }
+
+    /**
+     * Updates an item in the database.
+     * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
+     * @param {string} encryptedItemId The encrypted item ID.
+     * @param {Array<any>} inputData All values of all fields.
+     * @param {boolean} isNewItem Whether or not this is a new item.
+     * @param {string} title The title of the item.
+     * @param {boolean} executeWorkFlow Whether or not to execute any workflow that might be set up, if/when the update has succeeded.
+     * @param {string} entityType The entity type of the item.
+     * @returns {any} A promise with the result of the AJAX call.
+     */
+    static async updateItem(moduleSettings, encryptedItemId, inputData, isNewItem, title = null, executeWorkFlow = true, entityType = null) {
+        const updateItemData = {
+            title: title,
+            details: inputData,
+            changedBy: moduleSettings.username,
+            entityType: entityType
+        };
+
+        if (executeWorkFlow) {
+            const apiActionId = await Wiser.getApiAction(moduleSettings, "before_update", entityType);
+            if (apiActionId) {
+                await Wiser.doApiCall(moduleSettings, apiActionId, updateItemData);
+            }
+        }
+
+        try {
+            const updateResult = await Wiser.api({
+                url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?isNewItem=${!!isNewItem}`,
+                method: "PUT",
+                contentType: "application/json",
+                dataType: "JSON",
+                data: JSON.stringify(updateItemData)
+            });
+
+            // Check if we need to execute any API action and do that.
+            try {
+                if (executeWorkFlow) {
+                    const apiActionId = await Wiser.getApiAction(moduleSettings, "after_update", updateResult.entityType);
+                    if (apiActionId) {
+                        await Wiser.doApiCall(this.settings, apiActionId, updateResult);
+                    }
+                }
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
+            }
+            
+            return updateResult;
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan tijdens opslaan van de wijzigingen. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
+        }
+    }
+
+    /**
+     * Marks an item as deleted.
+     * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
+     * @param {string} encryptedItemId The encrypted item ID.
+     * @param {string} entityType The entity type of the item to delete. This is required for workflows.
+     * @returns {Promise} A promise with the result of the AJAX call.
+     */
+    static async deleteItem(moduleSettings, encryptedItemId, entityType) {
+        try {
+            const apiActionId = await Wiser.getApiAction(moduleSettings, "before_delete", entityType);
+            if (apiActionId) {
+                await Wiser.doApiCall(moduleSettings, apiActionId, { encryptedId: encryptedItemId });
+            }
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_before_delete'. Hierdoor is het betreffende item ook niet uit Wiser verwijderd. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+            return new Promise((resolve, reject) => {
+                reject(exception);
+            });
+        }
+
+        return Wiser.api({
+            url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?entityType=${entityType || ""}`,
+            method: "DELETE",
+            contentType: "application/json",
+            dataType: "JSON"
+        });
+    }
+
+    /**
+     * Moves an item from archive back to the default tables again, so that it can be used again..
+     * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
+     * @param {string} encryptedItemId The encrypted item ID.
+     * @param {string} entityType The entity type of the item to undelete.
+     * @returns {Promise} A promise with the result of the AJAX call.
+     */
+    static async undeleteItem(moduleSettings, encryptedItemId, entityType) {
+        return Wiser.api({
+            url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?undelete=true&entityType=${entityType || ""}`,
+            method: "DELETE",
+            contentType: "application/json",
+            dataType: "JSON"
+        });
+    }
+
+    /**
+     * Duplicates an item (including values of fields, excluding linked items).
+     * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
+     * @param {string} itemId The (encrypted) ID of the item to get the HTML for.
+     * @param {string} parentId The (encrypted) ID of the parent item, so that the duplicated item will be linked to the same parent.
+     * @param {string} entityType Optional: The entity type of the item to duplicate, so that the API can use the correct table and settings.
+     * @param {string} parentEntityType Optional: The entity type of the parent of item to duplicate, so that the API can use the correct table and settings.
+     * @returns {Promise} The details about the newly created item.
+     */
+    async duplicateItem(moduleSettings, itemId, parentId, entityType = null, parentEntityType = null) {
+        try {
+            const entityTypeQueryString = !entityType ? "" : `?entityType=${encodeURIComponent(entityType)}`;
+            const parentEntityTypeQueryString = !parentEntityType ? "" : `${!entityType ? "?" : "&"}parentEntityType=${encodeURIComponent(parentEntityType)}`;
+            const createItemResult = await Wiser.api({
+                method: "POST",
+                url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(itemId)}/duplicate/${encodeURIComponent(parentId)}${entityTypeQueryString}${parentEntityTypeQueryString}`,
+                contentType: "application/json",
+                dataType: "JSON"
+            });
+            const workflowResult = await Wiser.api({
+                method: "POST",
+                url: `${moduleSettings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
+                contentType: "application/json",
+                dataType: "JSON"
+            });
+            return {
+                itemId: createItemResult.newItemId,
+                itemIdPlain: createItemResult.newItemIdPlain,
+                linkId: createItemResult.newLinkId,
+                icon: createItemResult.icon,
+                workflowResult: workflowResult,
+                title: createItemResult.title
+            };
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert("Er is iets fout gegaan met het dupliceren van het item. Neem a.u.b. contact op met ons.");
+            return {};
+        }
+    }
+
+    /**
+     * Gets a certain API action for a certain entity type. This will return the ID that can be used for executing an API action.
+     * @param {any} moduleSettings The settings of the module that calls this method. This needs to contain at least the "wiserApiRoot" property.
+     * @param {string} actionType The type of action to get. Possible values: "after_insert", "after_update", "before_update" and "before_delete".
+     * @param {string} entityType The name of the entity type to get the action for.
+     * @returns {number} The ID of the API action, or 0 if there is no action set.
+     */
+    static async getApiAction(moduleSettings, actionType, entityType) {
+        const result = await Wiser.api({ url: `${moduleSettings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
+        return result || 0;
+    }
 }
 
 /**

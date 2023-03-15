@@ -428,7 +428,8 @@ export class ModuleTab {
                 { text: "Scheduler", value: "Scheduler" },
                 { text: "Search", value: "Search" },
                 { text: "ImportExport", value: "ImportExport" },
-                { text: "Communication", value: "Communication" }
+                { text: "Communication", value: "Communication" },
+                { text: "FileManager", value: "FileManager" }
             ],
             dataTextField: "text",
             dataValueField: "value",
