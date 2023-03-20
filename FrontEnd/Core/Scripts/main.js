@@ -122,7 +122,7 @@ class Main {
         this.initVue();
     }
 
-    handlePostMessage(event) {
+    async handlePostMessage(event) {
         if (!event.data || !event.data.action) {
             return;
         }
@@ -161,6 +161,47 @@ class Main {
                         accessToken: this.vueApp.user.access_token,
                         originalRequest: event.data
                     }, event.origin);
+                });
+                break;
+            }
+            case "OpenClearCachePrompt": {
+                this.vueApp.openClearCachePrompt();
+                break;
+            }
+            case "OpenWiserBranchesPrompt": {
+                this.vueApp.openWiserBranchesPrompt();
+                break;
+            }
+            case "OpenMarkerIoScreen": {
+                this.vueApp.openMarkerIoScreen();
+                break;
+            }
+            case "OpenWiserIdPrompt": {
+                this.vueApp.openWiserIdPrompt();
+                break;
+            }
+            case "OpenChangePasswordPrompt": {
+                this.vueApp.openChangePasswordPrompt();
+                break;
+            }
+            case "OpenCustomerManagement": {
+                this.vueApp.openCustomerManagement();
+                break;
+            }
+            case "OpenGenerateTotpBackupCodesPrompt": {
+                this.vueApp.openGenerateTotpBackupCodesPrompt();
+                break;
+            }
+            case "OpenUserData": {
+                const encryptedUserId = await main.itemsService.encryptId(this.vueApp.user.id);
+                this.vueApp.openModule({
+                    moduleId: 0,
+                    name: "Mijn gegevens",
+                    type: "dynamicItems",
+                    iframe: true,
+                    itemId: encryptedUserId,
+                    fileName: "",
+                    queryString: `?itemId=${encodeURIComponent(encryptedUserId)}&moduleId=0&iframe=true&entityType=wiseruser`
                 });
                 break;
             }
@@ -576,33 +617,45 @@ class Main {
                 },
 
                 openWiserIdPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserIdPrompt.open();
                 },
 
                 openWiserEntityTypePrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserEntityTypePrompt.open();
                 },
 
                 openChangePasswordPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.changePasswordPrompt.open();
                 },
 
                 openWiserBranchesPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserBranchesPrompt.open();
                 },
 
                 openCreateBranchPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserCreateBranchPrompt.open();
                     this.$refs.wiserBranchesPrompt.close();
                 },
 
                 openMergeBranchPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserMergeBranchPrompt.open();
                     this.$refs.wiserBranchesPrompt.close();
                 },
@@ -833,6 +886,20 @@ class Main {
                 
                 async reloadModules() {
                     await this.$store.dispatch(MODULES_REQUEST);
+                },
+                
+                openConfigurationModule(event) {
+                    if (event) {
+                        event.preventDefault();
+                    }
+                    
+                    const module = this.modules.find(module => module.type === "Configuration");
+                    if (!module) {
+                        kendo.alert("Configuratiemodule niet gevonden. Ververs a.u.b. de pagina en probeer het opnieuw, of neem contact op met ons.");
+                        return;
+                    }
+                    
+                    this.openModule(module.moduleId);
                 },
 
                 onGenerateTotpBackupCodesPromptClose(event) {

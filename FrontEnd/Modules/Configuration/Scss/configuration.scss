@@ -1,4 +1,10 @@
-﻿.group-container {
+﻿@import "../../Base/scss/base.scss";
+
+#fullForm {
+    display:  block;
+}
+
+.group-container {
     display: flex;
     gap: 1rem;
     flex-direction: column;
@@ -103,6 +109,11 @@
                             [class^="icon-"] {
                                 color: var(--action-color);
                             }
+                        }
+                        
+                        &:focus {
+                            border: none;
+                            outline: none;
                         }
                     }
                 }
