@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -6,6 +7,7 @@ using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
@@ -244,5 +246,41 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateIds">The IDs of the templates to deploy.</param>
         /// <param name="branchId">The ID of the branch to deploy the templates to.</param>
         Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId);
+
+        /// <summary>
+        /// Get the settings for measurements of a template. You have to specify either a template ID or a component ID, not both.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to get the settings of.</param>
+        /// <param name="componentId">The ID of the dynamic content to get the settings of.</param>
+        /// <returns>The measurement settings of the template.</returns>
+        Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0);
+
+        /// <summary>
+        /// Save the settings for measurements of this template. You have to specify either a template ID or a component ID, not both.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to save the settings for.</param>
+        /// <param name="componentId">The ID of the dynamic content to save the settings for.</param>
+        /// <param name="settings">The new settings.</param>
+        Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0);
+        
+        /// <summary>
+        /// Get rendering logs from database, filtered by the parameters.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to get the render logs for.</param>
+        /// <param name="version">The version of the template or component.</param>
+        /// <param name="urlRegex">A regex for filtering logs on certain URLs/pages.</param>
+        /// <param name="environment">The environment to get the logs for. Set to null to get the logs for all environments. Default value is null.</param>
+        /// <param name="userId">The ID of the website user, if you want to get the logs for a specific user only.</param>
+        /// <param name="languageCode">The language code that is used on the website, if you want to get the logs for a specific language only.</param>
+        /// <param name="pageSize">The amount of logs to get. Set to 0 to get all of then. Default value is 500.</param>
+        /// <param name="pageNumber">The page number. Default value is 1. Only applicable if pageSize is greater than zero.</param>
+        /// <param name="getDailyAverage">Set this to true to get the average render time per day, instead of getting every single render log separately. Default is false.</param>
+        /// <param name="start">Only get results from this start date and later.</param>
+        /// <param name="end">Only get results from this end date and earlier.</param>
+        /// <returns>A list of <see cref="RenderLogModel"/> with the results.</returns>
+        Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
+            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null);
     }
 }

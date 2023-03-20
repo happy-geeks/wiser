@@ -1666,6 +1666,34 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<WiserItemModel>>> GetLinkedItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null, string itemIdEntityType = null, int linkType = 0, bool reversed = false)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+
+            // First check if the user is allowed to access the main item.
+            var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
+
+            // If the user is not allowed to read this item, return an empty result.
+            if (!success)
+            {
+                return new ServiceResult<List<WiserItemModel>>();
+            }
+
+            // Now try to retrieve a linked item.
+            var result = await wiserItemsService.GetLinkedItemDetailsAsync(itemId, linkType, entityType, false, userId, reversed, itemIdEntityType);
+            if (result == null) return new ServiceResult<List<WiserItemModel>>();
+
+            foreach (var item in result)
+            {
+                item.EncryptedId = await wiserCustomersService.EncryptValue(item.Id, identity);
+            }
+
+            return new ServiceResult<List<WiserItemModel>>(result);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<ItemMetaDataModel>> GetItemMetaDataAsync(string encryptedId, ClaimsIdentity identity, string entityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -1908,7 +1936,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                         ) AS ordering ON ordering.id = link.id
                         JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id {moduleIdClause}
                         SET link.ordering = ordering.ordering
-                        WHERE destination_item_id = ?parentId";
+                        WHERE link.destination_item_id = ?parentId
+                        AND link.type = ?linkType";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Items that are copies of another item, should get the same ordering as the original.
@@ -1916,7 +1945,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                     JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id AND item.original_item_id > 0 AND item.original_item_id <> item.id
                     JOIN {WiserTableNames.WiserItemLink} AS link2 ON link2.destination_item_id = ?parentId AND link2.item_id = item.original_item_id
                     SET link.ordering = link2.ordering
-                    WHERE link.destination_item_id = ?parentId";
+                    WHERE link.destination_item_id = ?parentId
+                    AND link.type = ?linkType";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             if (parentId <= 0)
@@ -1976,6 +2006,16 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var results = new List<TreeViewItemModel>();
             var checkId = String.IsNullOrWhiteSpace(encryptedCheckId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedCheckId, customer);
+
+            var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
+            var linkTypesToHideFromTreeView = allLinkTypeSettings.Where(x => !x.ShowInTreeView).Select(x => x.Type).ToList();
+            if (!linkTypesToHideFromTreeView.Any())
+            {
+                // Just to make it easier in the queries below.
+                linkTypesToHideFromTreeView.Add(-1);
+            }
+            
+            var linkTypesToHideFromTreeViewList = String.Join(",", linkTypesToHideFromTreeView);
 
             // Inline function to convert a DataRow to a TreeViewItemModel and add it to the results list.
             void AddItem(DataRow dataRow)
@@ -2047,7 +2087,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
 FROM {WiserTableNames.WiserItem} AS item
 JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
 LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
-JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.destination_item_id = ?parentId AND link_parent.item_id = item.id
+JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.item_id = item.id AND link_parent.destination_item_id = ?parentId AND link_parent.type NOT IN ({linkTypesToHideFromTreeViewList})
 
 # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
 LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
@@ -2057,15 +2097,11 @@ LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id 
 LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
 JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
-# Link settings to check if these links should be shown.
-LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.type = link_parent.type AND link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
-
 {checkIdJoin}
 
 WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
 AND item.moduleid = ?moduleId
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-AND IFNULL(link_settings.show_in_tree_view, 1) = 1
 GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
 
 ORDER BY {orderByClause}";
@@ -2169,17 +2205,15 @@ ORDER BY {orderByClause}";
             query = $@"SELECT 
 	                    item.id,
 	                    item.original_item_id,
-	                    IF(COUNT(child.id) > 0 AND COUNT(child_entity.id) > 0 AND SUM(IF(child_entity.id IS NOT NULL AND child_link_settings.show_in_tree_view IS NULL, 1, IFNULL(child_link_settings.show_in_tree_view, 0))) > 0, 1, 0) AS has_children
+	                    IF(COUNT(child.id) > 0 AND COUNT(child_entity.id) > 0 AND SUM(IF(child_entity.id IS NOT NULL, 1, 0)) > 0, 1, 0) AS has_children
 
                     # Get the items linked to the parent.
                     FROM {WiserTableNames.WiserItem} AS item
                     JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
 
-                    JOIN {WiserTableNames.WiserItemLink} link_child ON link_child.destination_item_id = item.id
+                    JOIN {WiserTableNames.WiserItemLink} link_child ON link_child.destination_item_id = item.id AND link_child.type NOT IN ({linkTypesToHideFromTreeViewList})
                     JOIN {WiserTableNames.WiserItem} AS child ON child.id = link_child.item_id AND child.moduleid = ?moduleId AND (?entityType = '' OR FIND_IN_SET(child.entity_type, ?entityType))
                     JOIN {WiserTableNames.WiserEntity} AS child_entity ON child_entity.name = child.entity_type AND child_entity.show_in_tree_view = 1 AND (entity.accepted_childtypes = '' OR FIND_IN_SET(child.entity_type, entity.accepted_childtypes))
-                    # Link settings to check if these links should be shown.
-                    LEFT JOIN {WiserTableNames.WiserLink} AS child_link_settings ON child_link_settings.type = link_child.type AND child_link_settings.destination_entity_type = item.entity_type AND child_link_settings.connected_entity_type = child.entity_type
 
                     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                     LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId

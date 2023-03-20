@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using Microsoft.AspNetCore.Hosting;

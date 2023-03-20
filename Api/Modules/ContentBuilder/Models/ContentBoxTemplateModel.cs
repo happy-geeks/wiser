@@ -1,5 +1,8 @@
 ﻿namespace Api.Modules.ContentBuilder.Models;
 
+/// <summary>
+/// Model class for ContentBoxTemplates
+/// </summary>
 public class ContentBoxTemplateModel
 {
     /// <summary>

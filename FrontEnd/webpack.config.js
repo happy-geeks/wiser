@@ -38,6 +38,7 @@ module.exports = {
         VersionControl: "../../Modules/VersionControl/Scripts/VersionControl.js",
         CommunicationIndex: "../../Modules/Communication/Scripts/Index.js",
         CommunicationSettings: "../../Modules/Communication/Scripts/Settings.js",
+        FileManager: "../../Modules/FileManager/Scripts/FileManager.js",
         Configuration: "../../Modules/Configuration/Scripts/Configuration.js"
     },
     output: {

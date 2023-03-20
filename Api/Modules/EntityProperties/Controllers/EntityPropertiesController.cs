@@ -140,6 +140,11 @@ namespace Api.Modules.EntityProperties.Controllers
             return (await entityPropertiesService.CopyToAllAvailableLanguagesAsync((ClaimsIdentity)User.Identity, id, tabOption)).GetHttpResponseMessage();
         }
         
+        /// <summary>
+        /// Fixes the ordering of an entity property
+        /// </summary>
+        /// <param name="entityName">The name of the entity property</param>
+        /// <returns></returns>
         [HttpPut]
         [Route("{entityName}/fix-ordering")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
@@ -148,6 +153,11 @@ namespace Api.Modules.EntityProperties.Controllers
             return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
         }
         
+        /// <summary>
+        /// Fixes the ordering of a link type
+        /// </summary>
+        /// <param name="linkType">The ID of a link type</param>
+        /// <returns></returns>
         [HttpPut]
         [Route("{linkType:int}/fix-ordering")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]

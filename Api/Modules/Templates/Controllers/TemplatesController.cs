@@ -9,6 +9,7 @@ using Api.Modules.Customers.Models;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
@@ -219,13 +220,12 @@ namespace Api.Modules.Templates.Controllers
                 ? currentPublished.GetHttpResponseMessage() 
                 : (await templatesService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.
         /// </summary>
         /// <param name="parentId">The id of the parent template of the template that will be created.</param>
-        /// <param name="name">The name to give the template that will be created.</param>
-        /// <param name="type">The type of the new template that will be created.</param>
+        /// <param name="newTemplate">Model class with the needed info to make the template</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         [HttpPut]
         [Route("{parentId:int}")]
@@ -450,6 +450,58 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> DeployToBranchAsync(int templateId, int branchId)
         {
             return (await templatesService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { templateId }, branchId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Get the settings for measurements of a template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to get the settings of.</param>
+        /// <returns>The measurement settings of the template.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/measurement-settings")]
+        [ProducesResponseType(typeof(MeasurementSettings), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMeasurementSettingsAsync(int templateId)
+        {
+            return (await templatesService.GetMeasurementSettingsAsync(templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Save the settings for measurements of this template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to save the settings for.</param>
+        /// <param name="settings">The new settings.</param>
+        [HttpPut]
+        [Route("{templateId:int}/measurement-settings")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> SaveMeasurementSettingsAsync(int templateId, [FromBody]MeasurementSettings settings)
+        {
+            return (await templatesService.SaveMeasurementSettingsAsync(settings, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Get rendering logs from database, filtered by the parameters.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to get the render logs for.</param>
+        /// <param name="version">The version of the template or component.</param>
+        /// <param name="urlRegex">A regex for filtering logs on certain URLs/pages.</param>
+        /// <param name="environment">The environment to get the logs for. Set to null to get the logs for all environments. Default value is null.</param>
+        /// <param name="userId">The ID of the website user, if you want to get the logs for a specific user only.</param>
+        /// <param name="languageCode">The language code that is used on the website, if you want to get the logs for a specific language only.</param>
+        /// <param name="pageSize">The amount of logs to get. Set to 0 to get all of then. Default value is 500.</param>
+        /// <param name="pageNumber">The page number. Default value is 1. Only applicable if pageSize is greater than zero.</param>
+        /// <param name="getDailyAverage">Set this to true to get the average render time per day, instead of getting every single render log separately. Default is false.</param>
+        /// <param name="start">Only get results from this start date and later.</param>
+        /// <param name="end">Only get results from this end date and earlier.</param>
+        /// <returns>A list of <see cref="RenderLogModel"/> with the results.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/render-logs")]
+        [ProducesResponseType(typeof(MeasurementSettings), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRenderLogsAsync(int templateId, int version = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
+            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            return (await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end)).GetHttpResponseMessage();
         }
     }
 }

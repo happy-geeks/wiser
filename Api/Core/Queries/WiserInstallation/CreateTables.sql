@@ -283,6 +283,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `itemlink_id` bigint NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
   `ordering` int NOT NULL DEFAULT 0,
+  `extra_data` mediumtext,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_item_id`(`item_id`, `property_name`) USING BTREE,
   INDEX `idx_item_link_id`(`itemlink_id`, `property_name`) USING BTREE
@@ -698,6 +699,8 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `is_default_footer` tinyint(1) NOT NULL DEFAULT 0,
    `default_header_footer_regex` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `is_partial` tinyint(1) NOT NULL DEFAULT 0,
+   `widget_content` mediumtext,
+   `widget_location` tinyint(4) NOT NULL DEFAULT 1,
    PRIMARY KEY (`id`) USING BTREE,
    UNIQUE INDEX `idx_unique`(`template_id` ASC, `version` ASC) USING BTREE,
    INDEX `idx_removed`(`removed` ASC) USING BTREE,

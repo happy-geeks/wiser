@@ -165,6 +165,10 @@
     flex-grow: 1;
 }
 
+.k-dialog #translationsDialog {
+    display: block;
+}
+
 /** TREEVIEW **/
 #right-pane {
     width: auto;
@@ -529,7 +533,6 @@
     opacity: 0.75;
 }
 
-
 #published-environments .item .flex-container .k-dropdown,
 #published-environments .item .flex-container .k-dropdownlist,
 #published-environments-dynamic-component .item .flex-container .k-dropdown,
@@ -542,61 +545,10 @@
     width: 40%;
 }
 
-/** ICONS **/
-.k-sprite {
-    color: var(--dark-txt);
-    font-family: 'icomoon' !important;
-    font-size: 16px;
-    margin-right: 5px;
-    padding-top: 1px;
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.k-sprite.rootfolder:before {
-    content: "\e972";
-}
-
-.k-sprite.folder:before {
-    content: "\e968";
-}
-
-.k-sprite.wiserfolderclosed:before {
-    content: "\e96d";
-}
-
-.k-sprite.wiserfolderopened:before {
-    content: "\e965";
-}
-
-.k-sprite.pdf:before {
-    content: "\e956";
-}
-
-.k-sprite.html:before {
-    content: "\e957";
-}
-
-.k-sprite.image:before {
-    content: "\e9eb";
-}
-
-.k-sprite.file:before {
-    content: "\e94b";
-}
-
-.k-sprite.edit:before {
-    content: "\e9e8";
-}
-
-.k-sprite.delete:before {
-    content: "\e93f";
+/** MEASUREMENTS **/
+#measurementCharts {
+    width: 100%;
+    height: 700px
 }
 
 .k-state-default > .k-clear-value {
@@ -650,4 +602,21 @@
 
 .for-iframe .k-window-titlebar {
     display: none;
+}
+
+/* Measurements */
+.row.measurement-settings .flex-container.item > label {
+    margin-bottom: 5px;
+}
+.row.measurement-settings .flex-container.item .inline {
+    margin: 0;
+}
+.row.measurement-filters { 
+    flex-direction: row;
+}
+.row.measurement-filters .col {
+    flex: 1 1 25%;
+}
+.row.measurement-filters .col .flex-container.item > .k-input {
+    margin: 5px 0;
 }

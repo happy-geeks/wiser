@@ -52,10 +52,12 @@ var youTubeTool = {
     tooltip: "YouTube video invoegen",
     exec: function(e) { window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
 };
+
+var wiserApiRoot = window.dynamicItems.fields.base.settings.wiserApiRoot;
 var translationsTool = {
     name: "wiserTranslation",
     tooltip: "Vertaling invoegen",
-    exec: function(e) { window.dynamicItems.fields.onHtmlEditorTranslationExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor")); }
+    exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
 };
 
 var options = $.extend(true, {

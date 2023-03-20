@@ -3,7 +3,9 @@ using Api.Modules.EntityProperties.Enums;
 
 namespace Api.Modules.EntityProperties.Helpers;
 
+#pragma warning disable CS1591
 public class EntityPropertyHelper
+#pragma warning restore CS1591
 {
     /// <summary>
     /// Converts a string to its equivalent <see cref="EntityPropertyInputTypes"/> enum value. 

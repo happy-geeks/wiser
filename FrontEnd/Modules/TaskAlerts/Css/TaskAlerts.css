@@ -206,3 +206,8 @@ html, body {
         left: -100%;
     }
 }
+
+.k-notification {
+    width: 100%;
+    margin: 0;
+}

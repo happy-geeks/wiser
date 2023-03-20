@@ -131,6 +131,18 @@ namespace Api.Modules.Items.Interfaces
         Task<ServiceResult<WiserItemModel>> GetItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null);
 
         /// <summary>
+        /// Returns all items linked to a given item, or all items the given item is linked to.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to get.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+        /// <param name="linkType">Optional: The type number of the link.</param>
+        /// <param name="reversed">Optional: Whether to retrieve an item that is linked to this item (<see langword="true"/>), or an item that this item is linked to (<see langword="false"/>).</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<WiserItemModel>>> GetLinkedItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null, string itemIdEntityType = null, int linkType = 0, bool reversed = false);
+
+        /// <summary>
         /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item.</param>
@@ -147,7 +159,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="alsoGetOptions">Whether to also get the options of the property.</param>
         /// <param name="itemId">Optional: If this query needs to be executed for a specific item, you can enter that ID here. If the query then contains the value "{itemId}", then that value will be replaced with this ID.</param>
         /// <typeparam name="T">The return type of the method you call this from.</typeparam>
-        /// <returns>The query, any errors and the options (if <see cref="alsoGetOptions"/> is set to <see langword="true"/>).</returns>
+        /// <returns>The query, any errors and the options (if alsoGetOptions is set to <see langword="true"/>).</returns>
         Task<(string Query, ServiceResult<T> ErrorResult, string RawOptions)> GetPropertyQueryAsync<T>(int propertyId, string queryColumnName, bool alsoGetOptions, ulong? itemId = null);
 
         /// <summary>

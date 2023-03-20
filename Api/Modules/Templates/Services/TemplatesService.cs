@@ -24,6 +24,7 @@ using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -85,11 +86,31 @@ namespace Api.Modules.Templates.Services
         private readonly ApiSettings apiSettings;
         private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IBranchesService branchesService;
+        private readonly IMeasurementsDataService measurementsDataService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment, IBranchesService branchesService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor,
+            IWiserCustomersService wiserCustomersService,
+            IStringReplacementsService stringReplacementsService,
+            GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService,
+            IDatabaseConnection clientDatabaseConnection,
+            IApiReplacementsService apiReplacementsService,
+            ITemplateDataService templateDataService,
+            IHistoryService historyService,
+            IWiserItemsService wiserItemsService,
+            IPagesService pagesService,
+            IRazorViewEngine razorViewEngine,
+            ITempDataProvider tempDataProvider,
+            IObjectsService objectsService,
+            IDatabaseHelpersService databaseHelpersService,
+            ILogger<TemplatesService> logger,
+            IOptions<GclSettings> gclSettings,
+            IOptions<ApiSettings> apiSettings,
+            IWebHostEnvironment webHostEnvironment,
+            IBranchesService branchesService,
+            IMeasurementsDataService measurementsDataService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -110,6 +131,7 @@ namespace Api.Modules.Templates.Services
             this.apiSettings = apiSettings.Value;
             this.webHostEnvironment = webHostEnvironment;
             this.branchesService = branchesService;
+            this.measurementsDataService = measurementsDataService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -295,8 +317,6 @@ ORDER BY template.ordering ASC");
                     {
                         "SEARCH_ITEMS_OLD",
                         "GET_ITEM_DETAILS",
-                        "GET_DESTINATION_ITEMS",
-                        "GET_DESTINATION_ITEMS_REVERSED",
                         "GET_DATA_FOR_TABLE",
                         "GET_DATA_FOR_FIELD_TABLE"
                     }.Contains(templateName))
@@ -928,6 +948,75 @@ AND (({parentId:decrypt(true)} = 0 AND e.name = '') OR ({parentId:decrypt(true)}
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_LINK_TYPES", @"SELECT type AS id, `name`
 FROM wiser_link
 ORDER BY `name`");
+                TemplateQueryStrings.Add("SAVE_ENTITY_VALUES", @"
+SET @_id = {id};
+SET @_name = '{name}';
+SET @_module_id = {moduleId};
+SET @_accepted_childtypes = '{acceptedChildtypes}';
+SET @_icon = '{icon}';
+SET @_icon_add = '{iconAdd}';
+SET @_icon_expanded = '{iconExpanded}';
+SET @_show_in_tree_view = '{showInTreeView}';
+SET @_query_after_insert = '{queryAfterInsert}';
+SET @_query_after_update = '{queryAfterUpdate}';
+SET @_query_before_update = '{queryBeforeUpdate}';
+SET @_query_before_delete = '{queryBeforeDelete}';
+SET @_color = '{color}';
+SET @_show_in_search = '{showInSearch}';
+SET @_show_overview_tab = '{showOverviewTab}';
+SET @_save_title_as_seo = '{saveTitleAsSeo}';
+#SET @_api_after_insert = {apiAfterInsert};
+#SET @_api_after_update = {apiAfterUpdate};
+#SET @_api_before_update = {apiBeforeUpdate};
+#SET @_api_before_delete = {apiBeforeDelete};
+SET @_show_title_field = '{showTitleField}';
+SET @_friendly_name = IF('{friendlyName}' = '' OR '{friendlyName}' LIKE '{%}', NULL, '{friendlyName}');
+SET @_save_history = '{saveHistory}';
+SET @_default_ordering = '{defaultOrdering}';
+SET @_dedicated_table_prefix = '{dedicatedTablePrefix}';
+
+SET @_show_in_tree_view = IF(@_show_in_tree_view = TRUE OR @_show_in_tree_view = 'true', 1, 0);
+SET @_show_in_search = IF(@_show_in_search = TRUE OR @_show_in_search = 'true', 1, 0);
+SET @_show_overview_tab = IF(@_show_overview_tab = TRUE OR @_show_overview_tab = 'true', 1, 0);
+SET @_save_title_as_seo = IF(@_save_title_as_seo = TRUE OR @_save_title_as_seo = 'true', 1, 0);
+SET @_show_title_field = IF(@_show_title_field = TRUE OR @_show_title_field = 'true', 1, 0);
+SET @_save_history = IF(@_save_history = TRUE OR @_save_history = 'true', 1, 0);
+
+SET @_name_changed = (SELECT `name` != @_name FROM wiser_entity WHERE id = @_id);
+SET @_name_old = (SELECT `name`  FROM wiser_entity WHERE id = @_id);
+
+UPDATE wiser_entity e
+LEFT JOIN wiser_entity accepted ON accepted.accepted_childtypes LIKE CONCAT('%',@_name_old,'%') AND @_name_changed
+LEFT JOIN wiser_entityproperty propertyOption ON REPLACE(`options` , ' ', '') LIKE CONCAT('%""entityType"":""',@_name_old,'""%') AND @_name_changed
+SET 
+     accepted.accepted_childtypes = REPLACE(accepted.accepted_childtypes, @_name_old, @_name),
+     propertyOption.`options` = REPLACE(propertyOption.`options`, @_name_old, @_name),
+	 e.module_id = @_module_id,
+	 e.name= @_name,
+	 e.accepted_childtypes = @_accepted_childtypes,
+	 e.icon = @_icon,
+	 e.icon_add = @_icon_add,
+	 e.icon_expanded = @_icon_expanded,
+	 e.show_in_tree_view = @_show_in_tree_view,
+	 e.query_after_insert = @_query_after_insert,
+	 e.query_after_update = @_query_after_update,
+	 e.query_before_update = @_query_before_update,
+	 e.query_before_delete = @_query_before_delete,
+	 e.color = @_color,
+	 e.show_in_search = @_show_in_search,
+	 e.show_overview_tab = @_show_overview_tab,
+	 e.save_title_as_seo = @_save_title_as_seo,
+	 #e.api_after_insert = @_api_after_insert,
+	 #e.api_after_update = @_api_after_update,
+	 #e.api_before_update = @_api_before_update,
+	 #e.api_before_delete = @_api_before_delete,
+	 e.show_title_field = @_show_title_field,
+	 e.friendly_name = @_friendly_name,
+	 e.save_history = @_save_history,
+	 e.default_ordering = @_default_ordering,
+     e.dedicated_table_prefix = @_dedicated_table_prefix
+WHERE e.id = @_id;
+");
                 TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
 SET @_tab_name = '{tabName}';
 SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
@@ -1372,6 +1461,31 @@ WHERE role.id = {role_id}");
                 TemplateQueryStrings.Add("DELETE_MODULE_RIGHT_ASSIGNMENT", @"DELETE FROM `wiser_system`.`wiser_permission`
 WHERE role_id = {role_id} AND module_id={module_id}");
 
+                TemplateQueryStrings.Add("IMPORTEXPORT_GET_ENTITY_PROPERTIES", @"SELECT property.`name`, property.`value`, property.languageCode, property.isImageField, property.allowMultipleImages
+FROM (
+    SELECT 'Item naam' AS `name`, 'itemTitle' AS `value`, '' AS languageCode, 0 AS isImageField, 0 AS allowMultipleImages, 0 AS baseOrder
+    FROM DUAL
+    WHERE '{entityName}' NOT LIKE '{%}' AND '{entityName}' <> ''
+    UNION
+    SELECT
+        CONCAT(
+            IF(display_name = '', property_name, display_name),
+            IF(
+                language_code <> '',
+                CONCAT(' (', language_code, ')'),
+                ''
+            )
+        ) AS `name`,
+        IF(property_name = '', display_name, property_name) AS `value`,
+        language_code AS languageCode,
+        inputtype = 'image-upload' AS isImageField,
+        IFNULL(JSON_UNQUOTE(JSON_EXTRACT(NULLIF(`options`, ''), '$.multiple')), 'true') = 'true' AS allowMultipleImages,
+        1 AS baseOrder
+    FROM wiser_entityproperty
+    WHERE entity_name = '{entityName}'
+    OR ('{linkType}' > 0 AND link_type = '{linkType}')
+    ORDER BY baseOrder, `name`
+) AS property");
                 TemplateQueryStrings.Add("GET_ROLE_RIGHTS", @"SELECT
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
@@ -1500,76 +1614,6 @@ AND (
 
 GROUP BY i.id
 ORDER BY ilp.ordering, i.title");
-                TemplateQueryStrings.Add("GET_DESTINATION_ITEMS", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
-SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
-SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT 
-	i.id, 
-	i.id AS encryptedId_encrypt_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-	i.title, 
-	i.entity_type, 
-	id.`key` AS property_name,
-	CONCAT(IFNULL(id.`value`, ''), IFNULL(id.`long_value`, '')) AS property_value,
-	il.type AS link_type, 
-    il.id AS link_id
-FROM wiser_itemlink il
-JOIN wiser_item i ON i.id = il.destination_item_id AND i.entity_type = @_entityType
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = il.destination_item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-WHERE il.item_id = @_itemId
-AND il.type = @_linkType
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-GROUP BY il.item_id, id.id
-ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("GET_DESTINATION_ITEMS_REVERSED", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
-SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
-SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT 
-	i.id, 
-	i.id AS encryptedId_encrypt_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-	i.title, 
-	i.entity_type, 
-	id.`key` AS property_name,
-	CONCAT(IFNULL(id.`value`, ''), IFNULL(id.`long_value`, '')) AS property_value,
-	il.type AS link_type,
-    il.id AS link_id
-FROM wiser_itemlink il
-JOIN wiser_item i ON i.id = il.item_id AND i.entity_type = @_entityType
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-WHERE il.destination_item_id = @_itemId
-AND il.type = @_linkType
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-GROUP BY il.destination_item_id, id.id
-ORDER BY il.ordering, i.title, i.id");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 
@@ -2004,6 +2048,10 @@ SET @querytext = (SELECT REPLACE(REPLACE(IFNULL(data_query, 'SELECT 0 AS id, "" 
 
 PREPARE stmt1 FROM @querytext;
 EXECUTE stmt1;");
+                TemplateQueryStrings.Add("GET_WISER_LINK_LIST", @"SELECT *,
+CONCAT(`name`, ' --> #', type, ' connected entity: ""', connected_entity_type ,'"" destination entity: ""', destination_entity_type, '""')AS formattedName
+FROM `wiser_link`
+ORDER BY type");
             }
         }
 
@@ -2373,7 +2421,9 @@ LIMIT 1";
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserTemplateRenderLog,
+                WiserTableNames.WiserDynamicContentRenderLog
             });
 
             // Make sure the ordering is correct.
@@ -2414,7 +2464,7 @@ LIMIT 1";
             }
 
             var helper = new TreeViewHelper();
-            var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
+            var convertedList = rawSection.Select(TreeViewHelper.ConvertTemplateTreeViewDaoToTemplateTreeViewModel).ToList();
 
             return new ServiceResult<List<TemplateTreeViewModel>>(convertedList);
         }
@@ -3254,6 +3304,187 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
+        {
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var result = new MeasurementSettings();
+
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+            
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            if (!String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                var ids = developmentRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnDevelopmentForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnDevelopmentForEverything = String.Equals(developmentRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                      || String.Equals(developmentRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+            
+            if (!String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                var ids = testRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnTestForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnTestForEverything = String.Equals(testRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(testRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+            
+            if (!String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                var ids = acceptanceRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnAcceptanceForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnAcceptanceForEverything = String.Equals(acceptanceRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                     || String.Equals(acceptanceRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+            
+            if (!String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                var ids = liveRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnLiveForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnLiveForEverything = String.Equals(liveRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(liveRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return new ServiceResult<MeasurementSettings>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
+        {
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var previousSettings = (await GetMeasurementSettingsAsync(templateId, componentId)).ModelObject;
+            if (previousSettings.MeasureRenderTimesOnDevelopmentForEverything || previousSettings.MeasureRenderTimesOnTestForEverything || previousSettings.MeasureRenderTimesOnAcceptanceForEverything || previousSettings.MeasureRenderTimesOnLiveForEverything)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Cannot change these settings, because they are enabled globally."
+                };
+            }
+            
+            // Get the current settings from database.
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            // Add or remove the current template from the settings.
+            var developmentIds = developmentRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var testIds = testRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var acceptanceIds = acceptanceRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var liveIds = liveRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+
+            if (settings.MeasureRenderTimesOnDevelopmentForCurrent)
+            {
+                if (!developmentIds.Contains(templateId)) developmentIds.Add(templateId);
+            }
+            else
+            {
+                if (developmentIds.Contains(templateId)) developmentIds.Remove(templateId);
+            }
+
+            if (settings.MeasureRenderTimesOnTestForCurrent)
+            {
+                if (!testIds.Contains(templateId)) testIds.Add(templateId);
+            }
+            else
+            {
+                if (testIds.Contains(templateId)) testIds.Remove(templateId);
+            }
+            
+            if (settings.MeasureRenderTimesOnAcceptanceForCurrent)
+            {
+                if (!acceptanceIds.Contains(templateId)) acceptanceIds.Add(templateId);
+            }
+            else
+            {
+                if (acceptanceIds.Contains(templateId)) acceptanceIds.Remove(templateId);
+            }
+            
+            if (settings.MeasureRenderTimesOnLiveForCurrent)
+            {
+                if (!liveIds.Contains(templateId)) liveIds.Add(templateId);
+            }
+            else
+            {
+                if (liveIds.Contains(templateId)) liveIds.Remove(templateId);
+            }
+
+            // Save the new settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}", ""); // These are saved empty, because we copied all IDs to the specific environment settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_development", String.Join(",", developmentIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_test", String.Join(",", testIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_acceptance", String.Join(",", acceptanceIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_live", String.Join(",", liveIds));
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
+            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
+            return new ServiceResult<List<RenderLogModel>>(results);
         }
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)

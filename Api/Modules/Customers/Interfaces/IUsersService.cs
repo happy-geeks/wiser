@@ -194,8 +194,8 @@ namespace Api.Modules.Customers.Interfaces
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
-        /// <returns>A <see cref="TimeSpan"/> indicating how long the user has been active.</returns>
-        Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId);
+        /// <returns>An <see cref="Int64"/> indicating how long the user has been active.</returns>
+        Task<ServiceResult<long>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId);
 
         /// <summary>
         /// Resets the last time the "time active" field was updated to the current time.

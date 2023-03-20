@@ -21,10 +21,6 @@
     max-height: 100%;
 }
 
-#task-grid .k-button {
-    display: none;
-}
-
 #task-grid .k-state-selected .k-button {
     display: block;
 }

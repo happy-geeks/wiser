@@ -4,6 +4,9 @@ using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Helpers
 {
+    /// <summary>
+    /// Helper class for a PreviewProfile
+    /// </summary>
     public class PreviewProfileHelper
     {
         /// <summary>

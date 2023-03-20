@@ -11,7 +11,7 @@ import "../css/DataSelector.css";
 const moduleSettings = {
 };
 
-((jQuery, moduleSettings) => {
+((moduleSettings) => {
     class DataSelector {
         constructor(settings) {
             kendo.culture("nl-NL");
@@ -2101,7 +2101,7 @@ const moduleSettings = {
          * @param {HTMLElement | Document | jQuery} context The context, which can be a DOM element, Document, or jQuery object.
          */
         destroyChildKendoWidgets(context) {
-            if (!(context instanceof HTMLElement) && !(context instanceof HTMLDocument) && !(context instanceof jQuery)) {
+            if (!(context instanceof HTMLElement) && !(context instanceof Document) && !(context instanceof $)) {
                 return;
             }
 
@@ -2148,4 +2148,4 @@ const moduleSettings = {
     }
 
     window.dataSelector = new DataSelector(moduleSettings);
-})($, moduleSettings);
+})(moduleSettings);

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace Api.Modules.Languages.Services;
 
+/// <inheritdoc />
 public class CachedLanguagesService : ILanguagesService
 {
     private readonly IAppCache cache;

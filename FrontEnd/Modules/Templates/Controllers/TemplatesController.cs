@@ -1,4 +1,5 @@
 ﻿using System;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Templates.Interfaces;
@@ -95,6 +96,13 @@ namespace FrontEnd.Modules.Templates.Controllers
         {
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/PreviewTab");
+        }
+
+        [HttpPost, Route("MeasurementsTab")]
+        public IActionResult MeasurementsTab([FromBody]MeasurementSettings measurementSettings)
+        {
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Tabs/MeasurementsTab", measurementSettings);
         }
 
         [HttpPost, Route("PublishedEnvironments")]
