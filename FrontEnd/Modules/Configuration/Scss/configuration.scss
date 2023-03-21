@@ -59,31 +59,6 @@
                     font-size: 20px;
                 }
             }
-
-            &:hover {
-                border: solid 1px darken(#e6e6e6,10%);
-                cursor: pointer;
-                color: var(--action-color);
-
-                [class^="icon-"] {
-                    color: var(--action-color);
-                }
-
-                button.pin-item {
-                    opacity: 1;
-                    pointer-events: all;
-                    
-                    ins {
-                        color: var(--light-txt);
-                    }
-
-                    &:hover {
-                        ins {
-                            color: var(--action-color);
-                        }
-                    }
-                }
-            }
             
             &.has-sub {
                 .group-sub {
@@ -155,6 +130,68 @@
                 &:hover > .group-sub {
                     transform: translateY(15px) translateX(-50%);
                     visibility: visible;
+                }
+            }
+
+            .tooltip {
+                box-shadow: 0 2px 20px 0 rgb(0 0 0 / 10%);
+                transition: 50ms all ease-in-out;
+                background-color: var(--dark-txt);
+                color: var(--white-color);
+                border-radius: 8px;
+                display: block;
+                padding: 12px 15px;
+                position: absolute;
+                left: 0;
+                top: 100%;
+                transform: translateY(60px);
+                visibility: hidden;
+                z-index: 2;
+                font-size: 0.825rem;
+                width: 340px;
+
+                &:after {
+                    display: block;
+                    height: 0;
+                    width: 0;
+                    border-left: 10px solid transparent;
+                    border-right: 10px solid transparent;
+                    border-bottom: 10px solid var(--dark-txt);
+                    content: "";
+                    position: absolute;
+                    bottom: 100%;
+                    left: 15px;
+                }
+            }
+
+            &.tooltip-active .tooltip {
+                transform: translateY(16px);
+                visibility: visible;
+            }
+
+
+            &:hover {
+                border: solid 1px darken(#e6e6e6,10%);
+                cursor: pointer;
+                color: var(--action-color);
+
+                [class^="icon-"] {
+                    color: var(--action-color);
+                }
+
+                button.pin-item {
+                    opacity: 1;
+                    pointer-events: all;
+
+                    ins {
+                        color: var(--light-txt);
+                    }
+
+                    &:hover {
+                        ins {
+                            color: var(--action-color);
+                        }
+                    }
                 }
             }
         }
