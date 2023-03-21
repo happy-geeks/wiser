@@ -24,6 +24,7 @@
         }
         
         .group-item {
+            transition: 200ms all ease-in-out;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -35,19 +36,53 @@
             font: 400 16px/20px "Roboto", sans-serif;
             position: relative;
 
+            > [class^="icon-"] {
+                transition: 200ms all ease-in-out;
+                font-size: 2.5rem;
+                color: var(--light-txt);
+            }
+            
+            button.pin-item {
+                transition: 200ms all ease-in-out;
+                position: absolute;
+                top: 0;
+                right: 0;
+                border: none;
+                background: none;
+                padding: 5px;
+                cursor: pointer;
+                opacity: 0;
+                pointer-events: none;
+                
+                ins {
+                    transition: 200ms all ease-in-out;
+                    font-size: 20px;
+                }
+            }
+
             &:hover {
                 border: solid 1px darken(#e6e6e6,10%);
                 cursor: pointer;
                 color: var(--action-color);
-                
+
                 [class^="icon-"] {
                     color: var(--action-color);
                 }
-            }
 
-            [class^="icon-"] {
-                font-size: 2.5rem;
-                color: var(--light-txt);
+                button.pin-item {
+                    opacity: 1;
+                    pointer-events: all;
+                    
+                    ins {
+                        color: var(--light-txt);
+                    }
+
+                    &:hover {
+                        ins {
+                            color: var(--action-color);
+                        }
+                    }
+                }
             }
             
             &.has-sub {
