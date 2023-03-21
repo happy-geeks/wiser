@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.FrontEnd</PackageId>
     <Version>3.3.0</Version>
     <Authors>Happy Geeks B.V.</Authors>
@@ -25,14 +25,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="2.2.28" />
     <PackageReference Include="GoogleAuthenticator" Version="3.0.0" />
     <PackageReference Include="JetBrains.Annotations" Version="2022.3.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Api\Api.csproj" />
+    <ProjectReference Include="..\..\GeeksCoreLibrary\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
