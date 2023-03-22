@@ -65,6 +65,7 @@ const moduleSettings = {
             
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
+            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
             
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             
@@ -173,7 +174,6 @@ const moduleSettings = {
                     }
 
                     for (let module of modules) {
-                        console.log("open module", module)
                         window.parent.postMessage({
                             action: "OpenModule",
                             actionData: {
@@ -197,6 +197,9 @@ const moduleSettings = {
                     action: event.currentTarget.dataset.action
                 });
             });
+
+            // Modules that are only available for admins.
+            $(`.group-item[data-requires-admin='true']`).toggleClass("hidden", !this.settings.adminAccountLoggedIn);
         }
     }
 

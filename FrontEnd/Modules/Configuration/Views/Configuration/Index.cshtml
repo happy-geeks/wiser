@@ -28,6 +28,7 @@
       data-api-client-secret="@Model.Settings.ApiClientSecret"
       data-track-js-token="@Model.Settings.TrackJsToken">
 <form id="fullForm">
+    @* NOTE: The commented HTML in this file is for functionality that will be added in the future, for now they need to stay commented. *@
     <div id="wiser" class="configuration">
         <div class="group-container">
             <div class="group-wrapper">
@@ -37,34 +38,34 @@
                 <a class="group-item hidden" data-module-type="Templates">
                     <ins class="icon-document-fold"></ins>
                     <span>Templates</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
-                    <div class="tooltip">Nullam quam lacus, cursus non ligula et, euismod posuere felis. Nullam vitae accumsan quam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</div>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                    @* <div class="tooltip">Nullam quam lacus, cursus non ligula et, euismod posuere felis. Nullam vitae accumsan quam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</div> *@
                 </a>
-                <a class="group-item hidden tooltip-active" data-module-type="VersionControl">
+                <a class="group-item hidden" data-module-type="VersionControl">
                     <ins class="icon-git"></ins>
                     <span>Versiebeheer</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
-                    <div class="tooltip">Nullam quam lacus, cursus non ligula et, euismod posuere felis. Nullam vitae accumsan quam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</div>
+                    @* @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                    @* <div class="tooltip">Nullam quam lacus, cursus non ligula et, euismod posuere felis. Nullam vitae accumsan quam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</div> *@
                 </a>
                 <a class="group-item">
                     <ins class="icon-line-refresh"></ins>
                     <span>Applicatie cache legen</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Translations">
                     <ins class="icon-flag"></ins>
                     <span>Vertaalwoorden</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Seo">
                     <ins class="icon-seo"></ins>
                     <span>SEO</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Redirect">
                     <ins class="icon-reset"></ins>
                     <span>Redirect</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
             </div>
             <div class="group-wrapper">
@@ -74,27 +75,27 @@
                 <a class="group-item hidden" data-module-type="Admin">
                     <ins class="icon-config"></ins>
                     <span>Wiser beheer</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Users">
                     <ins class="icon-users"></ins>
                     <span>Gebruikers</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item" data-action="OpenMarkerIoScreen">
                     <ins class="icon-line-bug"></ins>
                     <span>Bug melden</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
-                <a class="group-item hidden" data-module-type="NewCustomer">
+                <a class="group-item hidden" data-action="OpenCustomerManagement" data-requires-admin="true">
                     <ins class="icon-line-user-plus"></ins>
                     <span>Nieuwe klant</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <div class="group-item has-sub hidden" data-module-type="MasterData">
                     <ins class="icon-line-sliders"></ins>
                     <span>Stamgegevens</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                     
                     <div class="group-sub">
                         <a href="#" class="group-sub-item">
@@ -147,37 +148,37 @@
             <a class="group-item hidden" data-module-type="ImportExport">
                 <ins class="icon-im-ex"></ins>
                 <span>Import- / export</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>   
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@   
             </a>
             <a class="group-item hidden" data-module-type="ImportHistory">
                 <ins class="icon-database"></ins>
                 <span>Importhistorie</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
             </a>
             <a class="group-item hidden" data-module-type="DataSelector">
                 <ins class="icon-settings"></ins>
                 <span>Dataselector</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
             </a>
             <a class="group-item hidden" data-module-type="Communication">
                 <ins class="icon-mail-forward"></ins>
                 <span>Communicatie</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
             </a>
             <a class="group-item hidden" data-module-type="Search">
                 <ins class="icon-search"></ins>
                 <span>Zoeken</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
             </a>
             <a class="group-item" data-action="OpenWiserIdPrompt">
                 <ins class="icon-clipboard"></ins>
                 <span>Item openen</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
             </a>
             <a class="group-item" data-action="OpenWiserBranchesPrompt">
                 <ins class="icon-table-backup"></ins>
                 <span>Branches</span>
-                <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
             </a>
         </div>
             <div class="group-wrapper">
@@ -187,17 +188,17 @@
                 <a class="group-item" data-action="OpenChangePasswordPrompt">
                     <ins class="icon-line-settings"></ins>
                     <span>Wachtwoord wijzigen</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item" data-action="OpenUserData">
                     <ins class="icon-line-lock"></ins>
                     <span>Mijn gegevens</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Dashboard">
                     <ins class="icon-project"></ins>
                     <span>Dashboard</span>
-                    <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
             </div>
         </div>
