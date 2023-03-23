@@ -6,9 +6,13 @@
 public enum ReviewStatuses
 {
     /// <summary>
+    /// No review has been requested.
+    /// </summary>
+    None,
+    /// <summary>
     /// The changes are still waiting for someone to review it.
     /// </summary>
-    Waiting,
+    Pending,
     /// <summary>
     /// The changes have been approved.
     /// </summary>

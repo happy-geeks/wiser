@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Api.Modules.VersionControl.Enums;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -17,7 +18,7 @@ namespace Api.Modules.VersionControl.Services.DataLayer;
 public class CommitDataService : ICommitDataService, IScopedService
 {
     private readonly IDatabaseConnection databaseConnection;
-    
+
     /// <summary>
     /// Creates a new instance of <see cref="CommitDataService"/>.
     /// </summary>
@@ -53,7 +54,10 @@ public class CommitDataService : ICommitDataService, IScopedService
 	IFNULL(liveContent.version, 0) AS version_live,
 	IFNULL(content.version, 0) <= IFNULL(testContent.version, 0) AS test,
 	IFNULL(content.version, 0) <= IFNULL(acceptanceContent.version, 0) AS accept,
-	IFNULL(content.version, 0) <= IFNULL(liveContent.version, 0) AS live
+	IFNULL(content.version, 0) <= IFNULL(liveContent.version, 0) AS live,
+	review.status AS reviewStatus,
+	review.reviewed_by AS reviewedBy,
+	review.reviewed_by_name AS reviewedByName
 FROM {WiserTableNames.WiserCommit} AS `commit`
 LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS linkToContent ON `commit`.id = linkToContent.commit_id
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS content ON content.content_id = linkToContent.dynamic_content_id AND content.version = linkToContent.version
@@ -62,9 +66,10 @@ LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptan
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
+LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
 WHERE `commit`.id = ?id
 GROUP BY content.content_id";
-	    
+
 	    databaseConnection.AddParameter("id", id);
 	    var dataTable = await databaseConnection.GetAsync(query);
 	    if (dataTable.Rows.Count == 0)
@@ -78,9 +83,15 @@ GROUP BY content.content_id";
 		    Description = dataTable.Rows[0].Field<string>("description"),
 		    AddedBy = dataTable.Rows[0].Field<string>("added_by"),
 		    AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
-		    ExternalId = dataTable.Rows[0].Field<string>("external_id")
+		    ExternalId = dataTable.Rows[0].Field<string>("external_id"),
+		    Review = new ReviewModel
+		    {
+			    Status =  dataTable.Rows[0].IsNull("reviewStatus") ? ReviewStatuses.None : (ReviewStatuses)Enum.Parse(typeof(ReviewStatuses), dataTable.Rows[0].Field<string>("reviewStatus")),
+			    ReviewedBy = dataTable.Rows[0].Field<long?>("reviewedBy") ?? 0,
+			    ReviewedByName = dataTable.Rows[0].Field<string>("reviewedByName")
+		    }
 	    };
-	    
+
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
 		    if (dataRow.IsNull("content_id"))
@@ -108,7 +119,7 @@ GROUP BY content.content_id";
 			    TemplateNames = dataRow.Field<string>("template_names")?.Split(",").ToList()
 		    });
 	    }
-	    
+
 	    // Get all templates of the commit.
 	    query = $@"	SELECT
 	`commit`.id,
@@ -140,12 +151,12 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTem
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
 WHERE `commit`.id = ?id";
-	    
+
 	    dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
 		    var publishedEnvironment = (Environments)Convert.ToInt32(dataRow["published_environment"]);
-		    
+
 		    commitModel.Templates.Add(new TemplateCommitModel
 		    {
 			    Version = dataRow.Field<int>("version"),
@@ -177,7 +188,7 @@ WHERE `commit`.id = ?id";
 	    databaseConnection.AddParameter("externalId", data.ExternalId ?? "");
 	    databaseConnection.AddParameter("addedBy", data.AddedBy);
 	    databaseConnection.AddParameter("addedOn", data.AddedOn);
-	    
+
 	    var query = $@"INSERT INTO {WiserTableNames.WiserCommit} (description, external_id, added_by, added_on) VALUES (?description, ?externalId, ?addedBy, ?addedOn)";
 	    data.Id = (int) await databaseConnection.InsertRecordAsync(query);
 
@@ -264,7 +275,7 @@ ORDER BY template.changed_on ASC";
 
 	    var results = new List<TemplateCommitModel>();
         var dataTable = await databaseConnection.GetAsync(query);
-        
+
 	    foreach (DataRow dataRow in dataTable.Rows)
         {
 	        var item = new TemplateCommitModel
@@ -327,7 +338,7 @@ ORDER BY content.changed_on ASC";
 
 	    var results = new List<DynamicContentCommitModel>();
         var dataTable = await databaseConnection.GetAsync(query);
-        
+
 	    foreach (DataRow dataRow in dataTable.Rows)
         {
 	        var item = new DynamicContentCommitModel
@@ -356,7 +367,7 @@ ORDER BY content.changed_on ASC";
     public async Task<List<CommitModel>> GetNotCompletedCommitsAsync()
     {
 	    var results = new List<CommitModel>();
-	    
+
 	    // Get all commits with dynamic content.
 	    var query = $@"SELECT
 	`commit`.id,
@@ -380,7 +391,10 @@ ORDER BY content.changed_on ASC";
 	IFNULL(liveContent.version, 0) AS version_live,
 	IFNULL(content.version, 0) <= IFNULL(testContent.version, 0) AS test,
 	IFNULL(content.version, 0) <= IFNULL(acceptanceContent.version, 0) AS accept,
-	IFNULL(content.version, 0) <= IFNULL(liveContent.version, 0) AS live
+	IFNULL(content.version, 0) <= IFNULL(liveContent.version, 0) AS live,
+	review.status AS reviewStatus,
+	review.reviewed_by AS reviewedBy,
+	review.reviewed_by_name AS reviewedByName
 FROM {WiserTableNames.WiserCommit} AS `commit`
 JOIN {WiserTableNames.WiserCommitDynamicContent} AS linkToContent ON `commit`.id = linkToContent.commit_id
 JOIN {WiserTableNames.WiserDynamicContent} AS content ON content.content_id = linkToContent.dynamic_content_id AND content.version = linkToContent.version
@@ -389,15 +403,16 @@ LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptan
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
+LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
 WHERE `commit`.completed = FALSE
 GROUP BY content.content_id";
-	    
+
 	    var dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
 		    var commitId = dataRow.Field<int>("id");
 		    var commitModel = GetOrAddCommitModel(results, commitId, dataRow);
-		    
+
 		    commitModel.DynamicContents.Add(new DynamicContentCommitModel
 		    {
 			    Component = dataRow.Field<string>("component"),
@@ -417,7 +432,7 @@ GROUP BY content.content_id";
 			    TemplateNames = dataRow.Field<string>("template_names")?.Split(",").ToList()
 		    });
 	    }
-	    
+
 	    // Get all commits with templates.
 	    query = $@"	SELECT
 	`commit`.id,
@@ -440,7 +455,10 @@ GROUP BY content.content_id";
 	IFNULL(liveTemplate.version, 0) AS version_live,
 	IFNULL(template.version, 0) <= IFNULL(testTemplate.version, 0) AS test,
 	IFNULL(template.version, 0) <= IFNULL(acceptanceTemplate.version, 0) AS accept,
-	IFNULL(template.version, 0) <= IFNULL(liveTemplate.version, 0) AS live
+	IFNULL(template.version, 0) <= IFNULL(liveTemplate.version, 0) AS live,
+	review.status AS reviewStatus,
+	review.reviewed_by AS reviewedBy,
+	review.reviewed_by_name AS reviewedByName
 FROM {WiserTableNames.WiserCommit} AS `commit`
 JOIN {WiserTableNames.WiserCommitTemplate} AS linkToTemplate ON `commit`.id = linkToTemplate.commit_id
 JOIN {WiserTableNames.WiserTemplate} AS template ON linkToTemplate.template_id = template.template_id AND linkToTemplate.version = template.version
@@ -448,8 +466,9 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS testTemplate ON testTemplate.templa
 LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTemplate.template_id = template.template_id AND (acceptanceTemplate.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
 WHERE `commit`.completed = FALSE";
-	    
+
 	    dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
@@ -457,7 +476,7 @@ WHERE `commit`.completed = FALSE";
 		    var commitModel = GetOrAddCommitModel(results, commitId, dataRow);
 
 		    var publishedEnvironment = (Environments)Convert.ToInt32(dataRow["published_environment"]);
-		    
+
 		    commitModel.Templates.Add(new TemplateCommitModel
 		    {
 			    Version = dataRow.Field<int>("version"),
@@ -493,7 +512,13 @@ WHERE `commit`.completed = FALSE";
 			    Description = dataRow.Field<string>("description"),
 			    AddedBy = dataRow.Field<string>("added_by"),
 			    AddedOn = dataRow.Field<DateTime>("added_on"),
-			    ExternalId = dataRow.Field<string>("external_id")
+			    ExternalId = dataRow.Field<string>("external_id"),
+			    Review = new ReviewModel
+			    {
+				    Status =  dataRow.IsNull("reviewStatus") ? ReviewStatuses.None : (ReviewStatuses)Enum.Parse(typeof(ReviewStatuses), dataRow.Field<string>("reviewStatus")),
+				    ReviewedBy = dataRow.Field<long?>("reviewedBy") ?? 0,
+				    ReviewedByName = dataRow.Field<string>("reviewedByName")
+			    }
 		    };
 
 		    results.Add(commitModel);

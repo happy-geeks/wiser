@@ -54,7 +54,7 @@ public class ReviewModel
     /// <summary>
     /// Gets or sets the status.
     /// </summary>
-    public ReviewStatuses Status { get; set; } = ReviewStatuses.Waiting;
+    public ReviewStatuses Status { get; set; } = ReviewStatuses.None;
 
     /// <summary>
     /// Gets or sets the users that have been requested to do the code review.

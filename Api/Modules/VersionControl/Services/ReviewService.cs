@@ -38,9 +38,12 @@ public class ReviewService : IReviewService, IScopedService
             RequestedBy = isAdmin ? Convert.ToInt64(IdentityHelpers.GetWiserAdminId(identity)) * -1 : Convert.ToInt64(IdentityHelpers.GetWiserUserId(identity)),
             RequestedByName = isAdmin ? IdentityHelpers.GetAdminUserName(identity) : IdentityHelpers.GetName(identity),
             RequestedUsers = requestedUsers.Select(user => Convert.ToInt64(user.Id) * (user.Fields.TryGetValue("isAdmin", out var value) && (bool)value ? -1 : 1)).ToList(),
-            Status = ReviewStatuses.Waiting
+            Status = ReviewStatuses.Pending
         };
 
         return new ServiceResult<ReviewModel>(await reviewDataService.SaveReviewAsync(review));
     }
+
+    // Function to add comments to a review.
+
 }

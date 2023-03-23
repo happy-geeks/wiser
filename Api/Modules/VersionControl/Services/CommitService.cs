@@ -8,6 +8,7 @@ using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Templates.Interfaces;
+using Api.Modules.VersionControl.Enums;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
@@ -55,7 +56,8 @@ public class CommitService : ICommitService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<CommitModel>> CreateAndOrDeployCommitAsync(CommitModel data, ClaimsIdentity identity)
     {
-        if (data.Id == 0 && String.IsNullOrWhiteSpace(data.Description))
+        var isNewCommit = data.Id == 0;
+        if (isNewCommit && String.IsNullOrWhiteSpace(data.Description))
         {
             return new ServiceResult<CommitModel>
             {
@@ -64,12 +66,33 @@ public class CommitService : ICommitService, IScopedService
             };
         }
 
-        if (data.Id == 0 && (data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
+        if (isNewCommit && (data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
         {
             return new ServiceResult<CommitModel>
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 ErrorMessage = "Please select at least one template or dynamic content to commit"
+            };
+        }
+
+        // Make sure the tables are up-to-date.
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+        {
+            WiserTableNames.WiserCommit,
+            WiserTableNames.WiserCommitTemplate,
+            WiserTableNames.WiserCommitDynamicContent,
+            WiserTableNames.WiserCommitReviews,
+            WiserTableNames.WiserCommitReviewRequests,
+            WiserTableNames.WiserCommitReviewComments
+        });
+
+        // Don't allow commits to live if there are any pending reviews.
+        if (data.Environment == Environments.Live && data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
+        {
+            return new ServiceResult<CommitModel>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "You cannot commit to live if you have requested reviews."
             };
         }
 
@@ -82,7 +105,7 @@ public class CommitService : ICommitService, IScopedService
             data.AddedBy = IdentityHelpers.GetUserName(identity, true);
             data.AddedOn = DateTime.Now;
 
-            var result = data.Id == 0 ? await commitDataService.CreateCommitAsync(data) : await commitDataService.GetCommitAsync(data.Id);
+            var result = isNewCommit ? await commitDataService.CreateCommitAsync(data) : await commitDataService.GetCommitAsync(data.Id);
             if (result == null)
             {
                 return new ServiceResult<CommitModel>
@@ -92,9 +115,18 @@ public class CommitService : ICommitService, IScopedService
                 };
             }
 
+            // Create a review request.
             if (data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
             {
                 await reviewService.RequestReviewForCommitAsync(identity, result.Id, data.ReviewRequestedUsers);
+            }
+            else if (!isNewCommit && data.Environment == Environments.Live && result.Review?.Status is ReviewStatuses.Pending or ReviewStatuses.RequestChanges)
+            {
+                return new ServiceResult<CommitModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "You cannot commit to live until the changes have been approved by the requested code reviewer(s)."
+                };
             }
 
             if (result.Templates != null)

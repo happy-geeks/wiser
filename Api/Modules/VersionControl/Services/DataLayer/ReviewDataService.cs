@@ -37,6 +37,7 @@ public class ReviewDataService : IReviewDataService, IScopedService
         });
 
         // Save the review data in the database.
+        databaseConnection.ClearParameters();
         databaseConnection.AddParameter("commit_id", review.CommitId);
         databaseConnection.AddParameter("requested_on", review.RequestedOn);
         databaseConnection.AddParameter("requested_by", review.RequestedBy);

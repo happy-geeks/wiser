@@ -243,6 +243,18 @@ const moduleSettings = {
          * @param event The click event of the kendoButton component.
          */
         async onCommit(event) {
+            const selectedEnvironment = this.commitEnvironmentField.value();
+            if (!selectedEnvironment) {
+                kendo.alert("Selecteer een omgeving om de wijzigingen naar te deployen.");
+                return;
+            }
+
+            const selectedUsersForCodeReview = this.codeReviewUsersField.dataItems();
+            if (selectedUsersForCodeReview.length > 0 && selectedEnvironment === "8") {
+                kendo.alert("Het is niet mogelijk om code reviews aan te vragen voor een live omgeving. Code review moet gedaan worden voordat het live wordt gezet.");
+                return;
+            }
+
             const initialProcess = `CreateCommit_${Date.now()}`;
             window.processing.addProcess(initialProcess);
 
@@ -256,7 +268,7 @@ const moduleSettings = {
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify({
-                        environment: this.commitEnvironmentField.value(),
+                        environment: selectedEnvironment,
                         description: this.commitDescriptionField.value,
                         templates: selectedTemplates.map(t => {
                             return {templateId: t.templateId, version: t.version};
@@ -264,7 +276,7 @@ const moduleSettings = {
                         dynamicContents: selectedDynamicContent.map(d => {
                             return {dynamicContentId: d.dynamicContentId, version: d.version};
                         }),
-                        reviewRequestedUsers: this.codeReviewUsersField.dataItems()
+                        reviewRequestedUsers: selectedUsersForCodeReview
                     })
                 });
 
@@ -345,9 +357,22 @@ const moduleSettings = {
                 return;
             }
 
-            const selectedCommits = this.deployGrid.getSelectedData();
+            const selectedCommits = [];
+            this.deployGrid.select().each((index, element) => {
+                const dataItem = this.deployGrid.dataItem(element);
+                if (dataItem) {
+                    selectedCommits.push(dataItem);
+                }
+            });
+
             if (!selectedCommits || !selectedCommits.length) {
                 kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
+                return;
+            }
+
+            // Don't allow deploying to live if there is a pending code review.
+            if (environment === 8 && selectedCommits.filter(c => c.review.status === "Pending" || c.review.status === "RequestChanges").length > 0) {
+                kendo.alert("Er zijn nog code reviews die nog niet afgerond zijn. Wacht a.u.b. tot deze code reviews zijn afgerond voordat je naar live deployt.");
                 return;
             }
 
@@ -684,6 +709,9 @@ const moduleSettings = {
                                     },
                                     templateNames: {
                                         type: "array"
+                                    },
+                                    review: {
+                                        type: "object"
                                     }
                                 }
                             }
@@ -729,6 +757,16 @@ const moduleSettings = {
                         {
                             "field": "addedBy",
                             "title": "Door",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "review.status",
+                            "title": "Review status",
+                            "width": "100px"
+                        },
+                        {
+                            "field": "review.reviewedByName",
+                            "title": "Review door",
                             "width": "100px"
                         },
                         {

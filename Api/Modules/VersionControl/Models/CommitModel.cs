@@ -72,4 +72,9 @@ public class CommitModel
     /// Note: Users with a negative ID are admins from the main Wiser database, others are normal users from the tenant.
     /// </summary>
     public List<FlatItemModel> ReviewRequestedUsers { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the review status.
+    /// </summary>
+    public ReviewModel Review { get; set; }
 }
