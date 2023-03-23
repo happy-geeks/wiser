@@ -10,6 +10,7 @@ require("@progress/kendo-ui/js/kendo.tooltip.js");
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.dialog.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
+require("@progress/kendo-ui/js/kendo.multiselect.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -19,7 +20,7 @@ const moduleSettings = {
 };
 
 ((settings) => {
-    
+
     class VersionControl {
         /**
          * Initializes a new instance of DynamicItems.
@@ -32,6 +33,7 @@ const moduleSettings = {
             this.mainLoader = null;
             this.commitEnvironmentField = null;
             this.commitDescriptionField = null;
+            this.codeReviewUsersField = null;
             this.templateChangesGrid = null;
             this.dynamicContentChangesGrid = null;
             this.mainTabStrip = null;
@@ -42,9 +44,9 @@ const moduleSettings = {
             this.deployLiveButton = null;
             this.deployToBranchButton = null;
             this.branchesDropDown = null;
-            
+
             this.deployToBranchContainer = null;
-            
+
             // Other data.
             this.branches = null;
 
@@ -130,7 +132,7 @@ const moduleSettings = {
 
             // Initialize sub classes.
             await this.initializeComponents();
-            
+
             this.toggleMainLoader(false);
         }
 
@@ -140,7 +142,7 @@ const moduleSettings = {
         async initializeComponents() {
             this.commitDescriptionField = document.getElementById("commitDescription");
             this.deployToBranchContainer = document.getElementById("deployToBranchContainer");
-            
+
             // Tab strip.
             this.mainTabStrip = $("#tabstrip").kendoTabStrip({
                 activate: this.onMainTabStripActivate.bind(this)
@@ -151,7 +153,7 @@ const moduleSettings = {
                 click: this.onCommit.bind(this),
                 icon: "save"
             }).data("kendoButton");
-            
+
             this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
                 optionLabel: "Selecteer omgeving",
                 dataTextField: "text",
@@ -163,20 +165,34 @@ const moduleSettings = {
                     { text: "Live", value: 8 }
                 ]
             }).data("kendoDropDownList");
-            
+
+            this.codeReviewUsersField = $("#usersForCodeReview").kendoMultiSelect({
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: `${this.settings.wiserApiRoot}users?includeAdminUsers=true`,
+                            dataType: "json"
+                        }
+                    },
+                    group: { field: "group" }
+                },
+                dataTextField: "title",
+                dataValueField: "id"
+            }).data("kendoMultiSelect");
+
             // Deploy buttons (from second tab).
             this.deployTestButton = $("#deployCommitToTest").kendoButton({
                 click: this.onDeploy.bind(this, 2),
                 icon: "data",
                 enable: false
             }).data("kendoButton");
-            
+
             this.deployAcceptanceButton = $("#deployCommitToAcceptance").kendoButton({
                 click: this.onDeploy.bind(this, 4),
                 icon: "data",
                 enable: false
             }).data("kendoButton");
-            
+
             this.deployLiveButton = $("#deployCommitToLive").kendoButton({
                 click: this.onDeploy.bind(this, 8),
                 icon: "data",
@@ -187,14 +203,14 @@ const moduleSettings = {
                 click: this.onDeployToBranch.bind(this),
                 icon: "data"
             }).data("kendoButton");
-            
+
             this.branchesDropDown = $("#branchesDropDown").kendoDropDownList({
                 dataSource: this.branches,
                 dataValueField: "id",
                 dataTextField: "name",
                 optionLabel: "Kies een branch..."
             }).data("kendoDropDownList");
-            
+
             // noinspection ES6MissingAwait
             this.setupTemplateChangesGrid();
             // noinspection ES6MissingAwait
@@ -247,7 +263,8 @@ const moduleSettings = {
                         }),
                         dynamicContents: selectedDynamicContent.map(d => {
                             return {dynamicContentId: d.dynamicContentId, version: d.version};
-                        })
+                        }),
+                        reviewRequestedUsers: this.codeReviewUsersField.dataItems()
                     })
                 });
 
@@ -289,16 +306,16 @@ const moduleSettings = {
                 if (!selectedCommit.isTest) {
                     everythingIsOnTest = false;
                 }
-                
+
                 if (!selectedCommit.isAcceptance) {
                     everythingIsOnAcceptance = false;
                 }
-                
+
                 if (!selectedCommit.isLive) {
                     everythingIsOnLive = false;
                 }
             }
-            
+
             this.deployTestButton.enable(!everythingIsOnTest);
             this.deployAcceptanceButton.enable(!everythingIsOnAcceptance);
             this.deployLiveButton.enable(!everythingIsOnLive);
@@ -327,7 +344,7 @@ const moduleSettings = {
             if (!environment) {
                 return;
             }
-            
+
             const selectedCommits = this.deployGrid.getSelectedData();
             if (!selectedCommits || !selectedCommits.length) {
                 kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
@@ -341,7 +358,7 @@ const moduleSettings = {
                 event.preventDefault();
 
                 // We used to do these all at the same time, but that caused problems in some cases.
-                // The problem was that if there are multiple commits for the same template/component, 
+                // The problem was that if there are multiple commits for the same template/component,
                 // then it would sometimes happen that version 10 would be deployed to live first and then version 9.
                 // So we have to do them one by one in the correct order, to make sure the correct versions will be deployed.
                 for (let selectedCommit of selectedCommits) {
@@ -377,7 +394,7 @@ const moduleSettings = {
                 kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
                 return;
             }
-            
+
             const selectedBranch = this.branchesDropDown.value();
             if (!selectedBranch) {
                 kendo.alert("Kies a.u.b. eerst een branch om naar te deployen.");
@@ -407,7 +424,7 @@ const moduleSettings = {
                 window.processing.removeProcess(initialProcess);
             }
         }
-        
+
         /**
          * Setup/initialize the grid with all uncommitted template changes.
          */
@@ -416,7 +433,7 @@ const moduleSettings = {
                 if (this.templateChangesGrid) {
                     return;
                 }
-                
+
                 const gridSettings = {
                     dataSource: {
                         transport: {
@@ -721,12 +738,12 @@ const moduleSettings = {
                                 if (!dataItem.dynamicContents || !dataItem.dynamicContents.length) {
                                     return `<span class="dynamic-content">Geen dynamic content in deze commit</span>`;
                                 }
-                                
+
                                 const html = [];
                                 for (let dynamicContent of dataItem.dynamicContents) {
                                     html.push(`<span class="dynamic-content">${dynamicContent.templateNames[0]} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
                                 }
-                                
+
                                 return html.join("<br />")
                             }
                         },

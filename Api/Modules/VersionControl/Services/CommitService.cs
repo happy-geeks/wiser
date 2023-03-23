@@ -30,11 +30,16 @@ public class CommitService : ICommitService, IScopedService
     private readonly IBranchesService branchesService;
     private readonly IVersionControlService versionControlService;
     private readonly ILogger<CommitService> logger;
+    private readonly IReviewService reviewService;
 
     /// <summary>
     /// Creates a new instance of <see cref="CommitService"/>.
     /// </summary>
-    public CommitService(ICommitDataService commitDataService, ITemplatesService templatesService, IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, IVersionControlService versionControlService, ILogger<CommitService> logger)
+    public CommitService(ICommitDataService commitDataService, ITemplatesService templatesService,
+        IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection,
+        IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService,
+        IVersionControlService versionControlService, ILogger<CommitService> logger,
+        IReviewService reviewService)
     {
         this.commitDataService = commitDataService;
         this.templatesService = templatesService;
@@ -44,6 +49,7 @@ public class CommitService : ICommitService, IScopedService
         this.branchesService = branchesService;
         this.versionControlService = versionControlService;
         this.logger = logger;
+        this.reviewService = reviewService;
     }
 
     /// <inheritdoc />
@@ -84,6 +90,11 @@ public class CommitService : ICommitService, IScopedService
                     StatusCode = HttpStatusCode.NotFound,
                     ErrorMessage = $"Commit with ID '{data.Id}' not found."
                 };
+            }
+
+            if (data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
+            {
+                await reviewService.RequestReviewForCommitAsync(identity, result.Id, data.ReviewRequestedUsers);
             }
 
             if (result.Templates != null)
@@ -165,7 +176,7 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
         });
-        
+
         var results = await commitDataService.GetTemplatesToCommitAsync();
 
         return new ServiceResult<List<TemplateCommitModel>>(results);
@@ -195,7 +206,7 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
         });
-        
+
         var results = await commitDataService.GetNotCompletedCommitsAsync();
 
         return new ServiceResult<List<CommitModel>>(results);

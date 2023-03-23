@@ -116,6 +116,17 @@ namespace Api.Core.Helpers
         }
 
         /// <summary>
+        /// Get the admin username from a <see cref="ClaimsIdentity">ClaimsIdentity</see>.
+        /// If the user is not a Wiser admin account (from the main Wiser database), then this will return null.
+        /// </summary>
+        /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <returns></returns>
+        public static string GetAdminUserName(ClaimsIdentity claimsIdentity)
+        {
+            return claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == IdentityConstants.AdminAccountName)?.Value;
+        }
+
+        /// <summary>
         /// Get the email address from a <see cref="ClaimsIdentity">ClaimsIdentity</see>.
         /// </summary>
         /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
@@ -143,6 +154,17 @@ namespace Api.Core.Helpers
         public static ulong GetWiserUserId(ClaimsIdentity claimsIdentity)
         {
             return !UInt64.TryParse(claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier)?.Value, out var result) ? 0 : result;
+        }
+
+        /// <summary>
+        /// Get the admin ID of a <see cref="ClaimsIdentity">ClaimsIdentity</see>.
+        /// If the user is not a Wiser admin account (from the main Wiser database), then this will return 0.
+        /// </summary>
+        /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <returns></returns>
+        public static ulong GetWiserAdminId(ClaimsIdentity claimsIdentity)
+        {
+            return !UInt64.TryParse(claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Sid)?.Value, out var result) ? 0 : result;
         }
 
         /// <summary>
