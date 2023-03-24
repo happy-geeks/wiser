@@ -221,6 +221,7 @@
                                                 <option value="4">Alles wat toegevoegd is voor X</option>
                                                 <option value="5">Alles wat toegevoegd is na X</option>
                                                 <option value="6">Alles wat toegevoegd is tussen X en Y</option>
+                                                <option value="7">Dataselector</option>
                                             </select>
                                         </td>
                                         <td class="extra">
@@ -250,6 +251,7 @@
                                                 <option value="4">Alles wat toegevoegd is voor X</option>
                                                 <option value="5">Alles wat toegevoegd is na X</option>
                                                 <option value="6">Alles wat toegevoegd is tussen X en Y</option>
+                                                <option value="7">Dataselector</option>
                                             </select>
                                         </td>
                                         <td class="extra">
@@ -264,6 +266,14 @@
                                             <div class="date-range" v-if="createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 6">
                                                 <input type="date" v-model="createBranchSettings.entities[entity.id].start"/>
                                                 <input type="date" v-model="createBranchSettings.entities[entity.id].end"/>
+                                            </div>
+                                            <div class="branch-data-selector" v-if="createBranchSettings.entities[entity.id] && createBranchSettings.entities[entity.id].mode == 7">
+                                                <select v-model="createBranchSettings.entities[entity.id].dataSelector">
+                                                    <option disabled :value="0">Kies een dataselector</option>
+                                                    <option v-for="dataSelector in dataSelectorsForBranches" :value="dataSelector.id">
+                                                        {{ dataSelector.name }}
+                                                    </option>
+                                                </select>
                                             </div>
                                         </td>
                                     </tr>

@@ -54,6 +54,11 @@
         /// Gets or sets whether the result of this data selector should be shown in the "Dataselector" tile of the dashboard.
         /// </summary>
         public bool ShowInDashboard { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether this data selector should be available when making branches.
+        /// </summary>
+        public bool AvailableForBranches { get; set; }
 
         /// <summary>
         /// Gets or sets the ID of the default HTML template for rendering. Only applicable if <see cref="AvailableForRendering"/> is set to <see langword="true"/>.

@@ -1541,6 +1541,7 @@ SELECT
     dataSelector.show_in_communication_module AS showInCommunicationModule,
     dataSelector.available_for_rendering AS availableForRendering,
     dataSelector.show_in_dashboard AS showInDashboard,
+    dataSelector.available_for_branches AS availableForBranches,
     IFNULL(GROUP_CONCAT(permission.role_id), '') AS allowedRoles
 FROM wiser_data_selector AS dataSelector
 LEFT JOIN wiser_permission AS permission ON permission.data_selector_id = dataSelector.id
