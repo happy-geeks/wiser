@@ -2133,6 +2133,11 @@ export class EntityTab {
                     }
                     break;
                 }
+                case actionTypes.CONFIRMDIALOG.id: {
+                    document.getElementById("actionButtonItemId").value = gridDataItem.action.itemId;
+                    this.actionButtonItemLink.value(gridDataItem.action.linkId);
+                    break;
+                }
             }
         }
         window.title("Actie wijzigen");
