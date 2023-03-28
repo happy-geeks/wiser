@@ -1,0 +1,200 @@
+﻿@import "../../Base/scss/base.scss";
+
+#fullForm {
+    display:  block;
+}
+
+.group-container {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+    padding: 1.5rem;
+    
+    .group-wrapper {    
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;    
+        box-shadow: 1px 1px 7px 1px rgb(0 0 0 / 2%);
+        background: var(--white-color);
+        padding: 1.5rem;
+        
+        .group-wrapper-title {
+            flex: 0 0 100%;
+            font: 700 18px/22px "Roboto", sans-serif;
+        }
+        
+        .group-item {
+            transition: 200ms all ease-in-out;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+            border: solid 1px var(--sec-color);
+            border-radius: 5px;
+            padding: 1rem 0.75rem 0.75rem 0.75rem;
+            min-width: 175px;
+            font: 400 16px/20px "Roboto", sans-serif;
+            position: relative;
+
+            > [class^="icon-"] {
+                transition: 200ms all ease-in-out;
+                font-size: 2.5rem;
+                color: var(--light-txt);
+            }
+            
+            button.pin-item {
+                transition: 200ms all ease-in-out;
+                position: absolute;
+                top: 0;
+                right: 0;
+                border: none;
+                background: none;
+                padding: 5px;
+                cursor: pointer;
+                opacity: 0;
+                pointer-events: none;
+                
+                ins {
+                    transition: 200ms all ease-in-out;
+                    font-size: 20px;
+                }
+            }
+            
+            &.has-sub {
+                .group-sub {
+                    box-shadow: 0 2px 20px 0 rgb(0 0 0 / 10%);
+                    transition: 50ms all ease-in-out;
+                    background-color: var(--white-color);
+                    border-radius: 8px;
+                    display: block;
+                    padding: 20px;
+                    position: absolute;
+                    left: 50%;
+                    top: 100%;
+                    transform: translateY(60px) translateX(-50%);
+                    visibility: hidden;
+                    column-count: 2;
+                    column-gap: 4rem;
+                    z-index: 2;
+
+                    &:before {
+                        content: "";
+                        position: absolute;
+                        bottom: 100%;
+                        left: 0;
+                        right: 0;
+                        height: 35px;
+                    }
+                    &:after {
+                        display: block;
+                        height: 0;
+                        width: 0;
+                        border-left: 10px solid transparent;
+                        border-right: 10px solid transparent;
+                        border-bottom: 10px solid #FFFFFF;
+                        content: "";
+                        position: absolute;
+                        bottom: 100%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                    }
+
+                    .group-sub-item {
+                        display: block;
+                        line-height: 40px;
+                        white-space: nowrap;
+                        text-decoration: none;
+                        color: var(--dark-txt);
+                        
+                        ins {
+                            font-size: 20px;
+                            padding: 0 10px 0 5px;
+                            vertical-align: text-bottom;
+                            color: var(--light-txt);
+                        }
+                        
+                        &:hover {
+                            color: var(--action-color);
+
+                            [class^="icon-"] {
+                                color: var(--action-color);
+                            }
+                        }
+                        
+                        &:focus {
+                            border: none;
+                            outline: none;
+                        }
+                    }
+                }
+                &:hover > .group-sub {
+                    transform: translateY(15px) translateX(-50%);
+                    visibility: visible;
+                }
+            }
+
+            .tooltip {
+                box-shadow: 0 2px 20px 0 rgb(0 0 0 / 10%);
+                transition: 50ms all ease-in-out;
+                background-color: var(--dark-txt);
+                color: var(--white-color);
+                border-radius: 8px;
+                display: block;
+                padding: 12px 15px;
+                position: absolute;
+                left: 0;
+                top: 100%;
+                transform: translateY(60px);
+                visibility: hidden;
+                z-index: 2;
+                font-size: 0.825rem;
+                width: 340px;
+
+                &:after {
+                    display: block;
+                    height: 0;
+                    width: 0;
+                    border-left: 10px solid transparent;
+                    border-right: 10px solid transparent;
+                    border-bottom: 10px solid var(--dark-txt);
+                    content: "";
+                    position: absolute;
+                    bottom: 100%;
+                    left: 15px;
+                }
+            }
+
+            &.tooltip-active .tooltip {
+                transform: translateY(16px);
+                visibility: visible;
+            }
+
+
+            &:hover {
+                border: solid 1px darken(#e6e6e6,10%);
+                cursor: pointer;
+                color: var(--action-color);
+
+                [class^="icon-"] {
+                    color: var(--action-color);
+                }
+
+                button.pin-item {
+                    opacity: 1;
+                    pointer-events: all;
+
+                    ins {
+                        color: var(--light-txt);
+                    }
+
+                    &:hover {
+                        ins {
+                            color: var(--action-color);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+ 
