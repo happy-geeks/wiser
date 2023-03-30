@@ -82,6 +82,7 @@ namespace Api.Modules.Modules.Services
                 738, // Import / export
                 806, // Wiser users
                 5505, // Webpagina's
+                1, // Templates
                 6000 // Version control
             };
 
@@ -300,7 +301,6 @@ UNION
                 {
                     string groupName;
                     var isPinned = pinnedModules.Contains(moduleId);
-                    // TODO: Add the new settings and templates modules here once they are finished.
                     switch (moduleId)
                     {
                         case 700: // Stamgegevens
@@ -320,7 +320,7 @@ UNION
                                 Icon = "line-sliders",
                                 ModuleId = moduleId,
                                 Name = "Stamgegevens",
-                                Type = "DynamicItems",
+                                Type = "MasterData",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -430,7 +430,7 @@ UNION
                                 Icon = "users",
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
-                                Type = "DynamicItems",
+                                Type = "Users",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -472,8 +472,29 @@ UNION
                                 CanWrite = true,
                                 Icon = "git",
                                 ModuleId = moduleId,
-                                Name = "Version control",
+                                Name = "Versiebeheer",
                                 Type = "VersionControl",
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
+                            });
+                            break;
+                        case 1: // Templates
+                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            if (!results.ContainsKey(groupName))
+                            {
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
+                            }
+                            results[groupName].Add(new ModuleAccessRightsModel
+                            {
+                                Group = "Systeem",
+                                CanCreate = true,
+                                CanDelete = true,
+                                CanRead = true,
+                                CanWrite = true,
+                                Icon = "document-fold",
+                                ModuleId = moduleId,
+                                Name = "Templates",
+                                Type = "Templates",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -482,6 +503,31 @@ UNION
                             throw new NotImplementedException($"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
                     }
                 }
+            }
+
+            // Everyone should always have the configuration module.
+            if (results.All(g => g.Value.All(m => m.Type != "Configuration")))
+            {
+                var isPinned = pinnedModules.Contains(0);
+                var groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                if (!results.ContainsKey(groupName))
+                {
+                    results.Add(groupName, new List<ModuleAccessRightsModel>());
+                }
+                results[groupName].Add(new ModuleAccessRightsModel
+                {
+                    Group = "Systeem",
+                    CanCreate = true,
+                    CanDelete = true,
+                    CanRead = true,
+                    CanWrite = true,
+                    Icon = "config",
+                    ModuleId = 0,
+                    Name = "Wiser Configuratie",
+                    Type = "Configuration",
+                    Pinned = isPinned,
+                    PinnedGroup = PinnedModulesGroupName
+                });
             }
 
             // Sort all the groups.
