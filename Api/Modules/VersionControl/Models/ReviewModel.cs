@@ -15,11 +15,6 @@ public class ReviewModel
     public int Id { get; set; }
 
     /// <summary>
-    /// Gets or sets the ID of the commit that this review is meant for.
-    /// </summary>
-    public int CommitId { get; set; }
-
-    /// <summary>
     /// Gets or sets the date and time that the review was requested.
     /// </summary>
     public DateTime RequestedOn { get; set; }
@@ -66,4 +61,14 @@ public class ReviewModel
     /// Gets or sets the comments that have been placed on this review.
     /// </summary>
     public List<ReviewCommentModel> Comments { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the ID of the commit that this review is meant for.
+    /// </summary>
+    public int CommitId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the description of the commit.
+    /// </summary>
+    public string CommitDescription { get; set; }
 }

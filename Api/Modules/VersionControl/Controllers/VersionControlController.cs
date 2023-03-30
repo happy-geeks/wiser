@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.VersionControl.Interfaces;
@@ -15,20 +16,24 @@ namespace Api.Modules.VersionControl.Controllers;
 [Route("api/v3/version-control")]
 [ApiController]
 [Authorize]
+[Consumes(MediaTypeNames.Application.Json)]
+[Produces(MediaTypeNames.Application.Json)]
 public class VersionControlController : Controller
 {
     private readonly ICommitService commitService;
     private readonly IVersionControlService versionControlService;
+    private readonly IReviewService reviewService;
 
     /// <summary>
     /// Creates a new instance of <see cref="VersionControlController"/>.
     /// </summary>
-    public VersionControlController(ICommitService commitService, IVersionControlService versionControlService)
+    public VersionControlController(ICommitService commitService, IVersionControlService versionControlService, IReviewService reviewService)
     {
         this.commitService = commitService;
         this.versionControlService = versionControlService;
+        this.reviewService = reviewService;
     }
-    
+
     /// <summary>
     /// Get all templates that have uncommitted changes.
     /// </summary>
@@ -39,7 +44,7 @@ public class VersionControlController : Controller
     {
         return (await commitService.GetTemplatesToCommitAsync()).GetHttpResponseMessage();
     }
-    
+
     /// <summary>
     /// Get all dynamic content that have uncommitted changes.
     /// </summary>
@@ -51,7 +56,7 @@ public class VersionControlController : Controller
     {
         return (await commitService.GetDynamicContentsToCommitAsync()).GetHttpResponseMessage();
     }
-    
+
     /// <summary>
     /// Creates new commit item in the database and deploys the selected templates and contents to the selected environment, or gets an existing commit and deploy that to another environment.
     /// </summary>
@@ -87,5 +92,19 @@ public class VersionControlController : Controller
     public async Task<IActionResult> DeployToBranchAsync(int branchId, List<int> commitIds)
     {
         return (await versionControlService.DeployToBranchAsync((ClaimsIdentity) User.Identity, commitIds, branchId)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Gets all reviews.
+    /// </summary>
+    /// <param name="hideApprovedReviews">Optional: Whether to only get reviews that haven't been approved yet. Default is true.</param>
+    /// <param name="getReviewsForCurrentUserOnly">Optional: Whether to only get reviews that have been assigned to the current user.</param>
+    /// <returns>A list with all (not approved) reviews.</returns>
+    [HttpGet]
+    [Route("reviews")]
+    [ProducesResponseType(typeof(List<ReviewModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReviewsAsync(bool hideApprovedReviews = true, bool getReviewsForCurrentUserOnly = false)
+    {
+        return (await reviewService.GetAsync((ClaimsIdentity) User.Identity, hideApprovedReviews, getReviewsForCurrentUserOnly)).GetHttpResponseMessage();
     }
 }

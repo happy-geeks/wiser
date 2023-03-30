@@ -13,6 +13,15 @@ namespace Api.Modules.VersionControl.Interfaces;
 public interface IReviewService
 {
     /// <summary>
+    /// Gets all reviews.
+    /// </summary>
+    /// <param name="identity">The authenticated user data.</param>
+    /// <param name="hideApprovedReviews">Optional: Whether to only get reviews that haven't been approved yet. Default is true.</param>
+    /// <param name="getReviewsForCurrentUserOnly">Optional: Whether to only get reviews that have been assigned to the current user.</param>
+    /// <returns>A list with all (not approved) reviews.</returns>
+    Task<ServiceResult<List<ReviewModel>>> GetAsync(ClaimsIdentity identity, bool hideApprovedReviews = true, bool getReviewsForCurrentUserOnly = false);
+
+    /// <summary>
     /// Request certain users to do a code review for a specific commit.
     /// </summary>
     /// <param name="identity">The authenticated user data.</param>

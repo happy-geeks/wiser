@@ -44,8 +44,8 @@ const moduleSettings = {
             this.deployLiveButton = null;
             this.deployToBranchButton = null;
             this.branchesDropDown = null;
-
             this.deployToBranchContainer = null;
+            this.reviewGrid = null;
 
             // Other data.
             this.branches = null;
@@ -234,6 +234,9 @@ const moduleSettings = {
             switch (event.sender.select().attr("id")) {
                 case "deployTab":
                     await this.setupDeployTab();
+                    break;
+                case "reviewTab":
+                    await this.setupReviewTab();
                     break;
             }
         }
@@ -498,55 +501,55 @@ const moduleSettings = {
                     resizable : true,
                     columns: [
                         {
-                            "field": "templateId",
-                            "title": "ID",
-                            "width": "50px"
+                            field: "templateId",
+                            title: "ID",
+                            width: "50px"
                         },
                         {
-                            "field": "templateType",
-                            "title": "Type",
-                            "width": "75px"
+                            field: "templateType",
+                            title: "Type",
+                            width: "75px"
                         },
                         {
-                            "field": "templateParentName",
-                            "title": "Map",
-                            "width": "150px"
+                            field: "templateParentName",
+                            title: "Map",
+                            width: "150px"
                         },
                         {
-                            "field": "templateName",
-                            "title": "Template",
-                            "width": "150px"
+                            field: "templateName",
+                            title: "Template",
+                            width: "150px"
                         },
                         {
-                            "field": "version",
-                            "title": "Versie",
-                            "width": "75px"
+                            field: "version",
+                            title: "Versie",
+                            width: "75px"
                         },
                         {
-                            "field": "versionTest",
-                            "title": "Versie test",
-                            "width": "75px"
+                            field: "versionTest",
+                            title: "Versie test",
+                            width: "75px"
                         },
                         {
-                            "field": "versionAcceptance",
-                            "title": "Versie acceptatie",
-                            "width": "100px"
+                            field: "versionAcceptance",
+                            title: "Versie acceptatie",
+                            width: "100px"
                         },
                         {
-                            "field": "versionLive",
-                            "title": "Versie live",
-                            "width": "75px"
+                            field: "versionLive",
+                            title: "Versie live",
+                            width: "75px"
                         },
                         {
-                            "field": "changedOn",
-                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
-                            "title": "Datum",
-                            "width": "100px"
+                            field: "changedOn",
+                            format: "{0:dd-MM-yyyy HH:mm:ss}",
+                            title: "Datum",
+                            width: "100px"
                         },
                         {
-                            "field": "changedBy",
-                            "title": "Door",
-                            "width": "100px"
+                            field: "changedBy",
+                            title: "Door",
+                            width: "100px"
                         }
                     ]
                 };
@@ -610,51 +613,51 @@ const moduleSettings = {
                     resizable : true,
                     columns: [
                         {
-                            "field": "dynamicContentId",
-                            "title": "ID",
-                            "width": "50px"
+                            field: "dynamicContentId",
+                            title: "ID",
+                            width: "50px"
                         },
                         {
-                            "field": "templateNames",
-                            "title": "Gebruikt in",
-                            "width": "150px",
-                            "template": "#: templateNames ? templateNames.join(', ') : '' #"
+                            field: "templateNames",
+                            title: "Gebruikt in",
+                            width: "150px",
+                            template: "#: templateNames ? templateNames.join(', ') : '' #"
                         },
                         {
-                            "field": "title",
-                            "title": "Naam",
-                            "width": "150px"
+                            field: "title",
+                            title: "Naam",
+                            width: "150px"
                         },
                         {
-                            "field": "version",
-                            "title": "Versie",
-                            "width": "75px"
+                            field: "version",
+                            title: "Versie",
+                            width: "75px"
                         },
                         {
-                            "field": "versionTest",
-                            "title": "Versie test",
-                            "width": "75px"
+                            field: "versionTest",
+                            title: "Versie test",
+                            width: "75px"
                         },
                         {
-                            "field": "versionAcceptance",
-                            "title": "Versie acceptatie",
-                            "width": "100px"
+                            field: "versionAcceptance",
+                            title: "Versie acceptatie",
+                            width: "100px"
                         },
                         {
-                            "field": "versionLive",
-                            "title": "Versie live",
-                            "width": "75px"
+                            field: "versionLive",
+                            title: "Versie live",
+                            width: "75px"
                         },
                         {
-                            "field": "changedOn",
-                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
-                            "title": "Datum",
-                            "width": "100px"
+                            field: "changedOn",
+                            format: "{0:dd-MM-yyyy HH:mm:ss}",
+                            title: "Datum",
+                            width: "100px"
                         },
                         {
-                            "field": "changedBy",
-                            "title": "Door",
-                            "width": "100px"
+                            field: "changedBy",
+                            title: "Door",
+                            width: "100px"
                         }
                     ]
                 };
@@ -721,58 +724,58 @@ const moduleSettings = {
                     resizable : true,
                     columns: [
                         {
-                            "field": "id",
-                            "title": "ID",
-                            "width": "50px"
+                            field: "id",
+                            title: "ID",
+                            width: "50px"
                         },
                         {
-                            "field": "description",
-                            "title": "Omschrijving",
-                            "width": "150px"
+                            field: "description",
+                            title: "Omschrijving",
+                            width: "150px"
                         },
                         {
-                            "field": "isTest",
-                            "title": "Test",
-                            "width": "50px",
-                            "template": "<span class='k-icon k-i-#:(isTest ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                            field: "isTest",
+                            title: "Test",
+                            width: "50px",
+                            template: "<span class='k-icon k-i-#:(isTest ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
-                            "field": "isAcceptance",
-                            "title": "Acceptatie",
-                            "width": "50px",
-                            "template": "<span class='k-icon k-i-#:(isAcceptance ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                            field: "isAcceptance",
+                            title: "Acceptatie",
+                            width: "50px",
+                            template: "<span class='k-icon k-i-#:(isAcceptance ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
-                            "field": "isLive",
-                            "title": "Live",
-                            "width": "50px",
-                            "template": "<span class='k-icon k-i-#:(isLive ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                            field: "isLive",
+                            title: "Live",
+                            width: "50px",
+                            template: "<span class='k-icon k-i-#:(isLive ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
-                            "field": "addedOn",
-                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
-                            "title": "Datum",
-                            "width": "100px"
+                            field: "addedOn",
+                            format: "{0:dd-MM-yyyy HH:mm:ss}",
+                            title: "Datum",
+                            width: "100px"
                         },
                         {
-                            "field": "addedBy",
-                            "title": "Door",
-                            "width": "100px"
+                            field: "addedBy",
+                            title: "Door",
+                            width: "100px"
                         },
                         {
-                            "field": "review.status",
-                            "title": "Review status",
-                            "width": "100px"
+                            field: "review.status",
+                            title: "Review status",
+                            width: "100px"
                         },
                         {
-                            "field": "review.reviewedByName",
-                            "title": "Review door",
-                            "width": "100px"
+                            field: "review.reviewedByName",
+                            title: "Review door",
+                            width: "100px"
                         },
                         {
-                            "field": "dynamicContents",
-                            "title": "Dynamic contents",
-                            "template": (dataItem) => {
+                            field: "dynamicContents",
+                            title: "Dynamic contents",
+                            template: (dataItem) => {
                                 if (!dataItem.dynamicContents || !dataItem.dynamicContents.length) {
                                     return `<span class="dynamic-content">Geen dynamic content in deze commit</span>`;
                                 }
@@ -786,9 +789,9 @@ const moduleSettings = {
                             }
                         },
                         {
-                            "field": "templates",
-                            "title": "Templates",
-                            "template": (dataItem) => {
+                            field: "templates",
+                            title: "Templates",
+                            template: (dataItem) => {
                                 if (!dataItem.templates || !dataItem.templates.length) {
                                     return `<span class="template">Geen templates in deze commit</span>`;
                                 }
@@ -812,6 +815,137 @@ const moduleSettings = {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het laden van de nog niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             }
+        }
+
+        /**
+         * Setup/initialize the grid with all reviews.
+         */
+        async setupReviewTab() {
+            try {
+                if (this.reviewGrid) {
+                    return;
+                }
+
+                this.reviewGrid = $("#reviewGrid").kendoGrid({
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetReviews_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/reviews`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "id",
+                                fields: {
+                                    requestedOn: {
+                                        type: "date"
+                                    },
+                                    requestedUsers: {
+                                        type: "array"
+                                    },
+                                    comments: {
+                                        type: "array"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    resizable : true,
+                    columns: [
+                        {
+                            field: "id",
+                            title: "ID",
+                            width: "50px"
+                        },
+                        {
+                            field: "commitDescription",
+                            title: "Omschrijving",
+                            width: "150px"
+                        },
+                        {
+                            field: "requestedByName",
+                            title: "Aangevraagd door",
+                            width: "100px"
+                        },
+                        {
+                            field: "status",
+                            title: "Status",
+                            width: "100px"
+                        }
+                    ],
+                    detailInit: this.onReviewGridDetailInit.bind(this)
+                }).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de reviews. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        /**
+         * Setup/initialize the sub grid with all comments of a review.
+         * @param event The detail init event of the grid.
+         */
+        onReviewGridDetailInit(event) {
+            console.log("onReviewGridDetailInit", event);
+            const comments = event.data.comments;
+            $("<div/>").appendTo(event.detailCell).kendoGrid({
+                dataSource: {
+                    data: comments,
+                    schema: {
+                        model: {
+                            id: "id",
+                            fields: {
+                                addedOn: {
+                                    type: "date"
+                                }
+                            }
+                        }
+                    }
+                },
+                scrollable: false,
+                sortable: false,
+                pageable: false,
+                columns: [
+                    { field: "addedOn", title: "Datum", width: "150px", format: "{0:dd-MM-yyyy HH:mm}" },
+                    { field: "addedByName", title:"Door", width: "100px" },
+                    { field: "text", title:"Bericht" }
+                ]
+            });
+        }
+
+        /**
+         * Open the templates module with the history of a specific template.
+         * @param templateId The ID of the template to open.
+         */
+        async openTemplateHistory(templateId) {
+            const templateModuleWindow = $("<div />").kendoWindow({
+                actions: ["Close"],
+                content: {
+                    url: `/Modules/Templates?templateId=${templateId}&initialTab=history`,
+                    iframe: true
+                },
+                title: `Template: ${templateId}`
+            }).data("kendoWindow");
+
+            templateModuleWindow.open().maximize();
         }
     }
 

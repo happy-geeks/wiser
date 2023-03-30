@@ -28,6 +28,17 @@ public class ReviewService : IReviewService, IScopedService
     }
 
     /// <inheritdoc />
+    public async Task<ServiceResult<List<ReviewModel>>> GetAsync(ClaimsIdentity identity, bool hideApprovedReviews = true, bool getReviewsForCurrentUserOnly = false)
+    {
+        var isAdmin = IdentityHelpers.IsAdminAccount(identity);
+        var userId = isAdmin ? Convert.ToInt64(IdentityHelpers.GetWiserAdminId(identity)) * -1 : Convert.ToInt64(IdentityHelpers.GetWiserUserId(identity));
+
+        var reviews = await reviewDataService.GetAsync(hideApprovedReviews, getReviewsForCurrentUserOnly ? userId : 0);
+
+        return new ServiceResult<List<ReviewModel>>(reviews);
+    }
+
+    /// <inheritdoc />
     public async Task<ServiceResult<ReviewModel>> RequestReviewForCommitAsync(ClaimsIdentity identity, int commitId, List<FlatItemModel> requestedUsers)
     {
         var isAdmin = IdentityHelpers.IsAdminAccount(identity);
@@ -43,7 +54,4 @@ public class ReviewService : IReviewService, IScopedService
 
         return new ServiceResult<ReviewModel>(await reviewDataService.SaveReviewAsync(review));
     }
-
-    // Function to add comments to a review.
-
 }

@@ -69,7 +69,7 @@ const moduleSettings = {
             this.entityData = null;
             this.openTaskAlertsData = null;
             this.dataSelectorResult = null;
-            
+
             this.servicesGrid = null;
             this.serviceWindow = null;
             this.serviceLogsGrid = null;
@@ -224,7 +224,7 @@ const moduleSettings = {
                     window.processing.removeProcess("dataUpdate");
                 });
             });
-            
+
             document.getElementById("refreshServices").addEventListener("click", async e => {
                 await this.updateServices();
             });
@@ -321,7 +321,7 @@ const moduleSettings = {
                 iframe: true,
                 actions: ["Close"],
                 visible: false
-            }).data("kendoWindow")
+            }).data("kendoWindow");
         }
 
         /**
@@ -902,7 +902,7 @@ const moduleSettings = {
                     extraRunButton.classList.remove("k-i-play");
                     extraRunButton.classList.add("k-i-stop");
                 }
-                
+
                 const templateId = dataItem.get("templateId");
                 // If template ID is -1 there is no template and ID 0 is a local file. In both cases hide the edit action.
                 if (templateId <= 0) {
@@ -993,7 +993,7 @@ const moduleSettings = {
         async editServiceTemplate(e) {
             const templateId = this.servicesGrid.dataItem(e.currentTarget.closest("tr")).templateId;
             const newUrl = `/Modules/Templates?templateId=${templateId}`;
-            
+
             if (!this.serviceTemplateWindow.options || !this.serviceTemplateWindow.options.content || this.serviceTemplateWindow.options.content.url !== newUrl) {
                 this.serviceTemplateWindow.setOptions({
                     content: {
@@ -1004,7 +1004,7 @@ const moduleSettings = {
 
                 this.serviceTemplateWindow.refresh();
             }
-            
+
             this.serviceTemplateWindow.title(`Template: ${templateId}`).open().maximize();
         }
 
