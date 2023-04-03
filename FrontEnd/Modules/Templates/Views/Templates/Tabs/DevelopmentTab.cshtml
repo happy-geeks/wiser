@@ -2,58 +2,29 @@
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 @* ReSharper disable Mvc.PartialViewNotResolved *@
 <div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
-    <div class="settings-container">
-        <partial name="Partials/ConnectedUsers"/>
+    <partial name="Partials/ConnectedUsers" />
 
-        <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings"/>
+    <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
 
-        @if (Model.TemplateSettings.Type == TemplateTypes.Routine)
-        {
-            <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings"/>
-        }
+    @if (Model.TemplateSettings.Type == TemplateTypes.Routine)
+    {
+        <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings" />
+    }
 
-        @if (Model.TemplateSettings.Type == TemplateTypes.Trigger)
-        {
-            <partial name="Partials/TriggerDefinition" model="@Model.TemplateSettings"/>
-        }
+    @if (Model.TemplateSettings.Type == TemplateTypes.Trigger)
+    {
+        <partial name="Partials/TriggerDefinition" model="@Model.TemplateSettings" />
+    }
 
-        <partial name="Partials/TemplateEditor" model="@Model"/>
+    <partial name="Partials/TemplateEditor" model="@Model" />
 
-        @if (Model.TemplateSettings.Type == TemplateTypes.Html)
-        {
-            <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates"/>
-        }
+    @if (Model.TemplateSettings.Type == TemplateTypes.Html)
+    {
+        <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates" />
+    }
 
-        @if (!String.IsNullOrWhiteSpace(Model.SettingsPartial))
-        {
-            <partial name="Partials/AdvancedSettings" model="@Model"/>
-        }
-    </div>
-    <footer>
-        <div class="item version-test">
-            <div class="flex-container">
-                <select class="combo-select">
-                    @foreach (var version in Model.TemplateSettings.PublishedEnvironments.VersionList)
-                    {
-                        <!option value="@version" @(version == Model.TemplateSettings.PublishedEnvironments.TestVersion ? "selected" : "")>@version</!option>
-                    }
-                </select>
-
-                <button id="deployTest" class="k-primary">Deploy naar test</button>
-            </div>
-        </div>
-
-        <div class="item branch-container">
-            <div class="flex-container">
-                <select id="branchesDropDown"></select>
-
-                <button id="deployToBranchButton" class="k-primary">Deploy naar geselecteerde branch</button>
-            </div>
-        </div>
-
-        <div class="item version-actions">
-            <button id="saveAndDeployToTestButton" class="k-primary saveButton">Opslaan &amp; deploy naar test-omgeving</button>
-            <button id="saveButton" class="k-primary saveButton">Opslaan</button>
-        </div>
-    </footer>
+    @if (!String.IsNullOrWhiteSpace(Model.SettingsPartial))
+    {
+        <partial name="Partials/AdvancedSettings" model="@Model" />
+    }
 </div>
