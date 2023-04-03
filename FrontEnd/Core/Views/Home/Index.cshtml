@@ -61,6 +61,7 @@
                 <ul class="sub-menu">
                     <li><a href="#" @@click="openMarkerIoScreen"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
                     <li><a href="#" @@click="openConfigurationModule"><ins class="icon-config"></ins><span>Wiser configuratie</span></a></li>
+                    <li><a href="#" @@click="logout"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                 </ul>
             </li>
             <li class="logo">
@@ -122,9 +123,9 @@
                     <div class="col col-3" v-if="isMainBranch">
                         <h2>Branch maken</h2>
                         <p>
-                            Hier kan een nieuwe branch gemaakt worden. Een branch is een (deel-)kopie van uw database. 
+                            Hier kan een nieuwe branch gemaakt worden. Een branch is een (deel-)kopie van uw database.
                             Dit kan gebruikt worden om wijzigingen in Wiser op een veilige manier door te voeren en te testen in een aparte omgeving.
-                            Nadat u klaar bent met testen, kunt u de wijzigingen in een branch weer terugzetten naar de productie-omgeving. 
+                            Nadat u klaar bent met testen, kunt u de wijzigingen in een branch weer terugzetten naar de productie-omgeving.
                         </p>
 
                         <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
@@ -134,17 +135,17 @@
                         <p>
                             Hier kan een bestaande branch geopend worden.
                         </p>
-                        
+
                         <div class="col col-12 form-row" v-if="isMainBranch">
                             <label for="open-branch-type">Waar wilt u de branch openen?</label>
                             <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
                         </div>
-                        
+
                         <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
                             <label for="website-url">Geef de URL op van uw website</label>
                             <input type="url" id="website-url" placeholder="https://mywebsite.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
                         </div>
-                        
+
                         <div class="col col-12 form-row" v-if="isMainBranch">
                             <label for="available-branches">Selecteer de branch die u wilt openen</label>
                             <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
@@ -160,8 +161,8 @@
                             Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
                         </p>
                         <p>
-                            <strong>Let op:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden. 
-                            Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn. 
+                            <strong>Let op:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden.
+                            Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn.
                             Zorg daarom dat u het samenvoegen start op een moment waarbij dit het minste impact heeft (zoals 's nachts).
                         </p>
 
@@ -299,12 +300,12 @@
                         <label for="available-branches">Selecteer eerst de branch die u wilt synchroniseren</label>
                         <dropdownlist id="available-branches" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="branchMergeSettings.selectedBranch" @@change="onSelectedBranchChange"></dropdownlist>
                     </div>
-                    
+
                     <section class="full-error" v-if="mergeBranchError">
                         <ins class="icon-line-alert"></ins>
                         <span v-html="mergeBranchError"></span>
                     </section>
-                    
+
                     <div class="col col-12 form-row no-bottom-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
                         <label>Selecteer te synchroniseren Wiser data</label>
                     </div>
@@ -464,7 +465,7 @@
                             </table>
                         </div>
                     </div>
-                    
+
                     <div class="col col-12 form-row" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
                         <label class="checkbox">
                             <input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
@@ -495,7 +496,7 @@
                 </div>
             </footer>
         </wiser-dialog>
-        
+
         <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[]">
             <div class="container stretch">
                 <div class="row no-scroll">
@@ -527,7 +528,7 @@
                     <div class="col col-12 flex-inline">
                         <p>Het goedkeuren van een conflict betekent dat de aanpassing van de geselecteerde branch wordt gebruikt en de waarde in de originele/productie branch wordt overschreven en dus verloren gaat. Het afkeuren van een wijziging is andersom, dan wordt de wijziging van de originele/productie branch behouden en gaat de wijziging van de geselecteerde branch verloren.</p>
                     </div>
-                    
+
                     <div class="col col-12 table-row no-top-margin">
                         <div class="fixed-table">
                             <table>
@@ -656,7 +657,7 @@
                 <span v-html="clearCacheError"></span>
             </section>
         </wiser-dialog>
-        
+
         <wiser-dialog :modal="true" :width="'400px'" :title="'2FA-backup-codes'" ref="generateTotpBackupCodesPrompt" :visible="false" :actions="totpBackupCodes.length > 0 ? [{ text: 'OK', primary: true }] : [{ text: 'Nee' }, { text: 'Ja', primary: true, action: generateNewTotpBackupCodes }]" @@close="onGenerateTotpBackupCodesPromptClose">
             <p v-if="totpBackupCodes.length === 0">Weet u zeker dat u nieuwe backup-codes wilt genereren? Uw oude backup-codes zullen dan verloren gaan.</p>
             <p v-else>
@@ -668,7 +669,7 @@
                     {{ code }}
                 </li>
             </ul>
-            
+
             <div class="error" v-if="generateTotpBackupCodesError">{{ generateTotpBackupCodesError }}</div>
         </wiser-dialog>
     </div>
@@ -716,16 +717,16 @@
                 <p v-else-if="showTotpBackupCodeScreen">Vul hier een van uw backup-codes in.</p>
                 <p v-else>Vul de code in van uw authenticator app.</p>
 
-                <div class="form-row" v-if="totpQrImageUrl"> 
+                <div class="form-row" v-if="totpQrImageUrl">
                     <img :src="totpQrImageUrl" alt="2FA Setup QR" />
                 </div>
-                <div v-if="showTotpBackupCodeScreen" class="form-row"> 
+                <div v-if="showTotpBackupCodeScreen" class="form-row">
                     <input type="text" name="totpBackupCode" v-model="loginForm.totpBackupCode" />
                 </div>
-                <div v-else class="form-row"> 
+                <div v-else class="form-row">
                     <input type="text" name="totpPin" v-model="loginForm.totpPin" />
                 </div>
-                
+
                 <a v-if="!totpQrImageUrl && !showTotpBackupCodeScreen && !user.adminLogin" href="#" @@click="toggleTotpBackupCodeScreen(true)" id="totpBackupCode">Inloggen via backup-code?</a>
 
                 <div class="btn-row">
@@ -736,7 +737,7 @@
             <div v-if="(loginStatus === 'list' || loginStatus === 'list_loading') && !showForgotPasswordScreen">
                 <p>Kies de gebruiker waarmee u wilt inloggen</p>
 
-                <div class="form-row"> 
+                <div class="form-row">
                     <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 
