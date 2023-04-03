@@ -29,6 +29,7 @@ module.exports = {
         DataSelectorConnection: "../../Modules/DataSelector/Scripts/Connection.js",
         ContentBuilder: "../../Modules/ContentBuilder/Scripts/main.js",
         ContentBox: "../../Modules/ContentBox/Scripts/main.js",
+        WtsConfiguration: "../../Modules/Templates/Scripts/WtsConfiguration.js",
         Templates: "../../Modules/Templates/Scripts/Templates.js",
         DynamicContent: "../../Modules/Templates/Scripts/DynamicContent.js",
         Admin: "../../Modules/Admin/Scripts/Admin.js",
@@ -70,12 +71,12 @@ module.exports = {
                         // Kendo and InnovaStudio have multiple modules, we want to create a chunk for each of those.
                         const vendorExcludes = ["@progress", "@innovastudio"];
                         const foundVendorName = vendorExcludes.find(x => module.resource.includes(x));
-                        
+
                         if (!foundVendorName) {
                             // If it's not one of the specified vendors, bundle them all in the same file.
                             return "vendors";
                         }
-                        
+
                         // Here we find the name of the module in the full resource path.
                         // First we get the index of where the vendor name starts.
                         const vendorIndex = module.resource.indexOf(foundVendorName);
@@ -87,7 +88,7 @@ module.exports = {
                         if (slashIndex < 0) {
                             slashIndex = name.indexOf("\\");
                         }
-                        
+
                         // And finally we can take the name before the next slash, which will be the name of the module.
                         if (slashIndex > -1) {
                             name = name.substring(0, slashIndex);
