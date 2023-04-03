@@ -30,12 +30,29 @@
         }
     </div>
     <footer>
-        <div class="version-actions">
-            <div class="branch-container hidden" id="deployToBranchContainer">
-                <select id="branchesDropDown"></select>
-                <button id="deployToBranchButton" class="k-primary" title="Deploy naar geselecteerde branch"><ins class="icon-git"></ins></button>
+        <div class="item version-test">
+            <div class="flex-container">
+                <select class="combo-select">
+                    @foreach (var version in Model.TemplateSettings.PublishedEnvironments.VersionList)
+                    {
+                        <!option value="@version" @(version == Model.TemplateSettings.PublishedEnvironments.TestVersion ? "selected" : "")>@version</!option>
+                    }
+                </select>
+
+                <button id="deployTest" class="k-primary">Deploy naar test</button>
             </div>
-            <button id="saveAndDeployToTestButton" class="k-primary saveButton" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button>
+        </div>
+
+        <div class="item branch-container">
+            <div class="flex-container">
+                <select id="branchesDropDown"></select>
+
+                <button id="deployToBranchButton" class="k-primary">Deploy naar geselecteerde branch</button>
+            </div>
+        </div>
+
+        <div class="item version-actions">
+            <button id="saveAndDeployToTestButton" class="k-primary saveButton">Opslaan &amp; deploy naar test-omgeving</button>
             <button id="saveButton" class="k-primary saveButton">Opslaan</button>
         </div>
     </footer>
