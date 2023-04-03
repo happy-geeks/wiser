@@ -47,11 +47,11 @@
                 <li id="historyTab">Historie</li>
             </ul>
             <div id="templateChangeHistory">
-                <form class="formData">
+                <div class="formData">
                     <div id="commitData">
                         <select id="commitEnvironment"></select>
                         <label for="commitDescription">Omschrijving</label>
-                        <textarea type="text" id="commitDescription"></textarea>                            
+                        <textarea type="text" id="commitDescription"></textarea>
                     </div>
                     <div id="gridsContainer">
                         <h2>Templates</h2>
@@ -59,8 +59,11 @@
                         <h2>Dynamische content</h2>
                         <div id="dynamicContentChangesGrid"></div>
                     </div>
+                </div>
+                <footer>
+                    <button id="reloadUncommittedChangesButton">Verversen</button>
                     <button id="commitButton">Commit</button>
-                </form>
+                </footer>
             </div>
             <div id="deploy">
                 <div class="formData">
@@ -68,25 +71,28 @@
                         <div id="deployGrid"></div>
                     </div>
                 </div>
-                <button class="environment-deploy" id="deployCommitToLive">deploy naar live</button>
-                <button class="environment-deploy" id="deployCommitToAcceptance">deploy naar acceptatie</button>
-                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button>
-                <div class="branch-container hidden" id="deployToBranchContainer">
-                    <select id="branchesDropDown"></select>
-                    <button class="branch-deploy" id="deployCommitToBranch">deploy naar geselecteerde branch</button>
-                </div>
+                <footer>
+                    <button id="reloadCommitsButton">Verversen</button>
+                    <div class="branch-container hidden" id="deployToBranchContainer">
+                        <select id="branchesDropDown"></select>
+                        <button class="branch-deploy" id="deployCommitToBranch" title="Deploy naar geselecteerde branch"><ins class="icon-git"></ins></button>
+                    </div>
+                    <button class="environment-deploy" id="deployCommitToLive">Deploy naar live</button>
+                    <button class="environment-deploy" id="deployCommitToAcceptance">Deploy naar acceptatie</button>
+                    <button class="environment-deploy" id="deployCommitToTest">Deploy naar test</button>
+                </footer>
             </div>
             <div id="history">Work in progress</div>
         </div>
     </div>
 
-     <div id="mainLoader" class="fullscreen-loader loading"> 
-         <div class="loader-icon"> 
-             <div></div> 
-             <div></div> 
-             <div></div> 
-             <div></div> 
-         </div> 
+     <div id="mainLoader" class="fullscreen-loader loading">
+         <div class="loader-icon">
+             <div></div>
+             <div></div>
+             <div></div>
+             <div></div>
+         </div>
     </div>
 
     <webpack-script file-name="runtime.js"></webpack-script>

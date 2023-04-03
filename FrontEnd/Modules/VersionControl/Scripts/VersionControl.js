@@ -36,6 +36,8 @@ const moduleSettings = {
             this.dynamicContentChangesGrid = null;
             this.mainTabStrip = null;
             this.commitButton = null;
+            this.reloadUncommittedChangesButton = null;
+            this.reloadCommitsButton = null;
             this.deployGrid = null;
             this.deployTestButton = null;
             this.deployAcceptanceButton = null;
@@ -152,6 +154,16 @@ const moduleSettings = {
                 icon: "save"
             }).data("kendoButton");
 
+            this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendoButton({
+                click: this.onReloadUncommittedChanges.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
+
+            this.reloadCommitsButton = $("#reloadCommitsButton").kendoButton({
+                click: this.onReloadCommits.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
+
             this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
                 optionLabel: "Selecteer omgeving",
                 dataTextField: "text",
@@ -254,6 +266,47 @@ const moduleSettings = {
                 this.dynamicContentChangesGrid.dataSource.read();
                 this.commitDescriptionField.value = "";
                 this.commitEnvironmentField.value("");
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the first tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadUncommittedChanges(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.templateChangesGrid.dataSource.read();
+                this.dynamicContentChangesGrid.dataSource.read();
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the second tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadCommits(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.deployGrid.dataSource.read();
             }
             catch (exception) {
                 console.error(exception);
