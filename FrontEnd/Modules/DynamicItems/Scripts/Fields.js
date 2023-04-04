@@ -2668,7 +2668,7 @@ export class Fields {
                                                         for (let selectedItem of selectedItems) {
                                                             queryPromises.push(Wiser.api({
                                                                 method: "POST",
-                                                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encryptedId)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.linkId)}`,
+                                                                url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.dataItem.encryptedId || selectedItem.dataItem.encrypted_id)}/action-button/${propertyId}?queryId=${encodeURIComponent(action.executeQueryAfterEmail)}&itemLinkId=${encodeURIComponent(selectedItem.dataItem.linkId || selectedItem.dataItem.link_id || 0)}`,
                                                                 data: JSON.stringify(userParametersWithValues),
                                                                 contentType: "application/json"
                                                             }));
@@ -2683,6 +2683,9 @@ export class Fields {
                                                         });
                                                     };
 
+                                                    const cc = mailDialog.element.find("input[name=cc]").val();
+                                                    const bcc = mailDialog.element.find("input[name=bcc]").val();
+
                                                     Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}communications/email`,
                                                         method: "POST",
@@ -2694,8 +2697,8 @@ export class Fields {
                                                                 displayName: mailDialog.element.find("input[name=receiverName]").val(),
                                                                 address: mailDialog.element.find("input[name=receiverEmail]").val(),
                                                             }],
-                                                            cc: [mailDialog.element.find("input[name=cc]").val()],
-                                                            bcc: [mailDialog.element.find("input[name=bcc]").val()],
+                                                            cc: cc ? [cc] : null,
+                                                            bcc: bcc ? [bcc] : null,
                                                             subject: mailDialog.element.find("input[name=subject]").val(),
                                                             wiserItemFiles: wiserFileAttachments,
                                                             content: emailBodyEditor.value()
