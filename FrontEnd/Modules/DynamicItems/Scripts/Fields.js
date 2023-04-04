@@ -2286,7 +2286,7 @@ export class Fields {
                     
                     case "actionConfirmDialog": {
                         try {
-                            await Wiser.showConfirmDialog("Wilt u doorgaan met de actie?", "Doorgaan", "Annuleren", "Doorgaan");
+                            await Wiser.showConfirmDialog(action.text || "Wilt u doorgaan met de actie?", action.title || "Doorgaan", "Annuleren", "Doorgaan");
                             break;
                         } catch {
                             return false;

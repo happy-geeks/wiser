@@ -1760,7 +1760,7 @@ export class EntityTab {
             const emptyActions = [];
             for (let i = 0; i < abag.length; i++) {
                 let action = abag[i].action;
-                if (abag[i].type === "refreshCurrentItem" || abag[i].type === "custom" || abag[i].type === "actionConfirmDialog") {
+                if (abag[i].type === "refreshCurrentItem" || abag[i].type === "custom") {
                     action = { type: abag[i].type };
                 } else if (!action) {
                     emptyActions.push(this.base.actionButtonTypes[abag[i].type.toUpperCase()].text || abag[i].type);
@@ -1872,6 +1872,9 @@ export class EntityTab {
             document.getElementById("pdfBackgroundPropertyName").value = "";
             document.getElementById("pdfDocumentOptionsPropertyName").value = "";
             document.getElementById("pdfFilename").value = "";
+            // confirm dialog
+            document.getElementById("actionButtonConfirmDialogTitle").value = "";
+            document.getElementById("actionButtonConfirmDialogText").value = "";
             // reset user parameters grid
             const resetDs = this.userParametersGridDataSourceSettings;
             resetDs.data = [];
@@ -2134,7 +2137,8 @@ export class EntityTab {
                     break;
                 }
                 case actionTypes.ACTIONCONFIRMDIALOG.id: {
-                    
+                    document.getElementById("actionButtonConfirmDialogTitle").value = gridDataItem.action.title;
+                    document.getElementById("actionButtonConfirmDialogText").value = gridDataItem.action.text;
                     break;
                 }
             }
@@ -2257,6 +2261,10 @@ export class EntityTab {
                     action.pdfFilename = document.getElementById("pdfFilename").value;
                     action.emailDataQueryId = this.emailDataQueryId.value();
                 }
+                break;
+            case actionTypes.ACTIONCONFIRMDIALOG.id:
+                action.title = document.getElementById("actionButtonConfirmDialogTitle").value;
+                action.text = document.getElementById("actionButtonConfirmDialogText").value;
                 break;
         }
         return action;
