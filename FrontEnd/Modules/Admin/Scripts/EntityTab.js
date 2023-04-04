@@ -1760,7 +1760,7 @@ export class EntityTab {
             const emptyActions = [];
             for (let i = 0; i < abag.length; i++) {
                 let action = abag[i].action;
-                if (abag[i].type === "refreshCurrentItem" || abag[i].type === "custom") {
+                if (abag[i].type === "refreshCurrentItem" || abag[i].type === "custom" || abag[i].type === "actionConfirmDialog") {
                     action = { type: abag[i].type };
                 } else if (!action) {
                     emptyActions.push(this.base.actionButtonTypes[abag[i].type.toUpperCase()].text || abag[i].type);
@@ -2133,9 +2133,8 @@ export class EntityTab {
                     }
                     break;
                 }
-                case actionTypes.CONFIRMDIALOG.id: {
-                    document.getElementById("actionButtonItemId").value = gridDataItem.action.itemId;
-                    this.actionButtonItemLink.value(gridDataItem.action.linkId);
+                case actionTypes.ACTIONCONFIRMDIALOG.id: {
+                    
                     break;
                 }
             }
