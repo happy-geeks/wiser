@@ -366,7 +366,7 @@ const modulesModule = {
                 return;
             }
 
-            var hasAutoload = false;
+            let hasAutoload = false;
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;

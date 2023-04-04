@@ -1,6 +1,8 @@
 ﻿import BaseService from "./base.service";
 
 export default class ModulesService extends BaseService {
+    dynamicItemsModules = ["DynamicItems", "Translation", "Seo", "Redirect", "MasterData", "Users", "ImportHistory"];
+    
 	/**
 	 * Gets all modules that the user has access to.
 	 * @returns {any} An array with all available modules.
@@ -29,9 +31,11 @@ export default class ModulesService extends BaseService {
                             break;
                     }
 
-                    if (module.type === "DynamicItems") {
+                    if (this.dynamicItemsModules.indexOf(module.type) > -1) {
+                        module.iframeType = "DynamicItems";
                         module.queryString = `?moduleId=${!module.itemId ? module.moduleId : 0}&iframe=${module.iframe || false}${(!module.itemId ? "" : `&itemId=${encodeURIComponent(module.itemId)}`)}${(!module.entityType? "" : `&entityType=${encodeURIComponent(module.entityType)}`)}`;
                     } else {
+                        module.iframeType = module.type;
                         module.queryString = "";
                     }
 
