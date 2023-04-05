@@ -14,7 +14,7 @@ public class CommitModel
     /// Gets or sets the id of the commit.
     /// </summary>
     public int Id { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the description of the commit.
     /// </summary>
@@ -50,6 +50,51 @@ public class CommitModel
     /// Any 'lower' environments will be automatically committed. So if it's set to live, then it will also be committed to acceptance and test.
     /// </summary>
     public Environments Environment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time that this commit was deployed to development.
+    /// </summary>
+    public DateTime? DeployedToDevelopmentOn { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the user that deployed this commit to development.
+    /// </summary>
+    public string DeployedToDevelopmentBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time that this commit was deployed to test.
+    /// </summary>
+    public DateTime? DeployedToTestOn { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the user that deployed this commit to test.
+    /// </summary>
+    public string DeployedToTestBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time that this commit was deployed to acceptance.
+    /// </summary>
+    public DateTime? DeployedToAcceptanceOn { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the user that deployed this commit to acceptance.
+    /// </summary>
+    public string DeployedToAcceptanceBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time that this commit was deployed to live.
+    /// </summary>
+    public DateTime? DeployedToLiveOn { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the user that deployed this commit to live.
+    /// </summary>
+    public string DeployedToLiveBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the commit has been completed.
+    /// </summary>
+    public bool Completed { get; set; }
 
     /// <summary>
     /// Gets whether this commit has been fully deployed to test.

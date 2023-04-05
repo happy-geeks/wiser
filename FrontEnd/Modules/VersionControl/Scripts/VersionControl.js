@@ -44,6 +44,7 @@ const moduleSettings = {
             this.deployLiveButton = null;
             this.deployToBranchButton = null;
             this.branchesDropDown = null;
+            this.historyGrid = null;
 
             this.deployToBranchContainer = null;
 
@@ -229,6 +230,9 @@ const moduleSettings = {
             switch (event.sender.select().attr("id")) {
                 case "deployTab":
                     await this.setupDeployTab();
+                    break;
+                case "historyTab":
+                    await this.setupHistoryTab();
                     break;
             }
         }
@@ -690,7 +694,7 @@ const moduleSettings = {
                     dataSource: {
                         transport: {
                             read: async (transportOptions) => {
-                                const initialProcess = `GetNotCompletedCommits_${Date.now()}`;
+                                const initialProcess = `GetCompletedCommits_${Date.now()}`;
                                 window.processing.addProcess(initialProcess);
 
                                 try {
@@ -734,8 +738,7 @@ const moduleSettings = {
                         },
                         {
                             "field": "description",
-                            "title": "Omschrijving",
-                            "width": "150px"
+                            "title": "Omschrijving"
                         },
                         {
                             "field": "isTest",
@@ -759,12 +762,12 @@ const moduleSettings = {
                             "field": "addedOn",
                             "format": "{0:dd-MM-yyyy HH:mm:ss}",
                             "title": "Datum",
-                            "width": "100px"
+                            "width": "150px"
                         },
                         {
                             "field": "addedBy",
                             "title": "Door",
-                            "width": "100px"
+                            "width": "150px"
                         },
                         {
                             "field": "dynamicContents",
@@ -776,7 +779,8 @@ const moduleSettings = {
 
                                 const html = [];
                                 for (let dynamicContent of dataItem.dynamicContents) {
-                                    html.push(`<span class="dynamic-content">${dynamicContent.templateNames[0]} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
+                                    let templateName = dynamicContent.templateNames && dynamicContent.templateNames.length ? dynamicContent.templateNames[0] : "Geen template";
+                                    html.push(`<span class="dynamic-content">${templateName} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
                                 }
 
                                 return html.join("<br />")
@@ -808,6 +812,130 @@ const moduleSettings = {
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het laden van de nog niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        /**
+         * Setup/initialize the grid with all finished commits (commits that have been deployed to live).
+         */
+        async setupHistoryTab() {
+            try {
+                if (this.historyGrid) {
+                    return;
+                }
+
+                const gridSettings = {
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetCompletedCommits_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/completed-commits`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van de commit historie. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "id",
+                                fields: {
+                                    addedOn: {
+                                        type: "date"
+                                    },
+                                    deployedToDevelopmentOn: {
+                                        type: "date"
+                                    },
+                                    deployedToTestOn: {
+                                        type: "date"
+                                    },
+                                    deployedToAcceptanceOn: {
+                                        type: "date"
+                                    },
+                                    deployedToLiveOn: {
+                                        type: "date"
+                                    },
+                                    templateNames: {
+                                        type: "array"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    selectable: false,
+                    resizable : true,
+                    columns: [
+                        {
+                            "field": "id",
+                            "title": "ID",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "description",
+                            "title": "Omschrijving"
+                        },
+                        {
+                            "title": "Deploy historie",
+                            "template": `
+                                Dev: #:(typeof(deployedToDevelopmentOn) !== "undefined" && deployedToDevelopmentOn ? kendo.toString(deployedToDevelopmentOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToDevelopmentBy) !== "undefined" && deployedToDevelopmentBy ? deployedToDevelopmentBy : "Onbekend")#<br />
+                                Test: #:(typeof(deployedToTestOn) !== "undefined" && deployedToTestOn ? kendo.toString(deployedToTestOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToTestBy) !== "undefined" && deployedToTestOn ? deployedToTestBy : "Onbekend")#<br />
+                                Acceptatie: #:(typeof(deployedToAcceptanceOn) !== "undefined" && deployedToAcceptanceOn ? kendo.toString(deployedToAcceptanceOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToAcceptanceBy) !== "undefined" ? deployedToAcceptanceBy : "Onbekend")#<br />
+                                Live: #:(typeof(deployedToLiveOn) !== "undefined" && deployedToLiveOn ? kendo.toString(deployedToLiveOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToLiveBy) !== "undefined" && deployedToLiveOn ? deployedToLiveBy : "Onbekend")#
+                            `
+                        },
+                        {
+                            "field": "dynamicContents",
+                            "title": "Dynamic contents",
+                            "template": (dataItem) => {
+                                if (!dataItem.dynamicContents || !dataItem.dynamicContents.length) {
+                                    return `<span class="dynamic-content">Geen dynamic content in deze commit</span>`;
+                                }
+
+                                const html = [];
+                                for (let dynamicContent of dataItem.dynamicContents) {
+                                    let templateName = dynamicContent.templateNames && dynamicContent.templateNames.length ? dynamicContent.templateNames[0] : "Geen template";
+                                    html.push(`<span class="dynamic-content">${templateName} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
+                                }
+
+                                return html.join("<br />")
+                            }
+                        },
+                        {
+                            "field": "templates",
+                            "title": "Templates",
+                            "template": (dataItem) => {
+                                if (!dataItem.templates || !dataItem.templates.length) {
+                                    return `<span class="template">Geen templates in deze commit</span>`;
+                                }
+
+                                const html = [];
+                                for (let template of dataItem.templates) {
+                                    html.push(`<span class="template">${template.templateParentName} (${template.templateParentId}) => ${template.templateName} (${template.templateId}) - Versie ${template.version}</span>`);
+                                }
+
+                                return html.join("<br />")
+                            }
+                        }
+                    ]
+                };
+
+                this.historyGrid = $("#historyGrid").kendoGrid(gridSettings).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de commit historie. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             }
         }
     }
