@@ -75,17 +75,42 @@
         </header>
 
         <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
-            <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
-            <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
-            <section class="iframe-container">
-                <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.iframeType || module.type}${module.fileName}${module.queryString}`" :id="module.id" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-                <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
-            </section>
+        <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
+        <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
+        <section class="iframe-container">
+            <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.iframeType || module.type}${module.fileName}${module.queryString}`" :id="module.id" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+            <iframe v-for="module in openedWiser1Modules" :key="module.id" :src="`${appSettings.wiser1BaseUrl}?singleModuleId=${module.moduleId}&autoLoginCookie=${encodeURIComponent(user.cookieValue)}&autoLoginUserId=${encodeURIComponent(user.encryptedId)}`" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
+        </section>
 
-            <keep-alive>
-                <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
-            </keep-alive>
-        </main>
+        <keep-alive>
+            <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+        </keep-alive>
+    </main>
+    
+    <div class="notification-dialog-d top-sticky active">
+        <ins class="icon-close"></ins>
+        <ins class="icon-alert"></ins>
+        <div class="nd-content">
+            <strong class="nd-title">Wiser livegang in uitvoering</strong>
+            <span class="nd-message">In verband van een livegang die momenteel in uitvoering is is net niet mogelijk gebruik te maken van Wiser</span>
+        </div>
+    </div>
+    <div class="notification-dialog corner-sticky active">
+        <ins class="icon-close"></ins>
+        <ins class="icon-alert"></ins>
+        <div class="nd-content">
+            <strong class="nd-title">Wiser livegang in uitvoering</strong>
+            <span class="nd-message">In verband van een livegang die momenteel in uitvoering is is net niet mogelijk gebruik te maken van Wiser</span>
+        </div>
+    </div>
+    <div class="notification-dialog modal active">
+        <ins class="icon-close"></ins>
+        <ins class="icon-alert"></ins>
+        <div class="nd-content">
+            <strong class="nd-title">Wiser livegang in uitvoering</strong>
+            <span class="nd-message">In verband van een livegang die momenteel in uitvoering is is net niet mogelijk gebruik te maken van Wiser</span>
+        </div>
+    </div>
 
         <wiser-dialog class="general-message-dialog" :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
             <div class="form-row">
@@ -495,7 +520,6 @@
                 </div>
             </footer>
         </wiser-dialog>
-        
         <wiser-dialog class="branches-dialog" :modal="true" :width="'1500px'" :title="'Conflicten'" ref="wiserMergeConflictsPrompt" :visible="false" :actions="[]">
             <div class="container stretch">
                 <div class="row no-scroll">
@@ -656,7 +680,6 @@
                 <span v-html="clearCacheError"></span>
             </section>
         </wiser-dialog>
-        
         <wiser-dialog :modal="true" :width="'400px'" :title="'2FA-backup-codes'" ref="generateTotpBackupCodesPrompt" :visible="false" :actions="totpBackupCodes.length > 0 ? [{ text: 'OK', primary: true }] : [{ text: 'Nee' }, { text: 'Ja', primary: true, action: generateNewTotpBackupCodes }]" @@close="onGenerateTotpBackupCodesPromptClose">
             <p v-if="totpBackupCodes.length === 0">Weet u zeker dat u nieuwe backup-codes wilt genereren? Uw oude backup-codes zullen dan verloren gaan.</p>
             <p v-else>
