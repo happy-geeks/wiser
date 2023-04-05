@@ -257,13 +257,18 @@ namespace Api.Modules.Files.Services
                 databaseConnection.AddParameter("item_id", itemId);
                 columnsForInsertQuery.Add("item_id");
             }
-            
+            else
+            {
+                databaseConnection.AddParameter("itemlink_id", 0);
+                databaseConnection.AddParameter("item_id", 0);
+            }
+
             if (content?.Length > 0)
             {
                 databaseConnection.AddParameter("content", content);
                 columnsForInsertQuery.Add("content");
             }
-            
+
             databaseConnection.AddParameter("content_url", contentUrl);
             databaseConnection.AddParameter("content_type", contentType);
             databaseConnection.AddParameter("file_name", fileName);

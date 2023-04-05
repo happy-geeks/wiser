@@ -28,7 +28,7 @@ public class CommunicationsController : Controller
     {
         this.communicationsService = communicationsService;
     }
-    
+
     /// <summary>
     /// Get the settings of all communications of a specific type (such as SMS or e-mail).
     /// </summary>
@@ -43,7 +43,7 @@ public class CommunicationsController : Controller
     }
 
     /// <summary>
-    /// Get the settings of a specific row from wiser_communication. 
+    /// Get the settings of a specific row from wiser_communication.
     /// </summary>
     /// <param name="id">The ID of the communication settings to get.</param>
     /// <param name="nameOnly">Optional: Whether to only get the name (and ID) or everything.</param>
@@ -56,7 +56,7 @@ public class CommunicationsController : Controller
     {
         return (await communicationsService.GetSettingsAsync(id, nameOnly)).GetHttpResponseMessage();
     }
-    
+
     /// <summary>
     /// Create new settings or updates existing settings (based on <see cref="CommunicationSettingsModel.Id"/>).
     /// </summary>
@@ -68,7 +68,7 @@ public class CommunicationsController : Controller
     {
         return (await communicationsService.SaveSettingsAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();
     }
-    
+
     /// <summary>
     /// Deletes a row of communication settings.
     /// </summary>
@@ -80,5 +80,17 @@ public class CommunicationsController : Controller
     public async Task<IActionResult> DeleteSettingsAsync(int id)
     {
         return (await communicationsService.DeleteSettingsAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Send an e-mail to someone.
+    /// </summary>
+    /// <param name="communication">The <see cref="SingleCommunicationModel"/> with information for sending the e-mail.</param>
+    [HttpPost]
+    [Route("email")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> SendEmailAsync(SingleCommunicationModel communication)
+    {
+        return (await communicationsService.SendEmailAsync((ClaimsIdentity)User.Identity, communication)).GetHttpResponseMessage();
     }
 }
