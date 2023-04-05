@@ -1765,7 +1765,7 @@ export class Fields {
                         }
                     });
                 };
-
+                
                 switch (action.type) {
                     // Opens a new tab/window in the browser of the user with the given URL. A tab will be opened for every selected item.
                     case "openUrl": {
@@ -2282,6 +2282,15 @@ export class Fields {
                         });
 
                         break;
+                    }
+                    
+                    case "actionConfirmDialog": {
+                        try {
+                            await Wiser.showConfirmDialog(action.text || "Wilt u doorgaan met de actie?", action.title || "Doorgaan", "Annuleren", "Doorgaan");
+                            break;
+                        } catch {
+                            return false;
+                        }
                     }
 
                     // Custom actions with custom javascript.
