@@ -10,6 +10,7 @@
     flex-direction: column;
     height: calc(100% - 50px) !important;
     position: relative;
+    padding: 0 10px;
 }
 
 .tabstrip .k-tabstrip-content.k-state-active .formData {
@@ -53,7 +54,7 @@
 
 #templateChangesGrid,
 #dynamicContentChangesGrid {
-    height: 33vh;
+    height: 29vh;
 }
 
 body {
@@ -77,5 +78,20 @@ body {
 }
 
 footer .k-button.k-disabled {
+    display: none;
+}
+
+#history .formData,
+#history .gridData,
+#history #historyGrid {
+    height: 100%;
+    overflow: hidden;
+}
+
+#historyGrid {
+    height: 100%;
+}
+
+.k-loading-image {
     display: none;
 }

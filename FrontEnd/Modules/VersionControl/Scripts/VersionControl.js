@@ -29,6 +29,7 @@ const moduleSettings = {
             this.base = this;
 
             // Components.
+            this.mainWindow = null;
             this.mainLoader = null;
             this.commitEnvironmentField = null;
             this.commitDescriptionField = null;
@@ -45,6 +46,7 @@ const moduleSettings = {
             this.deployToBranchButton = null;
             this.branchesDropDown = null;
             this.historyGrid = null;
+            this.reloadHistoryButton = null;
 
             this.deployToBranchContainer = null;
 
@@ -141,6 +143,16 @@ const moduleSettings = {
          * Initialize all components on the first tab.
          */
         async initializeComponents() {
+            // Main window
+            this.mainWindow = $("#window").kendoWindow({
+                width: "1500",
+                height: "650",
+                title: "Versiebeheer",
+                visible: true,
+                actions: [],
+                draggable: false
+            }).data("kendoWindow").maximize().open();
+
             this.commitDescriptionField = document.getElementById("commitDescription");
             this.deployToBranchContainer = document.getElementById("deployToBranchContainer");
 
@@ -162,6 +174,11 @@ const moduleSettings = {
 
             this.reloadCommitsButton = $("#reloadCommitsButton").kendoButton({
                 click: this.onReloadCommits.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
+
+            this.reloadHistoryButton = $("#reloadHistoryButton").kendoButton({
+                click: this.onReloadHistory.bind(this),
                 icon: "reload"
             }).data("kendoButton");
 
@@ -294,7 +311,7 @@ const moduleSettings = {
             }
             catch (exception) {
                 console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+                kendo.alert("Er is iets fout gegaan met het verversen van de openstaande wijzigingen. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
 
             window.processing.removeProcess(initialProcess);
@@ -314,7 +331,27 @@ const moduleSettings = {
             }
             catch (exception) {
                 console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+                kendo.alert("Er is iets fout gegaan met het verversen van de commits. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the second tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadHistory(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.historyGrid.dataSource.read();
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het verversen van de historie. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
 
             window.processing.removeProcess(initialProcess);
