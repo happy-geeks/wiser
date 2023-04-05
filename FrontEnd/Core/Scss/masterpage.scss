@@ -1149,17 +1149,13 @@ ul.totp-backup-codes {
     width: 100%;
 }
 
-.notification-dialog {
-    display: flex;
-    position: absolute;
-    z-index: 1000;
-    gap: 0.5rem;
-    background-color: $color-progress-yellow;
-    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
-    padding: 1rem;
-    border-radius: 0.5rem;
-    max-width: calc(100vw - 3rem);
-    transition: 200ms all ease-in-out;
+.notification-dialog {   
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1000000;
     opacity: 0;
     pointer-events: none;
     
@@ -1168,38 +1164,48 @@ ul.totp-backup-codes {
         pointer-events: all;
     }
     
-    &.top-sticky {
-        top: 1rem;
-        left: 50%;
-        transform: translateX(-50%);
+    &:after {
+        content: '';
+        position: absolute; 
+        background: rgba(0,0,0,0.5);
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
     }
-    &.corner-sticky {
-        bottom: 1rem;
-        right: 1.5rem;
-    }
-    &.modal {
+     
+    .nd-wrapper {
+        @include md {
+            max-width: 40vw;
+        }
+        display: flex;
+        position: absolute;
+        z-index: 2;
+        gap: 0.5rem;
+        background-color: $color-progress-yellow;
+        box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        border-radius: 0.25rem;
+        width: calc(100vw - 3rem);
+        max-width: calc(100vw - 3rem);
+        transition: 200ms all ease-in-out;
         transform: translate(-50%, -50%);
         top: 50%;
         left: 50%;
-    }
+        
+        .nd-content {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
 
-    ins.icon-close {
-        position: absolute;
-        top: 0.5rem;
-        right: 0.5rem;
-        cursor: pointer;
-    }
-    .nd-content {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-
-        .nd-title {
-            font-size: 1rem;
-        }
-        .nd-message {
-            font-size: 0.75rem;
-            line-height: 1rem;
+            .nd-title {
+                font-size: 1rem;
+            }
+            .nd-message {
+                font-size: 0.75rem;
+                line-height: 1rem;
+            }
         }
     }
 }
