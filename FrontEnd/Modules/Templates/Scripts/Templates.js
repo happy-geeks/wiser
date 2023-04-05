@@ -2507,13 +2507,13 @@ const moduleSettings = {
                             field: "start",
                             title: "Datum",
                             width: 150,
-                            template: "#= kendo.toString(kendo.parseDate(start), 'dd MMM yyyy HH:mm:ss') #",
+                            template: "#= kendo.toString(kendo.parseDate(start), 'dd MMM \\'yy') #",
                             filterable: {
                                 ui: "datepicker"
                             }
                         },
                         {
-                            field: "timeTaken",
+                            field: "timeTakenFormatted",
                             title: "Gemeten tijd",
                             width: 150,
                             filterable: false
