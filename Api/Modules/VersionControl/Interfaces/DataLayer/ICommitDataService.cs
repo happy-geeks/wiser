@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Api.Modules.VersionControl.Models;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Interfaces.DataLayer;
 
@@ -15,7 +16,7 @@ public interface ICommitDataService
     /// <param name="id">The ID of the commit.</param>
     /// <returns>A <see cref="CommitModel"/> with the result.</returns>
     Task<CommitModel> GetCommitAsync(int id);
-    
+
     /// <summary>
     /// Creates new commit item in the database.
     /// </summary>
@@ -24,11 +25,12 @@ public interface ICommitDataService
     Task<CommitModel> CreateCommitAsync(CommitModel data);
 
     /// <summary>
-    /// Completes the commit
+    /// Deploy a commit to an environment. This will only mark the commit as deployed, it will not actually deploy the commit.
     /// </summary>
-    /// <param name="commitId">The id of the commit</param>
-    /// <param name="commitCompleted">Bool that sets the commit to completed</param>
-    Task CompleteCommitAsync(int commitId, bool commitCompleted);
+    /// <param name="id">The ID of the commit to deploy.</param>
+    /// <param name="environment">The environment to deploy to. The commit will always also be deployed to lower environments, so if you deploy to acceptance for example, it will also be deployed to development and test, if it wasn't already.</param>
+    /// <param name="username">The name of the user that deployed the commit.</param>
+    Task LogDeploymentOfCommitAsync(int id, Environments environment, string username);
 
     /// <summary>
     /// Get all templates that have uncommitted changes.
@@ -41,8 +43,10 @@ public interface ICommitDataService
     Task<List<DynamicContentCommitModel>> GetDynamicContentsToCommitAsync();
 
     /// <summary>
-    /// Get all commits that haven't been completed yet,
+    /// Get the history of commits. You must set at least one of the parameters to true.
     /// </summary>
+    /// <param name="includeCompleted">Whether to include completed commits.</param>
+    /// <param name="includeIncompleted">Whether to include commits that haven't been completed yet.</param>
     /// <returns>A list of <see cref="CommitModel"/>.</returns>
-    Task<List<CommitModel>> GetNotCompletedCommitsAsync();
+    Task<List<CommitModel>> GetCommitHistoryAsync(bool includeCompleted, bool includeIncompleted);
 }
