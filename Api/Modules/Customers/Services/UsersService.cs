@@ -19,9 +19,11 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Models;
 using Google.Authenticator;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StringHelpers = Api.Core.Helpers.StringHelpers;
@@ -659,19 +661,26 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
+        public async Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            clientDatabaseConnection.AddParameter("group", groupName);
             clientDatabaseConnection.AddParameter("key", uniqueKey);
 
-            var query = $@"SELECT long_value
-                        FROM {WiserTableNames.WiserItemDetail}
-                        WHERE item_id = ?userId
-                        AND groupname = '{UserGridSettingsGroupName}'
-                        AND `key` = ?key";
+            var query = $@"SELECT settings.long_value
+                        FROM {WiserTableNames.WiserItem} AS `user`
+                        JOIN {WiserTableNames.WiserItemDetail} AS settings ON settings.item_id = `user`.id AND settings.`key` = ?key AND settings.groupname = ?group
+                        WHERE `user`.id = ?userId AND `user`.entity_type = '{WiserUserEntityType}'";
+
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<string>("long_value"));
+            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? defaultValue : dataTable.Rows[0].Field<string>("long_value"));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
+        {
+            return await GetSettingsAsync(identity, UserGridSettingsGroupName, uniqueKey);
         }
 
         /// <inheritdoc />
@@ -727,19 +736,26 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
+        public async Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
             clientDatabaseConnection.AddParameter("key", uniqueKey);
+            clientDatabaseConnection.AddParameter("group", groupName);
             clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
 
             var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, groupname, `key`, long_value)
-                        VALUES (?userId, '{UserGridSettingsGroupName}', ?key, ?settings)
+                        VALUES (?userId, ?group, ?key, ?settings)
                         ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveGridSettingsAsync(ClaimsIdentity identity, string uniqueKey, JToken settings)
+        {
+            return await SaveSettingsAsync(identity, UserGridSettingsGroupName, uniqueKey, settings);
         }
 
         /// <inheritdoc />
@@ -840,7 +856,7 @@ namespace Api.Modules.Customers.Services
         public async Task<string> GenerateAndSaveNewRefreshTokenAsync(string cookieSelector, string subDomain, string ticket)
         {
             string refreshToken;
-            using (var rng = new RNGCryptoServiceProvider())
+            using (var rng = RandomNumberGenerator.Create())
             {
                 var data = new byte[30];
                 rng.GetBytes(data);
@@ -877,9 +893,9 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        public async Task<ServiceResult<long>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
         {
-            var result = new ServiceResult<TimeSpan>();
+            var result = new ServiceResult<long>();
 
             // Try to decrypt the encrypted log ID.
             string decryptedLogIdAsString;
@@ -921,26 +937,27 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", decryptedLogId);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                var timeActiveData = await clientDatabaseConnection.GetAsync($"SELECT time_active, time_active_changed_on FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
+                var timeActiveData = await clientDatabaseConnection.GetAsync($"SELECT time_active_in_seconds, time_active_changed_on FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
                 if (timeActiveData.Rows.Count == 0)
                 {
-                    logger.LogError($"UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.");
+                    logger.LogError("UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.", decryptedLogId);
                     result.StatusCode = HttpStatusCode.BadRequest;
                     result.ErrorMessage = $"Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user";
                     return result;
                 }
 
                 var timeActiveChangedOn = timeActiveData.Rows[0].Field<DateTime>("time_active_changed_on");
-                var currentTimeActive = timeActiveData.Rows[0].Field<TimeSpan>("time_active");
-                var timeActive = currentTimeActive.Add(DateTime.Now.Subtract(timeActiveChangedOn));
+                var currentTimeActive = timeActiveData.Rows[0].Field<long>("time_active_in_seconds");
+                var timeActive = currentTimeActive + Convert.ToInt64(Math.Floor(DateTime.Now.Subtract(timeActiveChangedOn).TotalSeconds));
 
                 clientDatabaseConnection.ClearParameters();
-                clientDatabaseConnection.AddParameter("time_active", timeActive);
+                clientDatabaseConnection.AddParameter("time_active_in_seconds", timeActive);
                 clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, decryptedLogId);
 
@@ -1002,6 +1019,7 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
@@ -1033,7 +1051,6 @@ namespace Api.Modules.Customers.Services
             }
         }
 
-
         /// <inheritdoc />
         public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
         {
@@ -1044,30 +1061,13 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetDashboardSettingsAsync(ClaimsIdentity identity)
         {
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
-
-            var query = $@"SELECT settings.long_value
-                        FROM `{WiserTableNames.WiserItem}` AS user
-                        JOIN `{WiserTableNames.WiserItemDetail}` AS settings ON settings.item_id = user.id AND settings.`key` = '{UserDashboardSettingsKey}'
-                        WHERE user.id = ?userId AND user.entity_type = '{WiserUserEntityType}'";
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
-            return new ServiceResult<string>(dataTable.Rows.Count == 0 ? "[]" : dataTable.Rows[0].Field<string>("long_value"));
+            return await GetSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, "[]");
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings)
         {
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
-            clientDatabaseConnection.AddParameter("settings", settings?.ToString(Formatting.None));
-
-            var query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (item_id, `key`, long_value)
-                        VALUES (?userId, '{UserDashboardSettingsKey}', ?settings)
-                        ON DUPLICATE KEY UPDATE long_value = VALUES(long_value)";
-            await clientDatabaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true);
+            return await SaveSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, settings);
         }
 
         /// <summary>
@@ -1275,6 +1275,7 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
                 
                 clientDatabaseConnection.ClearParameters();
@@ -1436,6 +1437,58 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
             await connectionToUse.ExecuteAsync(query);
 
             return (true, false);
+        }
+        
+        /// <summary>
+        /// Checks if the MySQL tables for the login log is up-to-date.
+        /// </summary>
+        private async Task KeepTablesUpToDateAsync(string databaseName)
+        {
+            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
+
+            // Check if the login log table needs to be updated.
+            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 23))
+            {
+                // Add column.
+                var column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
+                await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
+
+                // Convert and drop the "time_active" column if it still exists.
+                if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName))
+                {
+                    await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserLoginLog, databaseName, "time_active", "time_active_in_seconds");
+                    await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName);
+                }
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserLoginLog);
+                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+                var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
+                if (lastUpdateData.Rows.Count == 0)
+                {
+                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
+                }
+                else
+                {
+                    await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
+                }
+            }
+        }
+
+        private async Task ConvertTimeSpanToSecondsAsync(string tableName, string databaseName, string oldColumnName, string newColumnName)
+        {
+            var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+
+            var convertDataTable = await clientDatabaseConnection.GetAsync($"SELECT id, `{oldColumnName}` FROM {queryDatabasePart}`{tableName}`");
+            foreach (var dataRow in convertDataTable.Rows.Cast<DataRow>())
+            {
+                var seconds = Convert.ToInt32(Math.Floor(dataRow.Field<TimeSpan>(oldColumnName).TotalSeconds));
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("tableId", Convert.ToUInt64(dataRow["id"]));
+                clientDatabaseConnection.AddParameter("seconds", seconds);
+                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{tableName}` SET `{newColumnName}` = ?seconds WHERE id = ?tableId");
+            }
         }
     }
 }

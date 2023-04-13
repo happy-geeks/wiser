@@ -122,3 +122,22 @@
     <textarea rows="10" cols="30" id="preLoadQuery" data-editor-type="text/x-mysql">@Model.PreLoadQuery</textarea>
     <div class="form-hint"><span>Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix "template.". Als de query bijvoorbeeld een kolom "title" terruggeeft, dan kan de variabele "{template.title}" overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden. Deze query kan ook gebruikt worden om SEO meta tags op de pagina te zetten. De query moet dan een of meer van de volgende kolommen bevatten, die worden dan automatisch verwerkt: SEOtitle, SEOdescription, SEOkeywords, SEOcanonical, noindex, nofollow en SEOrobots.</span></div>
 </div>
+
+<div class="item item-full">
+    <h4><label for="widgetContent">Widget</label></h4>
+    <textarea rows="10" cols="30" id="widgetContent" data-editor-type="text/html">@Model.WidgetContent</textarea>
+    <div class="form-hint"><span>Hiermeee kan een stukje HTML toegevoegd worden die op een bepaalde plek op de pagina gezet wordt. Dit mag ook een script tag zijn met daarin javascript-code, of een style tag met daairn CSS. Deze widget wordt alleen getoond op pagina's die deze template gebruiken. Als je een widget wilt hebben voor alle pagina's, dan kun je die toevoegen aan de module Stamgegevens. Hieronder kan gekozen worden op welke locatie de widget geladen moet worden.</span></div>
+</div>
+
+<div class="item" data-label-style="float" data-label-width="0">
+    <h4><label for="widgetLocation">Widget locatie</label></h4>
+    <div class="flex-container">
+        <select id="widgetLocation" class="combo-select" data-kendo-control="kendoDropDownList" name="widgetLocation">
+            <!option value="@((int)PageWidgetLocations.HeaderTop)" @(Model.WidgetLocation == PageWidgetLocations.HeaderTop ? "selected" : "")>Bovenaan in header van pagina</!option>
+            <!option value="@((int)PageWidgetLocations.HeaderBottom)" @(Model.WidgetLocation == PageWidgetLocations.HeaderBottom ? "selected" : "")>Onderaan in header van pagina</!option>
+            <!option value="@((int)PageWidgetLocations.BodyTop)" @(Model.WidgetLocation == PageWidgetLocations.BodyTop ? "selected" : "")>Bovenaan in body van pagina</!option>
+            <!option value="@((int)PageWidgetLocations.BodyBottom)" @(Model.WidgetLocation == PageWidgetLocations.BodyBottom ? "selected" : "")>Onderaan in body van pagina</!option>
+        </select>
+    </div>
+    <div class="form-hint"><span>Waar moet de widget geladen worden?</span></div>
+</div>

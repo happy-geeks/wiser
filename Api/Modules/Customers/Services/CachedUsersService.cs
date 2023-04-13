@@ -98,6 +98,12 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null)
+        {
+            return usersService.GetSettingsAsync(identity, groupName, uniqueKey, defaultValue);
+        }
+
+        /// <inheritdoc />
         public Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
         {
             return usersService.GetGridSettingsAsync(identity, uniqueKey);
@@ -113,6 +119,12 @@ namespace Api.Modules.Customers.Services
         public Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity)
         {
             return usersService.GetAutoLoadModulesAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings)
+        {
+            return usersService.SaveSettingsAsync(identity, groupName, uniqueKey, settings);
         }
 
         /// <inheritdoc />
@@ -170,7 +182,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        public Task<ServiceResult<long>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
         {
             return usersService.UpdateUserTimeActiveAsync(identity, encryptedLoginLogId);
         }

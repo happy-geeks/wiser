@@ -340,9 +340,12 @@ const moduleSettings = {
             try {
                 event.preventDefault();
 
-                const promises = [];
+                // We used to do these all at the same time, but that caused problems in some cases.
+                // The problem was that if there are multiple commits for the same template/component, 
+                // then it would sometimes happen that version 10 would be deployed to live first and then version 9.
+                // So we have to do them one by one in the correct order, to make sure the correct versions will be deployed.
                 for (let selectedCommit of selectedCommits) {
-                    promises.push(Wiser.api({
+                    await Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}version-control`,
                         method: "POST",
                         contentType: "application/json",
@@ -350,10 +353,9 @@ const moduleSettings = {
                             id: selectedCommit.id,
                             environment: environment
                         })
-                    }));
+                    });
                 }
 
-                await Promise.all(promises);
                 this.deployGrid.dataSource.read();
             }
             catch (exception) {
@@ -451,6 +453,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "templateId",
@@ -562,6 +565,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "dynamicContentId",
@@ -669,6 +673,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
+                    resizable : true,
                     columns: [
                         {
                             "field": "id",

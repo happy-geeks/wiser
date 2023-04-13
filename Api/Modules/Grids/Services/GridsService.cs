@@ -263,7 +263,16 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("itemId", itemId);
 
-                    countQuery = $@"SELECT COUNT(*) FROM {WiserTableNames.WiserHistory} WHERE item_id = ?itemid AND action <> 'UPDATE_ITEMLINK'";
+                    countQuery = $@"SELECT COUNT(*)
+                                    FROM {WiserTableNames.WiserHistory}
+                                    WHERE item_id = ?itemid
+                                    AND action <> 'UPDATE_ITEMLINK'
+                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
+                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
+                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
+                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
+                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
+                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]";
 
                     selectQuery = $@"SELECT 
 	                                    current.id AS id,
@@ -276,11 +285,18 @@ namespace Api.Modules.Grids.Services
 	                                    current.oldvalue AS oldvalue,
 	                                    current.newvalue AS newvalue
                                     FROM {WiserTableNames.WiserHistory} current
-	                                   
+	                                
                                     WHERE current.item_id=?itemid
                                     # Item link IDs will also be saved in the column 'item_id'.
                                     # To prevent showing the history of an item link with the same id as the currently opened item, don't get history with action = 'UPDATE_ITEMLINK'.
                                     AND current.action <> 'UPDATE_ITEMLINK'
+                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
+                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
+                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
+                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
+                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
+                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]
+                                    
                                     GROUP BY current.id
                                     
                                     ORDER BY current.changed_on DESC, current.id DESC
@@ -311,10 +327,10 @@ namespace Api.Modules.Grids.Services
                                     FROM {WiserTableNames.WiserItem} i
 
                                     JOIN {WiserTableNames.WiserItemDetail} AS dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
-                                    [if({{checked_date}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date}}!)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
-                                    [if({{sender}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender}}!)]AND sender.`value` {{sender_filter}}[endif] 
-                                    JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver}}!)]AND receiver.`value` {{receiver_filter}}[endif] 
-                                    JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content}}!)]AND content.`value` {{content_filter}}[endif] 
+                                    [if({{checked_date_has_filter}}!1)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date_has_filter}}=1)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
+                                    [if({{sender_has_filter}}!1)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender_has_filter}}=1)]AND sender.`value` {{sender_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver_has_filter}}=1)]AND receiver.`value` {{receiver_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content_has_filter}}=1)]AND content.`value` {{content_filter}}[endif] 
 
                                     WHERE i.entity_type = 'agendering'";
 
@@ -894,12 +910,17 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("entityType", entityType);
                     clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
                     var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
-
+                    var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
+                    
                     if (columnsDataTable.Rows.Count > 0)
                     {
                         foreach (DataRow dataRow in columnsDataTable.Rows)
                         {
                             var fieldName = dataRow.Field<string>("field").ToLowerInvariant().MakeJsonPropertyName();
+                            if (reservedWordsArray.Contains(fieldName))
+                            {
+                                throw new Exception( $"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
+                            }
 
                             var field = new FieldModel
                             {
@@ -2060,7 +2081,7 @@ namespace Api.Modules.Grids.Services
             }
 
             // Remove any left over variables that we can't use and handle [if] statements.
-            var regex = new Regex("{[^}]*}");
+            var regex = new Regex("{[^}]*}", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             selectQuery = regex.Replace(selectQuery, "");
             countQuery = regex.Replace(countQuery, "");
 

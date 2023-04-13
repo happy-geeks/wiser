@@ -54,6 +54,7 @@ namespace FrontEnd.Modules.Templates.Controllers
             var componentType = ReflectionHelper.GetComponentTypeByName(component);
             var viewModel = dynamicContentService.GenerateDynamicContentInformationViewModel(componentType, data.Data, data.ComponentMode);
 
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/DynamicContentTabPane", viewModel);
         }
 
@@ -77,12 +78,14 @@ namespace FrontEnd.Modules.Templates.Controllers
                 });
             }
 
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/DynamicContentHistoryPane", viewModel);
         }
 
         [HttpPost, Route("PublishedEnvironments")]
         public IActionResult PublishedEnvironments([FromBody]DynamicContentOverviewModel tabViewData)
         {
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/PublishedEnvironments", tabViewData);
         }
         

@@ -122,7 +122,7 @@ class Main {
         this.initVue();
     }
 
-    handlePostMessage(event) {
+    async handlePostMessage(event) {
         if (!event.data || !event.data.action) {
             return;
         }
@@ -131,6 +131,80 @@ class Main {
             case "OpenModule":
                 this.vueApp.openModule(event.data.actionData.moduleId);
                 break;
+            case "OpenItem": {
+                if (!event.data.actionData?.moduleId || (!event.data.actionData?.encryptedItemId && !event.data.actionData?.itemId)) {
+                    break;
+                }
+
+                this.vueApp.openModule({
+                    moduleId: event.data.actionData.moduleId,
+                    name: event.data.actionData.name || "Item",
+                    type: event.data.actionData.type || "dynamicItems",
+                    iframe: true,
+                    itemId: event.data.actionData.encryptedItemId ?? event.data.actionData.itemId,
+                    fileName: "",
+                    queryString: event.data.actionData.queryString ?? ""
+                });
+                break;
+            }
+            case "GetAccessToken": {
+                // Access tokens can only be requested by origins that share the same main domain and on test environments.
+                if (!event.source || (!event.origin.endsWith(`.${this.appSettings.currentDomain}`) && !this.appSettings.isTestEnvironment)) {
+                    break;
+                }
+
+                // Request authentication, refreshing the token if needed.
+                this.vueApp.$store.dispatch(AUTH_REQUEST).then(() => {
+                    // Post a message back to the sender with the token and original request.
+                    // The original request is sent back to the sender to allow the message data to be validated.
+                    event.source.postMessage({
+                        accessToken: this.vueApp.user.access_token,
+                        originalRequest: event.data
+                    }, event.origin);
+                });
+                break;
+            }
+            case "OpenClearCachePrompt": {
+                this.vueApp.openClearCachePrompt();
+                break;
+            }
+            case "OpenWiserBranchesPrompt": {
+                this.vueApp.openWiserBranchesPrompt();
+                break;
+            }
+            case "OpenMarkerIoScreen": {
+                this.vueApp.openMarkerIoScreen();
+                break;
+            }
+            case "OpenWiserIdPrompt": {
+                this.vueApp.openWiserIdPrompt();
+                break;
+            }
+            case "OpenChangePasswordPrompt": {
+                this.vueApp.openChangePasswordPrompt();
+                break;
+            }
+            case "OpenCustomerManagement": {
+                this.vueApp.openCustomerManagement();
+                break;
+            }
+            case "OpenGenerateTotpBackupCodesPrompt": {
+                this.vueApp.openGenerateTotpBackupCodesPrompt();
+                break;
+            }
+            case "OpenUserData": {
+                const encryptedUserId = await main.itemsService.encryptId(this.vueApp.user.id);
+                this.vueApp.openModule({
+                    moduleId: 0,
+                    name: "Mijn gegevens",
+                    type: "dynamicItems",
+                    iframe: true,
+                    itemId: encryptedUserId,
+                    fileName: "",
+                    queryString: `?itemId=${encodeURIComponent(encryptedUserId)}&moduleId=0&iframe=true&entityType=wiseruser`
+                });
+                break;
+            }
         }
     }
 
@@ -543,33 +617,45 @@ class Main {
                 },
 
                 openWiserIdPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserIdPrompt.open();
                 },
 
                 openWiserEntityTypePrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserEntityTypePrompt.open();
                 },
 
                 openChangePasswordPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.changePasswordPrompt.open();
                 },
 
                 openWiserBranchesPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserBranchesPrompt.open();
                 },
 
                 openCreateBranchPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserCreateBranchPrompt.open();
                     this.$refs.wiserBranchesPrompt.close();
                 },
 
                 openMergeBranchPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserMergeBranchPrompt.open();
                     this.$refs.wiserBranchesPrompt.close();
                 },
@@ -800,6 +886,20 @@ class Main {
                 
                 async reloadModules() {
                     await this.$store.dispatch(MODULES_REQUEST);
+                },
+                
+                openConfigurationModule(event) {
+                    if (event) {
+                        event.preventDefault();
+                    }
+                    
+                    const module = this.modules.find(module => module.type === "Configuration");
+                    if (!module) {
+                        kendo.alert("Configuratiemodule niet gevonden. Ververs a.u.b. de pagina en probeer het opnieuw, of neem contact op met ons.");
+                        return;
+                    }
+                    
+                    this.openModule(module.moduleId);
                 },
 
                 onGenerateTotpBackupCodesPromptClose(event) {

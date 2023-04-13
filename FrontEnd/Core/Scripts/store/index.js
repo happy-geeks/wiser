@@ -202,6 +202,7 @@ const loginModule = {
             commit(AUTH_REQUEST, user);
 
             // Check if we have user data in the local storage and if that data is still valid.
+            let startUpdateTimeActiveTimer = false;
             if (!user) {
                 const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
 
@@ -223,6 +224,8 @@ const loginModule = {
                     localStorage.setItem("accessToken", loginResult.data.access_token);
                     localStorage.setItem("accessTokenExpiresOn", loginResult.data.expiresOn);
                     localStorage.setItem("userData", JSON.stringify(Object.assign({}, user, loginResult.data)));
+
+                    startUpdateTimeActiveTimer = true;
                 }
 
                 window.main.api.defaults.headers.common["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
@@ -239,7 +242,7 @@ const loginModule = {
                 await this.dispatch(MODULES_REQUEST);
 
                 // If a login log ID is also set in the user data, use it to start the "time active" timer.
-                if (user.hasOwnProperty("encryptedLoginLogId")) {
+                if (startUpdateTimeActiveTimer && user.hasOwnProperty("encryptedLoginLogId")) {
                     await main.usersService.startUpdateTimeActiveTimer();
                 }
 
@@ -363,7 +366,7 @@ const modulesModule = {
                 return;
             }
 
-            var hasAutoload = false;
+            let hasAutoload = false;
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;

@@ -22,7 +22,8 @@
         #addDynamicContentToHtmlDialog,
         #linkExistingDynamicContentDialog,
         #htmlSourceWindow,
-        #NotMainBranchNotification {
+        #NotMainBranchNotification,
+        #translationsDialog {
             display: none;
         }
     </style>
@@ -87,13 +88,15 @@
                                     <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
                                     <li class="preview-tab" data-name="preview">Preview</li>
                                     <li class="history-tab" data-name="history">Historie</li>
+                                    <li class="measurements-tab" data-name="measurements">Metingen</li>
                                 </ul>
                                 <div id="developmentTab"></div>
-                                <div>
+                                <div id="dynamicContentTab">
                                     <partial name="Tabs/DynamicContentTab"/>
                                 </div>
                                 <div id="previewTab"></div>
                                 <div id="historyTab"></div>
+                                <div id="measurementsTab"></div>
                             </div>
                         </div>
                     </div>

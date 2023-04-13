@@ -82,7 +82,7 @@ export class Grids {
                 if (event.target.contentDocument.URL === "about:blank") {
                     return;
                 }
-                
+
                 window.processing.removeProcess(initialProcess);
 
                 dynamicItems.grids.informationBlockIframe[0].contentDocument.addEventListener("dynamicItems.onSaveButtonClick", () => {
@@ -111,7 +111,7 @@ export class Grids {
                         if (!createItemResult) {
                             return hideGrid;
                         }
-                        
+
                         const itemId = createItemResult.itemId;
                         this.informationBlockIframe.attr("src", `/Modules/DynamicItems?itemId=${itemId}&moduleId=${this.base.settings.moduleId}&iframe=true&readonly=${!!informationBlockSettings.initialItem.readOnly}&hideFooter=${!!informationBlockSettings.initialItem.hideFooter}&hideHeader=${!!informationBlockSettings.initialItem.hideHeader}`);
                     },
@@ -200,7 +200,7 @@ export class Grids {
                     $.globalEval(gridDataResult.extraJavascript);
                 }
             }
-            
+
             let disableOpeningOfItems = gridViewSettings.disableOpeningOfItems;
             if (!disableOpeningOfItems) {
                 if (gridDataResult.schemaModel && gridDataResult.schemaModel.fields) {
@@ -219,8 +219,19 @@ export class Grids {
                         name: "openDetails",
                         iconClass: "k-icon k-i-hyperlink-open",
                         text: "",
-                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); }
+                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, false); }
                     });
+
+                    if (gridViewSettings.allowOpeningOfItemsInNewTab) {
+                        commandColumnWidth += 60;
+
+                        commands.push({
+                            name: "openDetailsInNewTab",
+                            iconClass: "k-icon k-i-window",
+                            text: "",
+                            click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, true); }
+                        });
+                    }
                 }
 
                 if (gridViewSettings.deleteItemQueryId && (typeof (gridViewSettings.showDeleteButton) === "undefined" || gridViewSettings.showDeleteButton === true)) {
@@ -305,7 +316,7 @@ export class Grids {
                     name: "excel"
                 });
             }
-            
+
             if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.canCreate) {
                 toolbar.push({
                     name: "add",
@@ -405,7 +416,7 @@ export class Grids {
 
                                 window.processing.addProcess(process);
 
-                                // If we're using the same filters as before, we don't need to count the total amount of results again, 
+                                // If we're using the same filters as before, we don't need to count the total amount of results again,
                                 // so we tell the API whether this is the case, so that it can skip the execution of the count query, to make scrolling through the grid faster.
                                 let currentFilters = null;
                                 if (transportOptions.data.filter) {
@@ -501,6 +512,8 @@ export class Grids {
 
             await this.loadGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, finalGridViewSettings);
 
+            await require("/kendo/messages/kendo.grid.nl-NL.js");
+
             this.mainGrid = $("#gridView").kendoGrid(finalGridViewSettings).data("kendoGrid");
 
             if (!disableOpeningOfItems) {
@@ -551,7 +564,7 @@ export class Grids {
 
     /**
      * Save a certain state of a grid view in session storage and in database.
-     * @param key The key/name of the state that is being saved. This should be an unique key for every grid. 
+     * @param key The key/name of the state that is being saved. This should be an unique key for every grid.
      * @param dataToSave The stringified state data to save.
      * @returns {Promise<void>} The promise of the request.
      */
@@ -563,7 +576,7 @@ export class Grids {
             localStorageKey += `_${userData.id}`;
         }
         sessionStorage.setItem(localStorageKey, dataToSave);
-        
+
         return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
             method: "POST",
@@ -579,14 +592,14 @@ export class Grids {
      */
     async loadGridViewState(key) {
         let value;
-        let localStorageKey = key; 
+        let localStorageKey = key;
 
         // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
         const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
         if (userData) {
             localStorageKey += `_${userData.id}`;
         }
-        
+
         value = sessionStorage.getItem(localStorageKey);
         if (!value) {
             value = await Wiser.api({
@@ -597,13 +610,13 @@ export class Grids {
 
             sessionStorage.setItem(localStorageKey, value || "");
         }
-        
+
         return value;
     }
 
     /**
      * Load the saved state of columns back into a grid. Depending on the settings, users can hide/show whichever columns in a grid that they want.
-     * This method is to save that state so that the user's choices will be remembered. 
+     * This method is to save that state so that the user's choices will be remembered.
      * This method should be called BEFORE the grid is being initialized.
      * @param key The name/key of the state to load.
      * @param gridOptions The options object for the grid to load the state into.
@@ -702,14 +715,25 @@ export class Grids {
                     const commands = [];
 
                     if (!options.disableOpeningOfItems) {
-                        commandColumnWidth += 80;
+                        commandColumnWidth += 60;
 
                         commands.push({
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     customQueryResults.columns.push({
@@ -726,7 +750,7 @@ export class Grids {
                     }
                 }
 
-                kendoGrid = this.generateGrid(field, loader, options, customQueryGrid, customQueryResults, propertyId, height, itemId, extraData);
+                kendoGrid = await this.generateGrid(field, loader, options, customQueryGrid, customQueryResults, propertyId, height, itemId, extraData);
             } else {
                 const gridSettings = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${itemId}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId=${propertyId}&mode=1`,
@@ -779,7 +803,7 @@ export class Grids {
 
                 // Add command columns separately, because of the click event that we can't do properly server-side.
                 if (!options.hideCommandColumn) {
-                    let commandColumnWidth = 80;
+                    let commandColumnWidth = 60;
                     let commands = [];
 
                     if (!options.disableOpeningOfItems) {
@@ -787,8 +811,19 @@ export class Grids {
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     gridSettings.columns.push({
@@ -798,7 +833,7 @@ export class Grids {
                     });
                 }
 
-                kendoGrid = this.generateGrid(field, loader, options, customQueryGrid, gridSettings, propertyId, height, itemId, extraData);
+                kendoGrid = await this.generateGrid(field, loader, options, customQueryGrid, gridSettings, propertyId, height, itemId, extraData);
             }
 
         } catch (exception) {
@@ -807,7 +842,7 @@ export class Grids {
         }
     }
 
-    generateGrid(element, loader, options, customQueryGrid, data, propertyId, height, itemId, extraData) {
+    async generateGrid(element, loader, options, customQueryGrid, data, propertyId, height, itemId, extraData) {
         // TODO: Implement all functionality of all grids (https://app.asana.com/0/12170024697856/1138392544929161), so that we can use this method for everything.
         let isFirstLoad = true;
 
@@ -845,6 +880,8 @@ export class Grids {
             element.data("kendoGrid").destroy();
             element.empty();
         }
+
+        await require("/kendo/messages/kendo.grid.nl-NL.js");
 
         const kendoGrid = element.kendoGrid({
             dataSource: {
@@ -1038,11 +1075,11 @@ export class Grids {
             if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
                 continue;
             }
-            
+
             if (customAction.groupName) {
                 let group = groups.filter(g => g.name === customAction.groupName)[0];
                 if (!group) {
-                    group = { 
+                    group = {
                         name: customAction.groupName,
                         icon: customAction.icon,
                         actions: []
@@ -1084,8 +1121,9 @@ export class Grids {
      * @param {any} event The event.
      * @param {any} grid The grid that executed the event.
      * @param {any} options The options for the grid.
+     * @param openInNewTab {boolean} Whether to open the item in a new tab in Wiser (like opening a new module).
      */
-    async onShowDetailsClick(event, grid, options) {
+    async onShowDetailsClick(event, grid, options, openInNewTab = false) {
         event.preventDefault();
 
         const dataItem = grid.dataItem($(event.currentTarget).closest("tr"));
@@ -1132,7 +1170,7 @@ export class Grids {
                         if (!dataItem.hasOwnProperty(key)) {
                             continue;
                         }
-                        
+
                         const columnName = Strings.unmakeJsonPropertyName(key);
 
                         if (!idFound && (columnName.indexOf(`ID_${entityType}`) === 0 || columnName.indexOf(`id_${entityType}`) === 0 || columnName.indexOf(`itemId_${entityType}`) === 0 || columnName.indexOf(`itemid_${entityType}`) === 0 || columnName.indexOf(`item_id_${entityType}`) === 0)) {
@@ -1181,7 +1219,26 @@ export class Grids {
             return;
         }
 
-        this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        if (openInNewTab) {
+            if (!window.parent) {
+                kendo.alert("Er kan geen parent frame gevonden worden. Waarschijnlijk heeft u deze module in een losse browser tab geopend. Open de module a.u.b. via de normale manier in Wiser.")
+                return;
+            }
+
+            window.parent.postMessage({
+                action: "OpenItem",
+                actionData: {
+                    moduleId: this.base.settings.moduleId,
+                    name: title || `Item #${itemId}`,
+                    type: "dynamicItems",
+                    itemId: encryptedId,
+                    queryString: `?itemId=${encodeURIComponent(encryptedId)}&moduleId=${this.base.settings.moduleId}&iframe=true&entityType=${entityType}`
+                }
+            });
+        }
+        else {
+            this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        }
     }
 
     /**
@@ -1401,7 +1458,7 @@ export class Grids {
     onItemLinkerSelectAll(treeViewSelector, checkAll) {
         const treeView = $(treeViewSelector);
 
-        Wiser.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`, 
+        Wiser.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`,
             checkAll ? "Alles aanvinken" : "Alles uitvinken",
             "Annuleren",
             checkAll ? "Alles aanvinken" : "Alles uitvinken").then(() => {
@@ -1461,7 +1518,7 @@ export class Grids {
             console.error("Grid not found, cannot maximize it.", event, $(event.target).closest(".k-grid"));
             return;
         }
-        
+
         const originalParent = grid.wrapper.parent();
         const gridWindow = $("#maximizeSubEntitiesGridWindow").clone(true);
         const titleElement = originalParent.find("h4");
