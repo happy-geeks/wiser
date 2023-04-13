@@ -17,7 +17,7 @@ namespace Api.Modules.VersionControl.Services.DataLayer;
 public class CommitDataService : ICommitDataService, IScopedService
 {
     private readonly IDatabaseConnection databaseConnection;
-    
+
     /// <summary>
     /// Creates a new instance of <see cref="CommitDataService"/>.
     /// </summary>
@@ -37,6 +37,14 @@ public class CommitDataService : ICommitDataService, IScopedService
 	`commit`.added_by,
 	`commit`.completed,
 	`commit`.external_id,
+	`commit`.deployed_to_development_on,
+	`commit`.deployed_to_test_on,
+	`commit`.deployed_to_acceptance_on,
+	`commit`.deployed_to_live_on,
+	`commit`.deployed_to_development_by,
+	`commit`.deployed_to_test_by,
+	`commit`.deployed_to_acceptance_by,
+	`commit`.deployed_to_live_by,
 	content.published_environment,
 	content.component,
 	content.content_id,
@@ -64,7 +72,7 @@ LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON lin
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
 WHERE `commit`.id = ?id
 GROUP BY content.content_id";
-	    
+
 	    databaseConnection.AddParameter("id", id);
 	    var dataTable = await databaseConnection.GetAsync(query);
 	    if (dataTable.Rows.Count == 0)
@@ -78,9 +86,18 @@ GROUP BY content.content_id";
 		    Description = dataTable.Rows[0].Field<string>("description"),
 		    AddedBy = dataTable.Rows[0].Field<string>("added_by"),
 		    AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
-		    ExternalId = dataTable.Rows[0].Field<string>("external_id")
+		    ExternalId = dataTable.Rows[0].Field<string>("external_id"),
+		    DeployedToDevelopmentOn = dataTable.Rows[0].Field<DateTime?>("deployed_to_development_on"),
+		    DeployedToTestOn = dataTable.Rows[0].Field<DateTime?>("deployed_to_test_on"),
+		    DeployedToAcceptanceOn = dataTable.Rows[0].Field<DateTime?>("deployed_to_acceptance_on"),
+		    DeployedToLiveOn = dataTable.Rows[0].Field<DateTime?>("deployed_to_live_on"),
+		    DeployedToDevelopmentBy = dataTable.Rows[0].Field<string>("deployed_to_development_by"),
+		    DeployedToTestBy = dataTable.Rows[0].Field<string>("deployed_to_test_by"),
+		    DeployedToAcceptanceBy = dataTable.Rows[0].Field<string>("deployed_to_acceptance_by"),
+		    DeployedToLiveBy = dataTable.Rows[0].Field<string>("deployed_to_live_by"),
+		    Completed = Convert.ToBoolean(dataTable.Rows[0]["completed"])
 	    };
-	    
+
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
 		    if (dataRow.IsNull("content_id"))
@@ -108,7 +125,7 @@ GROUP BY content.content_id";
 			    TemplateNames = dataRow.Field<string>("template_names")?.Split(",").ToList()
 		    });
 	    }
-	    
+
 	    // Get all templates of the commit.
 	    query = $@"	SELECT
 	`commit`.id,
@@ -117,6 +134,14 @@ GROUP BY content.content_id";
 	`commit`.added_by,
 	`commit`.completed,
 	`commit`.external_id,
+	`commit`.deployed_to_development_on,
+	`commit`.deployed_to_test_on,
+	`commit`.deployed_to_acceptance_on,
+	`commit`.deployed_to_live_on,
+	`commit`.deployed_to_development_by,
+	`commit`.deployed_to_test_by,
+	`commit`.deployed_to_acceptance_by,
+	`commit`.deployed_to_live_by,
 	template.template_id,
 	template.published_environment,
 	template.template_type,
@@ -140,12 +165,12 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTem
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
 WHERE `commit`.id = ?id";
-	    
+
 	    dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
 		    var publishedEnvironment = (Environments)Convert.ToInt32(dataRow["published_environment"]);
-		    
+
 		    commitModel.Templates.Add(new TemplateCommitModel
 		    {
 			    Version = dataRow.Field<int>("version"),
@@ -177,7 +202,7 @@ WHERE `commit`.id = ?id";
 	    databaseConnection.AddParameter("externalId", data.ExternalId ?? "");
 	    databaseConnection.AddParameter("addedBy", data.AddedBy);
 	    databaseConnection.AddParameter("addedOn", data.AddedOn);
-	    
+
 	    var query = $@"INSERT INTO {WiserTableNames.WiserCommit} (description, external_id, added_by, added_on) VALUES (?description, ?externalId, ?addedBy, ?addedOn)";
 	    data.Id = (int) await databaseConnection.InsertRecordAsync(query);
 
@@ -218,15 +243,32 @@ WHERE `commit`.id = ?id";
     }
 
     /// <inheritdoc/>
-    public async Task CompleteCommitAsync(int commitId, bool commitCompleted)
+    public async Task LogDeploymentOfCommitAsync(int id, Environments environment, string username)
     {
-	    var query = $@"UPDATE {WiserTableNames.WiserCommit} SET completed = ?commitCompleted WHERE id = ?commitId";
+	    var queries = new List<string>();
+	    if (environment >= Environments.Development)
+	    {
+		    queries.Add($@"UPDATE {WiserTableNames.WiserCommit} SET deployed_to_development_on = ?deployedOn, deployed_to_development_by = ?username WHERE id = ?id AND deployed_to_development_on IS NULL");
+	    }
+	    if (environment >= Environments.Test)
+	    {
+		    queries.Add($@"UPDATE {WiserTableNames.WiserCommit} SET deployed_to_test_on = ?deployedOn, deployed_to_test_by = ?username WHERE id = ?id AND deployed_to_test_on IS NULL");
+	    }
+	    if (environment >= Environments.Acceptance)
+	    {
+		    queries.Add($@"UPDATE {WiserTableNames.WiserCommit} SET deployed_to_acceptance_on = ?deployedOn, deployed_to_acceptance_by = ?username WHERE id = ?id AND deployed_to_acceptance_on IS NULL");
+	    }
+	    if (environment >= Environments.Live)
+	    {
+		    queries.Add($@"UPDATE {WiserTableNames.WiserCommit} SET deployed_to_live_on = ?deployedOn, deployed_to_live_by = ?username, completed = 1 WHERE id = ?id AND deployed_to_live_on IS NULL");
+	    }
 
-	    databaseConnection.ClearParameters();
-	    databaseConnection.AddParameter("commitId", commitId);
-	    databaseConnection.AddParameter("commitCompleted", commitCompleted);
+	    databaseConnection.AddParameter("id", id);
+	    databaseConnection.AddParameter("username", username);
+	    databaseConnection.AddParameter("deployedOn", DateTime.Now);
+	    databaseConnection.AddParameter("environment", (int)environment);
 
-	    await databaseConnection.ExecuteAsync(query);
+	    await databaseConnection.ExecuteAsync(String.Join("; ", queries));
     }
 
     /// <inheritdoc/>
@@ -264,7 +306,7 @@ ORDER BY template.changed_on ASC";
 
 	    var results = new List<TemplateCommitModel>();
         var dataTable = await databaseConnection.GetAsync(query);
-        
+
 	    foreach (DataRow dataRow in dataTable.Rows)
         {
 	        var item = new TemplateCommitModel
@@ -327,7 +369,7 @@ ORDER BY content.changed_on ASC";
 
 	    var results = new List<DynamicContentCommitModel>();
         var dataTable = await databaseConnection.GetAsync(query);
-        
+
 	    foreach (DataRow dataRow in dataTable.Rows)
         {
 	        var item = new DynamicContentCommitModel
@@ -353,11 +395,26 @@ ORDER BY content.changed_on ASC";
     }
 
     /// <inheritdoc />
-    public async Task<List<CommitModel>> GetNotCompletedCommitsAsync()
-    {
-	    var results = new List<CommitModel>();
-	    
-	    // Get all commits with dynamic content.
+    public async Task<List<CommitModel>> GetCommitHistoryAsync(bool includeCompleted, bool includeIncompleted)
+	{
+		if (!includeCompleted && !includeIncompleted)
+		{
+			throw new ArgumentException("At least one of the parameters includeCompleted or includeIncompleted must be true.");
+		}
+
+		var results = new List<CommitModel>();
+
+		var whereClause = "";
+		if (includeCompleted && !includeIncompleted)
+		{
+			whereClause = "WHERE `commit`.completed = TRUE";
+		}
+		else if (!includeCompleted && includeIncompleted)
+		{
+			whereClause = "WHERE `commit`.completed = FALSE";
+		}
+
+		// Get all commits with dynamic content.
 	    var query = $@"SELECT
 	`commit`.id,
 	`commit`.description,
@@ -365,6 +422,14 @@ ORDER BY content.changed_on ASC";
 	`commit`.added_by,
 	`commit`.completed,
 	`commit`.external_id,
+	`commit`.deployed_to_development_on,
+	`commit`.deployed_to_test_on,
+	`commit`.deployed_to_acceptance_on,
+	`commit`.deployed_to_live_on,
+	`commit`.deployed_to_development_by,
+	`commit`.deployed_to_test_by,
+	`commit`.deployed_to_acceptance_by,
+	`commit`.deployed_to_live_by,
 	content.published_environment,
 	content.component,
 	content.content_id,
@@ -389,15 +454,15 @@ LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptan
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
-WHERE `commit`.completed = FALSE
+{whereClause}
 GROUP BY content.content_id";
-	    
+
 	    var dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
 		    var commitId = dataRow.Field<int>("id");
 		    var commitModel = GetOrAddCommitModel(results, commitId, dataRow);
-		    
+
 		    commitModel.DynamicContents.Add(new DynamicContentCommitModel
 		    {
 			    Component = dataRow.Field<string>("component"),
@@ -417,7 +482,7 @@ GROUP BY content.content_id";
 			    TemplateNames = dataRow.Field<string>("template_names")?.Split(",").ToList()
 		    });
 	    }
-	    
+
 	    // Get all commits with templates.
 	    query = $@"	SELECT
 	`commit`.id,
@@ -426,6 +491,14 @@ GROUP BY content.content_id";
 	`commit`.added_by,
 	`commit`.completed,
 	`commit`.external_id,
+	`commit`.deployed_to_development_on,
+	`commit`.deployed_to_test_on,
+	`commit`.deployed_to_acceptance_on,
+	`commit`.deployed_to_live_on,
+	`commit`.deployed_to_development_by,
+	`commit`.deployed_to_test_by,
+	`commit`.deployed_to_acceptance_by,
+	`commit`.deployed_to_live_by,
 	template.template_id,
 	template.published_environment,
 	template.template_type,
@@ -448,8 +521,8 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS testTemplate ON testTemplate.templa
 LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTemplate.template_id = template.template_id AND (acceptanceTemplate.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
-WHERE `commit`.completed = FALSE";
-	    
+{whereClause}";
+
 	    dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
 	    {
@@ -457,7 +530,7 @@ WHERE `commit`.completed = FALSE";
 		    var commitModel = GetOrAddCommitModel(results, commitId, dataRow);
 
 		    var publishedEnvironment = (Environments)Convert.ToInt32(dataRow["published_environment"]);
-		    
+
 		    commitModel.Templates.Add(new TemplateCommitModel
 		    {
 			    Version = dataRow.Field<int>("version"),
@@ -479,7 +552,18 @@ WHERE `commit`.completed = FALSE";
 		    });
 	    }
 
-	    return results.Where(r => r.Templates.Any(t => !t.IsLive) || r.DynamicContents.Any(d => !d.IsLive)).ToList();
+	    if (includeCompleted && !includeIncompleted)
+	    {
+		    results = results.Where(r => r.Templates.Any(t => t.IsLive) || r.DynamicContents.Any(d => d.IsLive)).ToList();
+	    }
+	    else if (!includeCompleted && includeIncompleted)
+	    {
+		    results = results.Where(r => r.Templates.Any(t => !t.IsLive) || r.DynamicContents.Any(d => !d.IsLive)).ToList();
+	    }
+
+	    return results
+		    .OrderByDescending(r => r.Id)
+		    .ToList();
     }
 
     private static CommitModel GetOrAddCommitModel(List<CommitModel> results, int commitId, DataRow dataRow)
@@ -493,7 +577,16 @@ WHERE `commit`.completed = FALSE";
 			    Description = dataRow.Field<string>("description"),
 			    AddedBy = dataRow.Field<string>("added_by"),
 			    AddedOn = dataRow.Field<DateTime>("added_on"),
-			    ExternalId = dataRow.Field<string>("external_id")
+			    ExternalId = dataRow.Field<string>("external_id"),
+			    DeployedToDevelopmentOn = dataRow.Field<DateTime?>("deployed_to_development_on"),
+			    DeployedToTestOn = dataRow.Field<DateTime?>("deployed_to_test_on"),
+			    DeployedToAcceptanceOn = dataRow.Field<DateTime?>("deployed_to_acceptance_on"),
+			    DeployedToLiveOn = dataRow.Field<DateTime?>("deployed_to_live_on"),
+			    DeployedToDevelopmentBy = dataRow.Field<string>("deployed_to_development_by"),
+			    DeployedToTestBy = dataRow.Field<string>("deployed_to_test_by"),
+			    DeployedToAcceptanceBy = dataRow.Field<string>("deployed_to_acceptance_by"),
+			    DeployedToLiveBy = dataRow.Field<string>("deployed_to_live_by"),
+			    Completed = Convert.ToBoolean(dataRow["completed"])
 		    };
 
 		    results.Add(commitModel);
