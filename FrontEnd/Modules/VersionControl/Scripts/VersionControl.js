@@ -168,7 +168,8 @@ const moduleSettings = {
                 click: this.onCommit.bind(this),
                 icon: "save"
             }).data("kendoButton");
-this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendoButton({
+
+            this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendoButton({
                 click: this.onReloadUncommittedChanges.bind(this),
                 icon: "reload"
             }).data("kendoButton");
@@ -182,6 +183,7 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                 click: this.onReloadHistory.bind(this),
                 icon: "reload"
             }).data("kendoButton");
+
             this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
                 optionLabel: "Selecteer omgeving",
                 dataTextField: "text",
@@ -207,6 +209,7 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                 dataTextField: "title",
                 dataValueField: "id"
             }).data("kendoMultiSelect");
+
             // Deploy buttons (from second tab).
             this.deployTestButton = $("#deployCommitToTest").kendoButton({
                 click: this.onDeploy.bind(this, 2),
@@ -260,6 +263,12 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
             switch (event.sender.select().attr("id")) {
                 case "deployTab":
                     await this.setupDeployTab();
+                    break;
+                case "reviewTab":
+                    await this.setupReviewTab();
+                    break;
+                case "historyTab":
+                    await this.setupHistoryTab();
                     break;
             }
         }
@@ -451,6 +460,7 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                     selectedCommits.push(dataItem);
                 }
             });
+
             if (!selectedCommits || !selectedCommits.length) {
                 kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
                 return;
@@ -795,9 +805,6 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                                     },
                                     templateNames: {
                                         type: "array"
-                                    },
-                                    review: {
-                                        type: "object"
                                     }
                                 }
                             }
@@ -807,57 +814,47 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                     resizable : true,
                     columns: [
                         {
-                            field: "id",
-                            title: "ID",
-                            width: "50px"
-                        },
-                        {
-                            field: "description",
-                            title: "Omschrijving",
-                            width: "150px"
-                        },
-                        {
-                            field: "isTest",
-                            title: "Test",
-                            width: "50px",
-                            template: "<span class='k-icon k-i-#:(isTest ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                            "field": "id",
+                            "title": "ID",
+                            "width": "50px"
                         },
                         {
                             "field": "description",
-                            "title": "Omschrijving",
+                            "title": "Omschrijving"
+                        },
+                        {
+                            "field": "isTest",
+                            "title": "Test",
+                            "width": "50px",
+                            "template": "<span class='k-icon k-i-#:(isTest ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                        },
+                        {
+                            "field": "isAcceptance",
+                            "title": "Acceptatie",
+                            "width": "50px",
+                            "template": "<span class='k-icon k-i-#:(isAcceptance ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                        },
+                        {
+                            "field": "isLive",
+                            "title": "Live",
+                            "width": "50px",
+                            "template": "<span class='k-icon k-i-#:(isLive ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                        },
+                        {
+                            "field": "addedOn",
+                            "format": "{0:dd-MM-yyyy HH:mm:ss}",
+                            "title": "Datum",
                             "width": "150px"
                         },
                         {
-                            field: "isLive",
-                            title: "Live",
-                            width: "50px",
-                            template: "<span class='k-icon k-i-#:(isLive ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                            "field": "addedBy",
+                            "title": "Door",
+                            "width": "150px"
                         },
                         {
-                            field: "addedOn",
-                            format: "{0:dd-MM-yyyy HH:mm:ss}",
-                            title: "Datum",
-                            width: "100px"
-                        },
-                        {
-                            field: "addedBy",
-                            title: "Door",
-                            width: "100px"
-                        },
-                        {
-                            field: "review.status",
-                            title: "Review status",
-                            width: "150px"
-                        },
-                        {
-                            field: "review.reviewedByName",
-                            title: "Review door",
-                            width: "150px"
-                        },
-                        {
-                            field: "dynamicContents",
-                            title: "Dynamic contents",
-                            template: (dataItem) => {
+                            "field": "dynamicContents",
+                            "title": "Dynamic contents",
+                            "template": (dataItem) => {
                                 if (!dataItem.dynamicContents || !dataItem.dynamicContents.length) {
                                     return `<span class="dynamic-content">Geen dynamic content in deze commit</span>`;
                                 }
@@ -872,9 +869,9 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                             }
                         },
                         {
-                            field: "templates",
-                            title: "Templates",
-                            template: (dataItem) => {
+                            "field": "templates",
+                            "title": "Templates",
+                            "template": (dataItem) => {
                                 if (!dataItem.templates || !dataItem.templates.length) {
                                     return `<span class="template">Geen templates in deze commit</span>`;
                                 }
@@ -898,6 +895,261 @@ this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendo
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het laden van de nog niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             }
+        }
+
+        /**
+         * Setup/initialize the grid with all finished commits (commits that have been deployed to live).
+         */
+        async setupHistoryTab() {
+            try {
+                if (this.historyGrid) {
+                    return;
+                }
+
+                const gridSettings = {
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetCompletedCommits_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/completed-commits`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van de commit historie. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "id",
+                                fields: {
+                                    addedOn: {
+                                        type: "date"
+                                    },
+                                    deployedToDevelopmentOn: {
+                                        type: "date"
+                                    },
+                                    deployedToTestOn: {
+                                        type: "date"
+                                    },
+                                    deployedToAcceptanceOn: {
+                                        type: "date"
+                                    },
+                                    deployedToLiveOn: {
+                                        type: "date"
+                                    },
+                                    templateNames: {
+                                        type: "array"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    selectable: false,
+                    resizable : true,
+                    columns: [
+                        {
+                            "field": "id",
+                            "title": "ID",
+                            "width": "50px"
+                        },
+                        {
+                            "field": "description",
+                            "title": "Omschrijving"
+                        },
+                        {
+                            "title": "Deploy historie",
+                            "template": `
+                                Dev: #:(typeof(deployedToDevelopmentOn) !== "undefined" && deployedToDevelopmentOn ? kendo.toString(deployedToDevelopmentOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToDevelopmentBy) !== "undefined" && deployedToDevelopmentBy ? deployedToDevelopmentBy : "Onbekend")#<br />
+                                Test: #:(typeof(deployedToTestOn) !== "undefined" && deployedToTestOn ? kendo.toString(deployedToTestOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToTestBy) !== "undefined" && deployedToTestOn ? deployedToTestBy : "Onbekend")#<br />
+                                Acceptatie: #:(typeof(deployedToAcceptanceOn) !== "undefined" && deployedToAcceptanceOn ? kendo.toString(deployedToAcceptanceOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToAcceptanceBy) !== "undefined" ? deployedToAcceptanceBy : "Onbekend")#<br />
+                                Live: #:(typeof(deployedToLiveOn) !== "undefined" && deployedToLiveOn ? kendo.toString(deployedToLiveOn, "dd-MM-yyyy HH:mm:ss") : "Onbekend")# door #:(typeof(deployedToLiveBy) !== "undefined" && deployedToLiveOn ? deployedToLiveBy : "Onbekend")#
+                            `
+                        },
+                        {
+                            "field": "dynamicContents",
+                            "title": "Dynamic contents",
+                            "template": (dataItem) => {
+                                if (!dataItem.dynamicContents || !dataItem.dynamicContents.length) {
+                                    return `<span class="dynamic-content">Geen dynamic content in deze commit</span>`;
+                                }
+
+                                const html = [];
+                                for (let dynamicContent of dataItem.dynamicContents) {
+                                    let templateName = dynamicContent.templateNames && dynamicContent.templateNames.length ? dynamicContent.templateNames[0] : "Geen template";
+                                    html.push(`<span class="dynamic-content">${templateName} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
+                                }
+
+                                return html.join("<br />")
+                            }
+                        },
+                        {
+                            "field": "templates",
+                            "title": "Templates",
+                            "template": (dataItem) => {
+                                if (!dataItem.templates || !dataItem.templates.length) {
+                                    return `<span class="template">Geen templates in deze commit</span>`;
+                                }
+
+                                const html = [];
+                                for (let template of dataItem.templates) {
+                                    html.push(`<span class="template">${template.templateParentName} (${template.templateParentId}) => ${template.templateName} (${template.templateId}) - Versie ${template.version}</span>`);
+                                }
+
+                                return html.join("<br />")
+                            }
+                        }
+                    ]
+                };
+
+                this.historyGrid = $("#historyGrid").kendoGrid(gridSettings).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de commit historie. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        /**
+         * Setup/initialize the grid with all reviews.
+         */
+        async setupReviewTab() {
+            try {
+                if (this.reviewGrid) {
+                    return;
+                }
+
+                this.reviewGrid = $("#reviewGrid").kendoGrid({
+                    dataSource: {
+                        transport: {
+                            read: async (transportOptions) => {
+                                const initialProcess = `GetReviews_${Date.now()}`;
+                                window.processing.addProcess(initialProcess);
+
+                                try {
+                                    const templatesToCommit = await Wiser.api({
+                                        url: `${this.base.settings.wiserApiRoot}version-control/reviews`,
+                                        method: "GET",
+                                        contentType: "application/json"
+                                    });
+
+                                    transportOptions.success(templatesToCommit);
+                                } catch (exception) {
+                                    console.error(exception);
+                                    kendo.alert("Er is iets fout gegaan met het laden van niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+                                    transportOptions.error(exception);
+                                }
+
+                                window.processing.removeProcess(initialProcess);
+                            }
+                        },
+                        schema: {
+                            model: {
+                                id: "id",
+                                fields: {
+                                    requestedOn: {
+                                        type: "date"
+                                    },
+                                    requestedUsers: {
+                                        type: "array"
+                                    },
+                                    comments: {
+                                        type: "array"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    resizable : true,
+                    columns: [
+                        {
+                            field: "id",
+                            title: "ID",
+                            width: "50px"
+                        },
+                        {
+                            field: "commitDescription",
+                            title: "Omschrijving",
+                            width: "150px"
+                        },
+                        {
+                            field: "requestedByName",
+                            title: "Aangevraagd door",
+                            width: "100px"
+                        },
+                        {
+                            field: "status",
+                            title: "Status",
+                            width: "100px"
+                        }
+                    ],
+                    detailInit: this.onReviewGridDetailInit.bind(this)
+                }).data("kendoGrid");
+
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het laden van de reviews. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            }
+        }
+
+        /**
+         * Setup/initialize the sub grid with all comments of a review.
+         * @param event The detail init event of the grid.
+         */
+        onReviewGridDetailInit(event) {
+            console.log("onReviewGridDetailInit", event);
+            const comments = event.data.comments;
+            $("<div/>").appendTo(event.detailCell).kendoGrid({
+                dataSource: {
+                    data: comments,
+                    schema: {
+                        model: {
+                            id: "id",
+                            fields: {
+                                addedOn: {
+                                    type: "date"
+                                }
+                            }
+                        }
+                    }
+                },
+                scrollable: false,
+                sortable: false,
+                pageable: false,
+                columns: [
+                    { field: "addedOn", title: "Datum", width: "150px", format: "{0:dd-MM-yyyy HH:mm}" },
+                    { field: "addedByName", title:"Door", width: "100px" },
+                    { field: "text", title:"Bericht" }
+                ]
+            });
+        }
+
+        /**
+         * Open the templates module with the history of a specific template.
+         * @param templateId The ID of the template to open.
+         */
+        async openTemplateHistory(templateId) {
+            const templateModuleWindow = $("<div />").kendoWindow({
+                actions: ["Close"],
+                content: {
+                    url: `/Modules/Templates?templateId=${templateId}&initialTab=history`,
+                    iframe: true
+                },
+                title: `Template: ${templateId}`
+            }).data("kendoWindow");
+
+            templateModuleWindow.open().maximize();
         }
     }
 

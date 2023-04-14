@@ -101,7 +101,6 @@ GROUP BY content.content_id";
 		    DeployedToAcceptanceBy = dataTable.Rows[0].Field<string>("deployed_to_acceptance_by"),
 		    DeployedToLiveBy = dataTable.Rows[0].Field<string>("deployed_to_live_by"),
 		    Completed = Convert.ToBoolean(dataTable.Rows[0]["completed"]),
-		    ExternalId = dataTable.Rows[0].Field<string>("external_id"),
 		    Review = new ReviewModel
 		    {
 			    Status =  dataTable.Rows[0].IsNull("reviewStatus") ? ReviewStatuses.None : (ReviewStatuses)Enum.Parse(typeof(ReviewStatuses), dataTable.Rows[0].Field<string>("reviewStatus")),
@@ -469,6 +468,7 @@ LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptan
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
+LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
 WHERE `commit`.completed = FALSE
 GROUP BY content.content_id";
 
@@ -539,6 +539,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS testTemplate ON testTemplate.templa
 LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTemplate.template_id = template.template_id AND (acceptanceTemplate.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
+LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
 WHERE `commit`.completed = FALSE";
 
 	    dataTable = await databaseConnection.GetAsync(query);
@@ -595,7 +596,22 @@ WHERE `commit`.completed = FALSE";
 			    Description = dataRow.Field<string>("description"),
 			    AddedBy = dataRow.Field<string>("added_by"),
 			    AddedOn = dataRow.Field<DateTime>("added_on"),
-			    ExternalId = dataRow.Field<string>("external_id")
+			    ExternalId = dataRow.Field<string>("external_id"),
+			    DeployedToDevelopmentOn = dataRow.Field<DateTime?>("deployed_to_development_on"),
+			    DeployedToTestOn = dataRow.Field<DateTime?>("deployed_to_test_on"),
+			    DeployedToAcceptanceOn = dataRow.Field<DateTime?>("deployed_to_acceptance_on"),
+			    DeployedToLiveOn = dataRow.Field<DateTime?>("deployed_to_live_on"),
+			    DeployedToDevelopmentBy = dataRow.Field<string>("deployed_to_development_by"),
+			    DeployedToTestBy = dataRow.Field<string>("deployed_to_test_by"),
+			    DeployedToAcceptanceBy = dataRow.Field<string>("deployed_to_acceptance_by"),
+			    DeployedToLiveBy = dataRow.Field<string>("deployed_to_live_by"),
+			    Completed = Convert.ToBoolean(dataRow["completed"]),
+			    Review = new ReviewModel
+			    {
+				    Status =  dataRow.IsNull("reviewStatus") ? ReviewStatuses.None : (ReviewStatuses)Enum.Parse(typeof(ReviewStatuses), dataRow.Field<string>("reviewStatus")),
+				    ReviewedBy = dataRow.Field<long?>("reviewedBy") ?? 0,
+				    ReviewedByName = dataRow.Field<string>("reviewedByName")
+			    }
 		    };
 
 		    results.Add(commitModel);
