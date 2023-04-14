@@ -120,6 +120,7 @@ const moduleSettings = {
                 EXECUTEQUERYONCE: { text: "Voer query eenmalig uit", id: "executeQueryOnce" },
                 GENERATEFILE: { text: "Genereer bestand", id: "generateFile" },
                 REFRESHCURRENTITEM: { text: "Ververs het item", id: "refreshCurrentItem" },
+                ACTIONCONFIRMDIALOG: { text: "Bevestigingsvenster", id: "actionConfirmDialog" },
                 CUSTOM: { text: "Custom javascript", id: "custom" }
             });
             this.fieldTypesDropDown = Object.freeze({

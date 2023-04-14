@@ -30,6 +30,7 @@ const moduleSettings = {
             this.base = this;
 
             // Components.
+            this.mainWindow = null;
             this.mainLoader = null;
             this.commitEnvironmentField = null;
             this.commitDescriptionField = null;
@@ -38,12 +39,16 @@ const moduleSettings = {
             this.dynamicContentChangesGrid = null;
             this.mainTabStrip = null;
             this.commitButton = null;
+            this.reloadUncommittedChangesButton = null;
+            this.reloadCommitsButton = null;
             this.deployGrid = null;
             this.deployTestButton = null;
             this.deployAcceptanceButton = null;
             this.deployLiveButton = null;
             this.deployToBranchButton = null;
             this.branchesDropDown = null;
+            this.historyGrid = null;
+            this.reloadHistoryButton = null;
             this.deployToBranchContainer = null;
             this.reviewGrid = null;
 
@@ -140,6 +145,16 @@ const moduleSettings = {
          * Initialize all components on the first tab.
          */
         async initializeComponents() {
+            // Main window
+            this.mainWindow = $("#window").kendoWindow({
+                width: "1500",
+                height: "650",
+                title: "Versiebeheer",
+                visible: true,
+                actions: [],
+                draggable: false
+            }).data("kendoWindow").maximize().open();
+
             this.commitDescriptionField = document.getElementById("commitDescription");
             this.deployToBranchContainer = document.getElementById("deployToBranchContainer");
 
@@ -153,7 +168,20 @@ const moduleSettings = {
                 click: this.onCommit.bind(this),
                 icon: "save"
             }).data("kendoButton");
+this.reloadUncommittedChangesButton = $("#reloadUncommittedChangesButton").kendoButton({
+                click: this.onReloadUncommittedChanges.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
 
+            this.reloadCommitsButton = $("#reloadCommitsButton").kendoButton({
+                click: this.onReloadCommits.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
+
+            this.reloadHistoryButton = $("#reloadHistoryButton").kendoButton({
+                click: this.onReloadHistory.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
             this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
                 optionLabel: "Selecteer omgeving",
                 dataTextField: "text",
@@ -179,7 +207,6 @@ const moduleSettings = {
                 dataTextField: "title",
                 dataValueField: "id"
             }).data("kendoMultiSelect");
-
             // Deploy buttons (from second tab).
             this.deployTestButton = $("#deployCommitToTest").kendoButton({
                 click: this.onDeploy.bind(this, 2),
@@ -200,8 +227,7 @@ const moduleSettings = {
             }).data("kendoButton");
 
             this.deployToBranchButton = $("#deployCommitToBranch").kendoButton({
-                click: this.onDeployToBranch.bind(this),
-                icon: "data"
+                click: this.onDeployToBranch.bind(this)
             }).data("kendoButton");
 
             this.branchesDropDown = $("#branchesDropDown").kendoDropDownList({
@@ -234,9 +260,6 @@ const moduleSettings = {
             switch (event.sender.select().attr("id")) {
                 case "deployTab":
                     await this.setupDeployTab();
-                    break;
-                case "reviewTab":
-                    await this.setupReviewTab();
                     break;
             }
         }
@@ -291,6 +314,67 @@ const moduleSettings = {
             catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the first tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadUncommittedChanges(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.templateChangesGrid.dataSource.read();
+                this.dynamicContentChangesGrid.dataSource.read();
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het verversen van de openstaande wijzigingen. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the second tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadCommits(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.deployGrid.dataSource.read();
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het verversen van de commits. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the second tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadHistory(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.historyGrid.dataSource.read();
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het verversen van de historie. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
 
             window.processing.removeProcess(initialProcess);
@@ -367,7 +451,6 @@ const moduleSettings = {
                     selectedCommits.push(dataItem);
                 }
             });
-
             if (!selectedCommits || !selectedCommits.length) {
                 kendo.alert("Kies a.u.b. eerst een of meer commits om te deployen.");
                 return;
@@ -683,7 +766,7 @@ const moduleSettings = {
                     dataSource: {
                         transport: {
                             read: async (transportOptions) => {
-                                const initialProcess = `GetNotCompletedCommits_${Date.now()}`;
+                                const initialProcess = `GetCompletedCommits_${Date.now()}`;
                                 window.processing.addProcess(initialProcess);
 
                                 try {
@@ -740,10 +823,9 @@ const moduleSettings = {
                             template: "<span class='k-icon k-i-#:(isTest ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
                         },
                         {
-                            field: "isAcceptance",
-                            title: "Acceptatie",
-                            width: "50px",
-                            template: "<span class='k-icon k-i-#:(isAcceptance ? \"check k-syntax-str\" : \"cancel k-syntax-error\")#'></span>"
+                            "field": "description",
+                            "title": "Omschrijving",
+                            "width": "150px"
                         },
                         {
                             field: "isLive",
@@ -765,12 +847,12 @@ const moduleSettings = {
                         {
                             field: "review.status",
                             title: "Review status",
-                            width: "100px"
+                            width: "150px"
                         },
                         {
                             field: "review.reviewedByName",
                             title: "Review door",
-                            width: "100px"
+                            width: "150px"
                         },
                         {
                             field: "dynamicContents",
@@ -782,7 +864,8 @@ const moduleSettings = {
 
                                 const html = [];
                                 for (let dynamicContent of dataItem.dynamicContents) {
-                                    html.push(`<span class="dynamic-content">${dynamicContent.templateNames[0]} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
+                                    let templateName = dynamicContent.templateNames && dynamicContent.templateNames.length ? dynamicContent.templateNames[0] : "Geen template";
+                                    html.push(`<span class="dynamic-content">${templateName} ${dynamicContent.component} - ${dynamicContent.title} (${dynamicContent.dynamicContentId}) - Versie ${dynamicContent.version}</span>`);
                                 }
 
                                 return html.join("<br />")
@@ -815,137 +898,6 @@ const moduleSettings = {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het laden van de nog niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             }
-        }
-
-        /**
-         * Setup/initialize the grid with all reviews.
-         */
-        async setupReviewTab() {
-            try {
-                if (this.reviewGrid) {
-                    return;
-                }
-
-                this.reviewGrid = $("#reviewGrid").kendoGrid({
-                    dataSource: {
-                        transport: {
-                            read: async (transportOptions) => {
-                                const initialProcess = `GetReviews_${Date.now()}`;
-                                window.processing.addProcess(initialProcess);
-
-                                try {
-                                    const templatesToCommit = await Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}version-control/reviews`,
-                                        method: "GET",
-                                        contentType: "application/json"
-                                    });
-
-                                    transportOptions.success(templatesToCommit);
-                                } catch (exception) {
-                                    console.error(exception);
-                                    kendo.alert("Er is iets fout gegaan met het laden van niet afgeronde commits. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
-                                    transportOptions.error(exception);
-                                }
-
-                                window.processing.removeProcess(initialProcess);
-                            }
-                        },
-                        schema: {
-                            model: {
-                                id: "id",
-                                fields: {
-                                    requestedOn: {
-                                        type: "date"
-                                    },
-                                    requestedUsers: {
-                                        type: "array"
-                                    },
-                                    comments: {
-                                        type: "array"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    resizable : true,
-                    columns: [
-                        {
-                            field: "id",
-                            title: "ID",
-                            width: "50px"
-                        },
-                        {
-                            field: "commitDescription",
-                            title: "Omschrijving",
-                            width: "150px"
-                        },
-                        {
-                            field: "requestedByName",
-                            title: "Aangevraagd door",
-                            width: "100px"
-                        },
-                        {
-                            field: "status",
-                            title: "Status",
-                            width: "100px"
-                        }
-                    ],
-                    detailInit: this.onReviewGridDetailInit.bind(this)
-                }).data("kendoGrid");
-
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan met het laden van de reviews. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
-            }
-        }
-
-        /**
-         * Setup/initialize the sub grid with all comments of a review.
-         * @param event The detail init event of the grid.
-         */
-        onReviewGridDetailInit(event) {
-            console.log("onReviewGridDetailInit", event);
-            const comments = event.data.comments;
-            $("<div/>").appendTo(event.detailCell).kendoGrid({
-                dataSource: {
-                    data: comments,
-                    schema: {
-                        model: {
-                            id: "id",
-                            fields: {
-                                addedOn: {
-                                    type: "date"
-                                }
-                            }
-                        }
-                    }
-                },
-                scrollable: false,
-                sortable: false,
-                pageable: false,
-                columns: [
-                    { field: "addedOn", title: "Datum", width: "150px", format: "{0:dd-MM-yyyy HH:mm}" },
-                    { field: "addedByName", title:"Door", width: "100px" },
-                    { field: "text", title:"Bericht" }
-                ]
-            });
-        }
-
-        /**
-         * Open the templates module with the history of a specific template.
-         * @param templateId The ID of the template to open.
-         */
-        async openTemplateHistory(templateId) {
-            const templateModuleWindow = $("<div />").kendoWindow({
-                actions: ["Close"],
-                content: {
-                    url: `/Modules/Templates?templateId=${templateId}&initialTab=history`,
-                    iframe: true
-                },
-                title: `Template: ${templateId}`
-            }).data("kendoWindow");
-
-            templateModuleWindow.open().maximize();
         }
     }
 

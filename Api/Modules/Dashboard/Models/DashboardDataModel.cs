@@ -32,12 +32,12 @@ public class DashboardDataModel
     /// <summary>
     /// Gets or sets the amount of time in seconds the top 10 users have spent logged in.
     /// </summary>
-    public int UserLoginTimeTop10 { get; set; }
+    public long UserLoginActiveTop10 { get; set; }
 
     /// <summary>
     /// Gets or sets the amount of time in seconds all other users have spent logged in (users that aren't in the top 10).
     /// </summary>
-    public int UserLoginTimeOther { get; set; }
+    public long UserLoginActiveOther { get; set; }
 
     /// <summary>
     /// Gets or sets the dictionary containing the open task alerts.

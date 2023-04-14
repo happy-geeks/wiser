@@ -78,7 +78,19 @@ public class VersionControlController : Controller
     [ProducesResponseType(typeof(List<CommitModel>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetNotCompletedCommitsAsync()
     {
-        return (await commitService.GetNotCompletedCommitsAsync()).GetHttpResponseMessage();
+        return (await commitService.GetCommitHistoryAsync(false, true)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get all commits that haven't been completed yet,
+    /// </summary>
+    /// <returns>A list of <see cref="CommitModel"/>.</returns>
+    [HttpGet]
+    [Route("completed-commits")]
+    [ProducesResponseType(typeof(List<CommitModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCompletedCommitsAsync()
+    {
+        return (await commitService.GetCommitHistoryAsync(true, false)).GetHttpResponseMessage();
     }
 
     /// <summary>

@@ -1278,6 +1278,9 @@
                                                                         <li data-visible="generateFile">
                                                                             Genereer bestand
                                                                         </li>
+                                                                        <li data-visible="actionConfirmDialog">
+                                                                            Bevestigingsvenster
+                                                                        </li>
                                                                     </ul>
                                                                     <div class="flex-container">
                                                                         <div class="item">
@@ -1293,55 +1296,6 @@
                                                                                 <span class="info" data-type="action-button-url"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <div class="actionButtonUserParametersGrid"></div>
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 25%;">
-                                                                            <h4>
-                                                                                <label>Data selector id</label>
-                                                                                <span class="info" data-type="action-button-data-selector-id"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="dataSelectorId" class="textField k-input" maxlength="10" autocomplete="off" />
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 25%;">
-                                                                            <h4>
-                                                                                <label>Content property naam</label>
-                                                                                <span class="info" data-type="action-button-content-property-name"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="contentPropertyName" class="textField k-input" maxlength="10" autocomplete="off" />
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 25%;">
-                                                                            <h4>
-                                                                                <label>Content item id</label>
-                                                                                <span class="info" data-type="action-button-content-item-id"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="contentItemId" class="textField k-input" maxlength="10" autocomplete="off" />
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 25%;">
-                                                                            <h4>
-                                                                                <label>Email data selector id</label>
-                                                                                <span class="info" data-type="action-button-pdf-email-data-query-id"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="emailDataQueryId" class="textField k-input" maxlength="10" autocomplete="off" />
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 33%;">
-                                                                            <h4>
-                                                                                <label>PDF veldnaam achtergrond</label>
-                                                                                <span class="info" data-type="action-button-pdf-background-property-name"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="pdfBackgroundPropertyName" class="textField k-input" maxlength="255" autocomplete="off" />
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 33%;">
-                                                                            <h4>
-                                                                                <label>PDF document opties veldnaam</label>
-                                                                                <span class="info" data-type="action-button-pdf-background-property-name"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="pdfDocumentOptionsPropertyName" class="textField k-input" maxlength="255" autocomplete="off" />
-                                                                        </div>
-                                                                        <div class="item" data-visible="generateFile" style="width: 33%;">
-                                                                            <h4>
-                                                                                <label>PDF bestandsnaam</label>
-                                                                                <span class="info" data-type="action-button-pdf-filename"><ins class="icon-info-full"></ins></span>
-                                                                            </h4>
-                                                                            <input type="text" id="pdfFilename" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                     </div>
                                                                     <div>
@@ -1389,6 +1343,73 @@
                                                                                 <span class="info" data-type="action-button-itemlink"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
                                                                             <input type="number" class="actionButtonItemLink numeric" min="0" step="1" autocomplete="off" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Data selector id</label>
+                                                                                <span class="info" data-type="action-button-data-selector-id"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="dataSelectorId" class="textField k-input" maxlength="10" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Content property naam</label>
+                                                                                <span class="info" data-type="action-button-content-property-name"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="contentPropertyName" class="textField k-input" maxlength="10" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Content item id</label>
+                                                                                <span class="info" data-type="action-button-content-item-id"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="contentItemId" class="textField k-input" maxlength="10" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 25%;">
+                                                                            <h4>
+                                                                                <label>Email data selector id</label>
+                                                                                <span class="info" data-type="action-button-pdf-email-data-query-id"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="emailDataQueryId" class="textField k-input" maxlength="10" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 33%;">
+                                                                            <h4>
+                                                                                <label>PDF veldnaam achtergrond</label>
+                                                                                <span class="info" data-type="action-button-pdf-background-property-name"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="pdfBackgroundPropertyName" class="textField k-input" maxlength="255" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 33%;">
+                                                                            <h4>
+                                                                                <label>PDF document opties veldnaam</label>
+                                                                                <span class="info" data-type="action-button-pdf-background-property-name"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="pdfDocumentOptionsPropertyName" class="textField k-input" maxlength="255" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item" style="width: 33%;">
+                                                                            <h4>
+                                                                                <label>PDF bestandsnaam</label>
+                                                                                <span class="info" data-type="action-button-pdf-filename"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="pdfFilename" class="textField k-input" maxlength="255" autocomplete="off" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="item">
+                                                                            <h4>
+                                                                                <label>Titel</label>
+                                                                                <span class="info" data-type="action-button-confirm-dialog-title"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="actionButtonConfirmDialogTitle" class="textField k-input" maxlength="255" autocomplete="off" />
+                                                                        </div>
+                                                                        <div class="item">
+                                                                            <h4>
+                                                                                <label>Tekst</label>
+                                                                                <span class="info" data-type="action-button-url-height"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <input type="text" id="actionButtonConfirmDialogText" class="textField k-input" maxlength="255" autocomplete="off" />
                                                                         </div>
                                                                     </div>
                                                                 </div>

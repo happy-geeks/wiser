@@ -24,7 +24,7 @@ const communicationModuleSettings = {
         constructor(settings) {
             this.base = this;
             this.mainLoader = null;
-            
+
             // Enumerations.
             this.triggerWeekDays = Object.freeze({
                 Monday: 1,
@@ -35,7 +35,7 @@ const communicationModuleSettings = {
                 Saturday: 32,
                 Sunday: 64
             });
-            
+
             // Components.
             this.nameElement = null;
             this.editNameButton = null;
@@ -136,7 +136,7 @@ const communicationModuleSettings = {
             await this.initializeComponents();
 
             this.setupBindings();
-            
+
             if (this.settings.settingsId > 0) {
                 await this.loadSettings(this.settings.settingsId);
             } else {
@@ -246,7 +246,7 @@ const communicationModuleSettings = {
                         change: this.onLanguageDropDownChange.bind(this)
                     }).data("kendoDropDownList");
                 }
-                
+
                 // Data tab.
                 if (!dataSelectors || !dataSelectors.length) {
                     $("#DataSelectorForContentContainer").hide();
@@ -269,7 +269,7 @@ const communicationModuleSettings = {
                         dataSource: queries
                     }).data("kendoDropDownList");
                 }
-                
+
                 const wiserApiRoot = this.settings.wiserApiRoot;
 
                 const translationsTool = {
@@ -277,7 +277,7 @@ const communicationModuleSettings = {
                     tooltip: "Vertaling invoegen",
                     exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
                 };
-                
+
                 // Content tab.
                 this.mailBodyEditor = $("#MailBodyEditor").kendoEditor({
                     tools: [
@@ -311,6 +311,9 @@ const communicationModuleSettings = {
                         "viewHtml",
                         "formatting",
                         "cleanFormatting"
+                    ],
+                    stylesheets: [
+                        this.base.settings.htmlEditorCssUrl
                     ]
                 }).data("kendoEditor");
 
@@ -345,7 +348,7 @@ const communicationModuleSettings = {
                     decimals: 0,
                     format: "#"
                 }).data("kendoNumericTextBox");
-                
+
                 this.recurringPeriodTypeDropDown = $("#RecurringPeriodTypeDropDown").kendoDropDownList({
                     change: this.onRecurringPeriodTypeDropDownChange.bind(this)
                 }).data("kendoDropDownList");
@@ -448,13 +451,13 @@ const communicationModuleSettings = {
             await Wiser.showConfirmDialog(`Wilt u de communicatie-instellingen met de naam "${this.nameElement.text()}" wilt verwijderen?`);
             const process = `deleteSettings_${Date.now()}`;
             window.processing.addProcess(process);
-            
+
             try {
                 await Wiser.api({
                     url: `${this.settings.wiserApiRoot}communications/${this.settings.settingsId}`,
                     method: "DELETE"
                 });
-                
+
                 // Don't remove the process if everything succeeded, so that the loader will stay visible until the index page has finished loading.
                 window.location = "/Modules/Communication";
             } catch (exception) {
@@ -471,38 +474,38 @@ const communicationModuleSettings = {
         async onSaveButtonClick(event) {
             const process = `saveSettings_${Date.now()}`;
             window.processing.addProcess(process);
-            
+
             try {
                 const settings = this.getCurrentSettings();
-                
+
                 // Check if all mandatory settings have been entered.
                 if (!settings.name) {
                     kendo.alert("Vul a.u.b. een naam in");
                     return;
-                } 
-                
+                }
+
                 if (!settings.receiversDataSelectorId && !settings.receiversQueryId && (!settings.receiversList || !settings.receiversList.length)) {
                     kendo.alert("Vul a.u.b. de ontvangers in");
                     return;
                 }
-                
+
                 if (!settings.settings || !settings.settings.length || !settings.settings.some(x => !!x.content)) {
                     kendo.alert("Vul a.u.b. in wat voor bericht er gestuurd moet worden.");
                     return;
                 }
-                
+
                 if (!settings.sendTriggerType) {
                     kendo.alert("Vul a.u.b. een verzendpatroon in.")
                     return;
                 }
-                
+
                 const result = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}communications`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(settings)
                 });
-                
+
                 this.settings.settingsId = result.id;
 
                 kendo.alert("De instellingen zijn succesvol opgeslagen.");
@@ -533,7 +536,7 @@ const communicationModuleSettings = {
             if (!selectedMailTemplate || !selectedMailTemplate.id || (this.languageDropDown && (!selectedLanguage || !selectedLanguage.id))) {
                 return;
             }
-            
+
             if (this.mailBodyEditor.value() || this.mailSubjectField.val()) {
                 try {
                     await Wiser.showConfirmDialog("U heeft al een waarde ingevuld in de inhoud van de mail. Wilt u die overschrijven met de nieuw gekozen mailtemplate/taal?", "Overschrijven inhoud", "Annuleren", "Overschrijven");
@@ -545,14 +548,14 @@ const communicationModuleSettings = {
                     return;
                 }
             }
-            
+
             let templatePropertyName = "Template";
             let subjectPropertyName = "Onderwerp"
             if (selectedLanguage && selectedLanguage.code) {
                 templatePropertyName += ` (${selectedLanguage.code})`;
                 subjectPropertyName += ` (${selectedLanguage.code})`;
             }
-            
+
             const html = selectedMailTemplate[templatePropertyName] || selectedMailTemplate.Template || selectedMailTemplate.template || "";
             const subject = selectedMailTemplate[subjectPropertyName] || selectedMailTemplate.Onderwerp || selectedMailTemplate.onderwerp || "";
             this.mailBodyEditor.value(html);
@@ -566,7 +569,7 @@ const communicationModuleSettings = {
         async loadSettings(id) {
             const process = `loadSettings_${Date.now()}`;
             window.processing.addProcess(process);
-            
+
             try {
                 // Get the settings from the API.
                 const settings = await Wiser.api({
@@ -591,7 +594,7 @@ const communicationModuleSettings = {
                     $("#QueryForReceivers").prop("checked", true);
                     this.queryForReceiversDropDown.value(settings.receiversQueryId);
                 }
-                
+
                 // Set the values in the second tab (data).
                 if (settings.contentDataSelectorId > 0) {
                     $("#DataSelectorForContent").prop("checked", true);
@@ -600,7 +603,7 @@ const communicationModuleSettings = {
                     $("#QueryForContent").prop("checked", true);
                     this.queryForContentDropDown.value(settings.contentQueryId);
                 }
-                
+
                 // Set the values in the third tab (content).
                 for (let setting of settings.settings) {
                     switch (setting.type) {
@@ -622,7 +625,7 @@ const communicationModuleSettings = {
                             break;
                     }
                 }
-                
+
                 // Set the values in the fourth tab (pattern).
                 switch (settings.sendTriggerType) {
                     case "Direct":
@@ -644,7 +647,7 @@ const communicationModuleSettings = {
                         this.recurringPeriodValueField.value(settings.triggerPeriodValue);
                         this.recurringPeriodTypeDropDown.value(settings.triggerPeriodType);
                         this.recurringPeriodTypeDropDown.trigger("change");
-                        
+
                         switch (settings.triggerPeriodType) {
                             case "Week":
                                 for (let weekDay in this.triggerWeekDays) {
@@ -688,7 +691,7 @@ const communicationModuleSettings = {
                 name: this.editNameField.val(),
                 settings: []
             };
-            
+
             // Settings for first tab (receivers).
             const selectedReceiverType = $("input[type='radio'][name='receiverType']:checked").val();
             switch (selectedReceiverType) {
@@ -711,7 +714,7 @@ const communicationModuleSettings = {
                     console.error(`Unknown receiver type set: ${selectedReceiverType}`);
                     break;
             }
-            
+
             // Settings for second tab (data).
             const selectedContentDataType = $("input[type='radio'][name='contentDataType']:checked").val();
             switch (selectedContentDataType) {
@@ -725,7 +728,7 @@ const communicationModuleSettings = {
                     console.error(`Unknown receiver type set: ${selectedReceiverType}`);
                     break;
             }
-            
+
             // Settings for third tab (content).
             if (this.mailToggleCheckBox.prop("checked")) {
                 result.settings.push({
@@ -737,7 +740,7 @@ const communicationModuleSettings = {
                     selector: this.emailSelectorField.val()
                 });
             }
-            
+
             if (this.smsToggleCheckBox.prop("checked")) {
                 // No else-if here, it's possible to send both an e-mail and SMS at the same time.
                 result.settings.push({
@@ -770,7 +773,7 @@ const communicationModuleSettings = {
                             this.recurringWeeklyContainer.find(`input[type='checkbox'][name='recurringWeekDay']:checked`).each((index, element) => {
                                 triggerWeekDays += parseInt(element.value);
                             });
-                            
+
                             result.triggerWeekDays = triggerWeekDays;
                             break;
                         case "Month":
@@ -785,7 +788,7 @@ const communicationModuleSettings = {
                     console.error(`Unknown send trigger type set: ${result.sendTriggerType}`);
                     break;
             }
-            
+
             return result;
         }
     }

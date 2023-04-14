@@ -176,10 +176,10 @@ public class CommitService : ICommitService, IScopedService
                         }
                     }
                 }
-
-                // Mark the commit as completed if it's committed to live.
-                await CompleteCommitAsync(result.Id, true);
             }
+
+            // Log the deployment of the commit, so that we can see in the history when it was deployed to which environment.
+            await LogDeploymentOfCommitAsync(result.Id, data.Environment, identity);
 
             await databaseConnection.CommitTransactionAsync();
 
@@ -193,9 +193,14 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<bool>> CompleteCommitAsync(int commitId, bool commitCompleted)
+    public async Task<ServiceResult<bool>> LogDeploymentOfCommitAsync(int id, Environments environment, ClaimsIdentity identity)
     {
-        await commitDataService.CompleteCommitAsync(commitId, commitCompleted);
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+        {
+            WiserTableNames.WiserCommit
+        });
+
+        await commitDataService.LogDeploymentOfCommitAsync(id, environment, IdentityHelpers.GetUserName(identity, true));
         return new ServiceResult<bool>(true);
     }
 
@@ -230,7 +235,7 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<CommitModel>>> GetNotCompletedCommitsAsync()
+    public async Task<ServiceResult<List<CommitModel>>> GetCommitHistoryAsync(bool includeCompleted, bool includeIncompleted)
     {
         await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
         {
@@ -239,7 +244,7 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitDynamicContent
         });
 
-        var results = await commitDataService.GetNotCompletedCommitsAsync();
+        var results = await commitDataService.GetCommitHistoryAsync(includeCompleted, includeIncompleted);
 
         return new ServiceResult<List<CommitModel>>(results);
     }

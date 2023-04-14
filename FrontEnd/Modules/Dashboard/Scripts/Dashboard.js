@@ -654,12 +654,12 @@ const moduleSettings = {
                 loginCountOtherPercentage = 100 - loginCountTop10Percentage;
             }
 
-            const loginTimeTotal = data.userLoginTimeTop10 + data.userLoginTimeOther;
+            const loginTimeTotal = data.userLoginActiveTop10 + data.userLoginActiveOther;
             let loginTimeTop10Percentage = 0;
             let loginTimeOtherPercentage = 0;
 
             if (loginTimeTotal > 0) {
-                loginTimeTop10Percentage = Math.round(((data.userLoginTimeTop10 / loginTimeTotal) * 100) * 10) / 10;
+                loginTimeTop10Percentage = Math.round(((data.userLoginActiveTop10 / loginTimeTotal) * 100) * 10) / 10;
                 loginTimeOtherPercentage = 100 - loginTimeTop10Percentage;
             }
 
@@ -676,7 +676,7 @@ const moduleSettings = {
                         color: "#FF6800"
                     }
                 ],
-                loginTime: [
+                loginActive: [
                     {
                         category: "Rest",
                         value: loginTimeOtherPercentage,
@@ -727,6 +727,7 @@ const moduleSettings = {
                     categories: categories
                 }
             });
+            console.log("bla", filter, this.itemsData[filter]);
             dataChart.setDataSource(this.itemsData[filter]);
         }
 
