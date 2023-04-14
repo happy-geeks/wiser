@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
@@ -46,6 +47,7 @@ public class ReviewService : IReviewService, IScopedService
         var review = new ReviewModel
         {
             CommitId = commitId,
+            RequestedOn = DateTime.Now,
             RequestedBy = isAdmin ? Convert.ToInt64(IdentityHelpers.GetWiserAdminId(identity)) * -1 : Convert.ToInt64(IdentityHelpers.GetWiserUserId(identity)),
             RequestedByName = isAdmin ? IdentityHelpers.GetAdminUserName(identity) : IdentityHelpers.GetName(identity),
             RequestedUsers = requestedUsers.Select(user => Convert.ToInt64(user.Id) * (user.Fields.TryGetValue("isAdmin", out var value) && (bool)value ? -1 : 1)).ToList(),
@@ -53,5 +55,41 @@ public class ReviewService : IReviewService, IScopedService
         };
 
         return new ServiceResult<ReviewModel>(await reviewDataService.SaveReviewAsync(review));
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<ReviewCommentModel>> AddCommentAsync(ClaimsIdentity identity, int reviewId, string comment)
+    {
+        var isAdmin = IdentityHelpers.IsAdminAccount(identity);
+
+        var reviewComment = new ReviewCommentModel
+        {
+            ReviewId = reviewId,
+            Text = comment,
+            AddedBy = isAdmin ? Convert.ToInt64(IdentityHelpers.GetWiserAdminId(identity)) * -1 : Convert.ToInt64(IdentityHelpers.GetWiserUserId(identity)),
+            AddedByName = isAdmin ? IdentityHelpers.GetAdminUserName(identity) : IdentityHelpers.GetName(identity),
+            AddedOn = DateTime.Now
+        };
+
+        await reviewDataService.AddOrUpdateCommentAsync(reviewComment);
+
+        return new ServiceResult<ReviewCommentModel>(reviewComment);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> UpdateReviewStatusAsync(ClaimsIdentity identity, int id, ReviewStatuses newStatus)
+    {
+        var isAdmin = IdentityHelpers.IsAdminAccount(identity);
+        var review = await reviewDataService.GetAsync(id, false);
+        review.Status = newStatus;
+        review.ReviewedBy = isAdmin ? Convert.ToInt64(IdentityHelpers.GetWiserAdminId(identity)) * -1 : Convert.ToInt64(IdentityHelpers.GetWiserUserId(identity));
+        review.ReviewedByName = isAdmin ? IdentityHelpers.GetAdminUserName(identity) : IdentityHelpers.GetName(identity);
+        review.ReviewedOn = DateTime.Now;
+
+        await reviewDataService.SaveReviewAsync(review);
+        return new ServiceResult<bool>(true)
+        {
+            StatusCode = HttpStatusCode.NoContent
+        };
     }
 }

@@ -57,10 +57,6 @@
     height: 29vh;
 }
 
-#commitButton {
-    margin-top: 10px;
-}
-
 body {
     margin: 0;
 }
@@ -97,5 +93,9 @@ footer .k-button.k-disabled {
 }
 
 .k-loading-image {
+    display: none;
+}
+
+.review-comment-prompt + .k-prompt-container {
     display: none;
 }

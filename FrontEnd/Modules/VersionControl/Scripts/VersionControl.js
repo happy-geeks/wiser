@@ -51,6 +51,7 @@ const moduleSettings = {
             this.reloadHistoryButton = null;
             this.deployToBranchContainer = null;
             this.reviewGrid = null;
+            this.reloadReviewsButton = null;
 
             // Other data.
             this.branches = null;
@@ -69,7 +70,7 @@ const moduleSettings = {
 
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
-                headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
+                headers: {"Authorization": `Bearer ${localStorage.getItem("accessToken")}`}
             });
 
             // Fire event on page ready for direct actions
@@ -184,15 +185,20 @@ const moduleSettings = {
                 icon: "reload"
             }).data("kendoButton");
 
+            this.reloadReviewsButton = $("#reloadReviewsButton").kendoButton({
+                click: this.onReloadReviews.bind(this),
+                icon: "reload"
+            }).data("kendoButton");
+
             this.commitEnvironmentField = $("#commitEnvironment").kendoDropDownList({
                 optionLabel: "Selecteer omgeving",
                 dataTextField: "text",
                 dataValueField: "value",
                 dataSource: [
-                    { text: "Ontwikkeling", value: 1 },
-                    { text: "Test", value: 2 },
-                    { text: "Acceptatie", value: 4 },
-                    { text: "Live", value: 8 }
+                    {text: "Ontwikkeling", value: 1},
+                    {text: "Test", value: 2},
+                    {text: "Acceptatie", value: 4},
+                    {text: "Live", value: 8}
                 ]
             }).data("kendoDropDownList");
 
@@ -204,7 +210,7 @@ const moduleSettings = {
                             dataType: "json"
                         }
                     },
-                    group: { field: "group" }
+                    group: {field: "group"}
                 },
                 dataTextField: "title",
                 dataValueField: "id"
@@ -319,8 +325,7 @@ const moduleSettings = {
                 this.dynamicContentChangesGrid.dataSource.read();
                 this.commitDescriptionField.value = "";
                 this.commitEnvironmentField.value("");
-            }
-            catch (exception) {
+            } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het maken van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
@@ -340,8 +345,7 @@ const moduleSettings = {
                 event.preventDefault();
                 this.templateChangesGrid.dataSource.read();
                 this.dynamicContentChangesGrid.dataSource.read();
-            }
-            catch (exception) {
+            } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het verversen van de openstaande wijzigingen. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
@@ -360,8 +364,7 @@ const moduleSettings = {
             try {
                 event.preventDefault();
                 this.deployGrid.dataSource.read();
-            }
-            catch (exception) {
+            } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het verversen van de commits. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
@@ -380,10 +383,28 @@ const moduleSettings = {
             try {
                 event.preventDefault();
                 this.historyGrid.dataSource.read();
-            }
-            catch (exception) {
+            } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het verversen van de historie. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
+            }
+
+            window.processing.removeProcess(initialProcess);
+        }
+
+        /**
+         * Event for when the user clicks the reload button in the third tab.
+         * @param event The click event of the kendoButton component.
+         */
+        async onReloadReviews(event) {
+            const initialProcess = `Reload_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                event.preventDefault();
+                this.reviewGrid.dataSource.read();
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het verversen van de reviews. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
             }
 
             window.processing.removeProcess(initialProcess);
@@ -495,12 +516,10 @@ const moduleSettings = {
                 }
 
                 this.deployGrid.dataSource.read();
-            }
-            catch (exception) {
+            } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het deployen van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
-            }
-            finally {
+            } finally {
                 window.processing.removeProcess(initialProcess);
             }
         }
@@ -536,12 +555,10 @@ const moduleSettings = {
                 });
 
                 kendo.alert(selectedCommits.length === 1 ? "De geselecteerde commit is succesvol naar de geselecteerde branch gezet" : "De geselecteerde commits zijn succesvol naar de geselecteerde branch gezet.");
-            }
-            catch (exception) {
+            } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het deployen van de commit. Probeer het a.u.b. opnieuw of neem contact op als dat niet werkt.");
-            }
-            finally {
+            } finally {
                 window.processing.removeProcess(initialProcess);
             }
         }
@@ -591,7 +608,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
-                    resizable : true,
+                    resizable: true,
                     columns: [
                         {
                             field: "templateId",
@@ -703,7 +720,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
-                    resizable : true,
+                    resizable: true,
                     columns: [
                         {
                             field: "dynamicContentId",
@@ -811,7 +828,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: "multiple, row",
-                    resizable : true,
+                    resizable: true,
                     columns: [
                         {
                             "field": "id",
@@ -957,7 +974,7 @@ const moduleSettings = {
                         }
                     },
                     selectable: false,
-                    resizable : true,
+                    resizable: true,
                     columns: [
                         {
                             "field": "id",
@@ -1066,12 +1083,15 @@ const moduleSettings = {
                                     },
                                     comments: {
                                         type: "array"
+                                    },
+                                    commit: {
+                                        type: "object"
                                     }
                                 }
                             }
                         }
                     },
-                    resizable : true,
+                    resizable: true,
                     columns: [
                         {
                             field: "id",
@@ -1092,6 +1112,52 @@ const moduleSettings = {
                             field: "status",
                             title: "Status",
                             width: "100px"
+                        },
+                        {
+                            title: "&nbsp;",
+                            width: "300px",
+                            command: [
+                                {
+                                    name: "approve",
+                                    text: "Goedkeuren",
+                                    iconClass: "k-icon k-i-check-outline",
+                                    click: (event) => {
+                                        const dataItem = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
+                                        this.approveReview(dataItem.id);
+                                    }
+                                },
+                                {
+                                    name: "requestChanges",
+                                    text: "Afkeuren",
+                                    iconClass: "k-icon k-i-x-outline",
+                                    click: (event) => {
+                                        const dataItem = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
+                                        this.reviewRequestChanges(dataItem.id);
+                                    }
+                                },
+                                {
+                                    name: "addComment",
+                                    text: "Reactie plaatsen",
+                                    iconClass: "k-icon k-i-comment",
+                                    click: (event) => {
+                                        const dataItem = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
+                                        const prompt = $("<div class='review-comment-prompt'></div>").kendoPrompt({
+                                            title: "Reactie plaatsen",
+                                            content: "<textarea class='k-textbox'></textarea>",
+                                        }).data("kendoPrompt");
+                                        prompt.open();
+                                        console.log("prompt", prompt, prompt.result);
+                                        prompt.result.done(() => {
+                                            const value = prompt.element.find("textarea").val();
+                                            if (!value) {
+                                                kendo.alert("Vul a.u.b. een waarde in");
+                                                return;
+                                            }
+                                            this.reviewAddComment(dataItem.id, value);
+                                        });
+                                    }
+                                }
+                            ]
                         }
                     ],
                     detailInit: this.onReviewGridDetailInit.bind(this)
@@ -1108,8 +1174,12 @@ const moduleSettings = {
          * @param event The detail init event of the grid.
          */
         onReviewGridDetailInit(event) {
-            console.log("onReviewGridDetailInit", event);
             const comments = event.data.comments;
+            event.data.commit = event.data.commit || {};
+            const templates = event.data.commit.templates || [];
+            const dynamicContents = event.data.commit.dynamicContents || [];
+
+            $("<h2>Reacties</h2>").appendTo(event.detailCell);
             $("<div/>").appendTo(event.detailCell).kendoGrid({
                 dataSource: {
                     data: comments,
@@ -1128,10 +1198,86 @@ const moduleSettings = {
                 sortable: false,
                 pageable: false,
                 columns: [
-                    { field: "addedOn", title: "Datum", width: "150px", format: "{0:dd-MM-yyyy HH:mm}" },
-                    { field: "addedByName", title:"Door", width: "100px" },
-                    { field: "text", title:"Bericht" }
-                ]
+                    {field: "addedOn", title: "Datum", width: "150px", format: "{0:dd-MM-yyyy HH:mm}"},
+                    {field: "addedByName", title: "Door", width: "100px"},
+                    {field: "text", title: "Bericht"}
+                ],
+                noRecords: {
+                    template: "Deze review heeft nog geen reacties"
+                }
+            });
+
+            $("<br><h2>Templates</h2>").appendTo(event.detailCell);
+            $("<div/>").appendTo(event.detailCell).kendoGrid({
+                dataSource: {
+                    data: templates
+                },
+                scrollable: false,
+                sortable: false,
+                pageable: false,
+                columns: [
+                    {field: "templateParentName", title: "Map"},
+                    {field: "templateName", title: "Template"},
+                    {
+                        title: "&nbsp;",
+                        width: "150px",
+                        command: [{
+                            name: "open",
+                            text: "Bekijk historie",
+                            iconClass: "k-icon k-i-hyperlink-open",
+                            click: (event) => {
+                                const dataItem = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
+                                this.openTemplateHistory(dataItem.templateId);
+                            }
+                        }]
+                    }
+                ],
+                noRecords: {
+                    template: "Deze commmit bevat geen templates"
+                }
+            });
+
+            $("<br><h2>Dynamic content</h2>").appendTo(event.detailCell);
+            $("<div/>").appendTo(event.detailCell).kendoGrid({
+                dataSource: {
+                    data: dynamicContents,
+                    schema: {
+                        model: {
+                            id: "id",
+                            fields: {
+                                templateNames: {
+                                    type: "array"
+                                }
+                            }
+                        }
+                    }
+                },
+                scrollable: false,
+                sortable: false,
+                pageable: false,
+                columns: [
+                    {field: "templateNames", title: "Templates", template: "#= templateNames.join(', ') #"},
+                    {field: "title", title: "Naam"},
+                    {field: "component", title: "Compnent"},
+                    {
+                        title: "&nbsp;",
+                        width: "150px",
+                        command: [{
+                            name: "open",
+                            text: "Bekijk historie",
+                            iconClass: "k-icon k-i-hyperlink-open",
+                            click: (event) => {
+                                const dataItem = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
+                                for (const template of dataItem.templateIds) {
+                                    this.openTemplateHistory(template);
+                                }
+                            }
+                        }]
+                    }
+                ],
+                noRecords: {
+                    template: "Deze commmit bevat geen dynamic content"
+                }
             });
         }
 
@@ -1150,6 +1296,80 @@ const moduleSettings = {
             }).data("kendoWindow");
 
             templateModuleWindow.open().maximize();
+        }
+
+        /**
+         * Approve a commit.
+         * @param reviewId The ID of the review to approve.
+         */
+        async approveReview(reviewId) {
+            const initialProcess = `ApproveCommit_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/reviews/${reviewId}/approve`,
+                    method: "PUT",
+                    contentType: "application/json"
+                });
+
+                this.reloadReviewsButton.trigger("click");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het goedkeuren van deze review/commit. Probeer het opnieuw of neem contact op als dat niet werkt.");
+            } finally {
+                window.processing.removeProcess(initialProcess);
+            }
+        }
+
+        /**
+         * Denies a commit, the owner needs to make some changes before it can be approved.
+         * @param reviewId The ID of the review to request changes for.
+         */
+        async reviewRequestChanges(reviewId) {
+            const initialProcess = `DenyCommit_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/reviews/${reviewId}/request-changes`,
+                    method: "PUT",
+                    contentType: "application/json"
+                });
+
+                this.reloadReviewsButton.trigger("click");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het goedkeuren van deze review/commit. Probeer het opnieuw of neem contact op als dat niet werkt.");
+            } finally {
+                window.processing.removeProcess(initialProcess);
+            }
+        }
+
+        /**
+         * Add a comment to a review.
+         * @param reviewId The ID of the review to request changes for.
+         * @param comment The comment to add to the review.
+         */
+        async reviewAddComment(reviewId, comment) {
+            const initialProcess = `AddComment_${Date.now()}`;
+            window.processing.addProcess(initialProcess);
+
+            try {
+                await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}version-control/reviews/${reviewId}/comment`,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(comment)
+                });
+
+                this.reloadReviewsButton.trigger("click");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het plaatsen van de reactie. Probeer het opnieuw of neem contact op als dat niet werkt.");
+            } finally {
+                window.processing.removeProcess(initialProcess);
+            }
         }
     }
 

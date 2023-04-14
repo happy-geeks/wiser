@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Modules.VersionControl.Enums;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -118,5 +119,43 @@ public class VersionControlController : Controller
     public async Task<IActionResult> GetReviewsAsync(bool hideApprovedReviews = true, bool getReviewsForCurrentUserOnly = false)
     {
         return (await reviewService.GetAsync((ClaimsIdentity) User.Identity, hideApprovedReviews, getReviewsForCurrentUserOnly)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Add a comment to an existing review.
+    /// </summary>
+    /// <param name="reviewId">The ID of the review to add the comment to.</param>
+    /// <param name="comment">The text of the comment to add.</param>
+    /// <returns>The newly added <see cref="ReviewCommentModel"/>.</returns>
+    [HttpPost]
+    [Route("reviews/{reviewId:int}/comment")]
+    [ProducesResponseType(typeof(List<ReviewCommentModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> AddCommentToReviewAsync(int reviewId, [FromBody]string comment)
+    {
+        return (await reviewService.AddCommentAsync((ClaimsIdentity) User.Identity, reviewId, comment)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Approves a commit.
+    /// </summary>
+    /// <param name="reviewId">The ID of the review.</param>
+    [HttpPut]
+    [Route("reviews/{reviewId:int}/approve")]
+    [ProducesResponseType(typeof(List<ReviewCommentModel>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ApproveReviewAsync(int reviewId)
+    {
+        return (await reviewService.UpdateReviewStatusAsync((ClaimsIdentity) User.Identity, reviewId, ReviewStatuses.Approved)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Denies a commit, the owner needs to make some changes before it can be approved.
+    /// </summary>
+    /// <param name="reviewId">The ID of the review.</param>
+    [HttpPut]
+    [Route("reviews/{reviewId:int}/request-changes")]
+    [ProducesResponseType(typeof(List<ReviewCommentModel>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ReviewRequestChangesAsync(int reviewId)
+    {
+        return (await reviewService.UpdateReviewStatusAsync((ClaimsIdentity) User.Identity, reviewId, ReviewStatuses.RequestChanges)).GetHttpResponseMessage();
     }
 }

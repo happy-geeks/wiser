@@ -68,6 +68,11 @@ public class ReviewModel
     public int CommitId { get; set; }
 
     /// <summary>
+    /// Gets or sets the commit that this review is meant for.
+    /// </summary>
+    public CommitModel Commit { get; set; }
+
+    /// <summary>
     /// Gets or sets the description of the commit.
     /// </summary>
     public string CommitDescription { get; set; }
