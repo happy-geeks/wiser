@@ -196,7 +196,7 @@ By default, users can see and change everything. If there is no entry in wiser_p
 # Publishing
 To publish Wiser 3 to your own server, you should use the following publish settings:
 - Configuration: `Release`
-- Target Framework: `net6.0`
+- Target Framework: `net7.0`
 - Deployment Mode: `Self-Contained`
 - Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
 - Under File Publish Option, tick the box for `Enable ReadyToRun compilation`
