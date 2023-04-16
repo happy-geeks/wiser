@@ -4,7 +4,7 @@ Wiser v3. This includes the API and the front-end projects.
 ## Requirements
 ### Software
 1. Install [NodeJs](https://nodejs.org/en/) LTS.
-2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) and install it.
+2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) and install it.
 
 ### Compile front-end
 1. Open PowerShell/CMD Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
