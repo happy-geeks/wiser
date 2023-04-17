@@ -196,7 +196,6 @@ const moduleSettings = {
             if (this.settings.templateId) {
                 await this.loadTemplate(this.settings.templateId);
                 this.selectedId = this.settings.templateId;
-                console.log("initial tab", this.settings.initialTab);
                 if (this.settings.initialTab) {
                     this.mainTabStrip.select(`li.${this.settings.initialTab}-tab`);
                 }

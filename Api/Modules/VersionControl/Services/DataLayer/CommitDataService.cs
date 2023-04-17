@@ -469,7 +469,7 @@ LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.co
 LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
 LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
-WHERE `commit`.completed = FALSE
+{whereClause}
 GROUP BY content.content_id";
 
 	    var dataTable = await databaseConnection.GetAsync(query);
@@ -540,7 +540,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTem
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent ON template.parent_id = parent.template_id AND parent.version = (SELECT MAX(x.version) FROM wiser_template AS x WHERE x.template_id = template.parent_id)
 LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
-WHERE `commit`.completed = FALSE";
+{whereClause}";
 
 	    dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)

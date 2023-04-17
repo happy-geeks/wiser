@@ -141,7 +141,7 @@ public class VersionControlController : Controller
     /// <param name="reviewId">The ID of the review.</param>
     [HttpPut]
     [Route("reviews/{reviewId:int}/approve")]
-    [ProducesResponseType(typeof(List<ReviewCommentModel>), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ApproveReviewAsync(int reviewId)
     {
         return (await reviewService.UpdateReviewStatusAsync((ClaimsIdentity) User.Identity, reviewId, ReviewStatuses.Approved)).GetHttpResponseMessage();
@@ -153,7 +153,7 @@ public class VersionControlController : Controller
     /// <param name="reviewId">The ID of the review.</param>
     [HttpPut]
     [Route("reviews/{reviewId:int}/request-changes")]
-    [ProducesResponseType(typeof(List<ReviewCommentModel>), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> ReviewRequestChangesAsync(int reviewId)
     {
         return (await reviewService.UpdateReviewStatusAsync((ClaimsIdentity) User.Identity, reviewId, ReviewStatuses.RequestChanges)).GetHttpResponseMessage();
