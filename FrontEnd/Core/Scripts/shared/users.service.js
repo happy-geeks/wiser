@@ -32,7 +32,7 @@ export default class UsersService extends BaseService {
             const loginResult = await this.base.api.post(`/connect/token`, loginData);
             result.success = true;
             result.data = loginResult.data;
-            result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
+            result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in > 60 ? 60 : 0)) * 1000));
             result.data.usersList = JSON.parse(result.data.users || "[]").map((user) => {
                 if (!user.Details || !user.Details.length) {
                     return user;
@@ -45,10 +45,6 @@ export default class UsersService extends BaseService {
                 return user;
             });
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
-
-            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
-                await this.startUpdateTimeActiveTimer();
-            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -99,12 +95,8 @@ export default class UsersService extends BaseService {
             const loginResult = await this.base.api.post(`/connect/token`, loginData);
             result.success = true;
             result.data = loginResult.data;
-            result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
+            result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in  > 60 ? 60 : 0)) * 1000));
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
-
-            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
-                await this.startUpdateTimeActiveTimer();
-            }
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
