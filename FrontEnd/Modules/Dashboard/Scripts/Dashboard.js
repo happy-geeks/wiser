@@ -321,7 +321,7 @@ const moduleSettings = {
                 iframe: true,
                 actions: ["Close"],
                 visible: false
-            }).data("kendoWindow")
+            }).data("kendoWindow");
         }
 
         /**

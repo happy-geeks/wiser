@@ -95,3 +95,7 @@ footer .k-button.k-disabled {
 .k-loading-image {
     display: none;
 }
+
+.review-comment-prompt + .k-prompt-container {
+    display: none;
+}

@@ -96,7 +96,9 @@ const moduleSettings = {
                 customerId: 0,
                 username: "Onbekend",
                 userEmailAddress: "",
-                userType: ""
+                userType: "",
+                templateId: 0,
+                initialTab: null
             };
             Object.assign(this.settings, settings);
 
@@ -194,6 +196,9 @@ const moduleSettings = {
             if (this.settings.templateId) {
                 await this.loadTemplate(this.settings.templateId);
                 this.selectedId = this.settings.templateId;
+                if (this.settings.initialTab) {
+                    this.mainTabStrip.select(`li.${this.settings.initialTab}-tab`);
+                }
             }
 
             window.processing.removeProcess(process);

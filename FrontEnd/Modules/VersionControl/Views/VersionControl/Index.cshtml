@@ -2,9 +2,8 @@
 @addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 @{
-    ViewBag.Title = "VCS";
+    ViewBag.Title = "Versiebeheer";
     Layout = "";
-    //_Layout
 }
 
 <!DOCTYPE html>
@@ -45,6 +44,7 @@
                 <ul>
                     <li id="changeHistoryTab" class="k-state-active">Openstaande wijzigingen</li>
                     <li id="deployTab">Deploy</li>
+                    <li id="reviewTab">Reviews</li>
                     <li id="historyTab">Historie</li>
                 </ul>
                 <div id="templateChangeHistory">
@@ -53,6 +53,8 @@
                             <select id="commitEnvironment"></select>
                             <label for="commitDescription">Omschrijving</label>
                             <textarea type="text" id="commitDescription"></textarea>
+                            <label for="usersForCodeReview">Code review aanvragen? Selecteer hier dan 1 of meer personen die de review kunnen doen:</label>
+                            <select id="usersForCodeReview" multiple></select>
                         </div>
                         <div id="gridsContainer">
                             <h2>Templates</h2>
@@ -81,6 +83,16 @@
                         <button class="environment-deploy" id="deployCommitToLive">Deploy naar live</button>
                         <button class="environment-deploy" id="deployCommitToAcceptance">Deploy naar acceptatie</button>
                         <button class="environment-deploy" id="deployCommitToTest">Deploy naar test</button>
+                    </footer>
+                </div>
+                <div id="review">
+                    <div class="formData">
+                        <div class="gridData">
+                            <div id="reviewGrid"></div>
+                        </div>
+                    </div>
+                    <footer>
+                        <button id="reloadReviewsButton">Verversen</button>
                     </footer>
                 </div>
                 <div id="history">

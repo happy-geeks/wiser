@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Models;
@@ -110,4 +111,15 @@ public class CommitModel
     /// Gets whether this commit has been fully deployed to test.
     /// </summary>
     public bool IsLive => (!Templates.Any() || Templates.All(t => t.IsLive)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsLive));
+
+    /// <summary>
+    /// Gets or sets the users that have been requested to do a code review for this commit.
+    /// Note: Users with a negative ID are admins from the main Wiser database, others are normal users from the tenant.
+    /// </summary>
+    public List<FlatItemModel> ReviewRequestedUsers { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the review status.
+    /// </summary>
+    public ReviewModel Review { get; set; }
 }
