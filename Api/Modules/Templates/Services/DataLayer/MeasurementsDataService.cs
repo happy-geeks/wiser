@@ -136,7 +136,7 @@ UNION ALL
     JOIN {WiserTableNames.WiserDynamicContentRenderLog} AS log ON log.content_id = link.content_id
     {whereClauseString}
     WHERE link.destination_template_id = ?id
-    {(getDailyAverage ? "GROUP BY DATE(log.start)" : "")}
+    {(getDailyAverage ? "GROUP BY log.content_id, DATE(log.start)" : "")}
 )");
         }
 
