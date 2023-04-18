@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Files.Models;
+using Api.Modules.Items.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Api.Modules.Files.Interfaces
@@ -13,6 +14,14 @@ namespace Api.Modules.Files.Interfaces
     /// </summary>
     public interface IFilesService
     {
+        /// <summary>
+        /// Gets all items in a tree view from a parent.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="parentId">Optional: The parent ID. If no value is given, then the items in the root will be retrieved.</param>
+        /// <returns>A list of <see cref="FileTreeViewModel"/>.</returns>
+        Task<ServiceResult<List<FileTreeViewModel>>> GetTreeAsync(ClaimsIdentity identity, ulong parentId = 0);
+
         /// <summary>
         /// Upload one or more files for an item.
         /// </summary>
@@ -70,7 +79,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         Task<ServiceResult<bool>> DeleteAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0);
-        
+
         /// <summary>
         /// Change the name of a file.
         /// </summary>

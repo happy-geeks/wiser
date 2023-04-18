@@ -295,7 +295,7 @@ ORDER BY template.ordering ASC");
         }
 
         /// <summary>
-        /// Return the query-string as it was formally stored in the database. These strings are now hardcoded. 
+        /// Return the query-string as it was formally stored in the database. These strings are now hardcoded.
         /// Settings are also hardcoded now.
         /// </summary>
         /// <param name="templateName"></param>
@@ -1998,49 +1998,6 @@ AND (@_linkTypeNumber = '' OR il.type = @_linkTypeNumber)
 GROUP BY il.item_id, id2.id
 
 ORDER BY ordering, title");
-                TemplateQueryStrings.Add("GET_ITEM_FILES_AND_DIRECTORIES", @"SET @parent = IF('{id}' = '' OR '{id}' LIKE '{%}', '{rootId:decrypt(true)}', '{id:decrypt(true)}');
-
-SELECT
-	id AS id_encrypt_withdate,
-    id AS plainId,
-	file_name AS name,
-	content_type AS contentType,
-	0 AS isDirectory,
-	0 AS childrenCount,
-    property_name AS propertyName,
-    item_id AS itemId_encrypt_withdate,
-    item_id AS itemIdPlain,
-    CASE
-        WHEN content_type LIKE 'image/%' THEN 'image'
-        WHEN content_type = 'text/html' THEN 'html'
-        ELSE 'file'
-    END AS spriteCssClass,
-    IF(content_type IN('text/html', 'application/octet-stream'), CONVERT(content USING utf8), '') AS html
-FROM wiser_itemfile
-WHERE item_id = @parent
-
-UNION ALL
-
-SELECT
-	item.id AS id_encrypt_withdate,
-    item.id AS plainId,
-	item.title AS name,
-	'' AS contentType,
-	1 AS isDirectory,
-	COUNT(DISTINCT subItem.id) + COUNT(DISTINCT file.id) AS childrenCount,
-    '' AS property_name,
-	item.id AS itemId_encrypt_withdate,
-    item.id AS itemIdPlain,
-    'wiserfolderclosed' AS spriteCssClass,
-    '' AS html
-FROM wiser_item AS item
-LEFT JOIN wiser_item AS subItem ON subItem.entity_type = 'filedirectory' AND subItem.parent_item_id = item.id
-LEFT JOIN wiser_itemfile AS file ON file.item_id = item.id
-WHERE item.entity_type = 'filedirectory'
-AND item.parent_item_id = @parent
-GROUP BY item.id
-
-ORDER BY isDirectory DESC, name ASC");
 
                 TemplateQueryStrings.Add("GET_DATA_FROM_ENTITY_QUERY", @"SET @_itemId = {myItemId};
 SET @entityproperty_id = {propertyid};
@@ -2615,7 +2572,7 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject; 
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject;
                 }
                 else
                 {
@@ -2686,7 +2643,7 @@ LIMIT 1";
             var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
 
             await SetupGclForPreviewAsync(identity, requestModel);
-            
+
             var contentToWrite = new StringBuilder();
 
             // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
@@ -2738,7 +2695,7 @@ LIMIT 1";
                 var cssBuilder = new StringBuilder();
                 cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
                 cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
-                
+
                 var regex = new Regex("/css/gclcss_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
                 var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
                 if (match.Success)
@@ -2748,7 +2705,7 @@ LIMIT 1";
                 }
 
                 viewModel.Css.PageStandardCssFileName = null;
-                
+
                 match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
                 if (match.Success)
                 {
@@ -2757,7 +2714,7 @@ LIMIT 1";
                 }
 
                 viewModel.Css.PageAsyncFooterCssFileName = null;
-                
+
                 match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
                 if (match.Success)
                 {
@@ -2784,7 +2741,7 @@ LIMIT 1";
                 }
 
                 viewModel.Javascript.PageStandardJavascriptFileName = null;
-                
+
                 match = regex.Match(viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName ?? "");
                 if (match.Success)
                 {
@@ -2817,7 +2774,7 @@ LIMIT 1";
                 }
 
                 viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
-                
+
                 match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
                 if (match.Success)
                 {
@@ -2863,7 +2820,7 @@ LIMIT 1";
             finalResult = finalResult.ReplaceCaseInsensitive("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
             return new ServiceResult<string>(finalResult);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
         {
@@ -3238,10 +3195,10 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch." 
+                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch."
                 };
             }
-            
+
             // Check if the branch exists.
             var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
             if (branchToDeploy == null)
@@ -3250,7 +3207,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Branch with ID {branchId} does not exist" 
+                    ErrorMessage = $"Branch with ID {branchId} does not exist"
                 };
             }
 
@@ -3261,7 +3218,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}" 
+                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}"
                 };
             }
 
@@ -3324,7 +3281,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
             var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
             var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
-            
+
             var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
             if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
             {
@@ -3350,7 +3307,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 result.MeasureRenderTimesOnDevelopmentForEverything = String.Equals(developmentRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
                                                                       || String.Equals(developmentRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
-            
+
             if (!String.IsNullOrWhiteSpace(testRenderingSettings))
             {
                 var ids = testRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
@@ -3358,7 +3315,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 result.MeasureRenderTimesOnTestForEverything = String.Equals(testRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
                                                                || String.Equals(testRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
-            
+
             if (!String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
             {
                 var ids = acceptanceRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
@@ -3366,7 +3323,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 result.MeasureRenderTimesOnAcceptanceForEverything = String.Equals(acceptanceRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
                                                                      || String.Equals(acceptanceRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
             }
-            
+
             if (!String.IsNullOrWhiteSpace(liveRenderingSettings))
             {
                 var ids = liveRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
@@ -3398,7 +3355,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     ErrorMessage = "Cannot change these settings, because they are enabled globally."
                 };
             }
-            
+
             // Get the current settings from database.
             var name = templateId > 0 ? "templates" : "components";
             var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
@@ -3446,7 +3403,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 if (testIds.Contains(templateId)) testIds.Remove(templateId);
             }
-            
+
             if (settings.MeasureRenderTimesOnAcceptanceForCurrent)
             {
                 if (!acceptanceIds.Contains(templateId)) acceptanceIds.Add(templateId);
@@ -3455,7 +3412,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             {
                 if (acceptanceIds.Contains(templateId)) acceptanceIds.Remove(templateId);
             }
-            
+
             if (settings.MeasureRenderTimesOnLiveForCurrent)
             {
                 if (!liveIds.Contains(templateId)) liveIds.Add(templateId);
@@ -3480,7 +3437,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         /// <inheritdoc />
         public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
             string urlRegex = null, Environments? environment = null, ulong userId = 0,
-            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            string languageCode = null, int pageSize = 500, int pageNumber = 1,
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
             var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);

@@ -14,6 +14,7 @@ require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.window.js");
 require("@progress/kendo-ui/js/kendo.numerictextbox.js");
 require("@progress/kendo-ui/js/kendo.dropdownlist.js");
+require("@progress/kendo-ui/js/kendo.tabstrip.js");
 require("@progress/kendo-ui/js/filemanager/contextmenu.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
@@ -37,6 +38,8 @@ const moduleSettings = {
          */
         constructor(settings) {
             this.base = this;
+
+            this.mainTabStrip = null;
 
             // Upload windows.
             this.imagesUploaderWindow = null;
@@ -121,16 +124,24 @@ const moduleSettings = {
             }
 
             // Get user data from API.
-            const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
+            let userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
+
+            // If we have no 'plainImagesRootId', then force the refresh from database, because this is a new setting and not everyone has it in their cache
+            if (!userData.plainImagesRootId) {
+                userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot, true);
+            }
             this.settings.userId = userData.encryptedId;
             this.settings.customerId = userData.encryptedCustomerId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.filesRootId = userData.filesRootId;
             this.settings.imagesRootId = userData.imagesRootId;
             this.settings.templatesRootId = userData.templatesRootId;
+            this.settings.plainFilesRootId = userData.plainFilesRootId;
+            this.settings.plainImagesRootId = userData.plainImagesRootId;
+            this.settings.plainTemplatesRootId = userData.plainTemplatesRootId;
             this.settings.mainDomain = userData.mainDomain;
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
-            
+
             await this.initialize();
         }
 
@@ -158,7 +169,7 @@ const moduleSettings = {
                     template: $("#successTemplate").html()
                 }]
             }).data("kendoNotification");
-            
+
             // Window for viewing a all generic images and for adding them into an HTML editor.
             this.imagesUploaderWindow = $("#imagesUploaderWindow").kendoWindow({
                 width: "90%",
@@ -189,6 +200,13 @@ const moduleSettings = {
                     collapsible: false
                 }]
             }).data("kendoSplitter");
+
+            this.imagesUploaderWindow.element.find(".image-preview .copy-image-url").click((event) => {
+                event.preventDefault();
+                navigator.clipboard.writeText(this.generateImagePreviewUrl().url)
+                    .then(() => console.log("Copied to clipboard"))
+                    .catch((error) => console.error("Could not copy to clipboard", error));
+            });
 
             // Window for viewing a all generic files and for adding them into an HTML editor.
             this.filesUploaderWindow = $("#filesUploaderWindow").kendoWindow({
@@ -225,6 +243,13 @@ const moduleSettings = {
                 }]
             }).data("kendoSplitter");
 
+            this.filesUploaderWindow.element.find(".file-preview .copy-file-url").click((event) => {
+                event.preventDefault();
+                navigator.clipboard.writeText(this.generateFilePreviewUrl())
+                    .then(() => console.log("Copied to clipboard"))
+                    .catch((error) => console.error("Could not copy to clipboard", error));
+            });
+
             // Window for viewing a all generic HTML templates and for adding them into an HTML editor.
             this.templatesUploaderWindow = $("#templatesUploaderWindow").kendoWindow({
                 width: "90%",
@@ -255,7 +280,7 @@ const moduleSettings = {
                     collapsible: false
                 }]
             }).data("kendoSplitter");
-            
+
             // Open the correct screen based on the selected mode.
             this.settings.mode = this.settings.mode || "";
             switch (this.settings.mode.toLowerCase()) {
@@ -269,7 +294,11 @@ const moduleSettings = {
                     this.templatesUploaderWindow.maximize().open();
                     break;
                 default:
-                    $("#ModeSelector").show();
+                    this.mainTabStrip = $("#ModeSelector").show().kendoTabStrip({
+                        animation: false,
+                        select: this.onTabStripSelect.bind(this)
+                    }).data("kendoTabStrip");
+                    this.mainTabStrip.select(0);
                     break;
             }
         }
@@ -283,6 +312,19 @@ const moduleSettings = {
         }
 
         /**
+         * Event for when the user selects a tab in the main tab strip.
+         * @param event
+         */
+        onTabStripSelect(event) {
+            const iframeElement = event.contentElement.querySelector("iframe");
+            if (!iframeElement || iframeElement.src) {
+                return;
+            }
+
+            iframeElement.src = iframeElement.getAttribute("data-src");
+        }
+
+        /**
          * Initializes all components in the image uploader window.
          * @param {any} event The event of the open function of the imageUploaderWindow.
          */
@@ -292,15 +334,24 @@ const moduleSettings = {
                 dragAndDrop: false,
                 dataSource: {
                     transport: {
-                        read: {
-                            url: `${this.settings.serviceRoot}/GET_ITEM_FILES_AND_DIRECTORIES?rootId=${encodeURIComponent(this.settings.imagesRootId)}`,
-                            dataType: "json"
+                        read: (transportOptions) => {
+                            const node = transportOptions.data;
+                            const nodeId = node.id || this.settings.plainImagesRootId;
+                            const url = `${this.settings.wiserApiRoot}files/${encodeURIComponent(nodeId)}/tree`;
+                            Wiser.api({
+                                url: url,
+                                dataType: "json"
+                            }).then((result) => {
+                                transportOptions.success(result);
+                            }).catch((error) => {
+                                transportOptions.error(error);
+                            });
                         }
                     },
                     schema: {
                         model: {
                             id: "id",
-                            hasChildren: "childrenCount"
+                            hasChildren: "hasChildren"
                         }
                     }
                 },
@@ -427,7 +478,7 @@ const moduleSettings = {
                                 } else {
                                     Wiser.showConfirmDialog(`Weet u zeker dat u de afbeelding '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                         Wiser.api({
-                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
+                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.encryptedItemId)}/files/${encodeURIComponent(selectedItem.id)}`,
                                             method: "DELETE",
                                             contentType: "application/json",
                                             dataType: "JSON"
@@ -446,7 +497,7 @@ const moduleSettings = {
                             case "rename":
                                 kendo.prompt("Geef een nieuwe naam op", selectedItem.name).then((newName) => {
                                     if (selectedItem.isDirectory) {
-                                        Wiser.updateItem(this.settings, selectedItem.itemId, [], false, newName, true, "filedirectory").then(() => {
+                                        Wiser.updateItem(this.settings, selectedItem.encryptedItemId, [], false, newName, true, "filedirectory").then(() => {
                                             this.imagesUploaderWindowTreeView.text(this.imagesUploaderWindowTreeViewContextMenuTarget, newName);
                                             this.notification.show({ message: "Mapnaam is succesvol gewijzigd" }, "success");
                                             loader.removeClass("loading");
@@ -457,7 +508,7 @@ const moduleSettings = {
                                         });
                                     } else {
                                         Wiser.api({
-                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
+                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.encryptedItemId)}/files/${encodeURIComponent(selectedItem.id)}/rename/${encodeURIComponent(newName)}`,
                                             method: "PUT",
                                             contentType: "application/json",
                                             dataType: "JSON"
@@ -533,15 +584,24 @@ const moduleSettings = {
                 dragAndDrop: false,
                 dataSource: {
                     transport: {
-                        read: {
-                            url: `${this.settings.serviceRoot}/GET_ITEM_FILES_AND_DIRECTORIES?rootId=${encodeURIComponent(this.settings.filesRootId)}`,
-                            dataType: "json"
+                        read: (transportOptions) => {
+                            const node = transportOptions.data;
+                            const nodeId = node.id || this.settings.plainFilesRootId;
+                            const url = `${this.settings.wiserApiRoot}files/${encodeURIComponent(nodeId)}/tree`;
+                            Wiser.api({
+                                url: url,
+                                dataType: "json"
+                            }).then((result) => {
+                                transportOptions.success(result);
+                            }).catch((error) => {
+                                transportOptions.error(error);
+                            });
                         }
                     },
                     schema: {
                         model: {
                             id: "id",
-                            hasChildren: "childrenCount"
+                            hasChildren: "hasChildren"
                         }
                     }
                 },
@@ -640,7 +700,7 @@ const moduleSettings = {
                                 } else {
                                     Wiser.showConfirmDialog(`Weet u zeker dat u het bestand '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                         Wiser.api({
-                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
+                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.encryptedItemId)}/files/${encodeURIComponent(selectedItem.id)}`,
                                             method: "DELETE",
                                             contentType: "application/json",
                                             dataType: "JSON"
@@ -659,7 +719,7 @@ const moduleSettings = {
                             case "rename":
                                 kendo.prompt("Geef een nieuwe naam op", selectedItem.name).then((newName) => {
                                     if (selectedItem.isDirectory) {
-                                        Wiser.updateItem(this.settings, selectedItem.itemId, [], false, newName, true, "filedirectory").then(() => {
+                                        Wiser.updateItem(this.settings, selectedItem.encryptedItemId, [], false, newName, true, "filedirectory").then(() => {
                                             this.filesUploaderWindowTreeView.text(this.filesUploaderWindowTreeViewContextMenuTarget, newName);
                                             this.notification.show({ message: "Mapnaam is succesvol gewijzigd" }, "success");
                                             loader.removeClass("loading");
@@ -670,7 +730,7 @@ const moduleSettings = {
                                         });
                                     } else {
                                         Wiser.api({
-                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
+                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.encryptedItemId)}/files/${encodeURIComponent(selectedItem.id)}/rename/${encodeURIComponent(newName)}`,
                                             method: "PUT",
                                             contentType: "application/json",
                                             dataType: "JSON"
@@ -746,15 +806,24 @@ const moduleSettings = {
                 dragAndDrop: false,
                 dataSource: {
                     transport: {
-                        read: {
-                            url: `${this.settings.serviceRoot}/GET_ITEM_FILES_AND_DIRECTORIES?rootId=${encodeURIComponent(this.settings.templatesRootId)}`,
-                            dataType: "json"
+                        read: (transportOptions) => {
+                            const node = transportOptions.data;
+                            const nodeId = node.id || this.settings.plainTemplatesRootId;
+                            const url = `${this.settings.wiserApiRoot}files/${encodeURIComponent(nodeId)}/tree`;
+                            Wiser.api({
+                                url: url,
+                                dataType: "json"
+                            }).then((result) => {
+                                transportOptions.success(result);
+                            }).catch((error) => {
+                                transportOptions.error(error);
+                            });
                         }
                     },
                     schema: {
                         model: {
                             id: "id",
-                            hasChildren: "childrenCount"
+                            hasChildren: "hasChildren"
                         }
                     }
                 },
@@ -868,7 +937,7 @@ const moduleSettings = {
                                 } else {
                                     Wiser.showConfirmDialog(`Weet u zeker dat u de template '${selectedItem.name}' wilt verwijderen?`).then(() => {
                                         Wiser.api({
-                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}`,
+                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.encryptedItemId)}/files/${encodeURIComponent(selectedItem.id)}`,
                                             method: "DELETE",
                                             contentType: "application/json",
                                             dataType: "JSON"
@@ -887,7 +956,7 @@ const moduleSettings = {
                             case "rename":
                                 kendo.prompt("Geef een nieuwe naam op", selectedItem.name).then((newName) => {
                                     if (selectedItem.isDirectory) {
-                                        Wiser.updateItem(this.settings, selectedItem.itemId, [], false, newName, true, "filedirectory").then(() => {
+                                        Wiser.updateItem(this.settings, selectedItem.encryptedItemId, [], false, newName, true, "filedirectory").then(() => {
                                             this.templatesUploaderWindowTreeView.text(this.templatesUploaderWindowTreeViewContextMenuTarget, newName);
                                             this.notification.show({ message: "Mapnaam is succesvol gewijzigd" }, "success");
                                             loader.removeClass("loading");
@@ -898,7 +967,7 @@ const moduleSettings = {
                                         });
                                     } else {
                                         Wiser.api({
-                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.itemId)}/files/${encodeURIComponent(selectedItem.plainId)}/rename/${encodeURIComponent(newName)}`,
+                                            url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(selectedItem.encryptedItemId)}/files/${encodeURIComponent(selectedItem.id)}/rename/${encodeURIComponent(newName)}`,
                                             method: "PUT",
                                             contentType: "application/json",
                                             dataType: "JSON"
@@ -994,7 +1063,7 @@ const moduleSettings = {
             treeView.element.find(".k-item").each((index, element) => {
                 const item = treeView.dataItem(element);
                 if (item && item.expanded) {
-                    this.uploaderWindowTreeViewStates[type][item.plainId] = true;
+                    this.uploaderWindowTreeViewStates[type][item.id] = true;
                 }
             });
         }
@@ -1009,7 +1078,7 @@ const moduleSettings = {
             }
 
             for (let i = 0; i < data.length; i++) {
-                if (this.uploaderWindowTreeViewStates[type][data[i].plainId]) {
+                if (this.uploaderWindowTreeViewStates[type][data[i].id]) {
                     await data[i].load();
                     treeView.expand(treeView.findByUid(data[i].uid));
                 }
@@ -1028,7 +1097,7 @@ const moduleSettings = {
          * @param extension The extension of the image file
          * @returns {string} The URL for the preview image.
          */
-        generateImagePreviewUrl(extension) {
+        generateImagePreviewUrl(extension = "") {
             const selectedItem = this.imagesUploaderWindowTreeView.dataItem(this.imagesUploaderWindowTreeView.select());
             let resizeMode = this.imagesUploaderWindow.element.find("#resizeMode").data("kendoDropDownList").value() || "normal";
             if (resizeMode === "crop" || resizeMode === "fill") {
@@ -1054,7 +1123,7 @@ const moduleSettings = {
             }
 
             return {
-                url: `${domain}image/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName || "global_file"}/${resizeMode}/${width}/${height}/${fileName}`,
+                url: `${domain}image/wiser2/${selectedItem.id}/direct/${selectedItem.propertyName || "global_file"}/${resizeMode}/${width}/${height}/${fileName}`,
                 altText: altText
             };
         }
@@ -1065,7 +1134,7 @@ const moduleSettings = {
          */
         generateFilePreviewUrl() {
             const selectedItem = this.filesUploaderWindowTreeView.dataItem(this.filesUploaderWindowTreeView.select());
-            let result = `${this.settings.mainDomain}/file/wiser2/${selectedItem.plainId}/direct/${selectedItem.propertyName || "global_file"}/${selectedItem.name}`;
+            let result = `${this.settings.mainDomain}/file/wiser2/${selectedItem.id}/direct/${selectedItem.propertyName || "global_file"}/${selectedItem.name}`;
             return result.replace("//file", "/file");
         }
 

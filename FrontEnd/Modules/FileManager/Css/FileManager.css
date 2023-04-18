@@ -112,3 +112,25 @@ html, body {
 .iframe .k-window-titlebar {
     display: none;
 }
+
+#ModeSelector {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#ModeSelector .k-tabstrip-items-wrapper {
+    height: 48px;
+}
+
+#ModeSelector .k-tabstrip-content {
+    flex-grow: 1;
+}
+
+#ModeSelector iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
