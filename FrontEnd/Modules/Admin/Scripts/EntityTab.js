@@ -14,6 +14,7 @@ export class EntityTab {
         this.fieldOptions = {};
         this.previouslySelectedEntity = null;
         this.previouslySelectedTab = null;
+        this.allFieldsOfSelectedEntity = [];
     }
 
     checkIfEntityIsSet() {
@@ -1269,7 +1270,35 @@ export class EntityTab {
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
-            dataSource: {}
+            dataSource: {},
+            cascade: async (event) => {
+                const dataItem = event.dataItem || event.sender.dataItem();
+                if (!dataItem) {
+                    return;
+                }
+
+                const fields = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${dataItem.id}`,
+                    method: "GET",
+                    contentType: "application/json"
+                });
+
+                this.searchFields.setDataSource(fields);
+            }
+        }).data("kendoDropDownList");
+
+        this.dataSelectors = await Wiser.api({
+            url: `${this.base.settings.wiserApiRoot}data-selectors`,
+            contentType: 'application/json',
+            method: "GET"
+        });
+        this.dataSourceDataSelector = $("#dataSourceDataSelector").kendoDropDownList({
+            clearButton: false,
+            dataTextField: "name",
+            dataValueField: "id",
+            filter: "contains",
+            minLength: 1,
+            dataSource: this.dataSelectors
         }).data("kendoDropDownList");
 
         this.linkedItemEntity = $("#linkedItemEntity").kendoDropDownList({
@@ -1407,34 +1436,15 @@ export class EntityTab {
             }
         }).data("kendoDropDownList");
 
-        function onDataBound(e) {
-            $('.k-multiselect .k-input').unbind('keyup');
-            $('.k-multiselect .k-input').on('keyup', onClickEnter);
-        }
-
-        function onClickEnter(e) {
-            if (e.keyCode === 13) {
-                const widget = $('#searchFields').getKendoMultiSelect();
-                const value = $(`.item.tagList .k-multiselect .k-input`).val().trim();
-                if (!value || value.length === 0) {
-                    return;
-                }
-                const newItem = {
-                    name: value
-                };
-
-                widget.dataSource.add(newItem);
-                widget.value(widget.value().concat([newItem.name]));
-            }
-        }
-
         this.searchFields = $("#searchFields").kendoMultiSelect({
-            dataTextField: "name",
-            dataValueField: "name",
-            dataSource: {
-                data: []
-            },
-            dataBound: onDataBound
+            placeholder: "Selecteer veld(en)...",
+            clearButton: false,
+            filter: "contains",
+            multiple: "multiple",
+            dataSource: [],
+            dataTextField: "displayName",
+            dataValueField: "propertyName",
+            groupName: "tabName"
         }).data("kendoMultiSelect");
 
         //COMBOBOX - INPUT-TYPE
@@ -1448,7 +1458,7 @@ export class EntityTab {
                 if (!dataItem) {
                     return;
                 }
-                
+
                 $(`.togglePanel.dataSource[data-panel="${dataItem.id}"]`).addClass("active");
                 $("[data-show-for-panel=panel2]").toggle(dataItem.id === "panel2");
             }
@@ -2282,12 +2292,12 @@ export class EntityTab {
         }
 
         this.entityTabStrip.wrapper.show();
-        const selectedId = this.entitiesCombobox.dataItem().id;
-        if (selectedId) {
-            await this.getEntityPropertiesOfSelected(this.entitiesCombobox.dataItem().id);
+        const selectedItem = this.entitiesCombobox.dataItem();
+        if (selectedItem.id) {
+            await this.getEntityPropertiesOfSelected(selectedItem.id);
         }
 
-        $("#entityView .delBtn").toggleClass("hidden", !selectedId);
+        $("#entityView .delBtn").toggleClass("hidden", !selectedItem.id);
 
         // set tabnames
         await this.setTabNameDropDown();
@@ -2811,8 +2821,8 @@ export class EntityTab {
                 entityProperties.options.mainImageId = this.multiSelectMainImageId.value();
                 entityProperties.options.mainImageUrl = $("#multiSelectMainImageUrl").val();
                 entityProperties.options.imagePropertyName = $("#multiSelectImagePropertyName").val();
+                entityProperties.options.saveValueAsItemLink = document.getElementById("saveValueAsItemLink").checked;
 
-                // check if panel 1 is selected, which is "Vaste waardes"
                 if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL1.id) {
                     var data = this.grid.dataSource.data();
                     var dataSource = [];
@@ -2828,8 +2838,6 @@ export class EntityTab {
                     entityProperties.options.entityType = null;
                     entityProperties.options.searchInTitle = null;
                     entityProperties.options.searchEverywhere = null;
-
-                    // check if panel 2 is selected, which is "Lijst van entiteiten"
                 } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL2.id) {
                     // check if entity to search for is set, show error if not
                     if (!this.dataSourceEntities.dataItem()) {
@@ -2844,13 +2852,22 @@ export class EntityTab {
 
                     // overwrite the preserved options, else the options would
                     this.fieldOptions.searchFields = this.searchFields.value();
-
-                    // check if panel 1 is selected, which is "Query"
                 } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL3.id) {
                     // get value through codemirror function getValue() because textarea is empty
                     entityProperties.dataQuery = this.queryField.getValue();
                     entityProperties.options.dataSource = null;
                     entityProperties.options.entityType = null;
+                    entityProperties.options.searchInTitle = null;
+                    entityProperties.options.searchEverywhere = null;
+                } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL4.id) {
+                    // check if entity to search for is set, show error if not
+                    if (!this.dataSourceDataSelector.dataItem()) {
+                        this.base.showNotification("notification", `Selecteer eerst een data selector die gebruikt moet worden`, "error");
+                        return;
+                    }
+                    entityProperties.options.dataSelectorId = this.dataSourceDataSelector.dataItem().id;
+                    entityProperties.options.entityType = null;
+                    entityProperties.options.dataSource = null;
                     entityProperties.options.searchInTitle = null;
                     entityProperties.options.searchEverywhere = null;
                 }
@@ -3250,10 +3267,12 @@ export class EntityTab {
         this.grid.setDataSource(null);
         this.dataSourceEntities.select("");
         this.dataSourceFilter.select(0);
+        this.dataSourceDataSelector.select(0);
         this.searchFields.value([]);
         document.getElementById("useDropDownList").checked = false;
         document.getElementById("searchInTitle").checked = false;
         document.getElementById("searchEverywhere").checked = false;
+        document.getElementById("saveValueAsItemLink").checked = false;
 
         // secure input default
         $("#typeSecureInput").data("kendoDropDownList").select(0);
@@ -3647,9 +3666,12 @@ export class EntityTab {
                 break;
             case inputTypes.COMBOBOX:
             case inputTypes.MULTISELECT:
+                const dataSelectorId = getOptionValueAndDeleteForOptionsField("dataSelectorId", "");
                 if (resultSet.inputType === inputTypes.COMBOBOX) {
                     document.getElementById("useDropDownList").checked = getOptionValueAndDeleteForOptionsField("useDropDownList");
                 }
+
+                document.getElementById("saveValueAsItemLink").checked = getOptionValueAndDeleteForOptionsField("saveValueAsItemLink");
 
                 this.multiSelectMode.select((dataItem) => {
                     return (dataItem.value || "").toString().toLowerCase() === (optionsMode || "").toString().toLowerCase();
@@ -3657,6 +3679,7 @@ export class EntityTab {
                 this.multiSelectMainImageId.value(getOptionValueAndDeleteForOptionsField("mainImageId", ""));
                 $("#multiSelectMainImageUrl").val(getOptionValueAndDeleteForOptionsField("mainImageUrl", ""));
                 $("#multiSelectImagePropertyName").val(getOptionValueAndDeleteForOptionsField("imagePropertyName", ""));
+                this.dataSourceDataSelector.value(dataSelectorId);
 
                 let panel = "";
                 // if dataQuery is set, set the codemirror field to the field's value
@@ -3675,19 +3698,15 @@ export class EntityTab {
                     document.getElementById("searchEverywhere").checked = getOptionValueAndDeleteForOptionsField("searchEverywhere", false);
 
                     const searchFields = getOptionValueAndDeleteForOptionsField("searchFields", []);
-                    $.each(searchFields, (i, v) => {
-                        const newItem = {
-                            name: v
-                        };
-                        const widget = this.searchFields;
-                        widget.dataSource.add(newItem);
-                        widget.value(widget.value().concat([newItem.name]));
-                    });
+                    this.searchFields.value(searchFields);
 
                 } // if dataSource is set, set the grid datasource to the options dataSource
                 else if (optionsDataSource) {
                     panel = this.base.dataSourceType.PANEL1.id;
                     this.grid.setDataSource(optionsDataSource);
+                }
+                else if (dataSelectorId) {
+                    panel = this.base.dataSourceType.PANEL4.id;
                 }
                 // set dropdown to right panel
                 this.dataSourceFilter.select((dataItem) => {

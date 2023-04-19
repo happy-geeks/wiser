@@ -335,10 +335,6 @@ li.hint span {
     margin-top: 26px;
 }
 
-#searchFields-list {
-    display: none !important;
-}
-
 /* loader */
 .loaderWrap {
     background: rgba(0, 0, 0, 0.40);
