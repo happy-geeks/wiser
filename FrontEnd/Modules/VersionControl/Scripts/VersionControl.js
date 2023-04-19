@@ -1216,8 +1216,8 @@ const moduleSettings = {
                 sortable: false,
                 pageable: false,
                 columns: [
-                    {field: "templateParentName", title: "Map"},
                     {field: "templateName", title: "Template"},
+                    {field: "templateParentName", title: "Map"},
                     {
                         title: "&nbsp;",
                         width: "150px",
@@ -1256,9 +1256,9 @@ const moduleSettings = {
                 sortable: false,
                 pageable: false,
                 columns: [
-                    {field: "templateNames", title: "Templates", template: "#= templateNames.join(', ') #"},
+                    {field: "templateNames", title: "Gekoppelde templates", template: "#= templateNames.join(', ') #"},
                     {field: "title", title: "Naam"},
-                    {field: "component", title: "Compnent"},
+                    {field: "component", title: "Component"},
                     {
                         title: "&nbsp;",
                         width: "150px",
