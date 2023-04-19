@@ -849,41 +849,43 @@ WHERE id = ?serviceId");
         var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
         // Check if the dashboard table needs to be updated.
-        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserDashboard) || lastTableUpdates[WiserTableNames.WiserDashboard] < new DateTime(2023, 2, 23))
+        if (!await databaseHelpersService.TableExistsAsync(WiserTableNames.WiserDashboard) || lastTableUpdates.TryGetValue(WiserTableNames.WiserDashboard, out var value) && value >= new DateTime(2023, 2, 23))
         {
-            // Add columns.
-            var column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
-            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
-            column = new ColumnSettingsModel("user_login_active_other", MySqlDbType.Int64, notNull: true, defaultValue: "0");
-            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+            return;
+        }
 
-            // Convert and drop the "user_login_time_top10" column if it still exists.
-            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName))
-            {
-                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_top10", "user_login_active_top10");
-                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName);
-            }
+        // Add columns.
+        var column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+        await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+        column = new ColumnSettingsModel("user_login_active_other", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+        await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
 
-            // Convert and drop the "user_login_time_other" column if it still exists.
-            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName))
-            {
-                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_other", "user_login_active_other");
-                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName);
-            }
+        // Convert and drop the "user_login_time_top10" column if it still exists.
+        if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName))
+        {
+            await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_top10", "user_login_active_top10");
+            await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName);
+        }
 
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserDashboard);
-            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            var lastUpdateData = await clientDatabaseConnection.GetAsync($"SELECT `name` FROM `{WiserTableNames.WiserTableChanges}` WHERE `name` = ?tableName");
-            var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
-            if (lastUpdateData.Rows.Count == 0)
-            {
-                await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
-            }
-            else
-            {
-                await clientDatabaseConnection.ExecuteAsync($"UPDATE {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
-            }
+        // Convert and drop the "user_login_time_other" column if it still exists.
+        if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName))
+        {
+            await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_other", "user_login_active_other");
+            await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName);
+        }
+
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserDashboard);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        var lastUpdateData = await clientDatabaseConnection.GetAsync($"SELECT `name` FROM `{WiserTableNames.WiserTableChanges}` WHERE `name` = ?tableName");
+        var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+        if (lastUpdateData.Rows.Count == 0)
+        {
+            await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
+        }
+        else
+        {
+            await clientDatabaseConnection.ExecuteAsync($"UPDATE {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
         }
     }
 
