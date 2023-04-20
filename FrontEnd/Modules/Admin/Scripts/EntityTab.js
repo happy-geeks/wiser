@@ -2631,44 +2631,62 @@ export class EntityTab {
         }
     }
 
+    /**
+     * Get the current entity settings, these are the settings that are currently set in the fields, including unsaved changes.
+     * @returns {EntityModel|null} The settings for the entity, or null if no module has been selected.
+     */
+    getCurrentEntitySettings() {
+        const entityDataItem = this.entitiesCombobox.dataItem();
+        if (!entityDataItem || !entityDataItem.id) {
+            return null;
+        }
+
+        const entity = new EntityModel();
+        entity.id = entityDataItem.id;
+        entity.entityType = document.getElementById("entityName").value;
+
+        entity.moduleId = this.entityModule.value();
+        entity.acceptedChildtypes = this.acceptedChildTypes.value();
+        entity.icon = this.entityIcon.value();
+        entity.iconAdd = this.entityIconAdd.value();
+        entity.iconExpanded = this.entityIconExpanded.value();
+        entity.defaultOrdering = this.defaultOrdering.value();
+        entity.color = this.entityColor.value();
+        entity.deleteAction = this.deleteAction.value();
+
+        entity.showInTreeView = document.getElementById("showInTreeView").checked;
+        entity.showInSearch = document.getElementById("showInSearch").checked;
+        entity.showOverviewTab = document.getElementById("showInOverviewTab").checked;
+        entity.saveTitleAsSeo = document.getElementById("saveTitleAsSEO").checked;
+        entity.showTitleField = document.getElementById("showTitleField").checked;
+        entity.saveHistory = document.getElementById("saveHistory").checked;
+        entity.showInDashboard = document.getElementById("showInDashboard").checked;
+        entity.enableMultipleEnvironments = document.getElementById("enableMultipleEnvironments").checked;
+
+        entity.displayName = document.getElementById("friendlyName").value;
+        entity.queryAfterInsert = this.queryAfterInsert.getValue();
+        entity.queryAfterUpdate = this.queryAfterUpdate.getValue();
+        entity.queryBeforeUpdate = this.queryBeforeUpdate.getValue();
+        entity.queryBeforeDelete = this.queryBeforeDelete.getValue();
+        entity.templateQuery = this.templateQueryField.getValue();
+        entity.templateHtml = this.templateHtmlField.getValue();
+
+        entity.dedicatedTablePrefix = document.getElementById("entityDedicatedTablePrefix").value;
+
+        return entity;
+    }
+
     async saveEntityProperties() {
         try {
-            const entity = new EntityModel();
+            const entity = this.getCurrentEntitySettings();
+            if (!entity) {
+                kendo.alert("Selecteer eerst een entiteit.");
+                return;
+            }
+
             const entityDataItem = this.entitiesCombobox.dataItem();
             const oldName = entityDataItem.name === "ROOT" ? "" : entityDataItem.name;
             const oldModuleId = entityDataItem.moduleId;
-
-            entity.id = entityDataItem.id;
-            entity.entityType = document.getElementById("entityName").value;
-
-            entity.moduleId = this.entityModule.value();
-            entity.acceptedChildtypes = this.acceptedChildTypes.value();
-            entity.icon = this.entityIcon.value();
-            entity.iconAdd = this.entityIconAdd.value();
-            entity.iconExpanded = this.entityIconExpanded.value();
-            entity.defaultOrdering = this.defaultOrdering.value();
-            entity.color = this.entityColor.value();
-            entity.deleteAction = this.deleteAction.value();
-
-            entity.showInTreeView = document.getElementById("showInTreeView").checked;
-            entity.showInSearch = document.getElementById("showInSearch").checked;
-            entity.showOverviewTab = document.getElementById("showInOverviewTab").checked;
-            entity.saveTitleAsSeo = document.getElementById("saveTitleAsSEO").checked;
-            entity.showTitleField = document.getElementById("showTitleField").checked;
-            entity.saveHistory = document.getElementById("saveHistory").checked;
-            entity.showInDashboard = document.getElementById("showInDashboard").checked;
-            entity.enableMultipleEnvironments = document.getElementById("enableMultipleEnvironments").checked;
-
-            entity.displayName = document.getElementById("friendlyName").value;
-            entity.queryAfterInsert = this.queryAfterInsert.getValue();
-            entity.queryAfterUpdate = this.queryAfterUpdate.getValue();
-            entity.queryBeforeUpdate = this.queryBeforeUpdate.getValue();
-            entity.queryBeforeDelete = this.queryBeforeDelete.getValue();
-            entity.templateQuery = this.templateQueryField.getValue();
-            entity.templateHtml = this.templateHtmlField.getValue();
-
-            entity.dedicatedTablePrefix = document.getElementById("entityDedicatedTablePrefix").value;
-
             document.querySelector(".loaderWrap").classList.add("active");
 
             //save to database
@@ -3972,5 +3990,9 @@ export class EntityTab {
             returnVal.push({ text: v, id: i });
         });
         return returnVal;
+    }
+
+    hasChanges() {
+        return false;
     }
 }

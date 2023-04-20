@@ -30,8 +30,9 @@ namespace Api.Modules.Modules.Interfaces
         /// </summary>
         /// <param name="id">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="encryptIds">Optional: Whether or not the IDs in the module settings should be encrypted. Defaults to true.</param>
         /// <returns></returns>
-        Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity);
+        Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptIds = true);
 
         /// <summary>
         /// Creates a new module

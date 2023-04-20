@@ -13,7 +13,6 @@ export class WiserLinkTab {
     async setupBindings() {
         await this.initializeKendoComponents();
     }
-
     async editLink() {
         if (!this.wiserLinkCombobox || !this.wiserLinkCombobox.dataItem() || !this.wiserLinkCombobox.dataItem().type) return;
         const linkDataItem = this.wiserLinkCombobox.dataItem();
@@ -92,7 +91,7 @@ export class WiserLinkTab {
 
     async initializeKendoComponents() {
         return new Promise((resolve) => {
-            // initialize kendo components on page 
+            // initialize kendo components on page
 
             $(".addLinkBtn").kendoButton({
                 click: () => {
@@ -128,7 +127,7 @@ export class WiserLinkTab {
             this.linkType = $("#wiserLinkType").kendoNumericTextBox({
                 decimals: 0,
                 format: "#"
-            }).data("kendoNumericTextBox"); 
+            }).data("kendoNumericTextBox");
 
             // Main combobox for selecting a link
             this.wiserLinkCombobox = $("#wiserLinks").kendoDropDownList({
@@ -152,7 +151,7 @@ export class WiserLinkTab {
                 },
                 cascade: this.onWiserLinkComboBoxSelect.bind(this)
             }).data("kendoDropDownList");
-            
+
             this.connectedEntity = $("#connectedEntity").kendoDropDownList({
                 clearButton: false,
                 dataTextField: "displayName",
@@ -250,7 +249,7 @@ export class WiserLinkTab {
             this.linkTypePopup = $("#wiserLinkTypePopup").kendoNumericTextBox({
                 decimals: 0,
                 format: "#"
-            }).data("kendoNumericTextBox"); 
+            }).data("kendoNumericTextBox");
             resolve();
         });
     }
@@ -281,5 +280,9 @@ export class WiserLinkTab {
         });
 
         this.wiserLinkCombobox.setDataSource(dataSource);
+    }
+
+    hasChanges() {
+        return false;
     }
 }

@@ -53,10 +53,16 @@ const moduleSettings = {
             this.settings = {};
             Object.assign(this.settings, settings);
 
+            // Ask for confirmation when leaving the page if there are unsaved changes.
+            window.onbeforeunload = () => {
+                if (this.hasChanges()) {
+                    return false;
+                }
+            };
+
             // Fire event on page ready for direct actions
             $(document).ready(() => {
                 this.onPageReady();
-
             });
 
             // enum of available kendo prompts
@@ -173,7 +179,6 @@ const moduleSettings = {
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
-
             // These are all entities, including duplicate ones that have the same name in different modules.
             try {
                 this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
@@ -211,6 +216,14 @@ const moduleSettings = {
             } catch (e) {
                 return false;
             }
+        }
+
+        hasChanges() {
+            return this.entityTab.hasChanges()
+                || this.moduleTab.hasChanges()
+                || this.roleTab.hasChanges()
+                || this.wiserQueryTab.hasChanges()
+                || this.wiserLinkTab.hasChanges();
         }
 
         moveUp(e) {

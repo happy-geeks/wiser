@@ -1888,7 +1888,6 @@ const moduleSettings = {
             $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
 
-        //Save the template data
         bindEvents() {
             window.addEventListener("beforeunload", async (event) => {
                 if (!this.canUnloadTemplate()) {

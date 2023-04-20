@@ -94,12 +94,12 @@ namespace Api.Modules.Modules.Services
 
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
                 WiserTableNames.WiserEntity,
                 WiserTableNames.WiserEntityProperty,
                 WiserTableNames.WiserLink
             });
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
                 WiserTableNames.WiserItem,
                 WiserTableNames.WiserItemDetail,
                 WiserTableNames.WiserModule ,
@@ -119,13 +119,13 @@ namespace Api.Modules.Modules.Services
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
-            
+
             // Make sure that all triggers for Wiser tables are up-to-date.
             if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
-                
+
                 // Update wiser_table_changes.
                 clientDatabaseConnection.AddParameter("tableName", TriggersName);
                 clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
@@ -183,7 +183,7 @@ UNION
             }
 
             var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",                                                                                                                     "false"), "true", StringComparison.OrdinalIgnoreCase);
-            
+
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
@@ -595,7 +595,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptIds = true)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
@@ -641,7 +641,11 @@ UNION
             }
 
             var parsedOptionsJson = JToken.Parse(optionsJson);
-            jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+
+            if (encryptIds)
+            {
+                jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+            }
 
             result.Options = parsedOptionsJson;
 
@@ -716,7 +720,7 @@ ORDER BY `group` ASC");
             var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
             return new ServiceResult<List<string>>(results.ToList());
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
         {
@@ -764,7 +768,7 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
                                 `type` = ?type,
                                 `group` = ?group
                         WHERE id = ?id";
-            
+
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true)
             {
