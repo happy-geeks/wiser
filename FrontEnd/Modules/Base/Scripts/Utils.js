@@ -380,9 +380,10 @@ export class Wiser {
     /**
      * Get the data of the logged in user.
      * @param {string} apiRoot The root URL of the Wiser API.
+     * @param {boolean} forceRefresh If true, the user data will be retrieved from the API instead of the session storage.
      * @returns {any} The user data as an object.
      */
-    static async getLoggedInUserData(apiRoot) {
+    static async getLoggedInUserData(apiRoot, forceRefresh = false) {
         try {
             let result = sessionStorage.getItem("userSettings");
             if (result) {
@@ -395,7 +396,7 @@ export class Wiser {
                 }
             }
 
-            if (!result) {
+            if (!result || forceRefresh) {
                 result = await Wiser.api({ url: `${apiRoot}users/self` });
                 if (result) {
                     sessionStorage.setItem("userSettings", JSON.stringify({ dateTime: new Date(), data: result }));

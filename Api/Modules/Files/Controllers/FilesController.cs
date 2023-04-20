@@ -41,6 +41,21 @@ namespace Api.Modules.Files.Controllers
         }
 
         /// <summary>
+        /// Gets all items in a tree view from a parent.
+        /// </summary>
+        /// <param name="parentId">The parent ID. Enter 0 to get items from the root directory..</param>
+        /// <returns>A list of <see cref="FileTreeViewModel"/>.</returns>
+        [HttpGet]
+        [Route("{parentId:int}/tree")]
+        [ProducesResponseType(typeof(List<FileTreeViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetTreeAsync(ulong parentId)
+        {
+            return (await filesService.GetTreeAsync((ClaimsIdentity) User.Identity, parentId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Upload one or more files for an item.
         /// The files should be included in the request as multi part form data.
         /// </summary>
@@ -124,7 +139,7 @@ namespace Api.Modules.Files.Controllers
             {
                 return result;
             }
-            
+
             if (!String.IsNullOrWhiteSpace(imageResult.ModelObject.Url))
             {
                 imageResult.StatusCode = HttpStatusCode.Found;
