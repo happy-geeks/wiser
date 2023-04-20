@@ -99,3 +99,14 @@ footer .k-button.k-disabled {
 .review-comment-prompt + .k-prompt-container {
     display: none;
 }
+
+#reaction-grid .k-state-selected {
+    background-color: #FFFFFF;
+    border-color: #E6E6E6;
+    color: #282828;
+    white-space: pre-line;
+}
+
+#reaction-grid .k-state-selected:hover {
+    background-color: #F3F5F7;
+}
