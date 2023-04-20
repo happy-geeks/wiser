@@ -43,7 +43,7 @@ namespace Api.Modules.Files.Controllers
         /// <summary>
         /// Gets all items in a tree view from a parent.
         /// </summary>
-        /// <param name="parentId">Optional: The parent ID. If no value is given, then the items in the root will be retrieved.</param>
+        /// <param name="parentId">The parent ID. Enter 0 to get items from the root directory..</param>
         /// <returns>A list of <see cref="FileTreeViewModel"/>.</returns>
         [HttpGet]
         [Route("{parentId:int}/tree")]
