@@ -671,8 +671,11 @@ ORDER BY username.`value` ASC";
 
             var wiserSettings = await usersService.GetWiserSettingsForUserAsync(encryptionKey);
             result.FilesRootId = wiserSettings.FilesRootId;
+            result.PlainFilesRootId = wiserSettings.PlainFilesRootId;
             result.ImagesRootId = wiserSettings.ImagesRootId;
+            result.PlainImagesRootId = wiserSettings.PlainImagesRootId;
             result.TemplatesRootId = wiserSettings.TemplatesRootId;
+            result.PlainTemplatesRootId = wiserSettings.PlainTemplatesRootId;
             result.MainDomain = wiserSettings.MainDomain;
 
             return new ServiceResult<UserModel>(result);
@@ -842,12 +845,15 @@ ORDER BY username.`value` ASC";
                 {
                     case "w2filesrootid":
                         result.FilesRootId = encryptedValue;
+                        result.PlainFilesRootId = value;
                         break;
                     case "w2imagesrootid":
                         result.ImagesRootId = encryptedValue;
+                        result.PlainImagesRootId = value;
                         break;
                     case "w2templatesrootid":
                         result.TemplatesRootId = encryptedValue;
+                        result.PlainTemplatesRootId = value;
                         break;
                     case "maindomain_wiser":
                         mainDomainWiser = savedValue;

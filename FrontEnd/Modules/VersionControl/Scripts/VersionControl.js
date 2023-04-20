@@ -1180,7 +1180,7 @@ const moduleSettings = {
             const dynamicContents = event.data.commit.dynamicContents || [];
 
             $("<h2>Reacties</h2>").appendTo(event.detailCell);
-            $("<div/>").appendTo(event.detailCell).kendoGrid({
+            $("<div id='reaction-grid'/>").appendTo(event.detailCell).kendoGrid({
                 dataSource: {
                     data: comments,
                     schema: {
@@ -1196,6 +1196,7 @@ const moduleSettings = {
                 },
                 scrollable: false,
                 sortable: false,
+                selectable: "cell",
                 pageable: false,
                 columns: [
                     {field: "addedOn", title: "Datum", width: "150px", format: "{0:dd-MM-yyyy HH:mm}"},

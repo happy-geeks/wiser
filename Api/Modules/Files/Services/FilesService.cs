@@ -14,6 +14,8 @@ using Api.Modules.Customers.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Models;
 using Api.Modules.CloudFlare.Interfaces;
+using Api.Modules.Files.Interfaces.Repository;
+using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -36,17 +38,46 @@ namespace Api.Modules.Files.Services
         private readonly IDatabaseConnection databaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly ICloudFlareService cloudFlareService;
+        private readonly IFilesRepository filesRepository;
 
         /// <summary>
         /// Creates a new instance of <see cref="FilesService"/>.
         /// </summary>
-        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService)
+        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
             this.databaseConnection = databaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.cloudFlareService = cloudFlareService;
+            this.filesRepository = filesRepository;
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<FileTreeViewModel>>> GetTreeAsync(ClaimsIdentity identity, ulong parentId = 0)
+        {
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(parentId, EntityActions.Read, userId, entityType: Constants.FilesDirectoryEntityType);
+            if (!success)
+            {
+                return new ServiceResult<List<FileTreeViewModel>>
+                {
+                    ErrorMessage = errorMessage,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+
+            var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(Constants.FilesDirectoryEntityType);
+            var results = await filesRepository.GetTreeAsync(parentId, tablePrefix);
+
+            foreach (var fileTreeViewModel in results)
+            {
+                fileTreeViewModel.EncryptedId = await wiserCustomersService.EncryptValue(fileTreeViewModel.Id.ToString(), identity);
+                fileTreeViewModel.EncryptedItemId = await wiserCustomersService.EncryptValue(fileTreeViewModel.ItemId.ToString(), identity);
+            }
+
+            return new ServiceResult<List<FileTreeViewModel>>(results);
         }
 
         /// <inheritdoc />

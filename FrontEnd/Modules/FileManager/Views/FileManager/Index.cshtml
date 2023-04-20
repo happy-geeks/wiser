@@ -13,7 +13,7 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
-    
+
     <style>
         #imagesUploaderWindow,
         #filesUploaderWindow,
@@ -35,14 +35,16 @@
       data-mode="@Model.Mode"
       data-selected-text="@Model.SelectedText">
 
-<div id="ModeSelector">
-    <p>Welke bestanden wilt u beheren?</p>
-    <ul>
-        <li><a href="?mode=Images">Afbeeldingen</a></li>
-        <li><a href="?mode=Templates">HTML templates</a></li>
-        <li><a href="?mode=Files">Overige bestanden</a></li>
-    </ul>
-</div>
+    <div id="ModeSelector">
+        <ul>
+            <li>Afbeeldingen</li>
+            <li>HTML templates</li>
+            <li>Overige bestanden</li>
+        </ul>
+        <div id="ImagesTab"><iframe data-src="?mode=Images"></iframe></div>
+        <div id="TemplatesTab"><iframe data-src="?mode=Templates"></iframe></div>
+        <div id="FilesTab"><iframe data-src="?mode=Files"></iframe></div>
+    </div>
 
     <div id="imagesUploaderWindow" class="popup-container">
         <input type="file" id="newImageUpload" class="hidden" multiple />
@@ -66,7 +68,6 @@
 
             <div class="right-pane hidden">
                 <div class="pane-content image-preview">
-
                     <div class="formview full static-fields group-columns">
                         <div class="item-group">
                             <h3>Opties</h3>
@@ -170,7 +171,8 @@
                         <div class="item-group">
                             <h3>Voorbeeld</h3>
                             <div class="item">
-                                <a class="image-preview-link" target="_blank"><img /></a>
+                                <a class="image-preview-link" target="_blank"><img /></a><br/>
+                                <a class="copy-image-url" href="#">URL kopiëren</a>
                             </div>
                         </div>
                     </div>
@@ -211,7 +213,6 @@
 
             <div class="right-pane hidden">
                 <div class="pane-content file-preview">
-
                     <div class="formview full static-fields group-columns">
                         <div class="item-group">
                             <h3>Opties</h3>
@@ -227,7 +228,8 @@
                         <div class="item-group">
                             <h3>Voorbeeld</h3>
                             <div class="item">
-                                <a class="file-preview-link" target="_blank">Download bestand</a>
+                                <a class="file-preview-link" target="_blank">Download bestand</a><br/>
+                                <a class="copy-file-url" href="#">URL kopiëren</a>
                             </div>
                         </div>
                     </div>
@@ -268,7 +270,6 @@
 
             <div class="right-pane hidden">
                 <div class="pane-content template-preview">
-
                     <div class="formview full static-fields group-columns">
                         <div class="item-group">
                             <h3>Voorbeeld</h3>
@@ -290,7 +291,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- ALERT MESSAGES -->
     <div id="alert"></div>
     <div id="alert-pane"></div>
