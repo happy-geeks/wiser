@@ -173,7 +173,6 @@ namespace Api.Modules.LinkSettings.Services
                             relationship = ?relationship,
                             duplication = ?duplication,
                             use_item_parent_id = ?use_item_parent_id,
-                        	use_item_parent_id = ?use_item_parent_id,
                             use_dedicated_table = ?use_dedicated_table,
                             cascade_delete = ?cascade_delete
                         WHERE id = ?id";
