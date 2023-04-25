@@ -83,6 +83,8 @@ namespace Api.Modules.LinkSettings.Services
             clientDatabaseConnection.AddParameter("relationship", ToDatabaseValue(linkSettings.Relationship));
             clientDatabaseConnection.AddParameter("duplication", ToDatabaseValue(linkSettings.DuplicationMethod));
             clientDatabaseConnection.AddParameter("use_item_parent_id", linkSettings.UseItemParentId);
+            clientDatabaseConnection.AddParameter("cascade_delete", linkSettings.CascadeDelete);
+            clientDatabaseConnection.AddParameter("use_dedicated_table", linkSettings.UseDedicatedTable);
             var query = $@"INSERT INTO {WiserTableNames.WiserLink} 
                         (
                             type,
@@ -105,7 +107,10 @@ namespace Api.Modules.LinkSettings.Services
                             ?show_in_data_selector,
                             ?relationship,
                             ?duplication,
-                            ?use_item_parent_id
+                            ?use_item_parent_id,
+                            ?use_item_parent_id,
+                            ?use_dedicated_table,
+                            ?cascade_delete
                         ); SELECT LAST_INSERT_ID();";
 
             try
@@ -155,6 +160,8 @@ namespace Api.Modules.LinkSettings.Services
             clientDatabaseConnection.AddParameter("relationship", ToDatabaseValue(linkSettings.Relationship));
             clientDatabaseConnection.AddParameter("duplication", ToDatabaseValue(linkSettings.DuplicationMethod));
             clientDatabaseConnection.AddParameter("use_item_parent_id", linkSettings.UseItemParentId);
+            clientDatabaseConnection.AddParameter("cascade_delete", linkSettings.CascadeDelete);
+            clientDatabaseConnection.AddParameter("use_dedicated_table", linkSettings.UseDedicatedTable);
 
             var query = $@"UPDATE {WiserTableNames.WiserLink}
                         SET type = ?type,
@@ -165,7 +172,10 @@ namespace Api.Modules.LinkSettings.Services
                             show_in_data_selector = ?show_in_data_selector,
                             relationship = ?relationship,
                             duplication = ?duplication,
-                            use_item_parent_id = ?use_item_parent_id
+                            use_item_parent_id = ?use_item_parent_id,
+                        	use_item_parent_id = ?use_item_parent_id,
+                            use_dedicated_table = ?use_dedicated_table,
+                            cascade_delete = ?cascade_delete
                         WHERE id = ?id";
 
             try
