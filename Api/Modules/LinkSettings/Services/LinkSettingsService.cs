@@ -108,7 +108,6 @@ namespace Api.Modules.LinkSettings.Services
                             ?relationship,
                             ?duplication,
                             ?use_item_parent_id,
-                            ?use_item_parent_id,
                             ?use_dedicated_table,
                             ?cascade_delete
                         ); SELECT LAST_INSERT_ID();";
