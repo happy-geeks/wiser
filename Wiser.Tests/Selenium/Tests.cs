@@ -363,9 +363,10 @@ public class Tests
     }
 
     [Test]
-    // 1. Open popup to open item by ID;
-    // 2. Search for item;
-    // 3. Close item window.
+    // 1. Open the Wiser configuration module;
+    // 2. Open popup to open item by ID;
+    // 3. Search for item;
+    // 4. Close item window.
     public void OpenWiserItemById()
     {
         foreach (var url in testSettings.TestUrls)
@@ -376,10 +377,13 @@ public class Tests
             // Open popup to open an item by ID.
             var actions = new Actions(driver);
             actions.MoveToElement(driver.FindElement(By.CssSelector(".sub-title"))).Perform();
-            WaitTillElementIsDisplayed(By.CssSelector(".sub-menu > li:nth-child(3)"));
-            driver.FindElement(By.CssSelector(".sub-menu > li:nth-child(3)")).Click();
+            WaitTillElementIsDisplayed(By.CssSelector(".sub-menu > li:nth-child(2)"));
+            driver.FindElement(By.CssSelector(".sub-menu > li:nth-child(2)")).Click();
+            driver.SwitchTo().Frame(driver.FindElement(By.Id("0_1")));
+            driver.FindElement(By.CssSelector("a.group-item[data-action='OpenWiserIdPrompt']")).Click();
             
             // Open the item with the ID of the admin user.
+            driver.SwitchTo().DefaultContent();
             driver.FindElement(By.Id("wiserId")).SendKeys("51111");
             driver.FindElement(By.CssSelector(".btn-primary")).Click();
             WaitTillElementIsFound(By.Id("wiserItem_51111_wiseruser_1"));
@@ -415,6 +419,7 @@ public class Tests
             // Load data selector.
             driver.FindElement(By.Id("loadButton")).Click();
             WaitTillElementIsDisplayed(By.CssSelector(".k-dialog .k-input-value-text"));
+            Thread.Sleep(1000); // Options are shown by animation, when clicking to soon focus will be lost and no value can be entered causing the test to fail.
             driver.FindElement(By.CssSelector(".k-dialog .k-input-value-text")).Click();
             WaitTillElementIsDisplayed(By.CssSelector(".k-animation-container .k-input-inner"));
             driver.FindElement(By.CssSelector(".k-animation-container .k-input-inner")).SendKeys("Alle users in Wiser");
