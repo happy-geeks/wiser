@@ -95,7 +95,9 @@ namespace Api.Modules.LinkSettings.Services
                             show_in_data_selector,
                             relationship,
                             duplication,
-                            use_item_parent_id
+                            use_item_parent_id,
+                            use_dedicated_table,
+                            cascade_delete
                         )
                         VALUES
                         (
