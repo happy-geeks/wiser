@@ -50,7 +50,7 @@ export class WiserLinkTab {
 
             $(".deleteLinkBtn").kendoButton({
                 click: () => {
-                    Wiser.showConfirmDialog(`Weet u zeker dat u deze link wilt verwijderen?`).then(() => {
+                    Wiser.showConfirmDialog(`Weet u zeker dat u deze koppeling wilt verwijderen?`).then(() => {
                         this.deleteLink();
                     });
                 },
