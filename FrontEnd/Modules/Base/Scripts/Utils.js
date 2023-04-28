@@ -277,13 +277,13 @@ export class Wiser {
             previousWindow = wiserMainWindow;
             wiserMainWindow = wiserMainWindow.parent;
         }
-        
+
         // If another process/request is already requesting a new access token, wait for that to finish first.
         // This is to prevent multiple access token requests at the same time and to prevent racing conditions.
         if (wiserMainWindow.wiserApiRefreshTokenPromise) {
             const timeoutPromise = new Promise((res) => setTimeout(() => res("TIMEOUT"), 1000));
             const newRefreshToken = await Promise.race([wiserMainWindow.wiserApiRefreshTokenPromise, timeoutPromise]);
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             if (newRefreshToken !== "TIMEOUT") {
                 $.ajaxSetup({
@@ -304,12 +304,12 @@ export class Wiser {
                 if (wiserMainWindow && wiserMainWindow.main && wiserMainWindow.main.vueApp) {
                     await wiserMainWindow.main.vueApp.logout();
                 }
-                
+
                 return Promise.reject("No refresh token found!");
             }
 
             const wiserSettings = document.body.dataset;
-            
+
             // Create a promise for the refresh token, so that other requests know we're already busy getting one. They will then wait for this to finish.
             wiserMainWindow.wiserApiRefreshTokenPromise = new Promise(async (resolve, reject) => {
                 try {
@@ -326,7 +326,7 @@ export class Wiser {
                         }
                     });
 
-                    refreshTokenResult.expiresOn = new Date(new Date().getTime() + (refreshTokenResult.expires_in * 1000));
+                    refreshTokenResult.expiresOn = new Date(new Date().getTime() + ((refreshTokenResult.expires_in - (refreshTokenResult.expires_in > 60 ? 60 : 0)) * 1000));
                     refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
 
                     localStorage.setItem("accessToken", refreshTokenResult.access_token);
@@ -350,7 +350,7 @@ export class Wiser {
             const timeoutPromise = new Promise((res) => setTimeout(() => res("TIMEOUT"), 1000));
             await Promise.race([wiserMainWindow.wiserApiRefreshTokenPromise, timeoutPromise]);
         }
-        
+
         // Double check if the current ajax setup has the correct token set.
         // It can happen that this still has an old token when someone is working in multiple browser tabs at the same time,
         // If the token gets refreshed in tab X, it will not update the ajax setup in tab Y, so we need to do that now.
@@ -368,7 +368,7 @@ export class Wiser {
 
             if (settings.url.indexOf("/connect/token") > -1) {
                 console.error("Refresh token failed!");
-                
+
                 // If we got a 401 while using the refresh token, it means the refresh token is no longer valid, so logout the user.
                 if (window.parent && window.parent.main && window.parent.main.vueApp) {
                     window.parent.main.vueApp.logout();
@@ -380,9 +380,10 @@ export class Wiser {
     /**
      * Get the data of the logged in user.
      * @param {string} apiRoot The root URL of the Wiser API.
+     * @param {boolean} forceRefresh If true, the user data will be retrieved from the API instead of the session storage.
      * @returns {any} The user data as an object.
      */
-    static async getLoggedInUserData(apiRoot) {
+    static async getLoggedInUserData(apiRoot, forceRefresh = false) {
         try {
             let result = sessionStorage.getItem("userSettings");
             if (result) {
@@ -395,7 +396,7 @@ export class Wiser {
                 }
             }
 
-            if (!result) {
+            if (!result || forceRefresh) {
                 result = await Wiser.api({ url: `${apiRoot}users/self` });
                 if (result) {
                     sessionStorage.setItem("userSettings", JSON.stringify({ dateTime: new Date(), data: result }));
@@ -468,7 +469,7 @@ export class Wiser {
                         cssClass: "cancel-button"
                     },
                     {
-                        text: confirmButtonText, 
+                        text: confirmButtonText,
                         primary: true,
                         cssClass: "delete-button",
                         action: (event) => {
@@ -676,7 +677,7 @@ export class Wiser {
                             data: !extraData ? null : JSON.stringify(extraData),
                             contentType: "application/json"
                         });
-                        
+
                         if (queryResult && queryResult.otherData && queryResult.otherData.length > 0) {
                             extraData = $.extend(extraData || {}, queryResult.otherData[0]);
                         }
@@ -695,11 +696,11 @@ export class Wiser {
                         action.function = "/" + action.function;
                     }
 
-                    // Setup the headers for the request.                    
+                    // Setup the headers for the request.
                     const headers = {
                         "X-Api-Url": `${apiOptions.baseUrl}${action.function}`
                     };
-                    
+
                     if (action.extraHeaders) {
                         for (let headerName in action.extraHeaders) {
                             if (!action.extraHeaders.hasOwnProperty(headerName)) {
@@ -792,7 +793,7 @@ export class Wiser {
     /**
      * Use standard full OAUTH2 authentication.
      * If a manual login is required, this will open a window where the user can login.
-     * @param {any} settings The module settings. 
+     * @param {any} settings The module settings.
      * @param {any} apiOptions The API options from wiser_api_connection.
      * @param {any} apiConnectionId The ID of the API connection/authentication data in wiser_api_connection.
      * @param {any} authenticationData The saved authentication data from wiser_api_connection.
@@ -968,7 +969,7 @@ export class Wiser {
      * @param {string} name Optional: The name of the new item.
      * @param {number} linkTypeNumber Optional: The type number of the link between the new item and it's parent.
      * @param {any} data Optional: The data to save with the new item.
-     * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save). 
+     * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save).
      * @param {number} moduleId Optional: The id of the module in which the item should be created.
      * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
      */
@@ -1081,7 +1082,7 @@ export class Wiser {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan tijdens het uitvoeren (of opzoeken) van de actie 'api_after_update'. Indien er een koppeling is opgezet met een extern systeem, dan zijn de wijzigingen nu niet gesynchroniseerd naar dat systeem. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
             }
-            
+
             return updateResult;
         } catch (exception) {
             console.error(exception);

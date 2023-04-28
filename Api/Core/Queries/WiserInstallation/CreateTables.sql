@@ -846,8 +846,8 @@ CREATE TABLE IF NOT EXISTS `wiser_dashboard`  (
   `entities_data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `user_login_count_top10` int NOT NULL DEFAULT 0,
   `user_login_count_other` int NOT NULL DEFAULT 0,
-  `user_login_time_top10` time NOT NULL DEFAULT '00:00:00',
-  `user_login_time_other` time NOT NULL DEFAULT '00:00:00',
+  `user_login_active_top10` bigint NOT NULL DEFAULT 0,
+  `user_login_active_other` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 

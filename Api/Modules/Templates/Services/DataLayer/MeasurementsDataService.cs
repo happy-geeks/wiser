@@ -29,7 +29,7 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
     /// <inheritdoc />
     public async Task<List<RenderLogModel>> GetRenderLogsAsync(int templateId = 0, int componentId = 0, int version = 0,
         string urlRegex = null, Environments? environment = null, ulong userId = 0,
-        string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+        string languageCode = null, int pageSize = 500, int pageNumber = 1,
         bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
     {
         if (templateId <= 0 && componentId <= 0)
@@ -39,10 +39,10 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
 
         var idColumn = componentId > 0 ? "content_id" : "template_id";
         var tableName = componentId > 0 ? WiserTableNames.WiserDynamicContentRenderLog : WiserTableNames.WiserTemplateRenderLog;
-        
+
         // First build the query with filters and paging.
         clientDatabaseConnection.AddParameter("id", componentId > 0 ? componentId : templateId);
-        
+
         var whereClause = new List<string>();
         if (environment.HasValue)
         {
@@ -136,7 +136,7 @@ UNION ALL
     JOIN {WiserTableNames.WiserDynamicContentRenderLog} AS log ON log.content_id = link.content_id
     {whereClauseString}
     WHERE link.destination_template_id = ?id
-    {(getDailyAverage ? "GROUP BY DATE(log.start)" : "")}
+    {(getDailyAverage ? "GROUP BY log.content_id, DATE(log.start)" : "")}
 )");
         }
 
@@ -161,7 +161,6 @@ UNION ALL
                 Environment = (Environments) Enum.Parse(typeof(Environments), dataRow.Field<string>("environment"), true),
                 Start = dataTable.Columns.Contains("start") ? dataRow.Field<DateTime>("start") : dataRow.Field<DateTime>("date"),
                 End = dataTable.Columns.Contains("end") ? dataRow.Field<DateTime>("end") : null,
-                TimeTaken = TimeSpan.FromMilliseconds(timeTaken),
                 TimeTakenInMilliseconds = timeTaken,
                 UserId = dataRow.Field<ulong>("user_id"),
                 LanguageCode = dataRow.Field<string>("language_code"),

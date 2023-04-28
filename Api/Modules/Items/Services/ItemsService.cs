@@ -1308,7 +1308,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     var parsedFilesJson = JToken.Parse(filesJson);
                     jsonService.EncryptValuesInJson(parsedFilesJson, encryptionKey, new List<string> { "itemId" });
                     filesJson = parsedFilesJson.ToString();
-                    
+
                     // Fix the ordering of the files in this field, to prevent problems with changing the ordering later.
                     await filesService.FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
                 }
@@ -1426,9 +1426,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         longValue = await wiserItemsService.ReplaceHtmlForViewingAsync(longValue);
                         break;
                     case "empty":
-                        // Other fields get HTML encoded later, with the exception of empty field. This is so that you can set some HTML in the default value for this field.
-                        value = value.HtmlEncode();
-                        break;
                     case "iframe":
                         {
                             if (String.IsNullOrWhiteSpace(defaultValue))
@@ -1436,7 +1433,13 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 break;
                             }
 
-                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
+                            var queryId = "0";
+                            if (optionsObject.TryGetValue("queryId", out var queryIdValue))
+                            {
+                                queryId = queryIdValue.Value<string>();
+                            }
+
+                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue(queryId, identity), identity, userId);
                             if (customQueryResult.ModelObject is not { Success: true })
                             {
                                 break;
@@ -1885,7 +1888,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
 
                 var itemEntityType = dataTable.Rows[0].Field<string>("entity_type");
                 var entity = group.FirstOrDefault(x => String.Equals(itemEntityType, x.Item1, StringComparison.OrdinalIgnoreCase));
-                
+
                 if (entity == null)
                 {
                     continue;
@@ -2014,7 +2017,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                 // Just to make it easier in the queries below.
                 linkTypesToHideFromTreeView.Add(-1);
             }
-            
+
             var linkTypesToHideFromTreeViewList = String.Join(",", linkTypesToHideFromTreeView);
 
             // Inline function to convert a DataRow to a TreeViewItemModel and add it to the results list.
@@ -2541,7 +2544,7 @@ ORDER BY {orderByClause}";
             {
                 sourceEntityType = linkTypeSettings.SourceEntityType;
             }
-            
+
             var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
 
             clientDatabaseConnection.ClearParameters();
@@ -2585,14 +2588,14 @@ ORDER BY {orderByClause}";
             {
                 throw new ArgumentNullException(nameof(settings.SourceLanguageCode));
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
             var username = IdentityHelpers.GetUserName(identity, true);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
-            
+
             try
             {
                 // Get all item details that can be translated.

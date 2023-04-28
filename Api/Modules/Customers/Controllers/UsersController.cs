@@ -40,9 +40,9 @@ namespace Api.Modules.Customers.Controllers
         /// <returns>A <see cref="List{T}"/> of <see cref="WiserItemModel"/>, but only with names and IDs.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(bool includeAdminUsers = false)
         {
-            return (await usersService.GetAsync()).GetHttpResponseMessage();
+            return (await usersService.GetAsync(includeAdminUsers)).GetHttpResponseMessage();
         }
 
         /// <summary>

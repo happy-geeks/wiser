@@ -136,7 +136,7 @@ public class DashboardService : IDashboardService, IScopedService
                 await RefreshTableDataAsync(databaseName);
             }
 
-            var wiserStatsData = await clientDatabaseConnection.GetAsync($"SELECT items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other FROM {queryDatabasePart}`{WiserTableNames.WiserDashboard}`");
+            var wiserStatsData = await clientDatabaseConnection.GetAsync($"SELECT items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_active_top10, user_login_active_other FROM {queryDatabasePart}`{WiserTableNames.WiserDashboard}`");
             if (wiserStatsData.Rows.Count == 0)
             {
                 // This should not be possible, so throw an error here if this happens.
@@ -154,15 +154,15 @@ public class DashboardService : IDashboardService, IScopedService
                 ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<EntityTypeModel>>>(rawEntitiesData)
                 : new Dictionary<string, List<EntityTypeModel>>(0);
 
-            var userLoginTimeTop10 = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_top10");
-            var userLoginTimeOther = wiserStatsData.Rows[0].Field<TimeSpan>("user_login_time_other");
+            var userLoginActiveTop10 = wiserStatsData.Rows[0].Field<long>("user_login_active_top10");
+            var userLoginActiveOther = wiserStatsData.Rows[0].Field<long>("user_login_active_other");
 
             result.Items = itemsData ?? new Dictionary<string, List<ItemsCountModel>>(0);
             result.Entities = entitiesData ?? new Dictionary<string, List<EntityTypeModel>>(0);
             result.UserLoginCountTop10 = wiserStatsData.Rows[0].Field<int>("user_login_count_top10");
             result.UserLoginCountOther = wiserStatsData.Rows[0].Field<int>("user_login_count_other");
-            result.UserLoginTimeTop10 = (int) Math.Round(userLoginTimeTop10.TotalSeconds);
-            result.UserLoginTimeOther = (int) Math.Round(userLoginTimeOther.TotalSeconds);
+            result.UserLoginActiveTop10 = userLoginActiveTop10;
+            result.UserLoginActiveOther = userLoginActiveOther;
         }
         else
         {
@@ -173,8 +173,8 @@ public class DashboardService : IDashboardService, IScopedService
             var userData = await GetUserDataAsync(periodFrom, periodTo, databaseName);
             result.UserLoginCountTop10 = userData.UserLoginCountTop10;
             result.UserLoginCountOther = userData.UserLoginCountOther;
-            result.UserLoginTimeTop10 = (int) Math.Round(userData.UserLoginTimeTop10.TotalSeconds);
-            result.UserLoginTimeOther = (int) Math.Round(userData.UserLoginTimeOther.TotalSeconds);
+            result.UserLoginActiveTop10 = userData.UserLoginActiveTop10;
+            result.UserLoginActiveOther = userData.UserLoginActiveOther;
         }
 
         // Limit the item counts to the highest 8.
@@ -324,7 +324,7 @@ public class DashboardService : IDashboardService, IScopedService
                 }
                 entityTypeFilter.Append(")");
                 whereParts.Add(entityTypeFilter.ToString());
-                
+
                 // Update the wherePart string.
                 wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
 
@@ -354,7 +354,7 @@ public class DashboardService : IDashboardService, IScopedService
     /// <param name="periodTo">The maximum age of the data.</param>
     /// <param name="databaseName">The name of a branch database that should be used. Can be empty to use current branch.</param>
     /// <returns>A <see cref="ValueTuple"/> containing the top 10 login counts and times, and the remaining login counts and times.</returns>
-    private async Task<(int UserLoginCountTop10, int UserLoginCountOther, TimeSpan UserLoginTimeTop10, TimeSpan UserLoginTimeOther)> GetUserDataAsync(DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
+    private async Task<(int UserLoginCountTop10, int UserLoginCountOther, long UserLoginActiveTop10, long UserLoginActiveOther)> GetUserDataAsync(DateTime? periodFrom = null, DateTime? periodTo = null, string databaseName = null)
     {
         var databasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
 
@@ -393,21 +393,17 @@ ORDER BY login_count DESC";
         var loginCountOther = loginCounts.Count > 10 ? loginCounts.Skip(10).Sum() : 0;
 
         // Retrieve user login time active data.
-        query = $@"SELECT user_id, SEC_TO_TIME(SUM(TIME_TO_SEC(time_active))) AS time_active
+        query = $@"SELECT user_id, SUM(time_active_in_seconds) AS time_active
 FROM {databasePart}{WiserTableNames.WiserLoginLog}
 {wherePart}
 GROUP BY user_id
-ORDER BY TIME_TO_SEC(time_active) DESC";
+ORDER BY time_active DESC";
         var userLoginTimeData = await clientDatabaseConnection.GetAsync(query);
 
-        // Initialize two TimeSpans.
-        var timeActiveTop10 = TimeSpan.Zero;
-        var timeActiveOther = TimeSpan.Zero;
-
         // Turn the data rows into a list of TimeSpans.
-        var timeSpans = userLoginTimeData.Rows.Cast<DataRow>().Select(dr => dr.Field<TimeSpan>("time_active")).ToList();
-        timeActiveTop10 = timeSpans.Take(10).Aggregate(timeActiveTop10, (current, timeSpan) => current.Add(timeSpan));
-        timeActiveOther = timeSpans.Count > 10 ? timeSpans.Skip(10).Aggregate(timeActiveOther, (current, timeSpan) => current.Add(timeSpan)) : TimeSpan.Zero;
+        var timeSpans = userLoginTimeData.Rows.Cast<DataRow>().Select(dataRow => Convert.ToInt64(dataRow["time_active"])).ToList();
+        var timeActiveTop10 = timeSpans.Take(10).Sum();
+        var timeActiveOther = timeSpans.Count > 10 ? timeSpans.Skip(10).Sum() : 0;
 
         return (loginCountTop10, loginCountOther, timeActiveTop10, timeActiveOther);
     }
@@ -539,19 +535,19 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
             }
 
             // Combine items data.
-            if (source.Items.ContainsKey(collectionAll))
+            if (source.Items.TryGetValue(collectionAll, out var item))
             {
-                AddItemCountsToResult(result.Items, collectionAll, source.Items[collectionAll]);
+                AddItemCountsToResult(result.Items, collectionAll, item);
             }
 
-            if (source.Items.ContainsKey(collectionNewlyCreated))
+            if (source.Items.TryGetValue(collectionNewlyCreated, out item))
             {
-                AddItemCountsToResult(result.Items, collectionNewlyCreated, source.Items[collectionNewlyCreated]);
+                AddItemCountsToResult(result.Items, collectionNewlyCreated, item);
             }
 
-            if (source.Items.ContainsKey(collectionChanged))
+            if (source.Items.TryGetValue(collectionChanged, out item))
             {
-                AddItemCountsToResult(result.Items, collectionChanged, source.Items[collectionChanged]);
+                AddItemCountsToResult(result.Items, collectionChanged, item);
             }
 
             // Combine entities data.
@@ -581,17 +577,13 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
             // Combine user data.
             result.UserLoginCountTop10 += source.UserLoginCountTop10;
             result.UserLoginCountOther += source.UserLoginCountOther;
-            result.UserLoginTimeTop10 = result.UserLoginTimeTop10 += source.UserLoginTimeTop10;
-            result.UserLoginTimeOther = result.UserLoginTimeOther += source.UserLoginTimeOther;
+            result.UserLoginActiveTop10 += source.UserLoginActiveTop10;
+            result.UserLoginActiveOther += source.UserLoginActiveOther;
 
             // Combine open task alerts data.
             foreach (var (key, value) in source.OpenTaskAlerts)
             {
-                if (!result.OpenTaskAlerts.ContainsKey(key))
-                {
-                    result.OpenTaskAlerts[key] = 0;
-                }
-
+                result.OpenTaskAlerts.TryAdd(key, 0);
                 result.OpenTaskAlerts[key] += value;
             }
         }
@@ -650,9 +642,9 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
         clientDatabaseConnection.AddParameter("entities_data", Newtonsoft.Json.JsonConvert.SerializeObject(entitiesData));
         clientDatabaseConnection.AddParameter("user_login_count_top10", userData.UserLoginCountTop10);
         clientDatabaseConnection.AddParameter("user_login_count_other", userData.UserLoginCountOther);
-        clientDatabaseConnection.AddParameter("user_login_time_top10", userData.UserLoginTimeTop10);
-        clientDatabaseConnection.AddParameter("user_login_time_other", userData.UserLoginTimeOther);
-        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}`{WiserTableNames.WiserDashboard}` (last_update, items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_time_top10, user_login_time_other) VALUES (?last_update, ?items_data, ?entities_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_time_top10, ?user_login_time_other)");
+        clientDatabaseConnection.AddParameter("user_login_active_top10", userData.UserLoginActiveTop10);
+        clientDatabaseConnection.AddParameter("user_login_active_other", userData.UserLoginActiveOther);
+        await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {databasePart}`{WiserTableNames.WiserDashboard}` (last_update, items_data, entities_data, user_login_count_top10, user_login_count_other, user_login_active_top10, user_login_active_other) VALUES (?last_update, ?items_data, ?entities_data, ?user_login_count_top10, ?user_login_count_other, ?user_login_active_top10, ?user_login_active_other)");
     }
 
     /// <inheritdoc />
@@ -663,7 +655,7 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
             WiserTableNames.WtsLogs,
             WiserTableNames.WtsServices
         });
-        
+
         var services = new List<Service>();
 
         var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.WtsServices}");
@@ -694,10 +686,10 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
                 ExtraRun = row.Field<bool>("extra_run"),
                 TemplateId = row["template_id"] == DBNull.Value ? -1 : row.Field<int>("template_id")
             };
-            
+
             services.Add(service);
         }
-        
+
         return new ServiceResult<List<Service>>
         {
             ModelObject = services,
@@ -709,7 +701,7 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
     public async Task<ServiceResult<List<ServiceLog>>> GetWtsServiceLogsAsync(ClaimsIdentity identity, int id)
     {
         var logs = new List<ServiceLog>();
-        
+
         clientDatabaseConnection.AddParameter("serviceId", id);
         var datatable = await clientDatabaseConnection.GetAsync($@"SELECT log.*
                                                                         FROM {WiserTableNames.WtsServices} AS service
@@ -732,7 +724,7 @@ ORDER BY TIME_TO_SEC(time_active) DESC";
                 Message = row.Field<string>("message"),
                 IsTest = row.Field<bool>("is_test")
             };
-            
+
             logs.Add(log);
         }
 
@@ -776,7 +768,7 @@ WHERE id = ?serviceId");
             ModelObject = !state ? ServicePauseStates.Unpaused : serviceIsCurrentlyRunning ? ServicePauseStates.WillPauseAfterRunFinished : ServicePauseStates.Paused
         };
     }
-    
+
     /// <inheritdoc />
     public async Task<ServiceResult<ServiceExtraRunStates>> SetWtsServiceExtraRunStateAsync(ClaimsIdentity identity, int id, bool state)
     {
@@ -795,7 +787,7 @@ WHERE id = ?serviceId");
         }
 
         var currentState = dataTable.Rows[0].Field<string>("state");
-        
+
         // If the service is currently running the extra run state can't change.
         if (currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase))
         {
@@ -857,41 +849,43 @@ WHERE id = ?serviceId");
         var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
         // Check if the dashboard table needs to be updated.
-        if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserDashboard) || lastTableUpdates[WiserTableNames.WiserDashboard] < new DateTime(2023, 2, 23))
+        if (!await databaseHelpersService.TableExistsAsync(WiserTableNames.WiserDashboard) || lastTableUpdates.TryGetValue(WiserTableNames.WiserDashboard, out var value) && value >= new DateTime(2023, 2, 23))
         {
-            // Add columns.
-            var column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
-            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
-            column = new ColumnSettingsModel("user_login_active_other", MySqlDbType.Int64, notNull: true, defaultValue: "0");
-            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+            return;
+        }
 
-            // Convert and drop the "user_login_time_top10" column if it still exists.
-            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName))
-            {
-                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_top10", "user_login_active_top10");
-                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName);
-            }
+        // Add columns.
+        var column = new ColumnSettingsModel("user_login_active_top10", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+        await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
+        column = new ColumnSettingsModel("user_login_active_other", MySqlDbType.Int64, notNull: true, defaultValue: "0");
+        await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserDashboard, column, false, databaseName);
 
-            // Convert and drop the "user_login_time_other" column if it still exists.
-            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName))
-            {
-                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_other", "user_login_active_other");
-                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName);
-            }
+        // Convert and drop the "user_login_time_top10" column if it still exists.
+        if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName))
+        {
+            await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_top10", "user_login_active_top10");
+            await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_top10", databaseName);
+        }
 
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserDashboard);
-            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
-            var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
-            if (lastUpdateData.Rows.Count == 0)
-            {
-                await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
-            }
-            else
-            {
-                await clientDatabaseConnection.ExecuteAsync($"UPDATE {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
-            }
+        // Convert and drop the "user_login_time_other" column if it still exists.
+        if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName))
+        {
+            await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserDashboard, databaseName, "user_login_time_other", "user_login_active_other");
+            await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserDashboard, "user_login_time_other", databaseName);
+        }
+
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserDashboard);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        var lastUpdateData = await clientDatabaseConnection.GetAsync($"SELECT `name` FROM `{WiserTableNames.WiserTableChanges}` WHERE `name` = ?tableName");
+        var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+        if (lastUpdateData.Rows.Count == 0)
+        {
+            await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
+        }
+        else
+        {
+            await clientDatabaseConnection.ExecuteAsync($"UPDATE {queryDatabasePart}`{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
         }
     }
 
