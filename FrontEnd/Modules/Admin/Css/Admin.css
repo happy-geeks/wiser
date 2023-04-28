@@ -47,7 +47,6 @@
 .tabSplit .left-pane {
     background: #eeeeee;
     border-right: 2px solid var(--dark-txt);
-    padding-right: 15px;
     width: 20%;
     position: relative;
 }
