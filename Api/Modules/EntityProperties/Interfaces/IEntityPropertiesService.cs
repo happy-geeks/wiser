@@ -13,14 +13,14 @@ namespace Api.Modules.EntityProperties.Interfaces
     public interface IEntityPropertiesService
     {
         /// <summary>
-        /// Get all entity properties. 
+        /// Get all entity properties.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A List of <see cref="EntityPropertyModel"/> with all settings.</returns>
         Task<ServiceResult<List<EntityPropertyModel>>> GetAsync(ClaimsIdentity identity);
 
         /// <summary>
-        /// Get entity property based on ID. 
+        /// Get entity property based on ID.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the settings from wiser_entityproperty.</param>
@@ -84,5 +84,12 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="entityType">Optional: The entity type to fix the ordering for. Leave empty if you want to do it for link fields instead of entity fields.</param>
         /// <param name="linkType">Optional: The link type to fix the ordering for. Leave empty if you want to do it for entity fields instead of link fields.</param>
         Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0);
+
+        /// <summary>
+        /// Move an entity property to a new position.
+        /// </summary>
+        /// <param name="id">The ID of the entity property</param>
+        /// <param name="data">Data required to do the move.</param>
+        Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity userIdentity, int id, MoveEntityPropertyRequestModel data);
     }
 }

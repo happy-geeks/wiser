@@ -1063,14 +1063,19 @@ export class EntityTab {
             hint: (element) => {
                 return element.clone().addClass("hint");
             },
-            change: async (e) => {
-                const dataSource = this.listOfTabProperties.dataSource.view();
-                if (!this.checkIfEntityIsSet() || !dataSource || !dataSource[e.oldIndex] || !dataSource[e.newIndex] || !e.sender.draggedElement[0].dataset.item) {
-                    return;
-                }
+            change: async (event) => {
+                try {
+                    const dataSource = this.listOfTabProperties.dataSource.view();
+                    if (!this.checkIfEntityIsSet() || !dataSource || !dataSource[event.oldIndex] || !dataSource[event.newIndex] || !event.sender.draggedElement[0].dataset.item) {
+                        return;
+                    }
 
-                const id = e.sender.draggedElement[0].dataset.item;
-                await this.updateEntityPropertyOrdering(dataSource[e.oldIndex].ordering, dataSource[e.newIndex].ordering, id);
+                    const id = event.sender.draggedElement[0].dataset.item;
+                    await this.updateEntityPropertyOrdering(dataSource[event.oldIndex].ordering, dataSource[event.newIndex].ordering, id);
+                } catch (error) {
+                    console.error(error);
+                    kendo.alert("Er is een fout opgetreden bij verplaatsen van het veld. Probeer het a.u.b. nogmaals of neem contact op met ons.");
+                }
             },
             cursorOffset: {
                 top: -10,
@@ -2335,15 +2340,17 @@ export class EntityTab {
         const tabName = !selectedTab || selectedTab.tabName === "Gegevens" ? "" : selectedTab.tabName;
 
         return Wiser.api({
-            url: `${this.base.settings.serviceRoot}/UPDATE_ORDERING_ENTITY_PROPERTY`,
-            method: "POST",
-            data: {
-                oldIndex: oldIndex,
+            url: `${this.base.settings.wiserApiRoot}entity-properties/${id}/move`,
+            method: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify({
+                currentIndex: oldIndex,
                 newIndex: newIndex,
-                currentId: id,
-                tabName: tabName,
-                entityName: this.entitiesCombobox.dataItem().name
-            }
+                id: id,
+                currentTabName: tabName,
+                newTabName: tabName,
+                entityType: this.entitiesCombobox.dataItem().name
+            })
         });
     }
 

@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
@@ -433,7 +434,7 @@ WHERE id = ?id";
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            
+
             clientDatabaseConnection.AddParameter("id", id);
             clientDatabaseConnection.AddParameter("newName", newName);
             clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
@@ -690,6 +691,52 @@ WHERE {whereClause}";
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity userIdentity, int id, MoveEntityPropertyRequestModel data)
+        {
+            if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Either entityType or linkType must be provided."
+                };
+            }
+
+            clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("currentIndex", data.CurrentIndex);
+            clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
+            clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+            clientDatabaseConnection.AddParameter("linkType", data.LinkType);
+            clientDatabaseConnection.AddParameter("newTabName", data.NewTabName);
+            clientDatabaseConnection.AddParameter("currentTabName", data.CurrentTabName);
+
+            var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+
+            var query = new StringBuilder($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex, tab_name = ?newTabName WHERE id = ?id;");
+            if (data.NewIndex < data.CurrentIndex)
+            {
+                query.AppendLine($@"UPDATE {WiserTableNames.WiserEntityProperty}
+SET ordering = ordering + 1
+WHERE {whereClause}
+AND ordering < ?currentIndex
+AND ordering >= ?newIndex
+AND id <> ?id;");
+            }
+            else
+            {
+                query.AppendLine($@"UPDATE {WiserTableNames.WiserEntityProperty}
+SET ordering = ordering - 1
+WHERE {whereClause}
+AND ordering > ?currentIndex
+AND ordering <= ?newIndex
+AND id <> ?id;");
+            }
+
+            await clientDatabaseConnection.ExecuteAsync(query.ToString());
+            return new ServiceResult<bool>(true);
         }
 
         private static FilterOperators? ToFilterOperator(string value)

@@ -33,7 +33,7 @@ namespace Api.Modules.EntityProperties.Controllers
         }
 
         /// <summary>
-        /// Get all entity properties. 
+        /// Get all entity properties.
         /// </summary>
         /// <returns>A List of <see cref="EntityPropertyModel"/> with all settings.</returns>
         [HttpGet]
@@ -44,7 +44,7 @@ namespace Api.Modules.EntityProperties.Controllers
         }
 
         /// <summary>
-        /// Get entity property based on ID. 
+        /// Get entity property based on ID.
         /// </summary>
         /// <param name="id">The ID from wiser_entityproperty.</param>
         /// <returns>A <see cref="EntityPropertyModel"/> with all settings.</returns>
@@ -101,7 +101,7 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.UpdateAsync((ClaimsIdentity)User.Identity, id, entityProperty)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Duplicates an entity property.
         /// </summary>
@@ -139,25 +139,36 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.CopyToAllAvailableLanguagesAsync((ClaimsIdentity)User.Identity, id, tabOption)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
-        /// Fixes the ordering of an entity property
+        /// Move an entity property to a new position.
         /// </summary>
-        /// <param name="entityName">The name of the entity property</param>
-        /// <returns></returns>
+        /// <param name="id">The ID of the entity property</param>
+        /// <param name="data">Data required to do the move.</param>
         [HttpPut]
-        [Route("{entityName}/fix-ordering")]
-        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> FixOrderingAsync(string entityName)
+        [Route("{id}/move")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> MovePropertyAsync(int id, MoveEntityPropertyRequestModel data)
         {
-            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
+            return (await entityPropertiesService.MovePropertyAsync((ClaimsIdentity)User.Identity, id, data)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
-        /// Fixes the ordering of a link type
+        /// Fixes the ordering of all fields for a specific entity type, so that all fields have consecutive order numbers.
         /// </summary>
-        /// <param name="linkType">The ID of a link type</param>
-        /// <returns></returns>
+        /// <param name="entityType">The entity type to fix the ordering for.</param>
+        [HttpPut]
+        [Route("{entityType}/fix-ordering")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FixOrderingAsync(string entityType)
+        {
+            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Fixes the ordering of all fields for a specific link type, so that all fields have consecutive order numbers.
+        /// </summary>
+        /// <param name="linkType">The link type to fix the ordering for.</param>
         [HttpPut]
         [Route("{linkType:int}/fix-ordering")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
