@@ -235,7 +235,7 @@ export class WiserLinkTab {
                 method: "POST"
             });
 
-            this.base.showNotification("notification", `Link succesvol toegevoegd`, "success");
+            this.base.showNotification("notification", "Link succesvol toegevoegd", "success");
             // close popup
             $('.linkPopupContent').data("kendoWindow").close();
             // reload list
@@ -252,7 +252,7 @@ export class WiserLinkTab {
             if (exception.responseText.indexOf("Duplicate entry")) {
                 this.base.showNotification("notification", `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`, "error");
             } else {
-                this.base.showNotification("notification", `Wiser link is niet succesvol aangemaakt, probeer het opnieuw`, "error");
+                this.base.showNotification("notification", "Wiser link is niet succesvol aangemaakt, probeer het opnieuw", "error");
             }
         }
     }
@@ -279,14 +279,14 @@ export class WiserLinkTab {
                 data: JSON.stringify(linkSettingsModel),
                 method: "PUT"
             });
-            this.base.showNotification("notification", `Link succesvol aangepast`, "success");
+            this.base.showNotification("notification", "Wiser Link succesvol aangepast", "success");
         }
         catch (exception) {
             console.error(exception);
             if (exception.responseText.indexOf("Duplicate entry")) {
                 this.base.showNotification("notification", `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`, "error");
             } else {
-                this.base.showNotification("notification", `Wiser link is niet succesvol aangepast, probeer het opnieuw`, "error");
+                this.base.showNotification("notification", "Wiser link is niet succesvol aangepast, probeer het opnieuw", "error");
             }
         }
     }
@@ -301,11 +301,11 @@ export class WiserLinkTab {
                 method: "DELETE"
             });
             await this.reloadWiserLinkList();
-            this.base.showNotification("notification", `Link succesvol verwijdert`, "success");
+            this.base.showNotification("notification", "Link succesvol verwijderd", "success");
         }
         catch (exception) {
             console.error(exception);
-            this.base.showNotification("notification", `Wiser link is niet succesvol aangepast, probeer het opnieuw`, "error");
+            this.base.showNotification("notification", "Wiser link is niet succesvol verwijderd, probeer het opnieuw", "error");
         }
     }
 }
