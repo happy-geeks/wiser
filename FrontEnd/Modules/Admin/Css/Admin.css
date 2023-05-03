@@ -47,23 +47,8 @@
 .tabSplit .left-pane {
     background: #eeeeee;
     border-right: 2px solid var(--dark-txt);
-    padding-right: 15px;
     width: 20%;
     position: relative;
-}
-
-.tabSplit .left-pane:after {
-    content: "";
-    display: block;
-    width: 0;
-    height: 0;
-    border-top: 8px solid transparent;
-    border-bottom: 8px solid transparent;
-    border-left: 8px solid var(--dark-txt);
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    transform: translateY(-50%);
 }
 
 .tabSplit .right-pane {

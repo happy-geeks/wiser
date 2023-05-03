@@ -400,24 +400,6 @@ export class RoleTab {
         });
     }
 
-    /**
-     * Check if a right checkbox has been checked otherwise the default is `all rights`
-     * @param {any} targetElement The checked checkbox element
-     */
-    checkRights(targetElement) {
-        const selectedRightsCount = targetElement.closest("tr").querySelectorAll("input:checked").length;
-
-        targetElement.closest("tr").querySelectorAll("input").forEach((element) => {
-            element.checked = false;
-        });
-
-        if (selectedRightsCount === 0) {
-            targetElement.closest("tr").querySelector("input").checked = true;
-        } else {
-            targetElement.checked = true;
-        }
-    }
-
     getSelectedTabName() {
         return this.rolesTabStrip.select().find(".k-link").text();
     }
