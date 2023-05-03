@@ -2848,53 +2848,62 @@ export class EntityTab {
                 entityProperties.options.imagePropertyName = $("#multiSelectImagePropertyName").val();
                 entityProperties.options.saveValueAsItemLink = document.getElementById("saveValueAsItemLink").checked;
 
-                if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL1.id) {
-                    var data = this.grid.dataSource.data();
-                    var dataSource = [];
-                    // specific check if all itemrows are filled.
-                    for (var i = 0; i < data.length; i++) {
-                        if (data[i].id == null || data[i].id === "" || data[i].name == null || data[i].name === "") {
-                            this.base.showNotification("notification", `Vul bij "Vaste waardes" alle items met naam en id in!`, "error");
+                switch (this.dataSourceFilter.dataItem().id) {
+                    case this.base.dataSourceType.PANEL1.id: {
+                        const data = this.grid.dataSource.data();
+                        const dataSource = [];
+                        // specific check if all itemrows are filled.
+                        for (const i = 0; i < data.length; i++) {
+                            if (data[i].id == null || data[i].id === "" || data[i].name == null || data[i].name === "") {
+                                this.base.showNotification("notification", `Vul bij "Vaste waardes" alle items met naam en id in!`, "error");
+                                return;
+                            }
+                            dataSource.push({id: data[i].id, name: data[i].name});
+                        }
+                        entityProperties.options.dataSource = dataSource;
+                        entityProperties.options.entityType = null;
+                        entityProperties.options.searchInTitle = null;
+                        entityProperties.options.searchEverywhere = null;
+                        break;
+                    }
+                    case this.base.dataSourceType.PANEL2.id: {
+                        // check if entity to search for is set, show error if not
+                        if (!this.dataSourceEntities.dataItem()) {
+                            this.base.showNotification("notification", `Selecteer eerst een entiteit waar naar gezocht moet worden!`, "error");
                             return;
                         }
-                        dataSource.push({id: data[i].id, name: data[i].name});
-                    }
-                    entityProperties.options.dataSource = dataSource;
-                    entityProperties.options.entityType = null;
-                    entityProperties.options.searchInTitle = null;
-                    entityProperties.options.searchEverywhere = null;
-                } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL2.id) {
-                    // check if entity to search for is set, show error if not
-                    if (!this.dataSourceEntities.dataItem()) {
-                        this.base.showNotification("notification", `Selecteer eerst een entiteit waar naar gezocht moet worden!`, "error");
-                        return;
-                    }
-                    entityProperties.options.entityType = this.dataSourceEntities.dataItem().name;
-                    entityProperties.options.dataSource = null;
-                    entityProperties.options.searchInTitle = document.getElementById("searchInTitle").checked;
-                    entityProperties.options.searchEverywhere = document.getElementById("searchEverywhere").checked;
-                    entityProperties.options.searchFields = this.searchFields.value();
+                        entityProperties.options.entityType = this.dataSourceEntities.dataItem().name;
+                        entityProperties.options.dataSource = null;
+                        entityProperties.options.searchInTitle = document.getElementById("searchInTitle").checked;
+                        entityProperties.options.searchEverywhere = document.getElementById("searchEverywhere").checked;
+                        entityProperties.options.searchFields = this.searchFields.value();
 
-                    // overwrite the preserved options, else the options would
-                    this.fieldOptions.searchFields = this.searchFields.value();
-                } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL3.id) {
-                    // get value through codemirror function getValue() because textarea is empty
-                    entityProperties.dataQuery = this.queryField.getValue();
-                    entityProperties.options.dataSource = null;
-                    entityProperties.options.entityType = null;
-                    entityProperties.options.searchInTitle = null;
-                    entityProperties.options.searchEverywhere = null;
-                } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL4.id) {
-                    // check if entity to search for is set, show error if not
-                    if (!this.dataSourceDataSelector.dataItem()) {
-                        this.base.showNotification("notification", `Selecteer eerst een data selector die gebruikt moet worden`, "error");
-                        return;
+                        // overwrite the preserved options, else the options would
+                        this.fieldOptions.searchFields = this.searchFields.value();
+                        break;
                     }
-                    entityProperties.options.dataSelectorId = this.dataSourceDataSelector.dataItem().id;
-                    entityProperties.options.entityType = null;
-                    entityProperties.options.dataSource = null;
-                    entityProperties.options.searchInTitle = null;
-                    entityProperties.options.searchEverywhere = null;
+                    case this.base.dataSourceType.PANEL3.id: {
+                        // get value through codemirror function getValue() because textarea is empty
+                        entityProperties.dataQuery = this.queryField.getValue();
+                        entityProperties.options.dataSource = null;
+                        entityProperties.options.entityType = null;
+                        entityProperties.options.searchInTitle = null;
+                        entityProperties.options.searchEverywhere = null;
+                        break;
+                    }
+                    case this.base.dataSourceType.PANEL4.id: {
+                        // check if entity to search for is set, show error if not
+                        if (!this.dataSourceDataSelector.dataItem()) {
+                            this.base.showNotification("notification", `Selecteer eerst een data selector die gebruikt moet worden`, "error");
+                            return;
+                        }
+                        entityProperties.options.dataSelectorId = this.dataSourceDataSelector.dataItem().id;
+                        entityProperties.options.entityType = null;
+                        entityProperties.options.dataSource = null;
+                        entityProperties.options.searchInTitle = null;
+                        entityProperties.options.searchEverywhere = null;
+                        break;
+                    }
                 }
                 break;
             case inputTypes.SECUREINPUT:
