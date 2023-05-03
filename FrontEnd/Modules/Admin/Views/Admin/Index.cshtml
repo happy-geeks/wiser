@@ -1714,29 +1714,76 @@
                                                 <label>Naam voor koppeling</label>
                                             </h4>
                                             <span class="k-widget k-input k-state-default">
-                                                <input id="wiserLinkName" type="text" class="textField k-input" autocomplete="off" />
+                                                <input id="wiserLinkName" type="text" class="textField k-input" autocomplete="off"/>
                                             </span>
                                         </div>
-                                        <div class="item" style="width: calc(100% / 3);">
+                                        <div class="item" style="width: calc(100% / 4);">
                                             <h4>
                                                 <label>Entiteit vanaf</label>
                                             </h4>
                                             <select id="connectedEntity" placeholder="Maak uw keuze...">
                                             </select>
                                         </div>
-                                        <div class="item" style="width: calc(100% / 3);">
+                                        <div class="item" style="width: calc(100% / 4);">
                                             <h4>
                                                 <label>Entiteit naar</label>
                                             </h4>
                                             <select id="destinationEntity" placeholder="Maak uw keuze...">
                                             </select>
                                         </div>
-                                        <div class="item" style="width: calc(100% / 3);">
+                                        <div class="item" style="width: calc(100% / 4);">
                                             <h4>
                                                 <label>Entiteiten relatie</label>
                                             </h4>
                                             <select id="linkRelation" placeholder="Maak uw keuze...">
                                             </select>
+                                        </div>
+                                        <div class="item" style="width: calc(100% / 4);">
+                                            <h4>
+                                                <label>Duplicatie methode</label>
+                                            </h4>
+                                            <select id="duplicationMethod" placeholder="Maak uw keuze...">
+                                            </select>
+                                        </div>
+                                        <div class="item" style="width: calc(100% / 5);">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkUseParentId" type="checkbox"/>
+                                                    <span>Gebruik parent id</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item" style="width: calc(100% / 5);">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkUseDedicatedTable" type="checkbox"/>
+                                                    <span>Gebruik eigen tabel</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item" style="width: calc(100% / 5);">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkCascadeDelete" type="checkbox"/>
+                                                    <span>Cascade verwijdering</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item" style="width: calc(100% / 5);">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkShowInDataSelector" type="checkbox"/>
+                                                    <span>Weergeven in data selector</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item" style="width: calc(100% / 5);">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkShowInTreeView" type="checkbox"/>
+                                                    <span>Weergeven in boom structuur</span>
+                                                </label>
+                                            </span>
                                         </div>
                                         <div class="flex-container btn-right">
                                             <button class="k-primary editLinkBtn" data-type="link">Opslaan</button>
@@ -1781,6 +1828,53 @@
                                             </h4>
                                             <select id="relationPopup" placeholder="Maak uw keuze...">
                                             </select>
+                                        </div>
+                                        <div class="item">
+                                            <h4>
+                                                <label>Duplicatie methode</label>
+                                            </h4>
+                                            <select id="duplicationMethodPopup" placeholder="Maak uw keuze...">
+                                            </select>
+                                        </div>
+                                        <div class="item">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkUseParentIdPopup" type="checkbox"/>
+                                                    <span>Gebruik parent id</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkUseDedicatedTablePopup" type="checkbox"/>
+                                                    <span>Gebruik eigen tabel</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkCascadeDeletePopup" type="checkbox"/>
+                                                    <span>Cascade verwijdering</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkShowInDataSelectorPopup" type="checkbox"/>
+                                                    <span>Weergeven in data selector</span>
+                                                </label>
+                                            </span>
+                                        </div>
+                                        <div class="item">
+                                            <span class="inline titleMargin">
+                                                <label class="checkbox">
+                                                    <input id="wiserLinkShowInTreeViewPopup" type="checkbox"/>
+                                                    <span>Weergeven in boom structuur</span>
+                                                </label>
+                                            </span>
                                         </div>
                                         <div class="item">
                                             <div class="flex-container">

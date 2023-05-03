@@ -25,9 +25,14 @@ export class WiserLinkTab {
             this.connectedEntity.dataItem().name,
             document.getElementById("wiserLinkName").value
         );
-
         linkSettingsModel.relationship = this.linkRelation.dataItem().id;
-
+        linkSettingsModel.useItemParentId = document.getElementById("wiserLinkUseParentId").checked;
+        linkSettingsModel.useDedicatedTable = document.getElementById("wiserLinkUseDedicatedTable").checked;
+        linkSettingsModel.cascadeDelete = document.getElementById("wiserLinkCascadeDelete").checked;
+        linkSettingsModel.showInDataSelector = document.getElementById("wiserLinkShowInDataSelector").checked;
+        linkSettingsModel.showInTreeView = document.getElementById("wiserLinkShowInTreeView").checked;
+        linkSettingsModel.duplicationMethod = this.duplicationMethod.dataItem().id;
+        
         try {
             await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}link-settings/${linkSettingsModel.id}`,
@@ -56,9 +61,14 @@ export class WiserLinkTab {
             this.connectedEntityPopup.dataItem().name,
             document.getElementById("wiserLinkNamePopup").value
         );
-
         linkSettingsModel.relationship = this.relationPopup.dataItem().id;
-
+        linkSettingsModel.useItemParentId = document.getElementById("wiserLinkUseParentIdPopup").checked;
+        linkSettingsModel.useDedicatedTable = document.getElementById("wiserLinkUseDedicatedTablePopup").checked;
+        linkSettingsModel.cascadeDelete = document.getElementById("wiserLinkCascadeDeletePopup").checked;
+        linkSettingsModel.showInDataSelector = document.getElementById("wiserLinkShowInDataSelectorPopup").checked;
+        linkSettingsModel.showInTreeView = document.getElementById("wiserLinkShowInTreeViewPopup").checked;
+        linkSettingsModel.duplicationMethod = this.duplicationMethodPopup.dataItem().id;
+        
         try {
             const result = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}link-settings`,
@@ -250,7 +260,47 @@ export class WiserLinkTab {
             this.linkTypePopup = $("#wiserLinkTypePopup").kendoNumericTextBox({
                 decimals: 0,
                 format: "#"
-            }).data("kendoNumericTextBox"); 
+            }).data("kendoNumericTextBox");
+
+            const duplicationDataSource = [
+                {
+                    id: 0,
+                    duplication: "none",
+                    displayName: "Geen"
+                }, {
+                    id: 1,
+                    duplication: "copy-link",
+                    displayName: "Kopieer link"
+                }, {
+                    id: 2,
+                    duplication: "copy-item",
+                    displayName: "Kopieer entiteit"
+                }
+            ];
+            this.duplicationMethod = $("#duplicationMethod").kendoDropDownList({
+                clearButton: false,
+                dataTextField: "displayName",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    displayName: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: duplicationDataSource
+            }).data("kendoDropDownList");
+            this.duplicationMethodPopup = $("#duplicationMethodPopup").kendoDropDownList({
+                clearButton: false,
+                dataTextField: "displayName",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    displayName: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: duplicationDataSource
+            }).data("kendoDropDownList");
             resolve();
         });
     }
@@ -272,6 +322,16 @@ export class WiserLinkTab {
 
         document.getElementById("wiserLinkName").value = linkDataItem.name;
         this.linkRelation.select((dataItem) => { return dataItem.relationship === linkDataItem.relationship; });
+
+        this.duplicationMethod.select((dataItem) => {
+            return dataItem.duplication === linkDataItem.duplication;
+        });
+
+        document.getElementById("wiserLinkUseParentId").checked = linkDataItem.use_item_parent_id === 1;
+        document.getElementById("wiserLinkUseDedicatedTable").checked = linkDataItem.use_dedicated_table === 1;
+        document.getElementById("wiserLinkCascadeDelete").checked = linkDataItem.cascade_delete === 1;
+        document.getElementById("wiserLinkShowInDataSelector").checked = linkDataItem.show_in_data_selector === 1;
+        document.getElementById("wiserLinkShowInTreeView").checked = linkDataItem.show_in_tree_view === 1;
     }
 
     async reloadWiserLinkList() {
