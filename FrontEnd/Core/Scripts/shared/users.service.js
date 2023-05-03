@@ -32,7 +32,7 @@ export default class UsersService extends BaseService {
             const loginResult = await this.base.api.post(`/connect/token`, loginData);
             result.success = true;
             result.data = loginResult.data;
-            result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
+            result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in > 60 ? 60 : 0)) * 1000));
             result.data.usersList = JSON.parse(result.data.users || "[]").map((user) => {
                 if (!user.Details || !user.Details.length) {
                     return user;
@@ -44,11 +44,7 @@ export default class UsersService extends BaseService {
 
                 return user;
             });
-            result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
-
-            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
-                await this.startUpdateTimeActiveTimer();
-            }
+            result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -99,12 +95,8 @@ export default class UsersService extends BaseService {
             const loginResult = await this.base.api.post(`/connect/token`, loginData);
             result.success = true;
             result.data = loginResult.data;
-            result.data.expiresOn = new Date(new Date().getTime() + (loginResult.data.expires_in * 1000));
-            result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true;
-
-            if (loginResult.data.hasOwnProperty("encryptedLoginLogId")) {
-                await this.startUpdateTimeActiveTimer();
-            }
+            result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in  > 60 ? 60 : 0)) * 1000));
+            result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
@@ -135,7 +127,7 @@ export default class UsersService extends BaseService {
 
         return result;
     }
-    
+
     /**
      * Get the data of the logged in user.
      * @returns {any} The user data as an object.
@@ -200,10 +192,10 @@ export default class UsersService extends BaseService {
         const result = {};
 
         try {
-            result.response = await this.base.api.put(`/api/v3/users/password`, { 
-                oldPassword: changePasswordModel.oldPassword, 
-                newPassword: changePasswordModel.newPassword, 
-                newPasswordRepeat: changePasswordModel.newPasswordRepeat 
+            result.response = await this.base.api.put(`/api/v3/users/password`, {
+                oldPassword: changePasswordModel.oldPassword,
+                newPassword: changePasswordModel.newPassword,
+                newPasswordRepeat: changePasswordModel.newPasswordRepeat
             });
         } catch (error) {
             if ((error.response.status !== 400 && error.response.status !== 401) || error.response.data.error === "server_error") {
@@ -243,7 +235,7 @@ export default class UsersService extends BaseService {
             return null;
         }
 
-        // Try to parse the data, and see if a key "encryptedLoginLogId" exists and if it has a value. 
+        // Try to parse the data, and see if a key "encryptedLoginLogId" exists and if it has a value.
         const userData = JSON.parse(savedUserData);
         if (!userData.hasOwnProperty("encryptedLoginLogId") || !userData.encryptedLoginLogId) {
             return null;
@@ -259,7 +251,7 @@ export default class UsersService extends BaseService {
                 console.warn("Couldn't update the active time. There's no login log ID.");
                 return;
             }
-    
+
             await this.base.api.put(`/api/v3/users/update-active-time?encryptedLoginLogId=${encodeURIComponent(encryptedLoginLogId)}`);
         } catch (exception) {
             console.warn("Error in updateActiveTime", exception);

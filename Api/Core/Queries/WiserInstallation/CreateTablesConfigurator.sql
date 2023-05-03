@@ -125,46 +125,51 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail_archive`  (
 -- ----------------------------
 -- Table structure for configurations_wiser_itemfile
 -- ----------------------------
-CREATE TABLE IF NOT EXISTS `configurations_wiser_itemfile`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
-  `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `content` longblob NULL,
-  `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `width` smallint NOT NULL DEFAULT 0,
-  `height` smallint NOT NULL DEFAULT 0,
-  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `extension` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `added_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
-  `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
-  `itemlink_id` bigint NOT NULL DEFAULT 0,
-  `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
-  INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
+CREATE TABLE IF NOT EXISTS `configurations_wiser_itemfile` (
+    `id` bigint NOT NULL AUTO_INCREMENT,
+    `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
+    `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+    `content` longblob NULL,
+    `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `width` smallint NOT NULL DEFAULT 0,
+    `height` smallint NOT NULL DEFAULT 0,
+    `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `extension` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `added_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
+    `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
+    `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
+    `ordering` int NOT NULL DEFAULT 0,
+    `extra_data` mediumtext,
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
+    INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for configurations_wiser_itemfile_archive`
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `configurations_wiser_itemfile_archive`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
-  `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `content` longblob NULL,
-  `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `width` smallint NOT NULL DEFAULT 0,
-  `height` smallint NOT NULL DEFAULT 0,
-  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `extension` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `added_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
-  `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
-  `itemlink_id` bigint NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE,
-  INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
-  INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
+    `id` bigint NOT NULL AUTO_INCREMENT,
+    `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
+    `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+    `content` longblob NULL,
+    `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `width` smallint NOT NULL DEFAULT 0,
+    `height` smallint NOT NULL DEFAULT 0,
+    `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `extension` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `added_on` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT 'De naam van het veld waar deze afbeelding bijhoort',
+    `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
+    `protected` tinyint NOT NULL DEFAULT 0 COMMENT 'Stel in op 1 om alleen toe te staan dat het bestand wordt opgehaald via een versleutelde id',
+    `ordering` int NOT NULL DEFAULT 0,
+    `extra_data` mediumtext,
+    PRIMARY KEY (`id`) USING BTREE,
+    INDEX `item_id`(`item_id`, `content_type`) USING BTREE,
+    INDEX `idx_itemlinkid`(`itemlink_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;

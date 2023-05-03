@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -7,6 +8,7 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.Enums;
@@ -210,6 +212,24 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
         {
             return await templatesService.DeployToBranchAsync(identity, templateIds, branchId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
+        {
+            return await templatesService.GetMeasurementSettingsAsync(templateId, componentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
+        {
+            return await templatesService.SaveMeasurementSettingsAsync(settings, templateId, componentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments? environment = null, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1, bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
         }
     }
 }

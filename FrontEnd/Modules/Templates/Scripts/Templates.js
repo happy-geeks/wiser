@@ -14,6 +14,10 @@ require("@progress/kendo-ui/js/kendo.tabstrip.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
+require("@progress/kendo-ui/js/kendo.datepicker.js");
+require("@progress/kendo-ui/js/kendo.daterangepicker.js");
+require("@progress/kendo-ui/js/dataviz/chart/chart.js");
+require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -64,6 +68,8 @@ const moduleSettings = {
             this.historyLoaded = false;
             this.initialTemplateSettings = null;
             this.branches = null;
+            this.renderLogsGrid = null;
+            this.measurementsLoaded = false;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -90,7 +96,9 @@ const moduleSettings = {
                 customerId: 0,
                 username: "Onbekend",
                 userEmailAddress: "",
-                userType: ""
+                userType: "",
+                templateId: 0,
+                initialTab: null
             };
             Object.assign(this.settings, settings);
 
@@ -157,7 +165,7 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            
+
             // Don't allow users to use this module in a branch, only in the main/production environment of a tenant.
             if (!userData.currentBranchIsMainBranch) {
                 $("#NotMainBranchNotification").removeClass("hidden");
@@ -165,7 +173,7 @@ const moduleSettings = {
                 window.processing.removeProcess(process);
                 return;
             }
-            
+
             try {
                 this.branches = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}branches`,
@@ -180,14 +188,17 @@ const moduleSettings = {
 
             await this.initializeKendoComponents();
             this.bindEvents();
-            
+
             // Start the Pusher connection.
             await this.connectedUsers.init();
-            
+
             // If we have a template ID in the query string, load that template immediately.
             if (this.settings.templateId) {
                 await this.loadTemplate(this.settings.templateId);
                 this.selectedId = this.settings.templateId;
+                if (this.settings.initialTab) {
+                    this.mainTabStrip.select(`li.${this.settings.initialTab}-tab`);
+                }
             }
 
             window.processing.removeProcess(process);
@@ -266,13 +277,13 @@ const moduleSettings = {
                 text: "Zoekresultaten",
                 content: `<ul id="search-results-treeview" class="treeview" data-id="0" data-title="Zoekresultaten"></ul>`
             });
-            
+
             this.treeViewTabStrip.tabGroup.find("li:last-child").addClass("hidden");
 
             // Select first tab.
             this.treeViewTabStrip.select(0);
 
-            // Treeview 
+            // Treeview
             this.mainTreeView = [];
             $(".treeview:not(#search-results-treeview)").each((index, element) => {
                 const treeViewElement = $(element);
@@ -309,7 +320,7 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
-            
+
             this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
                 loadOnDemand: false,
                 dragAndDrop: false,
@@ -357,7 +368,7 @@ const moduleSettings = {
                 const newItemIsDirectoryCheckBox = $("#newItemIsDirectoryCheckBox").prop("checked", false);
                 const newItemTitleField = $("#newItemTitleField").val("");
                 const parentIsDirectory = dataItem.isFolder;
-                
+
                 if (!isFromContextMenu) {
                     selectedTreeViewNode = treeView.select();
                 }
@@ -411,6 +422,9 @@ const moduleSettings = {
                     break;
                 case "history":
                     this.reloadHistoryTab();
+                    break;
+                case "measurements":
+                    this.reloadMeasurementsTab();
                     break;
             }
         }
@@ -488,6 +502,7 @@ const moduleSettings = {
 
             this.selectedId = dataItem.id;
             this.historyLoaded = false;
+            this.measurementsLoaded = false;
             this.onMainTabStripActivate();
 
             if (dataItem.isFolder) {
@@ -882,16 +897,6 @@ const moduleSettings = {
                     selectable: "row",
                     filterable: {
                         extra: false,
-                        operators: {
-                            string: {
-                                startswith: "Begint met",
-                                eq: "Is gelijk aan",
-                                neq: "Is ongelijk aan",
-                                contains: "Bevat",
-                                doesnotcontain: "Bevat niet",
-                                endswith: "Eindigt op"
-                            }
-                        },
                         messages: {
                             isTrue: "<span>Ja</span>",
                             isFalse: "<span>Nee</span>"
@@ -1029,7 +1034,7 @@ const moduleSettings = {
             if (!isDatabaseElementTemplate) {
                 return;
             }
-            
+
             const saveAndDeployToTestButton = document.getElementById("saveAndDeployToTestButton");
             $(saveAndDeployToTestButton).getKendoButton().enable(false);
             saveAndDeployToTestButton.classList.add("hidden");
@@ -1110,7 +1115,8 @@ const moduleSettings = {
         async initKendoDeploymentTab() {
             $("#deployLive, #deployAccept, #deployTest, #deployToBranchButton").kendoButton();
 
-            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
+            $("#saveAndDeployToTestButton").kendoButton();
+            $("#saveButton").kendoButton({
                 icon: "save"
             });
 
@@ -1125,7 +1131,7 @@ const moduleSettings = {
                     optionLabel: "Kies een branch..."
                 });
             }
-            
+
             this.bindDeploymentTabEvents();
 
             // ComboBox
@@ -1618,7 +1624,7 @@ const moduleSettings = {
         onDynamicContentDuplicateClick(templateId, event) {
             const process = `duplicateComponent_${Date.now()}`;
             window.processing.addProcess(process);
-            
+
             const tr = $(event.currentTarget).closest("tr");
             const data = this.dynamicContentGrid.dataItem(tr);
 
@@ -1633,11 +1639,11 @@ const moduleSettings = {
                 window.processing.removeProcess(process);
             });
         }
-        
+
         onDynamicContentDeleteClick(event) {
             const tr = $(event.currentTarget).closest("tr");
             const data = this.dynamicContentGrid.dataItem(tr);
-            
+
             Wiser.showConfirmDialog(`Weet u zeker dat u het item '${data.title}' wilt verwijderen?`).then(async () => {
                     Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${data.id}`,
@@ -1651,7 +1657,7 @@ const moduleSettings = {
                         kendo.alert("Er is iets fout gegaan tijdens het verwijderen van dit item. Probeer het a.u.b. nogmaals of neem contact op met ons.");
                     });
             })
-            
+
         }
 
         onDynamicContentGridChange(event) {
@@ -1690,7 +1696,7 @@ const moduleSettings = {
                     optionLabel: "Kies een component"
                 }).data("kendoDropDownList");
             }
-            
+
             const allDynamicContent = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}dynamic-content/linkable?templateId=${templateId}`,
                 dataType: "json",
@@ -1813,7 +1819,7 @@ const moduleSettings = {
                 kendo.alert("U heeft geen geldige versie geselecteerd.");
                 return;
             }
-            
+
             let environmentEnum;
             switch (environment) {
                 case "test":
@@ -1842,6 +1848,7 @@ const moduleSettings = {
                 window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
             }
             this.historyLoaded = false;
+            this.measurementsLoaded = false;
             await this.reloadMetaData(templateId);
         }
 
@@ -1877,6 +1884,7 @@ const moduleSettings = {
 
             window.popupNotification.show(`Dynamisch component is succesvol naar de ${environment} omgeving gezet`, "info");
             this.historyLoaded = false;
+            this.measurementsLoaded = false;
             $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
 
@@ -1901,7 +1909,7 @@ const moduleSettings = {
 
                 event.detail();
             });
-            
+
             document.body.addEventListener("keydown", (event) => {
                 if ((event.ctrlKey || event.metaKey) && event.keyCode === 83) {
                     event.preventDefault();
@@ -2149,7 +2157,7 @@ const moduleSettings = {
                     type: "POST",
                     contentType: "application/json"
                 });
-                
+
                 window.popupNotification.show(`Component is succesvol overgezet naar de geselecteerde branch.`, "info");
             }
             catch (exception) {
@@ -2305,7 +2313,7 @@ const moduleSettings = {
                     }
                 });
                 this.searchResultsTreeView.setDataSource(dataSource);
-                
+
                 const searchResultsTab = this.treeViewTabStrip.tabGroup.find("li:last-child");
                 searchResultsTab.removeClass("hidden");
                 this.treeViewTabStrip.select(searchResultsTab);
@@ -2337,14 +2345,15 @@ const moduleSettings = {
             });
 
             document.querySelector("#published-environments").outerHTML = response;
-            
+
             // Bind deploy buttons.
             $("#deployLive, #deployAccept, #deployTest, #deployToBranchButton").kendoButton();
             $("#published-environments .combo-select").kendoDropDownList();
             this.bindDeployButtons(templateId);
-            
+
             // Bind save buttons.
-            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
+            $("#saveAndDeployToTestButton").kendoButton();
+            $("#saveButton").kendoButton({
                 icon: "save"
             });
 
@@ -2361,7 +2370,7 @@ const moduleSettings = {
             }
 
             this.bindDeploymentTabEvents();
-            
+
             // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
             this.toggleElementsForDatabaseTemplates(this.templateSettings.type);
         }
@@ -2402,6 +2411,351 @@ const moduleSettings = {
             }
 
             window.processing.removeProcess(process);
+        }
+
+        /**
+         * Reloads measurements of the template.
+         * @param {any} templateId The ID of the template.
+         */
+        async reloadMeasurementsTab(templateId) {
+            if (this.measurementsLoaded) {
+                return;
+            }
+
+            templateId = templateId || this.selectedId;
+            this.measurementsLoaded = true;
+
+            const process = `reloadMeasurementsTab_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                // Get the measurement settings.
+                const measurementSettings = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/measurement-settings`,
+                    dataType: "json",
+                    method: "GET"
+                });
+
+                const measurementsTab = await Wiser.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/MeasurementsTab",
+                    data: JSON.stringify(measurementSettings)
+                });
+
+                document.getElementById("measurementsTab").innerHTML = measurementsTab;
+
+                // Initialize save button for settings.
+                $("#saveMeasuringSettingsButton").kendoButton({
+                    icon: "save",
+                    click: (event) => {
+                        event.preventDefault();
+                        this.saveMeasurementSettings(templateId);
+                    }
+                });
+
+                // Initialize the grid with rendering logs.
+                this.renderLogsGrid = $("#renderLogsGrid").kendoGrid({
+                    dataSource: {
+                        schema: {
+                            model: {
+                                fields: {
+                                    id: { type: "number"},
+                                    version: { type: "number" },
+                                    url: { type: "string" },
+                                    environment: { type: "string" },
+                                    start: { type: "datetime" },
+                                    end: { type: "datetime" },
+                                    timeTaken: { type: "string" },
+                                    userId: { type: "number" },
+                                    languageCode: { type: "string" },
+                                    error: { type: "string" }
+                                }
+                            }
+                        }
+                    },
+                    noRecords: {
+                        template: "Er zijn geen logs gevonden met de opgegeven filters."
+                    },
+                    height: 400,
+                    scrollable: true,
+                    resizable: true,
+                    selectable: false,
+                    filterable: false,
+                    sortable: false,
+                    pageable: false,
+                    columns: [
+                        {
+                            field: "name",
+                            title: "Template of component",
+                            filterable: true
+                        },
+                        {
+                            field: "environment",
+                            title: "Omgeving",
+                            width: 150,
+                            filterable: true
+                        },
+                        {
+                            field: "languageCode",
+                            title: "Taal",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "userId",
+                            title: "Gebruiker",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "start",
+                            title: "Datum",
+                            width: 150,
+                            template: "#= kendo.toString(kendo.parseDate(start), 'dd MMM \\'yy') #",
+                            filterable: {
+                                ui: "datepicker"
+                            }
+                        },
+                        {
+                            field: "timeTakenFormatted",
+                            title: "Gemeten tijd",
+                            width: 150,
+                            filterable: false
+                        },
+                        {
+                            field: "url",
+                            title: "Url",
+                            filterable: true
+                        },
+                        {
+                            field: "version",
+                            title: "Versie",
+                            width: 100,
+                            filterable: true
+                        },
+                        {
+                            field: "error",
+                            title: "Gelukt",
+                            width: 150,
+                            filterable: false,
+                            template: `# if (!error) { # Ja # } else { # Nee # } #`
+                        }
+                    ]
+                }).data("kendoGrid");
+
+                this.renderingLogsChart = $("#measurementCharts").kendoChart({
+                    title: {
+                        text: "Rendertijden"
+                    },
+                    legend: {
+                        position: "top"
+                    },
+                    seriesDefaults: {
+                        type: "line"
+                    },
+                    series: [{
+                        field: "timeTakenInSeconds",
+                        categoryField: "date",
+                        name: "#= group.value #",
+                        aggregate: "avg"
+                    }],
+                    categoryAxis: {
+                        type: "date",
+                        baseUnit: "days",
+                        baseUnitStep: 1,
+                        labels: {
+                            rotation: "auto",
+                            dateFormats: {
+                                days: "dd-MM"
+                            }
+                        }
+                    },
+                    valueAxis: {
+                        labels: {
+                            format: "N3"
+                        },
+                        majorUnit: 1
+                    },
+                    tooltip: {
+                        visible: true,
+                        shared: true,
+                        format: "N3"
+                    }
+                }).data("kendoChart");
+
+                this.measurementUserIdFilter = $("#measurementUserIdFilter").kendoNumericTextBox({
+                    decimals: 0,
+                    format: "#",
+                    change: this.updateRenderingDataOnMeasurementsTab.bind(this, templateId)
+                }).data("kendoNumericTextBox");
+
+                this.measurementEnvironmentFilter = $("#measurementEnvironmentFilter").kendoDropDownList({
+                    optionLabel: "Alle omgevingen",
+                    change: this.updateRenderingDataOnMeasurementsTab.bind(this, templateId)
+                }).data("kendoDropDownList");
+                this.measurementEnvironmentFilter.value("Live");
+
+                const languages = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}languages`,
+                    dataType: "json",
+                    method: "GET"
+                });
+                this.measurementLanguageCodeFilter = $("#measurementLanguageCodeFilter").kendoDropDownList({
+                    dataSource: languages,
+                    optionLabel: "Alle talen",
+                    dataValueField: "code",
+                    dataTextField: "name",
+                    change: this.updateRenderingDataOnMeasurementsTab.bind(this, templateId)
+                }).data("kendoDropDownList");
+                this.measurementUrlFilter = $("#measurementUrlFilter").change(this.updateRenderingDataOnMeasurementsTab.bind(this, templateId));
+
+                const currentDate = new Date();
+                const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7);
+                const end = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 1);
+                this.measurementChartDateRangeFilter = $("#measurementChartDateRangeFilter").kendoDateRangePicker({
+                    range: {
+                        start: start,
+                        end: end
+                    },
+                    change: (event) => {
+                        const dateRange = this.measurementChartDateRangeFilter.range();
+                        if (!dateRange || !dateRange.start || !dateRange.end) {
+                            return;
+                        }
+                        this.updateRenderingDataOnMeasurementsTab(templateId);
+                    }
+                }).data("kendoDateRangePicker");
+
+                await this.updateRenderingDataOnMeasurementsTab(templateId);
+                this.renderingLogsChart.resize();
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
+        }
+
+        /**
+         * Save the current measurement settings to database.
+         * @param templateId The ID of the template to save the settings for.
+         * @returns {Promise<void>}
+         */
+        async saveMeasurementSettings(templateId) {
+            const saveProcess = `saveMeasurementSettings_${Date.now()}`;
+            window.processing.addProcess(saveProcess);
+
+            try {
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/measurement-settings`,
+                    dataType: "json",
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        measureRenderTimesOnDevelopmentForCurrent: document.querySelector("#measureInDevelopment").checked,
+                        measureRenderTimesOnTestForCurrent: document.querySelector("#measureInTest").checked,
+                        measureRenderTimesOnAcceptanceForCurrent: document.querySelector("#measureInAcceptance").checked,
+                        measureRenderTimesOnLiveForCurrent: document.querySelector("#measureInLive").checked,
+                    })
+                });
+
+                window.popupNotification.show(`Instellingen succesvol opgslagen`, "info");
+            }
+            catch (exception) {
+                console.error(error);
+                kendo.alert("Er is iets fout gegaan met het opslaan van de instellingen. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+            }
+            finally {
+                window.processing.removeProcess(saveProcess);
+            }
+        }
+
+        /**
+         * This method will update the grid and chart on the measurements tabs with the latest data and using the values that the user entered in the filters.
+         * @returns {Promise<void>}
+         */
+        async updateRenderingDataOnMeasurementsTab(templateId) {
+            const process = `updateRenderingData_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const parametersForGrid = ["pageSize=500"];
+                const parametersForChart = [
+                    "getDailyAverage=true",
+                    "pageSize=0"
+                ];
+
+                const userId = this.measurementUserIdFilter.value();
+                const languageCode = this.measurementLanguageCodeFilter.value();
+                const environment = this.measurementEnvironmentFilter.value();
+                const urlRegex = this.measurementUrlFilter.val();
+                const dateRange = this.measurementChartDateRangeFilter.range();
+
+                parametersForChart.push(`start=${dateRange.start.toISOString()}`)
+                parametersForChart.push(`end=${dateRange.end.toISOString()}`)
+
+                if (userId) {
+                    parametersForChart.push(`userId=${userId}`)
+                    parametersForGrid.push(`userId=${userId}`)
+                }
+                if (languageCode) {
+                    parametersForChart.push(`languageCode=${encodeURIComponent(languageCode)}`)
+                    parametersForGrid.push(`languageCode=${encodeURIComponent(languageCode)}`)
+                }
+                if (environment) {
+                    parametersForChart.push(`environment=${encodeURIComponent(environment)}`)
+                    parametersForGrid.push(`environment=${encodeURIComponent(environment)}`)
+                }
+                if (urlRegex) {
+                    parametersForChart.push(`urlRegex=${encodeURIComponent(urlRegex)}`)
+                    parametersForGrid.push(`urlRegex=${encodeURIComponent(urlRegex)}`)
+                }
+
+                const promises = [];
+                promises.push(Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs?${parametersForChart.join("&")}`,
+                    dataType: "json",
+                    method: "GET"
+                }));
+                promises.push(Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/render-logs?${parametersForGrid.join("&")}`,
+                    dataType: "json",
+                    method: "GET"
+                }));
+
+                const promiseResults = await Promise.all(promises);
+                const chartDataSource = new kendo.data.DataSource({
+                    data: promiseResults[0],
+                    group: {
+                        field: "name"
+                    },
+                    schema: {
+                        model: {
+                            fields: {
+                                date: {
+                                    type: "date"
+                                },
+                                start: {
+                                    type: "date"
+                                },
+                                end: {
+                                    type: "date"
+                                }
+                            }
+                        }
+                    }
+                });
+                this.renderingLogsChart.setDataSource(chartDataSource);
+                this.renderLogsGrid.setDataSource(promiseResults[1]);
+            }
+            catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan met het ophalen van gegevens. Probeer het a.u.b. opnieuw of neem contact op met ons.")
+            }
+            finally {
+                window.processing.removeProcess(process);
+            }
         }
 
         /**
@@ -2478,7 +2832,7 @@ const moduleSettings = {
             if (preLoadQueryField.length > 0 && preLoadQueryField.data("CodeMirrorInstance")) {
                 settingsList.preLoadQuery = preLoadQueryField.data("CodeMirrorInstance").getValue();
             }
-            
+
             const widgetContentField = $("#widgetContent");
             if (widgetContentField.length > 0 && widgetContentField.data("CodeMirrorInstance")) {
                 settingsList.widgetContent = widgetContentField.data("CodeMirrorInstance").getValue();

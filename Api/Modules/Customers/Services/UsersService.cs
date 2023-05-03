@@ -11,6 +11,7 @@ using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
+using Api.Modules.Items.Models;
 using Api.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
@@ -19,9 +20,11 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Models;
 using Google.Authenticator;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StringHelpers = Api.Core.Helpers.StringHelpers;
@@ -52,13 +55,13 @@ namespace Api.Modules.Customers.Services
         private const string UserModuleSettingsGroupName = "module_settings";
         private const string UserPinnedModulesKey = "pinnedModules";
         private const string UserAutoLoadModulesKey = "autoLoadModules";
-        
+
         private const string TotpEnabledKey = "totp_enabled";
         private const string TotpSecretKey = "totp_secret";
         private const string TotpRequiresSetupKey = "totp_requires_setup";
         private const string TotpBackupCodesGroupName = "totp_backup_codes";
         private const int AmountOfBackupCodesToGenerate = 10;
-        
+
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseConnection wiserDatabaseConnection;
         private readonly ITemplatesService templatesService;
@@ -89,42 +92,59 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<WiserItemModel>>> GetAsync()
+        public async Task<ServiceResult<List<FlatItemModel>>> GetAsync(bool includeAdminUsers = false)
         {
+            var result = new List<FlatItemModel>();
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
 
             var query = $@"SELECT 
-                            i.id, 
-	                        IFNULL(NULLIF(i.title, ''), username.value) AS name, 
-                            username.`value` AS username
-                        FROM {WiserTableNames.WiserItem} i
-                        JOIN {WiserTableNames.WiserItemDetail} username ON username.item_id = i.id AND username.`key` = '{UserUsernameKey}'
-                        WHERE i.entity_type = '{WiserUserEntityType}'
-                        ORDER BY username.`value` ASC";
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+    user.id, 
+	IFNULL(NULLIF(user.title, ''), username.value) AS name, 
+    username.`value` AS username
+FROM {WiserTableNames.WiserItem} AS user
+JOIN {WiserTableNames.WiserItemDetail} AS username ON username.item_id = user.id AND username.`key` = '{UserUsernameKey}'
+WHERE user.entity_type = '{WiserUserEntityType}'
+ORDER BY username.`value` ASC";
 
-            var result = new List<WiserItemModel>();
-            if (dataTable.Rows.Count == 0)
+            DataTable dataTable;
+            if (includeAdminUsers)
             {
-                return new ServiceResult<List<WiserItemModel>>(result);
+                dataTable = await wiserDatabaseConnection.GetAsync(query);
+                if (dataTable.Rows.Count > 0)
+                {
+                    result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new FlatItemModel
+                    {
+                        Id = dataRow.Field<ulong>("id"),
+                        Title = dataRow.Field<string>("name"),
+                        Fields = new Dictionary<string, object>
+                        {
+                            { "username", dataRow.Field<string>("username") },
+                            { "isAdmin", true },
+                            { "group", "Admin" }
+                        }
+                    }));
+                }
             }
 
-            result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new WiserItemModel
-            {
-                Id = dataRow.Field<ulong>("id"),
-                Title = dataRow.Field<string>("name"),
-                Details = new List<WiserItemDetailModel>
-                {
-                    new()
-                    {
-                        Key = "username",
-                        Value = dataRow.Field<string>("username")
-                    }
-                }
-            }));
+            dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            return new ServiceResult<List<WiserItemModel>>(result);
+            if (dataTable.Rows.Count > 0)
+            {
+                result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new FlatItemModel
+                {
+                    Id = dataRow.Field<ulong>("id"),
+                    Title = dataRow.Field<string>("name"),
+                    Fields = new Dictionary<string, object>
+                    {
+                        { "username", dataRow.Field<string>("username") },
+                        { "isAdmin", false },
+                        { "group", "Klant" }
+                    }
+                }));
+            }
+
+            return new ServiceResult<List<FlatItemModel>>(result);
         }
 
         /// <inheritdoc />
@@ -184,7 +204,7 @@ namespace Api.Modules.Customers.Services
                     StatusCode = HttpStatusCode.Unauthorized
                 };
             }
-            
+
             var result = AdminAccountModel.FromDataRow(dataTable.Rows[0]);
             result.EncryptedId = result.Id.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true);
 
@@ -206,7 +226,7 @@ namespace Api.Modules.Customers.Services
                     StatusCode = HttpStatusCode.Unauthorized
                 };
             }
-            
+
             return new ServiceResult<AdminAccountModel>(result);
         }
 
@@ -304,7 +324,7 @@ namespace Api.Modules.Customers.Services
                     }
                 };
 
-                // If an admin account is logging in, we don't want to check the password, so just return the first user. 
+                // If an admin account is logging in, we don't want to check the password, so just return the first user.
                 // Otherwise find a user with the correct password.
                 if (validAdminAccount || (!String.IsNullOrWhiteSpace(password) && password.VerifySha512(user.Password)))
                 {
@@ -410,12 +430,12 @@ namespace Api.Modules.Customers.Services
                     
                     UPDATE {WiserTableNames.WiserLoginAttempts} SET attempts = 0, blocked = 0 WHERE username = ?username;";
             await clientDatabaseConnection.ExecuteAsync(query);
-            
+
             var mailTemplate = (await templatesService.GetTemplateByNameAsync("Wachtwoord vergeten", true)).ModelObject;
             mailTemplate.Content = mailTemplate.Content.Replace("{username}", resetPasswordRequestModel.Username).Replace("{password}", password).Replace("{subdomain}", resetPasswordRequestModel.SubDomain);
 
             await communicationsService.SendEmailAsync(resetPasswordRequestModel.EmailAddress, mailTemplate.Subject, mailTemplate.Content);
-            
+
             return new ServiceResult<bool>(true);
         }
 
@@ -508,8 +528,8 @@ namespace Api.Modules.Customers.Services
 
             return new ServiceResult<ValidateCookieModel>(new ValidateCookieModel
             {
-                Success = true, 
-                MessageOrValue = userId.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true), 
+                Success = true,
+                MessageOrValue = userId.ToString().EncryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true),
                 UserData = user
             });
         }
@@ -525,7 +545,7 @@ namespace Api.Modules.Customers.Services
                     ErrorMessage = "Provided old password and new password are not allowed to match"
                 };
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
@@ -608,7 +628,7 @@ namespace Api.Modules.Customers.Services
 
             var encryptionKey = customer.ModelObject.EncryptionKey;
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            
+
             clientDatabaseConnection.AddParameter("userId", userId);
             var query = $@"SELECT IF(value = '1', TRUE, FALSE) AS totpEnabled FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND `key` = '{TotpEnabledKey}'";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
@@ -651,8 +671,11 @@ namespace Api.Modules.Customers.Services
 
             var wiserSettings = await usersService.GetWiserSettingsForUserAsync(encryptionKey);
             result.FilesRootId = wiserSettings.FilesRootId;
+            result.PlainFilesRootId = wiserSettings.PlainFilesRootId;
             result.ImagesRootId = wiserSettings.ImagesRootId;
+            result.PlainImagesRootId = wiserSettings.PlainImagesRootId;
             result.TemplatesRootId = wiserSettings.TemplatesRootId;
+            result.PlainTemplatesRootId = wiserSettings.PlainTemplatesRootId;
             result.MainDomain = wiserSettings.MainDomain;
 
             return new ServiceResult<UserModel>(result);
@@ -767,7 +790,7 @@ namespace Api.Modules.Customers.Services
                         VALUES (?userId, '{UserPinnedModulesKey}', '{UserModuleSettingsGroupName}', '{String.Join(",", moduleIds)}')
                         ON DUPLICATE KEY UPDATE value = VALUES(value)";
             await clientDatabaseConnection.ExecuteAsync(query);
-            
+
             return new ServiceResult<bool>(true);
         }
 
@@ -782,7 +805,7 @@ namespace Api.Modules.Customers.Services
                         VALUES (?userId, '{UserAutoLoadModulesKey}', '{UserModuleSettingsGroupName}', '{String.Join(",", moduleIds)}')
                         ON DUPLICATE KEY UPDATE value = VALUES(value)";
             await clientDatabaseConnection.ExecuteAsync(query);
-            
+
             return new ServiceResult<bool>(true);
         }
 
@@ -807,7 +830,7 @@ namespace Api.Modules.Customers.Services
             {
                 return result;
             }
-            
+
             var mainDomainWiser = "";
             var mainDomain = "";
             var requireSsl = false;
@@ -822,12 +845,15 @@ namespace Api.Modules.Customers.Services
                 {
                     case "w2filesrootid":
                         result.FilesRootId = encryptedValue;
+                        result.PlainFilesRootId = value;
                         break;
                     case "w2imagesrootid":
                         result.ImagesRootId = encryptedValue;
+                        result.PlainImagesRootId = value;
                         break;
                     case "w2templatesrootid":
                         result.TemplatesRootId = encryptedValue;
+                        result.PlainTemplatesRootId = value;
                         break;
                     case "maindomain_wiser":
                         mainDomainWiser = savedValue;
@@ -840,7 +866,7 @@ namespace Api.Modules.Customers.Services
                         break;
                 }
             }
-            
+
             result.MainDomain = !String.IsNullOrWhiteSpace(mainDomainWiser) ? mainDomainWiser : mainDomain;
             if (!String.IsNullOrWhiteSpace(result.MainDomain) && !result.MainDomain.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
@@ -871,7 +897,7 @@ namespace Api.Modules.Customers.Services
 
             return refreshToken;
         }
-        
+
         /// <inheritdoc />
         public async Task<string> UseRefreshTokenAsync(string subDomain, string refreshToken)
         {
@@ -883,7 +909,7 @@ namespace Api.Modules.Customers.Services
             var dataTable = await clientDatabaseConnection.GetAsync($"SELECT ticket FROM {WiserTableNames.WiserUsersAuthenticationTokens} WHERE refresh_token = ?token AND refresh_token_expires > ?now");
 
             var result = dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<string>("ticket");
-            
+
             // Delete the refresh token, so that it can only be used once.
             await clientDatabaseConnection.ExecuteAsync($"UPDATE {WiserTableNames.WiserUsersAuthenticationTokens} SET refresh_token = NULL, ticket = NULL, refresh_token_expires = NULL WHERE refresh_token = ?token");
 
@@ -891,9 +917,9 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        public async Task<ServiceResult<long>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
         {
-            var result = new ServiceResult<TimeSpan>();
+            var result = new ServiceResult<long>();
 
             // Try to decrypt the encrypted log ID.
             string decryptedLogIdAsString;
@@ -935,26 +961,27 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", decryptedLogId);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                var timeActiveData = await clientDatabaseConnection.GetAsync($"SELECT time_active, time_active_changed_on FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
+                var timeActiveData = await clientDatabaseConnection.GetAsync($"SELECT time_active_in_seconds, time_active_changed_on FROM {WiserTableNames.WiserLoginLog} WHERE id = ?id AND user_id = ?user_id");
                 if (timeActiveData.Rows.Count == 0)
                 {
-                    logger.LogError($"UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.");
+                    logger.LogError("UpdateUserTimeActiveAsync: Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user.", decryptedLogId);
                     result.StatusCode = HttpStatusCode.BadRequest;
                     result.ErrorMessage = $"Log ID '{decryptedLogId}' does not exist or doesn't belong to the current user";
                     return result;
                 }
 
                 var timeActiveChangedOn = timeActiveData.Rows[0].Field<DateTime>("time_active_changed_on");
-                var currentTimeActive = timeActiveData.Rows[0].Field<TimeSpan>("time_active");
-                var timeActive = currentTimeActive.Add(DateTime.Now.Subtract(timeActiveChangedOn));
+                var currentTimeActive = timeActiveData.Rows[0].Field<long>("time_active_in_seconds");
+                var timeActive = currentTimeActive + Convert.ToInt64(Math.Floor(DateTime.Now.Subtract(timeActiveChangedOn).TotalSeconds));
 
                 clientDatabaseConnection.ClearParameters();
-                clientDatabaseConnection.AddParameter("time_active", timeActive);
+                clientDatabaseConnection.AddParameter("time_active_in_seconds", timeActive);
                 clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, decryptedLogId);
 
@@ -1016,6 +1043,7 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
@@ -1067,7 +1095,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <summary>
-        /// Validates an encrypted admin account ID. 
+        /// Validates an encrypted admin account ID.
         /// It checks if it contains a valid integer and then checks in the database if that ID actually exists and whether that user is still active.
         /// </summary>
         /// <param name="encryptedAdminAccountId">The encrypted admin account ID.</param>
@@ -1079,12 +1107,12 @@ namespace Api.Modules.Customers.Services
             {
                 return false;
             }
-            
+
             UInt64.TryParse(encryptedAdminAccountId.DecryptWithAes(apiSettings.AdminUsersEncryptionKey, useSlowerButMoreSecureMethod: true), out var decryptedAdminAccountId);
 
             return (await ValidateAdminAccountIdAsync(decryptedAdminAccountId, identity)).ModelObject;
         }
-        
+
         /// <summary>
         /// Validates the ID of an admin account, to check if that user exists and is still active.
         /// </summary>
@@ -1170,7 +1198,7 @@ namespace Api.Modules.Customers.Services
                 // Already blocked before, no need to count the attempts again.
                 return true;
             }
-            
+
             var attempts = dataTable.Rows[0].Field<int>("attempts");
             if (maximumLoginAttemptsAllowed == 0 || attempts < maximumLoginAttemptsAllowed)
             {
@@ -1197,7 +1225,7 @@ namespace Api.Modules.Customers.Services
                 // Can't do anything if we have no data.
                 return;
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("ipAddress", ipAddress ?? "");
@@ -1271,15 +1299,16 @@ namespace Api.Modules.Customers.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
+                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
-                
+
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("user_id", userId);
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("time_active_changed_on", DateTime.Now);
 
                 var logId = await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserLoginLog, 0UL);
-                
+
                 // Remove outdated logs (data is retained for 3 months).
                 await clientDatabaseConnection.ExecuteAsync($"DELETE FROM {WiserTableNames.WiserLoginLog} WHERE added_on < DATE_SUB(NOW(), INTERVAL 3 MONTH)");
 
@@ -1299,7 +1328,7 @@ namespace Api.Modules.Customers.Services
             var twoFactorAuthenticator = new TwoFactorAuthenticator();
             return twoFactorAuthenticator.ValidateTwoFactorPIN(key, code);
         }
-        
+
         /// <inheritdoc />
         public string SetUpTotpAuthentication(string account, string key)
         {
@@ -1323,7 +1352,7 @@ namespace Api.Modules.Customers.Services
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
             var query = $@"DELETE FROM {WiserTableNames.WiserItemDetail} WHERE item_id = ?userId AND groupname = ?groupName";
             await clientDatabaseConnection.ExecuteAsync(query);
-            
+
             // Hash the new backup codes and then save them in the database.
             var queryBuilder = new List<string>();
             for (var index = 0; index < results.Count; index++)
@@ -1333,7 +1362,7 @@ namespace Api.Modules.Customers.Services
                 clientDatabaseConnection.AddParameter($"code{index}", backupCode.ToSha512ForPasswords());
                 queryBuilder.Add($"(?userId, ?groupName, ?key{index}, ?code{index})");
             }
-            
+
             query = $@"INSERT INTO {WiserTableNames.WiserItemDetail} (`item_id`, `groupname`, `key`, `value`)
 VALUES {String.Join(", ", queryBuilder)}";
             await clientDatabaseConnection.ExecuteAsync(query);
@@ -1358,7 +1387,7 @@ VALUES {String.Join(", ", queryBuilder)}";
             {
                 return (true, false);
             }
-            
+
             string query;
             if (totpAuthentication.RequiresSetup && String.IsNullOrWhiteSpace(totpPin))
             {
@@ -1375,7 +1404,7 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
 
                 return (true, true);
             }
-            
+
             // If the user entered a backup code, check if it's valid and if so, allow the user to login once with this code and then delete the code.
             if (!String.IsNullOrWhiteSpace(totpBackupCode))
             {
@@ -1413,7 +1442,7 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
                 connectionToUse.AddParameter("detailId", validCodeId);
                 query = $"DELETE FROM {WiserTableNames.WiserItemDetail} WHERE id = ?detailId";
                 await connectionToUse.ExecuteAsync(query);
-                
+
                 return (true, false);
             }
 
@@ -1432,6 +1461,58 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
             await connectionToUse.ExecuteAsync(query);
 
             return (true, false);
+        }
+
+        /// <summary>
+        /// Checks if the MySQL tables for the login log is up-to-date.
+        /// </summary>
+        private async Task KeepTablesUpToDateAsync(string databaseName)
+        {
+            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
+
+            // Check if the login log table needs to be updated.
+            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 23))
+            {
+                // Add column.
+                var column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
+                await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
+
+                // Convert and drop the "time_active" column if it still exists.
+                if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName))
+                {
+                    await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserLoginLog, databaseName, "time_active", "time_active_in_seconds");
+                    await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName);
+                }
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserLoginLog);
+                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+                var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
+                if (lastUpdateData.Rows.Count == 0)
+                {
+                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
+                }
+                else
+                {
+                    await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
+                }
+            }
+        }
+
+        private async Task ConvertTimeSpanToSecondsAsync(string tableName, string databaseName, string oldColumnName, string newColumnName)
+        {
+            var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
+
+            var convertDataTable = await clientDatabaseConnection.GetAsync($"SELECT id, `{oldColumnName}` FROM {queryDatabasePart}`{tableName}`");
+            foreach (var dataRow in convertDataTable.Rows.Cast<DataRow>())
+            {
+                var seconds = Convert.ToInt32(Math.Floor(dataRow.Field<TimeSpan>(oldColumnName).TotalSeconds));
+
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("tableId", Convert.ToUInt64(dataRow["id"]));
+                clientDatabaseConnection.AddParameter("seconds", seconds);
+                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{tableName}` SET `{newColumnName}` = ?seconds WHERE id = ?tableId");
+            }
         }
     }
 }

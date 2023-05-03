@@ -5,6 +5,7 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
+import { WiserLinkTab } from "../Scripts/WiserLinkTab.js";
 import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 
 
@@ -43,6 +44,7 @@ const moduleSettings = {
             this.translations = null;
             this.roleTab = null;
             this.wiserQueryTab = null;
+            this.wiserLinkTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -118,6 +120,7 @@ const moduleSettings = {
                 EXECUTEQUERYONCE: { text: "Voer query eenmalig uit", id: "executeQueryOnce" },
                 GENERATEFILE: { text: "Genereer bestand", id: "generateFile" },
                 REFRESHCURRENTITEM: { text: "Ververs het item", id: "refreshCurrentItem" },
+                ACTIONCONFIRMDIALOG: { text: "Bevestigingsvenster", id: "actionConfirmDialog" },
                 CUSTOM: { text: "Custom javascript", id: "custom" }
             });
             this.fieldTypesDropDown = Object.freeze({
@@ -169,12 +172,30 @@ const moduleSettings = {
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
+
+            // These are all entities, including duplicate ones that have the same name in different modules.
+            try {
+                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types 1", exception);
+                this.entityList = [];
+            }
+
+            // These are all entities grouped by name.
+            try {
+                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types", exception);
+                this.allUniqueEntityTypes = [];
+            }
+
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
             this.entityFieldsTab = new EntityFieldTab(this);
             this.entityPropertyTab = new EntityPropertyTab(this);
             this.roleTab = new RoleTab(this);
             this.wiserQueryTab = new WiserQueryTab(this);
+            this.wiserLinkTab = new WiserLinkTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 
@@ -224,6 +245,7 @@ const moduleSettings = {
             grid.dataSource.remove(record);
             grid.dataSource.insert(newIndex, record);
         }
+        
         /**
          * Setup all basis bindings for this module.
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
@@ -238,41 +260,6 @@ const moduleSettings = {
             $(".saveButton").kendoButton({
                 click: this.saveChanges.bind(this),
                 icon: "save"
-            });
-
-            $("#generateStandardEntities").kendoButton({
-                click: () => {
-                    const entitiesToGenerate = [], entitiesToGeneratePrettyName = [];
-                    document.querySelectorAll("#generateEntitiesGroup input[type=checkbox]:checked").forEach((e) => {
-                        entitiesToGenerate.push(e.dataset.entityGroup);
-                        entitiesToGeneratePrettyName.push(e.dataset.entityPrettyName);
-                    });
-                    if (entitiesToGenerate.length === 0) return;
-                    this.openDialog("Standaard entiteiten genereren", `Weet u zeker dat u de entiteiten ${entitiesToGeneratePrettyName.join()} voor wilt genereren?`, this.kendoPromptType.CONFIRM).then((data) => {
-
-                        entitiesToGenerate.forEach(async (e) => {
-                            const templateName = e;
-                            if (!templateName) {
-                                this.openDialog("Oeps...!", `Entiteiten groep "${e}", is nog niet correct ingesteld. Probeer het later opnieuw.`, this.kendoPromptType.ALERT);
-                                return;
-                            }
-                            try {
-                                const qResult = await Wiser.api({ 
-                                    url: `${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`,
-                                    method: "GET"
-                                });
-                                if (qResult.success) {
-                                    this.showNotification(null, "Entiteiten zijn succesvol aangemaakt of bijgewerkt!", "success", 2000);
-                                }
-                            } catch (e) {
-                                console.log(e);
-                                this.openDialog("Oeps...!", `Er ging iets mis bij het genereren van de entiteiten, neem contact op met ons.`, this.kendoPromptType.ALERT);
-                            }
-                        });
-
-                    });
-                },
-                icon: "gear"
             });
 
             Misc.addEventToFixToolTipPositions();
@@ -294,6 +281,9 @@ const moduleSettings = {
                     break;
                 case "modules":
                     await this.moduleTab.beforeSave();
+                    break;
+                case "links":
+                    await this.wiserLinkTab.beforeSave();
                     break;
                 default:
                     await this.entityTab.beforeSave();

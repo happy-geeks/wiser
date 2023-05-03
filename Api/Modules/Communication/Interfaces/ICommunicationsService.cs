@@ -13,7 +13,7 @@ namespace Api.Modules.Communication.Interfaces;
 public interface ICommunicationsService
 {
     /// <summary>
-    /// Get the settings of a specific row from wiser_communication. 
+    /// Get the settings of a specific row from wiser_communication.
     /// </summary>
     /// <param name="id">The ID of the communication settings to get.</param>
     /// <param name="nameOnly">Optional: Whether to only get the name (and ID) or everything.</param>
@@ -41,4 +41,11 @@ public interface ICommunicationsService
     /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated user.</param>
     /// <param name="id">The ID of the settings to delete.</param>
     Task<ServiceResult<bool>> DeleteSettingsAsync(ClaimsIdentity identity, int id);
+
+    /// <summary>
+    /// Send an e-mail to someone.
+    /// </summary>
+    /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated user.</param>
+    /// <param name="communication">The <see cref="SingleCommunicationModel"/> with information for sending the e-mail.</param>
+    Task<ServiceResult<bool>> SendEmailAsync(ClaimsIdentity identity, SingleCommunicationModel communication);
 }

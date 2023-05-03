@@ -4,7 +4,7 @@ Wiser v3. This includes the API and the front-end projects.
 ## Requirements
 ### Software
 1. Install [NodeJs](https://nodejs.org/en/) LTS.
-2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) and install it.
+2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) and install it.
 
 ### Compile front-end
 1. Open PowerShell/CMD Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
@@ -16,26 +16,26 @@ If you get an error for not having enough rights to execute the script please ex
 
 ### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
-1. Open `appSettings.json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`. Please note that this directory should always end with a slash. Example: `Z:\AppSettings\Wiser\FrontEnd\`.
+1. Open `appSettings.[Environment].json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`. When running Wiser locally on your PC, you need the file `appSettings.Development.json`. Please note that this directory should always end with a slash. Example: `Z:\AppSettings\Wiser\FrontEnd\`.
 1. The `appsettings-secrets.json` files should look like this:
 #### API
 ```json
 {
   "GCL": {
     "connectionString": "", // Mandatory: The connection string to the main database for Wiser. See the chapter 'Database' for an example connectiom string.
-    "DefaultEncryptionKey": "", // Mandatory: The default encryption key that should be used for encrypting values with AES when no encryption key is given.
-    "DefaultEncryptionKeyTripleDes": "",  // Mandatory: The default encryption key that should be used for encrypting values with Tripe DES when no encryption key is given.
+    "DefaultEncryptionKey": "", // Mandatory: The default encryption key that should be used for encrypting values with AES when no encryption key is given. You can generate a value for this yourself.
+    "DefaultEncryptionKeyTripleDes": "",  // Mandatory: The default encryption key that should be used for encrypting values with Tripe DES when no encryption key is given. You can generate a value for this yourself.
     "evoPdfLicenseKey": "" // If you're going to use the PdfService, you need a license key for Evo PDF, or make your own implementation.
   },
   "Api": {
-    "AdminUsersEncryptionKey": "", // Mandatory: The encryption key to use for encrypting IDs and other data for admin users.
-    "DatabasePasswordEncryptionKey": "", // Mandatory: The encryption key that will be used for encrypting and saving passwords for connection strings to customer databases.
-    "ClientSecret": "", // Mandatory: The secret for the default client for OAUTH2 authentication.
+    "AdminUsersEncryptionKey": "", // Mandatory: The encryption key to use for encrypting IDs and other data for admin users. You can generate a value for this yourself.
+    "DatabasePasswordEncryptionKey": "", // Mandatory: The encryption key that will be used for encrypting and saving passwords for connection strings to customer databases. You can generate a value for this yourself.
+    "ClientSecret": "", // Mandatory: The secret for the default client for OAUTH2 authentication. You can generate a value for this yourself.
     "PusherAppId": "", // Some modules use pusher to send notifications to users. Enter the app ID for pusher here if you want to use that.
     "PusherAppKey": "", // The app key for pusher.
     "PusherAppSecret": "", // The app secret for pusher.
     "PusherSalt": "", // A salt to use when hashing event IDs for pusher.,
-    "SigningCredentialCertificate": "", // Mandatory: The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication.
+    "SigningCredentialCertificate": "", // Mandatory: The fully qualified name of the certificate in the store of the server, of the certificate to use for IdentityServer4 (OAUTH2) authentication. This can be any valid certificate that is not self-signed. Only required on production environment. Development uses a self-signed certificate that will be automatically generated.
     "UseTerserForTemplateScriptMinification": false // Whether terser should be used to handle the minification of JavaScript templates made in the Templates module.
   },
   "DigitalOcean": {
@@ -52,8 +52,8 @@ If you get an error for not having enough rights to execute the script please ex
     "ApiClientSecret": "", // Mandatory: The client secret for OAUTH2 authentication with the API, this should be the same value as "API.ClientSecret" in the appsettings-secrets.json of the API.
     "TrackJsToken": "", // If you want to use Track JS to track all errors, enter a token for that here. TrackJS will not be loaded if this is empty.
     "MarkerIoToken": "", // If you want to use Marker.io for allowing your users to send bug reports, enter the token for that here. Marker.io will not be loaded if this is empty.
-    "ApiBaseUrl": "", // Mandatory: The base URL for the API. Example: https://api.wiser3.nl/
-    "WiserHostNames": [] // One or more host names for running the Wiser FrontEnd on. This is needed to figure out the sub domain for multi tenancy. These values well be stripped from the host name and what is left over will be considered the sub domain.
+    "ApiBaseUrl": "", // Mandatory: The base URL for the API. Example: https://api.wiser3.nl/. You should use https://localhost:44349 when running/debugging Wiser locally on your PC.
+    "WiserHostNames": [] // One or more host names for running the Wiser FrontEnd on. This is needed to figure out the sub domain for multi tenancy. These values well be stripped from the host name and what is left over will be considered the sub domain. This should be an empty array when running/debugging Wiser locally on your PC.
   }
 }
 
@@ -129,7 +129,8 @@ Because terser works with input files, the API will create a temporary file wher
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
 1. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
 1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
-1. If you use Rider, you can also set that up to start both projects when debugging. To do this, click `Edit configuration` in the configurations dropdown (in the toolbar), this will open a new screen. In that screen select the root item `.NET Launch Settings Profile`, then click the plus icon on the top left. Now add a `Compound` and give it any name, such as "Debug both". Lastly, add the configurations `.NET Launch Settings Profile 'Api'` and `.NET Launch Settings Profile 'FrontEnd'` to that compount and click `OK`. 
+1. If you use Rider, we already have a configuration saved for this, it's called "Debug Both". If you don't see it, you can also set that up yourself. To do this, click `Edit configuration` in the configurations dropdown (in the toolbar), this will open a new screen. In that screen select the root item `.NET Launch Settings Profile`, then click the plus icon on the top left. Now add a `Compound` and give it any name, such as "Debug both". Lastly, add the configurations `.NET Launch Settings Profile 'Api'` and `.NET Launch Settings Profile 'FrontEnd'` to that compount and click `OK`.
+1. When debugging, Rider/Visual Studio will create a self-signed certificate. You need to add this certificate to the trusted sources on your computer, otherwise you won't be able to run/debug Wiser properly. In Rider you can do this by pressing `CTRL+SHIFT+A`, then typing `Certificate` and clicking the result (Set up ASP.NET Core Developer certificate). You will then get a pop-up asking for confirmation to add the certificate to the trusted sources. Click yes here. Now you should be able to run Wiser locally. If you don't do this, you will get the error `System.InvalidOperationException: IDX20803: Unable to obtain configuration` when loading the list of modules and other things.
 
 # Multitenancy
 Wiser works with multitenancy, but only with different (sub) domains. So for example, if Wiser runs on the domain `wiser.nl`, then you can use different sub domains for multi tenancy (eg. `foobar.wiser.nl`). Or you can just use multiple domains, like `example.com` and `foorbar.com`. When someone opens a (sub) domain of Wiser, that (sub) domain will then be looked up in `easy_customers`, via the column `subdomain`. If a row has been found, a connectionstring will be generated with the data from that row and that will be used for all requests on that sub domain.
@@ -195,7 +196,7 @@ By default, users can see and change everything. If there is no entry in wiser_p
 # Publishing
 To publish Wiser 3 to your own server, you should use the following publish settings:
 - Configuration: `Release`
-- Target Framework: `net6.0`
+- Target Framework: `net7.0`
 - Deployment Mode: `Self-Contained`
 - Target Runtime: The correct runtime for your system, for Windows this is usually `win-x64`
 - Under File Publish Option, tick the box for `Enable ReadyToRun compilation`

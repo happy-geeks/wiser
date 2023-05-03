@@ -1,0 +1,62 @@
+name: Publish external server 1 test
+
+on:
+  push:
+    tags:
+    - v*
+
+jobs:
+  build:
+
+    runs-on: wiser-ext-1-test
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Copy partner styles
+      run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION }}\*" -Destination "${{ secrets.WORKER_LOCATION_EXT_1_TEST }}\wiser\wiser\FrontEnd\Core\Css\partner" -Recurse
+      
+    - name: Build
+      run: dotnet build --no-restore
+      
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+      
+    - name: Enable maintenance notice API
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_LIVE }}\_App_Offline.htm" -NewName "App_Offline.htm"
+      
+    - name: Enable maintenance notice FrontEnd
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}\_App_Offline.htm" -NewName "App_Offline.htm"
+
+    - name: dotnet publish API
+      run: |
+        dotnet publish API -c Release -o "${{ secrets.PUBLISH_LOCATION_API_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
+
+    - name: Install NPM modules
+      run: npm install
+      working-directory: 'FrontEnd'
+
+    - name: Activate Kendo UI License
+      run: npx kendo-ui-license activate
+      working-directory: 'FrontEnd'
+      env:
+        KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}
+                
+    - name: Compile scripts and styles with webpack
+      run: node_modules\.bin\webpack --mode=production
+      working-directory: 'FrontEnd'
+
+    - name: dotnet publish front-end
+      run: |
+        dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
+      
+    - name: Disable maintenance notice API
+      if: ${{ always() }}
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"
+      
+    - name: Disable maintenance notice FrontEnd
+      if: ${{ always() }}
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"

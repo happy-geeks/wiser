@@ -2,9 +2,8 @@
 @addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 @{
-    ViewBag.Title = "VCS";
+    ViewBag.Title = "Versiebeheer";
     Layout = "";
-    //_Layout
 }
 
 <!DOCTYPE html>
@@ -40,53 +39,83 @@
         </p>
     </div>
     <div id="wiser">
-        <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
-            <ul>
-                <li id="changeHistoryTab" class="k-state-active">Openstaande wijzigingen</li>
-                <li id="deployTab">Deploy</li>
-                <li id="historyTab">Historie</li>
-            </ul>
-            <div id="templateChangeHistory">
-                <form class="formData">
-                    <div id="commitData">
-                        <select id="commitEnvironment"></select>
-                        <label for="commitDescription">Omschrijving</label>
-                        <textarea type="text" id="commitDescription"></textarea>                            
+        <div id="window" style="margin: 0 auto; padding: 0;">
+            <div id="tabstrip" class="tabstrip k-tabstrip-wrapper">
+                <ul>
+                    <li id="changeHistoryTab" class="k-state-active">Openstaande wijzigingen</li>
+                    <li id="deployTab">Deploy</li>
+                    <li id="reviewTab">Reviews</li>
+                    <li id="historyTab">Historie</li>
+                </ul>
+                <div id="templateChangeHistory">
+                    <div class="formData">
+                        <div id="commitData">
+                            <select id="commitEnvironment"></select>
+                            <label for="commitDescription">Omschrijving</label>
+                            <textarea type="text" id="commitDescription"></textarea>
+                            <label for="usersForCodeReview">Code review aanvragen? Selecteer hier dan 1 of meer personen die de review kunnen doen:</label>
+                            <select id="usersForCodeReview" multiple></select>
+                        </div>
+                        <div id="gridsContainer">
+                            <h2>Templates</h2>
+                            <div id="templateChangesGrid"></div>
+                            <h2>Dynamische content</h2>
+                            <div id="dynamicContentChangesGrid"></div>
+                        </div>
                     </div>
-                    <div id="gridsContainer">
-                        <h2>Templates</h2>
-                        <div id="templateChangesGrid"></div>
-                        <h2>Dynamische content</h2>
-                        <div id="dynamicContentChangesGrid"></div>
-                    </div>
-                    <button id="commitButton">Commit</button>
-                </form>
-            </div>
-            <div id="deploy">
-                <div class="formData">
-                    <div class="gridData">
-                        <div id="deployGrid"></div>
-                    </div>
+                    <footer>
+                        <button id="reloadUncommittedChangesButton">Verversen</button>
+                        <button id="commitButton">Commit</button>
+                    </footer>
                 </div>
-                <button class="environment-deploy" id="deployCommitToLive">deploy naar live</button>
-                <button class="environment-deploy" id="deployCommitToAcceptance">deploy naar acceptatie</button>
-                <button class="environment-deploy" id="deployCommitToTest">deploy naar test</button>
-                <div class="branch-container hidden" id="deployToBranchContainer">
-                    <select id="branchesDropDown"></select>
-                    <button class="branch-deploy" id="deployCommitToBranch">deploy naar geselecteerde branch</button>
+                <div id="deploy">
+                    <div class="formData">
+                        <div class="gridData">
+                            <div id="deployGrid"></div>
+                        </div>
+                    </div>
+                    <footer>
+                        <button id="reloadCommitsButton">Verversen</button>
+                        <div class="branch-container hidden" id="deployToBranchContainer">
+                            <select id="branchesDropDown"></select>
+                            <button class="branch-deploy" id="deployCommitToBranch" title="Deploy naar geselecteerde branch"><ins class="icon-git"></ins></button>
+                        </div>
+                        <button class="environment-deploy" id="deployCommitToLive">Deploy naar live</button>
+                        <button class="environment-deploy" id="deployCommitToAcceptance">Deploy naar acceptatie</button>
+                        <button class="environment-deploy" id="deployCommitToTest">Deploy naar test</button>
+                    </footer>
+                </div>
+                <div id="review">
+                    <div class="formData">
+                        <div class="gridData">
+                            <div id="reviewGrid"></div>
+                        </div>
+                    </div>
+                    <footer>
+                        <button id="reloadReviewsButton">Verversen</button>
+                    </footer>
+                </div>
+                <div id="history">
+                    <div class="formData">
+                        <div class="gridData">
+                            <div id="historyGrid"></div>
+                        </div>
+                    </div>
+                    <footer>
+                        <button id="reloadHistoryButton">Verversen</button>
+                    </footer>
                 </div>
             </div>
-            <div id="history">Work in progress</div>
         </div>
     </div>
 
-     <div id="mainLoader" class="fullscreen-loader loading"> 
-         <div class="loader-icon"> 
-             <div></div> 
-             <div></div> 
-             <div></div> 
-             <div></div> 
-         </div> 
+     <div id="mainLoader" class="fullscreen-loader loading">
+         <div class="loader-icon">
+             <div></div>
+             <div></div>
+             <div></div>
+             <div></div>
+         </div>
     </div>
 
     <webpack-script file-name="runtime.js"></webpack-script>

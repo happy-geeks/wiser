@@ -24,6 +24,12 @@ input:focus, textarea:focus, select:focus {
 ins {
 	text-decoration: none;
 }
+dl {
+	margin-top: 10px;
+}
+dd {
+	margin-left: 2em;
+}
 .hidden {
 	display: none !important;
 }
@@ -252,6 +258,14 @@ ins {
 .item {
 	border: none;
 	position: relative;
+	background: var(--item-bg-color);
+	box-sizing: border-box;
+	padding: 6px;
+	min-width: 10%;
+	max-width: 100%;
+}
+.item .disabled {
+	opacity: 0.5;
 }
 .item .actions {
 	position: relative;
@@ -270,14 +284,6 @@ ins {
 }
 .item .actions.btn2 button:last-child {
 	margin: 0;
-}
-.item {
-	background: var(--item-bg-color);
-	box-sizing: border-box;
-	padding: 6px;
-	position: relative;
-	min-width: 10%;
-	max-width: 100%;
 }
 .emptyItem {
 	padding: 9px;
@@ -868,6 +874,9 @@ ins {
 .checkbox, .radio {
 	cursor: pointer;
 }
+.checkbox, .radio {
+	cursor: pointer;
+}
 .checkbox > input,
 .radio > input {
 	height: 1px;
@@ -1264,4 +1273,61 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 }
 
 body.gridViewMode {
+}
+
+/** ICONS **/
+.k-sprite {
+	color: var(--dark-txt);
+	font-family: 'icomoon' !important;
+	font-size: 16px;
+	margin-right: 5px;
+	padding-top: 1px;
+	speak: none;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.k-sprite.rootfolder:before {
+	content: "\e972";
+}
+
+.k-sprite.folder:before {
+	content: "\e968";
+}
+
+.k-sprite.wiserfolderclosed:before {
+	content: "\e96d";
+}
+
+.k-sprite.wiserfolderopened:before {
+	content: "\e965";
+}
+
+.k-sprite.pdf:before {
+	content: "\e956";
+}
+
+.k-sprite.html:before {
+	content: "\e957";
+}
+
+.k-sprite.image:before {
+	content: "\e9eb";
+}
+
+.k-sprite.file:before {
+	content: "\e94b";
+}
+
+.k-sprite.edit:before {
+	content: "\e9e8";
+}
+
+.k-sprite.delete:before {
+	content: "\e93f";
 }

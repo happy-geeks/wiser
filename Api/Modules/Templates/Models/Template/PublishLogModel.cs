@@ -39,6 +39,13 @@
         /// The new version number of the version on the test environment
         /// </summary>
         public int NewTest { get; set; }
+        
+        /// <summary>
+        /// Creates a new instance of <see cref="PublishLogModel"/>.
+        /// </summary>
+        public PublishLogModel()
+        {
+        }
 
         /// <summary>
         /// Create a PublishLogModel with all values set to a base. Will set the old environments as new values.
