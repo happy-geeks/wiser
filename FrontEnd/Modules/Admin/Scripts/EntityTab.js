@@ -2872,7 +2872,7 @@ export class EntityTab {
                             this.base.showNotification("notification", `Selecteer eerst een entiteit waar naar gezocht moet worden!`, "error");
                             return;
                         }
-                        entityProperties.options.entityType = this.dataSourceEntities.dataItem().name;
+                        entityProperties.options.entityType = this.dataSourceEntities.dataItem().id;
                         entityProperties.options.dataSource = null;
                         entityProperties.options.searchInTitle = document.getElementById("searchInTitle").checked;
                         entityProperties.options.searchEverywhere = document.getElementById("searchEverywhere").checked;
