@@ -955,7 +955,7 @@ AND id <> ?id;");
             result.Id = dataRow.Field<int>("id");
             result.ModuleId = Convert.ToInt32(dataRow["module_id"]);
             result.EntityType = dataRow.Field<string>("entity_name");
-            result.LinkType = dataRow.Field<int>("link_type");
+            result.LinkType = dataRow.Field<int?>("link_type") ?? 0;
             result.PropertyName = dataRow.Field<string>("property_name");
             result.LanguageCode = dataRow.Field<string>("language_code");
             result.TabName = dataRow.Field<string>("tab_name");
