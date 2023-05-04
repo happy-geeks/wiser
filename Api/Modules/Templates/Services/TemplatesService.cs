@@ -1492,7 +1492,7 @@ FROM (
 	properties.display_name as `displayName`,
     properties.tab_name AS `tabName`,
     properties.group_name AS `groupName`,
-	IFNULL(permissions.permissions, 15) AS `permission`,
+	IFNULL(permissions.permissions, 0) AS `permission`,
     {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
 LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = properties.id AND permissions.role_id = {roleId}
@@ -1505,7 +1505,7 @@ ORDER BY properties.entity_name, properties.tab_name, properties.group_name, pro
 	role.role_name AS `roleName`,
 	module.id AS `moduleId`,
 	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
-	IFNULL(permission.permissions, 15) AS `permission`
+	IFNULL(permission.permissions, 0) AS `permission`
 FROM wiser_module AS module
 JOIN wiser_roles AS role ON role.id = {roleId}
 LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id
