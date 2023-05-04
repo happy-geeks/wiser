@@ -95,18 +95,32 @@ class Main {
             baseURL: this.appSettings.apiBase
         });
 
+        let stopRetrying = false;
         this.api.interceptors.response.use(undefined, async (error) => {
-            // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
-            if (error.response.status === 401) {
-                // If we ever get an unauthorized, logout the user.
-                if (error.response.config.url === "/connect/token") {
-                    this.vueApp.$store.dispatch(AUTH_LOGOUT);
-                } else {
-                    await this.vueApp.$store.dispatch(AUTH_REQUEST, { gotUnauthorized: true });
-                }
-            }
+            return new Promise(async (resolve, reject) => {
+                // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
+                if (error.response.status === 401 && !stopRetrying) {
+                    // If we ever get an unauthorized, logout the user.
+                    if (error.response.config.url === "/connect/token") {
+                        this.vueApp.$store.dispatch(AUTH_LOGOUT);
+                    } else {
+                        // Re-authenticate with the refresh token.
+                        await this.vueApp.$store.dispatch(AUTH_REQUEST, {gotUnauthorized: true});
+                        error.config.headers.Authorization = `Bearer ${localStorage.getItem("accessToken")}`;
 
-            return Promise.reject(error);
+                        // Retry the original request.
+                        this.api.request(error.config).then(response => {
+                            stopRetrying = false;
+                            resolve(response);
+                        }).catch((newError) => {
+                            stopRetrying = true;
+                            reject(newError);
+                        })
+                    }
+                }
+
+                reject(error);
+            });
         });
 
         if (this.appSettings.markerIoToken) {
