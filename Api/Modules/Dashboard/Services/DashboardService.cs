@@ -849,7 +849,7 @@ WHERE id = ?serviceId");
         var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
         // Check if the dashboard table needs to be updated.
-        if (!await databaseHelpersService.TableExistsAsync(WiserTableNames.WiserDashboard) || lastTableUpdates.TryGetValue(WiserTableNames.WiserDashboard, out var value) && value >= new DateTime(2023, 2, 23))
+        if (!await databaseHelpersService.TableExistsAsync(WiserTableNames.WiserDashboard) || (lastTableUpdates.TryGetValue(WiserTableNames.WiserDashboard, out var value) && value >= new DateTime(2023, 2, 23)))
         {
             return;
         }
