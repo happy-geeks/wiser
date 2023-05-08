@@ -602,8 +602,9 @@ WHERE il1.id = @_linkId;
 UPDATE wiser_itemlink
 SET destination_item_id = @destinationId, ordering = @newOrderNumber
 WHERE id = @_linkId;");
-                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, display_name AS displayName, property_name AS propertyName FROM wiser_entityproperty
-WHERE entity_name = '{entityName}'");
+                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, CONCAT(IF(tab_name = """", ""Gegevens"", tab_name), "" --> "", display_name) AS displayName, property_name AS propertyName FROM wiser_entityproperty
+WHERE entity_name = '{entityName}'
+ORDER BY displayName");
 
                 TemplateQueryStrings.Add("GET_ALL_INPUT_TYPES", @"SELECT DISTINCT inputtype FROM wiser_entityproperty ORDER BY inputtype");
                 TemplateQueryStrings.Add("DELETE_ENTITYPROPERTY", @"DELETE FROM wiser_entityproperty WHERE tab_name = '{tabName}' AND entity_name = '{entityName}' AND id = '{entityPropertyId}'");
