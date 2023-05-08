@@ -602,8 +602,9 @@ WHERE il1.id = @_linkId;
 UPDATE wiser_itemlink
 SET destination_item_id = @destinationId, ordering = @newOrderNumber
 WHERE id = @_linkId;");
-                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, display_name AS displayName, property_name AS propertyName FROM wiser_entityproperty
-WHERE entity_name = '{entityName}'");
+                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, CONCAT(IF(tab_name = """", ""Gegevens"", tab_name), "" --> "", display_name) AS displayName, property_name AS propertyName FROM wiser_entityproperty
+WHERE entity_name = '{entityName}'
+ORDER BY displayName");
 
                 TemplateQueryStrings.Add("GET_ALL_INPUT_TYPES", @"SELECT DISTINCT inputtype FROM wiser_entityproperty ORDER BY inputtype");
                 TemplateQueryStrings.Add("DELETE_ENTITYPROPERTY", @"DELETE FROM wiser_entityproperty WHERE tab_name = '{tabName}' AND entity_name = '{entityName}' AND id = '{entityPropertyId}'");
@@ -1492,7 +1493,7 @@ FROM (
 	properties.display_name as `displayName`,
     properties.tab_name AS `tabName`,
     properties.group_name AS `groupName`,
-	IFNULL(permissions.permissions, 15) AS `permission`,
+	IFNULL(permissions.permissions, 0) AS `permission`,
     {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
 LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = properties.id AND permissions.role_id = {roleId}
@@ -1505,7 +1506,7 @@ ORDER BY properties.entity_name, properties.tab_name, properties.group_name, pro
 	role.role_name AS `roleName`,
 	module.id AS `moduleId`,
 	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
-	IFNULL(permission.permissions, 15) AS `permission`
+	IFNULL(permission.permissions, 0) AS `permission`
 FROM wiser_module AS module
 JOIN wiser_roles AS role ON role.id = {roleId}
 LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id

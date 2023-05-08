@@ -1471,31 +1471,33 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
 
             // Check if the login log table needs to be updated.
-            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserLoginLog) || lastTableUpdates[WiserTableNames.WiserLoginLog] < new DateTime(2023, 2, 23))
+            if (!await databaseHelpersService.TableExistsAsync(WiserTableNames.WiserDashboard) || (lastTableUpdates.TryGetValue(WiserTableNames.WiserDashboard, out var value) && value >= new DateTime(2023, 2, 23)))
             {
-                // Add column.
-                var column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
-                await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
+                return;
+            }
 
-                // Convert and drop the "time_active" column if it still exists.
-                if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName))
-                {
-                    await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserLoginLog, databaseName, "time_active", "time_active_in_seconds");
-                    await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName);
-                }
+            // Add column.
+            var column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
+            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
 
-                clientDatabaseConnection.ClearParameters();
-                clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserLoginLog);
-                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-                var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
-                if (lastUpdateData.Rows.Count == 0)
-                {
-                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
-                }
-                else
-                {
-                    await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
-                }
+            // Convert and drop the "time_active" column if it still exists.
+            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName))
+            {
+                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserLoginLog, databaseName, "time_active", "time_active_in_seconds");
+                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName);
+            }
+
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserLoginLog);
+            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+            var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
+            if (lastUpdateData.Rows.Count == 0)
+            {
+                await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
+            }
+            else
+            {
+                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
             }
         }
 
