@@ -50,18 +50,31 @@ if (customQueryGrid) {
             let commands = [];
             
             if (!options.disableOpeningOfItems) {
-                commandColumnWidth += 80;
+                commandColumnWidth += 60;
                 
                 commands.push({
                     name: "openDetails",
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); }
+                    title: "Item openen",
+                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
                 });
+                
+                if (options.allowOpeningOfItemsInNewTab) {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "openDetailsInNewTab",
+                        iconClass: "k-icon k-i-window",
+                        text: "",
+                        title: "Item openen in nieuwe tab",
+                        click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    });
+                }
             }
 
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
-                commandColumnWidth += 80;
+                commandColumnWidth += 60;
                 
                 commands.push({
                     name: "remove",
@@ -70,7 +83,7 @@ if (customQueryGrid) {
                     click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
                 });
             } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
-                commandColumnWidth += 160;
+                commandColumnWidth += 120;
                 
                 commands.push("destroy");
             }
@@ -155,20 +168,32 @@ if (customQueryGrid) {
         
         // Add command columns separately, because of the click event that we can't do properly server-side.
         if (!options.hideCommandColumn) {
-            let commandColumnWidth = 80;
+            let commandColumnWidth = 0;
             let commands = [];
             
             if (!options.disableOpeningOfItems && !options.fieldGroupName) {
+                commandColumnWidth += 60;
                 commands.push({
                     name: "openDetails",
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); }
+                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
                 });
+
+                if (options.allowOpeningOfItemsInNewTab) {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "openDetailsInNewTab",
+                        iconClass: "k-icon k-i-window",
+                        text: "",
+                        click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    });
+                }
             }
             
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off" && !options.fieldGroupName) {
-                commandColumnWidth += 80;
+                commandColumnWidth += 60;
                 
                 commands.push({
                     name: "remove",
@@ -404,7 +429,7 @@ async function generateGrid(data, model, columns) {
                             entityType: "{entityType}"
                         };
 
-                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
+                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
@@ -861,7 +886,7 @@ async function generateGrid(data, model, columns) {
 
     if (!options.disableOpeningOfItems) {
         field.on("dblclick", "tbody tr[data-uid] td", function (event) {
-            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options);
+            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false);
         });
     }
 

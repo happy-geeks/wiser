@@ -107,7 +107,7 @@ const loginModule = {
             else {
                 state.loginStatus = "loading";
             }
-            
+
             state.loginMessage = "";
             state.listOfUsers = [];
         },
@@ -197,7 +197,7 @@ const loginModule = {
     },
 
     actions: {
-        async [AUTH_REQUEST]({ commit }, data = {}) {
+        async [AUTH_REQUEST]({ commit, rootState }, data = {}) {
             const user = data.user;
             commit(AUTH_REQUEST, user);
 
@@ -236,11 +236,13 @@ const loginModule = {
 
                 commit(AUTH_SUCCESS, user);
 
-                await this.dispatch(MODULES_REQUEST);
+                if (!rootState.modules.allModules || !rootState.modules.allModules.length) {
+                    await this.dispatch(MODULES_REQUEST);
+                }
 
                 // If a login log ID is also set in the user data, use it to start the "time active" timer.
-                if (user.hasOwnProperty("encryptedLoginLogId")) {
-                    await main.usersService.startUpdateTimeActiveTimer();
+                if (!rootState.users.updateTimeActiveTimerWorking && user.hasOwnProperty("encryptedLoginLogId")) {
+                    await this.dispatch(START_UPDATE_TIME_ACTIVE_TIMER);
                 }
 
                 return;
@@ -248,19 +250,19 @@ const loginModule = {
 
             const loginResult = await main.usersService.loginUser(user.username, user.password, (user.selectedUser || {}).username, user.totpPin, user.totpBackupCode);
             if (!loginResult.success) {
-                commit(AUTH_ERROR, { 
-                    message: loginResult.message, 
+                commit(AUTH_ERROR, {
+                    message: loginResult.message,
                     isTotpError: data.loginStatus === "totp"
                 });
                 return;
             }
-            
+
             // If TOTP is enabled and not succeeded yet, show the 2FA step.
             if (loginResult.data.totpEnabled && !loginResult.data.totpSuccess) {
                 commit(loginResult.data.totpQrImageUrl ? AUTH_TOTP_SETUP : AUTH_TOTP_PIN, loginResult.data);
                 return;
             }
-            
+
             // If the user that is logging in is an admin account, show a list of users for the customer.
             if (loginResult.data.adminLogin && !loginResult.data.adminAccountId) {
                 commit(AUTH_LIST, loginResult.data.usersList);
@@ -283,7 +285,14 @@ const loginModule = {
 
             commit(AUTH_SUCCESS, loginResult.data);
 
-            await this.dispatch(MODULES_REQUEST);
+            if (!rootState.modules.allModules || !rootState.modules.allModules.length) {
+                await this.dispatch(MODULES_REQUEST);
+            }
+
+            // If a login log ID is also set in the user data, use it to start the "time active" timer.
+            if (!rootState.users.updateTimeActiveTimerWorking && user.hasOwnProperty("encryptedLoginLogId")) {
+                await this.dispatch(START_UPDATE_TIME_ACTIVE_TIMER);
+            }
         },
 
         [AUTH_LOGOUT]({ commit }) {
@@ -292,6 +301,7 @@ const loginModule = {
             localStorage.removeItem("userData");
             sessionStorage.removeItem("userSettings");
             delete window.main.api.defaults.headers.common["Authorization"];
+            this.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
 
             commit(AUTH_LOGOUT);
         },
@@ -318,7 +328,7 @@ const loginModule = {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
         },
-        
+
         async [USE_TOTP_BACKUP_CODE]({ commit }, data = {}) {
             commit(USE_TOTP_BACKUP_CODE);
 
@@ -330,7 +340,7 @@ const loginModule = {
                 commit(CHANGE_PASSWORD_ERROR, result.message);
             }
         },
-        
+
         [USER_BACKUP_CODES_GENERATED]({ commit }) {
             commit(USER_BACKUP_CODES_GENERATED);
             const localUser = JSON.parse(localStorage.getItem("userData"));
@@ -363,7 +373,7 @@ const modulesModule = {
                 return;
             }
 
-            var hasAutoload = false;
+            let hasAutoload = false;
             for (let groupName in modules) {
                 if (!modules.hasOwnProperty(groupName)) {
                     continue;
@@ -394,7 +404,7 @@ const modulesModule = {
                 if (document.body.classList.contains("on-canvas")) {
                     document.body.classList.add("menu-active");
                     document.body.classList.remove("on-canvas");
-                }            
+                }
             } else {
                 if (document.body.classList.contains("off-canvas")) {
                     document.body.classList.remove("off-canvas");
@@ -421,7 +431,7 @@ const modulesModule = {
                     activeModule.id = `${activeModule.moduleId}_${newModuleIndex}`;
                     activeModule.index = newModuleIndex;
                 }
-                
+
                 // Add module name to query string.
                 if (!activeModule.queryString) {
                     activeModule.queryString = `?moduleName=${encodeURIComponent(module.name)}`;
@@ -501,7 +511,7 @@ const modulesModule = {
                 };
                 state.moduleGroups.push(addToGroup);
             }
-            
+
             removeFromGroup.modules.splice(removeFromGroup.modules.indexOf(module), 1);
             addToGroup.modules.push(module);
 
@@ -529,10 +539,10 @@ const modulesModule = {
                 if (groupA.name > groupB.name) {
                     return 1;
                 }
-                
+
                 return 0;
             });
-            
+
             // Order the modules in each group.
             for (let group of state.moduleGroups) {
                 group.modules = group.modules.sort((moduleA, moduleB) => {
@@ -543,7 +553,7 @@ const modulesModule = {
                     if (moduleA.name > moduleB.name) {
                         return 1;
                     }
-                
+
                     return 0;
                 });
             }
@@ -561,7 +571,7 @@ const modulesModule = {
                 if (!moduleGroups.hasOwnProperty(group)) {
                     continue;
                 }
-                
+
                 for (let module of moduleGroups[group]) {
                     if (!module.autoLoad) {
                         continue;
@@ -606,7 +616,7 @@ const usersModule = {
     state: () => ({
         changePasswordError: null,
         updateTimeActiveTimer: null,
-        updateTimeActiveTimerStopped: true,
+        updateTimeActiveTimerWorking: false,
         totpBackupCodes: [],
         generateTotpBackupCodesError: null
     }),
@@ -619,10 +629,10 @@ const usersModule = {
             state.changePasswordError = message;
         },
         [START_UPDATE_TIME_ACTIVE_TIMER]: (state) => {
-            state.updateTimeActiveTimerStopped = false;
+            state.updateTimeActiveTimerWorking = true;
         },
         [STOP_UPDATE_TIME_ACTIVE_TIMER]: (state) => {
-            state.updateTimeActiveTimerStopped = true;
+            state.updateTimeActiveTimerWorking = false;
         },
         [SET_ACTIVE_TIMER_INTERVAL]: (state, interval) => {
             state.updateTimeActiveTimer = interval;
@@ -659,30 +669,31 @@ const usersModule = {
                 commit(CHANGE_PASSWORD_ERROR, result.error);
             }
         },
-        
+
         async [START_UPDATE_TIME_ACTIVE_TIMER]({ commit }) {
             commit(START_REQUEST);
-            
+
             // Clear old interval first.
             commit(CLEAR_ACTIVE_TIMER_INTERVAL);
 
             commit(START_UPDATE_TIME_ACTIVE_TIMER);
             const interval = await main.usersService.startUpdateTimeActiveTimer();
             commit(SET_ACTIVE_TIMER_INTERVAL, interval);
-            
+
             commit(END_REQUEST);
         },
 
         [STOP_UPDATE_TIME_ACTIVE_TIMER]({ commit }) {
             commit(STOP_UPDATE_TIME_ACTIVE_TIMER);
+            commit(CLEAR_ACTIVE_TIMER_INTERVAL);
         },
-        
+
         async [UPDATE_ACTIVE_TIME]({ commit }) {
             commit(START_REQUEST);
             const result = await main.usersService.updateActiveTime();
             commit(END_REQUEST);
         },
-        
+
         async [GENERATE_TOTP_BACKUP_CODES]({ commit }) {
             commit(START_REQUEST);
             const result = await main.usersService.generateTotpBackupCodes();
@@ -809,13 +820,13 @@ const branchesModule = {
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
         },
-        
+
         [HANDLE_CONFLICT](state, { acceptChange, id }) {
             if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
                 console.warn("Tried to handle conflict, but there are no conflicts.");
                 return;
             }
-            
+
             const conflict = state.mergeBranchResult.conflicts.find(c => c.id === id);
             if (!conflict) {
                 console.warn("Tried to handle a conflict that doesn't exist.");
@@ -829,7 +840,7 @@ const branchesModule = {
             if (!settings || !settings.property || !settings.operator || !settings.start) {
                 return;
             }
-            
+
             if (!state.mergeBranchResult || !state.mergeBranchResult.conflicts || !state.mergeBranchResult.conflicts.length) {
                 console.warn("Tried to handle conflicts, but there are no conflicts.");
                 return;
@@ -840,11 +851,11 @@ const branchesModule = {
                 let valueToCheck;
                 let startValue = settings.start;
                 let endValue = settings.end;
-                
+
                 // Get the value of the property we want to check for the conflict to accept or deny.
                 switch (settings.property) {
                     case "type":
-                        valueToCheck = conflict.typeDisplayName; 
+                        valueToCheck = conflict.typeDisplayName;
                         break;
                     case "field":
                         valueToCheck = conflict.fieldDisplayName;
@@ -867,16 +878,16 @@ const branchesModule = {
                         console.warn(`${HANDLE_MULTIPLE_CONFLICTS} - Unsupported property '${settings.property}'`)
                         continue;
                 }
-                
+
                 if (!valueToCheck) {
                     continue;
                 }
-                
+
                 // Format dates so that they're all the same format.
                 if (isDate) {
                     valueToCheck = new Date(valueToCheck);
                     valueToCheck = new Date(valueToCheck.getFullYear(), valueToCheck.getMonth(), valueToCheck.getDate());
-                    
+
                     startValue = new Date(startValue);
                     startValue = new Date(startValue.getFullYear(), startValue.getMonth(), startValue.getDate());
                     if (endValue) {
@@ -884,13 +895,13 @@ const branchesModule = {
                         endValue = new Date(endValue.getFullYear(), endValue.getMonth(), endValue.getDate());
                     }
                 }
-                
+
                 // Make sure string checks are case insensitive.
                 if (!isDate) {
                     valueToCheck = valueToCheck.toLowerCase();
                     startValue = startValue.toLowerCase();
                 }
-                
+
                 let found = false;
                 switch (settings.operator) {
                     case "contains":
@@ -913,11 +924,11 @@ const branchesModule = {
                         found = valueToCheck >= startValue && valueToCheck <= endValue;
                         break;
                 }
-                
+
                 if (!found) {
                     continue;
                 }
-                
+
                 conflict.acceptChange = acceptChange;
             }
         }
@@ -939,7 +950,7 @@ const branchesModule = {
             }
             commit(END_REQUEST);
         },
-        
+
         [CREATE_BRANCH_ERROR]({ commit }, error) {
             commit(CREATE_BRANCH_ERROR, error);
         },
@@ -1051,8 +1062,8 @@ const cacheModule = {
 };
 
 export default createStore({
-    // Do not enable strict mode when deploying for production! 
-    // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state. 
+    // Do not enable strict mode when deploying for production!
+    // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state.
     // Make sure to turn it off in production to avoid the performance cost.
     strict: process.env.NODE_ENV === "development",
 

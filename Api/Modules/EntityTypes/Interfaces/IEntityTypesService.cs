@@ -18,7 +18,7 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to <see langword="false"/> to get all entity types, or <see langword="true"/> to get only entity types that have a display name. Default value is <see langword="true"/>.</param>
         /// <param name="includeCount">Optional: Whether to count how many items of each entity type exist in the database.</param>
-        /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when <see cref="includeCount"/> is set to <see langword="true" />.</param>
+        /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when includeCount is set to <see langword="true" />.</param>
         /// <returns>The list of entity types.</returns>
         Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false);
 
@@ -71,5 +71,13 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the entity type.</param>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
+
+        /// <summary>
+        /// Gets the ID of an API connection (from wiser_api_connection) for a specific entity and action.
+        /// </summary>
+        /// <param name="entityType">The name of the entity type to get the API connection ID for.</param>
+        /// <param name="actionType">The action type, this can be "after_insert", "after_update", "before_update" or "before_delete".</param>
+        /// <returns></returns>
+        Task<ServiceResult<int>> GetApiConnectionIdAsync(string entityType, string actionType);
     }
 }

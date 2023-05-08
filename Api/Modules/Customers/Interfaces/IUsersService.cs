@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Models;
+using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Models;
 using Newtonsoft.Json.Linq;
 
@@ -18,8 +19,9 @@ namespace Api.Modules.Customers.Interfaces
         /// <summary>
         /// Gets a list of all users for a customer.
         /// </summary>
+        /// <param name="includeAdminUsers">Optional: Whether to also get the admin users from the main Wiser database. Default is false.</param>
         /// <returns>A list of <see cref="WiserItemModel">ItemModel</see>.</returns>
-        Task<ServiceResult<List<WiserItemModel>>> GetAsync();
+        Task<ServiceResult<List<FlatItemModel>>> GetAsync(bool includeAdminUsers = false);
 
         /// <summary>
         /// Method for logging in admin accounts.
@@ -97,25 +99,45 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <returns></returns>
         Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService usersService, ClaimsIdentity identity);
-        
+
+        /// <summary>
+        /// Gets settings for the authenticated user for a specific group of settings.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="groupName">The group that the settings belong to.</param>
+        /// <param name="uniqueKey">The unique key for the settings.</param>
+        /// <param name="defaultValue">Optional: The default value to return if there is no setting saved with the given group name and key.</param>
+        /// <returns>The settings as a JSON string.</returns>
+        Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null);
+
         /// <summary>
         /// Gets settings for a grid for the authenticated user, so that users can keep their state of all grids in Wiser.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <param name="uniqueKey">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
         Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey);
-        
+
         /// <summary>
         /// Gets the pinned modules for the authenticated user, so that users can keep their state of the pinned modules in Wiser.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         Task<ServiceResult<List<int>>> GetPinnedModulesAsync(ClaimsIdentity identity);
-        
+
         /// <summary>
         /// Gets the modules that should be auto loaded, for the authenticated user. These modules should be automatically started when the user logs in.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity);
+
+        /// <summary>
+        /// Saves settings for the authenticated user that belong to a specific group.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
+        /// <param name="groupName">The group that the settings belong to.</param>
+        /// <param name="uniqueKey">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
+        /// <param name="settings">A JSON object with the settings to save.</param>
+        /// <returns>A boolean whether the save action was successful.</returns>
+        Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings);
 
         /// <summary>
         /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
@@ -131,7 +153,7 @@ namespace Api.Modules.Customers.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <param name="moduleIds">The list of module IDs that the user has pinned.</param>
         Task<ServiceResult<bool>> SavePinnedModulesAsync(ClaimsIdentity identity, List<int> moduleIds);
-        
+
         /// <summary>
         /// Save the list of modules that should be automatically started when the user logs in, to the user details.
         /// </summary>
@@ -174,8 +196,8 @@ namespace Api.Modules.Customers.Interfaces
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity"/> of the authenticated client.</param>
         /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
-        /// <returns>A <see cref="TimeSpan"/> indicating how long the user has been active.</returns>
-        Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId);
+        /// <returns>An <see cref="Int64"/> indicating how long the user has been active.</returns>
+        Task<ServiceResult<long>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId);
 
         /// <summary>
         /// Resets the last time the "time active" field was updated to the current time.

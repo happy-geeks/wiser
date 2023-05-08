@@ -2,17 +2,12 @@
 
 namespace Api.Modules.Google.Exceptions;
 
+/// <inheritdoc />
 public class InvalidApiKeyException : Exception
 {
-    public InvalidApiKeyException()
-    {
-    }
-
+    /// <inheritdoc />
     public InvalidApiKeyException(string message) : base(message)
     {
     }
-
-    public InvalidApiKeyException(string message, Exception inner) : base(message, inner)
-    {
-    }
+    
 }

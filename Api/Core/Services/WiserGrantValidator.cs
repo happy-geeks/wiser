@@ -49,7 +49,7 @@ namespace Api.Core.Services
                 context.Result = new GrantValidationResult(TokenRequestErrors.InvalidClient, "No sub domain given");
                 return;
             }
-            
+
             // Add sub domain to http context, to that the ClientDatabaseConnection can use it to get the correct connection string.
             httpContextAccessor.HttpContext?.Items.Add(HttpContextConstants.SubDomainKey, subDomain);
 
@@ -64,7 +64,7 @@ namespace Api.Core.Services
             {
                 isTestEnvironment = "false";
             }
-            
+
             // First try to login as a regular user.
             var loginResult = await usersService.LoginCustomerAsync(context.UserName, context.Password, subDomain: subDomain, generateAuthenticationTokenForCookie: true, totpPin: totpPin, totpBackupCode: totpBackupCode);
 
@@ -108,7 +108,7 @@ namespace Api.Core.Services
                     if (usersList.ModelObject.Count == 1)
                     {
                         // If there is only one user, immediately login as that user.
-                        selectedUser = usersList.ModelObject.Single().GetDetailValue("username");
+                        selectedUser = usersList.ModelObject.Single().Fields["username"].ToString();
                     }
                     else
                     {
@@ -125,7 +125,7 @@ namespace Api.Core.Services
                             { "access_token", null },
                             { "refresh_token", null }
                         };
-                        
+
                         context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment), customResponse: customResponse);
                         return;
                     }
@@ -176,7 +176,7 @@ namespace Api.Core.Services
                 customResponse.Add("adminAccountId", adminAccountId);
                 customResponse.Add("adminAccountName", adminAccountName);
             }
-            
+
             context.Result = new GrantValidationResult(loginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment), customResponse: customResponse);
         }
 
@@ -215,7 +215,7 @@ namespace Api.Core.Services
             {
                 claimsIdentity.Add(new Claim(IdentityConstants.TokenIdentifierKey, user.CookieValue));
             }
-            
+
             if (adminAccountId > 0)
             {
                 claimsIdentity.Add(new Claim(ClaimTypes.Role, IdentityConstants.AdminAccountRole));

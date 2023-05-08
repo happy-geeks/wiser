@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-
-namespace Api.Modules.Files.Models
+﻿namespace Api.Modules.Files.Models
 {
     /// <summary>
     /// A model for a Wiser file.

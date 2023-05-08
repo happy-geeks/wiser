@@ -8,6 +8,7 @@ using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Templates.Interfaces;
+using Api.Modules.VersionControl.Enums;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Models;
@@ -30,11 +31,16 @@ public class CommitService : ICommitService, IScopedService
     private readonly IBranchesService branchesService;
     private readonly IVersionControlService versionControlService;
     private readonly ILogger<CommitService> logger;
+    private readonly IReviewService reviewService;
 
     /// <summary>
     /// Creates a new instance of <see cref="CommitService"/>.
     /// </summary>
-    public CommitService(ICommitDataService commitDataService, ITemplatesService templatesService, IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection, IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService, IVersionControlService versionControlService, ILogger<CommitService> logger)
+    public CommitService(ICommitDataService commitDataService, ITemplatesService templatesService,
+        IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection,
+        IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService,
+        IVersionControlService versionControlService, ILogger<CommitService> logger,
+        IReviewService reviewService)
     {
         this.commitDataService = commitDataService;
         this.templatesService = templatesService;
@@ -44,12 +50,14 @@ public class CommitService : ICommitService, IScopedService
         this.branchesService = branchesService;
         this.versionControlService = versionControlService;
         this.logger = logger;
+        this.reviewService = reviewService;
     }
 
     /// <inheritdoc />
     public async Task<ServiceResult<CommitModel>> CreateAndOrDeployCommitAsync(CommitModel data, ClaimsIdentity identity)
     {
-        if (data.Id == 0 && String.IsNullOrWhiteSpace(data.Description))
+        var isNewCommit = data.Id == 0;
+        if (isNewCommit && String.IsNullOrWhiteSpace(data.Description))
         {
             return new ServiceResult<CommitModel>
             {
@@ -58,12 +66,33 @@ public class CommitService : ICommitService, IScopedService
             };
         }
 
-        if (data.Id == 0 && (data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
+        if (isNewCommit && (data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
         {
             return new ServiceResult<CommitModel>
             {
                 StatusCode = HttpStatusCode.BadRequest,
                 ErrorMessage = "Please select at least one template or dynamic content to commit"
+            };
+        }
+
+        // Make sure the tables are up-to-date.
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+        {
+            WiserTableNames.WiserCommit,
+            WiserTableNames.WiserCommitTemplate,
+            WiserTableNames.WiserCommitDynamicContent,
+            WiserTableNames.WiserCommitReviews,
+            WiserTableNames.WiserCommitReviewRequests,
+            WiserTableNames.WiserCommitReviewComments
+        });
+
+        // Don't allow commits to live if there are any pending reviews.
+        if (data.Environment == Environments.Live && data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
+        {
+            return new ServiceResult<CommitModel>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "You cannot commit to live if you have requested reviews."
             };
         }
 
@@ -76,13 +105,27 @@ public class CommitService : ICommitService, IScopedService
             data.AddedBy = IdentityHelpers.GetUserName(identity, true);
             data.AddedOn = DateTime.Now;
 
-            var result = data.Id == 0 ? await commitDataService.CreateCommitAsync(data) : await commitDataService.GetCommitAsync(data.Id);
+            var result = isNewCommit ? await commitDataService.CreateCommitAsync(data) : await commitDataService.GetCommitAsync(data.Id);
             if (result == null)
             {
                 return new ServiceResult<CommitModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
                     ErrorMessage = $"Commit with ID '{data.Id}' not found."
+                };
+            }
+
+            // Create a review request.
+            if (data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
+            {
+                await reviewService.RequestReviewForCommitAsync(identity, result.Id, data.ReviewRequestedUsers);
+            }
+            else if (!isNewCommit && data.Environment == Environments.Live && result.Review?.Status is ReviewStatuses.Pending or ReviewStatuses.RequestChanges)
+            {
+                return new ServiceResult<CommitModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "You cannot commit to live until the changes have been approved by the requested code reviewer(s)."
                 };
             }
 
@@ -133,10 +176,10 @@ public class CommitService : ICommitService, IScopedService
                         }
                     }
                 }
-
-                // Mark the commit as completed if it's committed to live.
-                await CompleteCommitAsync(result.Id, true);
             }
+
+            // Log the deployment of the commit, so that we can see in the history when it was deployed to which environment.
+            await LogDeploymentOfCommitAsync(result.Id, data.Environment, identity);
 
             await databaseConnection.CommitTransactionAsync();
 
@@ -150,9 +193,14 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<bool>> CompleteCommitAsync(int commitId, bool commitCompleted)
+    public async Task<ServiceResult<bool>> LogDeploymentOfCommitAsync(int id, Environments environment, ClaimsIdentity identity)
     {
-        await commitDataService.CompleteCommitAsync(commitId, commitCompleted);
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+        {
+            WiserTableNames.WiserCommit
+        });
+
+        await commitDataService.LogDeploymentOfCommitAsync(id, environment, IdentityHelpers.GetUserName(identity, true));
         return new ServiceResult<bool>(true);
     }
 
@@ -165,7 +213,7 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
         });
-        
+
         var results = await commitDataService.GetTemplatesToCommitAsync();
 
         return new ServiceResult<List<TemplateCommitModel>>(results);
@@ -187,7 +235,7 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<CommitModel>>> GetNotCompletedCommitsAsync()
+    public async Task<ServiceResult<List<CommitModel>>> GetCommitHistoryAsync(bool includeCompleted, bool includeIncompleted)
     {
         await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
         {
@@ -195,8 +243,8 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
         });
-        
-        var results = await commitDataService.GetNotCompletedCommitsAsync();
+
+        var results = await commitDataService.GetCommitHistoryAsync(includeCompleted, includeIncompleted);
 
         return new ServiceResult<List<CommitModel>>(results);
     }

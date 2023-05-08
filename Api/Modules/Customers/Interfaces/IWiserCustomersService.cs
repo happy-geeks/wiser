@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Customers.Enums;

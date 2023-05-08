@@ -1,4 +1,4 @@
-﻿((jQuery) => {
+﻿(() => {
     class Connection {
         constructor(dataSelector, parentContainer, isMainConnection = false) {
             this.dataSelector = dataSelector;
@@ -273,7 +273,7 @@
                 elements = Array.from(elementsToUpdate);
             } else if (Wiser.validateArray(elementsToUpdate)) {
                 elements = elementsToUpdate;
-            } else if (elementsToUpdate instanceof jQuery && elementsToUpdate.length > 0) {
+            } else if (elementsToUpdate instanceof $ && elementsToUpdate.length > 0) {
                 elements = elementsToUpdate.toArray();
             } else {
                 return;
@@ -306,7 +306,7 @@
                 elements = Array.from(elementsToUpdate);
             } else if (Wiser.validateArray(elementsToUpdate)) {
                 elements = elementsToUpdate;
-            } else if (elementsToUpdate instanceof jQuery && elementsToUpdate.length > 0) {
+            } else if (elementsToUpdate instanceof $ && elementsToUpdate.length > 0) {
                 elements = elementsToUpdate.toArray();
             } else {
                 return;
@@ -519,4 +519,4 @@
     }
 
     window.Connection = Connection;
-})($);
+})();

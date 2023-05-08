@@ -1,8 +1,39 @@
 @import "../../Base/scss/base.scss";
 
-#wiser {
+#wiser, #tabstrip {
     display: block;
     height: 100%;
+}
+
+.tabstrip .k-tabstrip-content.k-state-active {
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 50px) !important;
+    position: relative;
+    padding: 0 10px;
+}
+
+.tabstrip .k-tabstrip-content.k-state-active .formData {
+    flex: 1;
+    overflow: auto;
+    margin-bottom: 50px;
+}
+
+.tabstrip > div footer {
+    background: var(--white-color);
+    border-top: 1px solid #dddddd;
+    border-radius: 0 0 6px 6px;
+    box-sizing: content-box;
+    padding: 10px;
+    z-index: 250;
+    min-height: 47px;
+    flex-shrink: 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: right;
+    display: block;
 }
 
 #NotMainBranchNotification {
@@ -23,11 +54,7 @@
 
 #templateChangesGrid,
 #dynamicContentChangesGrid {
-    height: 33vh;
-}
-
-#commitButton {
-    margin-top: 10px;
+    height: 29vh;
 }
 
 body {
@@ -48,4 +75,38 @@ body {
 
 #deployToBranchContainer .k-dropdownlist {
     width: 200px;
+}
+
+footer .k-button.k-disabled {
+    display: none;
+}
+
+#history .formData,
+#history .gridData,
+#history #historyGrid {
+    height: 100%;
+    overflow: hidden;
+}
+
+#historyGrid {
+    height: 100%;
+}
+
+.k-loading-image {
+    display: none;
+}
+
+.review-comment-prompt + .k-prompt-container {
+    display: none;
+}
+
+#reaction-grid .k-state-selected {
+    background-color: #FFFFFF;
+    border-color: #E6E6E6;
+    color: #282828;
+    white-space: pre-line;
+}
+
+#reaction-grid .k-state-selected:hover {
+    background-color: #F3F5F7;
 }

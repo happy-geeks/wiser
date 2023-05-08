@@ -40,9 +40,9 @@ namespace Api.Modules.Customers.Controllers
         /// <returns>A <see cref="List{T}"/> of <see cref="WiserItemModel"/>, but only with names and IDs.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(bool includeAdminUsers = false)
         {
-            return (await usersService.GetAsync()).GetHttpResponseMessage();
+            return (await usersService.GetAsync(includeAdminUsers)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -86,7 +86,36 @@ namespace Api.Modules.Customers.Controllers
         {
             return (await usersService.ChangePasswordAsync((ClaimsIdentity)User.Identity, passwords)).GetHttpResponseMessage();
         }
-        
+
+        /// <summary>
+        /// Gets settings for the authenticated user for a specific group of settings.
+        /// </summary>
+        /// <param name="groupName">The group that the settings belong to.</param>
+        /// <param name="key">The unique key for the settings.</param>
+        /// <returns>The saved JSON object serialized as a string, or null if no setting for the given group and key were found.</returns>
+        [HttpGet]
+        [Route("settings/{groupName}/{key}")]
+        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetSettingsAsync(string groupName, string key)
+        {
+            return (await usersService.GetSettingsAsync((ClaimsIdentity) User.Identity, groupName, key)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Saves settings for the authenticated user that belong to a specific group.
+        /// </summary>
+        /// <param name="groupName">The group that the settings belong to.</param>
+        /// <param name="key">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
+        /// <param name="settings">A JSON object with the settings to save.</param>
+        /// <returns>A boolean whether the save action was successful.</returns>
+        [HttpPost]
+        [Route("settings/{groupName}/{key}")]
+        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveSettingsAsync(string groupName, string key, JToken settings)
+        {
+            return (await usersService.SaveSettingsAsync((ClaimsIdentity) User.Identity, groupName, key, settings)).GetHttpResponseMessage();
+        }
+
         /// <summary>
         /// Gets settings for a grid for the authenticated user, so that users can keep their state of all grids in Wiser.
         /// </summary>
@@ -100,7 +129,7 @@ namespace Api.Modules.Customers.Controllers
         }
         
         /// <summary>
-        /// Gets settings for a grid for the authenticated user, so that users can keep their state of all grids in Wiser.
+        /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
         /// </summary>
         /// <param name="key">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
         /// <param name="settings">A JSON object with the settings to save.</param>

@@ -484,30 +484,30 @@ export class EntityTab {
     }
 
     setEntityLists() {
-        this.entitiesCombobox.setDataSource(this.entityList);
-        this.dataSourceEntities.setDataSource(this.allUniqueEntityTypes);
-        this.linkedItemEntity.setDataSource(this.allUniqueEntityTypes);
-        this.itemLinkerEntity.setDataSource(this.allUniqueEntityTypes);
-        this.subEntityGridEntity.setDataSource(this.allUniqueEntityTypes);
-        this.timelineEntity.setDataSource(this.allUniqueEntityTypes);
+        this.entitiesCombobox.setDataSource(this.base.entityList);
+        this.dataSourceEntities.setDataSource(this.base.allUniqueEntityTypes);
+        this.linkedItemEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.itemLinkerEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.subEntityGridEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.timelineEntity.setDataSource(this.base.allUniqueEntityTypes);
     }
 
     async reloadEntityList(reloadDataSource = false) {
         if (reloadDataSource) {
             // These are all entities, including duplicate ones that have the same name in different modules.
             try {
-                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+                this.base.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types 1", exception);
-                this.entityList = [];
+                this.base.entityList = [];
             }
             
             // These are all entities grouped by name.
             try {
-                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+                this.base.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types 2", exception);
-                this.allUniqueEntityTypes = [];
+                this.base.allUniqueEntityTypes = [];
             }
         }
         
@@ -1263,22 +1263,6 @@ export class EntityTab {
             }
         }).data("kendoDropDownList");
 
-        // These are all entities, including duplicate ones that have the same name in different modules.
-        try {
-            this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
-        } catch (exception) {
-            console.error("Error occurred while trying to load all entity types 1", exception);
-            this.entityList = [];
-        }
-
-        // These are all entities grouped by name.
-        try {
-            this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
-        } catch (exception) {
-            console.error("Error occurred while trying to load all entity types", exception);
-            this.allUniqueEntityTypes = [];
-        }
-
         this.dataSourceEntities = $("#dataSourceEntities").kendoDropDownList({
             clearButton: false,
             dataTextField: "displayName",
@@ -1888,6 +1872,9 @@ export class EntityTab {
             document.getElementById("pdfBackgroundPropertyName").value = "";
             document.getElementById("pdfDocumentOptionsPropertyName").value = "";
             document.getElementById("pdfFilename").value = "";
+            // confirm dialog
+            document.getElementById("actionButtonConfirmDialogTitle").value = "";
+            document.getElementById("actionButtonConfirmDialogText").value = "";
             // reset user parameters grid
             const resetDs = this.userParametersGridDataSourceSettings;
             resetDs.data = [];
@@ -2149,6 +2136,11 @@ export class EntityTab {
                     }
                     break;
                 }
+                case actionTypes.ACTIONCONFIRMDIALOG.id: {
+                    document.getElementById("actionButtonConfirmDialogTitle").value = gridDataItem.action.title;
+                    document.getElementById("actionButtonConfirmDialogText").value = gridDataItem.action.text;
+                    break;
+                }
             }
         }
         window.title("Actie wijzigen");
@@ -2269,6 +2261,10 @@ export class EntityTab {
                     action.pdfFilename = document.getElementById("pdfFilename").value;
                     action.emailDataQueryId = this.emailDataQueryId.value();
                 }
+                break;
+            case actionTypes.ACTIONCONFIRMDIALOG.id:
+                action.title = document.getElementById("actionButtonConfirmDialogTitle").value;
+                action.text = document.getElementById("actionButtonConfirmDialogText").value;
                 break;
         }
         return action;
@@ -2675,15 +2671,26 @@ export class EntityTab {
             if (oldName !== entity.entityType || parseInt(oldModuleId) !== parseInt(entity.moduleId)) {
                 await this.reloadEntityList(true);
 
-                this.entitiesCombobox.one("dataBound", () => {
-                    this.entitiesCombobox.select((dataItem) => {
-                        return dataItem.name === entity.entityType;
+                this.entitiesCombobox.one("dataBound",
+                    () => {
+                        this.entitiesCombobox.select((dataItem) => {
+                            return dataItem.name === entity.entityType;
+                        });
                     });
-                });
             }
         } catch (exception) {
             console.error(exception);
-            this.base.showNotification("notification", `Entiteit is niet succesvol aangepast, probeer het opnieuw`, "error");
+            if (e.responseText.indexOf("Duplicate entry")) {
+                this.base.showNotification("notification",
+                    `Er bestaat al een entiteit met naam '${entity.name}' gekoppeld aan de module ${this.entityModule
+                    .dataItem().moduleName}`,
+                    "error");
+            } else {
+                this.base.showNotification("notification",
+                    `Entiteit is niet succesvol aangepast, probeer het opnieuw`,
+                    "error");
+            }
+            document.querySelector(".loaderWrap").classList.remove("active");
         }
     }
 
@@ -2825,7 +2832,7 @@ export class EntityTab {
                         this.base.showNotification("notification", `Selecteer eerst een entiteit waar naar gezocht moet worden!`, "error");
                         return;
                     }
-                    entityProperties.options.entityType = this.dataSourceEntities.dataItem().name;
+                    entityProperties.options.entityType = this.dataSourceEntities.dataItem().id;
                     entityProperties.options.dataSource = null;
                     entityProperties.options.searchInTitle = document.getElementById("searchInTitle").checked;
                     entityProperties.options.searchEverywhere = document.getElementById("searchEverywhere").checked;

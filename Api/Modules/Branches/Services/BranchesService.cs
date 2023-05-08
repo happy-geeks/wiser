@@ -96,7 +96,7 @@ namespace Api.Modules.Branches.Services
             // Create a valid database and sub domain name for the new environment.
             var databaseNameBuilder = new StringBuilder(settings.Name.Trim().ToLowerInvariant());
             databaseNameBuilder = Path.GetInvalidFileNameChars().Aggregate(databaseNameBuilder, (current, invalidChar) => current.Replace(invalidChar.ToString(), ""));
-            databaseNameBuilder = databaseNameBuilder.Replace(@"\", "_").Replace(@"/", "_").Replace(".", "_").Replace(" ", "_");
+            databaseNameBuilder = databaseNameBuilder.Replace(@"\", "_").Replace(@"/", "_").Replace(".", "_").Replace(" ", "_").Replace(@"'","_");
 
             var databaseName = $"{currentCustomer.Database.DatabaseName}_{databaseNameBuilder}".ToMySqlSafeValue(false);
             if (databaseName.Length > 54)

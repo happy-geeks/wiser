@@ -94,6 +94,24 @@ namespace Api.Modules.Items.Controllers
         }
 
         /// <summary>
+        /// Retrieve an item that the given item is linked to, or and item that is linked to the given item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the main item.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+        /// <param name="linkType">Optional: The type number of the link.</param>
+        /// <param name="reversed">Optional: Whether to retrieve an item that that given item is linked to (<see langword="true"/>), or an item that is linked to the given item (<see langword="false"/>).</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{encryptedId}/linked/details")]
+        [ProducesResponseType(typeof(IEnumerable<WiserItemModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetLinkedItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null, [FromQuery]string itemIdEntityType = null, [FromQuery]int linkType = 0, [FromQuery]bool reversed = false)
+        {
+            return (await itemsService.GetLinkedItemDetailsAsync(encryptedId, (ClaimsIdentity)User.Identity, entityType, itemIdEntityType, linkType, reversed)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item.</param>
@@ -350,7 +368,6 @@ namespace Api.Modules.Items.Controllers
         /// This method will get the different entity types with the given ID.
         /// </summary>
         /// <param name="itemId">The ID of the item to render to HTML.</param>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A list of all entity types that contain an item with this ID.</returns>
         [HttpGet]
         [Route("{itemId:long}/entity-types")]

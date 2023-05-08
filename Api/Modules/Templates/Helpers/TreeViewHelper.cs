@@ -3,6 +3,9 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Helpers
 {
+    /// <summary>
+    /// A helper class for functions to do something with tree views in the template module.
+    /// </summary>
     public class TreeViewHelper
     {
         /// <summary>
@@ -10,7 +13,7 @@ namespace Api.Modules.Templates.Helpers
         /// </summary>
         /// <param name="rawTreeView">The raw data in the form of a TemplateTreeViewDAO to convert.</param>
         /// <returns>A TemplateTreeViewModel containing the data provided in the param</returns>
-        public TemplateTreeViewModel ConvertTemplateTreeViewDAOToTemplateTreeViewModel (TemplateTreeViewDao rawTreeView)
+        public static TemplateTreeViewModel ConvertTemplateTreeViewDaoToTemplateTreeViewModel(TemplateTreeViewDao rawTreeView)
         {
             var treeViewModel = new TemplateTreeViewModel
             {

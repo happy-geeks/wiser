@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using FrontEnd.Core.Services;
@@ -104,6 +103,7 @@ namespace FrontEnd
             services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
             services.AddScoped<IExcelService, ExcelService>();
             services.AddSingleton<IWebPackService, WebPackService>();
+            services.AddSingleton<IExternalApisService, ExternalApisService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

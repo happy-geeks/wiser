@@ -6,6 +6,7 @@ using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
+using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -38,14 +39,14 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<WiserItemModel>>> GetAsync()
+        public async Task<ServiceResult<List<FlatItemModel>>> GetAsync(bool includeAdminUsers = false)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}_{includeAdminUsers}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return await usersService.GetAsync();
+                    return await usersService.GetAsync(includeAdminUsers);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
@@ -98,6 +99,12 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
+        public Task<ServiceResult<string>> GetSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, string defaultValue = null)
+        {
+            return usersService.GetSettingsAsync(identity, groupName, uniqueKey, defaultValue);
+        }
+
+        /// <inheritdoc />
         public Task<ServiceResult<string>> GetGridSettingsAsync(ClaimsIdentity identity, string uniqueKey)
         {
             return usersService.GetGridSettingsAsync(identity, uniqueKey);
@@ -113,6 +120,12 @@ namespace Api.Modules.Customers.Services
         public Task<ServiceResult<List<int>>> GetAutoLoadModulesAsync(ClaimsIdentity identity)
         {
             return usersService.GetAutoLoadModulesAsync(identity);
+        }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<bool>> SaveSettingsAsync(ClaimsIdentity identity, string groupName, string uniqueKey, JToken settings)
+        {
+            return usersService.SaveSettingsAsync(identity, groupName, uniqueKey, settings);
         }
 
         /// <inheritdoc />
@@ -170,7 +183,7 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<TimeSpan>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
+        public Task<ServiceResult<long>> UpdateUserTimeActiveAsync(ClaimsIdentity identity, string encryptedLoginLogId)
         {
             return usersService.UpdateUserTimeActiveAsync(identity, encryptedLoginLogId);
         }
@@ -192,13 +205,13 @@ namespace Api.Modules.Customers.Services
                     return await usersService.GetRolesAsync(includePermissions);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
         }
-        
+
         /// <inheritdoc />
         public bool ValidateTotpPin(string key, string code)
         {
-            return usersService.ValidateTotpPin(key, code); 
+            return usersService.ValidateTotpPin(key, code);
         }
-        
+
         /// <inheritdoc />
         public string SetUpTotpAuthentication(string account, string key)
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace FrontEnd.Core.Models
 {
@@ -6,7 +7,7 @@ namespace FrontEnd.Core.Models
     {
         public FrontEndSettings Settings { get; set; }
 
-        public Version? WiserVersion { get; set; }
+        [CanBeNull] public Version WiserVersion { get; set; }
 
         public string SubDomain { get; set; }
 

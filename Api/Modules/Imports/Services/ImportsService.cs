@@ -32,6 +32,7 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace Api.Modules.Imports.Services
 {
+    /// <inheritdoc cref="Api.Modules.Imports.Interfaces.IImportsService" />
     public class ImportsService : IImportsService, IScopedService
     {
         private readonly IWiserItemsService wiserItemsService;
@@ -43,6 +44,9 @@ namespace Api.Modules.Imports.Services
 
         private const uint ImportLimit = 1000000;
 
+        /// <summary>
+        /// Creates a new instance of <see cref="ImportsService"/>.
+        /// </summary>
         public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IExcelService excelService, ILogger<ImportsService> logger)
         {
             this.wiserItemsService = wiserItemsService;
@@ -736,6 +740,12 @@ namespace Api.Modules.Imports.Services
                     value = parsedDecimal.ToString(new CultureInfo("en-US"));
                     break;
                 case "date-time picker":
+                    if (String.IsNullOrEmpty(value))
+                    {
+                        // Don't do anything, empty values are allowed.
+                        break;
+                    }
+
                     if (!DateTime.TryParse(value, new CultureInfo("nl-NL"), DateTimeStyles.AssumeLocal, out var parsedDateTime))
                     {
                         importResult.Failed += 1U;
@@ -1049,6 +1059,7 @@ AND item.entity_type = ?entityName";
         /// </summary>
         /// <param name="deleteItemsRequest">The criteria for the items to delete.</param>
         /// <param name="fileLines"></param>
+        /// <param name="tablePrefix">The prefix of the table where the items will be deleted</param>
         /// <returns>Returns the query for after the SELECT statement for an item's property</returns>
         private string CreatePrepareDeleteQueryBottomForProperty(DeleteItemsRequestModel deleteItemsRequest, IEnumerable<string> fileLines, string tablePrefix)
         {

@@ -1,0 +1,136 @@
+@import "../../Base/scss/base.scss";
+
+html, body {
+    height: 100%;
+    min-height: 100%;
+}
+
+#imagesUploaderWindow img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+#imagesUploaderWindow #imagesUploaderTreeView,
+#filesUploaderWindow #filesUploaderTreeView,
+#templatesUploaderWindow #templatesUploaderTreeView {
+    min-height: 100px;
+}
+
+.horizontal {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.k-window {
+    box-shadow: none;
+    border-radius: 0;
+    max-height: 100% !important;
+    max-width: 100% !important;
+}
+
+.k-window.k-window-maximized {
+    border-radius: 0;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.k-window-maximized .k-window-titlebar,
+.k-window.k-widget .k-window-titlebar {
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.05);
+    background-color: var(--white-color);
+    border-radius: 6px 6px 0 0;
+    color: var(--dark-txt);
+    height: 75px;
+    z-index: 1000;
+    position: relative;
+}
+
+.k-window-maximized .k-window-content,
+.k-window.k-widget .k-window-content {
+    border-radius: 0;
+    padding: 0;
+}
+
+.image-preview .group-columns .item-group:first-child,
+.file-preview .group-columns .item-group:first-child {
+    width: calc(75% - 10px);
+}
+
+.image-preview .group-columns .item-group:last-child,
+.file-preview .group-columns .item-group:last-child {
+    width: calc(25% - 10px);
+}
+
+.template-preview .group-columns .item-group:first-child {
+    width: 100%;
+}
+
+.image-preview,
+.file-preview,
+.template-preview {
+    background-color: var(--item-bg-color);
+    height: 100%;
+}
+
+.group-columns {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.imagesUploaderActions,
+.filesUploaderActions,
+.templatesUploaderActions {
+    background-color: var(--medium-color);
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 5px;
+    padding-bottom: 0;
+}
+
+.imagesUploaderActions button,
+.filesUploaderActions button,
+.templatesUploaderActions button {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.pane-content {
+    min-height: calc(100% - 99px);
+}
+
+.k-splitter .k-scrollable.left-pane {
+    overflow-x: hidden;
+}
+
+.iframe .k-window-titlebar {
+    display: none;
+}
+
+#ModeSelector {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#ModeSelector .k-tabstrip-items-wrapper {
+    height: 48px;
+}
+
+#ModeSelector .k-tabstrip-content {
+    flex-grow: 1;
+}
+
+#ModeSelector iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
