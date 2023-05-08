@@ -141,7 +141,7 @@ namespace Api.Modules.Imports.Services
                 }
 
                 var idIndex = headerResult.idIndex;
-                var rows = excelService.GetLines(importRequest.FilePath, true);
+                var rows = excelService.GetLines(importRequest.FilePath,  headerFields.Length, true, true);
                 var rowsHandled = 0;
                 foreach (var row in rows)
                 {
