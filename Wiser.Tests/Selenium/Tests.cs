@@ -146,14 +146,14 @@ public class Tests
             driver.Navigate().GoToUrl(url);
             
             LoginWiserUser();
-            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo("TestMark"));
+            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo(testSettings.WiserAccountName));
             
             Logout();
             Assert.That(driver.FindElements(By.ClassName("sub-title")).Count, Is.EqualTo(0));
             
             // Check if flow can be repeated after logging out.
             LoginWiserUser();
-            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo("TestMark"));
+            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo(testSettings.WiserAccountName));
             
             Logout();
             Assert.That(driver.FindElements(By.ClassName("sub-title")).Count, Is.EqualTo(0));
@@ -166,13 +166,13 @@ public class Tests
             
             // Select the user to login as.
             driver.FindElement(By.CssSelector("#loginForm input")).Clear();
-            driver.FindElement(By.CssSelector("#loginForm input")).SendKeys("TestMark");
+            driver.FindElement(By.CssSelector("#loginForm input")).SendKeys(testSettings.WiserAccountName);
             driver.FindElement(By.CssSelector("#loginForm input")).SendKeys(Keys.Enter);
             driver.FindElement(By.CssSelector("#loginForm .btn-primary")).Click();
             
             // Validate the admin is logged in as the selected user.
             WaitTillElementIsFound(By.ClassName("sub-title"));
-            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo("TestMark"));
+            Assert.That(driver.FindElement(By.ClassName("sub-title")).Text, Is.EqualTo(testSettings.WiserAccountName));
             
             Logout();
             Assert.That(driver.FindElements(By.ClassName("sub-title")).Count, Is.EqualTo(0));
