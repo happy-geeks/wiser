@@ -142,16 +142,22 @@ const exportModuleSettings = {
                 return;
             }
 
+            const fileFormat = $("#fileFormatList").data("kendoDropDownList").dataItem();
+            if (!fileFormat) {
+                kendo.alert("Kies a.u.b. eerst een bestandsformaat");
+                return;
+            }
+
             switch (exportType) {
                 case "dataselector": {
                     const dropDownList = $("#DataSelectorList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     const dataSelectorId = dataItem.encryptedId;
-                    const fileName = `${dataItem.name}.xlsx`;
-
-                    const process = `exportToExcel_${Date.now()}`;
+                    const fileName = `${dataItem.name}.${fileFormat.extension}`;
+                    
+                    const process = `exportToFile_${Date.now()}`;
                     window.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.getItemsUrl}/excel?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
+                    const result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -166,11 +172,11 @@ const exportModuleSettings = {
                     const dropDownList = $("#QueryList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     const queryId = dataItem.encryptedId;
-                    const fileName = `${dataItem.description}.xlsx`;
+                    const fileName = `${dataItem.description}.${fileFormat.extension}`;
 
-                    const process = `exportToExcel_${Date.now()}`;
+                    const process = `exportToFile_${Date.now()}`;
                     window.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.getItemsUrl}/excel?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
+                    const result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -186,11 +192,11 @@ const exportModuleSettings = {
                     const dataItem = dropDownList.dataItem();
                     
                     const moduleId = dataItem.moduleId;
-                    const fileName = `${dataItem.name}.xlsx`;
+                    const fileName = `${dataItem.name}.${fileFormat.extension}`;
                     
-                    const process = `exportToExcel_${Date.now()}`;
+                    const process = `exportToFile_${Date.now()}`;
                     window.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
+                    const result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}&fileFormat=${fileFormat.value}`, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
@@ -300,6 +306,27 @@ const exportModuleSettings = {
             }
 
             window.processing.removeProcess(process);
+            
+            let fileFormatDataSource = [
+                {
+                    name: 'Excel',
+                    value: 'excel',
+                    extension: 'xlsx',
+                },
+                {
+                    name: 'CSV',
+                    value: 'csv',
+                    extension: 'csv',
+                }
+            ]
+
+            $(context).find('#fileFormatList').kendoDropDownList(
+                {
+                    dataTextField: "name",
+                    dataValueField: "value",
+                    dataSource: fileFormatDataSource
+                }
+            );
 
             //BUTTONS
             $(context).find(".saveButton").kendoButton({

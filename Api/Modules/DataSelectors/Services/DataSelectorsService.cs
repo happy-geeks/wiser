@@ -22,7 +22,8 @@ using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
-
+using GclDataSelectors = GeeksCoreLibrary.Modules.DataSelector.Interfaces;
+ 
 namespace Api.Modules.DataSelectors.Services
 {
     /// <summary>
@@ -33,7 +34,7 @@ namespace Api.Modules.DataSelectors.Services
         private readonly IWiserCustomersService wiserCustomersService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService;
+        private readonly GclDataSelectors.IDataSelectorsService gclDataSelectorsService;
         private readonly IExcelService excelService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IWiserItemsService wiserItemsService;
@@ -43,7 +44,7 @@ namespace Api.Modules.DataSelectors.Services
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsService"/>
         /// </summary>
-        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService)
+        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -519,6 +520,87 @@ VALUES(?roleId, ?id, 15)";
             }
 
             return new ServiceResult<FileContentResult>(result);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator = ',')
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var httpContext = httpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                throw new Exception("HttpContext.Current is null, can't proceed.");
+            }
+
+            // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
+            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+
+            var (jsonResult, statusCode, error) = await GetJsonResponseAsync(data, identity);
+            if (statusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<byte[]>
+                {
+                    StatusCode = statusCode,
+                    ErrorMessage = error
+                };
+            }
+            
+            var csvBody = FromJsonToCsv(jsonResult, separator);
+            var buffer = Encoding.UTF8.GetBytes(csvBody);
+            
+            return new ServiceResult<byte[]>(buffer);
+        }
+        
+        public static string FromJsonToCsv(JArray jsonResult, char separator)
+        {
+            StringBuilder csvBuilder = new StringBuilder();
+            var isFirstColumn = true;
+            foreach (var jsonToken in jsonResult.First as JObject)
+            {
+                if (!isFirstColumn)
+                {
+                    csvBuilder.Append(separator);
+                }
+
+                AppendCsvValue(separator, jsonToken.Key, csvBuilder);
+                isFirstColumn = false;
+            }
+
+            csvBuilder.AppendLine();
+            foreach (JObject jsonObject in jsonResult)
+            {
+                isFirstColumn = true;
+                foreach (var jsonToken in jsonObject)
+                {
+                    if (!isFirstColumn)
+                    {
+                        csvBuilder.Append(separator);
+                    }
+
+                    AppendCsvValue(separator, jsonToken.Value.ToString(), csvBuilder);
+                    isFirstColumn = false;
+                }
+
+                csvBuilder.AppendLine();
+            }
+
+            return csvBuilder.ToString();
+        }
+
+        private static void AppendCsvValue(char separator, string value, StringBuilder csvBuilder)
+        {
+            var valueContainsSeparator = value.Contains(separator);
+            if (valueContainsSeparator)
+            {
+                csvBuilder.Append('\"');
+            }
+
+            csvBuilder.Append(value);
+            if (valueContainsSeparator)
+            {
+                csvBuilder.Append('\"');
+            }
         }
 
         /// <inheritdoc />

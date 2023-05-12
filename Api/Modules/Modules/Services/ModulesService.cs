@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
@@ -670,7 +671,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<byte[]>> ExportToExcelAsync(int id, ClaimsIdentity identity)
         {
             var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
             if (gridResult.StatusCode != HttpStatusCode.OK)
@@ -704,7 +705,85 @@ UNION
             var result = excelService.JsonArrayToExcel(newData);
             return new ServiceResult<byte[]>(result);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator = ',')
+        {
+            var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
+            if (gridResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<byte[]>
+                {
+                    ErrorMessage = gridResult.ErrorMessage,
+                    StatusCode = gridResult.StatusCode
+                };
+            }
 
+            StringBuilder csvBuilder = new StringBuilder();
+            
+            var data = gridResult.ModelObject.Data;
+            var columns = gridResult.ModelObject.Columns;
+
+            var isFirstColumn = true;
+            foreach (var column in columns)
+            {
+                if (String.IsNullOrWhiteSpace(column.Field))
+                {
+                    continue;
+                }
+
+                if (!isFirstColumn)
+                {
+                    csvBuilder.Append(separator);
+                }
+                csvBuilder.Append(column.Title);
+                isFirstColumn = false;
+            }
+            csvBuilder.AppendLine();
+
+            foreach (var item in data)
+            {
+                isFirstColumn = true;
+                foreach (var column in columns)
+                {
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    if (!isFirstColumn)
+                    {
+                        csvBuilder.Append(separator);
+                    }
+
+                    AppendCsvValue(separator, item[column.Field.ToLowerInvariant()].ToString(), csvBuilder);
+
+                    isFirstColumn = false;
+                }
+
+                csvBuilder.AppendLine();
+            }
+            
+            var result = Encoding.UTF8.GetBytes(csvBuilder.ToString());
+            
+            return new ServiceResult<byte[]>(result);
+        }
+
+        private static void AppendCsvValue(char separator, string value, StringBuilder csvBuilder)
+        {
+            var valueContainsSeparator = value.Contains(separator);
+            if (valueContainsSeparator)
+            {
+                csvBuilder.Append('\"');
+            }
+
+            csvBuilder.Append(value);
+            if (valueContainsSeparator)
+            {
+                csvBuilder.Append('\"');
+            }
+        }
+        
         /// <inheritdoc />
         public async Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity)
         {

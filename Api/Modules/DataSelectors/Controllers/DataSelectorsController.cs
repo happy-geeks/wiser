@@ -151,6 +151,25 @@ namespace Api.Modules.DataSelectors.Controllers
             var result = await dataSelectorsService.ToExcelAsync(data, (ClaimsIdentity)User.Identity);
             return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.xlsx", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
+        
+        /// <summary>
+        /// Get the result of the data selector based on the request as an Excel file.
+        /// </summary>
+        /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
+        [HttpPost]
+        [Route("csv")]
+        [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces("text/csv")]
+        public async Task<IActionResult> ToCsvAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
+        {
+            using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+            var dataFromBody = await reader.ReadToEndAsync();
+            var bodyModel = String.IsNullOrWhiteSpace(dataFromBody) ? new WiserDataSelectorRequestModel() : JsonConvert.DeserializeObject<WiserDataSelectorRequestModel>(dataFromBody, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
+            var data = CombineDataSelectorRequestModels(bodyModel, dataFromUri);
+            var result = await dataSelectorsService.ToCsvAsync(data, (ClaimsIdentity)User.Identity);
+            return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.csv", ".csv", "text/csv");
+        }
 
         /// <summary>
         /// Get the result of the data selector based on the request as a HTML page.
