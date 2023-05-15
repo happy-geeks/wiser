@@ -136,8 +136,10 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 -- Orders
 -- ----------------------------
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('order', 5007, '', 'icon-cart', '','');
+INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('conceptorder', 5007, '', 'icon-cart', '','');
 INSERT IGNORE INTO `wiser_entity`(`name`, `module_id`, `accepted_childtypes`, `icon`, `icon_add`, `dedicated_table_prefix`) VALUES ('orderline', 5007, '', 'icon-doc-invoice', '','');
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'order', 'orderline', 'OrderLineUnderOrder', 0, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (5002, 'conceptorder', 'orderline', 'OrderLineUnderConceptOrder', 0, 0, 'one-to-one', 'none', 1);
 
 -- ----------------------------
 -- Mailtemplate
