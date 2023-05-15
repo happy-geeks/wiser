@@ -16,7 +16,7 @@ public class CsvBuilder
     /// Creates a new instance of <see cref="CsvBuilder"/>.
     /// </summary>
     /// <param name="separator">The character the value is seperated by</param>
-    public CsvBuilder(char separator = ',')
+    public CsvBuilder(char separator)
     {
         _separator = separator;
     }

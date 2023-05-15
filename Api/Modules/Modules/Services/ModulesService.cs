@@ -707,7 +707,7 @@ UNION
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator = ',')
+        public async Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator)
         {
             var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
             if (gridResult.StatusCode != HttpStatusCode.OK)

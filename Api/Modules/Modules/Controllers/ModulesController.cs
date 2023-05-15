@@ -128,7 +128,7 @@ namespace Api.Modules.Modules.Controllers
             var (exportResult, contentType,  extension) = fileFormat switch
             {
                 "excel" => (await modulesService.ExportToExcelAsync(id, (ClaimsIdentity)User.Identity), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
-                "csv" => (await modulesService.ExportToCsvAsync(id, (ClaimsIdentity)User.Identity), "text/csv", ".csv"),
+                "csv" => (await modulesService.ExportToCsvAsync(id, (ClaimsIdentity)User.Identity, ';'), "text/csv", ".csv"),
                 _ => throw new NotImplementedException($"Error in {nameof(ModulesController)}:Export to fileformat {fileFormat} is not implemented")
             };
             if (exportResult == null)

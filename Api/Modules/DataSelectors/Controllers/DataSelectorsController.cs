@@ -167,7 +167,7 @@ namespace Api.Modules.DataSelectors.Controllers
             var dataFromBody = await reader.ReadToEndAsync();
             var bodyModel = String.IsNullOrWhiteSpace(dataFromBody) ? new WiserDataSelectorRequestModel() : JsonConvert.DeserializeObject<WiserDataSelectorRequestModel>(dataFromBody, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
             var data = CombineDataSelectorRequestModels(bodyModel, dataFromUri);
-            var result = await dataSelectorsService.ToCsvAsync(data, (ClaimsIdentity)User.Identity);
+            var result = await dataSelectorsService.ToCsvAsync(data, (ClaimsIdentity)User.Identity, ';');
             return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.csv", ".csv", "text/csv");
         }
 

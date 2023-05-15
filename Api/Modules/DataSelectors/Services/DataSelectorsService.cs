@@ -523,7 +523,7 @@ VALUES(?roleId, ?id, 15)";
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator = ',')
+        public async Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var httpContext = httpContextAccessor.HttpContext;
