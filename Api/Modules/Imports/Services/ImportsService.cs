@@ -459,8 +459,8 @@ namespace Api.Modules.Imports.Services
             var allItemIds = importData.Where(i => i.Item.Id > 0).Select(i => i.Item.Id).ToList();
             var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            // Check if all items are of the correct entity type.
-            if (allItemIds.Any())
+            // Check if all items are of the correct entity type if there are any items that are imported according to the settings
+            if (allItemIds.Any() && importRequest.ImportSettings.Any())
             {
                 dataTable = await clientDatabaseConnection.GetAsync($"SELECT id, entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", allItemIds)})");
                 if (dataTable.Rows.Count > 0)
