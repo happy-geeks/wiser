@@ -552,55 +552,17 @@ VALUES(?roleId, ?id, 15)";
             return new ServiceResult<byte[]>(buffer);
         }
         
-        public static string FromJsonToCsv(JArray jsonResult, char separator)
+        private string FromJsonToCsv(JArray jsonResult, char separator)
         {
-            StringBuilder csvBuilder = new StringBuilder();
-            var isFirstColumn = true;
-            foreach (var jsonToken in jsonResult.First as JObject)
-            {
-                if (!isFirstColumn)
-                {
-                    csvBuilder.Append(separator);
-                }
-
-                AppendCsvValue(separator, jsonToken.Key, csvBuilder);
-                isFirstColumn = false;
-            }
-
-            csvBuilder.AppendLine();
+            var csvBuilder = new CsvBuilder(separator);
+            csvBuilder.AddRow<KeyValuePair<string, JToken>>(jsonResult.First as JObject, (i) => i.Key);
+        
             foreach (JObject jsonObject in jsonResult)
             {
-                isFirstColumn = true;
-                foreach (var jsonToken in jsonObject)
-                {
-                    if (!isFirstColumn)
-                    {
-                        csvBuilder.Append(separator);
-                    }
-
-                    AppendCsvValue(separator, jsonToken.Value.ToString(), csvBuilder);
-                    isFirstColumn = false;
-                }
-
-                csvBuilder.AppendLine();
+                csvBuilder.AddRow<KeyValuePair<string, JToken>>(jsonObject, (i) => i.Value.ToString());
             }
 
             return csvBuilder.ToString();
-        }
-
-        private static void AppendCsvValue(char separator, string value, StringBuilder csvBuilder)
-        {
-            var valueContainsSeparator = value.Contains(separator);
-            if (valueContainsSeparator)
-            {
-                csvBuilder.Append('\"');
-            }
-
-            csvBuilder.Append(value);
-            if (valueContainsSeparator)
-            {
-                csvBuilder.Append('\"');
-            }
         }
 
         /// <inheritdoc />

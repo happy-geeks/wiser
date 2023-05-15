@@ -719,49 +719,14 @@ UNION
                 };
             }
 
-            StringBuilder csvBuilder = new StringBuilder();
-            
             var data = gridResult.ModelObject.Data;
-            var columns = gridResult.ModelObject.Columns;
+            var columns = gridResult.ModelObject.Columns.Where(column => !String.IsNullOrWhiteSpace(column.Field)).ToList();
 
-            var isFirstColumn = true;
-            foreach (var column in columns)
-            {
-                if (String.IsNullOrWhiteSpace(column.Field))
-                {
-                    continue;
-                }
-
-                if (!isFirstColumn)
-                {
-                    csvBuilder.Append(separator);
-                }
-                csvBuilder.Append(column.Title);
-                isFirstColumn = false;
-            }
-            csvBuilder.AppendLine();
-
+            CsvBuilder csvBuilder = new CsvBuilder(separator);
+            csvBuilder.AddRow(columns, (i) => i.Title);
             foreach (var item in data)
             {
-                isFirstColumn = true;
-                foreach (var column in columns)
-                {
-                    if (String.IsNullOrWhiteSpace(column.Field))
-                    {
-                        continue;
-                    }
-
-                    if (!isFirstColumn)
-                    {
-                        csvBuilder.Append(separator);
-                    }
-
-                    AppendCsvValue(separator, item[column.Field.ToLowerInvariant()].ToString(), csvBuilder);
-
-                    isFirstColumn = false;
-                }
-
-                csvBuilder.AppendLine();
+                csvBuilder.AddRow(columns, (column) => item[column.Field.ToLowerInvariant()].ToString());
             }
             
             var result = Encoding.UTF8.GetBytes(csvBuilder.ToString());
@@ -769,21 +734,6 @@ UNION
             return new ServiceResult<byte[]>(result);
         }
 
-        private static void AppendCsvValue(char separator, string value, StringBuilder csvBuilder)
-        {
-            var valueContainsSeparator = value.Contains(separator);
-            if (valueContainsSeparator)
-            {
-                csvBuilder.Append('\"');
-            }
-
-            csvBuilder.Append(value);
-            if (valueContainsSeparator)
-            {
-                csvBuilder.Append('\"');
-            }
-        }
-        
         /// <inheritdoc />
         public async Task<ServiceResult<List<string>>> GetModuleGroupsAsync(ClaimsIdentity identity)
         {
