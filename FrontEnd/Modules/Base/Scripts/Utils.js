@@ -1144,7 +1144,7 @@ export class Wiser {
      * @param {string} parentEntityType Optional: The entity type of the parent of item to duplicate, so that the API can use the correct table and settings.
      * @returns {Promise} The details about the newly created item.
      */
-    async duplicateItem(moduleSettings, itemId, parentId, entityType = null, parentEntityType = null) {
+    static async duplicateItem(moduleSettings, itemId, parentId, entityType = null, parentEntityType = null) {
         try {
             const entityTypeQueryString = !entityType ? "" : `?entityType=${encodeURIComponent(entityType)}`;
             const parentEntityTypeQueryString = !parentEntityType ? "" : `${!entityType ? "?" : "&"}parentEntityType=${encodeURIComponent(parentEntityType)}`;
