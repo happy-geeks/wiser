@@ -50,7 +50,7 @@ namespace Api.Modules.Items.Interfaces
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item.</param>
         /// <param name="entityType">The entity type of the item.</param>
-        /// <param name="newEnvironments">The environment(s) make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         Task<ServiceResult<bool>> ChangeEnvironmentAsync(string encryptedId, string entityType, Environments newEnvironments, ClaimsIdentity identity);
 
