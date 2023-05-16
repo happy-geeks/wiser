@@ -212,7 +212,7 @@ namespace Api.Modules.Items.Controllers
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item.</param>
         /// <param name="entityType">The entity type of the item.</param>
-        /// <param name="newEnvironments">The environment(s) make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
         [HttpPatch]
         [Route("{encryptedId}/environment/{newEnvironments:int}")]
         [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
