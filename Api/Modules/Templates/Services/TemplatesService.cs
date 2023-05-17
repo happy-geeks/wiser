@@ -360,12 +360,6 @@ ORDER BY template.ordering ASC");
                 //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
 
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("GET_DATA_FOR_RADIO_BUTTONS", @"SET @_itemId = {itemId};
-SET @entityproperty_id = {propertyid};
-SET @querytext = (SELECT data_query FROM wiser_entityproperty WHERE id=@entityproperty_id);
-
-PREPARE stmt1 FROM @querytext;
-EXECUTE stmt1; #USING @itemid;");
                 TemplateQueryStrings.Add("GET_ITEM_HTML_FOR_NEW_ITEMS", @"/********* IMPORTANT NOTE: If you change something in this query, please also change it in the query 'GET_ITEM_HTML' *********/
 SET SESSION group_concat_max_len = 1000000;
 SET @_moduleId = {moduleId};
