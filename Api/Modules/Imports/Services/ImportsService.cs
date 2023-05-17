@@ -287,7 +287,7 @@ namespace Api.Modules.Imports.Services
                                     itemLink.ItemId = Convert.ToUInt64(value.Trim());
                                     itemLink.DestinationItemId = importItem.Item.Id;
                                 }
-                                
+
                                 // Make sure an item won't get linked to itself.
                                 if (itemLink.ItemId == itemLink.DestinationItemId)
                                 {
@@ -1296,10 +1296,10 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0)
+        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityPropertiesAsync(ClaimsIdentity identity, string entityName = null, int linkType = 0)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
             clientDatabaseConnection.AddParameter("linkType", linkType);

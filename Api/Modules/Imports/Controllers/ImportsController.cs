@@ -106,9 +106,9 @@ namespace Api.Modules.Imports.Controllers
         [HttpGet]
         [Route("entity-properties")]
         [ProducesResponseType(typeof(IEnumerable<EntityPropertyModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetEntityProperties(string entityName = null, int linkType = 0)
+        public async Task<IActionResult> GetEntityPropertiesAsync(string entityName = null, int linkType = 0)
         {
-            return (await importsService.GetEntityProperties((ClaimsIdentity)User.Identity, entityName, linkType)).GetHttpResponseMessage();
-        } 
+            return (await importsService.GetEntityPropertiesAsync((ClaimsIdentity)User.Identity, entityName, linkType)).GetHttpResponseMessage();
+        }
     }
 }
