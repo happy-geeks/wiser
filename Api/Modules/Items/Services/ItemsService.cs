@@ -610,6 +610,47 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ChangeEnvironmentAsync(string encryptedId, string entityType, Environments newEnvironments, ClaimsIdentity identity)
+        {
+            if (String.IsNullOrWhiteSpace(encryptedId))
+            {
+                throw new ArgumentNullException(nameof(encryptedId));
+            }
+
+            try
+            {
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+                var originalItemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var userId = IdentityHelpers.GetWiserUserId(identity);
+                var username = IdentityHelpers.GetUserName(identity, true);
+                var item = await wiserItemsService.GetItemDetailsAsync(originalItemId, entityType: entityType);
+                if (item == null || item.Id == 0)
+                {
+                    return new ServiceResult<bool>(false)
+                    {
+                        StatusCode = HttpStatusCode.NotFound
+                    };
+                }
+
+                item.PublishedEnvironment = newEnvironments;
+                await wiserItemsService.UpdateAsync(originalItemId, item, userId, username);
+                return new ServiceResult<bool>(true)
+                {
+                    StatusCode = HttpStatusCode.NoContent
+                };
+            }
+            catch (InvalidAccessPermissionsException exception)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    ErrorMessage = exception.Message,
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
