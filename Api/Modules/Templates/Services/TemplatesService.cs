@@ -355,57 +355,13 @@ ORDER BY template.ordering ASC");
         {
             if (TemplateQueryStrings.Count == 0)
             {
-                //MYSQL-QUERY TO GENERATE THE CODE TO FILL THE DICTIONARY
-                //select CONCAT('TemplateQueryStrings.Add("', name, '", @"', REPLACE(template, '"', '""'), '");') from easy_templates where binary upper(name) = name and COALESCE(trim(name), "") != "" and deleted = 0
-                //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
-
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("GET_ENTITY_TYPES", @"SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
-
-SELECT DISTINCT `name` AS entityType
-FROM wiser_entity
-WHERE
-    `name` <> ''
-    AND IF(@_module_list = '', 1 = 1, FIND_IN_SET(module_id, @_module_list)) > 0
-ORDER BY `name`");
                 TemplateQueryStrings.Add("CHECK_DATA_SELECTOR_NAME_EXISTS", @"SET @_name = '{name}';
 
 # Will automatically be NULL if it doesn't exist, which is good.
 SET @_item_id = (SELECT id FROM wiser_data_selector WHERE `name` = @_name LIMIT 1);
 
 SELECT @_item_id IS NOT NULL AS nameExists;");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_LINKED_TO", @"################################################
-#                                              #
-#   NOTE: THIS QUERY IS DEPRECATED!            #
-#   USE THE '_DOWN' OR '_UP' VERSION INSTEAD   #
-#                                              #
-################################################
-
-SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
-SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
-
-SELECT
-    display_name AS `name`,
-    CAST(IF(
-        inputtype = 'item-linker',
-        JSON_OBJECT(
-            'inputType', inputtype,
-            'type', `options`->>'$.linkTypeName',
-            'entityTypes', (SELECT GROUP_CONCAT(DISTINCT entity_name) FROM wiser_itemlink WHERE type_name = `options`->>'$.linkTypeName'),
-            'moduleId', `options`->>'$.moduleId'
-        ),
-        JSON_OBJECT(
-            'inputType', inputtype,
-            'type', `options`->>'$.entityType',
-            'entityTypes', `options`->>'$.entityType'
-        )
-    ) AS CHAR) AS `options`
-FROM wiser_entityproperty
-WHERE
-    IF(@_module_list = '', 1 = 1, FIND_IN_SET(module_id, @_module_list))
-    AND FIND_IN_SET(entity_name, @_entity_type_list)
-    AND inputtype IN ('item-linker', 'sub-entities-grid')
-ORDER BY display_name");
                 TemplateQueryStrings.Add("GET_PROPERTY_VALUES", @"SELECT wid.`value` AS `text`, wid.`value`
 FROM wiser_item wi
 JOIN wiser_itemdetail wid ON wid.item_id = wi.id

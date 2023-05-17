@@ -23,7 +23,7 @@ namespace Api.Modules.EntityTypes.Controllers
     public class EntityTypesController : ControllerBase
     {
         private readonly IEntityTypesService entityTypesService;
-        
+
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesController"/>.
         /// </summary>
@@ -39,14 +39,15 @@ namespace Api.Modules.EntityTypes.Controllers
         /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to false to get all entity types, or true to get only entity types that have a display name.</param>
         /// <param name="includeCount">Optional: Whether to count how many items of each entity type exist in the database.</param>
         /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when includeCount is set to true.</param>
+        /// <param name="moduleId">Optional: If you only want entity types from a specific module, enter the ID of that module here.</param>
         /// <returns>A list of all available entity types.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false)
+        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0)
         {
-            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems)).GetHttpResponseMessage();
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems, moduleId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets the settings for an entity type.
         /// </summary>
@@ -61,7 +62,7 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, entityType, moduleId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets the settings for an entity type.
         /// </summary>
@@ -76,7 +77,7 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets all available entity types, based on module id and parent id.
         /// </summary>

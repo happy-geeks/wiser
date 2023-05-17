@@ -137,13 +137,10 @@ const moduleSettings = {
                     });
                     console.error(e);
                 }
-            } else {
-                // Set some initial values.
-                await this.updateAvailableEntityTypes();
-
-                // Hide loader at the end.
-                this.toggleMainLoader(false);
             }
+
+            // Hide loader at the end.
+            this.toggleMainLoader(false);
         }
 
         /**
@@ -312,7 +309,6 @@ const moduleSettings = {
 
                 // This isn't really necessary, but it's nice to have the modules in a set order.
                 this.selectedModules.sort();
-                this.updateAvailableEntityTypes();
             });
 
             const selectEntity = $("#selectEntity").getKendoDropDownList();
@@ -387,19 +383,8 @@ const moduleSettings = {
         }
 
         async getAllEntityTypes() {
-            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
-            this.allEntityTypes = response.map(ce => ce.entityType);
-        }
-
-        async updateAvailableEntityTypes() {
-            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
-            this.availableEntityTypes = response.map(ce => ce.entityType);
-
-            $("#selectEntity").getKendoDropDownList().setDataSource({
-                data: this.availableEntityTypes.map((entityType) => {
-                    return { text: entityType, value: entityType };
-                })
-            });
+            this.allEntityTypes = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types` });
+            $("#selectEntity").getKendoDropDownList().setDataSource(this.allEntityTypes);
         }
 
         updateWidgetDataSource(widget, baseDataSource, includeAliasCheck = false) {
