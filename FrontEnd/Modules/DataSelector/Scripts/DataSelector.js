@@ -1128,10 +1128,10 @@ const moduleSettings = {
 
             kendoPrompt.open().result.done((input) => {
                 window.processing.addProcess("checkSavedNameExists");
-                Wiser.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
+                Wiser.api({ url: `${this.settings.wiserApiRoot}data-selectors/${encodeURIComponent(input)}/exists` }).then((existsResult) => {
                     window.processing.removeProcess("checkSavedNameExists");
 
-                    if (!Wiser.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
+                    if (existsResult === 0) {
                         this.currentName = input;
 
                         window.processing.addProcess("dataSelectorSave");
@@ -1152,6 +1152,7 @@ const moduleSettings = {
                                 });
                             }
                         );
+
                         return;
                     }
 

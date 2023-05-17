@@ -356,12 +356,6 @@ ORDER BY template.ordering ASC");
             if (TemplateQueryStrings.Count == 0)
             {
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("CHECK_DATA_SELECTOR_NAME_EXISTS", @"SET @_name = '{name}';
-
-# Will automatically be NULL if it doesn't exist, which is good.
-SET @_item_id = (SELECT id FROM wiser_data_selector WHERE `name` = @_name LIMIT 1);
-
-SELECT @_item_id IS NOT NULL AS nameExists;");
                 TemplateQueryStrings.Add("GET_PROPERTY_VALUES", @"SELECT wid.`value` AS `text`, wid.`value`
 FROM wiser_item wi
 JOIN wiser_itemdetail wid ON wid.item_id = wi.id
