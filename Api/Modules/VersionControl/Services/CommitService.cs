@@ -193,6 +193,75 @@ public class CommitService : ICommitService, IScopedService
     }
 
     /// <inheritdoc />
+    public async Task<ServiceResult<bool>> DeployCommitsAsync(DeployCommitsRequestModel data, ClaimsIdentity identity)
+    {
+        var commits = new List<CommitModel>();
+
+        foreach (var commitId in data.CommitIds)
+        {
+            var commit = await commitDataService.GetCommitAsync(commitId);
+            if (commit == null)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Commit with ID '{commitId}' not found."
+                };
+            }
+
+            commits.Add(commit);
+        }
+
+        // Don't allow commits to live if there are any pending reviews.
+        if (data.Environment == Environments.Live && commits.Any(commit => commit.Review?.Status is ReviewStatuses.Pending or ReviewStatuses.RequestChanges))
+        {
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "You cannot commit to live until the changes have been approved by the requested code reviewer(s)."
+            };
+        }
+
+        // Get all unique templates from all commits and the highest version of each template.
+        var templates = commits.SelectMany(x => x.Templates).GroupBy(x => x.TemplateId).Select(x => new { TemplateId = x.Key, Version = x.Max(y => y.Version) }).ToList();
+
+        // Get all unique dynamic contents from all commits and the highest version of each dynamic content.
+        var dynamicContents = commits.SelectMany(x => x.DynamicContents).GroupBy(x => x.DynamicContentId).Select(x => new { DynamicContentId = x.Key, Version = x.Max(y => y.Version) }).ToList();
+
+        // Publish all templates.
+        foreach (var template in templates)
+        {
+            var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(template.TemplateId);
+            if (currentPublished.StatusCode != HttpStatusCode.OK)
+            {
+                throw new Exception($"Could not get environments of template '{template.TemplateId}'. Error was: {currentPublished.ErrorMessage}");
+            }
+
+            await templatesService.PublishToEnvironmentAsync(identity, template.TemplateId, template.Version, data.Environment, currentPublished.ModelObject);
+        }
+
+        // Publish all dynamic contents.
+        foreach (var dynamicContent in dynamicContents)
+        {
+            var currentPublished = await dynamicContentService.GetEnvironmentsAsync(dynamicContent.DynamicContentId);
+            if (currentPublished.StatusCode != HttpStatusCode.OK)
+            {
+                throw new Exception($"Could not get environments of dynamic content '{dynamicContent.DynamicContentId}'. Error was: {currentPublished.ErrorMessage}");
+            }
+
+            await dynamicContentService.PublishToEnvironmentAsync(identity, dynamicContent.DynamicContentId, dynamicContent.Version, data.Environment, currentPublished.ModelObject);
+        }
+
+        // Log the deployment of the commits, so that we can see in the history when it was deployed to which environment.
+        foreach (var commit in commits)
+        {
+            await LogDeploymentOfCommitAsync(commit.Id, data.Environment, identity);
+        }
+
+        return new ServiceResult<bool>(true);
+    }
+
+    /// <inheritdoc />
     public async Task<ServiceResult<bool>> LogDeploymentOfCommitAsync(int id, Environments environment, ClaimsIdentity identity)
     {
         await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>

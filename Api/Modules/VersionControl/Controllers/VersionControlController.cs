@@ -71,6 +71,18 @@ public class VersionControlController : Controller
     }
 
     /// <summary>
+    /// Deploys one or more commits to an environment.
+    /// </summary>
+    /// <param name="data">The environment and commit IDs.</param>
+    [HttpPut]
+    [Route("deploy")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeployCommitsAsync(DeployCommitsRequestModel data)
+    {
+        return (await commitService.DeployCommitsAsync(data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
     /// Get all commits that haven't been completed yet,
     /// </summary>
     /// <returns>A list of <see cref="CommitModel"/>.</returns>
