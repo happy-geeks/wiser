@@ -6,6 +6,7 @@ using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
+using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -38,14 +39,14 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<WiserItemModel>>> GetAsync()
+        public async Task<ServiceResult<List<FlatItemModel>>> GetAsync(bool includeAdminUsers = false)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}_{includeAdminUsers}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return await usersService.GetAsync();
+                    return await usersService.GetAsync(includeAdminUsers);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
@@ -149,7 +150,7 @@ namespace Api.Modules.Customers.Services
         public async Task<string> GetUserEmailAddressAsync(ulong id)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}_{id}_email",
+            return await cache.GetOrAddAsync($"users_{databaseConnection.GetDatabaseNameForCaching()}_{id}_email",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
@@ -161,7 +162,7 @@ namespace Api.Modules.Customers.Services
         public async Task<UserModel> GetWiserSettingsForUserAsync(string encryptionKey)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"user_data_wiser_settings_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAddAsync($"user_data_wiser_settings_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
@@ -197,20 +198,20 @@ namespace Api.Modules.Customers.Services
         public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"user_roles_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAddAsync($"user_roles_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await usersService.GetRolesAsync(includePermissions);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Objects));
         }
-        
+
         /// <inheritdoc />
         public bool ValidateTotpPin(string key, string code)
         {
-            return usersService.ValidateTotpPin(key, code); 
+            return usersService.ValidateTotpPin(key, code);
         }
-        
+
         /// <inheritdoc />
         public string SetUpTotpAuthentication(string account, string key)
         {

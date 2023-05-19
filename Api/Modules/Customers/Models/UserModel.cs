@@ -13,7 +13,7 @@ namespace Api.Modules.Customers.Models
         /// </summary>
         [Key]
         public ulong Id { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the encrypted ID for Wiser.
         /// </summary>
@@ -28,9 +28,9 @@ namespace Api.Modules.Customers.Models
         ///  Gets or sets the encrypted customer if for Wiser.
         /// </summary>
         public string EncryptedCustomerId { get; set; }
-        
+
         /// <summary>
-        /// Gets or sets the password. 
+        /// Gets or sets the password.
         /// Will not be serialized to the output, only for internal usage.
         /// </summary>
         public string Password { get; set; }
@@ -44,7 +44,7 @@ namespace Api.Modules.Customers.Models
         /// Gets or sets the e-mail address.
         /// </summary>
         public string EmailAddress { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the date and time of the user's last successful login attempt.
         /// </summary>
@@ -107,14 +107,29 @@ namespace Api.Modules.Customers.Models
         public string FilesRootId { get; set; }
 
         /// <summary>
+        /// Gets or sets the plain ID of the root directory for general file uploader.
+        /// </summary>
+        public ulong PlainFilesRootId { get; set; }
+
+        /// <summary>
         /// Gets or sets the (encrypted) ID of the root directory for the general image uploader.
         /// </summary>
         public string ImagesRootId { get; set; }
 
         /// <summary>
+        /// Gets or sets the plain ID of the root directory for general image uploader.
+        /// </summary>
+        public ulong PlainImagesRootId { get; set; }
+
+        /// <summary>
         /// Gets or sets the (encrypted) ID of the root directory for the general template uploader.
         /// </summary>
         public string TemplatesRootId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the plain ID of the root directory for general template uploader.
+        /// </summary>
+        public ulong PlainTemplatesRootId { get; set; }
 
         /// <summary>
         /// Gets or sets the main domain. This is used for generating URLs for images, files etc in HTML editors.

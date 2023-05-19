@@ -75,14 +75,15 @@ namespace Api.Modules.Modules.Services
         {
             var modulesForAdmins = new List<int>
             {
-                700, // Stamgegevens
-                706, // Data selector
-                709, // Search module
-                737, // Admin
-                738, // Import / export
-                806, // Wiser users
-                5505, // Webpagina's
-                6000 // Version control
+                Constants.DefaultMasterDataModuleId,
+                Constants.DefaultDataSelectorModuleId,
+                Constants.DefaultSearchModuleId,
+                Constants.DefaultAdminModuleId,
+                Constants.DefaultImportExportModuleId,
+                Constants.DefaultWiserUsersModuleId,
+                Constants.DefaultWebpagesModuleId,
+                Constants.DefaultTemplatesModuleId,
+                Constants.DefaultVersionControlModuleId
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
@@ -93,12 +94,12 @@ namespace Api.Modules.Modules.Services
 
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
                 WiserTableNames.WiserEntity,
                 WiserTableNames.WiserEntityProperty,
                 WiserTableNames.WiserLink
             });
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { 
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
                 WiserTableNames.WiserItem,
                 WiserTableNames.WiserItemDetail,
                 WiserTableNames.WiserModule ,
@@ -118,13 +119,13 @@ namespace Api.Modules.Modules.Services
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
             var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
-            
+
             // Make sure that all triggers for Wiser tables are up-to-date.
             if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
-                
+
                 // Update wiser_table_changes.
                 clientDatabaseConnection.AddParameter("tableName", TriggersName);
                 clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
@@ -182,7 +183,7 @@ UNION
             }
 
             var onlyOneInstanceAllowedGlobal = String.Equals(await objectsService.FindSystemObjectByDomainNameAsync("wiser_modules_OnlyOneInstanceAllowed",                                                                                                                     "false"), "true", StringComparison.OrdinalIgnoreCase);
-            
+
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var moduleId = dataRow.Field<int>("module_id");
@@ -300,10 +301,9 @@ UNION
                 {
                     string groupName;
                     var isPinned = pinnedModules.Contains(moduleId);
-                    // TODO: Add the new settings and templates modules here once they are finished.
                     switch (moduleId)
                     {
-                        case 700: // Stamgegevens
+                        case Constants.DefaultMasterDataModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
                             if (!results.ContainsKey(groupName))
                             {
@@ -320,12 +320,12 @@ UNION
                                 Icon = "line-sliders",
                                 ModuleId = moduleId,
                                 Name = "Stamgegevens",
-                                Type = "DynamicItems",
+                                Type = "MasterData",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 706: // Data selector
+                        case Constants.DefaultDataSelectorModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -347,7 +347,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 709: // Search
+                        case Constants.DefaultSearchModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -369,7 +369,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 737: // Admin
+                        case Constants.DefaultAdminModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
                             if (!results.ContainsKey(groupName))
                             {
@@ -391,7 +391,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 738: // Import/export
+                        case Constants.DefaultImportExportModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -413,7 +413,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 806: // Wiser users
+                        case Constants.DefaultWiserUsersModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
                             if (!results.ContainsKey(groupName))
                             {
@@ -430,12 +430,12 @@ UNION
                                 Icon = "users",
                                 ModuleId = moduleId,
                                 Name = "Wiser beheer",
-                                Type = "DynamicItems",
+                                Type = "Users",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 5505: // Webpagina's
+                        case Constants.DefaultWebpagesModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -457,7 +457,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 6000: // Version control
+                        case Constants.DefaultVersionControlModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Systeem";
                             if (!results.ContainsKey(groupName))
                             {
@@ -472,8 +472,29 @@ UNION
                                 CanWrite = true,
                                 Icon = "git",
                                 ModuleId = moduleId,
-                                Name = "Version control",
+                                Name = "Versiebeheer",
                                 Type = "VersionControl",
+                                Pinned = isPinned,
+                                PinnedGroup = PinnedModulesGroupName
+                            });
+                            break;
+                        case Constants.DefaultTemplatesModuleId:
+                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            if (!results.ContainsKey(groupName))
+                            {
+                                results.Add(groupName, new List<ModuleAccessRightsModel>());
+                            }
+                            results[groupName].Add(new ModuleAccessRightsModel
+                            {
+                                Group = "Systeem",
+                                CanCreate = true,
+                                CanDelete = true,
+                                CanRead = true,
+                                CanWrite = true,
+                                Icon = "document-fold",
+                                ModuleId = moduleId,
+                                Name = "Templates",
+                                Type = "Templates",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
@@ -482,6 +503,31 @@ UNION
                             throw new NotImplementedException($"Trying to hard-code add module '{moduleId}' to list for admin account, but no case has been added for this module in the switch statement.");
                     }
                 }
+            }
+
+            // Everyone should always have the configuration module.
+            if (results.All(g => g.Value.All(m => m.Type != "Configuration")))
+            {
+                var isPinned = pinnedModules.Contains(0);
+                var groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                if (!results.ContainsKey(groupName))
+                {
+                    results.Add(groupName, new List<ModuleAccessRightsModel>());
+                }
+                results[groupName].Add(new ModuleAccessRightsModel
+                {
+                    Group = "Systeem",
+                    CanCreate = true,
+                    CanDelete = true,
+                    CanRead = true,
+                    CanWrite = true,
+                    Icon = "config",
+                    ModuleId = 0,
+                    Name = "Wiser Configuratie",
+                    Type = "Configuration",
+                    Pinned = isPinned,
+                    PinnedGroup = PinnedModulesGroupName
+                });
             }
 
             // Sort all the groups.
@@ -670,7 +716,7 @@ ORDER BY `group` ASC");
             var results = dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("group"));
             return new ServiceResult<List<string>>(results.ToList());
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
         {
@@ -718,7 +764,7 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
                                 `type` = ?type,
                                 `group` = ?group
                         WHERE id = ?id";
-            
+
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true)
             {

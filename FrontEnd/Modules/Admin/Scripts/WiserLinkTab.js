@@ -14,85 +14,9 @@ export class WiserLinkTab {
         await this.initializeKendoComponents();
     }
 
-    async editLink() {
-        if (!this.wiserLinkCombobox || !this.wiserLinkCombobox.dataItem() || !this.wiserLinkCombobox.dataItem().type) return;
-        const linkDataItem = this.wiserLinkCombobox.dataItem();
-
-        const linkSettingsModel = new LinkSettingsModel(
-            linkDataItem.id,
-            this.linkType.value(),
-            this.destinationEntity.dataItem().name,
-            this.connectedEntity.dataItem().name,
-            document.getElementById("wiserLinkName").value
-        );
-
-        linkSettingsModel.relationship = this.linkRelation.dataItem().id;
-
-        try {
-            await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}link-settings/${linkSettingsModel.id}`,
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                data: JSON.stringify(linkSettingsModel),
-                method: "PUT"
-            });
-            this.base.showNotification("notification", `Link succesvol aangepast`, "success");
-        }
-        catch (exception) {
-            console.error(exception);
-            if (exception.responseText.indexOf("Duplicate entry")) {
-                this.base.showNotification("notification", `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`, "error");
-            } else {
-                this.base.showNotification("notification", `Wiser link is niet succesvol aangepast, probeer het opnieuw`, "error");
-            }
-        }
-    }
-
-    async addLink() {
-        const linkSettingsModel = new LinkSettingsModel(
-            -1, // default
-            this.linkTypePopup.value(),
-            this.destinationEntityPopup.dataItem().name,
-            this.connectedEntityPopup.dataItem().name,
-            document.getElementById("wiserLinkNamePopup").value
-        );
-
-        linkSettingsModel.relationship = this.relationPopup.dataItem().id;
-
-        try {
-            const result = await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}link-settings`,
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                data: JSON.stringify(linkSettingsModel),
-                method: "POST"
-            });
-
-            this.base.showNotification("notification", `Link succesvol toegevoegd`, "success");
-            // close popup
-            $('.linkPopupContent').data("kendoWindow").close();
-            // reload list
-            await this.reloadWiserLinkList();
-            // select newly created link
-            if (result) {
-                this.wiserLinkCombobox.select((dataItem) => {
-                    return dataItem.id === result.id;
-                });
-            }
-        }
-        catch (exception) {
-            console.error(exception);
-            if (exception.responseText.indexOf("Duplicate entry")) {
-                this.base.showNotification("notification", `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`, "error");
-            } else {
-                this.base.showNotification("notification", `Wiser link is niet succesvol aangemaakt, probeer het opnieuw`, "error");
-            }
-        }
-    }
-
     async initializeKendoComponents() {
         return new Promise((resolve) => {
-            // initialize kendo components on page 
+            // initialize kendo components on page
 
             $(".addLinkBtn").kendoButton({
                 click: () => {
@@ -117,7 +41,6 @@ export class WiserLinkTab {
                 icon: "file"
             });
 
-
             $(".editLinkBtn").kendoButton({
                 click: () => {
                     this.editLink();
@@ -125,10 +48,19 @@ export class WiserLinkTab {
                 icon: "file"
             });
 
+            $(".deleteLinkBtn").kendoButton({
+                click: () => {
+                    Wiser.showConfirmDialog(`Weet u zeker dat u deze koppeling wilt verwijderen?`).then(() => {
+                        this.deleteLink();
+                    });
+                },
+                icon: "delete"
+            });
+
             this.linkType = $("#wiserLinkType").kendoNumericTextBox({
                 decimals: 0,
                 format: "#"
-            }).data("kendoNumericTextBox"); 
+            }).data("kendoNumericTextBox");
 
             // Main combobox for selecting a link
             this.wiserLinkCombobox = $("#wiserLinks").kendoDropDownList({
@@ -152,7 +84,7 @@ export class WiserLinkTab {
                 },
                 cascade: this.onWiserLinkComboBoxSelect.bind(this)
             }).data("kendoDropDownList");
-            
+
             this.connectedEntity = $("#connectedEntity").kendoDropDownList({
                 clearButton: false,
                 dataTextField: "displayName",
@@ -250,7 +182,45 @@ export class WiserLinkTab {
             this.linkTypePopup = $("#wiserLinkTypePopup").kendoNumericTextBox({
                 decimals: 0,
                 format: "#"
-            }).data("kendoNumericTextBox"); 
+            }).data("kendoNumericTextBox");const duplicationDataSource = [
+                {
+                    id: 0,
+                    duplication: "none",
+                    displayName: "Geen"
+                }, {
+                    id: 1,
+                    duplication: "copy-link",
+                    displayName: "Kopieer link"
+                }, {
+                    id: 2,
+                    duplication: "copy-item",
+                    displayName: "Kopieer entiteit"
+                }
+            ];
+            this.duplicationMethod = $("#duplicationMethod").kendoDropDownList({
+                clearButton: false,
+                dataTextField: "displayName",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    displayName: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: duplicationDataSource
+            }).data("kendoDropDownList");
+            this.duplicationMethodPopup = $("#duplicationMethodPopup").kendoDropDownList({
+                clearButton: false,
+                dataTextField: "displayName",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    displayName: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: duplicationDataSource
+            }).data("kendoDropDownList");
             resolve();
         });
     }
@@ -272,6 +242,16 @@ export class WiserLinkTab {
 
         document.getElementById("wiserLinkName").value = linkDataItem.name;
         this.linkRelation.select((dataItem) => { return dataItem.relationship === linkDataItem.relationship; });
+
+        this.duplicationMethod.select((dataItem) => {
+            return dataItem.duplication === linkDataItem.duplication;
+        });
+
+        document.getElementById("wiserLinkUseParentId").checked = linkDataItem.use_item_parent_id === 1;
+        document.getElementById("wiserLinkUseDedicatedTable").checked = linkDataItem.use_dedicated_table === 1;
+        document.getElementById("wiserLinkCascadeDelete").checked = linkDataItem.cascade_delete === 1;
+        document.getElementById("wiserLinkShowInDataSelector").checked = linkDataItem.show_in_data_selector === 1;
+        document.getElementById("wiserLinkShowInTreeView").checked = linkDataItem.show_in_tree_view === 1;
     }
 
     async reloadWiserLinkList() {
@@ -281,5 +261,109 @@ export class WiserLinkTab {
         });
 
         this.wiserLinkCombobox.setDataSource(dataSource);
+    }
+
+    async addLink() {
+        const linkSettingsModel = new LinkSettingsModel(
+            -1, // default
+            this.linkTypePopup.value(),
+            this.destinationEntityPopup.dataItem().name,
+            this.connectedEntityPopup.dataItem().name,
+            document.getElementById("wiserLinkNamePopup").value
+        );
+        linkSettingsModel.relationship = this.relationPopup.dataItem().id;
+        linkSettingsModel.useItemParentId = document.getElementById("wiserLinkUseParentIdPopup").checked;
+        linkSettingsModel.useDedicatedTable = document.getElementById("wiserLinkUseDedicatedTablePopup").checked;
+        linkSettingsModel.cascadeDelete = document.getElementById("wiserLinkCascadeDeletePopup").checked;
+        linkSettingsModel.showInDataSelector = document.getElementById("wiserLinkShowInDataSelectorPopup").checked;
+        linkSettingsModel.showInTreeView = document.getElementById("wiserLinkShowInTreeViewPopup").checked;
+        linkSettingsModel.duplicationMethod = this.duplicationMethodPopup.dataItem().id;
+
+        try {
+            const result = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}link-settings`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(linkSettingsModel),
+                method: "POST"
+            });
+
+            this.base.showNotification("notification", "Link succesvol toegevoegd", "success");
+            // close popup
+            $('.linkPopupContent').data("kendoWindow").close();
+            // reload list
+            await this.reloadWiserLinkList();
+            // select newly created link
+            if (result) {
+                this.wiserLinkCombobox.select((dataItem) => {
+                    return dataItem.id === result.id;
+                });
+            }
+        }
+        catch (exception) {
+            console.error(exception);
+            if (exception.responseText.indexOf("Duplicate entry")) {
+                this.base.showNotification("notification", `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`, "error");
+            } else {
+                this.base.showNotification("notification", "Wiser link is niet succesvol aangemaakt, probeer het opnieuw", "error");
+            }
+        }
+    }
+
+    async editLink() {
+        if (!this.wiserLinkCombobox || !this.wiserLinkCombobox.dataItem() || !this.wiserLinkCombobox.dataItem().type) return;
+        const linkDataItem = this.wiserLinkCombobox.dataItem();
+
+        const linkSettingsModel = new LinkSettingsModel(
+            linkDataItem.id,
+            this.linkType.value(),
+            this.destinationEntity.dataItem().name,
+            this.connectedEntity.dataItem().name,
+            document.getElementById("wiserLinkName").value
+        );
+        linkSettingsModel.relationship = this.linkRelation.dataItem().id;
+        linkSettingsModel.useItemParentId = document.getElementById("wiserLinkUseParentId").checked;
+        linkSettingsModel.useDedicatedTable = document.getElementById("wiserLinkUseDedicatedTable").checked;
+        linkSettingsModel.cascadeDelete = document.getElementById("wiserLinkCascadeDelete").checked;
+        linkSettingsModel.showInDataSelector = document.getElementById("wiserLinkShowInDataSelector").checked;
+        linkSettingsModel.showInTreeView = document.getElementById("wiserLinkShowInTreeView").checked;
+        linkSettingsModel.duplicationMethod = this.duplicationMethod.dataItem().id;
+
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}link-settings/${linkSettingsModel.id}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(linkSettingsModel),
+                method: "PUT"
+            });
+            this.base.showNotification("notification", "Wiser Link succesvol aangepast", "success");
+        }
+        catch (exception) {
+            console.error(exception);
+            if (exception.responseText.indexOf("Duplicate entry")) {
+                this.base.showNotification("notification", `Er bestaat al een link met type '${linkSettingsModel.type}' met entiteit van '${linkSettingsModel.destinationEntityType}' naar '${linkSettingsModel.sourceEntityType}'`, "error");
+            } else {
+                this.base.showNotification("notification", "Wiser link is niet succesvol aangepast, probeer het opnieuw", "error");
+            }
+        }
+    }
+
+    async deleteLink() {
+        if (!this.wiserLinkCombobox || !this.wiserLinkCombobox.dataItem() || !this.wiserLinkCombobox.dataItem().type) return;
+        const linkDataItem = this.wiserLinkCombobox.dataItem();
+
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}link-settings/${linkDataItem.id}`,
+                method: "DELETE"
+            });
+            await this.reloadWiserLinkList();
+            this.base.showNotification("notification", "Link succesvol verwijderd", "success");
+        }
+        catch (exception) {
+            console.error(exception);
+            this.base.showNotification("notification", "Wiser link is niet succesvol verwijderd, probeer het opnieuw", "error");
+        }
     }
 }

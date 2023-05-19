@@ -53,7 +53,7 @@ export class Windows {
             files: "files",
             templates: "templates"
         });
-        
+
         // File manager
         this.fileManagerWindow = null;
         this.fileManagerIframe = null;
@@ -81,7 +81,7 @@ export class Windows {
                     selectedText = this.fileManagerWindowSender.kendoEditor.getSelection().toString();
                 }
                 this.fileManagerIframe.src = `/Modules/FileManager?mode=${this.fileManagerWindowMode}&iframe=true&selectedText=${encodeURIComponent(selectedText)}`;
-                
+
                 switch (this.fileManagerWindowMode) {
                     case this.fileManagerModes.images:
                         event.sender.title("Afbeelding invoegen");
@@ -103,16 +103,16 @@ export class Windows {
                     kendo.alert("Er is geen HTML editor gevonden waar dit bestand toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
                     return;
                 }
-                
+
                 let html = "";
 
                 if (!this.fileManagerIframe || !this.fileManagerIframe.contentWindow || !this.fileManagerIframe.contentWindow.document) {
                     kendo.alert("Het iframe voor bestandsbeheer kon niet gevonden worden of is leeg. Ververs a.u.b. de tab waar Wiser in draait en probeer het opnieuw, of neem contact op met ons.");
                     return;
                 }
-                
+
                 const fileManagerClassFromIframe = this.fileManagerIframe.contentWindow.fileManager;
-                
+
                 switch (this.fileManagerWindowMode) {
                     case this.fileManagerModes.images: {
                         const selectedItem = fileManagerClassFromIframe.imagesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.imagesUploaderWindowTreeView.select());
@@ -131,7 +131,7 @@ export class Windows {
                     case this.fileManagerModes.files: {
                         const fileUrl = fileManagerClassFromIframe.generateFilePreviewUrl();
                         html = `<a href="${fileUrl}">${(fileManagerClassFromIframe.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
-                        
+
                         break;
                     }
                     case this.fileManagerModes.templates: {
@@ -474,7 +474,7 @@ export class Windows {
                     }
 
                     currentItemWindow.wrapper.find(".k-i-vertalen").parent().toggleClass("hidden", this.base.allLanguages.length <= 1 && currentItemWindow.element.find(".item[data-language-code]:not([data-language-code=''])").length === 0);
-                    
+
                     // Setup dependencies for all tabs.
                     for (let i = htmlData.tabs.length - 1; i >= 0; i--) {
                         const tabData = htmlData.tabs[i];
@@ -926,7 +926,7 @@ export class Windows {
                                     return;
                                 }
 
-                                // If we're using the same filters as before, we don't need to count the total amount of results again, 
+                                // If we're using the same filters as before, we don't need to count the total amount of results again,
                                 // so we tell the API whether this is the case, so that it can skip the execution of the count query, to make scrolling through the grid faster.
                                 let currentFilters = null;
                                 if (transportOptions.data.filter) {
@@ -994,6 +994,7 @@ export class Windows {
                 filterMenuOpen: this.base.grids.onFilterMenuOpen.bind(this)
             }, gridOptions.searchGridSettings.gridViewSettings);
 
+            await require("/kendo/messages/kendo.grid.nl-NL.js");
             this.searchItemsGrid = searchItemsGridElement.kendoGrid(finalGridOptions).data("kendoGrid");
 
             if (this.searchGridSettings.enableSelectAllServerSide) {

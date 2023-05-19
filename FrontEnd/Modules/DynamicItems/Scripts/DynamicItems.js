@@ -200,7 +200,7 @@ const moduleSettings = {
                 console.error("Error occurred while trying to load all entity types", exception);
                 this.allEntityTypes = [];
             }
-            
+
             // Get list of all languages, we need this later for the option for translating items.
             try {
                 this.allLanguages = (await Wiser.api({url: `${this.settings.wiserApiRoot}languages`})) || [];
@@ -219,7 +219,7 @@ const moduleSettings = {
             } else {
                 this.settings.permissions = {};
             }
-            
+
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
             $("body").toggleClass("gridViewMode", this.settings.gridViewMode);
 
@@ -313,7 +313,7 @@ const moduleSettings = {
                     }
                 }
             });
-            
+
             $("body").on("keyup", async (event) => {
                 const target = $(event.target);
 
@@ -334,7 +334,7 @@ const moduleSettings = {
                         if (!selectedItem.length) {
                             break;
                         }
-                        
+
                         await this.handleContextMenuAction(selectedItem, "RENAME_ITEM");
                         break;
                     }
@@ -645,6 +645,10 @@ const moduleSettings = {
             if (scriptTemplate.indexOf("kendoTimeline") > -1) {
                 await require("@progress/kendo-ui/js/kendo.timeline.js");
             }
+            if (scriptTemplate.indexOf("kendoGrid") > -1) {
+                await require("@progress/kendo-ui/js/kendo.grid.js");
+                await require("/kendo/messages/kendo.grid.nl-NL.js");
+            }
 
             await require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
         }
@@ -727,18 +731,18 @@ const moduleSettings = {
             const action = button.attr("action");
             await this.handleContextMenuAction($(event.target), action);
         }
-        
+
         async handleContextMenuAction(selectedNode, action) {
             if (!selectedNode || !action) {
                 return;
             }
-            
+
             const treeView = this.base.mainTreeView;
             const dataItem = treeView.dataItem(selectedNode);
             // For some reason the JCL already encodes the values, so decode them here, otherwise they will be encoded twice in some cases, which can cause problems.
             const itemId = decodeURIComponent(dataItem.id);
             const entityType = dataItem.entityType;
-            
+
             try {
                 switch (action) {
                     case "RENAME_ITEM":
@@ -797,7 +801,11 @@ const moduleSettings = {
                     }
                     case "HIDE_ITEM":
                     {
-                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        await Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/environment/${this.environmentsEnum.hidden}?entityType=${encodeURIComponent(entityType)}`,
+                            method: "PATCH",
+                            contentType: "application/json",
+                        });
                         selectedNode.closest("li").addClass("hiddenOnWebsite");
                         window.dynamicItems.notification.show({ message: "Item is verborgen" }, "success");
                         break;
@@ -805,7 +813,16 @@ const moduleSettings = {
                     case "PUBLISH_LIVE":
                     case "PUBLISH_ITEM":
                     {
-                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        const environments = this.environmentsEnum.development
+                            + this.environmentsEnum.test
+                            + this.environmentsEnum.acceptance
+                            + this.environmentsEnum.live;
+
+                        await Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/environment/${environments}?entityType=${encodeURIComponent(entityType)}`,
+                            method: "PATCH",
+                            contentType: "application/json",
+                        });
                         selectedNode.closest("li").removeClass("hiddenOnWebsite");
                         window.dynamicItems.notification.show({ message: "Item is zichtbaar gemaakt" }, "success");
                         break;
@@ -1010,7 +1027,7 @@ const moduleSettings = {
             });
 
             await this.base.loadItem(itemId, 0, dataItem.entityType || dataItem.entityType);
-            
+
             const pathString = `/${fullPath.join("/")}/`;
             // Show / hide fields based on path regex.
             $("#right-pane .item").each((index, element) => {
@@ -1199,6 +1216,8 @@ const moduleSettings = {
                 let previousFilters = null;
                 let totalResults = gridDataResult.totalResults;
 
+                await require("/kendo/messages/kendo.grid.nl-NL.js");
+
                 this.windows.historyGrid = historyGridElement.kendoGrid({
                     dataSource: {
                         serverPaging: true,
@@ -1214,7 +1233,7 @@ const moduleSettings = {
                                         return;
                                     }
 
-                                    // If we're using the same filters as before, we don't need to count the total amount of results again, 
+                                    // If we're using the same filters as before, we don't need to count the total amount of results again,
                                     // so we tell the API whether this is the case, so that it can skip the execution of the count query, to make scrolling through the grid faster.
                                     let currentFilters = null;
                                     if (transportOptions.data.filter) {
@@ -1477,7 +1496,7 @@ const moduleSettings = {
          */
         async onUndeleteItemClick(event, encryptedItemId) {
             event.preventDefault();
-            
+
             const title = $("#tabstrip .itemNameFieldContainer .itemNameField").val();
             await Wiser.showConfirmDialog(`Weet u zeker dat u het verwijderen ongedaan wilt maken voor '${title}'?`, "Verwijderen ongedaan maken", "Annuleren", "Terugzetten");
 
@@ -1540,14 +1559,14 @@ const moduleSettings = {
                 dialogElement.data("entityType", entityType);
                 let translateItemDialog = dialogElement.data("kendoDialog");
 
-                await require("@progress/kendo-ui/js/kendo.multiselect.js");                
-                
+                await require("@progress/kendo-ui/js/kendo.multiselect.js");
+
                 const sourceLanguageDropDownElement = dialogElement.find("#sourceLanguageDropDown");
                 const targetLanguagesMultiSelectElement = dialogElement.find("#targetLanguagesMultiSelect");
-                
+
                 let sourceLanguageDropDown = sourceLanguageDropDownElement.data("kendoDropDownList");
                 let targetLanguagesMultiSelect = targetLanguagesMultiSelectElement.data("kendoMultiSelect");
-                
+
                 if (!sourceLanguageDropDown) {
                     sourceLanguageDropDown = sourceLanguageDropDownElement.kendoDropDownList({
                         dataSource: this.allLanguages,
@@ -1563,7 +1582,7 @@ const moduleSettings = {
                         dataValueField: "code"
                     }).data("kendoMultiSelect");
                 }
-                
+
                 let defaultLanguage = this.allLanguages.find(l => l.isDefaultLanguage);
                 if (!defaultLanguage) {
                     defaultLanguage = this.allLanguages[0];
@@ -1613,7 +1632,7 @@ const moduleSettings = {
                                         } else if (error.statusText) {
                                             errorMessage = error.statusText;
                                         }
-                                        
+
                                         if (errorMessage) {
                                             kendo.alert(`Er is iets fout gegaan met vertalen. De fout was:<br><pre>${errorMessage}</pre>`);
                                         } else {
@@ -1718,7 +1737,7 @@ const moduleSettings = {
                         };
                     }
                 }
-                
+
                 const translateButton = entityContainer.find(".editMenu .translateItem").closest("li");
                 translateButton.toggle(this.allLanguages.length > 1 && entityContainer.find(".item[data-language-code]:not([data-language-code=''])").length > 0);
 
@@ -1749,7 +1768,7 @@ const moduleSettings = {
                     await this.onTabStripSelect((!this.selectedItem || !this.selectedItem.id ? 0 : this.selectedItem.id), "mainScreen", { item: this.mainTabStrip.select(), contentElement: this.mainTabStrip.contentElement(this.mainTabStrip.select().index()) });
                 }
 
-                // If the mode for changing field widths is enabled, call the method that show the current width of each field, 
+                // If the mode for changing field widths is enabled, call the method that show the current width of each field,
                 // so that the width numbers don't disappear after opening a different item.
                 if ($("#widthToggle").prop("checked")) {
                     container.find(".item").each((index, element) => {
@@ -1804,7 +1823,7 @@ const moduleSettings = {
                     });
                 }
             }
-            
+
             if (showSuccessMessage) {
                 this.notification.show({ message: "Opslaan is gelukt" }, "success");
             }
@@ -1839,7 +1858,7 @@ const moduleSettings = {
                     kendo.alert("<h1>Let op! Dit item is verwijderd!</h1>");
                 }
 
-                // Check permissions and hide buttons that users are not allowed to use. 
+                // Check permissions and hide buttons that users are not allowed to use.
                 // Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                 const itemContainer = metaDataContainer.closest("#right-pane, .popup-container");
                 const editMenu = itemContainer.find(".editMenu .editSub");
@@ -1900,7 +1919,7 @@ const moduleSettings = {
                 }
 
                 const environmentLabel = this.base.parseEnvironments(itemMetaData.publishedEnvironment);
-                
+
                 let friendlyEntityName = this.getEntityTypeFriendlyName(itemMetaData.entityType);
                 if (friendlyEntityName !== itemMetaData.entityType) {
                     friendlyEntityName += ` (${itemMetaData.entityType})`;
@@ -2078,7 +2097,7 @@ const moduleSettings = {
             if (linkType) {
                 url += `&linkType=${encodeURIComponent(linkType)}`;
             }
-            
+
             return Wiser.api({ url: url });
         }
 
@@ -2181,12 +2200,12 @@ const moduleSettings = {
             }
 
             moduleId = moduleId || this.settings.moduleId;
-            
+
             let entityTypes = this.allEntityTypes.filter(e => e.id === entityType);
             if (entityTypes.length === 0) {
                 return entityType;
             }
-            
+
             if (entityTypes.length === 1 || !moduleId) {
                 return entityTypes[0].displayName || entityType;
             }
@@ -2195,7 +2214,7 @@ const moduleSettings = {
             if (!entityTypeForModule) {
                 return entityTypes[0].displayName || entityType;
             }
-            
+
             return entityTypeForModule.displayName || entityType;
         }
     }

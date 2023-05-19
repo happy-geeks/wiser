@@ -252,13 +252,14 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    height: 100%;
     flex-wrap: nowrap;
-    height: fit-content;
 }
 
 .developmentContainer > div {
-    flex-grow: 0;
+    flex: 1;
+    overflow: auto;
+    margin-bottom: 50px;
 }
 
 .linkedTemplates {
@@ -275,6 +276,35 @@
 .editor-container .CodeMirror,
 .editor-container table.k-editor {
     flex-grow: 1;
+}
+
+footer {
+    background: var(--white-color);
+    border-top: 1px solid #dddddd;
+    border-radius: 0 0 6px 6px;
+    box-sizing: content-box;
+    padding: 10px;
+    z-index: 250;
+    min-height: 47px;
+    flex-shrink: 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.version-actions {
+    width: 100%;
+    text-align: right;
+}
+
+.version-actions > .k-picker {
+    width: 300px;
+}
+
+.version-actions > button {
+    min-width: 50px;
+    height: 42px;
 }
 
 /** ADVANCED **/
@@ -573,7 +603,7 @@
     overflow-x: auto;
 }
 
-/********************** 
+/**********************
 * CodeMirror
 **********************/
 .k-window-content .CodeMirror-fullscreen,
@@ -611,7 +641,7 @@
 .row.measurement-settings .flex-container.item .inline {
     margin: 0;
 }
-.row.measurement-filters { 
+.row.measurement-filters {
     flex-direction: row;
 }
 .row.measurement-filters .col {

@@ -24,6 +24,12 @@ input:focus, textarea:focus, select:focus {
 ins {
 	text-decoration: none;
 }
+dl {
+	margin-top: 10px;
+}
+dd {
+	margin-left: 2em;
+}
 .hidden {
 	display: none !important;
 }

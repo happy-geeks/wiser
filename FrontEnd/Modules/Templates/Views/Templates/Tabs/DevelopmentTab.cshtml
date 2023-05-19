@@ -2,29 +2,39 @@
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 @* ReSharper disable Mvc.PartialViewNotResolved *@
 <div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
-    <partial name="Partials/ConnectedUsers" />
+    <div class="settings-container">
+        <partial name="Partials/ConnectedUsers"/>
 
-    <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings" />
+        <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings"/>
 
-    @if (Model.TemplateSettings.Type == TemplateTypes.Routine)
-    {
-        <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings" />
-    }
+        @if (Model.TemplateSettings.Type == TemplateTypes.Routine)
+        {
+            <partial name="Partials/RoutineDefinition" model="@Model.TemplateSettings"/>
+        }
 
-    @if (Model.TemplateSettings.Type == TemplateTypes.Trigger)
-    {
-        <partial name="Partials/TriggerDefinition" model="@Model.TemplateSettings" />
-    }
+        @if (Model.TemplateSettings.Type == TemplateTypes.Trigger)
+        {
+            <partial name="Partials/TriggerDefinition" model="@Model.TemplateSettings"/>
+        }
 
-    <partial name="Partials/TemplateEditor" model="@Model" />
+        <partial name="Partials/TemplateEditor" model="@Model"/>
 
-    @if (Model.TemplateSettings.Type == TemplateTypes.Html)
-    {
-        <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates" />
-    }
+        @if (Model.TemplateSettings.Type == TemplateTypes.Html)
+        {
+            <partial name="Partials/LinkedTemplates" model="@Model.LinkedTemplates"/>
+        }
 
-    @if (!String.IsNullOrWhiteSpace(Model.SettingsPartial))
-    {
-        <partial name="Partials/AdvancedSettings" model="@Model" />
-    }
+        @if (!String.IsNullOrWhiteSpace(Model.SettingsPartial))
+        {
+            <partial name="Partials/AdvancedSettings" model="@Model"/>
+        }
+    </div>
+    <footer>
+        <div class="version-actions">
+            <select id="branchesDropDown"></select>
+            <button id="deployToBranchButton" class="k-primary" title="Deploy naar geselecteerde branch"><ins class="icon-git"></ins></button>
+            <button id="saveAndDeployToTestButton" class="k-primary saveButton" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button>
+            <button id="saveButton" class="k-primary saveButton">Opslaan</button>
+        </div>
+    </footer>
 </div>

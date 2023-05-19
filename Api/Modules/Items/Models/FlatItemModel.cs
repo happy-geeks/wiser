@@ -80,6 +80,6 @@ namespace Api.Modules.Items.Models
         /// Object with all fields and their values. The <see cref="JsonExtensionDataAttribute"/> will cause the serializer to flatten this object.
         /// </summary>
         [JsonExtensionData]
-        public Dictionary<string, object> Fields { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Fields { get; set; } = new();
     }
 }

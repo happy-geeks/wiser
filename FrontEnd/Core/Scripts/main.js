@@ -96,18 +96,32 @@ class Main {
             baseURL: this.appSettings.apiBase
         });
 
+        let stopRetrying = false;
         this.api.interceptors.response.use(undefined, async (error) => {
-            // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
-            if (error.response.status === 401) {
-                // If we ever get an unauthorized, logout the user.
-                if (error.response.config.url === "/connect/token") {
-                    this.vueApp.$store.dispatch(AUTH_LOGOUT);
-                } else {
-                    await this.vueApp.$store.dispatch(AUTH_REQUEST, { gotUnauthorized: true });
-                }
-            }
+            return new Promise(async (resolve, reject) => {
+                // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
+                if (error.response.status === 401 && !stopRetrying) {
+                    // If we ever get an unauthorized, logout the user.
+                    if (error.response.config.url === "/connect/token") {
+                        this.vueApp.$store.dispatch(AUTH_LOGOUT);
+                    } else {
+                        // Re-authenticate with the refresh token.
+                        await this.vueApp.$store.dispatch(AUTH_REQUEST, {gotUnauthorized: true});
+                        error.config.headers.Authorization = `Bearer ${localStorage.getItem("accessToken")}`;
 
-            return Promise.reject(error);
+                        // Retry the original request.
+                        this.api.request(error.config).then(response => {
+                            stopRetrying = false;
+                            resolve(response);
+                        }).catch((newError) => {
+                            stopRetrying = true;
+                            reject(newError);
+                        })
+                    }
+                }
+
+                reject(error);
+            });
         });
 
         if (this.appSettings.markerIoToken) {
@@ -123,7 +137,7 @@ class Main {
         this.initVue();
     }
 
-    handlePostMessage(event) {
+    async handlePostMessage(event) {
         if (!event.data || !event.data.action) {
             return;
         }
@@ -162,6 +176,47 @@ class Main {
                         accessToken: this.vueApp.user.access_token,
                         originalRequest: event.data
                     }, event.origin);
+                });
+                break;
+            }
+            case "OpenClearCachePrompt": {
+                this.vueApp.openClearCachePrompt();
+                break;
+            }
+            case "OpenWiserBranchesPrompt": {
+                this.vueApp.openWiserBranchesPrompt();
+                break;
+            }
+            case "OpenMarkerIoScreen": {
+                this.vueApp.openMarkerIoScreen();
+                break;
+            }
+            case "OpenWiserIdPrompt": {
+                this.vueApp.openWiserIdPrompt();
+                break;
+            }
+            case "OpenChangePasswordPrompt": {
+                this.vueApp.openChangePasswordPrompt();
+                break;
+            }
+            case "OpenCustomerManagement": {
+                this.vueApp.openCustomerManagement();
+                break;
+            }
+            case "OpenGenerateTotpBackupCodesPrompt": {
+                this.vueApp.openGenerateTotpBackupCodesPrompt();
+                break;
+            }
+            case "OpenUserData": {
+                const encryptedUserId = await main.itemsService.encryptId(this.vueApp.user.id);
+                this.vueApp.openModule({
+                    moduleId: 0,
+                    name: "Mijn gegevens",
+                    type: "dynamicItems",
+                    iframe: true,
+                    itemId: encryptedUserId,
+                    fileName: "",
+                    queryString: `?itemId=${encodeURIComponent(encryptedUserId)}&moduleId=0&iframe=true&entityType=wiseruser`
                 });
                 break;
             }
@@ -365,7 +420,7 @@ class Main {
                     if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
                         return 0;
                     }
-                    
+
                     return this.$store.state.branches.mergeBranchResult.conflicts.length;
                 },
                 totalAmountOfApprovedMergeConflicts() {
@@ -505,7 +560,7 @@ class Main {
                         document.body.classList.remove("menu-active");
                     }
                 },
-                
+
                 showGeneralMessagePrompt(text = "", title = "") {
                     this.generalMessagePromptText = text;
                     this.generalMessagePromptTitle = title;
@@ -516,8 +571,7 @@ class Main {
                     if (event) {
                         event.preventDefault();
                     }
-                    
-                    this.$store.dispatch(STOP_UPDATE_TIME_ACTIVE_TIMER);
+
                     // Update the user's active time one last time.
                     await this.$store.dispatch(UPDATE_ACTIVE_TIME);
                     this.$store.dispatch(CLOSE_ALL_MODULES);
@@ -536,29 +590,29 @@ class Main {
 
                 closeModule(module) {
                     let timeout = null;
-                    
+
                     const callback = () => {
                         if (timeout) {
                             clearTimeout(timeout);
                         }
-                        
+
                         this.$store.dispatch(CLOSE_MODULE, module);
                     };
-                    
+
                     // In case the module does not handle the moduleClosing event.
                     timeout = setTimeout(callback, 800);
-                    
+
                     if (!module || !module.id) {
                         callback();
                         return;
                     }
-                    
+
                     const moduleIframe = document.getElementById(module.id);
                     if (!moduleIframe || !moduleIframe.contentWindow || !moduleIframe.contentWindow.document) {
                         callback();
                         return;
                     }
-                    
+
                     moduleIframe.contentWindow.document.dispatchEvent(new CustomEvent("moduleClosing", { detail: callback }));
                 },
 
@@ -581,33 +635,45 @@ class Main {
                 },
 
                 openWiserIdPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserIdPrompt.open();
                 },
 
                 openWiserEntityTypePrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserEntityTypePrompt.open();
                 },
 
                 openChangePasswordPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.changePasswordPrompt.open();
                 },
 
                 openWiserBranchesPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserBranchesPrompt.open();
                 },
 
                 openCreateBranchPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserCreateBranchPrompt.open();
                     this.$refs.wiserBranchesPrompt.close();
                 },
 
                 openMergeBranchPrompt(event) {
-                    event.preventDefault();
+                    if (event) {
+                        event.preventDefault();
+                    }
                     this.$refs.wiserMergeBranchPrompt.open();
                     this.$refs.wiserBranchesPrompt.close();
                 },
@@ -699,14 +765,14 @@ class Main {
                     }
 
                     await this.$store.dispatch(CREATE_BRANCH, this.createBranchSettings);
-                    
+
                     if (!this.createBranchError) {
                         this.$refs.wiserCreateBranchPrompt.close();
                         this.showGeneralMessagePrompt("De branch staat klaar om gemaakt te worden. U krijgt een bericht wanneer dit voltooid is.");
-                        
+
                         return true;
                     }
-                    
+
                     return false;
                 },
 
@@ -714,7 +780,7 @@ class Main {
                     if (this.isMainBranch && (!this.branchMergeSettings.selectedBranch || !this.branchMergeSettings.selectedBranch.id)) {
                         return false;
                     }
-                    
+
                     if (this.mergeBranchResult && this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0 && !this.areAllConflictsHandled) {
                         return false;
                     }
@@ -729,7 +795,7 @@ class Main {
                     if (this.mergeBranchError) {
                         return false;
                     }
-                    
+
                     if (this.mergeBranchResult.conflicts && this.mergeBranchResult.conflicts.length > 0) {
                         this.openMergeConflictsPrompt();
                         return true;
@@ -752,27 +818,27 @@ class Main {
                         this.showGeneralMessagePrompt("Kies a.u.b. of u de branch in Wiser wilt openen of op uw website.");
                         return false;
                     }
-                    
+
                     if (this.openBranchSettings.selectedBranchType.id === 'website' && !this.openBranchSettings.websiteUrl) {
                         this.showGeneralMessagePrompt("Vul a.u.b. de URL van uw website in.");
                         return false;
                     }
-                    
+
                     if (!this.openBranchSettings || !this.openBranchSettings.selectedBranch|| !this.openBranchSettings.selectedBranch.id) {
                         this.showGeneralMessagePrompt("Kies a.u.b. welke branch u wilt openen.");
                         return false;
                     }
-                    
+
                     if (copy) {
                         await navigator.clipboard.writeText(this.openBranchUrl);
                         this.showGeneralMessagePrompt("De URL is gekopieerd naar uw klembord.");
                         return;
                     }
-                    
+
                     window.open(this.openBranchUrl, "_blank");
                     this.$refs.wiserBranchesPrompt.close();
                 },
-                
+
                 updateBranchChangeList(isChecked, setting, type, operation) {
                     if (type === "all") {
                         for (let entityOrSettingType of this.branchChanges[setting]) {
@@ -800,7 +866,7 @@ class Main {
                         this.branchMergeSettings[setting][type].create = isChecked;
                         this.branchMergeSettings[setting][type].update = isChecked;
                         this.branchMergeSettings[setting][type].delete = isChecked;
-                    }  
+                    }
                 },
 
                 async clearWebsiteCache() {
@@ -808,7 +874,7 @@ class Main {
                         await this.$store.dispatch(CLEAR_CACHE_ERROR, "Vul a.u.b. een geldige URL in.");
                         return false;
                     }
-                    
+
                     if (!this.clearCacheSettings.areas || this.clearCacheSettings.areas.length === 0) {
                         await this.$store.dispatch(CLEAR_CACHE_ERROR, "Kies a.u.b. minimaal 1 cache optie om te legen.");
                         return false;
@@ -835,9 +901,23 @@ class Main {
                     this.$store.dispatch(USER_BACKUP_CODES_GENERATED);
                     return false;
                 },
-                
+
                 async reloadModules() {
                     await this.$store.dispatch(MODULES_REQUEST);
+                },
+
+                openConfigurationModule(event) {
+                    if (event) {
+                        event.preventDefault();
+                    }
+
+                    const module = this.modules.find(module => module.type === "Configuration");
+                    if (!module) {
+                        kendo.alert("Configuratiemodule niet gevonden. Ververs a.u.b. de pagina en probeer het opnieuw, of neem contact op met ons.");
+                        return;
+                    }
+
+                    this.openModule(module.moduleId);
                 },
 
                 onGenerateTotpBackupCodesPromptClose(event) {
@@ -874,7 +954,7 @@ class Main {
                     event.preventDefault();
                     this.$store.dispatch(TOGGLE_PIN_MODULE, moduleId);
                 },
-                
+
                 async onWiserBranchesPromptOpen() {
                     await this.$store.dispatch(IS_MAIN_BRANCH);
                     await this.$store.dispatch(GET_BRANCHES);
@@ -887,7 +967,7 @@ class Main {
                         this.openBranchSettings.selectedBranch = this.branches.find(branch => branch.id === this.user.currentBranchId);
                     }
                 },
-                
+
                 async onWiserMergeBranchPromptOpen(sender) {
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
@@ -898,7 +978,7 @@ class Main {
                         this.onSelectedBranchChange();
                     }
                 },
-                
+
                 async onWiserCreateBranchPromptOpen() {
                     await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
                     await this.$store.dispatch(GET_DATA_SELECTORS_FOR_BRANCHES);
@@ -914,7 +994,7 @@ class Main {
                             }
                         }
                     };
-                    
+
                     for (let entity of this.entitiesForBranches) {
                         this.createBranchSettings.entities[entity.id] = {
                             mode: 0,
@@ -927,13 +1007,13 @@ class Main {
                     let selectedBranchId = event;
                     if (!selectedBranchId) {
                         selectedBranchId = 0;
-                    } 
+                    }
                     else if (selectedBranchId.target) {
                         selectedBranchId = event.target.value.id;
                     }
-                    
+
                     await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
-                    
+
                     // Clear all checkboxes.
                     this.branchMergeSettings.entities.all.everything = false;
                     this.branchMergeSettings.settings.all.everything = false;
@@ -971,7 +1051,7 @@ class Main {
                 onCacheTypeChecked(event, cacheType) {
                     const isChecked = event.currentTarget.checked;
                     const allTypes = [...document.querySelectorAll(".cache-type")].map(input => input.value);
-                    
+
                     if (cacheType === "all") {
                         if (!isChecked) {
                             this.clearCacheSettings.areas = [];

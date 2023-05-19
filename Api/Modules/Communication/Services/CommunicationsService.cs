@@ -39,7 +39,7 @@ public class CommunicationsService : ICommunicationsService, IScopedService
 
         return new ServiceResult<CommunicationSettingsModel>(result);
     }
-    
+
     /// <inheritdoc />
     public async Task<ServiceResult<List<CommunicationSettingsModel>>> GetSettingsAsync(CommunicationTypes? type = null, bool namesOnly = false)
     {
@@ -76,6 +76,19 @@ public class CommunicationsService : ICommunicationsService, IScopedService
         }
 
         await gclCommunicationsService.DeleteSettingsAsync(id, IdentityHelpers.GetUserName(identity, true));
-        return new ServiceResult<bool>(true);
+        return new ServiceResult<bool>(true)
+        {
+            StatusCode = HttpStatusCode.NoContent
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> SendEmailAsync(ClaimsIdentity identity, SingleCommunicationModel communication)
+    {
+        await gclCommunicationsService.SendEmailAsync(communication);
+        return new ServiceResult<bool>(true)
+        {
+            StatusCode = HttpStatusCode.NoContent
+        };
     }
 }
