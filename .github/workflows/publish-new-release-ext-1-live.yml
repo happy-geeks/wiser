@@ -1,6 +1,7 @@
 name: Publish external server 1 live
 
 on:
+  workflow_dispatch:
   push:
     tags:
     - v*
