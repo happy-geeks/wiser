@@ -8,7 +8,7 @@ on:
 jobs:
   build:
 
-    runs-on: wiser-ext-1-test
+    runs-on: wiser-ext-1-live
 
     steps:
     - uses: actions/checkout@v2
