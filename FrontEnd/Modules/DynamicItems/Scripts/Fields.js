@@ -884,7 +884,7 @@ export class Fields {
             // Try to determine the entity type. If this button is located within a window, that window element
             // might have the entity type set as one of its data properties.
             let entityType;
-            const window = event.sender.element.closest("div.k-window-content");
+            const window = event.sender.element.closest("div.entity-container");
             if (window) {
                 entityType = window.data("entityType");
                 if (!entityType && window.data("entityTypeDetails")) {
