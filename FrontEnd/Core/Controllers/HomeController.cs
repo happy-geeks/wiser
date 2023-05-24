@@ -25,9 +25,13 @@ namespace FrontEnd.Core.Controllers
         public IActionResult Index()
         {
             var viewModel = baseService.CreateBaseViewModel();
+            
             var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
-            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
-
+            if (partnerStylesDirectory.Exists)
+            {
+                viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
+            }
+            
             return View(viewModel);
         }
     }

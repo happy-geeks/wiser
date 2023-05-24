@@ -811,7 +811,7 @@
                 <div class="form-row">
                     <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser?</label>
                     <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
-                    <p class="hint">Alleen het subdomein, met kleine letters, bijvoorbeeld 'happygeeks'. Dit is verplicht voor Wiser klanten, die moeten kunnen inloggen via een subdomein, zoals 'happygeeks.wiser.nl'.</p>
+                    <p class="hint">Het subdomein van Wiser wat gebruikt moet gaan worden om in te loggen voor deze klant. Voer hier alleen het subdomein in, met kleine letters, bijvoorbeeld "happygeeks". Deze klant kan dan beheerd worden via happygeeks.wiser3.nl.</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
                     <ins class="icon-line-alert"></ins>
@@ -854,7 +854,7 @@
                         <label for="hostDev">Domein dev</label>
                         <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
                         <p class="hint">
-                            Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
+                            Het domein wat straks voor de dev gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
                         </p>
                     </div>

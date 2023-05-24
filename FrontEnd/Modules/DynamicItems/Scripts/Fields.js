@@ -884,7 +884,7 @@ export class Fields {
             // Try to determine the entity type. If this button is located within a window, that window element
             // might have the entity type set as one of its data properties.
             let entityType;
-            const window = event.sender.element.closest("div.k-window-content");
+            const window = event.sender.element.closest("div.entity-container");
             if (window) {
                 entityType = window.data("entityType");
                 if (!entityType && window.data("entityTypeDetails")) {
@@ -1765,7 +1765,7 @@ export class Fields {
                         }
                     });
                 };
-                
+
                 switch (action.type) {
                     // Opens a new tab/window in the browser of the user with the given URL. A tab will be opened for every selected item.
                     case "openUrl": {
@@ -2283,7 +2283,7 @@ export class Fields {
 
                         break;
                     }
-                    
+
                     case "actionConfirmDialog": {
                         try {
                             await Wiser.showConfirmDialog(action.text || "Wilt u doorgaan met de actie?", action.title || "Doorgaan", "Annuleren", "Doorgaan");
@@ -2743,8 +2743,8 @@ export class Fields {
                                 }
 
                                 let files = [];
-                                if (currentAction.emailDefaultAttachmentsPropertyName) {
-                                    const initialFilesJson = currentTemplateDetails.property_[currentAction.emailDefaultAttachmentsPropertyName] || "[]";
+                                if (currentAction.emailDefaultAttachmentsPropertyName && currentTemplateDetails.details && currentTemplateDetails.details.length > 0) {
+                                    const initialFilesJson = currentTemplateDetails.details.find(detail => detail.key === currentAction.emailDefaultAttachmentsPropertyName) || "[]";
                                     files = JSON.parse(initialFilesJson);
                                 }
 

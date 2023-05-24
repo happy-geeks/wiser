@@ -46,6 +46,15 @@ namespace Api.Modules.Items.Interfaces
         Task<ServiceResult<WiserItemModel>> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments, ClaimsIdentity identity);
 
         /// <summary>
+        /// Change the environments that an item should be visible in.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">The entity type of the item.</param>
+        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        Task<ServiceResult<bool>> ChangeEnvironmentAsync(string encryptedId, string entityType, Environments newEnvironments, ClaimsIdentity identity);
+
+        /// <summary>
         /// Create a new item.
         /// </summary>
         /// <param name="item">The item to create.</param>

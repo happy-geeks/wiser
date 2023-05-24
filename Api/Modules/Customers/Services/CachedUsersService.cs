@@ -150,7 +150,7 @@ namespace Api.Modules.Customers.Services
         public async Task<string> GetUserEmailAddressAsync(ulong id)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"users_{databaseConnection.GetDatabaseNameForCaching()}_{id}_email",
+            return await cache.GetOrAddAsync($"users_{databaseConnection.GetDatabaseNameForCaching()}_{id}_email",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
@@ -162,7 +162,7 @@ namespace Api.Modules.Customers.Services
         public async Task<UserModel> GetWiserSettingsForUserAsync(string encryptionKey)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"user_data_wiser_settings_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAddAsync($"user_data_wiser_settings_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
@@ -198,7 +198,7 @@ namespace Api.Modules.Customers.Services
         public async Task<ServiceResult<List<RoleModel>>> GetRolesAsync(bool includePermissions = false)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"user_roles_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAddAsync($"user_roles_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
