@@ -125,5 +125,12 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="id">The ID of the current data selector, which will be excluded from the check. This will be 0 if it's a new data selector.</param>
         /// <returns>Name of a data selector that has "show in dashboard" enabled, or <see langword="null">null</see> if no data selector has that option enabled.</returns>
         Task<ServiceResult<string>> CheckDashboardConflictAsync(int id);
+
+        /// <summary>
+        /// Check whether a data selector with the given name exists.
+        /// </summary>
+        /// <param name="name">The name of the data selector.</param>
+        /// <returns>The ID of the data selector if it exists, or 0 if it doesn't.</returns>
+        Task<ServiceResult<int>> ExistsAsync(string name);
     }
 }

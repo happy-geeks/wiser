@@ -670,7 +670,7 @@ VALUES(?roleId, ?id, 15)";
             {
                 return new ServiceResult<JToken>(response.Result);
             }
-            
+
             // Combine object to key value pair.
             var combinedResult = new JObject();
 
@@ -678,7 +678,7 @@ VALUES(?roleId, ?id, 15)";
             {
                 combinedResult.Add(item["key"].ToString(), item["value"]);
             }
-            
+
             return new ServiceResult<JToken>(combinedResult);
         }
 
@@ -686,8 +686,16 @@ VALUES(?roleId, ?id, 15)";
         public async Task<ServiceResult<string>> CheckDashboardConflictAsync(int id)
         {
             clientDatabaseConnection.AddParameter("id", id);
-            var getDataSelectorResult = await clientDatabaseConnection.GetAsync("SELECT `name` FROM wiser_data_selector WHERE id <> ?id AND show_in_dashboard = 1 LIMIT 1");
+            var getDataSelectorResult = await clientDatabaseConnection.GetAsync($"SELECT `name` FROM {WiserTableNames.WiserDataSelector} WHERE id <> ?id AND show_in_dashboard = 1 LIMIT 1");
             return new ServiceResult<string>(getDataSelectorResult.Rows.Count == 0 ? null : getDataSelectorResult.Rows[0].Field<string>("name"));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> ExistsAsync(string name)
+        {
+            clientDatabaseConnection.AddParameter("name", name);
+            var getDataSelectorResult = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name LIMIT 1");
+            return new ServiceResult<int>(getDataSelectorResult.Rows.Count == 0 ? 0 : getDataSelectorResult.Rows[0].Field<int>("id"));
         }
     }
 }
