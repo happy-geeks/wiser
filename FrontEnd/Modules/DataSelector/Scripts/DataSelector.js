@@ -1079,6 +1079,7 @@ const moduleSettings = {
                 showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
                 availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
                 showInDashboard: document.getElementById("showInDashboard").checked ? 1 : 0,
+                availableForBranches: document.getElementById("availableForBranches").checked ? 1 : 0,
                 allowedRoles: this.allowedRoles.value().join()
             };
 
