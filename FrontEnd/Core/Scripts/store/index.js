@@ -936,7 +936,6 @@ const branchesModule = {
         
         [GET_DATA_SELECTORS_FOR_BRANCHES](state, dataSelectors) {
             state.dataSelectors = dataSelectors;
-            console.log(state);
         }
     },
 
