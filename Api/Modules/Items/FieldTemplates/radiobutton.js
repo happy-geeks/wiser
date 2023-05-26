@@ -1,13 +1,13 @@
 ﻿(function() {
     Wiser.api({
-        url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FOR_RADIO_BUTTONS?propertyid={propertyId}&itemId={itemId}",
-        method: "GET"
+        url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}",
+        method: "POST"
     }).then(function(results) {
         var field = $("#field_{propertyIdWithSuffix}");
         var defaultValue = field.data("defaultValue");
-    
-        for (var i = 0; i < results.length; i++) {
-            var result = results[i];
+
+        for (var i = 0; i < results.otherData.length; i++) {
+            var result = results.otherData[i];
             var label = $("<label>").addClass("radio");
             var input = $("<input>")
                 .attr("type", "radio")
@@ -22,7 +22,7 @@
             input.change(window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields));
             field.append(label);
         }
-	
+
         {customScript}
     });
 })();

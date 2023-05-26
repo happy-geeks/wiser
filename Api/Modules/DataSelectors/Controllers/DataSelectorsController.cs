@@ -66,7 +66,20 @@ namespace Api.Modules.DataSelectors.Controllers
         {
             return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule)).GetHttpResponseMessage();
         }
-        
+
+        /// <summary>
+        /// Check whether a data selector with the given name exists.
+        /// </summary>
+        /// <param name="name">The name of the data selector.</param>
+        /// <returns>The ID of the data selector if it exists, or 0 if it doesn't.</returns>
+        [HttpGet]
+        [Route("{name}/exists")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ExistsAsync(string name)
+        {
+            return (await dataSelectorsService.ExistsAsync(name)).GetHttpResponseMessage();
+        }
+
         /// <summary>
         /// Get templates that can be used with data selectors.
         /// </summary>
@@ -199,7 +212,7 @@ namespace Api.Modules.DataSelectors.Controllers
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var html = await reader.ReadToEndAsync();
-            
+
             // Workaround for Axios, couldn't find a way to have it not add quotes around the HTML.
             if (html.StartsWith("\"") && html.EndsWith("\""))
             {
@@ -241,7 +254,7 @@ namespace Api.Modules.DataSelectors.Controllers
             var dataSelectorName = await dataSelectorsService.CheckDashboardConflictAsync(id);
             return Content(dataSelectorName.ModelObject, MediaTypeNames.Text.Plain);
         }
-        
+
         /// <summary>
         /// Combine two <see cref="WiserDataSelectorRequestModel"/>s. Used to combine information from the body with the information from the query.
         /// </summary>
