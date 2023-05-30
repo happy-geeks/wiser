@@ -64,13 +64,14 @@ namespace Api.Modules.EntityProperties.Controllers
         /// <param name="onlyEntityTypesWithDisplayName">Only get properties with a display name.</param>
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
+        /// <param name="orderByName">Optional: Whether to order by name (true) or by order number (false). Default value is true.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
         [HttpGet]
         [Route("{entityName}")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityName, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false)
+        public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityName, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false, [FromQuery] bool orderByName = true)
         {
-            return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityName, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty)).GetHttpResponseMessage();
+            return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityName, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty, orderByName)).GetHttpResponseMessage();
         }
 
         /// <summary>

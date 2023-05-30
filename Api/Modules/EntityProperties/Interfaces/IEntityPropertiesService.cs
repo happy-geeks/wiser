@@ -35,8 +35,9 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="onlyEntityTypesWithDisplayName">Only get properties with a display name.</param>
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
+        /// <param name="orderByName">Optional: Whether to order by name (true) or by order number (false). Default value is true.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
-        Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false);
+        Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true);
 
         /// <summary>
         /// Creates a new entity property.

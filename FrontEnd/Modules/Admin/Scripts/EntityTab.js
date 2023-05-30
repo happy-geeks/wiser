@@ -633,7 +633,14 @@ export class EntityTab {
         this.isSaveSelect = false;
         //LISTVIEWS
         this.listOfTabProperties = $("#tabNameProperties").kendoListView({
-            template: '<li class="sortable" data-item="${id}" data-ordering="${ordering}" data-display-name="${displayName}">${displayName}</li>',
+            //template: '<li class="sortable" data-item="${id}" data-ordering="${ordering}" data-display-name="${displayName}">${displayName}</li>',
+            template: `
+<li class="k-group-title">#= data.value #</li>
+<ul class="properties">
+# for (let item of data.items) { #
+<li class="sortable" data-item="#= item.id #" data-ordering="#= item.ordering #" data-display-name="#= item.displayName #">#= item.displayName #</li>
+# } #
+</ul>`,
             dataTextField: "displayName",
             dataValueField: "id",
             selectable: true,
@@ -2305,7 +2312,29 @@ export class EntityTab {
         $("#entityView .delBtn").toggleClass("hidden", !selectedItem.id);
 
         // set tabnames
-        await this.setTabNameDropDown();
+        //await this.setTabNameDropDown();
+
+        this.listOfTabProperties.setDataSource(new kendo.data.DataSource({
+            serverFiltering: true,
+            transport: {
+                read: {
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}?orderByName=false`,
+                }
+            },
+            group: {
+                field: "tabName",
+                dir: "asc"/*,
+                compare: function (a, b) {
+                    if (a.items.length === b.items.length) {
+                        return 0;
+                    } else if (a.items.length > b.items.length) {
+                        return 1;
+                    } else {
+                        return -1;
+                    }
+                }*/
+            }
+        }));
 
         // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
         this.queryAfterInsert.refresh();

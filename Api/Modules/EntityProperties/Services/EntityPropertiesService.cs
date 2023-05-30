@@ -74,7 +74,7 @@ namespace Api.Modules.EntityProperties.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false)
+        public async Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
@@ -84,7 +84,7 @@ namespace Api.Modules.EntityProperties.Services
                             WHERE entity_name = ?entityName
                             {(onlyEntityTypesWithDisplayName ? "AND display_name IS NOT NULL AND display_name <> ''" : "")}
                             {(onlyEntityTypesWithPropertyName ? "AND property_name IS NOT NULL AND property_name <> ''" : "")}
-                            ORDER BY display_name ASC";
+                            ORDER BY {(orderByName ? "display_name" : "ordering")} ASC";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             var results = new List<EntityPropertyModel>();
@@ -951,50 +951,62 @@ AND id <> ?id;");
 
         private static EntityPropertyModel FromDataRow(DataRow dataRow)
         {
-            var result = new EntityPropertyModel();
-            result.Id = dataRow.Field<int>("id");
-            result.ModuleId = Convert.ToInt32(dataRow["module_id"]);
-            result.EntityType = dataRow.Field<string>("entity_name");
-            result.LinkType = dataRow.Field<int?>("link_type") ?? 0;
-            result.PropertyName = dataRow.Field<string>("property_name");
-            result.LanguageCode = dataRow.Field<string>("language_code");
-            result.TabName = dataRow.Field<string>("tab_name");
-            result.GroupName = dataRow.Field<string>("group_name");
-            result.InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype"));
-            result.DisplayName = dataRow.Field<string>("display_name");
-            result.Ordering = Convert.ToInt32(dataRow["ordering"]);
-            result.Explanation = dataRow.Field<string>("explanation");
-            result.ExtendedExplanation = Convert.ToBoolean(dataRow["extended_explanation"]);
-            result.RegexValidation = dataRow.Field<string>("regex_validation");
-            result.Mandatory = Convert.ToBoolean(dataRow["mandatory"]);
-            result.ReadOnly = Convert.ToBoolean(dataRow["readonly"]);
-            result.DefaultValue = dataRow.Field<string>("default_value");
-            result.Width = Convert.ToInt32(dataRow["width"]);
-            result.Height = Convert.ToInt32(dataRow["height"]);
-            result.Options = dataRow.Field<string>("options");
-            result.DataQuery = dataRow.Field<string>("data_query");
-            result.ActionQuery = dataRow.Field<string>("action_query");
-            result.SearchQuery = dataRow.Field<string>("search_query");
-            result.SearchCountQuery = dataRow.Field<string>("search_count_query");
-            result.GridInsertQuery = dataRow.Field<string>("grid_insert_query");
-            result.GridUpdateQuery = dataRow.Field<string>("grid_update_query");
-            result.GridDeleteQuery = dataRow.Field<string>("grid_delete_query");
-            result.CustomScript = dataRow.Field<string>("custom_script");
-            result.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
-            result.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
-            result.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
-            result.LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]);
-            result.Overview = new EntityPropertyOverviewModel();
-            result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
-            result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
-            result.DependsOn = new EntityPropertyDependencyModel();
-            result.DependsOn.Action = ToDependencyAction(dataRow.Field<string>("depends_on_action"));
-            result.DependsOn.Field = dataRow.Field<string>("depends_on_field");
-            result.DependsOn.Operator = ToFilterOperator(dataRow.Field<string>("depends_on_operator"));
-            result.DependsOn.Value = dataRow.Field<string>("depends_on_value");
-            result.EnableAggregation = Convert.ToBoolean(dataRow["enable_aggregation"]);
-            result.AggregateOptions = dataRow.Field<string>("aggregate_options");
-            result.AccessKey = dataRow.Field<string>("access_key");
+            var result = new EntityPropertyModel
+            {
+                Id = dataRow.Field<int>("id"),
+                ModuleId = Convert.ToInt32(dataRow["module_id"]),
+                EntityType = dataRow.Field<string>("entity_name"),
+                LinkType = dataRow.Field<int?>("link_type") ?? 0,
+                PropertyName = dataRow.Field<string>("property_name"),
+                LanguageCode = dataRow.Field<string>("language_code"),
+                TabName = dataRow.Field<string>("tab_name"),
+                GroupName = dataRow.Field<string>("group_name"),
+                InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype")),
+                DisplayName = dataRow.Field<string>("display_name"),
+                Ordering = Convert.ToInt32(dataRow["ordering"]),
+                Explanation = dataRow.Field<string>("explanation"),
+                ExtendedExplanation = Convert.ToBoolean(dataRow["extended_explanation"]),
+                RegexValidation = dataRow.Field<string>("regex_validation"),
+                Mandatory = Convert.ToBoolean(dataRow["mandatory"]),
+                ReadOnly = Convert.ToBoolean(dataRow["readonly"]),
+                DefaultValue = dataRow.Field<string>("default_value"),
+                Width = Convert.ToInt32(dataRow["width"]),
+                Height = Convert.ToInt32(dataRow["height"]),
+                Options = dataRow.Field<string>("options"),
+                DataQuery = dataRow.Field<string>("data_query"),
+                ActionQuery = dataRow.Field<string>("action_query"),
+                SearchQuery = dataRow.Field<string>("search_query"),
+                SearchCountQuery = dataRow.Field<string>("search_count_query"),
+                GridInsertQuery = dataRow.Field<string>("grid_insert_query"),
+                GridUpdateQuery = dataRow.Field<string>("grid_update_query"),
+                GridDeleteQuery = dataRow.Field<string>("grid_delete_query"),
+                CustomScript = dataRow.Field<string>("custom_script"),
+                AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]),
+                SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]),
+                LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style")),
+                LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]),
+                Overview = new EntityPropertyOverviewModel
+                {
+                    Visible = Convert.ToBoolean(dataRow["visible_in_overview"]),
+                    Width = Convert.ToInt32(dataRow["overview_width"])
+                },
+                DependsOn = new EntityPropertyDependencyModel
+                {
+                    Action = ToDependencyAction(dataRow.Field<string>("depends_on_action")),
+                    Field = dataRow.Field<string>("depends_on_field"),
+                    Operator = ToFilterOperator(dataRow.Field<string>("depends_on_operator")),
+                    Value = dataRow.Field<string>("depends_on_value")
+                },
+                EnableAggregation = Convert.ToBoolean(dataRow["enable_aggregation"]),
+                AggregateOptions = dataRow.Field<string>("aggregate_options"),
+                AccessKey = dataRow.Field<string>("access_key")
+            };
+
+            if (String.IsNullOrWhiteSpace(result.TabName))
+            {
+                result.TabName = "Gegevens";
+            }
+
             return result;
         }
     }
