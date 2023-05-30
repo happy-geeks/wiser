@@ -656,8 +656,8 @@ export class EntityTab {
             clearButton: false,
             filter: "contains",
             multiple: "multiple",
-            dataTextField: "entityType",
-            dataValueField: "entityType",
+            dataTextField: "displayName",
+            dataValueField: "id",
             dataSource: []
         }).data("kendoMultiSelect");
 
@@ -2846,7 +2846,7 @@ export class EntityTab {
                 entityProperties.options.mainImageId = this.multiSelectMainImageId.value();
                 entityProperties.options.mainImageUrl = $("#multiSelectMainImageUrl").val();
                 entityProperties.options.imagePropertyName = $("#multiSelectImagePropertyName").val();
-                entityProperties.options.saveValueAsItemLink = document.getElementById("saveValueAsItemLink").checked;
+entityProperties.options.saveValueAsItemLink = document.getElementById("saveValueAsItemLink").checked;
 
                 switch (this.dataSourceFilter.dataItem().id) {
                     case this.base.dataSourceType.PANEL1.id: {
@@ -3475,7 +3475,7 @@ export class EntityTab {
 
     async getAcceptedChildTypes(moduleId, acceptedChildTypes) {
         const dsAcceptedChildTypes = await Wiser.api({
-            url: `${this.base.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${encodeURIComponent(moduleId)}`,
+            url: `${this.base.settings.wiserApiRoot}entity-types?moduleId=${encodeURIComponent(moduleId)}`,
             method: "GET"
         });
         this.acceptedChildTypes.setDataSource(dsAcceptedChildTypes);
@@ -3713,8 +3713,7 @@ export class EntityTab {
                 this.multiSelectMainImageId.value(getOptionValueAndDeleteForOptionsField("mainImageId", ""));
                 $("#multiSelectMainImageUrl").val(getOptionValueAndDeleteForOptionsField("mainImageUrl", ""));
                 $("#multiSelectImagePropertyName").val(getOptionValueAndDeleteForOptionsField("imagePropertyName", ""));
-                this.dataSourceDataSelector.value(dataSelectorId);
-
+this.dataSourceDataSelector.value(dataSelectorId);
                 let panel = "";
                 // if dataQuery is set, set the codemirror field to the field's value
                 if (resultSet.dataQuery) {

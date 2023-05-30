@@ -75,15 +75,15 @@ namespace Api.Modules.Modules.Services
         {
             var modulesForAdmins = new List<int>
             {
-                700, // Stamgegevens
-                706, // Data selector
-                709, // Search module
-                737, // Admin
-                738, // Import / export
-                806, // Wiser users
-                5505, // Webpagina's
-                1, // Templates
-                6000 // Version control
+                Constants.DefaultMasterDataModuleId,
+                Constants.DefaultDataSelectorModuleId,
+                Constants.DefaultSearchModuleId,
+                Constants.DefaultAdminModuleId,
+                Constants.DefaultImportExportModuleId,
+                Constants.DefaultWiserUsersModuleId,
+                Constants.DefaultWebpagesModuleId,
+                Constants.DefaultTemplatesModuleId,
+                Constants.DefaultVersionControlModuleId
             };
 
             var isAdminAccount = IdentityHelpers.IsAdminAccount(identity);
@@ -303,7 +303,7 @@ UNION
                     var isPinned = pinnedModules.Contains(moduleId);
                     switch (moduleId)
                     {
-                        case 700: // Stamgegevens
+                        case Constants.DefaultMasterDataModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
                             if (!results.ContainsKey(groupName))
                             {
@@ -325,7 +325,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 706: // Data selector
+                        case Constants.DefaultDataSelectorModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -347,7 +347,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 709: // Search
+                        case Constants.DefaultSearchModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -369,7 +369,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 737: // Admin
+                        case Constants.DefaultAdminModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
                             if (!results.ContainsKey(groupName))
                             {
@@ -391,7 +391,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 738: // Import/export
+                        case Constants.DefaultImportExportModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -413,7 +413,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 806: // Wiser users
+                        case Constants.DefaultWiserUsersModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
                             if (!results.ContainsKey(groupName))
                             {
@@ -435,7 +435,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 5505: // Webpagina's
+                        case Constants.DefaultWebpagesModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
                             if (!results.ContainsKey(groupName))
                             {
@@ -457,7 +457,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 6000: // Version control
+                        case Constants.DefaultVersionControlModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Systeem";
                             if (!results.ContainsKey(groupName))
                             {
@@ -478,7 +478,7 @@ UNION
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
-                        case 1: // Templates
+                        case Constants.DefaultTemplatesModuleId:
                             groupName = isPinned ? PinnedModulesGroupName : "Systeem";
                             if (!results.ContainsKey(groupName))
                             {

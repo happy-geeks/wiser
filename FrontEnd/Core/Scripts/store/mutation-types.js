@@ -63,6 +63,8 @@ export const GET_BRANCH_CHANGES = "getBranchChanges"
 export const HANDLE_CONFLICT = "handleConflict";
 export const HANDLE_MULTIPLE_CONFLICTS = "handleMultipleConflicts";
 
+export const GET_DATA_SELECTORS_FOR_BRANCHES = "getDataSelectorsForBranches";
+
 // Cache module.
 export const CLEAR_CACHE = "clearCache";
 export const CLEAR_CACHE_SUCCESS = "clearCacheSuccess";

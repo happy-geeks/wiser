@@ -35,6 +35,7 @@ import {
     GET_ENTITIES_FOR_BRANCHES,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
+    GET_DATA_SELECTORS_FOR_BRANCHES,
     IS_MAIN_BRANCH,
     LOAD_ENTITY_TYPES_OF_ITEM_ID,
     MERGE_BRANCH,
@@ -95,18 +96,32 @@ class Main {
             baseURL: this.appSettings.apiBase
         });
 
+        let stopRetrying = false;
         this.api.interceptors.response.use(undefined, async (error) => {
-            // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
-            if (error.response.status === 401) {
-                // If we ever get an unauthorized, logout the user.
-                if (error.response.config.url === "/connect/token") {
-                    this.vueApp.$store.dispatch(AUTH_LOGOUT);
-                } else {
-                    await this.vueApp.$store.dispatch(AUTH_REQUEST, { gotUnauthorized: true });
-                }
-            }
+            return new Promise(async (resolve, reject) => {
+                // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
+                if (error.response.status === 401 && !stopRetrying) {
+                    // If we ever get an unauthorized, logout the user.
+                    if (error.response.config.url === "/connect/token") {
+                        this.vueApp.$store.dispatch(AUTH_LOGOUT);
+                    } else {
+                        // Re-authenticate with the refresh token.
+                        await this.vueApp.$store.dispatch(AUTH_REQUEST, {gotUnauthorized: true});
+                        error.config.headers.Authorization = `Bearer ${localStorage.getItem("accessToken")}`;
 
-            return Promise.reject(error);
+                        // Retry the original request.
+                        this.api.request(error.config).then(response => {
+                            stopRetrying = false;
+                            resolve(response);
+                        }).catch((newError) => {
+                            stopRetrying = true;
+                            reject(newError);
+                        })
+                    }
+                }
+
+                reject(error);
+            });
         });
 
         if (this.appSettings.markerIoToken) {
@@ -229,7 +244,8 @@ class Main {
                             all: {
                                 mode: 0
                             }
-                        }
+                        },
+                        dataSelectors: []
                     },
                     branchMergeSettings: {
                         selectedBranch: {
@@ -355,6 +371,9 @@ class Main {
                 },
                 entitiesForBranches() {
                     return this.$store.state.branches.entities;
+                },
+                dataSelectorsForBranches() {
+                    return this.$store.state.branches.dataSelectors;
                 },
                 totalAmountOfItemsForCreatingBranch() {
                     return this.$store.state.branches.entities.reduce((accumulator, entity) => {
@@ -962,20 +981,24 @@ class Main {
 
                 async onWiserCreateBranchPromptOpen() {
                     await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                    await this.$store.dispatch(GET_DATA_SELECTORS_FOR_BRANCHES);
+                    
                     this.createBranchSettings = {
                         name: null,
                         startMode: "direct",
                         startOn: null,
                         entities: {
                             all: {
-                                mode: 0
+                                mode: 0,
+                                dataSelector: 0
                             }
                         }
                     };
 
                     for (let entity of this.entitiesForBranches) {
                         this.createBranchSettings.entities[entity.id] = {
-                            mode: 0
+                            mode: 0,
+                            dataSelector: 0
                         };
                     }
                 },

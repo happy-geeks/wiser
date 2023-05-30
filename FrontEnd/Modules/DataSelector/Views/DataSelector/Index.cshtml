@@ -48,7 +48,7 @@
 
                     <div class="item">
                         <h4><label>Entiteit van het type</label></h4>
-                        <select id="selectEntity" class="drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="text" data-data-value-field="value"></select>
+                        <select id="selectEntity" class="drop-down-list" data-option-label="Maak uw keuze..." data-data-text-field="displayName" data-data-value-field="id"></select>
                     </div>
 
                     <div id="connectionBlocks"></div>
@@ -121,6 +121,14 @@
                             <span>Toon op dashboard</span>
                         </label>
                         <div class="form-hint"><span>Zorgt ervoor dat het resultaat van deze dataselector getoond wordt in het "dataselector" blok van het dashboard</span></div>
+                    </div>
+
+                    <div class="item">
+                        <label class="checkbox">
+                            <input type="checkbox" id="availableForBranches" />
+                            <span>Beschikbaar maken tijdens het aanmaken van branches.</span>
+                        </label>
+                        <div class="form-hint"><span>Zorgt ervoor dat het resultaat van deze dataselector wordt gebruikt bij het aanmaken van branches</span></div>
                     </div>
                     
                     <div class="item">

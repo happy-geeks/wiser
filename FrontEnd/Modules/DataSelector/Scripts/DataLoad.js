@@ -116,7 +116,7 @@
             const firstConnectionBlock = connectionBlocksContainer.querySelector(".connectionBlock");
 
             window.processing.addProcess("dataSelectorLoad");
-            const response = await Wiser.api({ 
+            const response = await Wiser.api({
                 url: `${this.dataSelector.settings.serviceRoot}/GET_DATA_SELECTOR_BY_ID`,
                 method: "GET",
                 data: { id: id }
@@ -158,8 +158,6 @@
             }
 
             // Set entity type selection.
-            await this.dataSelector.updateAvailableEntityTypes();
-
             let mainEntityName;
             if (json.main.hasOwnProperty("entityName")) {
                 mainEntityName = json.main.entityName;
@@ -351,6 +349,10 @@
                 if (typeof savedData.showInDashboard === "boolean") {
                     document.getElementById("showInDashboard").checked = savedData.showInDashboard;
                 }
+                
+                if (typeof savedData.availableForBranches === "boolean") {
+                    document.getElementById("availableForBranches").checked = savedData.availableForBranches;
+                }
 
                 if (savedData.allowedRoles) {
                     $("#allowedRoles").getKendoMultiSelect().value(savedData.allowedRoles.split(","));
@@ -373,8 +375,8 @@
         }
 
         async removeById(id) {
-            return await Wiser.api({ 
-                url: `${this.dataSelector.settings.serviceRoot}/SET_DATA_SELECTOR_REMOVED`, 
+            return await Wiser.api({
+                url: `${this.dataSelector.settings.serviceRoot}/SET_DATA_SELECTOR_REMOVED`,
                 method: "GET",
                 data: { itemId: id }
             });

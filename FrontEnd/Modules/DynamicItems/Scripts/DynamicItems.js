@@ -801,7 +801,11 @@ const moduleSettings = {
                     }
                     case "HIDE_ITEM":
                     {
-                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        await Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/environment/${this.environmentsEnum.hidden}?entityType=${encodeURIComponent(entityType)}`,
+                            method: "PATCH",
+                            contentType: "application/json",
+                        });
                         selectedNode.closest("li").addClass("hiddenOnWebsite");
                         window.dynamicItems.notification.show({ message: "Item is verborgen" }, "success");
                         break;
@@ -809,7 +813,16 @@ const moduleSettings = {
                     case "PUBLISH_LIVE":
                     case "PUBLISH_ITEM":
                     {
-                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        const environments = this.environmentsEnum.development
+                            + this.environmentsEnum.test
+                            + this.environmentsEnum.acceptance
+                            + this.environmentsEnum.live;
+
+                        await Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/environment/${environments}?entityType=${encodeURIComponent(entityType)}`,
+                            method: "PATCH",
+                            contentType: "application/json",
+                        });
                         selectedNode.closest("li").removeClass("hiddenOnWebsite");
                         window.dynamicItems.notification.show({ message: "Item is zichtbaar gemaakt" }, "success");
                         break;
