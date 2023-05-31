@@ -1955,9 +1955,9 @@ export class Fields {
 
                         // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openWindow to open a newly created or updated item.
                         if (queryActionResult) {
-                            windowItemId = windowItemId.replace(/{itemId}/gi, queryActionResult.itemId || 0);
-                            windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
-                            windowLinkType = windowLinkType.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
+                            windowItemId = windowItemId.toString().replace(/{itemId}/gi, queryActionResult.itemId || 0);
+                            windowLinkId = windowLinkId.toString().replace(/{linkId}/gi, queryActionResult.linkId || 0);
+                            windowLinkType = windowLinkType.toString().replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
                         windowItemId = Wiser.doWiserItemReplacements(windowItemId, mainItemDetails);
 
