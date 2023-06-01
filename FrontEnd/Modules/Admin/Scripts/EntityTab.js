@@ -3081,6 +3081,7 @@ export class EntityTab {
         catch (exception) {
             console.error("Error while saving initial values", exception);
             this.base.showNotification("notification", `Item is niet succesvol aangepast, probeer het opnieuw`, "error");
+            document.querySelector(".loaderWrap").classList.remove("active");
         }
     }
 
