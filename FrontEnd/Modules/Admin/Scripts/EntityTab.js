@@ -1070,6 +1070,7 @@ export class EntityTab {
 
                 const id = e.sender.draggedElement[0].dataset.item;
                 await this.updateEntityPropertyOrdering(dataSource[e.oldIndex].ordering, dataSource[e.newIndex].ordering, id);
+                this.listOfTabProperties.refresh();
             },
             cursorOffset: {
                 top: -10,
