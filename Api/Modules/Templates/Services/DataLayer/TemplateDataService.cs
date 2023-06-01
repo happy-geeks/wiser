@@ -95,7 +95,11 @@ LIMIT 1");
     template.version, 
     template.changed_on, 
     template.changed_by, 
-    template.use_cache,   
+    template.use_cache,
+    template.cache_per_url,
+    template.cache_per_querystring,
+    template.cache_per_hostname,
+    template.cache_using_regex,
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
@@ -155,7 +159,11 @@ LIMIT 1");
                 Version = dataTable.Rows[0].Field<int>("version"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
-                UseCache = (TemplateCachingModes)dataTable.Rows[0].Field<int>("use_cache"),
+                UseCache = Convert.ToBoolean(dataTable.Rows[0]["use_cache"]),
+                CachePerUrl =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_url"]),
+                CachePerQueryString =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_querystring"]),
+                CacheUsingRegex =  Convert.ToBoolean(dataTable.Rows[0]["cache_using_regex"]),
+                CachePerHostName =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_hostname"]),
                 CacheMinutes = dataTable.Rows[0].Field<int>("cache_minutes"),
                 CacheLocation = (TemplateCachingLocations)dataTable.Rows[0].Field<int>("cache_location"),
                 CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
@@ -447,7 +455,11 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("editorValue", templateSettings.EditorValue);
             clientDatabaseConnection.AddParameter("minifiedValue", templateSettings.MinifiedValue);
             clientDatabaseConnection.AddParameter("type", templateSettings.Type);
-            clientDatabaseConnection.AddParameter("useCache", (int)templateSettings.UseCache);
+            clientDatabaseConnection.AddParameter("useCache", templateSettings.UseCache);
+            clientDatabaseConnection.AddParameter("cachePerUrl", templateSettings.CachePerUrl);
+            clientDatabaseConnection.AddParameter("cachePerQueryString", templateSettings.CachePerQueryString);
+            clientDatabaseConnection.AddParameter("cachePerHostName", templateSettings.CachePerHostName);
+            clientDatabaseConnection.AddParameter("cacheUsingRegex", templateSettings.CacheUsingRegex);
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
             clientDatabaseConnection.AddParameter("cacheRegex", templateSettings.CacheRegex);
@@ -497,6 +509,10 @@ INSERT INTO {WiserTableNames.WiserTemplate} (
     changed_on, 
     changed_by, 
     use_cache,
+    cache_per_url,
+    cache_per_querystring,
+    cache_per_hostname,
+    cache_using_regex,
     cache_minutes, 
     cache_location,
     cache_regex,
@@ -542,6 +558,10 @@ VALUES (
     ?now,
     ?username,
     ?useCache,
+    ?cachePerUrl,
+    ?cachePerQueryString,
+    ?cachePerHostName,
+    ?cacheUsingRegex,
     ?cacheMinutes,
     ?cacheLocation,
     ?cacheRegex,
@@ -1113,7 +1133,11 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.version, 
     template.changed_on, 
     template.changed_by, 
-    template.use_cache,   
+    template.use_cache,     
+    template.cache_per_url,   
+    template.cache_per_querystring,   
+    template.cache_per_hostname,
+    template.cache_using_regex,  
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
@@ -1167,8 +1191,11 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                     Version = dataRow.Field<int>("version"),
                     ChangedOn = dataRow.Field<DateTime>("changed_on"),
                     ChangedBy = dataRow.Field<string>("changed_by"),
-                    UseCache = (TemplateCachingModes) dataRow.Field<int>("use_cache"),
-                    CacheMinutes = dataRow.Field<int>("cache_minutes"),
+                    UseCache = dataTable.Rows[0].Field<bool>("use_cache"),
+                    CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
+                    CachePerQueryString = dataTable.Rows[0].Field<bool>("cache_per_querystring"),
+                    CacheUsingRegex = dataTable.Rows[0].Field<bool>("cache_using_regex"),
+                    CachePerHostName = dataTable.Rows[0].Field<bool>("cache_per_hostname"), CacheMinutes = dataRow.Field<int>("cache_minutes"),
                     CacheLocation = (TemplateCachingLocations) dataRow.Field<int>("cache_location"),
                     CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
                     LoginRequired = Convert.ToBoolean(dataRow["login_required"]),

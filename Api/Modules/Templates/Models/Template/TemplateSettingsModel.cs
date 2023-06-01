@@ -76,13 +76,34 @@ namespace Api.Modules.Templates.Models.Template
         public PublishedEnvironmentModel PublishedEnvironments { get; set; }
 
         #region HTML settings 
+        
         /// <summary>
         /// Gets or sets the cache mode to use.
         /// </summary>
-        public TemplateCachingModes UseCache { get; set; }
+        public bool UseCache { get; set; }
         
         /// <summary>
-        /// Gets or sets the amount of minutes the template should stay in cache. Only used if <see cref="UseCache"/> is NOT set to <see cref="TemplateCachingModes.NoCaching"/>.
+        /// Gets or sets whether the caching is seperated by SEO url
+        /// </summary>
+        public bool CachePerUrl { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether the caching is seperated by query string parameters
+        /// </summary>
+        public bool CachePerQueryString { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether the caching is seperated by hostname
+        /// </summary>
+        public bool CachePerHostName { get; set; }
+        
+        /// <summary>
+        /// Gets or sets whether caching is determined by a regex
+        /// </summary>
+        public bool CacheUsingRegex { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the amount of minutes the template should stay in cache. Only used if <see cref="UseCache"/> is set to true/>.
         /// </summary>
         public int CacheMinutes { get; set; }
         
@@ -90,7 +111,7 @@ namespace Api.Modules.Templates.Models.Template
         /// Gets or sets the location of where the cache should be saved.
         /// </summary>
         public TemplateCachingLocations CacheLocation { get; set; }
-        
+
         /// <summary>
         /// Gets or sets a regex to decide on which pages this template should be cached.
         /// The template will be cached separately for each named group in this regex. 
