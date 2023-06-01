@@ -3722,7 +3722,7 @@ export class EntityTab {
 
                 // set linked item entity to option defined type
                 this.linkedItemEntity.select((dataItem) => {
-                    return dataItem.id === optionsEentityType;
+                    return dataItem.id === optionsEntityType;
                 });
                 // set the template
                 document.getElementById("linkedItemTemplate").value = getOptionValueAndDeleteForOptionsField("template");
