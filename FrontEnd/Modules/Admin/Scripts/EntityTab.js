@@ -3077,13 +3077,12 @@ export class EntityTab {
 
             this.base.showNotification("notification", `Item succesvol aangepast`, "success");
             this.afterSave(entityProperties);
-            document.querySelector(".loaderWrap").classList.remove("active");
         }
         catch (exception) {
             console.error("Error while saving initial values", exception);
             this.base.showNotification("notification", `Item is niet succesvol aangepast, probeer het opnieuw`, "error");
-            document.querySelector(".loaderWrap").classList.remove("active");
         }
+        document.querySelector(".loaderWrap").classList.remove("active");
     }
 
     selectPropertyInListView(displayName) {
