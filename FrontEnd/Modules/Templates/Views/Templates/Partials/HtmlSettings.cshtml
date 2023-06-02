@@ -11,12 +11,6 @@
     <div class="item full-width" data-label-style="float" data-label-width="0">
         <div class="flex-container">
             <div class="item">
-                <input id="useCache" name="useCache" type="checkbox" @(Model.UseCache ? "checked" : "") class="hidden"/>
-                <label class="checkbox" for="useCache">
-                    <span>Gebruik Caching</span>
-                </label>
-            </div>
-            <div class="item">
                 <input id="cachePerUrl" name="cachePerUrl" type="checkbox" @(Model.CachePerUrl ? "checked" : "") class="hidden"/>
                 <label class="checkbox" for="cachePerUrl">
                     <span>Cache op Url</span>
@@ -66,7 +60,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off">
         </span>
-        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 of kleiner is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json.</span></div>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json. Indien de waarde kleiner is dan 0, wordt caching uitgeschakeld.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -95,7 +89,7 @@
     <label class="checkbox" for="isDefaultFooter">
         <span>Deze template is de standaard footer</span>
     </label>
-    
+
     <div class="header-footer-regex-panel">
         <div class="item" data-label-style="float" data-label-width="0">
             <h4><label for="defaultHeaderFooterRegex">Header/footer regex</label></h4>
@@ -105,7 +99,7 @@
             <div class="form-hint"><span>Indien hier een geldige regex is ingevuld, wordt deze header of footer alleen gebruikt voor URL's die voldoen aan deze regex.</span></div>
         </div>
     </div>
-    
+
     <input id="isPartial" name="isPartial" type="checkbox" @(Model.IsPartial ? "checked" : "") class="hidden" />
     <label class="checkbox" for="isPartial">
         <span>Is een partial template</span>
