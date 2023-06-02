@@ -79,7 +79,6 @@ namespace Api.Modules.Templates.Services.DataLayer
     template.version, 
     template.changed_on, 
     template.changed_by, 
-    template.use_cache,
     template.cache_per_url,
     template.cache_per_querystring,
     template.cache_per_hostname,
@@ -138,7 +137,6 @@ ORDER BY version DESC");
                     Version = row.Field<int>("version"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
-                    UseCache = dataTable.Rows[0].Field<bool>("use_cache"),
                     CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
                     CachePerQueryString = dataTable.Rows[0].Field<bool>("cache_per_querystring"),
                     CacheUsingRegex = dataTable.Rows[0].Field<bool>("cache_using_regex"),
@@ -178,7 +176,7 @@ ORDER BY version DESC");
                     WidgetContent = row.Field<string>("widget_content"),
                     WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["widget_location"])
                 };
-                
+
                 var loginRolesString = row.Field<string>("login_role");
                 if (!String.IsNullOrWhiteSpace(loginRolesString))
                 {
