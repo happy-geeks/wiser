@@ -150,7 +150,7 @@ namespace Api.Modules.Imports.Services
                         break;
                     }
                     
-                    await ReadLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
+                    await ProcessLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
                     rowsHandled++;
                 }
             }
@@ -194,7 +194,7 @@ namespace Api.Modules.Imports.Services
                             rowsHandled += 1;
 
                             var lineFields = reader.ReadFields();
-                            await ReadLineAsync(importResult, lineFields, identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
+                            await ProcessLineAsync(importResult, lineFields, identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
                         }
                     }
                 }
@@ -376,6 +376,12 @@ namespace Api.Modules.Imports.Services
             return new ServiceResult<ImportResultModel>(importResult);
         }
 
+        /// <summary>
+        /// Check the header of the file to see if it contains an ID column.
+        /// </summary>
+        /// <param name="headerFields">The fields containing the headers.</param>
+        /// <param name="importResult">The result that will be given back to the front-end to set any errors if they occur.</param>
+        /// <returns>Returns the index of the ID column and depending if it was found the <see cref="ServiceResult{T}"/> to return.</returns>
         private (ServiceResult<ImportResultModel> result, int idIndex) CheckHeader(string[] headerFields, ImportResultModel importResult)
         {
             var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
@@ -386,10 +392,27 @@ namespace Api.Modules.Imports.Services
             importResult.Errors.Add("Can't do import because of missing ID column");
             importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
             return (new ServiceResult<ImportResultModel>(importResult), idIndex);
-
         }
 
-        private async Task ReadLineAsync(ImportResultModel importResult,
+        /// <summary>
+        /// Process a given line to determine the import action.
+        /// </summary>
+        /// <param name="importResult">The result to add the information to of the line.</param>
+        /// <param name="lineFields">The fields/columns in the line to process.</param>
+        /// <param name="identity">The identity of the logged-in user.</param>
+        /// <param name="moduleId">The ID of the module the item will be created in.</param>
+        /// <param name="linkComboBoxFields">A list of <see cref="ComboBoxDataModel"/>s to add information of the combobox for linked items to.</param>
+        /// <param name="linkProperties">A list of properties to add information of properties on the link to.</param>
+        /// <param name="importData">A list of <see cref="ImportDataModel"/>s containing the data that need to be imported.</param>
+        /// <param name="idIndex">The index of the ID column.</param>
+        /// <param name="entityType">The entity type being imported.</param>
+        /// <param name="headerFields">The names of the columns in the header.</param>
+        /// <param name="importRequest">The <see cref="ImportRequestModel"/> with the information filled in in Wiser.</param>
+        /// <param name="comboBoxFields">The information of combobox fields in the entity to be set.</param>
+        /// <param name="properties">The information of the properties in the entity to be set.</param>
+        /// <param name="customer">The logged in user.</param>
+        /// <param name="subDomain">The sub domain where the import is prepared.</param>
+        private async Task ProcessLineAsync(ImportResultModel importResult,
             string[] lineFields,
             ClaimsIdentity identity,
             int moduleId,
