@@ -856,6 +856,7 @@ SELECT
     dataSelector.show_in_communication_module AS showInCommunicationModule,
     dataSelector.available_for_rendering AS availableForRendering,
     dataSelector.show_in_dashboard AS showInDashboard,
+    dataSelector.available_for_branches AS availableForBranches,
     IFNULL(GROUP_CONCAT(permission.role_id), '') AS allowedRoles
 FROM wiser_data_selector AS dataSelector
 LEFT JOIN wiser_permission AS permission ON permission.data_selector_id = dataSelector.id
@@ -2455,7 +2456,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("changed_on", reader.GetValue("changed_on"));
                 clientDatabaseConnection.AddParameter("changed_by", reader.GetValue("changed_by"));
                 clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
-                clientDatabaseConnection.AddParameter("use_cache", reader.GetValue("use_cache"));
                 clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
                 clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
                 clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));

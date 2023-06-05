@@ -132,9 +132,32 @@ namespace Api.Modules.Modules.Services
                 await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
 VALUES (?tableName, ?lastUpdate) 
 ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+                clientDatabaseConnection.ClearParameters();
             }
 
-            clientDatabaseConnection.ClearParameters();
+            const string TemplateCachingName = "wiser_template_caching";
+            if (!lastTableUpdates.TryGetValue(TemplateCachingName, out var updateDate) || updateDate < new DateTime(2023, 6, 2))
+            {
+                if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserTemplate, "use_cache"))
+                {
+                    const string CacheUpdateQuery = @$"UPDATE {WiserTableNames.WiserTemplate}
+SET cache_per_url = IF(use_cache >= 3, 1, 0),
+    cache_per_querystring = IF(use_cache >= 4, 1, 0),
+    cache_per_hostname = IF(use_cache = 5, 1, 0),
+    cache_using_regex = IF(use_cache = 6, 1, 0),
+    cache_minutes = IF(use_cache = 0 AND cache_minutes <= 0, -1, cache_minutes)";
+                    await clientDatabaseConnection.ExecuteAsync(CacheUpdateQuery);
+                }
+
+                // Update wiser_table_changes.
+                clientDatabaseConnection.AddParameter("tableName", TemplateCachingName);
+                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+                await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+VALUES (?tableName, ?lastUpdate) 
+ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+                clientDatabaseConnection.ClearParameters();
+            }
+
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
             var query = $@"(

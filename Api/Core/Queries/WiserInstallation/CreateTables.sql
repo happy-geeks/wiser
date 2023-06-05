@@ -562,6 +562,7 @@ CREATE TABLE IF NOT EXISTS `wiser_data_selector`  (
   `available_for_rendering` tinyint(1) NOT NULL DEFAULT 1,
   `default_template` bigint UNSIGNED NOT NULL DEFAULT 0,
   `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
+  `available_for_branches` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_name`(`name`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
@@ -665,8 +666,11 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `changed_on` datetime NULL DEFAULT NULL,
    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
    `published_environment` tinyint NOT NULL DEFAULT 0,
-   `use_cache` int NOT NULL DEFAULT 0,
-   `cache_minutes` int NOT NULL DEFAULT 0,
+   `cache_per_url` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_per_querystring` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_per_hostname` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_using_regex` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_minutes` int NOT NULL DEFAULT -1,
    `login_required` tinyint(1) NOT NULL DEFAULT 0,
    `login_role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
    `login_redirect_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,

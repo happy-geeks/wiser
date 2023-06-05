@@ -79,7 +79,10 @@ namespace Api.Modules.Templates.Services.DataLayer
     template.version, 
     template.changed_on, 
     template.changed_by, 
-    template.use_cache,
+    template.cache_per_url,
+    template.cache_per_querystring,
+    template.cache_per_hostname,
+    template.cache_using_regex,
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex, 
@@ -134,7 +137,10 @@ ORDER BY version DESC");
                     Version = row.Field<int>("version"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
-                    UseCache = (TemplateCachingModes)row.Field<int>("use_cache"),
+                    CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
+                    CachePerQueryString = dataTable.Rows[0].Field<bool>("cache_per_querystring"),
+                    CacheUsingRegex = dataTable.Rows[0].Field<bool>("cache_using_regex"),
+                    CachePerHostName = dataTable.Rows[0].Field<bool>("cache_per_hostname"),
                     CacheMinutes = row.Field<int>("cache_minutes"),
                     CacheLocation= (TemplateCachingLocations)row.Field<int>("cache_location"),
                     LoginRequired = Convert.ToBoolean(row["login_required"]),
@@ -170,7 +176,7 @@ ORDER BY version DESC");
                     WidgetContent = row.Field<string>("widget_content"),
                     WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["widget_location"])
                 };
-                
+
                 var loginRolesString = row.Field<string>("login_role");
                 if (!String.IsNullOrWhiteSpace(loginRolesString))
                 {

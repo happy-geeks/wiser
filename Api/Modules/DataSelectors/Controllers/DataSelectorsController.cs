@@ -59,12 +59,13 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
         /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
         /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <param name="forBranches">Optional: Set to true to only get data selectors that can be used when creating branches.</param>
         /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
+        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false, bool forBranches = false)
         {
-            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule)).GetHttpResponseMessage();
+            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule, forBranches)).GetHttpResponseMessage();
         }
 
         /// <summary>

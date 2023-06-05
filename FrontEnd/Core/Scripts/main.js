@@ -35,6 +35,7 @@ import {
     GET_ENTITIES_FOR_BRANCHES,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
+    GET_DATA_SELECTORS_FOR_BRANCHES,
     IS_MAIN_BRANCH,
     LOAD_ENTITY_TYPES_OF_ITEM_ID,
     MERGE_BRANCH,
@@ -243,7 +244,8 @@ class Main {
                             all: {
                                 mode: 0
                             }
-                        }
+                        },
+                        dataSelectors: []
                     },
                     branchMergeSettings: {
                         selectedBranch: {
@@ -369,6 +371,9 @@ class Main {
                 },
                 entitiesForBranches() {
                     return this.$store.state.branches.entities;
+                },
+                dataSelectorsForBranches() {
+                    return this.$store.state.branches.dataSelectors;
                 },
                 totalAmountOfItemsForCreatingBranch() {
                     return this.$store.state.branches.entities.reduce((accumulator, entity) => {
@@ -976,20 +981,24 @@ class Main {
 
                 async onWiserCreateBranchPromptOpen() {
                     await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                    await this.$store.dispatch(GET_DATA_SELECTORS_FOR_BRANCHES);
+                    
                     this.createBranchSettings = {
                         name: null,
                         startMode: "direct",
                         startOn: null,
                         entities: {
                             all: {
-                                mode: 0
+                                mode: 0,
+                                dataSelector: 0
                             }
                         }
                     };
 
                     for (let entity of this.entitiesForBranches) {
                         this.createBranchSettings.entities[entity.id] = {
-                            mode: 0
+                            mode: 0,
+                            dataSelector: 0
                         };
                     }
                 },

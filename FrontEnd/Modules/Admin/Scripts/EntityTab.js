@@ -1070,6 +1070,7 @@ export class EntityTab {
 
                 const id = e.sender.draggedElement[0].dataset.item;
                 await this.updateEntityPropertyOrdering(dataSource[e.oldIndex].ordering, dataSource[e.newIndex].ordering, id);
+                this.listOfTabProperties.refresh();
             },
             cursorOffset: {
                 top: -10,
@@ -3076,12 +3077,12 @@ export class EntityTab {
 
             this.base.showNotification("notification", `Item succesvol aangepast`, "success");
             this.afterSave(entityProperties);
-            document.querySelector(".loaderWrap").classList.remove("active");
         }
         catch (exception) {
             console.error("Error while saving initial values", exception);
             this.base.showNotification("notification", `Item is niet succesvol aangepast, probeer het opnieuw`, "error");
         }
+        document.querySelector(".loaderWrap").classList.remove("active");
     }
 
     selectPropertyInListView(displayName) {
@@ -3722,7 +3723,7 @@ export class EntityTab {
 
                 // set linked item entity to option defined type
                 this.linkedItemEntity.select((dataItem) => {
-                    return dataItem.id === optionsEentityType;
+                    return dataItem.id === optionsEntityType;
                 });
                 // set the template
                 document.getElementById("linkedItemTemplate").value = getOptionValueAndDeleteForOptionsField("template");

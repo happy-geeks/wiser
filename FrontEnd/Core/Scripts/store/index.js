@@ -38,6 +38,7 @@ import {
     GET_BRANCH_CHANGES,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
+    GET_DATA_SELECTORS_FOR_BRANCHES,
     CLEAR_CACHE,
     CLEAR_CACHE_SUCCESS,
     CLEAR_CACHE_ERROR,
@@ -931,6 +932,10 @@ const branchesModule = {
 
                 conflict.acceptChange = acceptChange;
             }
+        },
+        
+        [GET_DATA_SELECTORS_FOR_BRANCHES](state, dataSelectors) {
+            state.dataSelectors = dataSelectors;
         }
     },
 
@@ -1020,6 +1025,13 @@ const branchesModule = {
 
         [HANDLE_MULTIPLE_CONFLICTS]({ commit }, payload) {
             commit(HANDLE_MULTIPLE_CONFLICTS, payload);
+        },
+        
+        async [GET_DATA_SELECTORS_FOR_BRANCHES]({commit }) {
+            commit(START_REQUEST);
+            const dataSelectorsResponse = await main.branchesService.getDataSelectors();
+            commit(GET_DATA_SELECTORS_FOR_BRANCHES, dataSelectorsResponse.data);
+            commit(END_REQUEST);
         }
     },
 

@@ -349,6 +349,10 @@
                 if (typeof savedData.showInDashboard === "boolean") {
                     document.getElementById("showInDashboard").checked = savedData.showInDashboard;
                 }
+                
+                if (typeof savedData.availableForBranches === "boolean") {
+                    document.getElementById("availableForBranches").checked = savedData.availableForBranches;
+                }
 
                 if (savedData.allowedRoles) {
                     $("#allowedRoles").getKendoMultiSelect().value(savedData.allowedRoles.split(","));
