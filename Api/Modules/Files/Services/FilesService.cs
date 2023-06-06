@@ -149,7 +149,6 @@ namespace Api.Modules.Files.Services
                         try
                         {
                             fileBytes = await Tinify.FromBuffer(fileBytes).ToBuffer();
-                            tinifyProblemEncountered = true;
                         }
                         catch (ClientException e)
                         {
