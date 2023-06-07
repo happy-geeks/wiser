@@ -152,12 +152,12 @@ namespace Api.Modules.Files.Services
                         }
                         catch (ClientException e)
                         {
-                            logger.LogDebug(e,"Problem with input encountered when calling the tinyPng API");
+                            logger.LogDebug(e, "Problem with input encountered when calling the tinyPng API");
                             tinifyProblemEncountered = true;
                         }
                         catch (AccountException e)
                         {
-                            logger.LogError(e,"Account Problem encountered when calling the tinyPng API");
+                            logger.LogError(e, "Account Problem encountered when calling the tinyPng API");
 
                             // Don't try to tinify the rest of the images after an accountException
                             useTinyPng = false;
@@ -165,13 +165,13 @@ namespace Api.Modules.Files.Services
                         }
                         catch (ConnectionException e)
                         {
-                            logger.LogInformation(e,"Network problem encountered when calling the tinyPng API");
+                            logger.LogInformation(e, "Network problem encountered when calling the tinyPng API");
                             useTinyPng = false;
                             tinifyProblemEncountered = true;
                         }
                         catch (ServerException e)
                         {
-                            logger.LogInformation(e,"Third party server problem encountered when calling the tinyPng API");
+                            logger.LogInformation(e, "Third party server problem encountered when calling the tinyPng API");
                             useTinyPng = false;
                             tinifyProblemEncountered = true;
                         }
