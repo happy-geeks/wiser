@@ -44,6 +44,7 @@ namespace Api.Modules.Modules.Services
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly IDocumentStorageService documentStorageService;
 
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
@@ -55,7 +56,8 @@ namespace Api.Modules.Modules.Services
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
-            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
+            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
+            IDocumentStorageService documentStorageService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -67,6 +69,7 @@ namespace Api.Modules.Modules.Services
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
             this.databaseHelpersService = databaseHelpersService;
+            this.documentStorageService = documentStorageService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -151,6 +154,19 @@ SET cache_per_url = IF(use_cache >= 3, 1, 0),
 
                 // Update wiser_table_changes.
                 clientDatabaseConnection.AddParameter("tableName", TemplateCachingName);
+                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+                await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+VALUES (?tableName, ?lastUpdate) 
+ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
+                clientDatabaseConnection.ClearParameters();
+            }
+            
+            if (!lastTableUpdates.TryGetValue(WiserTableNames.WiserItemStore, out updateDate) || updateDate < new DateTime(2023, 6, 9))
+            {
+                await documentStorageService.CreateCollection();
+
+                // Update wiser_table_changes.
+                clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserItemStore);
                 clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
                 await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
 VALUES (?tableName, ?lastUpdate) 

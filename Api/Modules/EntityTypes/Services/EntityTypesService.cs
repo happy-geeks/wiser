@@ -27,16 +27,18 @@ namespace Api.Modules.EntityTypes.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly IDocumentStorageService documentStorageService;
 
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesService"/>.
         /// </summary>
-        public EntityTypesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService)
+        public EntityTypesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService, IDocumentStorageService documentStorageService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.databaseHelpersService = databaseHelpersService;
+            this.documentStorageService = documentStorageService;
         }
 
         /// <inheritdoc />
@@ -301,7 +303,11 @@ GROUP BY entity_type";
                     tablePrefix += "_";
                 }
 
-                if (!await databaseHelpersService.TableExistsAsync($"{tablePrefix}{WiserTableNames.WiserItem}"))
+                if (settings.StoreType is StoreType.DocumentStore or StoreType.Hybrid)
+                {
+                    await documentStorageService.CreateCollection(tablePrefix);
+                }
+                else if (!await databaseHelpersService.TableExistsAsync($"{tablePrefix}{WiserTableNames.WiserItem}"))
                 {
                     await clientDatabaseConnection.ExecuteAsync($@"CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItem}` LIKE `{WiserTableNames.WiserItem}`;
 CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` LIKE `{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}`;
