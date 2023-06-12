@@ -624,7 +624,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 var originalItemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
                 var userId = IdentityHelpers.GetWiserUserId(identity);
                 var username = IdentityHelpers.GetUserName(identity, true);
-                var item = await wiserItemsService.GetItemDetailsAsync(originalItemId, entityType: entityType);
+                var item = await wiserItemsService.GetItemDetailsAsync(originalItemId, entityType: entityType, userId: userId);
                 if (item == null || item.Id == 0)
                 {
                     return new ServiceResult<bool>(false)
