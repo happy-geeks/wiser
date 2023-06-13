@@ -887,7 +887,8 @@ SELECT LAST_INSERT_ID();";
         {
             // Simple text file that indicates whether or not the log table exists, so that we don't have to execute an extra query every time.
             var cacheDirectory = FileSystemHelpers.GetContentCacheFolderPath(webHostEnvironment);
-            var filePath = cacheDirectory == null ? null : Path.Combine(cacheDirectory, String.Format(Constants.LogTableExistsCacheFileName, (ConnectionForWriting ?? ConnectionForReading).Database));
+            // TODO: Use Constants.LogTableExistsCacheFileName instead of hardcoding the file name, once the GCL pull request has been approved.
+            var filePath = cacheDirectory == null ? null : Path.Combine(cacheDirectory, String.Format("MySqlDatabaseConnection-LogTableExistsAsync-{0}.txt", (ConnectionForWriting ?? ConnectionForReading).Database));
             if (filePath != null && File.Exists(filePath))
             {
                 return true;
