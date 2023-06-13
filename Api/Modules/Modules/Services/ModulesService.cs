@@ -595,7 +595,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptIds = true)
+        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
@@ -604,8 +604,7 @@ UNION
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            var userItemPermissions =
-                await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+            var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
 
             result.CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read;
             result.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
@@ -642,7 +641,7 @@ UNION
 
             var parsedOptionsJson = JToken.Parse(optionsJson);
 
-            if (encryptIds)
+            if (encryptValues)
             {
                 jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
             }

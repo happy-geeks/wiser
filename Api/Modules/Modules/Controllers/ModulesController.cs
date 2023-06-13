@@ -77,14 +77,14 @@ namespace Api.Modules.Modules.Controllers
         /// Gets settings for a Wiser module.
         /// </summary>
         /// <param name="id">The ID of the module.</param>
-        /// <param name="encryptIds">Optional: Whether or not the IDs in the module settings should be encrypted. Defaults to true.</param>
+        /// <param name="encryptValues">Optional: Whether to encrypt values in the JSON settings, such as queryId. Default is true. Set to false when getting the settings for the admin module.</param>
         [HttpGet]
         [Route("{id:int}/settings")]
         [ProducesResponseType(typeof(ModuleSettingsModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetSettingsAsync(int id, bool encryptIds = true)
+        public async Task<IActionResult> GetSettingsAsync(int id, bool encryptValues = true)
         {
-            return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity, encryptIds)).GetHttpResponseMessage();
+            return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity, encryptValues)).GetHttpResponseMessage();
         }
 
         /// <summary>

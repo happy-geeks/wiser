@@ -540,14 +540,12 @@ export class ModuleTab {
                 return;
             }
         }
-
         $(".delModuleBtn").toggleClass("hidden", !moduleId);
         $(".module-right-pane").toggleClass("hidden", !moduleId);
 
         if (this.previouslySelectedModule === moduleId) {
             return;
         }
-
         await this.getModuleById(moduleId);
         this.previouslySelectedModule = moduleId;
     }
@@ -604,7 +602,7 @@ export class ModuleTab {
         }
 
         this.selectedModuleSettings = await Wiser.api({
-            url: `${this.base.settings.wiserApiRoot}modules/${id}/settings?encryptIds=false`,
+            url: `${this.base.settings.wiserApiRoot}modules/${id}/settings?encryptValues=false`,
             method: "GET"
         });
 
@@ -718,7 +716,6 @@ export class ModuleTab {
             this.base.showNotification("notification", "Geen module geselecteerd", "error");
             return;
         }
-
         if (moduleSettingsModel.errors.length > 0) {
             this.base.showNotification("notification", `Controleer de instellingen van de module, er zijn ${moduleSettingsModel.errors.length} fout(en) gevonden: ${moduleSettingsModel.errors.join(", ")}`, "error");
             return;
