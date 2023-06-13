@@ -2431,7 +2431,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 clientDatabaseConnection.AddParameter("changed_on", reader.GetValue("changed_on"));
                 clientDatabaseConnection.AddParameter("changed_by", reader.GetValue("changed_by"));
                 clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
-                clientDatabaseConnection.AddParameter("use_cache", reader.GetValue("use_cache"));
                 clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
                 clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
                 clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));

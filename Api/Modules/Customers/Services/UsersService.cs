@@ -1490,7 +1490,7 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserLoginLog);
             clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            var lastUpdateData = await clientDatabaseConnection.GetAsync("SELECT `name` FROM `{WiserTableChanges}` WHERE `name` = ?tableName");
+            var lastUpdateData = await clientDatabaseConnection.GetAsync($"SELECT NULL FROM `{WiserTableNames.WiserTableChanges}` WHERE `name` = ?tableName");
             if (lastUpdateData.Rows.Count == 0)
             {
                 await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");

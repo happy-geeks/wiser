@@ -5,6 +5,8 @@ using FrontEnd.Modules.ImportExport.Interfaces;
 using FrontEnd.Modules.ImportExport.Services;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Services;
+using GeeksCoreLibrary.Modules.Exports.Interfaces;
+using GeeksCoreLibrary.Modules.Exports.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -99,6 +101,7 @@ namespace FrontEnd
             services.AddTransient<IBaseService, BaseService>();
             services.AddTransient<IImportsService, ImportsService>();
             services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
+            services.AddScoped<IExcelService, ExcelService>();
             services.AddSingleton<IWebPackService, WebPackService>();
             services.AddSingleton<IExternalApisService, ExternalApisService>();
         }

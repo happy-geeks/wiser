@@ -74,7 +74,7 @@ namespace Api.Modules.Templates.Services
                     }
                 }
             }
-            
+
             var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
             await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<int>
@@ -98,10 +98,10 @@ namespace Api.Modules.Templates.Services
         public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId)
         {
             var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(templateId);
-            
+
             return PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished);
         }
-        
+
         /// <inheritdoc />
         public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
         {
@@ -136,7 +136,7 @@ namespace Api.Modules.Templates.Services
             templateHistory.Add(new TemplateHistoryModel(rawTemplateModels.Last().TemplateId, rawTemplateModels.Last().Version, rawTemplateModels.Last().ChangedOn, rawTemplateModels.Last().ChangedBy));
             return templateHistory;
         }
-        
+
         /// <inheritdoc />
         public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
         {
@@ -152,12 +152,15 @@ namespace Api.Modules.Templates.Services
         private TemplateHistoryModel GenerateHistoryModelForTemplates(TemplateSettingsModel newVersion, TemplateSettingsModel oldVersion)
         {
             var historyModel = new TemplateHistoryModel(newVersion.TemplateId, newVersion.Version, newVersion.ChangedOn, newVersion.ChangedBy);
-            
+
             CheckIfValuesMatchAndSaveChangesToHistoryModel("name", newVersion.Name, oldVersion.Name, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUrl", newVersion.CachePerUrl, oldVersion.CachePerUrl, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheUsingRegex", newVersion.CacheUsingRegex, oldVersion.CacheUsingRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerHostName", newVersion.CachePerHostName, oldVersion.CachePerHostName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerQueryString", newVersion.CachePerQueryString, oldVersion.CachePerQueryString, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheRegex", newVersion.CacheRegex, oldVersion.CacheRegex, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRoles == null ? "" : String.Join(",", newVersion.LoginRoles), oldVersion.LoginRoles == null ? "" : String.Join(",", oldVersion.LoginRoles), historyModel);
@@ -228,8 +231,8 @@ namespace Api.Modules.Templates.Services
             {
                 return;
             }
-            
-            if ((newValue == null || (newValue is string stringValue && String.IsNullOrWhiteSpace(stringValue))) 
+
+            if ((newValue == null || (newValue is string stringValue && String.IsNullOrWhiteSpace(stringValue)))
                 && (oldValue == null || (oldValue is string oldStringValue && String.IsNullOrWhiteSpace(oldStringValue))))
             {
                 return;

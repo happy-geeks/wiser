@@ -1079,6 +1079,7 @@ export class EntityTab {
 
                     const id = event.sender.draggedElement[0].dataset.item;
                     await this.updateEntityPropertyOrdering(dataSource[event.oldIndex].ordering, dataSource[event.newIndex].ordering, id);
+                    this.listOfTabProperties.refresh();
                 } catch (error) {
                     console.error(error);
                     kendo.alert("Er is een fout opgetreden bij verplaatsen van het veld. Probeer het a.u.b. nogmaals of neem contact op met ons.");
@@ -3160,12 +3161,12 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
             this.base.showNotification("notification", `Item succesvol aangepast`, "success");
             this.afterSave(entityProperties);
-            document.querySelector(".loaderWrap").classList.remove("active");
         }
         catch (exception) {
             console.error("Error while saving initial values", exception);
             this.base.showNotification("notification", `Item is niet succesvol aangepast, probeer het opnieuw`, "error");
         }
+        document.querySelector(".loaderWrap").classList.remove("active");
     }
 
     selectPropertyInListView(displayName) {
@@ -3807,7 +3808,7 @@ this.dataSourceDataSelector.value(dataSelectorId);
 
                 // set linked item entity to option defined type
                 this.linkedItemEntity.select((dataItem) => {
-                    return dataItem.id === optionsEentityType;
+                    return dataItem.id === optionsEntityType;
                 });
                 // set the template
                 document.getElementById("linkedItemTemplate").value = getOptionValueAndDeleteForOptionsField("template");
