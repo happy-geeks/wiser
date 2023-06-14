@@ -1487,7 +1487,10 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
-            templateDataService.DecryptEditorValueIfEncrypted((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, templateData);
+            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
+            logger.LogDebug($"Encrypting template value for template ID {templateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
+            templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
 
             return new ServiceResult<TemplateSettingsModel>(templateData);
         }
@@ -1642,12 +1645,16 @@ LIMIT 1";
                     template.MinifiedValue = template.EditorValue;
                     break;
                 case TemplateTypes.Xml:
-                    if (!template.EditorValue.StartsWith("<Configuration>") && !template.EditorValue.StartsWith("<OAuthConfiguration>"))
+                    var trimmedValue = template.EditorValue.Trim();
+                    if (!trimmedValue.StartsWith("<Configuration>", StringComparison.OrdinalIgnoreCase) && !trimmedValue.StartsWith("<OAuthConfiguration>", StringComparison.OrdinalIgnoreCase))
                     {
                         break;
                     }
 
-                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
+                    var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+                    // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
+                    logger.LogDebug($"Encrypting template value for template ID {template.TemplateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
+                    template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
 
                     break;
             }
@@ -1736,7 +1743,6 @@ LIMIT 1";
                 }
             }
 
-            var helper = new TreeViewHelper();
             var convertedList = rawSection.Select(TreeViewHelper.ConvertTemplateTreeViewDaoToTemplateTreeViewModel).ToList();
 
             return new ServiceResult<List<TemplateTreeViewModel>>(convertedList);
