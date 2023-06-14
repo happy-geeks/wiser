@@ -14,6 +14,7 @@ using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Services;
 using Api.Modules.DigitalOcean.Models;
+using Api.Modules.Files.Models;
 using Api.Modules.Google.Models;
 using Api.Modules.Languages.Interfaces;
 using Api.Modules.Languages.Services;
@@ -91,6 +92,7 @@ namespace Api
             services.Configure<ApiSettings>(Configuration.GetSection("Api"));
             services.Configure<DigitalOceanSettings>(Configuration.GetSection("DigitalOcean"));
             services.Configure<GoogleSettings>(Configuration.GetSection("Google"));
+            services.Configure<TinyPngSettings>(Configuration.GetSection("TinyPNG"));
 
             // Use Serilog as our main logger.
             services.AddLogging(builder => { builder.AddSerilog(); });
