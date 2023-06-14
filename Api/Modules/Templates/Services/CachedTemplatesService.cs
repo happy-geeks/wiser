@@ -70,7 +70,7 @@ namespace Api.Modules.Templates.Services
             return await cache.GetOrAddAsync($"css_for_html_editors_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = gclSettings.DefaultTemplateCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = gclSettings.DefaultTemplateCacheDuration;
                     return await templatesService.GetCssForHtmlEditorsAsync(identity);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Templates));
         }
