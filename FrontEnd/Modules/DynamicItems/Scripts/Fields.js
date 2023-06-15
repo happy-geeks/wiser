@@ -1,6 +1,6 @@
-﻿import {Dates, Wiser, Misc, Utils} from "../../Base/Scripts/Utils.js";
+﻿import {Dates, Misc, Utils, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { DateTime } from "luxon";
+import {DateTime} from "luxon";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.dialog.js");
@@ -149,6 +149,13 @@ export class Fields {
                     switch ((field.attr("type") || "").toUpperCase()) {
                         case "CHECKBOX":
                             data.value = field.prop("checked");
+                            break;
+                        case "RADIO":
+                            // For radio buttons, only add the value if it's checked. Otherwise we'd get the value of all radio buttons.
+                            if (!field.prop("checked")) {
+                                return;
+                            }
+                            data.value = field.val();
                             break;
                         default:
                             data.value = field.val();

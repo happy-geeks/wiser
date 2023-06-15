@@ -1,9 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +8,7 @@ using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Services;
 using Api.Modules.DigitalOcean.Models;
+using Api.Modules.Files.Models;
 using Api.Modules.Google.Models;
 using Api.Modules.Languages.Interfaces;
 using Api.Modules.Languages.Services;
@@ -25,14 +20,20 @@ using GeeksCoreLibrary.Modules.Databases.Services;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -91,6 +92,7 @@ namespace Api
             services.Configure<ApiSettings>(Configuration.GetSection("Api"));
             services.Configure<DigitalOceanSettings>(Configuration.GetSection("DigitalOcean"));
             services.Configure<GoogleSettings>(Configuration.GetSection("Google"));
+            services.Configure<TinyPngSettings>(Configuration.GetSection("TinyPNG"));
 
             // Use Serilog as our main logger.
             services.AddLogging(builder => { builder.AddSerilog(); });
@@ -246,6 +248,7 @@ namespace Api
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
             services.Decorate<ILanguagesService, CachedLanguagesService>();
+            services.Decorate<IWiserCustomersService, CachedWiserCustomersService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();
