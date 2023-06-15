@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Mime;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Api.Modules.EntityProperties.Enums;
-using Api.Modules.EntityProperties.Models;
 using Api.Modules.EntityProperties.Interfaces;
+using Api.Modules.EntityProperties.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.EntityProperties.Controllers
 {
@@ -72,6 +72,19 @@ namespace Api.Modules.EntityProperties.Controllers
         public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityName, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false, [FromQuery] bool orderByName = true)
         {
             return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityName, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty, orderByName)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Get all entity properties of a specific entity, grouped by tab name.
+        /// </summary>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <returns>A <see cref="List{EntityPropertyTabModel}"/> with all tabs of a specific entity. Each tab contains all fields of that tab.</returns>
+        [HttpGet]
+        [Route("{entityName}/grouped-by-tab")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPropertiesOfEntityGroupedByTabAsync(string entityName)
+        {
+            return (await entityPropertiesService.GetPropertiesOfEntityGroupedByTabAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
         }
 
         /// <summary>

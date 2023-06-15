@@ -108,6 +108,29 @@ namespace Api.Modules.EntityProperties.Services
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
+        {
+            var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, false, false, false);
+            if (allProperties.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<List<EntityPropertyTabModel>>
+                {
+                    StatusCode = allProperties.StatusCode,
+                    ErrorMessage = allProperties.ErrorMessage
+                };
+            }
+
+            var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
+            {
+                Id = x.Key,
+                Name = x.Key,
+                Properties = x.ToList()
+            }).ToList();
+
+            return new ServiceResult<List<EntityPropertyTabModel>>(tabs);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<EntityPropertyModel>> CreateAsync(ClaimsIdentity identity, EntityPropertyModel entityProperty)
         {
             if (entityProperty == null || (String.IsNullOrWhiteSpace(entityProperty.EntityType) && entityProperty.LinkType <= 0))
@@ -694,7 +717,7 @@ WHERE {whereClause}";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity userIdentity, int id, MoveEntityPropertyRequestModel data)
+        public async Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data)
         {
             if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
             {

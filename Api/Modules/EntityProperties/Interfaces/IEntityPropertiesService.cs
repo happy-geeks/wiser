@@ -1,9 +1,9 @@
-﻿using Api.Core.Services;
-using Api.Modules.EntityProperties.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Services;
 using Api.Modules.EntityProperties.Enums;
+using Api.Modules.EntityProperties.Models;
 
 namespace Api.Modules.EntityProperties.Interfaces
 {
@@ -38,6 +38,14 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="orderByName">Optional: Whether to order by name (true) or by order number (false). Default value is true.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
         Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true);
+
+        /// <summary>
+        /// Get all entity properties of a specific entity, grouped by tab name.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <returns>A <see cref="List{EntityPropertyTabModel}"/> with all tabs of a specific entity. Each tab contains all fields of that tab.</returns>
+        Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName);
 
         /// <summary>
         /// Creates a new entity property.
@@ -89,8 +97,9 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <summary>
         /// Move an entity property to a new position.
         /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the entity property</param>
         /// <param name="data">Data required to do the move.</param>
-        Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity userIdentity, int id, MoveEntityPropertyRequestModel data);
+        Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data);
     }
 }
