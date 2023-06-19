@@ -2636,17 +2636,22 @@ export class Fields {
                                                 const allEditors = container.find(".editor");
                                                 for (let index = 0; index < allEditors.length; index++) {
                                                     const kendoEditor = $(allEditors[index]).data("kendoEditor");
+                                                    const pdfToHtmlData = {
+                                                        html: $("<div/>").text(kendoEditor.value()).html(), // alternative htmlEncode, because kendo.htmlEncode makes from a single quote &#039; (which goes wrong when posted to URL)
+                                                        backgroundPropertyName: currentAction.pdfBackgroundPropertyName || "",
+                                                        documentOptions: documentOptions,
+                                                        itemId: currentTemplateDetails.id,
+                                                        saveInDatabase: true
+                                                    };
+                                                    if (currentAction.pdfFilename) {
+                                                        pdfToHtmlData.fileName = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
+                                                    }
+
                                                     let ajaxOptions = {
                                                         url: `${this.base.settings.wiserApiRoot}pdf/save-html-as-pdf`,
                                                         method: "POST",
                                                         contentType: "application/json",
-                                                        data: JSON.stringify({
-                                                            html: $("<div/>").text(kendoEditor.value()).html(), // alternative htmlEncode, because kendo.htmlEncode makes from a single quote &#039; (which goes wrong when posted to URL)
-                                                            backgroundPropertyName: currentAction.pdfBackgroundPropertyName || "",
-                                                            documentOptions: documentOptions,
-                                                            itemId: currentTemplateDetails.id,
-                                                            saveInDatabase: true
-                                                        })
+                                                        data: JSON.stringify(pdfToHtmlData)
                                                     };
                                                     promises.push(Wiser.api(ajaxOptions));
                                                 }
