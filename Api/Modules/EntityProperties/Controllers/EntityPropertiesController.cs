@@ -168,6 +168,18 @@ namespace Api.Modules.EntityProperties.Controllers
         }
 
         /// <summary>
+        /// Move an entity tab with all it's properties to a new position.
+        /// </summary>
+        /// <param name="data">Data required to do the move.</param>
+        [HttpPut]
+        [Route("move-tab")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> MoveTabAsync(MoveEntityTabRequestModel data)
+        {
+            return (await entityPropertiesService.MoveTabAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Fixes the ordering of all fields for a specific entity type, so that all fields have consecutive order numbers.
         /// </summary>
         /// <param name="entityType">The entity type to fix the ordering for.</param>

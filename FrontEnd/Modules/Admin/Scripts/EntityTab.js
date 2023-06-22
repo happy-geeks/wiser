@@ -12,9 +12,7 @@ export class EntityTab {
         // init hide/show elements
         this.hideShowElementsBasedOnValue();
         this.fieldOptions = {};
-        this.previouslySelectedEntity = null;
-        this.previouslySelectedTab = null;
-        this.allFieldsOfSelectedEntity = [];
+        this.selectedTabOrProperty = null;
     }
 
     checkIfEntityIsSet() {
@@ -67,10 +65,8 @@ export class EntityTab {
                 }
 
                 if (addType === "entityProperty") {
-                    const tabNameProp = this.propertiesTreeView;
-                    const index = tabNameProp.select().index();
-                    const dataItem = tabNameProp.dataSource.view()[index];
-                    if (!dataItem) {
+                    const dataItem = this.selectedTabOrProperty;
+                    if (!dataItem || dataItem.isTab) {
                         this.base.showNotification("notification", "Kies a.u.b. eerst een veld om te verwijderen", "error");
                         return;
                     }
@@ -95,8 +91,7 @@ export class EntityTab {
 
         $(".copyToOtherLanguagesButton").kendoButton({
             click: () => {
-                const index = this.propertiesTreeView.select().index();
-                const dataItem = this.propertiesTreeView.dataSource.view()[index];
+                const dataItem = this.selectedTabOrProperty;
                 if (!dataItem) {
                     return;
                 }
@@ -119,14 +114,13 @@ export class EntityTab {
 
         $(".duplicateEntityPropertyButton").kendoButton({
             click: () => {
-                const index = this.propertiesTreeView.select().index();
-                const dataItem = this.propertiesTreeView.dataSource.view()[index];
-                if (!dataItem) {
+                const dataItem = this.selectedTabOrProperty;
+                if (!dataItem || dataItem.isTab) {
                     return;
                 }
 
                 this.base.openDialog("Veld dupliceren", "Voer de naam in van het nieuwe veld (vul kommagescheiden meerdere namen in om het veld meerdere keren te dupliceren).").then((data) => {
-                    this.duplicateEntityProperty(dataItem.id, data);
+                    this.duplicateEntityProperty(dataItem, data);
                 });
             },
             icon: "copy"
@@ -295,14 +289,15 @@ export class EntityTab {
      * @param name The names of the properties to create. You can create more by separating them with commas.
      */
     async addEntityProperty(name) {
-        if (!name) {
-            return;
-        }
-
         try {
-            const names = name.split(",");
+            const names = (name || "").split(",");
             if (!names.length) {
                 return;
+            }
+
+            let tabName = "";
+            if (this.selectedTabOrProperty) {
+                tabName = this.selectedTabOrProperty.isTab ? this.selectedTabOrProperty.name : this.selectedTabOrProperty.tabName;
             }
 
             const promises = [];
@@ -311,7 +306,7 @@ export class EntityTab {
 
                 const queryString = {
                     entityName: this.entitiesCombobox.dataItem().name,
-                    tabName: this.tabNameDropDownList.value() === "Gegevens" ? "" : this.tabNameDropDownList.value(),
+                    tabName: tabName === "Gegevens" ? "" : tabName,
                     displayName: actualName,
                     propertyName: actualName
                 };
@@ -324,19 +319,9 @@ export class EntityTab {
 
             await Promise.all(promises);
 
-            this.propertiesTreeView.one("dataBound", () => {
-                // select created item, except if tit is the only one.
-                this.selectPropertyInListView(names[0]);
-            });
+            await this.onEntitiesComboBoxSelect();
 
-            // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically be selected
-            if (!this.tabNameDropDownList.dataItem()) {
-                // reset tab names if we didnt have any before
-                await this.onEntitiesComboBoxSelect(this);
-            } else {
-                // select the right tab
-                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem(), true);
-            }
+            this.selectTabInTreeView(tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
@@ -353,9 +338,11 @@ export class EntityTab {
             return;
         }
 
+        const selectedProperty = this.selectedTabOrProperty;
+
         let queryString = {
             entityName: this.entitiesCombobox.dataItem().name,
-            tabName: this.tabNameDropDownList.value() === "Gegevens" ? "" : this.tabNameDropDownList.value(),
+            tabName: selectedProperty.tabName === "Gegevens" ? "" : selectedProperty.tabName,
             displayName: name,
             entityPropertyId: id
         };
@@ -367,13 +354,9 @@ export class EntityTab {
             });
 
             this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
-            await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem(), true);
 
-            // Select first item in list
-            const firstElement = this.propertiesTreeView.element.find("[data-item]").first();
-            this.propertiesTreeView.one("dataBound", () => {
-                this.selectPropertyInListView(firstElement.data("displayName"));
-            });
+            await this.onEntitiesComboBoxSelect(this);
+            this.selectTabInTreeView(selectedProperty.tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
@@ -414,7 +397,7 @@ export class EntityTab {
         }
 
         try {
-            const selectedTab = this.tabNameDropDownList.dataItem();
+            const selectedProperty = this.selectedTabOrProperty;
 
             // Do the copy action.
             await Wiser.api({
@@ -425,7 +408,7 @@ export class EntityTab {
             // Re load everything, so the new entity properties will become visible.
             await this.onEntitiesComboBoxSelect(this);
             // Select the same tab as before.
-            this.tabNameDropDownList.value(selectedTab.tabName);
+            this.selectTabInTreeView(selectedProperty.tabName);
             this.base.showNotification("notification", `Veld is succesvol gekopieerd naar alle andere talen`, "success");
         }
         catch (exception) {
@@ -436,17 +419,13 @@ export class EntityTab {
 
     /**
      * Duplicate an entity property with a new name.
-     * @param id The ID of the entity property to duplicate.
+     * @param dataItem The data item of the entity property to duplicate.
      * @param name The name(s) for the new entity property (comma separated for multiple names).
      */
-    async duplicateEntityProperty(id, name) {
-        if (!id || !name) {
-            return;
-        }
-
+    async duplicateEntityProperty(dataItem, name) {
         try {
-            const names = name.split(",");
-            if (!names.length) {
+            const names = (name || "").split(",");
+            if (!names.length || !dataItem || dataItem.isTab) {
                 return;
             }
 
@@ -455,7 +434,7 @@ export class EntityTab {
                 actualName = actualName.trim();
 
                 promises.push(Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/${id}/duplicate`,
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${dataItem.id}/duplicate`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(actualName)
@@ -464,19 +443,9 @@ export class EntityTab {
 
             await Promise.all(promises);
 
-            this.propertiesTreeView.one("dataBound", () => {
-                // select created item, except if tit is the only one.
-                this.selectPropertyInListView(names[0]);
-            });
-
-            // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically be selected
-            if (!this.tabNameDropDownList.dataItem()) {
-                // reset tab names if we didnt have any before
-                await this.onEntitiesComboBoxSelect(this);
-            } else {
-                // select the right tab
-                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem(), true);
-            }
+            await this.onEntitiesComboBoxSelect(this);
+            // Select the same tab as before.
+            this.selectTabInTreeView(dataItem.tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to duplicate an entity property", exception);
@@ -1194,16 +1163,6 @@ export class EntityTab {
             this.entityListInitialized = true;
         });
 
-        //combobox to select the correct tabname
-        this.tabNameDropDownList = $("#tabnames").kendoDropDownList({
-            clearButton: false,
-            dataTextField: "tabName",
-            dataValueField: "tabName",
-            filter: "contains",
-            minLength: 1,
-            cascade: this.tabNameDropDownListSelect.bind(this)
-        }).data("kendoDropDownList");
-
         // property tabname
         this.tabNameProperty = $("#tabNameProperty").kendoComboBox({
             placeholder: "Selecteer gewenste tab...",
@@ -1215,7 +1174,6 @@ export class EntityTab {
         }).data("kendoComboBox");
 
         //Combobox to get all possible inputtypes used in the database
-        //TODO set to kendodropdownlist and add filter?
         this.inputTypeSelector = $("#inputtypes").kendoDropDownList({
             placeholder: "Selecteer invoertype...",
             height: 400,
@@ -2193,7 +2151,7 @@ export class EntityTab {
                         return false;
                     }
                 }
-                //todo add checks
+
                 break;
         }
         return true;
@@ -2244,7 +2202,6 @@ export class EntityTab {
                 }
                 // generate file specific
                 if (action.type === actionTypes.GENERATEFILE.id) {
-                    //todo actions for generatefile
                     action.dataSelectorId = this.dataSelectorId.value();
                     action.contentItemId = this.contentItemId.value();
                     action.contentPropertyName = document.getElementById("contentPropertyName").value;
@@ -2264,7 +2221,7 @@ export class EntityTab {
 
     // get all tabnames of selected entity
     async onEntitiesComboBoxSelect() {
-        if (!this.tabNameDropDownList || !this.tabNameProperty) {
+        if (!this.tabNameProperty) {
             this.entityTabStrip.wrapper.hide();
             return;
         }
@@ -2277,30 +2234,6 @@ export class EntityTab {
 
         $("#entityView .delBtn").toggleClass("hidden", !selectedItem.id);
 
-        // set tabnames
-        //await this.setTabNameDropDown();
-/*
-        this.listOfTabProperties.setDataSource(new kendo.data.DataSource({
-            serverFiltering: true,
-            transport: {
-                read: {
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}?orderByName=false`,
-                }
-            },
-            group: {
-                field: "tabName",
-                dir: "asc"/*,
-                compare: function (a, b) {
-                    if (a.items.length === b.items.length) {
-                        return 0;
-                    } else if (a.items.length > b.items.length) {
-                        return 1;
-                    } else {
-                        return -1;
-                    }
-                }*//*
-            }
-        }));*/
         const tabsAndFields = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
             method: "GET"
@@ -2325,75 +2258,12 @@ export class EntityTab {
         this.templateHtmlField.refresh();
     }
 
-    async setTabNameDropDown() {
-        this.tabNameDropDownList.text("");
-        this.tabNameProperty.text("");
-        const tabNames = await Wiser.api({
-            url: `${this.base.settings.serviceRoot}/GET_ENTITY_PROPERTIES_TABNAMES?entityName=${encodeURIComponent(this.entitiesCombobox.dataItem().name)}`,
-            method: "GET"
-        });
-        this.tabNameDropDownList.setDataSource(tabNames);
-        this.tabNameProperty.setDataSource(tabNames);
-
-        // set properties of tab
-        this.tabNameDropDownList.select((dataItem) => {
-            return dataItem.tabName === "Gegevens";
-        });
-    }
-
-    // get entity properties of tab when tabname is selected
-    async tabNameDropDownListSelect(eventOrDataItem, forceReload = false) {
-        if (this.tabNameDropDownListSelectBusy) {
-            return;
-        }
-
-        const entityType = this.entitiesCombobox.dataItem().name;
-        if (!eventOrDataItem || !entityType) {
-            return;
-        }
-
-        let tabName = "";
-        tabName = eventOrDataItem.sender && eventOrDataItem.sender.dataItem() ? eventOrDataItem.sender.dataItem().tabName : eventOrDataItem.tabName;
-        tabName = tabName === "Gegevens" || !tabName ? "Gegevens" : tabName;
-
-        if (!forceReload && this.previouslySelectedTab === tabName && this.previouslySelectedEntity === entityType) {
-            return;
-        }
-
-        this.tabNameDropDownListSelectBusy = true;
-        try {
-            if (this.previouslySelectedEntity !== entityType) {
-                await Wiser.api({
-                    type: "PUT",
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(entityType)}/fix-ordering`,
-                    contentType: "application/json"
-                });
-            }
-
-            this.previouslySelectedTab = tabName;
-            this.previouslySelectedEntity = entityType;
-
-            this.propertiesTreeView.setDataSource(new kendo.data.DataSource({
-                serverFiltering: true,
-                transport: {
-                    read: {
-                        url: `${this.base.settings.serviceRoot}/GET_ENTITY_PROPERTIES_ADMIN?entityName=${encodeURIComponent(entityType)}&tabName=${encodeURIComponent(tabName)}`
-                    }
-                }
-            }));
-        } catch (exception) {
-            console.error(exception);
-            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-        } finally {
-            this.tabNameDropDownListSelectBusy = false;
-        }
-    }
-
     // get properties of entity fields and fill fields
     async onPropertiesTreeViewChange(event) {
         const selectedElement = event.sender.select();
         const index = selectedElement.index();
         const dataItem = event.sender.dataItem(selectedElement);
+        this.selectedTabOrProperty = dataItem;
         if (dataItem.isTab) {
             $("#EntityTabStrip-2 .right-pane").hide();
             return;
@@ -2457,15 +2327,6 @@ export class EntityTab {
         destinationDataItem.isRoot = destinationDataItem.isRoot || false;
         destinationDataItem.isTab = destinationDataItem.isTab || false;
 
-        console.log("drag", {
-            event: event,
-            dropTarget: dropTarget,
-            destinationNode: destinationNode,
-            sourceDataItem: sourceDataItem,
-            destinationDataItem: destinationDataItem,
-            allow: (!sourceDataItem.isTab && destinationDataItem.isTab) || (sourceDataItem.isTab && destinationDataItem.isRoot)
-        });
-
         if (!sourceDataItem) {
             console.warn("Source data item not found.");
             event.setStatusClass("k-i-cancel");
@@ -2493,6 +2354,26 @@ export class EntityTab {
         try {
             const sourceDataItem = event.sender.dataItem(event.sourceNode);
             const destinationDataItem = event.sender.dataItem(event.destinationNode);
+
+            let sourceTabName = sourceDataItem.isTab ? sourceDataItem.name : sourceDataItem.tabName;
+            sourceTabName = sourceTabName === "Gegevens" ? "" : sourceTabName;
+            let destinationTabName = destinationDataItem.isTab ? destinationDataItem.name : destinationDataItem.tabName;
+            destinationTabName = destinationTabName === "Gegevens" ? "" : destinationTabName;
+
+            if (sourceDataItem.isTab) {
+                return Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/move-tab`,
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        currentTabName: sourceTabName,
+                        destinationTabName: destinationTabName,
+                        entityType: this.entitiesCombobox.dataItem().name,
+                        dropPosition: event.dropPosition
+                    })
+                });
+            }
+
             const oldIndex = sourceDataItem.ordering;
             let newIndex = destinationDataItem.ordering;
 
@@ -2507,17 +2388,6 @@ export class EntityTab {
                     newIndex++;
                     break;
             }
-
-            console.log("drop", { oldIndex: oldIndex, newIndex: newIndex, sourceDataItem: sourceDataItem, destinationDataItem: destinationDataItem, event: event });
-
-            if (sourceDataItem.isTab) {
-                console.log("TODO");
-                return;
-            }
-
-            const sourceTabName = sourceDataItem.tabName === "Gegevens" ? "" : sourceDataItem.tabName;
-            let destinationTabName = destinationDataItem.isTab ? destinationDataItem.name : destinationDataItem.tabName;
-            destinationTabName = destinationTabName === "Gegevens" ? "" : destinationTabName;
 
             return Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
@@ -2550,6 +2420,13 @@ export class EntityTab {
 
         this.setEntityPropertiesToDefault();
         this.setEntityProperties(resultSet);
+
+        // Make sure all fields have proper ascending ordering numbers, otherwise dragging & dropping to change the order of fields won't work properly.
+        await Wiser.api({
+            type: "PUT",
+            url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/fix-ordering`,
+            contentType: "application/json"
+        });
     }
 
     async getEntityFieldPropertiesOfSelected(id, selectedEntityName, selectedTabName) {
@@ -2585,7 +2462,7 @@ export class EntityTab {
     // actions handled before save, such as checks
     async beforeSave() {
         // If no property is selected, we assume we only need to update the entity
-        const typeToSave = (this.propertiesTreeView.select().index() === -1) ? "entity" : "entityProperty";
+        const typeToSave = this.entityTabStrip.select().data("name");
 
         // check if entity is selected
         if (!this.checkIfEntityIsSet(typeToSave)) {
@@ -2595,14 +2472,8 @@ export class EntityTab {
         if (typeToSave === "entity") {
             await this.saveEntityProperties();
         } else {
-            // check if tab is selected
-            if (!this.tabNameDropDownList.dataItem()) {
-                this.base.showNotification("notification", "Selecteer eerst een bestaand tab!", "error");
-                return false;
-            }
-
             // check if property is selected
-            if (this.propertiesTreeView.select().index() === -1) {
+            if (!this.selectedTabOrProperty || this.selectedTabOrProperty.isTab) {
                 this.base.showNotification("notification", "Selecteer eerst een eigenschap!", "error");
                 return false;
             }
@@ -2841,8 +2712,7 @@ export class EntityTab {
     async saveEntityFieldProperties() {
         // create entity property model
         const entityProperties = new EntityPropertyModel();
-        let index = this.propertiesTreeView.select().index();
-        let dataItem = this.propertiesTreeView.dataSource.view()[index];
+        let dataItem = this.selectedTabOrProperty;
         entityProperties.id = dataItem.id;
         entityProperties.moduleId = this.selectedEntityType.moduleId;
         entityProperties.entityType = this.entitiesCombobox.dataItem().name;
@@ -3181,13 +3051,10 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                 entityProperties.options.queryId = $("#queryId").data("kendoNumericTextBox").value();
                 break;
             case inputTypes.DATERANGE:
-                // TODO how to save values?
-                // kendo.toString(new Date(), "MM/dd/yyyy")
                 entityProperties.options.from = $("#daterangeFrom").data("kendoDatePicker").value();
                 entityProperties.options.till = $("#daterangeTill").data("kendoDatePicker").value();
                 break;
             case inputTypes.QUERYBUILDER:
-                // TODO is this the correct way?
                 entityProperties.options.queryId = $("#queryId").data("kendoNumericTextBox").value();
                 break;
             case inputTypes.CHART:
@@ -3234,23 +3101,13 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
             });
 
             this.base.showNotification("notification", `Item succesvol aangepast`, "success");
-            this.afterSave(entityProperties);
+            await this.afterSave(entityProperties);
         }
         catch (exception) {
             console.error("Error while saving initial values", exception);
             this.base.showNotification("notification", `Item is niet succesvol aangepast, probeer het opnieuw`, "error");
         }
         document.querySelector(".loaderWrap").classList.remove("active");
-    }
-
-    selectPropertyInListView(displayName) {
-        // remove selected class
-        $(".sortable").removeClass("selected");
-        const elementToSelect = this.propertiesTreeView.element.find(`[data-display-name='${displayName}']`);
-        // select element in listview
-        this.propertiesTreeView.select(elementToSelect);
-        // add selected class
-        elementToSelect.addClass('selected');
     }
 
     removeOnAutoIndex(targetObject = {}, autoIndexId = 0) {
@@ -3294,39 +3151,33 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
     }
 
     // actions handled after saving, selecting right tab and such
-    afterSave(entityProperties) {
-        const selectCorrectListViewItem = () => {
-            // select correct entity display name
-            this.propertiesTreeView.one("dataBound",
-                () => {
-                    this.selectPropertyInListView(entityProperties.displayName);
-                });
-        };
+    async afterSave(property) {
+        console.log("property", property);
+        await this.onEntitiesComboBoxSelect();
+        this.selectPropertyInTreeView(property);
+    }
 
-        // only update tabname list if tab has been added/changed
-        if (this.tabNameDropDownList.value() !== entityProperties.tabName) {
-            // trigger select to get the new tab in the list
-            this.onEntitiesComboBoxSelect(this);
-            this.tabNameDropDownList.one("dataBound", (event) => {
-                // automatically select the newly added tab
-                this.tabNameDropDownList.select((dataItem) => {
-                    return dataItem.tabName === (entityProperties.tabName === "" ? "Gegevens" : entityProperties.tabName);
-                });
-                selectCorrectListViewItem();
-            });
+    selectTabInTreeView(tabName, alsoExpand = false) {
+        const selectedTab = this.propertiesTreeView.dataSource.get(tabName);
+        const nodeToSelect = this.propertiesTreeView.findByUid(selectedTab.uid);
+        this.propertiesTreeView.select(nodeToSelect);
+        if (!alsoExpand) {
+            return;
         }
 
-        const index = this.propertiesTreeView.select().index();
-        const dataItem = this.propertiesTreeView.dataSource.view()[index];
-        // only update tabname properties list if display name has been changed
-        if (this.tabNameDropDownList.value() === entityProperties.tabName && dataItem !== null && dataItem !== undefined && dataItem.displayName !== entityProperties.displayName) {
-            this.tabNameDropDownListSelect(dataItem);
-            selectCorrectListViewItem();
-        } else if (dataItem !== null && dataItem !== undefined && this.tabNameDropDownList.value() === entityProperties.tabName) {
-            // update if name and tab havent been changed
-            this.isSaveSelect = false;
-            this.getEntityFieldPropertiesOfSelected(dataItem.id, this.entitiesCombobox.dataItem().name, this.tabNameDropDownList.dataItem().tabName);
-        }
+        this.propertiesTreeView.expand(nodeToSelect);
+    }
+
+    selectPropertyInTreeView(property) {
+        // First we need to expand the tab, otherwise the children of the tab will be empty in the data source of Kendo.
+        const tabDataItem = this.propertiesTreeView.dataSource.get(property.tabName || "Gegevens");
+        const tabNode = this.propertiesTreeView.findByUid(tabDataItem.uid);
+        this.propertiesTreeView.expand(tabNode);
+
+        // Then we can select the property itself.
+        const fieldDataItem = this.propertiesTreeView.dataSource.get(property.id);
+        const propertyNode = this.propertiesTreeView.findByUid(fieldDataItem.uid);
+        this.propertiesTreeView.select(propertyNode);
     }
 
     /**

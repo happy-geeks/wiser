@@ -12,6 +12,7 @@ using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityProperties.Models;
+using Api.Modules.Kendo.Enums;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -724,7 +725,7 @@ WHERE {whereClause}";
                 return new ServiceResult<bool>(false)
                 {
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Either entityType or linkType must be provided."
+                    ErrorMessage = $"Either {nameof(data.EntityType)} or {nameof(data.LinkType)} must be provided."
                 };
             }
 
@@ -759,6 +760,126 @@ AND id <> ?id;");
             }
 
             await clientDatabaseConnection.ExecuteAsync(query.ToString());
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> MoveTabAsync(ClaimsIdentity identity, MoveEntityTabRequestModel data)
+        {
+            if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"Either {nameof(data.EntityType)} or {nameof(data.LinkType)} must be provided."
+                };
+            }
+
+            if (data.CurrentTabName == null || data.DestinationTabName == null)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"Both {nameof(data.CurrentTabName)} and {nameof(data.DestinationTabName)} must be provided."
+                };
+            }
+
+            clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+            clientDatabaseConnection.AddParameter("linkType", data.LinkType);
+            clientDatabaseConnection.AddParameter("destinationTabName", data.DestinationTabName);
+            clientDatabaseConnection.AddParameter("currentTabName", data.CurrentTabName);
+
+            // First we need to get the ordering number of the destination location.
+            var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+            string sqlFunction;
+
+            switch (data.DropPosition)
+            {
+                case TreeViewDropPositions.Before:
+                    sqlFunction = "MIN";
+                    break;
+                case TreeViewDropPositions.After:
+                    sqlFunction = "MAX";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException($"DropPosition {data.DropPosition} is not supported.");
+            }
+
+            var query = $@"SELECT {sqlFunction}(ordering) AS ordering FROM {WiserTableNames.WiserEntityProperty} WHERE {whereClause} AND tab_name = ?destinationTabName";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Tab with name {data.DestinationTabName} not found."
+                };
+            }
+
+            var destinationOrdering = Convert.ToInt32(dataTable.Rows[0]["ordering"]);
+
+            // Get the IDs and ordering numbers of all the properties in the tab that we're moving.
+            query = $"SELECT id, ordering FROM {WiserTableNames.WiserEntityProperty} WHERE {whereClause} AND tab_name = ?currentTabName ORDER BY ordering ASC";
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Tab with name {data.CurrentTabName} not found."
+                };
+            }
+
+            // Move all other properties to their new positions.
+            var amountOfPropertiesInSourceTab = dataTable.Rows.Count;
+            var oldOrderingStart = Convert.ToInt32(dataTable.Rows[0]["ordering"]);
+            var oldOrderingEnd = Convert.ToInt32(dataTable.Rows[amountOfPropertiesInSourceTab - 1]["ordering"]);
+            var newOrderingStart = destinationOrdering + (data.DropPosition == TreeViewDropPositions.After ? 1 : 0);
+            var newOrderingEnd = newOrderingStart + amountOfPropertiesInSourceTab;
+            var movingUp = newOrderingStart < oldOrderingStart;
+
+            if (movingUp)
+            {
+                query = $@"UPDATE {WiserTableNames.WiserEntityProperty} 
+SET ordering = ordering + ?amountOfPropertiesInSourceTab 
+WHERE {whereClause}
+AND ordering >= ?newOrderingStart
+AND ordering < ?oldOrderingEnd;";
+            }
+            else
+            {
+                query =$@"UPDATE {WiserTableNames.WiserEntityProperty}
+SET ordering = ordering - ?amountOfPropertiesInSourceTab 
+WHERE {whereClause}
+AND ordering > ?oldOrderingEnd
+AND ordering < ?newOrderingStart";
+            }
+
+            clientDatabaseConnection.AddParameter("oldOrderingStart", oldOrderingStart);
+            clientDatabaseConnection.AddParameter("oldOrderingEnd", oldOrderingEnd);
+            clientDatabaseConnection.AddParameter("newOrderingStart", newOrderingStart);
+            clientDatabaseConnection.AddParameter("newOrderingEnd", newOrderingEnd);
+            clientDatabaseConnection.AddParameter("amountOfPropertiesInSourceTab", amountOfPropertiesInSourceTab);
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Move the properties of the dragged tab to their new positions.
+            var queries = new List<string>();
+            for (var index = 0; index < amountOfPropertiesInSourceTab; index++)
+            {
+                var dataRow = dataTable.Rows[index];
+                var propertyId = dataRow.Field<int>("id");
+                var newOrdering = destinationOrdering + index + 1 - (movingUp ? 0 : amountOfPropertiesInSourceTab);
+
+                var orderingPropertyName = $"ordering{index}";
+                var idPropertyName = $"id{index}";
+                clientDatabaseConnection.AddParameter(orderingPropertyName, newOrdering);
+                clientDatabaseConnection.AddParameter(idPropertyName, propertyId);
+                queries.Add($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?{orderingPropertyName} WHERE id = ?{idPropertyName};");
+            }
+
+            await clientDatabaseConnection.ExecuteAsync(String.Join(Environment.NewLine, queries));
+
+
             return new ServiceResult<bool>(true);
         }
 

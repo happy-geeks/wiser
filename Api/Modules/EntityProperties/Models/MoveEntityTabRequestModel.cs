@@ -1,15 +1,12 @@
-﻿namespace Api.Modules.EntityProperties.Models;
+﻿using Api.Modules.Kendo.Enums;
+
+namespace Api.Modules.EntityProperties.Models;
 
 /// <summary>
 /// Model for moving an entity property.
 /// </summary>
-public class MoveEntityPropertyRequestModel
+public class MoveEntityTabRequestModel
 {
-    /// <summary>
-    /// Gets or sets the ID of the entity property.
-    /// </summary>
-    public int Id { get; set; }
-
     /// <summary>
     /// Gets or sets the name of the entity type that the property belongs too, if it belongs to an entity.
     /// </summary>
@@ -28,15 +25,10 @@ public class MoveEntityPropertyRequestModel
     /// <summary>
     /// Gets or sets the name of the tab that the property should be moved too (can be the same as the current one).
     /// </summary>
-    public string NewTabName { get; set; }
+    public string DestinationTabName { get; set; }
 
     /// <summary>
-    /// Gets or sets the current ordering number.
+    /// Gets or sets the position to drop the tab, if this is before or after the destination tab.
     /// </summary>
-    public int CurrentIndex { get; set; }
-
-    /// <summary>
-    /// Gets or sets the new ordering number.
-    /// </summary>
-    public int NewIndex { get; set; }
+    public TreeViewDropPositions DropPosition { get; set; }
 }
