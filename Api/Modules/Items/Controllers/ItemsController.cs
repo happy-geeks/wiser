@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Modules.EntityTypes.Models;
@@ -16,6 +17,7 @@ using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 
 namespace Api.Modules.Items.Controllers
@@ -28,6 +30,10 @@ namespace Api.Modules.Items.Controllers
     [Authorize]
     [Consumes(MediaTypeNames.Application.Json)]
     [Produces(MediaTypeNames.Application.Json)]
+    
+    //Enable rate limiting according to a policy added in startup
+    //This can be done via attributed in controllers, action methods and Razer pages
+    [EnableRateLimiting("TestingLimitResponse")]
     public class ItemsController : ControllerBase
     {
         private readonly IItemsService itemsService;
@@ -54,6 +60,8 @@ namespace Api.Modules.Items.Controllers
         /// <param name="filters">Optional: Add filters if you only want specific results.</param>
         /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
         [HttpGet]
+        // Disable all rate limiting on this endpoint including global rate limiting
+        [DisableRateLimiting]
         [ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetItemsAsync([FromQuery]PagedRequest pagedRequest = null, [FromQuery]WiserItemModel filters = null)
         {
