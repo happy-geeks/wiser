@@ -225,7 +225,7 @@ INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@stepTwoOneId
 
 -- Templates
 -- Configurator dynamic content
-SET @newContentId = (SELECT MAX(`content_id`) + 1 FROM `wiser_dynamic_content`);
+SET @newContentId = (SELECT IFNULL(MAX(`content_id`), 0) + 1 FROM `wiser_dynamic_content`);
 INSERT INTO `wiser_dynamic_content` (`content_id`, `settings`, `component`, `component_mode`, `version`, `title`, `changed_on`, `changed_by`, `published_environment`) VALUES (@newContentId, '{"ConfiguratorName":"ExampleConfigurator","ValuesCanContainDashes":false,"ProductsApiBaseUrl":"","ProductsApiGetProductsUrl":"","ProductsApiSalesPriceProperty":"","ProductsApiPurchasePriceProperty":"","ProductsApiFromPriceProperty":"","UserNeedsToBeLoggedIn":false,"HandleRequest":false,"EvaluateIfElseInTemplates":true,"RemoveUnknownVariables":true,"CachingMode":"0","CachingLocation":"0","CacheMinutes":0,"ComponentMode":"1"}', 'Configurator', 'Default', 1, 'ExampleConfigurator', NOW(), 'Wiser', 1);
 SET @configuratorDynamicContentId = (SELECT `content_id` FROM `wiser_dynamic_content` WHERE `id` = LAST_INSERT_ID());
 
