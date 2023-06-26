@@ -1,5 +1,4 @@
 ﻿@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
-
 @using GeeksCoreLibrary.Core.Enums
 @model FrontEnd.Core.Models.BaseViewModel
 <style>
@@ -684,7 +683,7 @@
         </wiser-dialog>
 
         <wiser-dialog :modal="true" :width="'400px'" :title="'Branch verwijderen'" ref="deleteBranchConfirmationPrompt" :visible="false" :actions="[{ text: 'Nee' }, { text: 'Ja', primary: true, action: deleteBranch }]">
-            <p>Weet u zeker dat u de branch "{{ branchActionSettings.selectedBranch.name }}" wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden!</p>
+            <p>Weet u zeker dat u de branch "{{ branchActionSettings.selectedBranch.name }}" wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden! Wijzigingen die in de branch zijn gedaan en niet samengevoegd zijn met live, zullen verloren gaan!</p>
 
             <div class="error" v-if="deleteBranchError">{{ deleteBranchError }}</div>
         </wiser-dialog>
