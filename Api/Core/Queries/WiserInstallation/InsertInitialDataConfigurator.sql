@@ -231,12 +231,12 @@ SET @configuratorDynamicContentId = (SELECT `content_id` FROM `wiser_dynamic_con
 
 -- Configurator scripts folder
 SET @scriptsFolderTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `template_name` = 'SCRIPTS');
-SET @newTemplateId = (SELECT MAX(`template_id`) + 1 FROM `wiser_template`);
+SET @newTemplateId = (SELECT IFNULL(MAX(`template_id`), 0) + 1 FROM `wiser_template`);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`) VALUES (@scriptsFolderTemplateId, 'Configurators', 7, 1, @newTemplateId, NOW(), 'Wiser', 1);
 SET @configuratorScriptsFolder = (SELECT `template_id` FROM `wiser_template` WHERE `id` = LAST_INSERT_ID());
 
 -- Configurator script template
-SET @newTemplateId = (SELECT MAX(`template_id`) + 1 FROM `wiser_template`);
+SET @newTemplateId = (SELECT IFNULL(MAX(`template_id`), 0) + 1 FROM `wiser_template`);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`) VALUES (@configuratorScriptsFolder, 'ExampleConfigurator',
 CONCAT('class ExampleConfigurator {
     constructor() {
@@ -271,12 +271,12 @@ SET @configuratorScriptTemplateId = (SELECT `template_id` FROM `wiser_template` 
 
 -- Configurator HTML folder
 SET @htmlFolderTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `template_name` = 'HTML');
-SET @newTemplateId = (SELECT MAX(`template_id`) + 1 FROM `wiser_template`);
+SET @newTemplateId = (SELECT IFNULL(MAX(`template_id`), 0) + 1 FROM `wiser_template`);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`) VALUES (@htmlFolderTemplateId, 'Configurators', 7, 1, @newTemplateId, NOW(), 'Wiser', 1);
 SET @configuratorTemplateFolder = (SELECT `template_id` FROM `wiser_template` WHERE `id` = LAST_INSERT_ID());
 
 -- Configurator HTML template
-SET @newTemplateId = (SELECT MAX(`template_id`) + 1 FROM `wiser_template`);
+SET @newTemplateId = (SELECT IFNULL(MAX(`template_id`), 0) + 1 FROM `wiser_template`);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_data`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`, `linked_templates`) VALUES (@configuratorTemplateFolder, 'ExampleConfigurator', CONCAT('<div class="dynamic-content" content-id="', @configuratorDynamicContentId, '"><h2>ExampleConfigurator</h2></div>'), 1, 1, @newTemplateId, NOW(), 'Wiser', 1, @configuratorScriptTemplateId);
 SET @configuratorHtmlTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `id` = LAST_INSERT_ID());
 
