@@ -1,59 +1,62 @@
-﻿import { createStore } from "vuex";
+﻿import {createStore} from "vuex";
 import {
-    START_REQUEST,
-    END_REQUEST,
-    AUTH_REQUEST,
-    AUTH_LIST,
-    AUTH_SUCCESS,
-    AUTH_ERROR,
-    AUTH_LOGOUT,
-    AUTH_TOTP_SETUP,
-    AUTH_TOTP_PIN,
-    MODULES_LOADED,
-    OPEN_MODULE,
     ACTIVATE_MODULE,
-    CLOSE_MODULE,
-    CLOSE_ALL_MODULES,
-    MODULES_REQUEST,
-    LOAD_ENTITY_TYPES_OF_ITEM_ID,
-    FORGOT_PASSWORD,
-    RESET_PASSWORD_SUCCESS,
-    RESET_PASSWORD_ERROR,
+    AUTH_ERROR,
+    AUTH_LIST,
+    AUTH_LOGOUT,
+    AUTH_REQUEST,
+    AUTH_SUCCESS,
+    AUTH_TOTP_PIN,
+    AUTH_TOTP_SETUP,
     CHANGE_PASSWORD,
+    CHANGE_PASSWORD_ERROR,
     CHANGE_PASSWORD_LOGIN,
     CHANGE_PASSWORD_SUCCESS,
-    CHANGE_PASSWORD_ERROR,
-    GET_CUSTOMER_TITLE,
-    VALID_SUB_DOMAIN,
-    TOGGLE_PIN_MODULE,
+    CLEAR_ACTIVE_TIMER_INTERVAL,
+    CLEAR_CACHE,
+    CLEAR_CACHE_ERROR,
+    CLEAR_CACHE_SUCCESS,
+    CLEAR_LOCAL_TOTP_BACKUP_CODES,
+    CLOSE_ALL_MODULES,
+    CLOSE_MODULE,
     CREATE_BRANCH,
-    CREATE_BRANCH_SUCCESS,
     CREATE_BRANCH_ERROR,
+    CREATE_BRANCH_SUCCESS,
+    DELETE_BRANCH,
+    DELETE_BRANCH_ERROR,
+    DELETE_BRANCH_SUCCESS,
+    END_REQUEST,
+    FORGOT_PASSWORD,
+    GENERATE_TOTP_BACKUP_CODES,
+    GENERATE_TOTP_BACKUP_CODES_ERROR,
+    GENERATE_TOTP_BACKUP_CODES_SUCCESS,
+    GET_BRANCH_CHANGES,
     GET_BRANCHES,
+    GET_CUSTOMER_TITLE,
+    GET_DATA_SELECTORS_FOR_BRANCHES,
+    GET_ENTITIES_FOR_BRANCHES,
+    HANDLE_CONFLICT,
+    HANDLE_MULTIPLE_CONFLICTS,
+    IS_MAIN_BRANCH,
+    LOAD_ENTITY_TYPES_OF_ITEM_ID,
     MERGE_BRANCH,
     MERGE_BRANCH_ERROR,
     MERGE_BRANCH_SUCCESS,
-    GET_ENTITIES_FOR_BRANCHES,
-    IS_MAIN_BRANCH,
-    GET_BRANCH_CHANGES,
-    HANDLE_CONFLICT,
-    HANDLE_MULTIPLE_CONFLICTS,
-    GET_DATA_SELECTORS_FOR_BRANCHES,
-    CLEAR_CACHE,
-    CLEAR_CACHE_SUCCESS,
-    CLEAR_CACHE_ERROR,
+    MODULES_LOADED,
+    MODULES_REQUEST,
+    OPEN_MODULE,
+    RESET_PASSWORD_ERROR,
+    RESET_PASSWORD_SUCCESS,
+    SET_ACTIVE_TIMER_INTERVAL,
+    START_REQUEST,
     START_UPDATE_TIME_ACTIVE_TIMER,
     STOP_UPDATE_TIME_ACTIVE_TIMER,
-    SET_ACTIVE_TIMER_INTERVAL,
-    CLEAR_ACTIVE_TIMER_INTERVAL,
+    TOGGLE_PIN_MODULE,
     UPDATE_ACTIVE_TIME,
-    GENERATE_TOTP_BACKUP_CODES,
-    GENERATE_TOTP_BACKUP_CODES_SUCCESS,
-    GENERATE_TOTP_BACKUP_CODES_ERROR,
-    CLEAR_LOCAL_TOTP_BACKUP_CODES,
     USE_TOTP_BACKUP_CODE,
     USE_TOTP_BACKUP_CODE_ERROR,
-    USER_BACKUP_CODES_GENERATED
+    USER_BACKUP_CODES_GENERATED,
+    VALID_SUB_DOMAIN
 } from "./mutation-types";
 
 const baseModule = {
@@ -782,7 +785,11 @@ const branchesModule = {
         branches: [],
         entities: [],
         isMainBranch: false,
-        branchChanges: {}
+        branchChanges: {},
+        mergeBranchError: null,
+        mergeBranchResult: null,
+        deleteBranchResult: null,
+        deleteBranchError: null
     }),
 
     mutations: {
@@ -933,9 +940,19 @@ const branchesModule = {
                 conflict.acceptChange = acceptChange;
             }
         },
-        
+
         [GET_DATA_SELECTORS_FOR_BRANCHES](state, dataSelectors) {
             state.dataSelectors = dataSelectors;
+        },
+
+        [DELETE_BRANCH_SUCCESS](state, result) {
+            state.deleteBranchResult = result;
+            state.deleteBranchError = null;
+        },
+
+        [DELETE_BRANCH_ERROR](state, error) {
+            state.deleteBranchResult = null;
+            state.deleteBranchError = error;
         }
     },
 
@@ -1026,11 +1043,27 @@ const branchesModule = {
         [HANDLE_MULTIPLE_CONFLICTS]({ commit }, payload) {
             commit(HANDLE_MULTIPLE_CONFLICTS, payload);
         },
-        
+
         async [GET_DATA_SELECTORS_FOR_BRANCHES]({commit }) {
             commit(START_REQUEST);
             const dataSelectorsResponse = await main.branchesService.getDataSelectors();
             commit(GET_DATA_SELECTORS_FOR_BRANCHES, dataSelectorsResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [DELETE_BRANCH]({ commit }, data) {
+            commit(START_REQUEST);
+            const result = await main.branchesService.delete(data);
+
+            if (result.success) {
+                if (result.data) {
+                    commit(DELETE_BRANCH_SUCCESS, result.data);
+                } else {
+                    commit(DELETE_BRANCH_ERROR, result.message);
+                }
+            } else {
+                commit(DELETE_BRANCH_ERROR, result.message);
+            }
             commit(END_REQUEST);
         }
     },
