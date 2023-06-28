@@ -1,5 +1,6 @@
-﻿import { DateTime } from "luxon";
+﻿import {DateTime} from "luxon";
 import "./Processing.js";
+
 window.$ = require("jquery");
 
 /**
@@ -1087,6 +1088,7 @@ export class Wiser {
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan tijdens opslaan van de wijzigingen. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
+            return false;
         }
     }
 

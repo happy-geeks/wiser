@@ -1829,7 +1829,7 @@ const moduleSettings = {
                 }
             }
 
-            if (showSuccessMessage) {
+            if (updateResult && showSuccessMessage) {
                 this.notification.show({ message: "Opslaan is gelukt" }, "success");
             }
         }
