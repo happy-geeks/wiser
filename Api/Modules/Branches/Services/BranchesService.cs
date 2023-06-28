@@ -961,7 +961,32 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
         {
-            if (!(await CanAccessBranchAsync(identity, id)).ModelObject)
+            var currentCustomer = (await wiserCustomersService.GetSingleAsync(identity, true)).ModelObject;
+            var productionCustomer = (await wiserCustomersService.GetSingleAsync(currentCustomer.CustomerId, true)).ModelObject;
+            var branchData = await wiserCustomersService.GetSingleAsync(id, true);
+
+            // Check if the branch exists or if there were any other errors retrieving the branch.
+            if (branchData.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = branchData.StatusCode,
+                    ErrorMessage = branchData.ErrorMessage
+                };
+            }
+
+            // Make sure the user is not trying to delete the main branch somehow, that is not allowed.
+            if (productionCustomer.CustomerId == id)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "U probeert de hoofdbranch te verwijderen, dat is niet mogelijk."
+                };
+            }
+
+            // Check to make sure someone is not trying to delete an environment that does not belong to them.
+            if (branchData.ModelObject.CustomerId != productionCustomer.CustomerId)
             {
                 return new ServiceResult<bool>(false)
                 {
@@ -969,14 +994,26 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
                 };
             }
 
+            var settings = new BranchActionBaseModel
+            {
+                Id = id,
+                DatabaseName = branchData.ModelObject.Database.DatabaseName
+            };
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.AddParameter("id", id);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
             clientDatabaseConnection.AddParameter("userid", IdentityHelpers.GetWiserUserId(identity));
-            var query = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} (branch_id, action, added_on, added_by, user_id, start_on)
-VALUES (?id, 'delete', ?now, ?username, ?userId, ?now)";
+            clientDatabaseConnection.AddParameter("data", JsonConvert.SerializeObject(settings));
+            var query = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} (branch_id, action, added_on, added_by, user_id, start_on, data)
+VALUES (?id, 'delete', ?now, ?username, ?userId, ?now, ?data)";
             await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Delete the row from easy_customers, so that the WTS doesn't need to access the main Wiser database.
+            query = $@"DELETE FROM {ApiTableNames.WiserCustomers} WHERE id = ?id";
+            wiserDatabaseConnection.AddParameter("id", id);
+            await wiserDatabaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true)
             {

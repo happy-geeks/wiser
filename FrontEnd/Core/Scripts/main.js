@@ -869,6 +869,7 @@ class Main {
 
                     if (!this.deleteBranchError) {
                         this.$refs.deleteBranchConfirmationPrompt.close();
+                        this.$refs.wiserBranchesPrompt.close();
                         this.showGeneralMessagePrompt("De branch staat klaar om verwijderd te worden. U krijgt een bericht wanneer dit voltooid is.");
 
                         return true;
