@@ -45,7 +45,7 @@ public class FilesRepository : IFilesRepository, ITransientService
     END AS spriteCssClass,
     IF(content_type IN('text/html', 'application/octet-stream'), CONVERT(content USING utf8), '') AS html
 FROM {tablePrefix}{WiserTableNames.WiserItemFile}
-WHERE item_id = ?parentId
+WHERE item_id = ?parentId AND itemlink_id=0
 
 UNION ALL
 
