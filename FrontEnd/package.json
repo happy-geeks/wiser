@@ -35,7 +35,7 @@
     "@marker.io/browser": "^0.16.0",
     "@vue/compiler-sfc": "^3.2.47",
     "css-loader": "^6.7.3",
-    "html-webpack-plugin": "^5.5.0",
+    "html-webpack-plugin": "^5.5.3",
     "sass": "^1.59.3",
     "sass-loader": "^13.2.1",
     "style-loader": "^3.3.2",
