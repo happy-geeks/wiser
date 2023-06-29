@@ -124,6 +124,7 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserItemLinkDetail,
                 WiserTableNames.WiserDataSelector,
                 WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserTemplateExternalFiles,
                 WiserTableNames.WiserDynamicContent,
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,

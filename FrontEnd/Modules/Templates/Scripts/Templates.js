@@ -2109,7 +2109,7 @@ const moduleSettings = {
                     if (a.__ordering < b.__ordering) return -1;
                     if (a.__ordering > b.__ordering) return 1;
                     return 0;
-                }).map(d => d.url);
+                }).map(d => { return { uri: d.url } });
             }
 
             return settings;
