@@ -1,0 +1,8 @@
+/* Kendo Theme 6.4.0 - Material */
+
+/* Panel with splitter */
+.k-ghost-splitbar-horizontal, 
+.k-splitbar-horizontal {
+    width: 7px;
+    border-width: 0 1px;
+}

@@ -17,15 +17,16 @@ require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.datepicker.js");
 require("@progress/kendo-ui/js/kendo.daterangepicker.js");
-require("@progress/kendo-ui/js/dataviz/chart/chart.js");
-require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
+require("@progress/kendo-ui/js/kendo.dataviz.chart.js");
+require("@progress/kendo-ui/js/kendo.dataviz.js");
+//require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
 
-};
+}; 
 
 ((settings) => {
     /**

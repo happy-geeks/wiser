@@ -613,7 +613,7 @@ const moduleSettings = {
                 await require("@progress/kendo-ui/js/kendo.timepicker.js");
             }
             if (scriptTemplate.indexOf("kendoChart") > -1) {
-                await require("@progress/kendo-ui/js/dataviz/chart/chart.js");
+                await require("@progress/kendo-ui/js/kendo.dataviz.chart.js");
             }
             if (scriptTemplate.indexOf("kendoColorPicker") > -1) {
                 await require("@progress/kendo-ui/js/kendo.colorpicker.js");
