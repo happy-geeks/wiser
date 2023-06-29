@@ -459,9 +459,9 @@ a.k-icon:hover {
     margin: 5px 0;
 }
 
-.k-input .k-input, 
-.k-input .k-picker, 
-.k-picker .k-input, 
+.k-input .k-input,
+.k-input .k-picker,
+.k-picker .k-input,
 .k-picker .k-picker {
     margin: 0;
 }
@@ -1465,11 +1465,7 @@ div.k-filebrowser-dropzone em {
 }
 
 .k-notification {
-    display: block;
     position: relative !important;
-    width: 60%;
-    text-align: center;
-    margin-left: auto;
 }
 
 .k-notification-error {

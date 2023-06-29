@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Api.Core.Filters;
 using Api.Core.Models;
 using Api.Core.Services;
@@ -208,7 +210,24 @@ namespace Api
             }
             else
             {
-                identityServerBuilder.AddSigningCredential(Configuration.GetValue<string>("Api:SigningCredentialCertificate"));
+                // Create an X509Store for the Web Hosting store and see if the certificate is there.
+                var certificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
+                using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
+                webHostingStore.Open(OpenFlags.ReadOnly);
+                var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+                if (certificateCollection.Count == 0)
+                {
+                    using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                    personalStore.Open(OpenFlags.ReadOnly);
+                    certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+
+                    if (certificateCollection.Count == 0)
+                    {
+                        throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
+                    }
+                }
+
+                identityServerBuilder.AddSigningCredential(certificateCollection.First());
             }
 
             services.AddAuthentication("Bearer")
