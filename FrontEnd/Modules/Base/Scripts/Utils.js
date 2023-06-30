@@ -4,6 +4,7 @@ import * as Diff2Html from "diff2html/lib/diff2html"
 import "diff2html/bundles/css/diff2html.min.css"
 
 window.$ = require("jquery");
+window.jQuery = window.$;
 
 /**
  * This function overrides the default ":contains" psuedo from jQuery, so that it's no longer case sensitive.
