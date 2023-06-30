@@ -1,6 +1,8 @@
-﻿import { DateTime } from "luxon";
+﻿import {DateTime} from "luxon";
 import "./Processing.js";
+
 window.$ = require("jquery");
+window.jQuery = window.$;
 
 /**
  * This function overrides the default ":contains" psuedo from jQuery, so that it's no longer case sensitive.
