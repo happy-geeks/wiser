@@ -9,6 +9,7 @@
         <div class="item version-live">
             <div class="flex-container">
                 <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.PublishedEnvironments.LiveVersion ? "selected" : "")>@version</!option>
@@ -22,6 +23,7 @@
         <div class="item version-accept">
             <div class="flex-container">
                 <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.PublishedEnvironments.AcceptVersion ? "selected" : "")>@version</!option>
@@ -35,6 +37,7 @@
         <div class="item version-test">
             <div class="flex-container">
                 <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.PublishedEnvironments.TestVersion ? "selected" : "")>@version</!option>

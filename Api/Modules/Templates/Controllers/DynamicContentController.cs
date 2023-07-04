@@ -92,7 +92,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveSettingsAsync(int id, DynamicContentOverviewModel data)
         {
-            return (await dynamicContentService.SaveNewSettingsAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
+            return (await dynamicContentService.SaveAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
         }
 
         /// <summary>
