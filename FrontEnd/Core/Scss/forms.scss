@@ -205,7 +205,7 @@ input[type="date"] {
         &[type="text"] {
             + ins {
                 &:before {
-                    content: "\e961";
+                    content: "\e95e";
                 }
             }
         }
@@ -227,6 +227,14 @@ input[type="date"] {
         img {
             width: 300px;
             margin: 0 auto;
+        }
+    }
+    
+    .k-clear-value {
+        .k-svg-icon {
+            display: inline-block;
+            vertical-align: middle;
+            width: 16px;
         }
     }
 }
