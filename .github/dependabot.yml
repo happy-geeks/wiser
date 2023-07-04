@@ -6,7 +6,21 @@ updates:
   # Enable version updates for nuget
   - package-ecosystem: "nuget"
     # Look for `package.json` and `lock` files in the `root` directory
-    directory: "/"
+    directory: "/FrontEnd"
+    # Make pull requests on develop branch.
+    target-branch: "develop"
+    # Set labels.
+    labels:
+      - "Dependabot"
+      - "NuGet dependencies"
+    # Check the nuget registry for updates every day (weekdays)
+    schedule:
+      interval: "daily"
+updates:
+  # Enable version updates for nuget
+  - package-ecosystem: "nuget"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/Api"
     # Make pull requests on develop branch.
     target-branch: "develop"
     # Set labels.
