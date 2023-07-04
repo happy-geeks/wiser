@@ -356,13 +356,6 @@ ORDER BY template.ordering ASC");
             if (TemplateQueryStrings.Count == 0)
             {
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("GET_PROPERTY_VALUES", @"SELECT wid.`value` AS `text`, wid.`value`
-FROM wiser_item wi
-JOIN wiser_itemdetail wid ON wid.item_id = wi.id
-WHERE wi.entity_type = '{entityName}' AND wid.`key` = '{propertyName}' AND wid.`value` <> ''
-GROUP BY wid.`value`
-ORDER BY wid.`value`
-LIMIT 25");
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_ENTITY_NAMES", @"SELECT `name`, module_id AS moduleId
 FROM wiser_entity
 WHERE `name` <> ''
