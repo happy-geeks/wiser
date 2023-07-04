@@ -801,15 +801,6 @@ table:not(.k-scheduler-dayview) .k-scheduler-header-wrap .k-today {
     background-color: var(--white-color);
 }
 
-.k-state-active,
-.k-state-active:hover,
-.k-active-filter,
-.k-tabstrip .k-state-active {
-    background-color: var(--white-color);
-    border-color: var(--medium-color);
-    color: var(--dark-txt);
-}
-
 .k-fieldselector .k-list-container {
     background-color: var(--white-color);
 }
@@ -2594,13 +2585,6 @@ span.k-colorpicker {
 .k-tabstrip-top>.k-tabstrip-items>.k-item {
     border-top-width: 2px;
     border-bottom-width: 0;
-}
-
-.k-tabstrip-items .k-state-active,
-.k-panelbar .k-tabstrip-items .k-state-active {
-    background-color: var(--item-bg-color);
-    background-image: none;
-    border-top-color: var(--color-2);
 }
 
 .k-tabstrip .k-content.k-state-active {

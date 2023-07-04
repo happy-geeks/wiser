@@ -642,12 +642,6 @@
 .k-tabstrip-items-wrapper {
 	background-color: var(--white-color);
 }
-.k-tabstrip-items-wrapper .k-tabstrip-items .k-item.k-state-active {
-	background-color: var(--item-bg-color);
-	color: var(--dark-txt);
-	border-bottom-color: transparent;
-	border-top-width: 1px;
-}
 .k-tabstrip .k-tabstrip-items {
 	background-color: var(--white-color);
 	margin: 0 !important;
