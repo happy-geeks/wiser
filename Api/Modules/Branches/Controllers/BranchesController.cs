@@ -79,7 +79,7 @@ namespace Api.Modules.Branches.Controllers
         {
             return (await branchesService.GetChangesAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Merge all changes done to wiser items, from a specific branch, to the main branch.
         /// </summary>
@@ -91,6 +91,18 @@ namespace Api.Modules.Branches.Controllers
         public async Task<IActionResult> MergeBranchAsync(MergeBranchSettingsModel settings)
         {
             return (await branchesService.MergeAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Marks a branch to be deleted by the WTS.
+        /// </summary>
+        /// <param name="id">The ID of the branch that should be deleted.</param>
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteBranchAsync(int id)
+        {
+            return (await branchesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
     }
 }

@@ -1,8 +1,6 @@
-﻿@using FrontEnd.Core.Models
+﻿@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @using GeeksCoreLibrary.Core.Enums
-@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
-
-@model BaseViewModel
+@model FrontEnd.Core.Models.BaseViewModel
 <style>
     [v-cloak] {
         display: none;
@@ -131,28 +129,29 @@
                         <button v-if="isMainBranch" class="btn btn-primary" @@click="openCreateBranchPrompt">Nieuwe branch maken</button>
                     </div>
                     <div class="col col-3" v-if="branches.length > 0">
-                        <h2>Branch openen</h2>
+                        <h2>Branch openen/verwijderen</h2>
                         <p>
-                            Hier kan een bestaande branch geopend worden.
+                            Hier kan een bestaande branch geopend of verwijderd worden.
                         </p>
 
                         <div class="col col-12 form-row" v-if="isMainBranch">
-                            <label for="open-branch-type">Waar wilt u de branch openen?</label>
-                            <dropdownlist id="open-branch-type" class="full-width" :data-items="openBranchTypes" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranchType"></dropdownlist>
+                            <label for="branch-action">Wat wilt u doen met de branch?</label>
+                            <dropdownlist id="branch-action" class="full-width" :data-items="branchActions" :text-field="'name'" :data-item-key="'id'" v-model="branchActionSettings.selectedAction"></dropdownlist>
                         </div>
 
-                        <div class="col col-12 form-row" v-if="openBranchSettings.selectedBranchType.id === 'website'">
+                        <div class="col col-12 form-row" v-if="branchActionSettings.selectedAction && branchActionSettings.selectedAction.id === 'website'">
                             <label for="website-url">Geef de URL op van uw website</label>
-                            <input type="url" id="website-url" placeholder="https://mywebsite.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="openBranchSettings.websiteUrl" required>
+                            <input type="url" id="website-url" placeholder="https://mywebsite.com/" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="branchActionSettings.websiteUrl" required>
                         </div>
 
                         <div class="col col-12 form-row" v-if="isMainBranch">
-                            <label for="available-branches">Selecteer de branch die u wilt openen</label>
-                            <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="openBranchSettings.selectedBranch"></dropdownlist>
+                            <label for="available-branches">Selecteer een branch</label>
+                            <dropdownlist id="available-branches-to-open" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="branchActionSettings.selectedBranch"></dropdownlist>
                         </div>
 
-                        <a href="#" class="btn btn-primary copy-branch-url" @@click="openOrCopyBranch($event, true)">Branch URL kopiëren</a>
-                        <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)">Branch openen</a>
+                        <a href="#" class="btn btn-primary copy-branch-url" @@click="openOrCopyBranch($event, true)" v-if="branchActionSettings.selectedAction && branchActionSettings.selectedAction.id !== '' && branchActionSettings.selectedAction.id !== 'delete'">Branch URL kopiëren</a>
+                        <a href="#" class="btn btn-primary open-branch" @@click="openOrCopyBranch($event, false)" v-if="branchActionSettings.selectedAction && branchActionSettings.selectedAction.id !== '' && branchActionSettings.selectedAction.id !== 'delete'">Branch openen</a>
+                        <a href="#" class="btn btn-primary delete-branch" @@click="openDeleteBranchConfirmationPrompt($event)" v-if="branchActionSettings.selectedAction && branchActionSettings.selectedAction.id === 'delete'">Branch verwijderen</a>
                     </div>
                     <div :class="{ 'col': true, 'col-6': isMainBranch || branches.length > 0, 'col-9': !isMainBranch || !branches.length }">
                         <h2>Branch terugzetten (mergen)</h2>
@@ -681,6 +680,12 @@
             </ul>
 
             <div class="error" v-if="generateTotpBackupCodesError">{{ generateTotpBackupCodesError }}</div>
+        </wiser-dialog>
+
+        <wiser-dialog :modal="true" :width="'400px'" :title="'Branch verwijderen'" ref="deleteBranchConfirmationPrompt" :visible="false" :actions="[{ text: 'Nee' }, { text: 'Ja', primary: true, action: deleteBranch }]">
+            <p>Weet u zeker dat u de branch "{{ branchActionSettings.selectedBranch.name }}" wilt verwijderen? Deze actie kan niet ongedaan gemaakt worden! Wijzigingen die in de branch zijn gedaan en niet samengevoegd zijn met live, zullen verloren gaan!</p>
+
+            <div class="error" v-if="deleteBranchError">{{ deleteBranchError }}</div>
         </wiser-dialog>
     </div>
 </div>
