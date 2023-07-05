@@ -1,11 +1,11 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../css/DataSelector.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/DataSelector.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -527,7 +527,7 @@ const moduleSettings = {
                 transport: {
                     read: (options) => {
                         Wiser.api({
-                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
+                            url: `${this.settings.wiserApiRoot}entity-properties/${encodeURIComponent(dataItem.entityName)}/unique-values/${encodeURIComponent(dataItem.propertyName)}?languageCode=${dataItem.languageCode}`,
                             dataType: "json"
                         }).then((result) => {
                             const items = [
@@ -539,7 +539,12 @@ const moduleSettings = {
                                     text: "Actuele datum en tijd",
                                     value: "{NowMysqlTime}"
                                 },
-                                ...result
+                                ...result.map(item => {
+                                    return {
+                                        text: item,
+                                        value: item
+                                    };
+                                })
                             ];
 
                             options.success(items);
@@ -1362,7 +1367,7 @@ const moduleSettings = {
                         transport: {
                             read: (options) => {
                                 Wiser.api({
-                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
+                                    url: `${this.settings.wiserApiRoot}entity-properties/${encodeURIComponent(dataItem.entityName)}/unique-values/${encodeURIComponent(dataItem.propertyName)}?languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
                                     const items = [
@@ -1374,7 +1379,12 @@ const moduleSettings = {
                                             text: "Actuele datum en tijd",
                                             value: "{NowMysqlTime}"
                                         },
-                                        ...result
+                                        ...result.map(item => {
+                                            return {
+                                                text: item,
+                                                value: item
+                                            };
+                                        })
                                     ];
 
                                     options.success(items);

@@ -16,6 +16,7 @@ export default {
                 subDomain: "",
                 isWebShop: false,
                 isConfigurator: false,
+                isMultiLanguage: false,
                 createNewDatabase: true,
                 digitalOceanApiAccessToken: "",
                 databaseHost: "",
@@ -136,7 +137,7 @@ export default {
                     break;
                 }
             }
-            
+
             this.newCustomerData.databaseHost = result.data.cluster.database.connection.host;
             this.newCustomerData.databasePort = result.data.cluster.database.connection.port;
             return result;
