@@ -2585,6 +2585,7 @@ export class Fields {
                                 const dialogElement = $("#sendMailDialog");
                                 const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
+                                const uploadedFiles = [];
 
                                 // Set the initial values from the query.
                                 const currentEmailData = container.data("emailData");
@@ -2657,8 +2658,9 @@ export class Fields {
                                                 }
 
                                                 Promise.all(promises).then((results) => {
-                                                    const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                    const wiserFileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                    const uploadElement = dialogElement.find("input[name=files]");
+                                                    const allFiles = uploadElement.data("kendoUpload").getFiles();
+                                                    const wiserFileAttachments = uploadedFiles.map(file => file.fileId) || [];
 
                                                     for (let fileId of results) {
                                                         wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
@@ -2764,10 +2766,11 @@ export class Fields {
                                 attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
                                     files: files,
                                     async: {
-                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=temporary`,
+                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=TEMPORARY_FILE_FROM_WISER`,
                                         removeUrl: "remove", // TODO
                                         withCredentials: false
                                     },
+                                    multiple: true,
                                     upload: (e) => {
                                         let xhr = e.XMLHttpRequest;
                                         if (xhr) {
@@ -2779,7 +2782,11 @@ export class Fields {
                                         }
                                     },
                                     success: (uploadSuccessEvent) => {
-                                        uploadSuccessEvent.sender.element.data("fileData", uploadSuccessEvent.response[0]);
+                                        if (uploadSuccessEvent.operation !== "upload") {
+                                            return;
+                                        }
+
+                                        uploadedFiles.push(...uploadSuccessEvent.response);
                                     }
                                 }).data("kendoUpload");
 
