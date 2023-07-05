@@ -1,4 +1,4 @@
-﻿import {TrackJS} from "trackjs";
+import {TrackJS} from "trackjs";
 import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {Preview} from "./Preview.js";
