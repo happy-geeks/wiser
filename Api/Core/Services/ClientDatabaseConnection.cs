@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -16,6 +17,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -37,6 +39,7 @@ namespace Api.Core.Services
         private readonly ApiSettings apiSettings;
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly ILogger<ClientDatabaseConnection> logger;
+        private readonly IWebHostEnvironment webHostEnvironment;
 
         private string connectionStringForReading;
         private string connectionStringForWriting;
@@ -53,7 +56,7 @@ namespace Api.Core.Services
         private IDbTransaction transaction;
 
         private readonly ConcurrentDictionary<string, object> parameters = new();
-        
+
         private readonly Guid instanceId;
         private int readConnectionLogId;
         private int writeConnectionLogId;
@@ -64,13 +67,14 @@ namespace Api.Core.Services
         /// <summary>
         /// Creates a new instance of <see cref="ClientDatabaseConnection"/>.
         /// </summary>
-        public ClientDatabaseConnection(IDatabaseConnection wiserDatabaseConnection, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IHttpContextAccessor httpContextAccessor, ILogger<ClientDatabaseConnection> logger)
+        public ClientDatabaseConnection(IDatabaseConnection wiserDatabaseConnection, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IHttpContextAccessor httpContextAccessor, ILogger<ClientDatabaseConnection> logger, IWebHostEnvironment webHostEnvironment)
         {
             this.gclSettings = gclSettings.Value;
             this.WiserDatabaseConnection = wiserDatabaseConnection;
             this.apiSettings = apiSettings.Value;
             this.httpContextAccessor = httpContextAccessor;
             this.logger = logger;
+            this.webHostEnvironment = webHostEnvironment;
             instanceId = Guid.NewGuid();
         }
 
@@ -124,7 +128,7 @@ namespace Api.Core.Services
             var encryptedPassword = dataTable.Rows[0].Field<string>("db_passencrypted");
             var decryptedPassword = encryptedPassword.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
             var database = dataTable.Rows[0].Field<string>("db_dbname");
-            
+
             // Use the default port number for MySQL (which is 3306) if it isn't set in the customer settings table.
             if (String.IsNullOrWhiteSpace(port))
             {
@@ -293,7 +297,7 @@ namespace Api.Core.Services
             {
                 query.Append($"UPDATE {(ignoreErrors ? "IGNORE" : "")} `{tableName}` SET ");
             }
-            
+
             if (idIsDefaultValue)
             {
                 query.Append($"({String.Join(",", parameters.Select(p => $"`{(p.Key == "InsertOrUpdateRecord_Id" ? idColumnName : p.Key)}`"))}) VALUES ({String.Join(",", parameters.Select(p => $"?{p.Key}"))})");
@@ -520,7 +524,7 @@ namespace Api.Core.Services
         public async Task EnsureOpenConnectionForReadingAsync()
         {
             var createdNewConnection = false;
-            
+
             // If we don't have a connection string yet, get the connection string from the Wiser database.
             if (String.IsNullOrWhiteSpace(connectionStringForReading))
             {
@@ -603,7 +607,7 @@ namespace Api.Core.Services
                         // Make sure we always use the same character set and collation.
                         CommandForReading.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;";
                         await CommandForReading.ExecuteNonQueryAsync();
-                        
+
                         // Make sure we always use the correct timezone.
                         if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
                         {
@@ -621,7 +625,7 @@ namespace Api.Core.Services
                         // Log the opening of the connection.
                         await AddConnectionOpenLogAsync(false);
                     }
-                    
+
                     break;
             }
         }
@@ -671,11 +675,11 @@ namespace Api.Core.Services
 
                     try
                     {
-                    
+
                         // Make sure we always use the same character set and collation.
                         CommandForWriting.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;";
                         await CommandForWriting.ExecuteNonQueryAsync();
-                        
+
                         // Make sure we always use the correct timezone.
                         if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
                         {
@@ -724,7 +728,7 @@ namespace Api.Core.Services
             {
                 CommandForReading.CommandTimeout = value;
             }
-            
+
             if (CommandForWriting != null)
             {
                 CommandForWriting.CommandTimeout = value;
@@ -753,17 +757,10 @@ namespace Api.Core.Services
                 {
                     return;
                 }
-                
+
                 var commandToUse = isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? CommandForWriting : CommandForReading;
 
-                if (!logTableExists.HasValue)
-                {
-                    var dataTable = new DataTable();
-                    commandToUse.CommandText = $"SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_NAME = '{Constants.DatabaseConnectionLogTableName}' AND TABLE_SCHEMA = '{(ConnectionForWriting ?? ConnectionForReading).Database.ToMySqlSafeValue(false)}'";
-                    using var dataAdapter = new MySqlDataAdapter(commandToUse);
-                    await dataAdapter.FillAsync(dataTable);
-                    logTableExists = dataTable.Rows.Count > 0;
-                }
+                logTableExists ??= await LogTableExistsAsync(commandToUse);
 
                 if (!logTableExists.Value)
                 {
@@ -796,7 +793,7 @@ VALUES (?gclConnectionOpened, ?gclConnectionUrl, ?gclConnectionHttpMethod, ?gclC
 SELECT LAST_INSERT_ID();";
                 await using var reader = await commandToUse.ExecuteReaderAsync();
                 var id = !await reader.ReadAsync() ? 0 : (Int32.TryParse(Convert.ToString(reader.GetValue(0)), out var tempId) ? tempId : 0);
-                
+
                 if (isWriteConnection)
                 {
                     writeConnectionLogId = id;
@@ -820,7 +817,7 @@ SELECT LAST_INSERT_ID();";
         private async Task AddConnectionCloseLogAsync(bool isWriteConnection, bool disposeConnection = false)
         {
             var commandToUse = isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? CommandForWriting : CommandForReading;
-            
+
             try
             {
                 if (!gclSettings.LogOpeningAndClosingOfConnections && ((isWriteConnection && writeConnectionLogId == 0) || (!isWriteConnection && readConnectionLogId == 0)))
@@ -879,6 +876,50 @@ SELECT LAST_INSERT_ID();";
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks whether or not the log table (for logging the opening and closing of database connections) exists.
+        /// </summary>
+        /// <param name="command">The MySqlCommand to execute the query on to check if the table exists.</param>
+        /// <returns>A boolean indicating whether the log table exists or not.</returns>
+        private async Task<bool> LogTableExistsAsync(MySqlCommand command)
+        {
+            // Simple text file that indicates whether or not the log table exists, so that we don't have to execute an extra query every time.
+            var cacheDirectory = FileSystemHelpers.GetContentCacheFolderPath(webHostEnvironment);
+            // TODO: Use Constants.LogTableExistsCacheFileName instead of hardcoding the file name, once the GCL pull request has been approved.
+            var filePath = cacheDirectory == null ? null : Path.Combine(cacheDirectory, String.Format("MySqlDatabaseConnection-LogTableExistsAsync-{0}.txt", (ConnectionForWriting ?? ConnectionForReading).Database));
+            if (filePath != null && File.Exists(filePath))
+            {
+                return true;
+            }
+
+            var dataTable = new DataTable();
+            command.CommandText = $"SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_NAME = '{Constants.DatabaseConnectionLogTableName}' AND TABLE_SCHEMA = '{(ConnectionForWriting ?? ConnectionForReading).Database.ToMySqlSafeValue(false)}'";
+            using var dataAdapter = new MySqlDataAdapter(command);
+            await dataAdapter.FillAsync(dataTable);
+
+            if (dataTable.Rows.Count == 0)
+            {
+                return false;
+            }
+
+            if (filePath == null)
+            {
+                return true;
+            }
+
+            try
+            {
+                // Create the file to indicate that the table exists.
+                await File.WriteAllTextAsync(filePath, "");
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"An error occurred while trying to create the file '{filePath}'.");
+            }
+
+            return true;
         }
     }
 }

@@ -21,6 +21,13 @@ public interface ICommitService
     Task<ServiceResult<CommitModel>> CreateAndOrDeployCommitAsync(CommitModel data, ClaimsIdentity identity);
 
     /// <summary>
+    /// Deploys one or more commits to an environment.
+    /// </summary>
+    /// <param name="data">The environment and commit IDs.</param>
+    /// <param name="identity">The authenticated user data.</param>
+    Task<ServiceResult<bool>> DeployCommitsAsync(DeployCommitsRequestModel data, ClaimsIdentity identity);
+
+    /// <summary>
     /// Deploy a commit to an environment. This will only mark the commit as deployed, it will not actually deploy the commit.
     /// </summary>
     /// <param name="id">The ID of the commit to deploy.</param>

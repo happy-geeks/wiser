@@ -1,6 +1,6 @@
-﻿import {Dates, Wiser, Misc, Utils} from "../../Base/Scripts/Utils.js";
+﻿import {Dates, Misc, Utils, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { DateTime } from "luxon";
+import {DateTime} from "luxon";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.dialog.js");
@@ -149,6 +149,13 @@ export class Fields {
                     switch ((field.attr("type") || "").toUpperCase()) {
                         case "CHECKBOX":
                             data.value = field.prop("checked");
+                            break;
+                        case "RADIO":
+                            // For radio buttons, only add the value if it's checked. Otherwise we'd get the value of all radio buttons.
+                            if (!field.prop("checked")) {
+                                return;
+                            }
+                            data.value = field.val();
                             break;
                         default:
                             data.value = field.val();
@@ -884,7 +891,7 @@ export class Fields {
             // Try to determine the entity type. If this button is located within a window, that window element
             // might have the entity type set as one of its data properties.
             let entityType;
-            const window = event.sender.element.closest("div.k-window-content");
+            const window = event.sender.element.closest("div.entity-container");
             if (window) {
                 entityType = window.data("entityType");
                 if (!entityType && window.data("entityTypeDetails")) {
@@ -1955,9 +1962,9 @@ export class Fields {
 
                         // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openWindow to open a newly created or updated item.
                         if (queryActionResult) {
-                            windowItemId = windowItemId.replace(/{itemId}/gi, queryActionResult.itemId || 0);
-                            windowLinkId = windowLinkId.replace(/{linkId}/gi, queryActionResult.linkId || 0);
-                            windowLinkType = windowLinkType.replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
+                            windowItemId = windowItemId.toString().replace(/{itemId}/gi, queryActionResult.itemId || 0);
+                            windowLinkId = windowLinkId.toString().replace(/{linkId}/gi, queryActionResult.linkId || 0);
+                            windowLinkType = windowLinkType.toString().replace(/{linkType}/gi, queryActionResult.linkType || queryActionResult.linkTypeNumber || 0);
                         }
                         windowItemId = Wiser.doWiserItemReplacements(windowItemId, mainItemDetails);
 
@@ -2629,17 +2636,22 @@ export class Fields {
                                                 const allEditors = container.find(".editor");
                                                 for (let index = 0; index < allEditors.length; index++) {
                                                     const kendoEditor = $(allEditors[index]).data("kendoEditor");
+                                                    const pdfToHtmlData = {
+                                                        html: $("<div/>").text(kendoEditor.value()).html(), // alternative htmlEncode, because kendo.htmlEncode makes from a single quote &#039; (which goes wrong when posted to URL)
+                                                        backgroundPropertyName: currentAction.pdfBackgroundPropertyName || "",
+                                                        documentOptions: documentOptions,
+                                                        itemId: currentTemplateDetails.id,
+                                                        saveInDatabase: true
+                                                    };
+                                                    if (currentAction.pdfFilename) {
+                                                        pdfToHtmlData.fileName = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
+                                                    }
+
                                                     let ajaxOptions = {
                                                         url: `${this.base.settings.wiserApiRoot}pdf/save-html-as-pdf`,
                                                         method: "POST",
                                                         contentType: "application/json",
-                                                        data: JSON.stringify({
-                                                            html: $("<div/>").text(kendoEditor.value()).html(), // alternative htmlEncode, because kendo.htmlEncode makes from a single quote &#039; (which goes wrong when posted to URL)
-                                                            backgroundPropertyName: currentAction.pdfBackgroundPropertyName || "",
-                                                            documentOptions: documentOptions,
-                                                            itemId: currentTemplateDetails.id,
-                                                            saveInDatabase: true
-                                                        })
+                                                        data: JSON.stringify(pdfToHtmlData)
                                                     };
                                                     promises.push(Wiser.api(ajaxOptions));
                                                 }

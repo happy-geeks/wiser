@@ -1,11 +1,11 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../css/DataSelector.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/DataSelector.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -137,13 +137,10 @@ const moduleSettings = {
                     });
                     console.error(e);
                 }
-            } else {
-                // Set some initial values.
-                await this.updateAvailableEntityTypes();
-
-                // Hide loader at the end.
-                this.toggleMainLoader(false);
             }
+
+            // Hide loader at the end.
+            this.toggleMainLoader(false);
         }
 
         /**
@@ -312,7 +309,6 @@ const moduleSettings = {
 
                 // This isn't really necessary, but it's nice to have the modules in a set order.
                 this.selectedModules.sort();
-                this.updateAvailableEntityTypes();
             });
 
             const selectEntity = $("#selectEntity").getKendoDropDownList();
@@ -387,19 +383,8 @@ const moduleSettings = {
         }
 
         async getAllEntityTypes() {
-            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
-            this.allEntityTypes = response.map(ce => ce.entityType);
-        }
-
-        async updateAvailableEntityTypes() {
-            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
-            this.availableEntityTypes = response.map(ce => ce.entityType);
-
-            $("#selectEntity").getKendoDropDownList().setDataSource({
-                data: this.availableEntityTypes.map((entityType) => {
-                    return { text: entityType, value: entityType };
-                })
-            });
+            this.allEntityTypes = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types` });
+            $("#selectEntity").getKendoDropDownList().setDataSource(this.allEntityTypes);
         }
 
         updateWidgetDataSource(widget, baseDataSource, includeAliasCheck = false) {
@@ -542,7 +527,7 @@ const moduleSettings = {
                 transport: {
                     read: (options) => {
                         Wiser.api({
-                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
+                            url: `${this.settings.wiserApiRoot}entity-properties/${encodeURIComponent(dataItem.entityName)}/unique-values/${encodeURIComponent(dataItem.propertyName)}?languageCode=${dataItem.languageCode}`,
                             dataType: "json"
                         }).then((result) => {
                             const items = [
@@ -554,7 +539,12 @@ const moduleSettings = {
                                     text: "Actuele datum en tijd",
                                     value: "{NowMysqlTime}"
                                 },
-                                ...result
+                                ...result.map(item => {
+                                    return {
+                                        text: item,
+                                        value: item
+                                    };
+                                })
                             ];
 
                             options.success(items);
@@ -1094,6 +1084,7 @@ const moduleSettings = {
                 showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
                 availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
                 showInDashboard: document.getElementById("showInDashboard").checked ? 1 : 0,
+                availableForBranches: document.getElementById("availableForBranches").checked ? 1 : 0,
                 allowedRoles: this.allowedRoles.value().join()
             };
 
@@ -1143,10 +1134,10 @@ const moduleSettings = {
 
             kendoPrompt.open().result.done((input) => {
                 window.processing.addProcess("checkSavedNameExists");
-                Wiser.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
+                Wiser.api({ url: `${this.settings.wiserApiRoot}data-selectors/${encodeURIComponent(input)}/exists` }).then((existsResult) => {
                     window.processing.removeProcess("checkSavedNameExists");
 
-                    if (!Wiser.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
+                    if (existsResult === 0) {
                         this.currentName = input;
 
                         window.processing.addProcess("dataSelectorSave");
@@ -1167,6 +1158,7 @@ const moduleSettings = {
                                 });
                             }
                         );
+
                         return;
                     }
 
@@ -1375,7 +1367,7 @@ const moduleSettings = {
                         transport: {
                             read: (options) => {
                                 Wiser.api({
-                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
+                                    url: `${this.settings.wiserApiRoot}entity-properties/${encodeURIComponent(dataItem.entityName)}/unique-values/${encodeURIComponent(dataItem.propertyName)}?languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
                                     const items = [
@@ -1387,7 +1379,12 @@ const moduleSettings = {
                                             text: "Actuele datum en tijd",
                                             value: "{NowMysqlTime}"
                                         },
-                                        ...result
+                                        ...result.map(item => {
+                                            return {
+                                                text: item,
+                                                value: item
+                                            };
+                                        })
                                     ];
 
                                     options.success(items);

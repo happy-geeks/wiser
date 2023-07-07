@@ -38,9 +38,9 @@ namespace Api.Modules.EntityTypes.Services
             this.wiserItemsService = wiserItemsService;
             this.databaseHelpersService = databaseHelpersService;
         }
-        
+
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false)
+        public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0)
         {
             var result = new List<EntityTypeModel>();
             var query = $@"SELECT 
@@ -53,9 +53,11 @@ FROM {WiserTableNames.WiserEntity} AS entity
 LEFT JOIN {WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
 WHERE entity.`name` <> ''
 {(onlyEntityTypesWithDisplayName ? "AND entity.friendly_name IS NOT NULL AND entity.friendly_name <> ''" : "")}
+{(moduleId <= 0 ? "" : "AND entity.module_id = ?moduleId")}
 GROUP BY entity.`name`
 ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name), IF(module.`name` IS NULL, '', CONCAT(' (', module.`name`, ')'))) ASC";
 
+            clientDatabaseConnection.AddParameter("moduleId", moduleId);
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
@@ -91,7 +93,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
 FROM {tableName}
 WHERE entity_type IN ({String.Join(", ", group.Select(entity => entity.Id.ToMySqlSafeValue(true)))})
 GROUP BY entity_type";
-                    
+
                     var countDataTable = await clientDatabaseConnection.GetAsync(query);
                     foreach (DataRow dataRow in countDataTable.Rows)
                     {
@@ -135,7 +137,7 @@ GROUP BY entity_type";
                     StatusCode = HttpStatusCode.BadRequest
                 };
             }
-            
+
             clientDatabaseConnection.AddParameter("id", id);
             var dataTable = await clientDatabaseConnection.GetAsync($"SELECT * FROM {WiserTableNames.WiserEntity} WHERE id = ?id");
             if (dataTable.Rows.Count == 0)
@@ -146,7 +148,7 @@ GROUP BY entity_type";
                     StatusCode = HttpStatusCode.NotFound
                 };
             }
-            
+
             var dataRow = dataTable.Rows[0];
             var defaultOrdering = dataRow.Field<string>("default_ordering") switch
             {
@@ -219,7 +221,7 @@ GROUP BY entity_type";
             {
                 actualParentId = await wiserCustomersService.DecryptValue<ulong>(parentId, identity);
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
@@ -289,7 +291,7 @@ GROUP BY entity_type";
                     StatusCode = HttpStatusCode.BadRequest
                 };
             }
-            
+
             // First try to create the tables, if we have a dedicated table prefix.
             var tablePrefix = settings.DedicatedTablePrefix;
             if (!String.IsNullOrWhiteSpace(tablePrefix))
@@ -307,7 +309,7 @@ CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemDetail}` LIKE `{WiserTableN
 CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix}` LIKE `{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix}`;
 CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}` LIKE `{WiserTableNames.WiserItemFile}`;
 CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}{WiserTableNames.ArchiveSuffix}` LIKE `{WiserTableNames.WiserItemFile}{WiserTableNames.ArchiveSuffix}`;");
-                    
+
                     var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateDedicatedItemTablesTriggers.sql");
                     createTriggersQuery = createTriggersQuery.Replace("{tablePrefix}", tablePrefix);
                     await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -330,7 +332,7 @@ CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}{WiserTableNames.Archi
                 EntityDeletionTypes.Disallow => "disallow",
                 _ => throw new ArgumentOutOfRangeException(nameof(settings.DeleteAction), settings.DeleteAction.ToString())
             };
-            
+
             // Check if the name has been changed.
             clientDatabaseConnection.AddParameter("id", id);
             var query = $"SELECT name FROM {WiserTableNames.WiserEntity} WHERE id = ?id";
@@ -442,7 +444,7 @@ DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
             {
                 throw new ArgumentNullException(nameof(actionType), "The parameter 'actionType' needs to have a value.");
             }
-            
+
             var columnName = actionType.ToLowerInvariant() switch
             {
                 "after_insert" => "api_after_insert",
@@ -451,7 +453,7 @@ DELETE FROM {WiserTableNames.WiserEntity} WHERE id = ?id;";
                 "before_delete" => "api_before_delete",
                 _ => throw new ArgumentOutOfRangeException(nameof(actionType), actionType, $"Invalid value for {nameof(actionType)}")
             };
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.AddParameter("entityType", entityType);
 

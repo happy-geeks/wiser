@@ -28,7 +28,7 @@ namespace Api.Modules.Customers.Services
     public class WiserCustomersService : IWiserCustomersService, IScopedService
     {
         #region Private fields
-        
+
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<WiserCustomersService> logger;
@@ -142,7 +142,7 @@ namespace Api.Modules.Customers.Services
             {
                 return new ServiceResult<string>(String.IsNullOrWhiteSpace(gclSettings.ExpiringEncryptionKey) ? gclSettings.DefaultEncryptionKey : gclSettings.ExpiringEncryptionKey);
             }
-            
+
             // Get the customer data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", subDomain);
@@ -160,10 +160,10 @@ namespace Api.Modules.Customers.Services
                     ErrorMessage = $"Customer with sub domain '{subDomain}' not found."
                 };
             }
-            
+
             return new ServiceResult<string>(customersDataTable.Rows[0].Field<string>("encryption_key"));
         }
-        
+
         /// <inheritdoc />
         public async Task<T> DecryptValue<T>(string encryptedValue, ClaimsIdentity identity)
         {
@@ -191,7 +191,7 @@ namespace Api.Modules.Customers.Services
         {
             return valueToEncrypt?.ToString().EncryptWithAesWithSalt(customer.EncryptionKey, withDateTime: true);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<CustomerExistsResults>> CustomerExistsAsync(string name, string subDomain)
         {
@@ -208,7 +208,7 @@ namespace Api.Modules.Customers.Services
             {
                 return new ServiceResult<CustomerExistsResults>(CustomerExistsResults.NameNotAvailable & CustomerExistsResults.SubDomainNotAvailable);
             }
-            
+
             // Get the customer data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", name);
@@ -253,12 +253,12 @@ namespace Api.Modules.Customers.Services
                 try
                 {
                     await wiserDatabaseConnection.BeginTransactionAsync();
-                    
+
                     if (!String.IsNullOrWhiteSpace(customer.Database?.Password))
                     {
                         customer.Database.Password = customer.Database.Password.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
                     }
-                    
+
                     if (String.IsNullOrWhiteSpace(customer.EncryptionKey))
                     {
                         customer.EncryptionKey = SecurityHelpers.GenerateRandomPassword(20);
@@ -275,7 +275,7 @@ namespace Api.Modules.Customers.Services
                     {
                         customer.Database.Password = null;
                     }
-                    
+
                     var createTablesQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTables.sql");
                     var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                     var createdStoredProceduresQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.StoredProcedures.sql");
@@ -298,7 +298,7 @@ namespace Api.Modules.Customers.Services
                             {
                                 insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
                             }
-                            
+
                             if (isWebShop)
                             {
                                 insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
@@ -325,13 +325,13 @@ namespace Api.Modules.Customers.Services
                         await command.ExecuteNonQueryAsync();
                         command.CommandText = insertInitialDataQuery;
                         await command.ExecuteNonQueryAsync();
-                        
+
                         if (isMultiLanguage)
                         {
                             command.CommandText = insertInitialDataMultiLanguageQuery;
                             await command.ExecuteNonQueryAsync();
                         }
-                        
+
                         if (isWebShop)
                         {
                             command.CommandText = insertInitialDataEcommerceQuery;
@@ -428,7 +428,7 @@ namespace Api.Modules.Customers.Services
         {
             return IsMainDatabase(IdentityHelpers.GetSubDomain(identity));
         }
-        
+
         /// <inheritdoc />
         public bool IsMainDatabase(string subDomain)
         {

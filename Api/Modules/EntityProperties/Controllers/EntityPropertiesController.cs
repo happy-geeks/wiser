@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Mime;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Api.Modules.EntityProperties.Enums;
-using Api.Modules.EntityProperties.Models;
 using Api.Modules.EntityProperties.Interfaces;
+using Api.Modules.EntityProperties.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.EntityProperties.Controllers
 {
@@ -33,7 +33,7 @@ namespace Api.Modules.EntityProperties.Controllers
         }
 
         /// <summary>
-        /// Get all entity properties. 
+        /// Get all entity properties.
         /// </summary>
         /// <returns>A List of <see cref="EntityPropertyModel"/> with all settings.</returns>
         [HttpGet]
@@ -44,7 +44,7 @@ namespace Api.Modules.EntityProperties.Controllers
         }
 
         /// <summary>
-        /// Get entity property based on ID. 
+        /// Get entity property based on ID.
         /// </summary>
         /// <param name="id">The ID from wiser_entityproperty.</param>
         /// <returns>A <see cref="EntityPropertyModel"/> with all settings.</returns>
@@ -60,17 +60,33 @@ namespace Api.Modules.EntityProperties.Controllers
         /// <summary>
         /// Get all entity properties of a specific entity.
         /// </summary>
-        /// <param name="entityName">The name of the entity.</param>
+        /// <param name="entityType">The name of the entity.</param>
         /// <param name="onlyEntityTypesWithDisplayName">Only get properties with a display name.</param>
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
         [HttpGet]
-        [Route("{entityName}")]
+        [Route("{entityType}")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityName, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false)
+        public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityType, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false)
         {
-            return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityName, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty)).GetHttpResponseMessage();
+            return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityType, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets all unique values for a specific property of a specific entity type.
+        /// </summary>
+        /// <param name="entityType">The entity type that the property belongs to.</param>
+        /// <param name="propertyName">The name (key) of the property.</param>
+        /// <param name="languageCode">Optional: Enter a language code here if you only want values of a specific language.</param>
+        /// <param name="maxResults">The maximum amount of results to return, default is 500.</param>
+        /// <returns>A list with unique values of the property.</returns>
+        [HttpGet]
+        [Route("{entityType}/unique-values/{propertyName}")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUniquePropertyValuesAsync(string entityType, string propertyName, string languageCode = null, int maxResults = 500)
+        {
+            return (await entityPropertiesService.GetUniquePropertyValuesAsync((ClaimsIdentity)User.Identity, entityType, propertyName, languageCode, maxResults)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -101,7 +117,7 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.UpdateAsync((ClaimsIdentity)User.Identity, id, entityProperty)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Duplicates an entity property.
         /// </summary>
@@ -139,7 +155,7 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.CopyToAllAvailableLanguagesAsync((ClaimsIdentity)User.Identity, id, tabOption)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Fixes the ordering of an entity property
         /// </summary>
@@ -152,7 +168,7 @@ namespace Api.Modules.EntityProperties.Controllers
         {
             return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Fixes the ordering of a link type
         /// </summary>

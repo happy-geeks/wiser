@@ -75,5 +75,12 @@ namespace Api.Modules.Branches.Interfaces
         /// <param name="branch">The <see cref="CustomerModel">CustomerModel</see> of the branch to check.</param>
         /// <returns>A boolean indicating whether the user is allowed access to the given branch.</returns>
         Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, CustomerModel branch);
+
+        /// <summary>
+        /// Marks a branch to be deleted by the WTS.
+        /// </summary>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="id">The ID of the branch that should be deleted.</param>
+        Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
     }
 }

@@ -67,10 +67,10 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<string>> GetCssForHtmlEditorsAsync(ClaimsIdentity identity)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"css_for_html_editors_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAddAsync($"css_for_html_editors_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = gclSettings.DefaultTemplateCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = gclSettings.DefaultTemplateCacheDuration;
                     return await templatesService.GetCssForHtmlEditorsAsync(identity);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Templates));
         }
@@ -182,13 +182,13 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.GeneratePreviewAsync(identity, requestModel);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
         {
             return await templatesService.CheckDefaultHeaderConflict(templateId, regexString);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
         {

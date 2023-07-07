@@ -1,12 +1,14 @@
-﻿import { TrackJS } from "trackjs";
-import {Modules, Dates, Wiser, Utils} from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Dates, Modules, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { DateTime } from "luxon";
-import { Fields } from "./Fields.js";
-import { Dialogs } from "./Dialogs.js";
-import { Windows } from "./Windows.js";
-import { Grids } from "./Grids.js";
-import { DragAndDrop } from "./DragAndDrop.js";
+import {DateTime} from "luxon";
+import {Fields} from "./Fields.js";
+import {Dialogs} from "./Dialogs.js";
+import {Windows} from "./Windows.js";
+import {Grids} from "./Grids.js";
+import {DragAndDrop} from "./DragAndDrop.js";
+import "../Css/DynamicItems.css";
+
 window.JSZip = require("jszip");
 
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -22,8 +24,6 @@ require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../Css/DynamicItems.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -470,12 +470,12 @@ const moduleSettings = {
             this.notification = $("#alert").kendoNotification({
                 button: true,
                 autoHideAfter: 5000,
-                stacking: "down",
+                stacking: "up",
                 position: {
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: null,
+                    top: null,
+                    left: null,
+                    right: 15,
+                    bottom: 120,
                     pinned: true
                 },
                 show: this.onShowNotification,
@@ -801,7 +801,11 @@ const moduleSettings = {
                     }
                     case "HIDE_ITEM":
                     {
-                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        await Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/environment/${this.environmentsEnum.hidden}?entityType=${encodeURIComponent(entityType)}`,
+                            method: "PATCH",
+                            contentType: "application/json",
+                        });
                         selectedNode.closest("li").addClass("hiddenOnWebsite");
                         window.dynamicItems.notification.show({ message: "Item is verborgen" }, "success");
                         break;
@@ -809,7 +813,16 @@ const moduleSettings = {
                     case "PUBLISH_LIVE":
                     case "PUBLISH_ITEM":
                     {
-                        await Wiser.api({ url: `${this.settings.serviceRoot}/${encodeURIComponent(action)}?itemid=${encodeURIComponent(itemId)}` });
+                        const environments = this.environmentsEnum.development
+                            + this.environmentsEnum.test
+                            + this.environmentsEnum.acceptance
+                            + this.environmentsEnum.live;
+
+                        await Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/environment/${environments}?entityType=${encodeURIComponent(entityType)}`,
+                            method: "PATCH",
+                            contentType: "application/json",
+                        });
                         selectedNode.closest("li").removeClass("hiddenOnWebsite");
                         window.dynamicItems.notification.show({ message: "Item is zichtbaar gemaakt" }, "success");
                         break;
@@ -912,7 +925,12 @@ const moduleSettings = {
          * Event that gets called once a notification is being shown.
          */
         onShowNotification(event) {
-            event.element.parent().css("width", "100%").css("height", "auto");
+            event.element.parent().css({
+                width: "auto",
+                minWidth: "200px",
+                left: "",
+                right: "15px"
+            });
         }
 
         /**
@@ -1811,7 +1829,7 @@ const moduleSettings = {
                 }
             }
 
-            if (showSuccessMessage) {
+            if (updateResult && showSuccessMessage) {
                 this.notification.show({ message: "Opslaan is gelukt" }, "success");
             }
         }

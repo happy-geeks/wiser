@@ -1,5 +1,6 @@
-﻿import { DateTime } from "luxon";
+﻿import {DateTime} from "luxon";
 import "./Processing.js";
+
 window.$ = require("jquery");
 
 /**
@@ -327,7 +328,7 @@ export class Wiser {
                     });
 
                     refreshTokenResult.expiresOn = new Date(new Date().getTime() + ((refreshTokenResult.expires_in - (refreshTokenResult.expires_in > 60 ? 60 : 0)) * 1000));
-                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
+                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true || refreshTokenResult.adminAccountId > 0;
 
                     localStorage.setItem("accessToken", refreshTokenResult.access_token);
                     localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);
@@ -1087,6 +1088,7 @@ export class Wiser {
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan tijdens opslaan van de wijzigingen. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
+            return false;
         }
     }
 
@@ -1144,7 +1146,7 @@ export class Wiser {
      * @param {string} parentEntityType Optional: The entity type of the parent of item to duplicate, so that the API can use the correct table and settings.
      * @returns {Promise} The details about the newly created item.
      */
-    async duplicateItem(moduleSettings, itemId, parentId, entityType = null, parentEntityType = null) {
+    static async duplicateItem(moduleSettings, itemId, parentId, entityType = null, parentEntityType = null) {
         try {
             const entityTypeQueryString = !entityType ? "" : `?entityType=${encodeURIComponent(entityType)}`;
             const parentEntityTypeQueryString = !parentEntityType ? "" : `${!entityType ? "?" : "&"}parentEntityType=${encodeURIComponent(parentEntityType)}`;

@@ -231,7 +231,7 @@ namespace Api.Modules.DataSelectors.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
+        public async Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false, bool forBranches = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
@@ -248,6 +248,11 @@ namespace Api.Modules.DataSelectors.Services
             if (forRendering)
             {
                 whereClauses.Add("available_for_rendering = 1");
+            }
+
+            if (forBranches)
+            {
+                whereClauses.Add("available_for_branches = 1");
             }
 
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id, name
@@ -288,18 +293,19 @@ ORDER BY name ASC");
             clientDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
             clientDatabaseConnection.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
             clientDatabaseConnection.AddParameter("showInDashboard", data.ShowInDashboard);
+            clientDatabaseConnection.AddParameter("availableForBranches", data.AvailableForBranches);
 
             int result;
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
             if (dataTable.Rows.Count == 0)
             {
-                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard)
-                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard)");
+                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
+                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)");
             }
             else
             {
                 result = dataTable.Rows[0].Field<int>("id");
-                await clientDatabaseConnection.ExecuteAsync($@"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard WHERE name = ?name");
+                await clientDatabaseConnection.ExecuteAsync($@"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard, available_for_branches = ?availableForBranches WHERE name = ?name");
             }
 
             clientDatabaseConnection.AddParameter("id", result);
@@ -708,7 +714,7 @@ VALUES(?roleId, ?id, 15)";
             {
                 return new ServiceResult<JToken>(response.Result);
             }
-            
+
             // Combine object to key value pair.
             var combinedResult = new JObject();
 
@@ -716,7 +722,7 @@ VALUES(?roleId, ?id, 15)";
             {
                 combinedResult.Add(item["key"].ToString(), item["value"]);
             }
-            
+
             return new ServiceResult<JToken>(combinedResult);
         }
 
@@ -724,8 +730,16 @@ VALUES(?roleId, ?id, 15)";
         public async Task<ServiceResult<string>> CheckDashboardConflictAsync(int id)
         {
             clientDatabaseConnection.AddParameter("id", id);
-            var getDataSelectorResult = await clientDatabaseConnection.GetAsync("SELECT `name` FROM wiser_data_selector WHERE id <> ?id AND show_in_dashboard = 1 LIMIT 1");
+            var getDataSelectorResult = await clientDatabaseConnection.GetAsync($"SELECT `name` FROM {WiserTableNames.WiserDataSelector} WHERE id <> ?id AND show_in_dashboard = 1 LIMIT 1");
             return new ServiceResult<string>(getDataSelectorResult.Rows.Count == 0 ? null : getDataSelectorResult.Rows[0].Field<string>("name"));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> ExistsAsync(string name)
+        {
+            clientDatabaseConnection.AddParameter("name", name);
+            var getDataSelectorResult = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name LIMIT 1");
+            return new ServiceResult<int>(getDataSelectorResult.Rows.Count == 0 ? 0 : getDataSelectorResult.Rows[0].Field<int>("id"));
         }
     }
 }

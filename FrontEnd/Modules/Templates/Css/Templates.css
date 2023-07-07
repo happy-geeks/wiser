@@ -298,11 +298,16 @@ footer {
     text-align: right;
 }
 
-.version-actions > .k-picker {
+.version-actions > .branch-container {
+    display: inline-block;
+}
+
+.version-actions > .branch-container > .k-picker {
     width: 300px;
 }
 
-.version-actions > button {
+.version-actions > button,
+.version-actions > .branch-container > button{
     min-width: 50px;
     height: 42px;
 }

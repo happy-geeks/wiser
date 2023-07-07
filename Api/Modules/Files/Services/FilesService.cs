@@ -25,8 +25,10 @@ using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
+using TinifyAPI;
 
 namespace Api.Modules.Files.Services
 {
@@ -43,7 +45,7 @@ namespace Api.Modules.Files.Services
         /// <summary>
         /// Creates a new instance of <see cref="FilesService"/>.
         /// </summary>
-        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository)
+        public FilesService(IWiserCustomersService wiserCustomersService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.logger = logger;
@@ -51,6 +53,8 @@ namespace Api.Modules.Files.Services
             this.wiserItemsService = wiserItemsService;
             this.cloudFlareService = cloudFlareService;
             this.filesRepository = filesRepository;
+            
+            Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
         }
 
         /// <inheritdoc />
@@ -121,16 +125,12 @@ namespace Api.Modules.Files.Services
 
                 var (ftpDirectory, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
 
-                if (useTinyPng)
-                {
-                    throw new NotImplementedException("Tiny PNG not supported yet.");
-                }
-
                 // Fix ordering of files.
                 await FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
 
                 var result = new List<FileModel>();
 
+                var tinifyProblemEncountered = false;
                 foreach (var file in files)
                 {
                     byte[] fileBytes;
@@ -143,10 +143,38 @@ namespace Api.Modules.Files.Services
                     var fileName = file.FileName?.Trim('"');
                     fileName = Path.GetFileNameWithoutExtension(fileName).ConvertToSeo() + Path.GetExtension(fileName)?.ToLowerInvariant();
                     var fileExtension = Path.GetExtension(fileName);
-
+                    
                     if (useTinyPng && (fileExtension.Equals(".png", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)))
                     {
-                        throw new NotImplementedException("Tiny PNG not supported yet.");
+                        try
+                        {
+                            fileBytes = await Tinify.FromBuffer(fileBytes).ToBuffer();
+                        }
+                        catch (ClientException e)
+                        {
+                            logger.LogDebug(e, "Problem with input encountered when calling the tinyPng API");
+                            tinifyProblemEncountered = true;
+                        }
+                        catch (AccountException e)
+                        {
+                            logger.LogError(e, "Account Problem encountered when calling the tinyPng API");
+
+                            // Don't try to tinify the rest of the images after an accountException
+                            useTinyPng = false;
+                            tinifyProblemEncountered = true;
+                        }
+                        catch (ConnectionException e)
+                        {
+                            logger.LogInformation(e, "Network problem encountered when calling the tinyPng API");
+                            useTinyPng = false;
+                            tinifyProblemEncountered = true;
+                        }
+                        catch (ServerException e)
+                        {
+                            logger.LogInformation(e, "Third party server problem encountered when calling the tinyPng API");
+                            useTinyPng = false;
+                            tinifyProblemEncountered = true;
+                        }
                     }
 
                     var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType);
@@ -162,6 +190,15 @@ namespace Api.Modules.Files.Services
                     result.Add(fileResult.ModelObject);
                 }
 
+                if (tinifyProblemEncountered)
+                {
+                    return new ServiceResult<List<FileModel>>(result)
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        ErrorMessage = "Partial success: file uploaded but not all images tinified"
+                    };
+                }
+                    
                 return new ServiceResult<List<FileModel>>(result);
             }
             catch (MySqlException mySqlException)

@@ -201,9 +201,28 @@ namespace Api.Modules.Items.Controllers
         [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
         public async Task<IActionResult> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments)
         {
             return (await itemsService.CopyToEnvironmentAsync(encryptedId, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Change the environments that an item should be visible in.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">The entity type of the item.</param>
+        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+        [HttpPatch]
+        [Route("{encryptedId}/environment/{newEnvironments:int}")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
+        public async Task<IActionResult> ChangeEnvironmentAsync(string encryptedId, Environments newEnvironments, [FromQuery]string entityType)
+        {
+            return (await itemsService.ChangeEnvironmentAsync(encryptedId, entityType, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -445,7 +464,7 @@ namespace Api.Modules.Items.Controllers
         {
             return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Translate all fields of an item into one or more other languages, using the Google Translation API.
         /// This will only translate fields that don't have a value yet for the destination language

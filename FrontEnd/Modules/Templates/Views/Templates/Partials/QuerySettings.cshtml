@@ -9,17 +9,39 @@
 </div>
 <div class="item item-left" style="width: 60%">
     <div class="item full-width" data-label-style="float" data-label-width="0">
-        <h4><label for="combo-cache">Cache</label></h4>
         <div class="flex-container">
-            <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList" name="useCache">
-                <!option value="@((int)TemplateCachingModes.NoCaching)" @(Model.UseCache == TemplateCachingModes.NoCaching ? "selected" : "")>geen caching</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCaching)" @(Model.UseCache == TemplateCachingModes.ServerSideCaching ? "selected" : "")>server caching volledige template (ongeacht URL)</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrl)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrl ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL verschillend)</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrlAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrlAndQueryString ? "selected" : "")>server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend)</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>server caching volledige template (obv volledige URL, inclusief domein en querystring)</!option>
-            </select>
+            <div class="item">
+                <input id="cachePerUrl" name="cachePerUrl" type="checkbox" @(Model.CachePerUrl ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerUrl">
+                    <span>Cache op Url</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerQueryString" name="cachePerQueryString" type="checkbox" @(Model.CachePerQueryString ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerQueryString">
+                    <span>Cache op query string</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerHostName" name="cachePerHostName" type="checkbox" @(Model.CachePerHostName ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerHostName">
+                    <span>Cache op domein</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cacheUsingRegex" name="cacheUsingRegex" type="checkbox" @(Model.CacheUsingRegex ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cacheUsingRegex">
+                    <span>Cache met Regex</span>
+                </label>
+            </div>
         </div>
-        <div class="form-hint"><span>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</span></div>
+        <div class="form-hint">
+            <p>Moet caching geselecteerd worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</p>
+            <p>Indien de optie "Cache met regex" is geselecteert, moet hieronder het veld "Cache regex" ook ingevuld worden. De template wordt dan gecached per unieke combinatie van alle genaamde groepen in de regex.</p>
+            <p>Voorbeeld: Als je de regex "\/products\/(?&lt;category&gt;.*)\/(?&lt;subCategory&gt;.*)\/(?&lt;product&gt;.*)\/" gebruikt, daar staan 3 groepen in met een naam (category, subCategory en product). Als je dan de URL "/products/drinks/soda/coca-cola/" zou openen, dan krijg je de volgende naam voor de cache: "Template_123_drinks_soda_coca-cola". Dit zorgt er dan dus voor dat deze template per product apart wordt gecacht.</p>
+            <p>Voorbeeld 2: Als je de regex "\/(?&lt;page&gt;[^\/]*)?(\/.*)?" gebruikt, dan wordt deze template alleen apart gecacht voor elke hoofdpagina en juist niet apart per product.</p>
+            <p>Wanneer caching met regex is geselecteerd geven de andere checkboxes aan welke delen van de url gematcht worden met de regex</p>
+        </div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
@@ -38,7 +60,7 @@
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
         </span>
-        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 of kleiner is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json.</span></div>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json. Indien de waarde kleiner is dan 0, wordt caching uitgeschakeld.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">

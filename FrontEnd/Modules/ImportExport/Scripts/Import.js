@@ -546,7 +546,7 @@ const importModuleSettings = {
                     invalidMaxFileSize: "Bestand mag maar maximaal 25 MB zijn"
                 },
                 validation: {
-                    allowedExtensions: [".csv"],
+                    allowedExtensions: [".csv", ".xlsx"],
                     maxFileSize: 26214400 // 25 MB = 25 * 1024 * 1024
                 },
                 multiple: false,
@@ -916,7 +916,33 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.wiserApiRoot}imports/entity-properties?linkType=${options.model.linkType}`
+                                        read: (kendoReadOptions) => {
+                                            Wiser.api({
+                                                url: `${this.settings.wiserApiRoot}imports/entity-properties?linkType=${options.model.linkType}`,
+                                                dataType: "json",
+                                                method: "GET",
+                                                data: kendoReadOptions.data
+                                            }).then((result) => {
+                                                const properties = [];
+                                                result.forEach(prop => {
+                                                    const options = prop.options !== "" ? JSON.parse(prop.options) : {};
+
+                                                    // Create data items out of the retrieved properties.
+                                                    properties.push({
+                                                        name: prop.displayName,
+                                                        value: prop.propertyName,
+                                                        languageCode: prop.languageCode,
+                                                        isImageField: prop.inputType === "ImageUpload",
+                                                        allowMultipleImages: options.hasOwnProperty("multiple") && options.multiple,
+                                                        propertyOrder: `${prop.ordering}_${prop.id}`
+                                                    });
+                                                });
+
+                                                kendoReadOptions.success(properties);
+                                            }).catch((result) => {
+                                                kendoReadOptions.error(result);
+                                            });
+                                        }
                                     }
                                 },
                                 change: (e) => {

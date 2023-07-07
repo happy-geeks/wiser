@@ -20,7 +20,7 @@ namespace Api.Modules.Customers.Services
     public class CachedWiserCustomersService : IWiserCustomersService, IScopedService
     {
         #region Private fields
-        
+
         private readonly IAppCache cache;
         private readonly ApiSettings apiSettings;
         private readonly ICacheService cacheService;
@@ -38,44 +38,45 @@ namespace Api.Modules.Customers.Services
             this.cacheService = cacheService;
             this.wiserCustomersService = wiserCustomersService;
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            return await cache.GetOrAdd($"customer_{subDomain}_{includeDatabaseInformation}",
+            return await cache.GetOrAddAsync($"customer_{subDomain}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await wiserCustomersService.GetSingleAsync(identity, includeDatabaseInformation);
-                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+                });
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
         {
-            return await cache.GetOrAdd($"customer_{id}_{includeDatabaseInformation}",
+            return await cache.GetOrAddAsync($"customer_{id}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await wiserCustomersService.GetSingleAsync(id, includeDatabaseInformation);
-                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+                });
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetEncryptionKey(ClaimsIdentity identity, bool forceLiveKey = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            return await cache.GetOrAdd($"encryption_key_{subDomain}",
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            return await cache.GetOrAddAsync($"encryption_key_{subDomain}_{(!forceLiveKey && IdentityHelpers.IsTestEnvironment(identity) ? "test" : "live")}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await wiserCustomersService.GetEncryptionKey(identity, forceLiveKey);
-                }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+                });
         }
 
         #region Wiser users data/settings
-        
+
         /// <inheritdoc />
         public async Task<T> DecryptValue<T>(string encryptedValue, ClaimsIdentity identity)
         {
@@ -99,7 +100,7 @@ namespace Api.Modules.Customers.Services
         {
             return wiserCustomersService.EncryptValue(valueToEncrypt, customer);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<CustomerExistsResults>> CustomerExistsAsync(string name, string subDomain)
         {
@@ -115,10 +116,10 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetTitleAsync(string subDomain)
         {
-            return await cache.GetOrAdd($"customer_title_{subDomain}",
+            return await cache.GetOrAddAsync($"customer_title_{subDomain}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return await wiserCustomersService.GetTitleAsync(subDomain);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
@@ -135,7 +136,7 @@ namespace Api.Modules.Customers.Services
             return cache.GetOrAdd($"is_main_database_{subDomain}",
                 cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = apiSettings.DefaultUsersCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
                     return wiserCustomersService.IsMainDatabase(subDomain);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }

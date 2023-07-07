@@ -59,14 +59,28 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
         /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
         /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <param name="forBranches">Optional: Set to true to only get data selectors that can be used when creating branches.</param>
         /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
+        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false, bool forBranches = false)
         {
-            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule)).GetHttpResponseMessage();
+            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule, forBranches)).GetHttpResponseMessage();
         }
-        
+
+        /// <summary>
+        /// Check whether a data selector with the given name exists.
+        /// </summary>
+        /// <param name="name">The name of the data selector.</param>
+        /// <returns>The ID of the data selector if it exists, or 0 if it doesn't.</returns>
+        [HttpGet]
+        [Route("{name}/exists")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ExistsAsync(string name)
+        {
+            return (await dataSelectorsService.ExistsAsync(name)).GetHttpResponseMessage();
+        }
+
         /// <summary>
         /// Get templates that can be used with data selectors.
         /// </summary>
@@ -218,7 +232,7 @@ namespace Api.Modules.DataSelectors.Controllers
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var html = await reader.ReadToEndAsync();
-            
+
             // Workaround for Axios, couldn't find a way to have it not add quotes around the HTML.
             if (html.StartsWith("\"") && html.EndsWith("\""))
             {
@@ -260,7 +274,7 @@ namespace Api.Modules.DataSelectors.Controllers
             var dataSelectorName = await dataSelectorsService.CheckDashboardConflictAsync(id);
             return Content(dataSelectorName.ModelObject, MediaTypeNames.Text.Plain);
         }
-        
+
         /// <summary>
         /// Combine two <see cref="WiserDataSelectorRequestModel"/>s. Used to combine information from the body with the information from the query.
         /// </summary>

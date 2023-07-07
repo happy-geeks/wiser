@@ -68,7 +68,7 @@ LIMIT 1");
         public async Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null, int? version = null)
         {
             clientDatabaseConnection.ClearParameters();
-            
+
             string publishedVersionWhere;
             if (version.HasValue)
             {
@@ -94,8 +94,11 @@ LIMIT 1");
     template.template_data, 
     template.version, 
     template.changed_on, 
-    template.changed_by, 
-    template.use_cache,   
+    template.changed_by,
+    template.cache_per_url,
+    template.cache_per_querystring,
+    template.cache_per_hostname,
+    template.cache_using_regex,
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
@@ -155,7 +158,10 @@ LIMIT 1");
                 Version = dataTable.Rows[0].Field<int>("version"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
-                UseCache = (TemplateCachingModes)dataTable.Rows[0].Field<int>("use_cache"),
+                CachePerUrl =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_url"]),
+                CachePerQueryString =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_querystring"]),
+                CacheUsingRegex =  Convert.ToBoolean(dataTable.Rows[0]["cache_using_regex"]),
+                CachePerHostName =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_hostname"]),
                 CacheMinutes = dataTable.Rows[0].Field<int>("cache_minutes"),
                 CacheLocation = (TemplateCachingLocations)dataTable.Rows[0].Field<int>("cache_location"),
                 CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
@@ -242,7 +248,7 @@ LIMIT 1");
             clientDatabaseConnection.AddParameter("environment", (int)environment);
 
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
-            
+
             // Add the bit of the selected environment to the selected version.
             var query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate}
 SET published_environment = published_environment | ?environment
@@ -250,7 +256,7 @@ WHERE template_id = ?templateId
 AND version = ?version
 AND (published_environment & ?environment) != ?environment";
             var affectedRows = await clientDatabaseConnection.ExecuteAsync(query);
-            
+
             // Query to remove the selected environment from all other versions, the ~ operator flips all the bits (1s become 0s and 0s become 1s).
             // This way we can safely turn off just the specific bits without having to check to see if the bit is set.
             query = $@"UPDATE {databaseNamePrefix}{WiserTableNames.WiserTemplate}
@@ -428,7 +434,7 @@ GROUP BY wdc.content_id");
                 resultDao.ChangedOn = row.Field<DateTime>("changed_on");
                 resultDao.ChangedBy = row.Field<string>("changed_by");
                 resultDao.Title = row.Field<string>("title");
-                
+
 
                 resultList.Add(resultDao);
             }
@@ -447,7 +453,10 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("editorValue", templateSettings.EditorValue);
             clientDatabaseConnection.AddParameter("minifiedValue", templateSettings.MinifiedValue);
             clientDatabaseConnection.AddParameter("type", templateSettings.Type);
-            clientDatabaseConnection.AddParameter("useCache", (int)templateSettings.UseCache);
+            clientDatabaseConnection.AddParameter("cachePerUrl", templateSettings.CachePerUrl);
+            clientDatabaseConnection.AddParameter("cachePerQueryString", templateSettings.CachePerQueryString);
+            clientDatabaseConnection.AddParameter("cachePerHostName", templateSettings.CachePerHostName);
+            clientDatabaseConnection.AddParameter("cacheUsingRegex", templateSettings.CacheUsingRegex);
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
             clientDatabaseConnection.AddParameter("cacheRegex", templateSettings.CacheRegex);
@@ -496,7 +505,10 @@ INSERT INTO {WiserTableNames.WiserTemplate} (
     parent_id,
     changed_on, 
     changed_by, 
-    use_cache,
+    cache_per_url,
+    cache_per_querystring,
+    cache_per_hostname,
+    cache_using_regex,
     cache_minutes, 
     cache_location,
     cache_regex,
@@ -541,7 +553,10 @@ VALUES (
     ?parentId,
     ?now,
     ?username,
-    ?useCache,
+    ?cachePerUrl,
+    ?cachePerQueryString,
+    ?cachePerHostName,
+    ?cacheUsingRegex,
     ?cacheMinutes,
     ?cacheLocation,
     ?cacheRegex,
@@ -737,7 +752,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("searchValue", searchValue);
             var dataTable = await clientDatabaseConnection.GetAsync(query);
-            
+
             var allItems = new List<SearchResultModel>();
 
             foreach (DataRow dataRow in dataTable.Rows)
@@ -810,7 +825,7 @@ AND template.removed = 0
 AND otherVersion.id IS NULL";
 
             dataTable = await clientDatabaseConnection.GetAsync(query);
-            
+
             // Local function to add unique results to the all items collection.
             void AddEncryptedTemplates(List<SearchResultModel> currentLevel)
             {
@@ -820,7 +835,7 @@ AND otherVersion.id IS NULL";
                     {
                         allItems.Add(result);
                     }
-                    
+
                     AddEncryptedTemplates(result.ChildNodes.Cast<SearchResultModel>().ToList());
                 }
             }
@@ -831,7 +846,7 @@ AND otherVersion.id IS NULL";
             {
                 var templateId = dataRow.Field<int>("template_id");
                 var templateData = dataRow.Field<string>("template_data");
-                
+
                 // Non encrypted templates are already checked by thr query and can be skipped.
                 if (allItems.Any(i => i.TemplateId == templateId) || String.IsNullOrWhiteSpace(templateData) || templateData.StartsWith("<") || templateData.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true).IndexOf(searchValue, StringComparison.OrdinalIgnoreCase) == -1)
                 {
@@ -842,13 +857,13 @@ AND otherVersion.id IS NULL";
                 AddEncryptedTemplates(searchResults);
                 encryptedTemplatesAdded = true;
             }
-            
-            
+
+
             if (!encryptedTemplatesAdded)
             {
                 return results;
             }
-            
+
             // Reset the result with the added values from the encrypted templates.
             results = allItems.Where(i => i.ParentId == 0).ToList();
             AddChildren(results);
@@ -870,8 +885,8 @@ AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("editorval", editorValue);
 
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering, template_data)
-                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering, ?editorval);
+                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
+                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering, ?editorval, -1);
                                                             SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
@@ -908,7 +923,7 @@ SET template.ordering = ordering.newOrdering";
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", templateId);
-            
+
             var query = $@"SELECT parent.template_id, parent.template_name
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
@@ -1112,8 +1127,11 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.template_data, 
     template.version, 
     template.changed_on, 
-    template.changed_by, 
-    template.use_cache,   
+    template.changed_by,   
+    template.cache_per_url,   
+    template.cache_per_querystring,   
+    template.cache_per_hostname,
+    template.cache_using_regex,  
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
@@ -1167,8 +1185,10 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                     Version = dataRow.Field<int>("version"),
                     ChangedOn = dataRow.Field<DateTime>("changed_on"),
                     ChangedBy = dataRow.Field<string>("changed_by"),
-                    UseCache = (TemplateCachingModes) dataRow.Field<int>("use_cache"),
-                    CacheMinutes = dataRow.Field<int>("cache_minutes"),
+                    CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
+                    CachePerQueryString = dataTable.Rows[0].Field<bool>("cache_per_querystring"),
+                    CacheUsingRegex = dataTable.Rows[0].Field<bool>("cache_using_regex"),
+                    CachePerHostName = dataTable.Rows[0].Field<bool>("cache_per_hostname"), CacheMinutes = dataRow.Field<int>("cache_minutes"),
                     CacheLocation = (TemplateCachingLocations) dataRow.Field<int>("cache_location"),
                     CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
                     LoginRequired = Convert.ToBoolean(dataRow["login_required"]),
@@ -1193,7 +1213,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                     PreLoadQuery = dataRow.Field<string>("pre_load_query"),
                     ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataRow["return_not_found_when_pre_load_query_has_no_data"])
                 };
-                
+
                 var loginRolesString = dataRow.Field<string>("login_role");
                 if (!String.IsNullOrWhiteSpace(loginRolesString))
                 {
@@ -1284,11 +1304,11 @@ AND otherVersion.id IS NULL";
 
             return true;
         }
-        
+
         /// <inheritdoc />
         public void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
         {
-            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.StartsWith("<"))
+            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.Trim().StartsWith("<"))
             {
                 rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
             }

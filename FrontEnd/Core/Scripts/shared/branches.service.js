@@ -2,8 +2,8 @@
 
 export default class BranchesService extends BaseService {
     /**
-     * Creates a new branch for the customers. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
-     * It will then also create a new tenant in Wiser so the customer can login to the new branch.
+     * Creates a new branch for this tenant. This will create a new database (on the same server/cluster as the current) and copy most data to that new database.
+     * It will then also create a new tenant in Wiser, linked to the current one, so users can login to the new branch.
      * @param {any} data The data for the new branch.
      */
     async create(data) {
@@ -14,30 +14,31 @@ export default class BranchesService extends BaseService {
                 startOn: data.startOn,
                 entities: []
             };
-            
+
             for (let key in data.entities) {
                 if (!data.entities.hasOwnProperty(key) || key === "all") {
                     continue;
                 }
-                
+
                 const settings = data.entities[key];
-                
+
                 postData.entities.push({
                     entityType: key,
                     mode: parseInt(settings.mode),
                     amountOfItems: parseInt(settings.amountOfItems) || null,
                     start: settings.start || null,
-                    end: settings.end || null
+                    end: settings.end || null,
+                    dataSelector: settings.dataSelector || 0
                 });
             }
-            
+
             const response = await this.base.api.post(`/api/v3/branches`, postData);
             result.success = true;
             result.data = response.data;
         } catch (error) {
             result.success = false;
             console.error("Error create branch", typeof(error.toJSON) === "function" ? error.toJSON() : error);
-            
+
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {
                 errorMessage = error.response.data.error;
@@ -115,22 +116,22 @@ export default class BranchesService extends BaseService {
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
                 settings: [],
-                conflictSettings: data.conflicts.map(conflict => { 
-                    return { 
+                conflictSettings: data.conflicts.map(conflict => {
+                    return {
                         id: conflict.id,
                         objectId: conflict.objectId,
                         acceptChange: conflict.acceptChange
-                    }; 
+                    };
                 })
             };
-            
+
             for (let key in data.entities) {
                 if (!data.entities.hasOwnProperty(key) || key === "all") {
                     continue;
                 }
-                
+
                 const entity = data.entities[key];
-                
+
                 postData.entities.push({
                     type: key,
                     create: entity.create || entity.everything,
@@ -138,7 +139,7 @@ export default class BranchesService extends BaseService {
                     delete: entity.delete || entity.everything
                 });
             }
-            
+
             for (let key in data.settings) {
                 if (!data.settings.hasOwnProperty(key) || key === "all") {
                     continue;
@@ -153,7 +154,7 @@ export default class BranchesService extends BaseService {
                     delete: setting.delete || setting.everything
                 });
             }
-            
+
             const response = await this.base.api.patch(`/api/v3/branches/merge`, postData);
             result.success = true;
             result.data = response.data;
@@ -283,6 +284,79 @@ export default class BranchesService extends BaseService {
                 // that falls out of the range of 2xx
                 console.warn(error.response);
                 result.statusCode = error.response.status;
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+            }
+        }
+
+        return result;
+    }
+
+    async getDataSelectors() {
+        const result = [];
+
+        try {
+            const response = await this.base.api.get(`/api/v3/data-selectors?forBranches=true`);
+            result.success = true;
+            result.statusCode = 200;
+            result.data = response.data;
+        } catch (error) {
+            result.success = false;
+            console.error("Error get data selectors", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de beschikbare dataselectors.";
+
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.warn(error.response);
+                result.statusCode = error.response.status;
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+            }
+        }
+
+        return result;
+    }
+    /**
+     * Deletes a branch for the customer. This will delete the corresponding database (on the same server/cluster as the current).
+     * It will then also delete the tenant in Wiser so the branch will be completely and permanently removed.
+     * @param {int} id The id of the branch to delete.
+     */
+    async delete(id) {
+        const result = {};
+        try {
+            const response = await this.base.api.delete(`/api/v3/branches/${id}`);
+            result.success = true;
+            result.data = response.data;
+        } catch (error) {
+            result.success = false;
+            console.error("Error deleting branch", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+
+            let errorMessage = error.message;
+            if (error.response && error.response.data && error.response.data.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response && error.response.data) {
+                errorMessage = error.response.data;
+            } else if (error.response && error.response.statusText) {
+                errorMessage = error.response.statusText;
+            }
+            result.message = `Er is iets fout gegaan tijdens het verwijderen van deze omgeving. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br>${errorMessage}`;
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.warn(error.response);
             } else if (error.request) {
                 // The request was made but no response was received
                 // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
