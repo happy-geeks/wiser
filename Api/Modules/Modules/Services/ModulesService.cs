@@ -45,7 +45,8 @@ namespace Api.Modules.Modules.Services
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
         private readonly IDatabaseHelpersService databaseHelpersService;
-
+        private readonly ICsvService csvService;
+        
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
 
@@ -56,7 +57,8 @@ namespace Api.Modules.Modules.Services
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
-            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
+            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
+            ICsvService csvService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -68,6 +70,7 @@ namespace Api.Modules.Modules.Services
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
             this.databaseHelpersService = databaseHelpersService;
+            this.csvService = csvService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -752,19 +755,28 @@ UNION
                     StatusCode = gridResult.StatusCode
                 };
             }
-
+            
+            var newData = new JArray();
             var data = gridResult.ModelObject.Data;
-            var columns = gridResult.ModelObject.Columns.Where(column => !String.IsNullOrWhiteSpace(column.Field)).ToList();
-
-            CsvBuilder csvBuilder = new CsvBuilder(separator);
-            csvBuilder.AddRow(columns, (i) => i.Title);
+            var columns = gridResult.ModelObject.Columns;
             foreach (var item in data)
             {
-                csvBuilder.AddRow(columns, (column) => item[column.Field.ToLowerInvariant()].ToString());
+                var newObject = new JObject();
+                foreach (var column in columns)
+                {
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    newObject.Add(new JProperty(column.Title, item[column.Field.ToLowerInvariant()]));
+                }
+
+                newData.Add(newObject);
             }
-            
-            var result = Encoding.UTF8.GetBytes(csvBuilder.ToString());
-            
+
+            var csvString = csvService.JsonArrayToCsv(newData);
+            var result = Encoding.UTF8.GetBytes(csvString);
             return new ServiceResult<byte[]>(result);
         }
 

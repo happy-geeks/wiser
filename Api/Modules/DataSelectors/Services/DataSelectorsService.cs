@@ -38,13 +38,14 @@ namespace Api.Modules.DataSelectors.Services
         private readonly IExcelService excelService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly ICsvService csvService;
 
         private const string DataSelectorTemplateEntityType = "dataselector-template";
 
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsService"/>
         /// </summary>
-        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService)
+        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService, ICsvService csvService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -53,6 +54,7 @@ namespace Api.Modules.DataSelectors.Services
             this.excelService = excelService;
             this.databaseHelpersService = databaseHelpersService;
             this.wiserItemsService = wiserItemsService;
+            this.csvService = csvService;
         }
 
         /// <inheritdoc />
@@ -511,7 +513,7 @@ VALUES(?roleId, ?id, 15)";
                 throw new Exception("HttpContext.Current is null, can't proceed.");
             }
 
-            // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
+            // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
 
@@ -538,7 +540,7 @@ VALUES(?roleId, ?id, 15)";
                 throw new Exception("HttpContext.Current is null, can't proceed.");
             }
 
-            // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
+            // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
             var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
             GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
 
@@ -552,23 +554,10 @@ VALUES(?roleId, ?id, 15)";
                 };
             }
             
-            var csvBody = FromJsonToCsv(jsonResult, separator);
+            var csvBody = csvService.JsonArrayToCsv(jsonResult);
             var buffer = Encoding.UTF8.GetBytes(csvBody);
             
             return new ServiceResult<byte[]>(buffer);
-        }
-        
-        private string FromJsonToCsv(JArray jsonResult, char separator)
-        {
-            var csvBuilder = new CsvBuilder(separator);
-            csvBuilder.AddRow<KeyValuePair<string, JToken>>(jsonResult.First as JObject, (i) => i.Key);
-        
-            foreach (JObject jsonObject in jsonResult)
-            {
-                csvBuilder.AddRow<KeyValuePair<string, JToken>>(jsonObject, (i) => i.Value.ToString());
-            }
-
-            return csvBuilder.ToString();
         }
 
         /// <inheritdoc />
