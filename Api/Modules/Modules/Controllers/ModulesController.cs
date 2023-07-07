@@ -123,12 +123,12 @@ namespace Api.Modules.Modules.Controllers
         [Route("{id:int}/export")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv")]
-        public async Task<IActionResult> ExportAsync(int id, string fileFormat, string fileName = null)
+        public async Task<IActionResult> ExportAsync(int id, ExportFileFormats fileFormat, string fileName = null)
         {
             var (exportResult, contentType,  extension) = fileFormat switch
             {
-                "excel" => (await modulesService.ExportToExcelAsync(id, (ClaimsIdentity)User.Identity), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
-                "csv" => (await modulesService.ExportToCsvAsync(id, (ClaimsIdentity)User.Identity, ';'), "text/csv", ".csv"),
+                ExportFileFormats.Excel => (await modulesService.ExportToExcelAsync(id, (ClaimsIdentity)User.Identity), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                ExportFileFormats.Csv => (await modulesService.ExportToCsvAsync(id, (ClaimsIdentity)User.Identity, ';'), "text/csv", ".csv"),
                 _ => throw new NotImplementedException($"Error in {nameof(ModulesController)}:Export to fileformat {fileFormat} is not implemented")
             };
             if (exportResult == null)

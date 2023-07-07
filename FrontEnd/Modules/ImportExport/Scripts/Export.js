@@ -158,9 +158,9 @@ const exportModuleSettings = {
                     const dropDownList = $("#DataSelectorList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     const dataSelectorId = dataItem.encryptedId;
-                    const fileName = `${dataItem.name}.${fileFormat.extension}`;
+                    fileName = `${dataItem.name}.${fileFormat.extension}`;
                     
-                    const result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
+                    result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -173,9 +173,9 @@ const exportModuleSettings = {
                     const dropDownList = $("#QueryList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     const queryId = dataItem.encryptedId;
-                    const fileName = `${dataItem.description}.${fileFormat.extension}`;
+                    fileName = `${dataItem.description}.${fileFormat.extension}`;
                     
-                    const result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
+                    result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
@@ -191,7 +191,7 @@ const exportModuleSettings = {
                     const moduleId = dataItem.moduleId;
                     fileName = `${dataItem.name}.${fileFormat.extension}`;
 
-                    result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
+                    result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}&fileFormat=${fileFormat.value}`, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
