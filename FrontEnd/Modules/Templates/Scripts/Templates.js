@@ -967,7 +967,7 @@ const moduleSettings = {
                                 {
                                     name: "Open",
                                     text: "",
-                                    iconClass: "k-icon k-i-edit",
+                                    iconClass: "k-icon k-i-pencil",
                                     click: this.onDynamicContentOpenClick.bind(this)
                                 },
                                 {

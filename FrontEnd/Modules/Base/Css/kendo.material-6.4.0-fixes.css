@@ -51,6 +51,12 @@
     width: 7px;
     border-width: 0 1px;
 }
+.k-splitter {
+    line-height: normal;
+}
+.k-splitter .pane-content {
+    min-height: calc(100% - 103px);
+}
 
 /* Treeview */
 .k-treeview .k-treeview-group {
@@ -121,12 +127,14 @@
     padding: 0;
 }
 .k-grid-toolbar .k-button {
+    border-color: var(--handle-bg-color);
+    background-color: var(--handle-bg-color);
     margin: 0;
 }
 .k-grid-toolbar .k-button[style*=hidden] {
     display: none;
 }
-.k-grid-toolbar .full-screen {
+.k-grid-toolbar .k-grid-fullscreen {
     order: 6;
 }
 
@@ -136,7 +144,7 @@
 
 .k-grid-toolbar .k-grid-excel,
 .k-grid-toolbar .k-grid-clearallfilters,
-.k-grid-toolbar .full-screen {
+.k-grid-toolbar .k-grid-fullscreen {
     order: 4;
 }
 
@@ -169,6 +177,10 @@
 .k-grid-toolbar .k-grid-count .counter {
     padding-right: 6px;
 }
+.k-grid-header .k-grid-header-menu.k-active {
+    color: inherit;
+    background-color: inherit;
+}
 .k-table-tbody .k-table-row:hover, 
 .k-table-list .k-table-row:hover, 
 .k-table-tbody .k-table-row.k-hover, 
@@ -193,6 +205,10 @@
     background-color: var(--lightest-color);
     border-color: var(--sec-color);
 }
+.k-grid-pager.k-pager-md {
+    padding-inline: 10px;
+    padding-block: 6px;
+}
 .k-pager .k-pager-numbers-wrap .k-button {
     border-radius: 0;
     padding-inline: 0;
@@ -210,6 +226,9 @@
 .k-pager .k-button.k-disabled .k-svg-icon {
     opacity: 0.25;
 }
+div.k-grid-norecords {
+    padding: 0 10px;
+}
 
 /* Tabstrip */
 .k-tabstrip-items .k-active, 
@@ -219,6 +238,10 @@
     border-bottom-color: transparent;
     border-top-width: 1px;
     border-top-color: var(--color-2);
+}
+.k-tabstrip .k-content.k-active {
+    background-color: var(--item-bg-color);
+    color: var(--dark-txt);
 }
 .k-tabstrip-items .k-active .k-link,
 .k-panelbar .k-tabstrip-items .k-active .k-link {
@@ -232,6 +255,12 @@
 }
 .k-tabstrip-items-wrapper .k-item.k-active::after {
     border-color: transparent;
+}
+.k-tabstrip-content:focus, 
+.k-tabstrip-content.k-focus, 
+.k-tabstrip > .k-content:focus, 
+.k-tabstrip > .k-content.k-focus {
+    outline: unset;
 }
 
 /* Input - font-weight */
@@ -274,7 +303,6 @@
 .k-input-md .k-input-values, 
 .k-picker-md .k-input-values {
     padding: 8px;
-    margin-top: 12px;
     max-height: 42px;
     overflow: hidden;
     overflow-y: auto;
@@ -310,6 +338,10 @@
 .item[data-label-style="float"] .k-selection-multiple {
     margin: 0;
 }
+.item[data-label-style="float"] .k-input-md .k-input-values,
+.item[data-label-style="float"] .k-picker-md .k-input-values {
+    margin-top: 12px;
+}
 .k-popup {
     color: var(--dark-txt);
     background-color: var(--white-color);
@@ -319,6 +351,7 @@
 }
 .k-list-md .k-list-item,
 .k-list-md .k-list-optionlabel {
+    padding-block: 4px;
     padding-inline: 8px;
 }
 .k-list-group-sticky-header,
@@ -350,4 +383,152 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* File upload */
+.k-file-extension-wrapper, 
+.k-file-group-wrapper, 
+.k-file-invalid-extension-wrapper,
+.k-multiple-files-extension-wrapper, 
+.k-multiple-files-group-wrapper, 
+.k-multiple-files-invalid-extension-wrapper {
+    display: block;
+}
+.k-file-extension-wrapper, 
+.k-file-invalid-extension-wrapper, 
+.k-multiple-files-extension-wrapper, 
+.k-multiple-files-invalid-extension-wrapper {
+    position: relative;
+    width: 24px;
+    height: 34px;
+    border-width: 2px;
+    border-style: solid;
+    vertical-align: top;
+    font-size: .57em;
+    text-transform: uppercase;
+}
+.k-file-extension-wrapper:before, 
+.k-file-invalid-extension-wrapper:before, 
+.k-multiple-files-extension-wrapper:after, 
+.k-multiple-files-extension-wrapper:before, 
+.k-multiple-files-invalid-extension-wrapper:after, 
+.k-multiple-files-invalid-extension-wrapper:before {
+    position: absolute;
+    content: "";
+    display: inline-block;
+    border-style: solid;
+}
+.k-file-extension-wrapper:before, 
+.k-file-invalid-extension-wrapper:before, 
+.k-multiple-files-extension-wrapper:before, 
+.k-multiple-files-invalid-extension-wrapper:before {
+    top: -1px;
+    right: -1px;
+    width: 0;
+    height: 0;
+    border-width: 6px;
+    margin-top: -1px;
+    margin-right: -1px;
+}
+.k-file-extension, 
+.k-file-invalid-icon {
+    position: absolute;
+    bottom: 0;
+    line-height: normal;
+}
+.k-file-extension {
+    margin-left: 0.4em;
+    margin-bottom: 0.3em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.k-upload-status {
+    position: absolute;
+    right: 0px;
+    top: 5px;
+}
+.k-upload-status .k-button-md.k-icon-button .k-button-icon {
+    min-width: 16px;
+    min-height: 16px;
+}
+.k-file-information, 
+.k-file-size, 
+.k-file-validation-message {
+    font-size: .78em;
+    line-height: 1.5em;
+}
+
+/* Editor */
+.k-editor .k-button-md.k-icon-button .k-button-icon {
+    min-height: 16px;
+    min-width: 16px;
+}
+.k-editor-toolbar .k-button {
+    padding: 8px !important;
+    margin-right: 0;
+}
+.k-toolbar .k-button-solid-base.k-input-button, 
+.k-toolbar .k-button-solid-base.k-input-spinner .k-spinner-increase, 
+.k-toolbar .k-button-solid-base.k-input-spinner .k-spinner-decrease {
+    background-color: var(--white-color);
+    border-color: var(--border-color);
+}
+.k-toolbar .k-combobox .k-input-inner {
+    padding-block: 0;
+    line-height: 34px;
+    text-indent: 0;
+}
+.k-editor .k-toolbar .k-button-group {
+    width: auto !important;
+}
+
+    /* Daterange picker */
+.k-daterange-picker .k-dateinput, 
+.k-daterangepicker .k-dateinput {
+    width: 100%;
+}
+.k-floating-label-container {
+    width: 100%;
+}
+.k-daterange-picker .k-input-md .k-input-inner,
+.k-daterangepicker .k-input-md .k-input-inner {
+    padding-block: 0;
+    padding-inline: 0;
+}
+.k-daterange-picker .k-input-solid:hover,
+.k-daterange-picker .k-input-solid.k-hover,
+.k-daterangepicker .k-input-solid:hover,
+.k-daterangepicker .k-input-solid.k-hover {
+    border-color: transparent;
+}
+
+/* Window alert */
+.k-window-content.k-dialog-content {
+    padding: 8px 16px;
+    padding-bottom: 0;
+}
+.k-window-content + .k-prompt-container {
+    background-color: var(--item-bg-color);
+    padding-inline: 16px;
+}
+.k-prompt-container .k-input-md .k-input-inner,
+.k-prompt-container .k-picker-md .k-input-inner {
+    padding-block: 0;
+    padding-inline: 0;
+}
+.k-dialog .k-dialog-actions .k-button {
+    margin-right: 0;
+}
+
+/* Version control */
+.version-actions > button, 
+.version-actions > .branch-container > button {
+    margin-right: 2px;
+}
+
+/* Communication module */
+#MainHeader {
+    z-index: 101;
+    position: relative;
 }

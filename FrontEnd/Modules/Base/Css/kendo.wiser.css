@@ -199,7 +199,7 @@
 }
 .k-file-name-size-wrapper {
 	border-left: 1px solid var(--handle-bg-color);
-	width: calc(100% - 200px);
+	width: calc(100% - 100px);
 }
 .k-file {
 	background-color: var(--lighter-color);
