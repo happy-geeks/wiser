@@ -85,7 +85,7 @@ public class ExternalApisService : IExternalApisService
         const string headerPrefix = "X-Extra-";
         foreach (var header in httpContextAccessor.HttpContext.Request.Headers)
         {
-            if (!header.Key.StartsWith(headerPrefix))
+            if (!header.Key.ToLower().StartsWith(headerPrefix.ToLower()))
             {
                 continue;
             }
