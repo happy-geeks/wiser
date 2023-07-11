@@ -17,8 +17,10 @@ namespace Api.Modules.Templates.Interfaces
         /// Retrieve history of the component with generated changes. The versions will be sorted by the HistoryVersion models version(DESC).
         /// </summary>
         /// <param name="contentId">The id of the content</param>
+        /// <param name="pageNumber"></param>
+        /// <param name="itemsPerPage"></param>
         /// <returns>List of HistoryVersionModels with generated changes. Sorted by descending version.</returns>
-        Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId);
+        Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId, int pageNumber, int itemsPerPage);
 
         /// <summary>
         /// Retrieves the current settings and applies the List of changes that should be reverted.
@@ -50,8 +52,10 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template.</param>
         /// <param name="dynamicContent">A Dictionary containing the overview of dynamic content and its respective history</param>
+        /// <param name="pageNumber"></param>
+        /// <param name="itemsPerPage"></param>
         /// <returns>A list of TemplateHistoryModel containing the history of the template and its linked dynamic content for each version</returns>
-        Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent);
+        Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent, int pageNumber, int itemsPerPage);
         
         /// <summary>
         /// Retrieves the publish history of a template

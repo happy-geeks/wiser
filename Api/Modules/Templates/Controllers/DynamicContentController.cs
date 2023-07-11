@@ -71,14 +71,16 @@ namespace Api.Modules.Templates.Controllers
         /// Get the history of the current component.
         /// </summary>
         /// <param name="contentId">The component of the history.</param>
+        /// <param name="pageNumber"></param>
+        /// <param name="itemsPerPage"></param>
         /// <returns>History PartialView containing the retrieved history of the component</returns>
         [HttpGet]
         [Route("{contentId:int}/history")]
         [ProducesResponseType(typeof(List<HistoryVersionModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId)
+        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId, int pageNumber = 1, int itemsPerPage = 100)
         {
-            return (await historyService.GetChangesInComponentAsync(contentId)).GetHttpResponseMessage();
+            return (await historyService.GetChangesInComponentAsync(contentId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }
 
         /// <summary>

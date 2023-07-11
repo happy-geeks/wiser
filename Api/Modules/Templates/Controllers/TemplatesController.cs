@@ -117,9 +117,9 @@ namespace Api.Modules.Templates.Controllers
         [HttpGet]
         [Route("{templateId:int}/history")]
         [ProducesResponseType(typeof(TemplateHistoryOverviewModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetHistoryAsync(int templateId)
+        public async Task<IActionResult> GetHistoryAsync(int templateId, int pageNumber = 1, int itemsPerPage = 50)
         {
-            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }
         
         /// <summary>

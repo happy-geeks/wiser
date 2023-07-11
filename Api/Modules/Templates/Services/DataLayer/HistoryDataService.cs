@@ -27,11 +27,16 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId)
+        public async Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId, int page, int itemsPerPage)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
-            var dataTable = await connection.GetAsync($"SELECT wdc.version, wdc.changed_on, wdc.changed_by, wdc.component, wdc.component_mode, wdc.settings FROM {WiserTableNames.WiserDynamicContent} wdc WHERE content_id = ?contentId ORDER BY wdc.version DESC");
+            var dataTable = await connection.GetAsync(
+                $@"SELECT wdc.version, wdc.changed_on, wdc.changed_by, wdc.component, wdc.component_mode, wdc.settings 
+                        FROM {WiserTableNames.WiserDynamicContent} wdc 
+                        WHERE content_id = ?contentId 
+                        ORDER BY wdc.version DESC
+                        LIMIT {(page-1) * itemsPerPage}, {itemsPerPage}");
 
             var resultDict = new List<HistoryVersionModel>();
             foreach (DataRow row in dataTable.Rows)
@@ -66,7 +71,7 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId, int page, int itemsPerPage)
         {
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
@@ -121,7 +126,8 @@ LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM 
 WHERE template.template_id = ?templateId
 AND template.removed = 0
 GROUP BY template.version
-ORDER BY version DESC");
+ORDER BY version DESC
+LIMIT {(page-1) * itemsPerPage}, {itemsPerPage}");
 
             var resultList = new List<TemplateSettingsModel>();
 
