@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Api.Core.Models;
 
 namespace FrontEnd.Core.Models
 {
@@ -63,5 +64,10 @@ namespace FrontEnd.Core.Models
         /// Gets or sets the directory where the plugins are located.
         /// </summary>
         public string PluginsDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the settings for Google authentication.
+        /// </summary>
+        public GoogleAuthenticationSettings GoogleAuthentication { get; set; } = new();
     }
 }

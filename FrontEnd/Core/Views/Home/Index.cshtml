@@ -7,6 +7,12 @@
     }
 </style>
 <!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+                <div id="g_id_onload"
+                    data-client_id="816507773475-92kb4c858uj31kl26fa8r1lpuisb2rcm.apps.googleusercontent.com"
+                    data-login_uri="https://localhost:44349/signin-google"
+                    data-auto_prompt="false">
+                </div>
 <div id="app" v-cloak>
     <div :class="{ 'loading': mainLoader }">
         <header v-if="user.loggedIn && !requirePasswordChange">
@@ -777,6 +783,16 @@
                     <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
                 </div>
 
+                @* <div id="GoogleSignInButton"></div> *@
+                <div class="g_id_signin"
+                    data-type="standard"
+                    data-size="large"
+                    data-theme="outline"
+                    data-text="sign_in_with"
+                    data-shape="rectangular"
+                    data-logo_alignment="left">
+                </div>
+
                 <div class="form-row">
                     <label id="remember" class="check-box">
                         <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>Ingelogd blijven</span>
@@ -1041,7 +1057,8 @@
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
     "trackJsToken": "@Model.Settings.TrackJsToken",
-    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin"
+    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin",
+    "googleAuthenticationClientId": "@Model.Settings.GoogleAuthentication.ClientId"
 }
 </script>
 

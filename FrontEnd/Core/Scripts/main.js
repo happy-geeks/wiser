@@ -93,6 +93,23 @@ class Main {
             import(`../Css/partner/${this.appSettings.subDomain}.css`);
         }
 
+        if (this.appSettings.googleAuthenticationClientId) {
+            /*function handleCredentialResponse(response) {
+                console.log("Encoded JWT ID token: " + response.credential);
+            }
+
+            google.accounts.id.initialize({
+                client_id: this.appSettings.googleAuthenticationClientId,
+                callback: handleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                document.getElementById("GoogleSignInButton"),
+                { theme: "outline", size: "large" }  // customization attributes
+            );
+            google.accounts.id.prompt(); // also display the One Tap dialog
+            console.log("google sign in button rendered", this.appSettings.googleAuthenticationClientId);*/
+        }
+
         this.api = axios.create({
             baseURL: this.appSettings.apiBase
         });
