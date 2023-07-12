@@ -411,31 +411,6 @@ WHERE
     AND language_code <> ''
 GROUP BY language_code
 ORDER BY language_code");
-                TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
-SET @new_index = {newIndex};
-SET @id = {currentId}; 
-SET @entity_name = '{entityName}';
-
-# move property to given index
-UPDATE wiser_entityproperty SET ordering = @new_index WHERE id=@id;
-
-# set other items to given index
-UPDATE wiser_entityproperty 
-SET ordering = IF(@old_index > @new_index, ordering, ordering) 
-WHERE ordering > IF(@old_index > @new_index, @new_index, @old_index)
-AND ordering < IF(@old_index > @new_index, @old_index, @new_index)
-AND entity_name = @entity_name
-AND id <> @id;
-
-# update record where index equals the new index value
-UPDATE wiser_entityproperty
-	SET ordering = IF(@old_index > @new_index, ordering+1, ordering-1) 
-WHERE 
-	ordering = @new_index AND 
-	entity_name = @entity_name AND 
-	tab_name =  @tab_name AND
-	id <> @id;
-");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_TABNAMES", @"SELECT id, IF(tab_name = '', 'Gegevens', tab_name) AS tabName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'
 GROUP BY tab_name

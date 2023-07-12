@@ -629,7 +629,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
@@ -638,8 +638,7 @@ UNION
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            var userItemPermissions =
-                await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+            var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
 
             result.CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read;
             result.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
@@ -675,7 +674,11 @@ UNION
             }
 
             var parsedOptionsJson = JToken.Parse(optionsJson);
-            jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+
+            if (encryptValues)
+            {
+                jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+            }
 
             result.Options = parsedOptionsJson;
 
@@ -689,13 +692,12 @@ UNION
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", name);
 
-            var query = $@"
-                        SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
-                        INSERT INTO {WiserTableNames.WiserModule}(id,`name`)
-                        VALUES (@newID, ?name); 
-                        INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
-                        VALUES (1, '', 0, 0, 15, @newID);
-                        SELECT @newID;";
+            var query = $@"SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
+INSERT INTO {WiserTableNames.WiserModule} (id,`name`)
+VALUES (@newID, ?name); 
+INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
+VALUES (1, '', 0, 0, 15, @newID);
+SELECT @newID;";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             var id = Convert.ToInt32(dataTable.Rows[0][0]);
@@ -789,15 +791,15 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
             var query = $@"UPDATE {WiserTableNames.WiserModule}
-                            SET `id` = ?new_id,
-                                `custom_query` = ?custom_query,
-                                `count_query` = ?count_query,
-                                `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
-                                `name` = ?name,
-                                `icon` = ?icon,
-                                `type` = ?type,
-                                `group` = ?group
-                        WHERE id = ?id";
+SET `id` = ?new_id,
+    `custom_query` = ?custom_query,
+    `count_query` = ?count_query,
+    `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
+    `name` = ?name,
+    `icon` = ?icon,
+    `type` = ?type,
+    `group` = ?group
+WHERE id = ?id";
 
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true)

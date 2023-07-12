@@ -64,13 +64,27 @@ namespace Api.Modules.EntityProperties.Controllers
         /// <param name="onlyEntityTypesWithDisplayName">Only get properties with a display name.</param>
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
+        /// <param name="orderByName">Optional: Whether to order by name (true) or by order number (false). Default value is true.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
         [HttpGet]
         [Route("{entityType}")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityType, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false)
+        public async Task<IActionResult> GetPropertiesOfEntityAsync(string entityType, [FromQuery] bool onlyEntityTypesWithDisplayName, [FromQuery] bool onlyEntityTypesWithPropertyName, [FromQuery] bool addIdProperty = false, [FromQuery] bool orderByName = true)
         {
-            return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityType, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty)).GetHttpResponseMessage();
+            return (await entityPropertiesService.GetPropertiesOfEntityAsync((ClaimsIdentity)User.Identity, entityType, onlyEntityTypesWithDisplayName, onlyEntityTypesWithPropertyName, addIdProperty, orderByName)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Get all entity properties of a specific entity, grouped by tab name.
+        /// </summary>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <returns>A <see cref="List{EntityPropertyTabModel}"/> with all tabs of a specific entity. Each tab contains all fields of that tab.</returns>
+        [HttpGet]
+        [Route("{entityName}/grouped-by-tab")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetPropertiesOfEntityGroupedByTabAsync(string entityName)
+        {
+            return (await entityPropertiesService.GetPropertiesOfEntityGroupedByTabAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -157,23 +171,46 @@ namespace Api.Modules.EntityProperties.Controllers
         }
 
         /// <summary>
-        /// Fixes the ordering of an entity property
+        /// Move an entity property to a new position.
         /// </summary>
-        /// <param name="entityName">The name of the entity property</param>
-        /// <returns></returns>
+        /// <param name="id">The ID of the entity property</param>
+        /// <param name="data">Data required to do the move.</param>
         [HttpPut]
-        [Route("{entityName}/fix-ordering")]
-        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> FixOrderingAsync(string entityName)
+        [Route("{id}/move")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> MovePropertyAsync(int id, MoveEntityPropertyRequestModel data)
         {
-            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityName)).GetHttpResponseMessage();
+            return (await entityPropertiesService.MovePropertyAsync((ClaimsIdentity)User.Identity, id, data)).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// Fixes the ordering of a link type
+        /// Move an entity tab with all it's properties to a new position.
         /// </summary>
-        /// <param name="linkType">The ID of a link type</param>
-        /// <returns></returns>
+        /// <param name="data">Data required to do the move.</param>
+        [HttpPut]
+        [Route("move-tab")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> MoveTabAsync(MoveEntityTabRequestModel data)
+        {
+            return (await entityPropertiesService.MoveTabAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Fixes the ordering of all fields for a specific entity type, so that all fields have consecutive order numbers.
+        /// </summary>
+        /// <param name="entityType">The entity type to fix the ordering for.</param>
+        [HttpPut]
+        [Route("{entityType}/fix-ordering")]
+        [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> FixOrderingAsync(string entityType)
+        {
+            return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Fixes the ordering of all fields for a specific link type, so that all fields have consecutive order numbers.
+        /// </summary>
+        /// <param name="linkType">The link type to fix the ordering for.</param>
         [HttpPut]
         [Route("{linkType:int}/fix-ordering")]
         [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]

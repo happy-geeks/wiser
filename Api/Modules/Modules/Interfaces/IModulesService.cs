@@ -30,8 +30,9 @@ namespace Api.Modules.Modules.Interfaces
         /// </summary>
         /// <param name="id">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="encryptValues">Optional: Whether to encrypt values in the JSON settings, such as queryId. Default is true. Set to false when getting the settings for the admin module.</param>
         /// <returns></returns>
-        Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity);
+        Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true);
 
         /// <summary>
         /// Creates a new module
