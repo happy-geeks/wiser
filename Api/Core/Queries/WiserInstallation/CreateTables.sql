@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
   `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
-  `store_type` enum('normal','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'normal',
+  `store_type` enum('table','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'normal',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
