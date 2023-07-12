@@ -1,5 +1,5 @@
-import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils";
+import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils";
 import "../../Base/Scripts/Processing.js";
 import "../Css/VersionControl.css"
 
@@ -161,7 +161,8 @@ const moduleSettings = {
 
             // Tab strip.
             this.mainTabStrip = $("#tabstrip").kendoTabStrip({
-                activate: this.onMainTabStripActivate.bind(this)
+                activate: this.onMainTabStripActivate.bind(this),
+                animation: false
             }).data("kendoTabStrip");
 
             // Commit button

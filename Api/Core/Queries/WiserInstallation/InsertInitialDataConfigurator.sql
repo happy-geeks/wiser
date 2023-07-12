@@ -230,7 +230,7 @@ INSERT INTO `wiser_dynamic_content` (`content_id`, `settings`, `component`, `com
 SET @configuratorDynamicContentId = (SELECT `content_id` FROM `wiser_dynamic_content` WHERE `id` = LAST_INSERT_ID());
 
 -- Configurator scripts folder
-SET @scriptsFolderTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `template_name` = 'SCRIPTS');
+SET @scriptsFolderTemplateId = (SELECT `template_id` FROM `wiser_template` WHERE `template_name` = 'JS');
 SET @newTemplateId = (SELECT IFNULL(MAX(`template_id`), 0) + 1 FROM `wiser_template`);
 INSERT INTO `wiser_template` (`parent_id`, `template_name`, `template_type`, `version`, `template_id`, `changed_on`, `changed_by`, `published_environment`) VALUES (@scriptsFolderTemplateId, 'Configurators', 7, 1, @newTemplateId, NOW(), 'Wiser', 1);
 SET @configuratorScriptsFolder = (SELECT `template_id` FROM `wiser_template` WHERE `id` = LAST_INSERT_ID());
