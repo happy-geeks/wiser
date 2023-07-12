@@ -14,6 +14,7 @@ using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityProperties.Models;
 using Api.Modules.Kendo.Enums;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySql.Data.MySqlClient;
@@ -26,14 +27,15 @@ namespace Api.Modules.EntityProperties.Services
     public class EntityPropertiesService : IEntityPropertiesService, IScopedService
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly IWiserItemsService wiserItemsService;
 
         /// <summary>
         /// Create a new instance of <see cref="EntityPropertiesService"/>
         /// </summary>
-        /// <param name="clientDatabaseConnection"></param>
-        public EntityPropertiesService(IDatabaseConnection clientDatabaseConnection)
+        public EntityPropertiesService(IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.wiserItemsService = wiserItemsService;
         }
 
         /// <inheritdoc />
@@ -75,11 +77,11 @@ namespace Api.Modules.EntityProperties.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true)
+        public async Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityType, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("entityName", entityName);
+            clientDatabaseConnection.AddParameter("entityName", entityType);
             var query = $@"SELECT *
                             FROM {WiserTableNames.WiserEntityProperty}
                             WHERE entity_name = ?entityName
@@ -715,6 +717,31 @@ WHERE {whereClause}";
             {
                 StatusCode = HttpStatusCode.NoContent
             };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<string>>> GetUniquePropertyValuesAsync(ClaimsIdentity identity, string entityType, string propertyName, string languageCode = null, int maxResults = 500)
+        {
+            if (maxResults <= 0)
+            {
+                throw new ArgumentException($"{nameof(maxResults)} must be greater than 0");
+            }
+
+            var languageCodePart = String.IsNullOrWhiteSpace(languageCode) ? "" : $"AND detail.language_code = '{languageCode}'";
+            var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+            var query = $@"SELECT `value`
+FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
+JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS detail ON detail.item_id = item.id AND detail.`key` = ?propertyName {languageCodePart} AND detail.`value` IS NOT NULL AND detail.`value` != ''
+WHERE item.entity_type = ?entityType
+GROUP BY detail.`value`
+ORDER BY detail.`value` ASC
+LIMIT {maxResults}";
+
+            clientDatabaseConnection.AddParameter("entityType", entityType);
+            clientDatabaseConnection.AddParameter("propertyName", propertyName);
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            return new ServiceResult<List<string>>(dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("value")).ToList());
         }
 
         /// <inheritdoc />

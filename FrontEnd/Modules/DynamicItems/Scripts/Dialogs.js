@@ -1,4 +1,5 @@
 ﻿import "../../Base/Scripts/Processing.js";
+
 require("@progress/kendo-ui/js/kendo.dialog.js");
 require("@progress/kendo-ui/js/kendo.dropdownlist.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -171,7 +172,7 @@ export class Dialogs {
         this.newItemDialog.element.data("linkTypeNumber", linkTypeNumber);
         this.newItemDialog.element.data("moduleId", moduleId);
         this.newItemDialog.element.data("kendoComponent", kendoComponent);
-        
+
         const hasOnlyOneOption = this.newItemDialogEntityTypeDropDown.dataSource.data().length === 1;
 
         if (skipInitialDialog || (skipName && hasOnlyOneOption)) {
@@ -185,7 +186,7 @@ export class Dialogs {
         if (skipName) {
             return;
         }
-        
+
         if (!hasOnlyOneOption) {
             this.newItemDialogEntityTypeDropDown.focus();
             this.newItemDialogEntityTypeDropDown.open();
@@ -240,6 +241,7 @@ export class Dialogs {
                 // Add the new item to the main tree view and select it.
                 const newNode = this.base.mainTreeView.append({
                     encryptedItemId: createItemResult.itemId,
+                    plainItemId: createItemResult.itemIdPlain,
                     spriteCssClass: createItemResult.icon,
                     title: newName,
                     destinationItemId: parentId,

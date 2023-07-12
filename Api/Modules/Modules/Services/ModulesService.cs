@@ -92,6 +92,18 @@ namespace Api.Modules.Modules.Services
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
+            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(clientDatabaseConnection.ConnectedDatabase);
+
+            // If the table changes don't contain wiser_itemdetail, it means this is an older database.
+            // We can assume that this database already has the able, otherwise nothing would work.
+            // We add that table to the list of last table updates, so that the GCL doesn't try to add any indexes that might be missing,
+            // because that takes a very long time for old databases with lots of data.
+            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserItemDetail))
+            {
+                await clientDatabaseConnection.ExecuteAsync($"INSERT IGNORE INTO {WiserTableNames.WiserTableChanges} (name, last_update) VALUES ('{WiserTableNames.WiserItemDetail}', '{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
+                lastTableUpdates.TryAdd(WiserTableNames.WiserItemDetail, DateTime.Now);
+            }
+
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
@@ -118,7 +130,6 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserCommunication,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
-            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
 
             // Make sure that all triggers for Wiser tables are up-to-date.
             if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))

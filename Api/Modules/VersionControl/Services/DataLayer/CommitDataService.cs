@@ -220,6 +220,7 @@ WHERE `commit`.id = ?id";
 	    databaseConnection.AddParameter("commitId", data.Id);
 	    if (data.Templates != null && data.Templates.Any())
 	    {
+		    var queries = new List<string>();
 		    var queryParts = new List<string>();
 		    for (var index = 0; index < data.Templates.Count; index++)
 		    {
@@ -228,14 +229,18 @@ WHERE `commit`.id = ?id";
 			    databaseConnection.AddParameter($"version{index}", template.Version);
 
 			    queryParts.Add($"(?id{index}, ?version{index}, ?commitId, ?addedOn, ?addedBy)");
+
+			    // We set dirty to false when we create a commit, so that it no longer shows up in the list of templates to commit.
+			    queries.Add($"UPDATE {WiserTableNames.WiserTemplate} SET is_dirty = FALSE WHERE template_id = ?id{index} AND version <= ?version{index};");
 		    }
 
-		    query = $@"INSERT INTO {WiserTableNames.WiserCommitTemplate} (template_id, version, commit_id, added_on, added_by) VALUES {String.Join(", ", queryParts)}";
-		    await databaseConnection.ExecuteAsync(query);
+		    queries.Add($@"INSERT INTO {WiserTableNames.WiserCommitTemplate} (template_id, version, commit_id, added_on, added_by) VALUES {String.Join(", ", queryParts)}");
+		    await databaseConnection.ExecuteAsync(String.Join(Environment.NewLine, queries));
 	    }
 
 	    if (data.DynamicContents != null && data.DynamicContents.Any())
 	    {
+		    var queries = new List<string>();
 		    var queryParts = new List<string>();
 		    for (var index = 0; index < data.DynamicContents.Count; index++)
 		    {
@@ -244,10 +249,13 @@ WHERE `commit`.id = ?id";
 			    databaseConnection.AddParameter($"version{index}", dynamicContent.Version);
 
 			    queryParts.Add($"(?id{index}, ?version{index}, ?commitId, ?addedOn, ?addedBy)");
+
+			    // We set dirty to false when we create a commit, so that it no longer shows up in the list of components to commit.
+			    queries.Add($"UPDATE {WiserTableNames.WiserDynamicContent} SET is_dirty = FALSE WHERE content_id = ?id{index} AND version <= ?version{index};");
 		    }
 
-		    query = $@"INSERT INTO {WiserTableNames.WiserCommitDynamicContent} (dynamic_content_id, version, commit_id, added_on, added_by) VALUES {String.Join(", ", queryParts)}";
-		    await databaseConnection.ExecuteAsync(query);
+		    queries.Add($@"INSERT INTO {WiserTableNames.WiserCommitDynamicContent} (dynamic_content_id, version, commit_id, added_on, added_by) VALUES {String.Join(", ", queryParts)}");
+		    await databaseConnection.ExecuteAsync(String.Join(Environment.NewLine, queries));
 	    }
 
 	    return data;
@@ -289,7 +297,7 @@ WHERE `commit`.id = ?id";
 	template.template_id,
 	template.parent_id,
 	template.template_name,
-	template.version,
+	MAX(template.version) AS version,
 	template.changed_on,
 	template.published_environment,
 	template.template_type,
@@ -303,14 +311,13 @@ WHERE `commit`.id = ?id";
 	IFNULL(template.version, 0) = IFNULL(liveTemplate.version, 0) AS live 
 FROM {WiserTableNames.WiserTemplate} AS template
 JOIN {WiserTableNames.WiserTemplate} AS parent ON parent.template_id = template.parent_id AND parent.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = template.parent_id)
-LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 LEFT JOIN {WiserTableNames.WiserTemplate} AS testTemplate ON testTemplate.template_id = template.template_id AND (testTemplate.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTemplate.template_id = template.template_id AND (acceptanceTemplate.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserCommitTemplate} AS templateCommit ON templateCommit.template_id = template.template_id AND templateCommit.version = template.version
-WHERE template.template_type != 7 
+WHERE template.template_type != {(int)TemplateTypes.Directory}
 AND template.removed = 0
-AND otherVersion.id IS NULL
+AND template.is_dirty = TRUE
 AND templateCommit.id IS NULL
 GROUP BY template.template_id
 ORDER BY template.changed_on ASC";
@@ -352,7 +359,7 @@ ORDER BY template.changed_on ASC";
 	content.title,
 	content.component,
 	content.component_mode,
-	content.version,
+	MAX(content.version) AS version,
 	content.changed_on,
 	content.published_environment,
 	content.changed_by,
@@ -365,7 +372,6 @@ ORDER BY template.changed_on ASC";
 	GROUP_CONCAT(DISTINCT template.template_id) AS template_ids,
 	GROUP_CONCAT(DISTINCT template.template_name) AS template_names
 FROM {WiserTableNames.WiserDynamicContent} AS content
-LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS testContent ON testContent.content_id = content.content_id AND (testContent.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptanceContent.content_id = content.content_id AND (acceptanceContent.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
@@ -373,7 +379,7 @@ LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON lin
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(version) FROM wiser_template WHERE template_id = linkToTemplate.destination_template_id)
 LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS dynamicContentCommit ON dynamicContentCommit.dynamic_content_id = content.content_id AND dynamicContentCommit.version = content.version
 WHERE content.removed = 0
-AND otherVersion.id IS NULL
+AND content.is_dirty = TRUE
 AND dynamicContentCommit.id IS NULL
 GROUP BY content.content_id
 ORDER BY content.changed_on ASC";

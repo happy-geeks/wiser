@@ -1,8 +1,9 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { Preview } from "./Preview.js";
-import { TemplateConnectedUsers } from "./TemplateConnectedUsers.js";
+import {Preview} from "./Preview.js";
+import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
+import "../css/Templates.css";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -20,9 +21,6 @@ require("@progress/kendo-ui/js/dataviz/chart/chart.js");
 require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/Templates.css";
-import {Init} from "codemirror/src/edit/options";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -1814,42 +1812,47 @@ const moduleSettings = {
 
         //Deploy a version to an enviorenment
         async deployEnvironment(environment, templateId, version) {
-            version = version || document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
-            if (!version) {
-                kendo.alert("U heeft geen geldige versie geselecteerd.");
-                return;
-            }
+            try {
+                version = parseInt(version || document.querySelector(`#published-environments .version-${environment} select.combo-select`).value);
+                if (!version) {
+                    kendo.alert("U heeft geen geldige versie geselecteerd.");
+                    return;
+                }
 
-            let environmentEnum;
-            switch (environment) {
-                case "test":
-                    environmentEnum = 2;
-                    break;
-                case "accept":
-                    environmentEnum = 4;
-                    break;
-                case "live":
-                    environmentEnum = 8;
-                    break;
-                default:
-                    environmentEnum = 1;
-                    break;
-            }
+                let environmentEnum;
+                switch (environment) {
+                    case "test":
+                        environmentEnum = 2;
+                        break;
+                    case "accept":
+                        environmentEnum = 4;
+                        break;
+                    case "live":
+                        environmentEnum = 8;
+                        break;
+                    default:
+                        environmentEnum = 1;
+                        break;
+                }
 
-            await Wiser.api({
-                url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${environmentEnum}/${version}`,
-                dataType: "json",
-                type: "POST",
-                contentType: "application/json"
-            });
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${environmentEnum}/${version}`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
 
-            // No message needs to be shown if deployed to the development environment because this is default.
-            if (environmentEnum !== 1) {
-                window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+                // No message needs to be shown if deployed to the development environment because this is default.
+                if (environmentEnum !== 1) {
+                    window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+                }
+                this.historyLoaded = false;
+                this.measurementsLoaded = false;
+                await this.reloadMetaData(templateId);
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is een fout opgetreden bij het deployen van de template: ${exception.responseText || exception}`);
             }
-            this.historyLoaded = false;
-            this.measurementsLoaded = false;
-            await this.reloadMetaData(templateId);
         }
 
         async deployDynamicContentEnvironment(environment, contentId, version) {
@@ -2346,29 +2349,9 @@ const moduleSettings = {
             document.querySelector("#published-environments").outerHTML = response;
 
             // Bind deploy buttons.
-            $("#deployLive, #deployAccept, #deployTest, #deployToBranchButton").kendoButton();
+            $("#deployLive, #deployAccept, #deployTest").kendoButton();
             $("#published-environments .combo-select").kendoDropDownList();
             this.bindDeployButtons(templateId);
-
-            // Bind save buttons.
-            $("#saveAndDeployToTestButton").kendoButton();
-            $("#saveButton").kendoButton({
-                icon: "save"
-            });
-
-            if (!this.branches || !this.branches.length) {
-                $(".branch-container").addClass("hidden");
-            } else {
-                $(".branch-container").removeClass("hidden");
-                $("#branchesDropDown").kendoDropDownList({
-                    dataSource: this.branches,
-                    dataValueField: "id",
-                    dataTextField: "name",
-                    optionLabel: "Kies een branch..."
-                });
-            }
-
-            this.bindDeploymentTabEvents();
 
             // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
             this.toggleElementsForDatabaseTemplates(this.templateSettings.type);
