@@ -1,7 +1,8 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { Preview } from "./Preview.js";
+import {Preview} from "./Preview.js";
+import "../css/DynamicContent.css";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -16,8 +17,6 @@ require("@progress/kendo-ui/js/kendo.multiselect.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/DynamicContent.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -119,7 +118,7 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            
+
             this.stickyHeader();
 
             this.initializeKendoComponents();
@@ -165,7 +164,7 @@ const moduleSettings = {
                 lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
             }
         }
-        
+
         /**
          * Initializes all kendo components for the base class.
          */
@@ -219,7 +218,7 @@ const moduleSettings = {
                     spin: () => this.onInputChange(false)
                 });
             });
-            
+
             //MULTISELECT
             container.find(".multi-select").kendoMultiSelect({
                 autoClose: false,
@@ -229,7 +228,7 @@ const moduleSettings = {
             container.find(".select").kendoDropDownList({
                 change: () => this.onInputChange(true)
             });
-            
+
             container.find(".add-subgroup-button").off("click").click(this.onAddSubGroupButtonClick.bind(this));
             container.find(".remove-subgroup-button").off("click").click(this.onRemoveSubGroupButtonClick.bind(this));
 
@@ -312,7 +311,7 @@ const moduleSettings = {
         }
 
         /**
-         * On opening the dynamic content and switching between component modes this method will check which groups and properties should be visible. 
+         * On opening the dynamic content and switching between component modes this method will check which groups and properties should be visible.
          * @param {number} componentModeKey The key value of the componentMode. This key will be used to retrieve the associated value.
          */
         updateComponentModeVisibility(componentModeKey) {
@@ -437,20 +436,20 @@ const moduleSettings = {
 
                     window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
 
-                
+
                 if (alsoDeployToTest) {
-                    const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 0) + 1;
-    
+                    const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 1);
+
                     await Wiser.api({
                         url: `${this.settings.wiserApiRoot}dynamic-content/${contentId}/publish/test/${version}`,
                         dataType: "json",
                         type: "POST",
                         contentType: "application/json"
                     });
-    
+
                     window.popupNotification.show(`Dynamisch component is succesvol naar de test-omgeving gezet`, "info");
                 }
-                
+
                 await this.loadComponentHistory();
             } catch (exception) {
                 console.error(exception);
@@ -486,7 +485,7 @@ const moduleSettings = {
         getNewSettings(fields = null) {
             const settingsList = {};
             fields = fields || $("[data-property]").not(".sub-groups [data-property]");
-            
+
             fields.each((index, element) => {
                 const field = $(element);
                 const propertyName = field.data("property");
@@ -508,7 +507,7 @@ const moduleSettings = {
 
                 if (kendoControlName) {
                     const kendoControl = field.data(kendoControlName);
-                    
+
                     if (kendoControl) {
                         settingsListToUse[propertyName] = kendoControl.value();
                         return;
@@ -581,7 +580,7 @@ const moduleSettings = {
                 method: "GET",
                 url: "/Modules/Templates/PreviewTab"
             });
-            
+
             document.getElementById("previewTab").innerHTML = response;
 
             this.preview.initPreviewProfileInputs(true, true);
@@ -735,14 +734,14 @@ const moduleSettings = {
             cloneFieldSet.data("key", `id${newIndex-1}`);
             cloneFieldSet.find("legend .index").html(newIndex-1);
             subGroupsContainer.append(cloneFieldSet);
-            
+
             this.initializeDynamicKendoComponents(cloneFieldSet);
             this.transformCodeMirrorViews(cloneFieldSet);
         }
 
         async onRemoveSubGroupButtonClick(event) {
             event.preventDefault();
-            
+
             const buttonElement = $(event.currentTarget);
             const container = buttonElement.closest(".sub-group");
             if (container.data("key") === "_template") {

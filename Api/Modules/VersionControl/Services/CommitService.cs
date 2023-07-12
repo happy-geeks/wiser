@@ -8,6 +8,7 @@ using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Templates.Interfaces;
+using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.VersionControl.Enums;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
@@ -32,6 +33,8 @@ public class CommitService : ICommitService, IScopedService
     private readonly IVersionControlService versionControlService;
     private readonly ILogger<CommitService> logger;
     private readonly IReviewService reviewService;
+    private readonly ITemplateDataService templateDataService;
+    private readonly IDynamicContentDataService dynamicContentDataService;
 
     /// <summary>
     /// Creates a new instance of <see cref="CommitService"/>.
@@ -40,7 +43,8 @@ public class CommitService : ICommitService, IScopedService
         IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection,
         IDatabaseHelpersService databaseHelpersService, IBranchesService branchesService,
         IVersionControlService versionControlService, ILogger<CommitService> logger,
-        IReviewService reviewService)
+        IReviewService reviewService, ITemplateDataService templateDataService,
+        IDynamicContentDataService dynamicContentDataService)
     {
         this.commitDataService = commitDataService;
         this.templatesService = templatesService;
@@ -51,6 +55,8 @@ public class CommitService : ICommitService, IScopedService
         this.versionControlService = versionControlService;
         this.logger = logger;
         this.reviewService = reviewService;
+        this.templateDataService = templateDataService;
+        this.dynamicContentDataService = dynamicContentDataService;
     }
 
     /// <inheritdoc />
@@ -140,6 +146,9 @@ public class CommitService : ICommitService, IScopedService
                     }
 
                     await templatesService.PublishToEnvironmentAsync(identity, template.TemplateId, template.Version, data.Environment, currentPublished.ModelObject);
+
+                    // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+                    await templatesService.CreateNewVersionAsync(template.TemplateId, template.Version);
                 }
             }
 
@@ -154,6 +163,9 @@ public class CommitService : ICommitService, IScopedService
                     }
 
                     await dynamicContentService.PublishToEnvironmentAsync(identity, dynamicContent.DynamicContentId, dynamicContent.Version, data.Environment, currentPublished.ModelObject);
+
+                    // Create a new version of the component, so that any changes made after this will be done in the new version instead of the published one.
+                    await dynamicContentService.CreateNewVersionAsync(dynamicContent.DynamicContentId, dynamicContent.Version);
                 }
             }
 
@@ -238,6 +250,9 @@ public class CommitService : ICommitService, IScopedService
             }
 
             await templatesService.PublishToEnvironmentAsync(identity, template.TemplateId, template.Version, data.Environment, currentPublished.ModelObject);
+
+            // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+            await templatesService.CreateNewVersionAsync(template.TemplateId, template.Version);
         }
 
         // Publish all dynamic contents.
@@ -250,6 +265,9 @@ public class CommitService : ICommitService, IScopedService
             }
 
             await dynamicContentService.PublishToEnvironmentAsync(identity, dynamicContent.DynamicContentId, dynamicContent.Version, data.Environment, currentPublished.ModelObject);
+
+            // Create a new version of the component, so that any changes made after this will be done in the new version instead of the published one.
+            await dynamicContentService.CreateNewVersionAsync(dynamicContent.DynamicContentId, dynamicContent.Version);
         }
 
         // Log the deployment of the commits, so that we can see in the history when it was deployed to which environment.
@@ -283,6 +301,9 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitDynamicContent
         });
 
+        // Do any table updates that might be needed.
+        await templateDataService.KeepTablesUpToDateAsync();
+
         var results = await commitDataService.GetTemplatesToCommitAsync();
 
         return new ServiceResult<List<TemplateCommitModel>>(results);
@@ -297,6 +318,9 @@ public class CommitService : ICommitService, IScopedService
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
         });
+
+        // Do any table updates that might be needed.
+        await dynamicContentDataService.KeepTablesUpToDateAsync();
 
         var results = await commitDataService.GetDynamicContentsToCommitAsync();
 

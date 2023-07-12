@@ -34,8 +34,8 @@ const moduleSettings = {
             // Kendo components.
             this.mainWindow = null;
 
-            this.activeMainTab = "Modules"; 
-            
+            this.activeMainTab = "Modules";
+
             //classes
             this.entityTab = null;
             this.entityFieldTab = null;
@@ -53,10 +53,16 @@ const moduleSettings = {
             this.settings = {};
             Object.assign(this.settings, settings);
 
+            // Ask for confirmation when leaving the page if there are unsaved changes.
+            window.onbeforeunload = () => {
+                if (this.hasChanges()) {
+                    return false;
+                }
+            };
+
             // Fire event on page ready for direct actions
             $(document).ready(() => {
                 this.onPageReady();
-
             });
 
             // enum of available kendo prompts
@@ -99,7 +105,8 @@ const moduleSettings = {
             this.dataSourceType = Object.freeze({
                 PANEL1: { text: "Vaste waardes", id: "panel1" },
                 PANEL2: { text: "Lijst van entiteiten", id: "panel2" },
-                PANEL3: { text: "Query", id: "panel3" }
+                PANEL3: { text: "Query", id: "panel3" },
+                PANEL4: { text: "Data Selector", id: "panel4" }
             });
 
             this.textboxType = Object.freeze({
@@ -140,7 +147,7 @@ const moduleSettings = {
         async onPageReady() {
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $("body").data());
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -171,7 +178,6 @@ const moduleSettings = {
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
-
 
             // These are all entities, including duplicate ones that have the same name in different modules.
             try {
@@ -212,6 +218,14 @@ const moduleSettings = {
             }
         }
 
+        hasChanges() {
+            return this.entityTab.hasChanges()
+                || this.moduleTab.hasChanges()
+                || this.roleTab.hasChanges()
+                || this.wiserQueryTab.hasChanges()
+                || this.wiserLinkTab.hasChanges();
+        }
+
         moveUp(e) {
             e.preventDefault();
             const kendo = $(e.currentTarget).closest("div.k-grid").data("kendoGrid");
@@ -245,7 +259,7 @@ const moduleSettings = {
             grid.dataSource.remove(record);
             grid.dataSource.insert(newIndex, record);
         }
-        
+
         /**
          * Setup all basis bindings for this module.
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.

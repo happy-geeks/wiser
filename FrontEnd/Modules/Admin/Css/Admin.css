@@ -320,10 +320,6 @@ li.hint span {
     margin-top: 26px;
 }
 
-#searchFields-list {
-    display: none !important;
-}
-
 /* loader */
 .loaderWrap {
     background: rgba(0, 0, 0, 0.40);
@@ -406,6 +402,12 @@ table.k-editor {
 
 .aggregate-example {
     padding-top: 35px;
+}
+
+#entityPropertyView .k-treeview {
+    padding: 20px 10px;
+    background-color: var(--white-color);
+    border: 1px solid var(--border-color);
 }
 
 /* Tab strips */

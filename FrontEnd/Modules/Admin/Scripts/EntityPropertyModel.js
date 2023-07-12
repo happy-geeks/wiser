@@ -56,10 +56,12 @@
         // remove null properties if set to true
         if (clean) {
             for (let propName in options) {
-                if (options.hasOwnProperty(propName)) {
-                    if (options[propName] === null || options[propName] === undefined) {
-                        delete options[propName];
-                    }
+                if (!options.hasOwnProperty(propName)) {
+                    continue;
+                }
+
+                if (options[propName] === null || options[propName] === undefined || options[propName] === "") {
+                    delete options[propName];
                 }
             }
         }

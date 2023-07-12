@@ -50,7 +50,7 @@ export class RoleTab {
                 url: `${this.base.settings.serviceRoot}/UPDATE_ENTITY_PROPERTY_PERMISSIONS?entityId=${encodeURIComponent(entity)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`,
                 method: "GET"
             });
-            
+
             this.base.showNotification("notification", `De wijzigingen zijn opgeslagen`, "success");
         }
         catch(exception) {
@@ -84,7 +84,7 @@ export class RoleTab {
     }
 
     /**
-     * Add or remove roles from the database based on the given parameters 
+     * Add or remove roles from the database based on the given parameters
      * @param {string} name The specified name of the role that must be added
      * @param {any} id The id of the role that must be deleted
      */
@@ -112,7 +112,7 @@ export class RoleTab {
         }
 
         try {
-            await Wiser.api({ 
+            await Wiser.api({
                 url: `${this.base.settings.serviceRoot}/${template}${Utils.toQueryString(data, true)}`,
                 method: "GET"
             });
@@ -461,5 +461,9 @@ export class RoleTab {
                 }
             }
         }).data("kendoListView");
+    }
+
+    hasChanges() {
+        return false;
     }
 }

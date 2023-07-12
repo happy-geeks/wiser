@@ -197,6 +197,7 @@ export class WiserLinkTab {
                     displayName: "Kopieer entiteit"
                 }
             ];
+
             this.duplicationMethod = $("#duplicationMethod").kendoDropDownList({
                 clearButton: false,
                 dataTextField: "displayName",
@@ -209,6 +210,7 @@ export class WiserLinkTab {
                 minLength: 1,
                 dataSource: duplicationDataSource
             }).data("kendoDropDownList");
+
             this.duplicationMethodPopup = $("#duplicationMethodPopup").kendoDropDownList({
                 clearButton: false,
                 dataTextField: "displayName",
@@ -261,6 +263,10 @@ export class WiserLinkTab {
         });
 
         this.wiserLinkCombobox.setDataSource(dataSource);
+    }
+
+    hasChanges() {
+        return false;
     }
 
     async addLink() {
