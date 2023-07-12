@@ -182,6 +182,41 @@ namespace Api
                     });
             });
 
+            services.AddAuthentication("Google")
+                .AddJwtBearer("Bearer",
+                              options =>
+                              {
+                                  options.Authority = apiBaseUrl;
+                                  options.TokenValidationParameters = new TokenValidationParameters
+                                  {
+                                      ValidateAudience = false,
+                                      ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
+                                  };
+                              })
+                // Configure Google authentication
+                .AddGoogle("Google", options =>
+                {
+                    //options.ClaimActions.MapUniqueJsonKey(JwtClaimTypes.Subject, ClaimTypes.NameIdentifier);
+                    options.ClientId = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientId");
+                    options.ClientSecret = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientSecret");
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+
+                    /*options.Scope.Clear();
+                    options.Scope.Add(OidcConstants.StandardScopes.OpenId);
+                    options.Scope.Add(OidcConstants.StandardScopes.Profile);
+                    options.Scope.Add(OidcConstants.StandardScopes.Email);*/
+                });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("ApiScope",
+                                  policy =>
+                                  {
+                                      policy.RequireAuthenticatedUser();
+                                      policy.RequireClaim("scope", "wiser-api");
+                                  });
+            });
+
             // Configure OAuth2
             var identityServerBuilder = services.AddIdentityServer(options =>
                 {
@@ -222,35 +257,6 @@ namespace Api
 
                 identityServerBuilder.AddSigningCredential(certificateCollection.First());
             }
-
-            services.AddAuthentication("Bearer")
-                .AddJwtBearer("Bearer",
-                    options =>
-                    {
-                        options.Authority = apiBaseUrl;
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateAudience = false,
-                            ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
-                        };
-                    })
-                // Configure Google authentication
-                .AddGoogle("Google", options =>
-                {
-                    options.ClientId = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientId");
-                    options.ClientSecret = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientSecret");
-                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                });
-
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("ApiScope",
-                    policy =>
-                    {
-                        policy.RequireAuthenticatedUser();
-                        policy.RequireClaim("scope", "wiser-api");
-                    });
-            });
 
             // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
             services.AddControllers(options => { options.AllowEmptyInputInBodyModelBinding = true; }).AddNewtonsoftJson(options =>

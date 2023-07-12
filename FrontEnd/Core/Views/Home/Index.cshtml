@@ -7,12 +7,6 @@
     }
 </style>
 <!-- Current Wiser version: @Model.WiserVersion?.ToString() -->
-<script src="https://accounts.google.com/gsi/client" async></script>
-                <div id="g_id_onload"
-                    data-client_id="816507773475-92kb4c858uj31kl26fa8r1lpuisb2rcm.apps.googleusercontent.com"
-                    data-login_uri="https://localhost:44349/signin-google"
-                    data-auto_prompt="false">
-                </div>
 <div id="app" v-cloak>
     <div :class="{ 'loading': mainLoader }">
         <header v-if="user.loggedIn && !requirePasswordChange">
@@ -773,6 +767,10 @@
 
             <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && loginStatus !== 'totp' && loginStatus !== 'totp_loading' && loginStatus !== 'totp_error' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
+                    <a id="GoogleSignInButton" href="https://localhost:44349/api/v3/users/external-login?provider=Google">Inloggen met Google</a>
+                </div>
+
+                <div class="form-row">
                     <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
 
@@ -781,16 +779,6 @@
                     <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
 
                     <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
-                </div>
-
-                @* <div id="GoogleSignInButton"></div> *@
-                <div class="g_id_signin"
-                    data-type="standard"
-                    data-size="large"
-                    data-theme="outline"
-                    data-text="sign_in_with"
-                    data-shape="rectangular"
-                    data-logo_alignment="left">
                 </div>
 
                 <div class="form-row">
@@ -1057,8 +1045,7 @@
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
     "trackJsToken": "@Model.Settings.TrackJsToken",
-    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin",
-    "googleAuthenticationClientId": "@Model.Settings.GoogleAuthentication.ClientId"
+    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin"
 }
 </script>
 
