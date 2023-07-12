@@ -906,7 +906,6 @@ AND ordering < ?newOrderingStart";
 
             await clientDatabaseConnection.ExecuteAsync(String.Join(Environment.NewLine, queries));
 
-
             return new ServiceResult<bool>(true);
         }
 

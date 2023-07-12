@@ -3152,7 +3152,6 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
     // actions handled after saving, selecting right tab and such
     async afterSave(property) {
-        console.log("property", property);
         await this.onEntitiesComboBoxSelect();
         this.selectPropertyInTreeView(property);
     }
