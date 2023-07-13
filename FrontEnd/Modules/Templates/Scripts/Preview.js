@@ -8,7 +8,7 @@ require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/Preview.css";
+import "../Css/Preview.css";
 
 export class Preview {
     /**
