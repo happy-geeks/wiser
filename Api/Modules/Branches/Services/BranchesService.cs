@@ -387,7 +387,7 @@ WHERE action = 'create'";
             {
                 entityType ??= "unknown";
 
-                var entityChangesModel = result.Entities.FirstOrDefault(setting => setting.EntityType == entityType);
+                var entityChangesModel = result.Entities.FirstOrDefault(setting => String.Equals(setting.EntityType, entityType, StringComparison.OrdinalIgnoreCase));
                 if (entityChangesModel != null)
                 {
                     return entityChangesModel;
@@ -414,9 +414,9 @@ WHERE action = 'create'";
             var idToEntityTypeMappings = new Dictionary<ulong, string>();
             async Task<string> GetEntityTypeFromIdAsync(ulong itemId, string tablePrefix, MySqlConnection branchconnection)
             {
-                if (idToEntityTypeMappings.ContainsKey(itemId))
+                if (idToEntityTypeMappings.TryGetValue(itemId, out var async))
                 {
-                    return idToEntityTypeMappings[itemId];
+                    return async;
                 }
 
                 // Get the entity type from [prefix]wiser_item or [prefix]wiser_itemarchive if it doesn't exist in the first one.
