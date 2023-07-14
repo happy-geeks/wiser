@@ -7,7 +7,7 @@ require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
 import "../../../Core/Scss/fonts.scss";
 import "../../../Core/Scss/icons.scss";
-import "../css/Dashboard.scss";
+import "../Css/Dashboard.scss";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {

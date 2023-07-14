@@ -1,4 +1,4 @@
-﻿import "../../scss/customer-management.scss";
+﻿import "../../Scss/customer-management.scss";
 
 export default {
     name: "customerManagement",

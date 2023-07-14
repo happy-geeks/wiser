@@ -1,8 +1,8 @@
-﻿import {TrackJS} from "trackjs";
+import {TrackJS} from "trackjs";
 import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {Preview} from "./Preview.js";
-import "../css/DynamicContent.css";
+import "../Css/DynamicContent.css";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
