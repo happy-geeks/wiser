@@ -6,7 +6,7 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/Settings.css";
+import "../Css/Settings.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const communicationModuleSettings = {

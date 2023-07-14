@@ -89,7 +89,7 @@ class Main {
         }
 
         if (this.appSettings.loadPartnerStyle) {
-            import(`../css/partner/${this.appSettings.subDomain}.css`);
+            import(`../Css/partner/${this.appSettings.subDomain}.css`);
         }
 
         this.api = axios.create({
