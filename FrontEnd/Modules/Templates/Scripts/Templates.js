@@ -63,11 +63,12 @@ const moduleSettings = {
             this.newContentId = 0;
             this.newContentTitle = null;
             this.saving = false;
-            this.historyLoaded = false;
             this.initialTemplateSettings = null;
             this.branches = null;
             this.renderLogsGrid = null;
             this.measurementsLoaded = false;
+            this.allHistoryPartsLoaded = false;
+            this.lastLoadedHistoryPartNumber = 0;
 
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
@@ -198,7 +199,6 @@ const moduleSettings = {
                     this.mainTabStrip.select(`li.${this.settings.initialTab}-tab`);
                 }
             }
-
             window.processing.removeProcess(process);
         }
 
@@ -499,7 +499,7 @@ const moduleSettings = {
             }
 
             this.selectedId = dataItem.id;
-            this.historyLoaded = false;
+            this.lastLoadedHistoryPartNumber = 0;
             this.measurementsLoaded = false;
             this.onMainTabStripActivate();
 
@@ -1846,7 +1846,7 @@ const moduleSettings = {
                 if (environmentEnum !== 1) {
                     window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
                 }
-                this.historyLoaded = false;
+                this.lastLoadedHistoryPartNumber = 0;
                 this.measurementsLoaded = false;
                 await this.reloadMetaData(templateId);
             } catch (exception) {
@@ -1886,7 +1886,7 @@ const moduleSettings = {
             });
 
             window.popupNotification.show(`Dynamisch component is succesvol naar de ${environment} omgeving gezet`, "info");
-            this.historyLoaded = false;
+            this.lastLoadedHistoryPartNumber = 0;
             this.measurementsLoaded = false;
             $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
@@ -2250,7 +2250,7 @@ const moduleSettings = {
                 });
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
-                this.historyLoaded = false;
+                this.lastLoadedHistoryPartNumber = 0;
 
                 const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
                 await this.deployEnvironment(alsoDeployToTest === true ? "test" : "development", templateId, version);
@@ -2362,12 +2362,11 @@ const moduleSettings = {
          * @param {any} templateId The ID of the template.
          */
         async reloadHistoryTab(templateId) {
-            if (this.historyLoaded) {
+            if (this.lastLoadedHistoryPartNumber > 0) {
                 return;
             }
 
             templateId = templateId || this.selectedId;
-            this.historyLoaded = true;
 
             const process = `reloadHistoryTab_${Date.now()}`;
             window.processing.addProcess(process);
@@ -2387,6 +2386,50 @@ const moduleSettings = {
                 });
 
                 document.getElementById("historyTab").innerHTML = historyTab;
+                this.lastLoadedHistoryPartNumber = 1;
+                
+                document.getElementById('historyTab').addEventListener('scroll', event => {
+                    const {scrollHeight, scrollTop, clientHeight} = event.target;
+
+                    // if user scrolled to bottom load next part of the history
+                    let treshold = 1
+                    if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
+                        this.loadNextPart()
+                    }
+                });
+                
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
+        }
+        
+        async loadNextPart(){
+            if (this.allHistoryPartsLoaded || this.lastLoadedHistoryPartNumber < 1) {
+                return;
+            }
+
+            const process = `loadHistoryTabNextPart_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const templateHistory = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/history?pageNumber=${this.lastLoadedHistoryPartNumber + 1}`,
+                    dataType: "json",
+                    method: "GET"
+                });
+
+                const historyTabPart = await Wiser.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/HistoryTabRows",
+                    data: JSON.stringify(templateHistory)
+                });
+
+                document.getElementById("historyContainer").insertAdjacentHTML("beforeend", historyTabPart);
+                this.lastLoadedHistoryPartNumber++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);

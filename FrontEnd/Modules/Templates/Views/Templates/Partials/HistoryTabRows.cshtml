@@ -1,0 +1,263 @@
+@using FrontEnd.Modules.Templates.Models
+@model HistoryTabViewModel
+@{
+    var publishLogCounter = 0;
+}
+
+@foreach (var historyModel in Model.TemplateHistory)
+{
+    for (var i = publishLogCounter; i < Model.PublishHistory.Count; i++)
+    {
+        if (@historyModel.ChangedOn < Model.PublishHistory[i].ChangedOn)
+        {
+            <div class="row historyLine">
+                <div class="col col-12 historyTagline">
+                    <span><span class="k-icon k-i-edit"></span> Published Environment |</span>
+                    <span><span class="k-icon k-i-calendar"></span> @Model.PublishHistory[i].GetDisplayChangedOn() |</span>
+                    <span><span class="k-icon k-i-user"></span> door @Model.PublishHistory[i].ChangedBy </span>
+                </div>
+                @if (Model.PublishHistory[i].PublishLog.OldLive != Model.PublishHistory[i].PublishLog.NewLive)
+                {
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span class="handler">&nbsp;</span>
+                            <h4><label for="text_101">Live @Model.PublishHistory[i].PublishLog.OldLive</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <ins class="version live" title="live"></ins>
+                            </span>
+                        </div>
+                    </div>
+
+
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span class="handler">&nbsp;</span>
+                            <h4><label for="text_102">Live @Model.PublishHistory[i].PublishLog.NewLive</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <ins class="version live" title="live"></ins>
+                            </span>
+                        </div>
+                    </div>
+                }
+                @if (Model.PublishHistory[i].PublishLog.OldAccept != Model.PublishHistory[i].PublishLog.NewAccept)
+                {
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span class="handler">&nbsp;</span>
+                            <h4><label for="text_101">Accept @Model.PublishHistory[i].PublishLog.OldAccept</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <ins class="version accept" title="acceptatie"></ins>
+                            </span>
+                        </div>
+                    </div>
+
+
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span class="handler">&nbsp;</span>
+                            <h4><label for="text_102">Accept @Model.PublishHistory[i].PublishLog.NewAccept</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <ins class="version accept" title="acceptatie"></ins>
+                            </span>
+                        </div>
+                    </div>
+                }
+                @if (Model.PublishHistory[i].PublishLog.OldTest != Model.PublishHistory[i].PublishLog.NewTest)
+                {
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span class="handler">&nbsp;</span>
+                            <h4><label for="text_101">Test @Model.PublishHistory[i].PublishLog.OldTest</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <ins class="version test" title="test"></ins>
+                            </span>
+                        </div>
+                    </div>
+
+
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span class="handler">&nbsp;</span>
+                            <h4><label for="text_102">Test @Model.PublishHistory[i].PublishLog.NewTest</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <ins class="version test" title="test"></ins>
+                            </span>
+                        </div>
+                    </div>
+                }
+            </div>
+            publishLogCounter++;
+        }
+    }
+
+    <div class="row historyLine">
+        <div class="col col-12 historyTagline">
+            @if (historyModel.Version <= Model.PublishedEnvironment.LiveVersion)
+            {
+                <ins class="version live" title="live"></ins>
+            }
+            else if (historyModel.Version <= Model.PublishedEnvironment.AcceptVersion)
+            {
+                <ins class="version accept" title="acceptatie"></ins>
+            }
+            else if (historyModel.Version <= Model.PublishedEnvironment.TestVersion)
+            {
+                <ins class="version test" title="test"></ins>
+            }
+            <span><span class="k-icon k-i-edit"></span> Versie @historyModel.Version |</span>
+            <span><span class="k-icon k-i-calendar"></span> @historyModel.GetDisplayChangedOn() |</span>
+            <span><span class="k-icon k-i-user"></span> door @historyModel.ChangedBy </span>
+        </div>
+        @foreach (var change in historyModel.TemplateChanges)
+        {
+            if (change.Value.Key is bool booleanNewValue && change.Value.Value is bool booleanOldValue)
+            {
+                <div class="col col-6 checkLine">
+                    <div class="item" data-label-style="normal" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <span class="inline">
+                            <label class="checkbox">
+                                @if (booleanOldValue)
+                                {
+                                    <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
+                                }
+                                else
+                                {
+                                    <input id="change.Key" name="change.Key" type="checkbox" disabled>
+                                }
+                                <span>@change.Key</span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+                <div class="col col-6 checkLine">
+                    <div class="item" data-label-style="normal" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <span class="inline">
+                            <label class="checkbox">
+                                @if (booleanNewValue)
+                                {
+                                    <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
+                                }
+                                else
+                                {
+                                    <input id="change.Key" name="change.Key" type="checkbox" disabled>
+                                }
+                                <span>@change.Key</span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="col col-6">
+                    <div class="item" data-label-style="float" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <h4><label for="@change.Key">@change.Key</label></h4>
+                        <span class="k-widget k-input k-state-default">
+                            @if (String.Equals(change.Key, "editorValue"))
+                            {
+                                <textarea id="text_101" autocomplete="off" disabled>@change.Value.Value</textarea>
+                            }
+                            else
+                            {
+                                <input type="text" id="text_101" class="textField k-input" autocomplete="off" value="@change.Value.Value" disabled/>
+                            }
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="col col-6">
+                    <div class="item" data-label-style="float" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <h4><label for="text_102">@change.Key</label></h4>
+                        <span class="k-widget k-input k-state-default">
+                            @if (String.Equals(change.Key, "editorValue"))
+                            {
+                                <textarea id="text_102" autocomplete="off" disabled>@change.Value.Key</textarea>
+                            }
+                            else
+                            {
+                                <input type="text" id="text_102" class="textField k-input" autocomplete="off" value="@change.Value.Key" disabled />
+                            }
+                        </span>
+                    </div>
+                </div>
+            }
+        }
+        @if (historyModel.LinkedTemplateChanges.Count > 0)
+        {
+            <div class="row historyLine">
+                <div class="col col-12 historyTagline">
+                    <span>Linked Templates:</span>
+                </div>
+            </div>
+
+            @foreach (var change in historyModel.LinkedTemplateChanges)
+            {
+                <div class="col col-6 checkLine">
+                    <div class="item" data-label-style="normal" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <span class="inline">
+                            <label class="checkbox">
+                                @if ((Boolean)change.Value.Value)
+                                {
+                                    <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
+                                }
+                                else
+                                {
+                                    <input id="change.Key" name="change.Key" type="checkbox" disabled>
+                                }
+                                <span>@change.Key</span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+                <div class="col col-6 checkLine">
+                    <div class="item" data-label-style="normal" data-label-width="0">
+                        <span class="handler">&nbsp;</span>
+                        <span class="inline">
+                            <label class="checkbox">
+                                @if ((Boolean)change.Value.Key)
+                                {
+                                    <input id="@change.Key" name="@change.Key" type="checkbox" checked="checked" disabled>
+                                }
+                                else
+                                {
+                                    <input id="@change.Key" name="@change.Key" type="checkbox" disabled>
+                                }
+                                <span>@change.Key</span>
+                            </label>
+                        </span>
+                    </div>
+                </div>
+            }
+        }
+        @if (historyModel.DynamicContentChanges.Count > 0)
+        {
+            <div class="row historyLine">
+                <div class="col col-12 historyTagline">
+                    <span>Dynamic Content:</span>
+                </div>
+            </div>
+
+            @foreach (var dynamicHistory in historyModel.DynamicContentChanges)
+            {
+                <div class="col col-12 historyTagline">
+                    <span><span class="k-icon k-i-edit"></span> Versie @dynamicHistory.Version |</span>
+                    <span><span class="k-icon k-i-calendar"></span> @dynamicHistory.GetDisplayChangedOn() |</span>
+                    <span><span class="k-icon k-i-user"></span> door @dynamicHistory.ChangedBy </span>
+                </div>
+                @if (dynamicHistory.ChangedFields != null)
+                {
+                    @foreach (var (oldVersion, newVersion) in dynamicHistory.ChangedFields)
+                    {
+                        <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="oldVersion" />
+                        <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="newVersion" />
+                    }
+                }
+            }
+        }
+    </div>
+}
