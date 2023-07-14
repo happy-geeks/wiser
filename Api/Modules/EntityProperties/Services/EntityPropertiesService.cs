@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
@@ -11,6 +12,7 @@ using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityProperties.Models;
+using Api.Modules.Kendo.Enums;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -75,7 +77,7 @@ namespace Api.Modules.EntityProperties.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityType, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false)
+        public async Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityType, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
@@ -85,7 +87,7 @@ namespace Api.Modules.EntityProperties.Services
                             WHERE entity_name = ?entityName
                             {(onlyEntityTypesWithDisplayName ? "AND display_name IS NOT NULL AND display_name <> ''" : "")}
                             {(onlyEntityTypesWithPropertyName ? "AND property_name IS NOT NULL AND property_name <> ''" : "")}
-                            ORDER BY display_name ASC";
+                            ORDER BY {(orderByName ? "display_name" : "ordering")} ASC";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             var results = new List<EntityPropertyModel>();
@@ -106,6 +108,29 @@ namespace Api.Modules.EntityProperties.Services
             }
 
             return new ServiceResult<List<EntityPropertyModel>>(results);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
+        {
+            var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, false, false, false);
+            if (allProperties.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<List<EntityPropertyTabModel>>
+                {
+                    StatusCode = allProperties.StatusCode,
+                    ErrorMessage = allProperties.ErrorMessage
+                };
+            }
+
+            var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
+            {
+                Id = x.Key,
+                Name = x.Key,
+                Properties = x.ToList()
+            }).ToList();
+
+            return new ServiceResult<List<EntityPropertyTabModel>>(tabs);
         }
 
         /// <inheritdoc />
@@ -719,6 +744,171 @@ LIMIT {maxResults}";
             return new ServiceResult<List<string>>(dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<string>("value")).ToList());
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data)
+        {
+            if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"Either {nameof(data.EntityType)} or {nameof(data.LinkType)} must be provided."
+                };
+            }
+
+            clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("currentIndex", data.CurrentIndex);
+            clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
+            clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+            clientDatabaseConnection.AddParameter("linkType", data.LinkType);
+            clientDatabaseConnection.AddParameter("newTabName", data.NewTabName);
+            clientDatabaseConnection.AddParameter("currentTabName", data.CurrentTabName);
+
+            var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+
+            var query = new StringBuilder($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex, tab_name = ?newTabName WHERE id = ?id;");
+            if (data.NewIndex < data.CurrentIndex)
+            {
+                query.AppendLine($@"UPDATE {WiserTableNames.WiserEntityProperty}
+SET ordering = ordering + 1
+WHERE {whereClause}
+AND ordering < ?currentIndex
+AND ordering >= ?newIndex
+AND id <> ?id;");
+            }
+            else
+            {
+                query.AppendLine($@"UPDATE {WiserTableNames.WiserEntityProperty}
+SET ordering = ordering - 1
+WHERE {whereClause}
+AND ordering > ?currentIndex
+AND ordering <= ?newIndex
+AND id <> ?id;");
+            }
+
+            await clientDatabaseConnection.ExecuteAsync(query.ToString());
+            return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> MoveTabAsync(ClaimsIdentity identity, MoveEntityTabRequestModel data)
+        {
+            if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"Either {nameof(data.EntityType)} or {nameof(data.LinkType)} must be provided."
+                };
+            }
+
+            if (data.CurrentTabName == null || data.DestinationTabName == null)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"Both {nameof(data.CurrentTabName)} and {nameof(data.DestinationTabName)} must be provided."
+                };
+            }
+
+            clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+            clientDatabaseConnection.AddParameter("linkType", data.LinkType);
+            clientDatabaseConnection.AddParameter("destinationTabName", data.DestinationTabName);
+            clientDatabaseConnection.AddParameter("currentTabName", data.CurrentTabName);
+
+            // First we need to get the ordering number of the destination location.
+            var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+            string sqlFunction;
+
+            switch (data.DropPosition)
+            {
+                case TreeViewDropPositions.Before:
+                    sqlFunction = "MIN";
+                    break;
+                case TreeViewDropPositions.After:
+                    sqlFunction = "MAX";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException($"DropPosition {data.DropPosition} is not supported.");
+            }
+
+            var query = $@"SELECT {sqlFunction}(ordering) AS ordering FROM {WiserTableNames.WiserEntityProperty} WHERE {whereClause} AND tab_name = ?destinationTabName";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Tab with name {data.DestinationTabName} not found."
+                };
+            }
+
+            var destinationOrdering = Convert.ToInt32(dataTable.Rows[0]["ordering"]);
+
+            // Get the IDs and ordering numbers of all the properties in the tab that we're moving.
+            query = $"SELECT id, ordering FROM {WiserTableNames.WiserEntityProperty} WHERE {whereClause} AND tab_name = ?currentTabName ORDER BY ordering ASC";
+            dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return new ServiceResult<bool>(false)
+                {
+                    StatusCode = HttpStatusCode.NotFound,
+                    ErrorMessage = $"Tab with name {data.CurrentTabName} not found."
+                };
+            }
+
+            // Move all other properties to their new positions.
+            var amountOfPropertiesInSourceTab = dataTable.Rows.Count;
+            var oldOrderingStart = Convert.ToInt32(dataTable.Rows[0]["ordering"]);
+            var oldOrderingEnd = Convert.ToInt32(dataTable.Rows[amountOfPropertiesInSourceTab - 1]["ordering"]);
+            var newOrderingStart = destinationOrdering + (data.DropPosition == TreeViewDropPositions.After ? 1 : 0);
+            var newOrderingEnd = newOrderingStart + amountOfPropertiesInSourceTab;
+            var movingUp = newOrderingStart < oldOrderingStart;
+
+            if (movingUp)
+            {
+                query = $@"UPDATE {WiserTableNames.WiserEntityProperty} 
+SET ordering = ordering + ?amountOfPropertiesInSourceTab 
+WHERE {whereClause}
+AND ordering >= ?newOrderingStart
+AND ordering < ?oldOrderingEnd;";
+            }
+            else
+            {
+                query =$@"UPDATE {WiserTableNames.WiserEntityProperty}
+SET ordering = ordering - ?amountOfPropertiesInSourceTab 
+WHERE {whereClause}
+AND ordering > ?oldOrderingEnd
+AND ordering < ?newOrderingStart";
+            }
+
+            clientDatabaseConnection.AddParameter("oldOrderingStart", oldOrderingStart);
+            clientDatabaseConnection.AddParameter("oldOrderingEnd", oldOrderingEnd);
+            clientDatabaseConnection.AddParameter("newOrderingStart", newOrderingStart);
+            clientDatabaseConnection.AddParameter("newOrderingEnd", newOrderingEnd);
+            clientDatabaseConnection.AddParameter("amountOfPropertiesInSourceTab", amountOfPropertiesInSourceTab);
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Move the properties of the dragged tab to their new positions.
+            var queries = new List<string>();
+            for (var index = 0; index < amountOfPropertiesInSourceTab; index++)
+            {
+                var dataRow = dataTable.Rows[index];
+                var propertyId = dataRow.Field<int>("id");
+                var newOrdering = destinationOrdering + index + 1 - (movingUp ? 0 : amountOfPropertiesInSourceTab);
+
+                var orderingPropertyName = $"ordering{index}";
+                var idPropertyName = $"id{index}";
+                clientDatabaseConnection.AddParameter(orderingPropertyName, newOrdering);
+                clientDatabaseConnection.AddParameter(idPropertyName, propertyId);
+                queries.Add($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?{orderingPropertyName} WHERE id = ?{idPropertyName};");
+            }
+
+            await clientDatabaseConnection.ExecuteAsync(String.Join(Environment.NewLine, queries));
+
+            return new ServiceResult<bool>(true);
+        }
+
         private static FilterOperators? ToFilterOperator(string value)
         {
             switch (value)
@@ -931,50 +1121,62 @@ LIMIT {maxResults}";
 
         private static EntityPropertyModel FromDataRow(DataRow dataRow)
         {
-            var result = new EntityPropertyModel();
-            result.Id = dataRow.Field<int>("id");
-            result.ModuleId = Convert.ToInt32(dataRow["module_id"]);
-            result.EntityType = dataRow.Field<string>("entity_name");
-            result.LinkType = dataRow.Field<int>("link_type");
-            result.PropertyName = dataRow.Field<string>("property_name");
-            result.LanguageCode = dataRow.Field<string>("language_code");
-            result.TabName = dataRow.Field<string>("tab_name");
-            result.GroupName = dataRow.Field<string>("group_name");
-            result.InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype"));
-            result.DisplayName = dataRow.Field<string>("display_name");
-            result.Ordering = Convert.ToInt32(dataRow["ordering"]);
-            result.Explanation = dataRow.Field<string>("explanation");
-            result.ExtendedExplanation = Convert.ToBoolean(dataRow["extended_explanation"]);
-            result.RegexValidation = dataRow.Field<string>("regex_validation");
-            result.Mandatory = Convert.ToBoolean(dataRow["mandatory"]);
-            result.ReadOnly = Convert.ToBoolean(dataRow["readonly"]);
-            result.DefaultValue = dataRow.Field<string>("default_value");
-            result.Width = Convert.ToInt32(dataRow["width"]);
-            result.Height = Convert.ToInt32(dataRow["height"]);
-            result.Options = dataRow.Field<string>("options");
-            result.DataQuery = dataRow.Field<string>("data_query");
-            result.ActionQuery = dataRow.Field<string>("action_query");
-            result.SearchQuery = dataRow.Field<string>("search_query");
-            result.SearchCountQuery = dataRow.Field<string>("search_count_query");
-            result.GridInsertQuery = dataRow.Field<string>("grid_insert_query");
-            result.GridUpdateQuery = dataRow.Field<string>("grid_update_query");
-            result.GridDeleteQuery = dataRow.Field<string>("grid_delete_query");
-            result.CustomScript = dataRow.Field<string>("custom_script");
-            result.AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]);
-            result.SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]);
-            result.LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style"));
-            result.LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]);
-            result.Overview = new EntityPropertyOverviewModel();
-            result.Overview.Visible = Convert.ToBoolean(dataRow["visible_in_overview"]);
-            result.Overview.Width = Convert.ToInt32(dataRow["overview_width"]);
-            result.DependsOn = new EntityPropertyDependencyModel();
-            result.DependsOn.Action = ToDependencyAction(dataRow.Field<string>("depends_on_action"));
-            result.DependsOn.Field = dataRow.Field<string>("depends_on_field");
-            result.DependsOn.Operator = ToFilterOperator(dataRow.Field<string>("depends_on_operator"));
-            result.DependsOn.Value = dataRow.Field<string>("depends_on_value");
-            result.EnableAggregation = Convert.ToBoolean(dataRow["enable_aggregation"]);
-            result.AggregateOptions = dataRow.Field<string>("aggregate_options");
-            result.AccessKey = dataRow.Field<string>("access_key");
+            var result = new EntityPropertyModel
+            {
+                Id = dataRow.Field<int>("id"),
+                ModuleId = Convert.ToInt32(dataRow["module_id"]),
+                EntityType = dataRow.Field<string>("entity_name"),
+                LinkType = dataRow.Field<int?>("link_type") ?? 0,
+                PropertyName = dataRow.Field<string>("property_name"),
+                LanguageCode = dataRow.Field<string>("language_code"),
+                TabName = dataRow.Field<string>("tab_name"),
+                GroupName = dataRow.Field<string>("group_name"),
+                InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype")),
+                DisplayName = dataRow.Field<string>("display_name"),
+                Ordering = Convert.ToInt32(dataRow["ordering"]),
+                Explanation = dataRow.Field<string>("explanation"),
+                ExtendedExplanation = Convert.ToBoolean(dataRow["extended_explanation"]),
+                RegexValidation = dataRow.Field<string>("regex_validation"),
+                Mandatory = Convert.ToBoolean(dataRow["mandatory"]),
+                ReadOnly = Convert.ToBoolean(dataRow["readonly"]),
+                DefaultValue = dataRow.Field<string>("default_value"),
+                Width = Convert.ToInt32(dataRow["width"]),
+                Height = Convert.ToInt32(dataRow["height"]),
+                Options = dataRow.Field<string>("options"),
+                DataQuery = dataRow.Field<string>("data_query"),
+                ActionQuery = dataRow.Field<string>("action_query"),
+                SearchQuery = dataRow.Field<string>("search_query"),
+                SearchCountQuery = dataRow.Field<string>("search_count_query"),
+                GridInsertQuery = dataRow.Field<string>("grid_insert_query"),
+                GridUpdateQuery = dataRow.Field<string>("grid_update_query"),
+                GridDeleteQuery = dataRow.Field<string>("grid_delete_query"),
+                CustomScript = dataRow.Field<string>("custom_script"),
+                AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]),
+                SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]),
+                LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style")),
+                LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]),
+                Overview = new EntityPropertyOverviewModel
+                {
+                    Visible = Convert.ToBoolean(dataRow["visible_in_overview"]),
+                    Width = Convert.ToInt32(dataRow["overview_width"])
+                },
+                DependsOn = new EntityPropertyDependencyModel
+                {
+                    Action = ToDependencyAction(dataRow.Field<string>("depends_on_action")),
+                    Field = dataRow.Field<string>("depends_on_field"),
+                    Operator = ToFilterOperator(dataRow.Field<string>("depends_on_operator")),
+                    Value = dataRow.Field<string>("depends_on_value")
+                },
+                EnableAggregation = Convert.ToBoolean(dataRow["enable_aggregation"]),
+                AggregateOptions = dataRow.Field<string>("aggregate_options"),
+                AccessKey = dataRow.Field<string>("access_key")
+            };
+
+            if (String.IsNullOrWhiteSpace(result.TabName))
+            {
+                result.TabName = "Gegevens";
+            }
+
             return result;
         }
     }

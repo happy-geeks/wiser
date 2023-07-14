@@ -1,7 +1,7 @@
 ﻿import {TrackJS} from "trackjs";
 import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import "../css/ImportExport.css";
+import "../Css/ImportExport.css";
 
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");

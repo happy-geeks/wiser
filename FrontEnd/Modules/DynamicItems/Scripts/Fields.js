@@ -2585,6 +2585,7 @@ export class Fields {
                                 const dialogElement = $("#sendMailDialog");
                                 const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
+                                const uploadedFiles = [];
 
                                 // Set the initial values from the query.
                                 const currentEmailData = container.data("emailData");
@@ -2657,8 +2658,9 @@ export class Fields {
                                                 }
 
                                                 Promise.all(promises).then((results) => {
-                                                    const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                    const wiserFileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                    const uploadElement = dialogElement.find("input[name=files]");
+                                                    const allFiles = uploadElement.data("kendoUpload").getFiles();
+                                                    const wiserFileAttachments = uploadedFiles.map(file => file.fileId) || [];
 
                                                     for (let fileId of results) {
                                                         wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
@@ -2763,7 +2765,29 @@ export class Fields {
                                 // Always re-create the upload widget because it's not possible to add files to programmatically a widget after it's been initialized, without using weird hacks.
                                 attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
                                     files: files,
-                                    enabled: false
+                                    async: {
+                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=TEMPORARY_FILE_FROM_WISER`,
+                                        removeUrl: "remove", // TODO
+                                        withCredentials: false
+                                    },
+                                    multiple: true,
+                                    upload: (e) => {
+                                        let xhr = e.XMLHttpRequest;
+                                        if (xhr) {
+                                            xhr.addEventListener("readystatechange", (e) => {
+                                                if (xhr.readyState === 1 /* OPENED */) {
+                                                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
+                                                }
+                                            });
+                                        }
+                                    },
+                                    success: (uploadSuccessEvent) => {
+                                        if (uploadSuccessEvent.operation !== "upload") {
+                                            return;
+                                        }
+
+                                        uploadedFiles.push(...uploadSuccessEvent.response);
+                                    }
                                 }).data("kendoUpload");
 
                                 // Initialize the kendo HTML editor.

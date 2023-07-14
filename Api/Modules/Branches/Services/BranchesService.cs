@@ -387,7 +387,7 @@ WHERE action = 'create'";
             {
                 entityType ??= "unknown";
 
-                var entityChangesModel = result.Entities.FirstOrDefault(setting => setting.EntityType == entityType);
+                var entityChangesModel = result.Entities.FirstOrDefault(setting => String.Equals(setting.EntityType, entityType, StringComparison.OrdinalIgnoreCase));
                 if (entityChangesModel != null)
                 {
                     return entityChangesModel;
@@ -414,9 +414,9 @@ WHERE action = 'create'";
             var idToEntityTypeMappings = new Dictionary<ulong, string>();
             async Task<string> GetEntityTypeFromIdAsync(ulong itemId, string tablePrefix, MySqlConnection branchconnection)
             {
-                if (idToEntityTypeMappings.ContainsKey(itemId))
+                if (idToEntityTypeMappings.TryGetValue(itemId, out var async))
                 {
-                    return idToEntityTypeMappings[itemId];
+                    return async;
                 }
 
                 // Get the entity type from [prefix]wiser_item or [prefix]wiser_itemarchive if it doesn't exist in the first one.
@@ -923,6 +923,7 @@ LIMIT 1";
             await using (var productionCommand = mainConnection.CreateCommand())
             {
                 productionCommand.Parameters.AddWithValue("branch_id", settings.Id);
+                productionCommand.Parameters.AddWithValue("name", selectedBranchCustomer.Name);
                 productionCommand.Parameters.AddWithValue("action", "merge");
                 productionCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
                 productionCommand.Parameters.AddWithValue("added_on", DateTime.Now);
@@ -1002,12 +1003,13 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.AddParameter("id", id);
+            clientDatabaseConnection.AddParameter("name", branchData.ModelObject.Name);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
             clientDatabaseConnection.AddParameter("userid", IdentityHelpers.GetWiserUserId(identity));
             clientDatabaseConnection.AddParameter("data", JsonConvert.SerializeObject(settings));
-            var query = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} (branch_id, action, added_on, added_by, user_id, start_on, data)
-VALUES (?id, 'delete', ?now, ?username, ?userId, ?now, ?data)";
+            var query = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} (branch_id, name, action, added_on, added_by, user_id, start_on, data)
+VALUES (?id, ?name, 'delete', ?now, ?username, ?userId, ?now, ?data)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Delete the row from easy_customers, so that the WTS doesn't need to access the main Wiser database.

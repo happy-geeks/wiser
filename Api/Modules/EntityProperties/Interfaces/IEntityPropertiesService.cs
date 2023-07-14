@@ -35,8 +35,17 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="onlyEntityTypesWithDisplayName">Only get properties with a display name.</param>
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
+        /// <param name="orderByName">Optional: Whether to order by name (true) or by order number (false). Default value is true.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
-        Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityType, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false);
+        Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityType, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true);
+
+        /// <summary>
+        /// Get all entity properties of a specific entity, grouped by tab name.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <returns>A <see cref="List{EntityPropertyTabModel}"/> with all tabs of a specific entity. Each tab contains all fields of that tab.</returns>
+        Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName);
 
         /// <summary>
         /// Creates a new entity property.
@@ -95,5 +104,20 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="maxResults">The maximum amount of results to return, default is 500.</param>
         /// <returns>A list with unique values of the property.</returns>
         Task<ServiceResult<List<string>>> GetUniquePropertyValuesAsync(ClaimsIdentity identity, string entityType, string propertyName, string languageCode = null, int maxResults = 500);
+
+        /// <summary>
+        /// Move an entity property to a new position.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity property</param>
+        /// <param name="data">Data required to do the move.</param>
+        Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data);
+
+        /// <summary>
+        /// Move an entity tab with all it's properties to a new position.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="data">Data required to do the move.</param>
+        Task<ServiceResult<bool>> MoveTabAsync(ClaimsIdentity identity, MoveEntityTabRequestModel data);
     }
 }

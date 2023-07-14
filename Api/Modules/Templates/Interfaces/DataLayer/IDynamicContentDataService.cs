@@ -17,7 +17,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateId">The ID of the template.</param>
         /// <returns>A list of dynamic components from other templates.</returns>
         Task<List<DynamicContentOverviewModel>> GetLinkableDynamicContentAsync(int templateId);
-        
+
         /// <summary>
         /// Retrieve the variable data of a set version. This can be used for retrieving past versions or the current version if the version number is known.
         /// </summary>
@@ -34,17 +34,32 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<KeyValuePair<string, Dictionary<string, object>>> GetComponentDataAsync(int contentId);
 
         /// <summary>
-        /// Save the given variables and their values as a new version in the database.
+        /// Get the ID, version number and published environment of the latest version of a component.
+        /// </summary>
+        /// <param name="contentId">The template ID.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <returns>The ID, version number and published environment of the template.</returns>
+        Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null);
+
+        /// <summary>
+        /// Updates the latest version of a template with new data. This method will overwrite this version, unless this version has been published to the live environment,
+        /// then it will create a new version as to not overwrite the live version.
         /// </summary>
         /// <param name="contentId">The ID of the dynamic content.</param>
         /// <param name="component">The type of component.</param>
         /// <param name="componentMode">The selected component mode.</param>
         /// <param name="title">The given name for the component.</param>
         /// <param name="settings">A dictionary of property names and their values.</param>
-        /// <param name="username">The name of the authenticated user.</param>
-        /// <returns>An int indicating the result of the executed query.</returns>
-        Task<int> SaveSettingsStringAsync(int contentId, string component, string componentMode, string title, Dictionary<string, object> settings, string username);
-        
+        /// <param name="username">The name of the authenticated user.</param>=
+        Task<int> SaveAsync(int contentId, string component, string componentMode, string title, Dictionary<string, object> settings, string username);
+
+        /// <summary>
+        /// Creates a new version of a dynamic component by copying the previous version and increasing the version number by one.
+        /// </summary>
+        /// <param name="contentId">The content ID of the dynamic component.</param>
+        /// <returns>The ID of the new version.</returns>
+        Task<int> CreateNewVersionAsync(int contentId);
+
         /// <summary>
         /// Save the given variables and their values as a new version in the database.
         /// </summary>
@@ -106,5 +121,10 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="dynamicContentIds">The IDs of the templates to deploy.</param>
         /// <param name="branchDatabaseName">The name of the database that contains the sub branch.</param>
         Task DeployToBranchAsync(List<int> dynamicContentIds, string branchDatabaseName);
+
+        /// <summary>
+        /// Function that makes sure that the database tables needed for components are up to date with the latest changes.
+        /// </summary>
+        Task KeepTablesUpToDateAsync();
     }
 }
