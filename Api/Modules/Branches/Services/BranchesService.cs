@@ -295,6 +295,10 @@ WHERE action = 'create'";
                 };
             }
 
+            // Get some data that we'll need later.
+            var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
+            var tablePrefixes = new Dictionary<string, string>();
+
             await using var branchConnection = new MySqlConnection(wiserCustomersService.GenerateConnectionStringFromCustomer(selectedEnvironmentCustomer));
             await branchConnection.OpenAsync();
 
@@ -648,14 +652,25 @@ LIMIT 1";
                         var sourceItemId = Convert.ToUInt64(newValue);
                         var split = field.Split(',');
                         var type = Int32.Parse(split[0]);
-                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, destinationItemId, type, branchConnection);
+                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, destinationItemId, type, branchConnection, allLinkTypeSettings, tablePrefixes);
                         if (linkData == null)
                         {
                             break;
                         }
 
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType), sourceItemId, linkData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType), destinationItemId, linkData.Value.DestinationType);
+                        if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
+                        {
+                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
+                            tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
+                        }
+                        if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
+                        {
+                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
+                            tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
+                        }
+
+                        AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
+                        AddItemToMutationList(updatedItems, destinationTablePrefix, destinationItemId, linkData.Value.DestinationType);
 
                         break;
                     }
@@ -670,29 +685,51 @@ LIMIT 1";
                         }
 
                         // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection);
+                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
                         if (!entityData.HasValue)
                         {
                             break;
                         }
 
+                        if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                        {
+                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
+                            tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                        }
+                        if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                        {
+                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
+                            tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                        }
+
                         // And finally mark these items as updated.
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType), linkData.Value.SourceItemId, entityData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType), linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+                        AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
+                        AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
 
                         break;
                     }
                     case "REMOVE_LINK":
                     {
                         var sourceItemId = UInt64.Parse(oldValue!);
-                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, Int32.Parse(field), branchConnection);
+                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, Int32.Parse(field), branchConnection, allLinkTypeSettings, tablePrefixes);
                         if (linkData == null)
                         {
                             break;
                         }
 
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType), sourceItemId, linkData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType), itemId, linkData.Value.DestinationType);
+                        if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
+                        {
+                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
+                            tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
+                        }
+                        if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
+                        {
+                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
+                            tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
+                        }
+
+                        AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
+                        AddItemToMutationList(updatedItems, destinationTablePrefix, itemId, linkData.Value.DestinationType);
 
                         break;
                     }
@@ -717,15 +754,26 @@ LIMIT 1";
                         }
 
                         // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection);
+                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
                         if (!entityData.HasValue)
                         {
                             break;
                         }
 
+                        if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                        {
+                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
+                            tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                        }
+                        if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                        {
+                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
+                            tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                        }
+
                         // And finally mark these items as updated.
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType), linkData.Value.SourceItemId, entityData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType), linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+                        AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
+                        AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
 
                         break;
                     }
@@ -763,15 +811,26 @@ LIMIT 1";
                         }
 
                         // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection);
+                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
                         if (!entityData.HasValue)
                         {
                             break;
                         }
 
+                        if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                        {
+                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
+                            tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                        }
+                        if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                        {
+                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
+                            tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                        }
+
                         // And finally mark these items as updated.
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType), linkData.Value.SourceItemId, entityData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType), linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+                        AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
+                        AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
 
                         break;
                     }
@@ -1602,16 +1661,18 @@ WHERE changed_on >= ?lastChange";
         /// <param name="destinationId">The ID of the destination item.</param>
         /// <param name="linkType">The link type number.</param>
         /// <param name="mySqlConnection">The connection to the database.</param>
+        /// <param name="allLinkTypeSettings">The list with all settings of all link types.</param>
+        /// <param name="tablePrefixes">The list of all already known table prefixes, so that we don't have to get them from database multiple times.</param>
         /// <returns>A named tuple with the entity types and table prefixes for both the source and the destination.</returns>
-        private async Task<(string SourceType, string SourceTablePrefix, string DestinationType, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection)
+        private async Task<(string SourceType, string SourceTablePrefix, string DestinationType, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes)
         {
-            var allLinkTypeSettings = (await wiserItemsService.GetAllLinkTypeSettingsAsync()).Where(l => l.Type == linkType).ToList();
+            var currentLinkTypeSettings = allLinkTypeSettings.Where(l => l.Type == linkType).ToList();
             await using var command = mySqlConnection.CreateCommand();
             command.Parameters.AddWithValue("sourceId", sourceId);
             command.Parameters.AddWithValue("destinationId", destinationId);
 
             // If there are no settings for this link, we assume that the links are from items in the normal wiser_item table and not a table with a prefix.
-            if (!allLinkTypeSettings.Any())
+            if (!currentLinkTypeSettings.Any())
             {
                 // Check if the source item exists in this table.
                 command.CommandText = $@"SELECT entity_type FROM {WiserTableNames.WiserItem} WHERE id = ?sourceId
@@ -1647,10 +1708,18 @@ LIMIT 1";
             }
 
             // It's possible that there are multiple link types that use the same number, so we have to check all of them.
-            foreach (var linkTypeSettings in allLinkTypeSettings)
+            foreach (var linkTypeSettings in currentLinkTypeSettings)
             {
-                var sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.SourceEntityType);
-                var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
+                if (!tablePrefixes.TryGetValue(linkTypeSettings.SourceEntityType, out var sourceTablePrefix))
+                {
+                    sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.SourceEntityType);
+                    tablePrefixes.Add(linkTypeSettings.SourceEntityType, sourceTablePrefix);
+                }
+                if (!tablePrefixes.TryGetValue(linkTypeSettings.DestinationEntityType, out var destinationTablePrefix))
+                {
+                    destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
+                    tablePrefixes.Add(linkTypeSettings.DestinationEntityType, destinationTablePrefix);
+                }
 
                 // Check if the source item exists in this table.
                 command.CommandText = $@"SELECT entity_type FROM {sourceTablePrefix}{WiserTableNames.WiserItem} WHERE id = ?sourceId
