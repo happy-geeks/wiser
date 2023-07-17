@@ -329,7 +329,7 @@ export class Wiser {
                     });
 
                     refreshTokenResult.expiresOn = new Date(new Date().getTime() + ((refreshTokenResult.expires_in - (refreshTokenResult.expires_in > 60 ? 60 : 0)) * 1000));
-                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true;
+                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true || refreshTokenResult.adminAccountId > 0;
 
                     localStorage.setItem("accessToken", refreshTokenResult.access_token);
                     localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);
@@ -1089,6 +1089,7 @@ export class Wiser {
         } catch (exception) {
             console.error(exception);
             kendo.alert("Er is iets fout gegaan tijdens opslaan van de wijzigingen. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
+            return false;
         }
     }
 

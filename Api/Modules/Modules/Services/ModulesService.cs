@@ -92,6 +92,18 @@ namespace Api.Modules.Modules.Services
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
+            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(clientDatabaseConnection.ConnectedDatabase);
+
+            // If the table changes don't contain wiser_itemdetail, it means this is an older database.
+            // We can assume that this database already has the able, otherwise nothing would work.
+            // We add that table to the list of last table updates, so that the GCL doesn't try to add any indexes that might be missing,
+            // because that takes a very long time for old databases with lots of data.
+            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserItemDetail))
+            {
+                await clientDatabaseConnection.ExecuteAsync($"INSERT IGNORE INTO {WiserTableNames.WiserTableChanges} (name, last_update) VALUES ('{WiserTableNames.WiserItemDetail}', '{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
+                lastTableUpdates.TryAdd(WiserTableNames.WiserItemDetail, DateTime.Now);
+            }
+
             // Make sure that Wiser tables are up-to-date.
             const string TriggersName = "wiser_triggers";
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
@@ -118,7 +130,6 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserCommunication,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
-            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync();
 
             // Make sure that all triggers for Wiser tables are up-to-date.
             if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))
@@ -618,7 +629,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
@@ -627,8 +638,7 @@ UNION
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            var userItemPermissions =
-                await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+            var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
 
             result.CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read;
             result.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
@@ -664,7 +674,11 @@ UNION
             }
 
             var parsedOptionsJson = JToken.Parse(optionsJson);
-            jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+
+            if (encryptValues)
+            {
+                jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+            }
 
             result.Options = parsedOptionsJson;
 
@@ -678,13 +692,12 @@ UNION
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", name);
 
-            var query = $@"
-                        SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
-                        INSERT INTO {WiserTableNames.WiserModule}(id,`name`)
-                        VALUES (@newID, ?name); 
-                        INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
-                        VALUES (1, '', 0, 0, 15, @newID);
-                        SELECT @newID;";
+            var query = $@"SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
+INSERT INTO {WiserTableNames.WiserModule} (id,`name`)
+VALUES (@newID, ?name); 
+INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
+VALUES (1, '', 0, 0, 15, @newID);
+SELECT @newID;";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             var id = Convert.ToInt32(dataTable.Rows[0][0]);
@@ -778,15 +791,15 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
             var query = $@"UPDATE {WiserTableNames.WiserModule}
-                            SET `id` = ?new_id,
-                                `custom_query` = ?custom_query,
-                                `count_query` = ?count_query,
-                                `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
-                                `name` = ?name,
-                                `icon` = ?icon,
-                                `type` = ?type,
-                                `group` = ?group
-                        WHERE id = ?id";
+SET `id` = ?new_id,
+    `custom_query` = ?custom_query,
+    `count_query` = ?count_query,
+    `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
+    `name` = ?name,
+    `icon` = ?icon,
+    `type` = ?type,
+    `group` = ?group
+WHERE id = ?id";
 
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true)
