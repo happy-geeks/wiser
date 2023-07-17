@@ -1,14 +1,4 @@
-﻿using Api.Core.Helpers;
-using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Imports.Interfaces;
-using Api.Modules.Imports.Models;
-using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -19,16 +9,26 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
+using Api.Core.Helpers;
+using Api.Core.Services;
+using Api.Modules.Customers.Interfaces;
 using Api.Modules.Customers.Models;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Models;
+using Api.Modules.Imports.Interfaces;
+using Api.Modules.Imports.Models;
+using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using GeeksCoreLibrary.Modules.Imports.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.FileIO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Imports.Services
 {
@@ -149,7 +149,7 @@ namespace Api.Modules.Imports.Services
                     {
                         break;
                     }
-                    
+
                     await ProcessLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
                     rowsHandled++;
                 }
@@ -387,7 +387,7 @@ namespace Api.Modules.Imports.Services
             var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
 
             if (idIndex >= 0) return (null, idIndex);
-            
+
             importResult.Failed += 1U;
             importResult.Errors.Add("Can't do import because of missing ID column");
             importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
@@ -439,7 +439,8 @@ namespace Api.Modules.Imports.Services
                 Item = new WiserItemModel
                 {
                     ChangedBy = IdentityHelpers.GetUserName(identity, true),
-                    ModuleId = moduleId
+                    ModuleId = moduleId,
+                    EntityType = entityType
                 }
             };
             importData.Add(importItem);
@@ -451,12 +452,6 @@ namespace Api.Modules.Imports.Services
                 // ID field exists and is filled; line is item update.
                 importItem.Item.Id = Convert.ToUInt64(lineFields[idIndex]);
                 isNewItem = importItem.Item.Id == 0;
-            }
-
-            // Only set entity type for new items, so that the import can never change the entity type of an existing item.
-            if (isNewItem)
-            {
-                importItem.Item.EntityType = entityType;
             }
 
             // Now update the item with the fields from the import.
@@ -547,7 +542,7 @@ namespace Api.Modules.Imports.Services
                         itemLink.ItemId = Convert.ToUInt64(value.Trim());
                         itemLink.DestinationItemId = importItem.Item.Id;
                     }
-                    
+
                     // Make sure an item won't get linked to itself.
                     if (itemLink.ItemId == itemLink.DestinationItemId)
                     {
