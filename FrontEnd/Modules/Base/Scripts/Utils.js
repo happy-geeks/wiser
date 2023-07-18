@@ -116,9 +116,7 @@ export class Dates {
      * @returns {any} A momentJs object. You can use result.isValid() to check whether the date has been parsed successfully, or result.toDate() to get a normal javascript date object. For more information, see https://momentjs.com/docs/.
      */
     static parseDateTime(value) {
-        value = (value || "").trim();
-
-        return DateTime.fromSQL(value, { locale: "nl-NL" });
+        return this.parseDate(value);
     }
 
     /**
@@ -127,9 +125,9 @@ export class Dates {
      * @returns {any} A momentJs object. You can use result.isValid() to check whether the date has been parsed successfully, or result.toDate() to get a normal javascript date object. For more information, see https://momentjs.com/docs/.
      */
     static parseDate(value) {
-        value = (value || "").trim();
+        value = value || "";
 
-        return DateTime.fromSQL(value, { locale: "nl-NL" });
+        return typeof(value) === "string" ? DateTime.fromSQL(value.trim(), { locale: "nl-NL" }) : DateTime.fromJSDate(value, { locale: "nl-NL" });
     }
 
     /**
@@ -144,7 +142,7 @@ export class Dates {
     }
 
     static formatWiserDateString(dateString) {
-        return this.parseDateTime(dateString).toLocaleString(this.LongDateTimeFormat);
+        return this.parseDate(dateString).toLocaleString(this.LongDateTimeFormat);
     }
 
     static convertMomentFormatToLuxonFormat(momentFormattingString) {
