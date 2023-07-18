@@ -10,12 +10,11 @@ using Api.Core.Enums;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.CloudFlare.Interfaces;
 using Api.Modules.Customers.Interfaces;
 using Api.Modules.Files.Interfaces;
-using Api.Modules.Files.Models;
-using Api.Modules.CloudFlare.Interfaces;
 using Api.Modules.Files.Interfaces.Repository;
-using Api.Modules.Items.Models;
+using Api.Modules.Files.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -53,7 +52,7 @@ namespace Api.Modules.Files.Services
             this.wiserItemsService = wiserItemsService;
             this.cloudFlareService = cloudFlareService;
             this.filesRepository = filesRepository;
-            
+
             Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
         }
 
@@ -143,7 +142,7 @@ namespace Api.Modules.Files.Services
                     var fileName = file.FileName?.Trim('"');
                     fileName = Path.GetFileNameWithoutExtension(fileName).ConvertToSeo() + Path.GetExtension(fileName)?.ToLowerInvariant();
                     var fileExtension = Path.GetExtension(fileName);
-                    
+
                     if (useTinyPng && (fileExtension.Equals(".png", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)))
                     {
                         try
@@ -198,7 +197,7 @@ namespace Api.Modules.Files.Services
                         ErrorMessage = "Partial success: file uploaded but not all images tinified"
                     };
                 }
-                    
+
                 return new ServiceResult<List<FileModel>>(result);
             }
             catch (MySqlException mySqlException)
@@ -782,7 +781,20 @@ SELECT LAST_INSERT_ID() AS newId;";
             databaseConnection.AddParameter("title", file.Title ?? "");
             databaseConnection.AddParameter("property_name", propertyName);
 
-            var query = $@"SET @_username = ?added_by;
+            var ordering = 1;
+            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
+            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
+FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+WHERE {whereClause}
+AND property_name = ?property_name";
+            var dataTable = await databaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count > 0)
+            {
+                ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
+            }
+            databaseConnection.AddParameter("ordering", ordering);
+
+            query = $@"SET @_username = ?added_by;
 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
 SELECT LAST_INSERT_ID() AS newId;";
