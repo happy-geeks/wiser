@@ -258,7 +258,7 @@ export class Grids {
 
                     commands.push({
                         name: "remove",
-                        iconClass: "k-icon k-i-delete",
+                        iconClass: "k-icon k-i-trash",
                         text: "",
                         click: onDeleteClick.bind(this)
                     });
@@ -269,7 +269,7 @@ export class Grids {
                     commands.push({
                         name: "remove",
                         text: "",
-                        iconClass: "k-icon k-i-delete",
+                        iconClass: "k-icon k-i-trash",
                         click: (event) => { this.base.grids.onDeleteItemClick(event, this.mainGrid, "deleteItem", gridViewSettings); }
                     });
                 }

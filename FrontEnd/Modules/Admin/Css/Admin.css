@@ -39,7 +39,7 @@
 }
 
 /* TABS SPLIT */
-.tabSplit.k-state-active,
+.tabSplit.k-active,
 .tabSplit.staticSplit {
     display: flex !important;
 }
@@ -279,7 +279,7 @@ li.hint span {
 }
 
 .multi-check .k-checkbox-label:empty {
-    display: inline-flex;
+    display: inline-flex !important;
 }
 
 .multi-check .k-grid-header th.k-header {
@@ -287,7 +287,8 @@ li.hint span {
 }
 
 .multi-check .k-grid-header th,
-.multi-check tbody td {
+.multi-check tbody td,
+.multi-check tbody td.k-table-td {
     position: relative;
 }
 
@@ -420,6 +421,17 @@ table.k-editor {
 #EntityTabStrip .k-content .right-pane {
     overflow: hidden;
     overflow-y: auto;
+}
+
+/* Inputs */
+.k-input-md .k-input-inner {
+    padding-block: 0;
+    padding-inline: 0;
+}
+
+.k-picker-md .k-input-inner {
+    padding-block: 0;
+    padding-inline: 8px;
 }
 
 /* Action button */

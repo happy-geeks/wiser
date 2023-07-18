@@ -37,6 +37,11 @@
     display: none;
 }
 
+/* Button */
+.k-button {
+    border-width: 0;
+}
+
 /* Selected */
 .k-list-item.k-selected,
 .k-list-item.k-selected:hover, 
@@ -72,6 +77,9 @@
 .k-treeview .k-treeview-leaf .k-image,
 .k-treeview .k-treeview-leaf .k-sprite {
     margin-right: 4px;
+}
+.pane-content .k-treeview {
+    min-height: calc(100vh - 156px);
 }
 
 /* Menu */
@@ -181,6 +189,11 @@
     color: inherit;
     background-color: inherit;
 }
+.k-grid-header .k-table-thead > .k-table-row:not(:only-child) > .k-table-th {
+    border-inline-start-color: transparent;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}
 .k-table-tbody .k-table-row:hover, 
 .k-table-list .k-table-row:hover, 
 .k-table-tbody .k-table-row.k-hover, 
@@ -221,13 +234,34 @@
     border-top-width: 2px;
     border-top-color: var(--color-2);
     border-top-style: solid;
-    top: -8px;
+    top: -6px;
 }
 .k-pager .k-button.k-disabled .k-svg-icon {
     opacity: 0.25;
 }
 div.k-grid-norecords {
     padding: 0 10px;
+}
+.k-grid-header .k-table-th {
+    font-weight: 400;
+}
+.k-grid-md .k-filtercell > span, 
+.k-grid-md .k-filtercell .k-filtercell-wrapper {
+    gap: 0;
+}
+.k-filtercell .k-button-md.k-icon-button .k-button-icon {
+    min-height: auto;
+    min-width: auto;
+    color: var(--dark-txt);
+}
+.k-filtercell .k-input, 
+.k-filtercell .k-picker {
+    height: 42px;
+    width: 42px;
+}
+.k-filtercell .k-picker .k-input-button {
+    width: 42px;
+    
 }
 
 /* Tabstrip */
@@ -310,9 +344,13 @@ div.k-grid-norecords {
 .k-input-md.k-focus .k-input-values {
     max-height: none;
 }
-.k-input-md .k-input-inner, 
-.k-picker-md .k-input-inner {
-    padding-block: 8px;
+.item[data-label-style="normal"] .k-input-md .k-input-inner,
+.item[data-label-style="normal"] .k-picker-md .k-input-inner {
+    padding-block: 0;
+    padding-inline: 8px;
+}
+.item[data-label-style="float"] .k-input-md .k-input-inner,
+.item[data-label-style="float"] .k-picker-md .k-input-inner {
     padding-inline: 8px;
 }
 .item[data-label-style="float"] h4 {
@@ -483,7 +521,12 @@ div.k-grid-norecords {
     width: auto !important;
 }
 
-    /* Daterange picker */
+/* Datetimepicker */
+.k-datetimepicker .k-button {
+    width: 36px;
+}
+
+/* Daterangepicker */
 .k-daterange-picker .k-dateinput, 
 .k-daterangepicker .k-dateinput {
     width: 100%;
@@ -531,4 +574,65 @@ div.k-grid-norecords {
 #MainHeader {
     z-index: 101;
     position: relative;
+}
+
+/* Urenregistratie */
+[data-module-id="856"] .item .flex-container .k-input-md .k-input-inner,
+[data-module-id="856"] .item .flex-container .k-picker-md .k-input-inner {
+    padding-block: 10px;
+}
+
+[data-module-id="856"] .item .flex-container .newItemButton,
+[data-module-id="856"] .item .flex-container .openItemButton {
+    margin: 5px 0 5px 5px;
+}
+
+[data-module-id="856"] .item .flex-container .newItemButton .k-button-icon,
+[data-module-id="856"] .item .flex-container .openItemButton .k-button-icon {
+    min-width: 1em;
+    min-height: 1em;
+}
+
+[data-module-name="Urenregistratie"] .k-grouping-row td,
+[data-module-name="Urenregistratie"] td.k-group-cell,
+[data-module-name="Urenregistratie"] .k-resize-handle-inner,
+[data-module-name="Urenregistratie"] .k-grid .k-selected:hover .k-group-cell {
+    color: var(--dark-txt);
+    background-color: var(--light-color);
+}
+
+[data-module-name="Urenregistratie"] .k-grid .k-grouping-row td,
+[data-module-name="Urenregistratie"] .k-grid .k-grouping-row .k-table-td {
+    padding: 9px !important;
+    padding-block: 9px;
+    padding-inline: 9px;
+    border-bottom-width: 0;
+    border-top-width: 0;
+}
+
+[data-module-name="Urenregistratie"] .k-grid-md .k-grouping-row .k-icon,
+[data-module-name="Urenregistratie"] .k-grid-md .k-grouping-row .k-svg-icon {
+    margin-inline-start: 0;
+}
+
+[data-module-name="Urenregistratie"] .k-grid .k-table .k-group-footer td,
+[data-module-name="Urenregistratie"] .k-grid .k-table .k-group-footer .k-table-td {
+    border-top-width: 0;
+}
+
+[data-module-name="Urenregistratie"] .k-group-footer td,
+[data-module-name="Urenregistratie"] .k-group-footer .k-table-td,
+[data-module-name="Urenregistratie"] .k-group-footer:hover td,
+[data-module-name="Urenregistratie"] .k-group-footer.k-hover td,
+[data-module-name="Urenregistratie"] .k-group-footer:hover .k-table-td,
+[data-module-name="Urenregistratie"] .k-group-footer.k-hover .k-table-td {
+    background-color: var(--light-color);
+}
+
+[data-module-name="Urenregistratie"] .k-table-row .k-group-cell,
+[data-module-name="Urenregistratie"] .k-group-footer .k-group-cell,
+[data-module-name="Urenregistratie"] .k-grid .k-table .k-group-footer td.k-group-cell,
+[data-module-name="Urenregistratie"] .k-grid .k-table .k-group-footer .k-table-td.k-group-cell {
+    border-bottom-width: 0;
+    
 }
