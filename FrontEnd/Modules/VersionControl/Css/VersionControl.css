@@ -5,7 +5,7 @@
     height: 100%;
 }
 
-.tabstrip .k-tabstrip-content.k-state-active {
+.tabstrip .k-tabstrip-content.k-active {
     display: flex;
     flex-direction: column;
     height: calc(100% - 50px) !important;
@@ -13,7 +13,7 @@
     padding: 0 10px;
 }
 
-.tabstrip .k-tabstrip-content.k-state-active .formData {
+.tabstrip .k-tabstrip-content.k-active .formData {
     flex: 1;
     overflow: auto;
     margin-bottom: 50px;
@@ -102,13 +102,13 @@ footer .k-button.k-disabled {
     display: none;
 }
 
-#reaction-grid .k-state-selected {
+#reaction-grid .k-selected {
     background-color: #FFFFFF;
     border-color: #E6E6E6;
     color: #282828;
     white-space: pre-line;
 }
 
-#reaction-grid .k-state-selected:hover {
+#reaction-grid .k-selected:hover {
     background-color: #F3F5F7;
 }
