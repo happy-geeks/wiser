@@ -1,4 +1,5 @@
 ﻿import {createStore} from "vuex";
+
 import {
     ACTIVATE_MODULE,
     AUTH_ERROR,

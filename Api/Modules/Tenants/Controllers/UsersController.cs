@@ -450,10 +450,14 @@ namespace Api.Modules.Tenants.Controllers
             await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
 
             // retrieve return URL
-            var returnUrl = result.Properties.Items["returnUrl"] ?? "~/";
+            if (!result.Properties.Items.TryGetValue("returnUrl", out var returnUrl))
+            {
+                returnUrl = "https://localhost:44377/";
+            }
 
             // check if external login is in the context of an OIDC request
             var context = await interaction.GetAuthorizationContextAsync(returnUrl);
+
             await events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.SubjectId, user.Username, true, context?.Client.ClientId));
 
             /*if (context != null)

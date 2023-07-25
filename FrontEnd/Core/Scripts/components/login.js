@@ -1,5 +1,6 @@
-﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN, USE_TOTP_BACKUP_CODE } from "../store/mutation-types";
-import { ComboBox } from "@progress/kendo-vue-dropdowns";
+﻿import {AUTH_LOGOUT, AUTH_REQUEST, CHANGE_PASSWORD_LOGIN, FORGOT_PASSWORD} from "../store/mutation-types";
+import {ComboBox} from "@progress/kendo-vue-dropdowns";
+import Oidc from "oidc-client";
 
 export default {
     name: "login",
@@ -26,11 +27,25 @@ export default {
                 newPassword: "",
                 newPasswordRepeat: ""
             },
-            showTotpBackupCodeScreen: false
+            showTotpBackupCodeScreen: false,
+            userManager: new Oidc.UserManager({
+                authority: "https://localhost:44349",
+                client_id: "wiser",
+                client_secret: "bJgzX2ek7pLUPc9t",
+                redirect_uri: "https://localhost:44377/callback.html",
+                response_type: "id_token token",
+                scope: "openid profile api1",
+                post_logout_redirect_uri: "https://localhost:44377/",
+                userStore: new Oidc.WebStorageStateStore({ store: window.localStorage }),
+            })
         };
     },
     async created() {
-        await this.$store.dispatch(AUTH_REQUEST);
+        const user = await this.userManager.getUser();
+        console.log("user", user);
+        //if (!user)
+        //return this.userManager.signinRedirect();
+        //await this.$store.dispatch(AUTH_REQUEST);
     },
     computed: {
         loginStatus() {
@@ -107,11 +122,11 @@ export default {
                 return;
             }
 
-            await this.$store.dispatch(AUTH_REQUEST, { 
+            await this.$store.dispatch(AUTH_REQUEST, {
                 user: Object.assign({}, this.loginForm),
                 loginStatus: this.loginStatus
             });
-            
+
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
