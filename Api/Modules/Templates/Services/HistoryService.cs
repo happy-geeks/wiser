@@ -84,7 +84,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList, int page, int itemsPerPage)
+        public async Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList)
         {
             foreach (var overview in overviewList)
             {
@@ -250,8 +250,8 @@ namespace Api.Modules.Templates.Services
         /// Get the raw list of versions of the component. These historymodels have a rawdatastring and no generated changes.
         /// </summary>
         /// <param name="templateId">The id of the content to retrieve the versions of.</param>
-        /// <param name="pageNumber"></param>
-        /// <param name="itemsPerPage"></param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>List of HistoryVersionModels forming</returns>
         private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId, int pageNumber, int itemsPerPage)
         {

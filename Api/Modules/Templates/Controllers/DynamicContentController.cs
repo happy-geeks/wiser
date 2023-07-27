@@ -71,8 +71,8 @@ namespace Api.Modules.Templates.Controllers
         /// Get the history of the current component.
         /// </summary>
         /// <param name="contentId">The component of the history.</param>
-        /// <param name="pageNumber"></param>
-        /// <param name="itemsPerPage"></param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>History PartialView containing the retrieved history of the component</returns>
         [HttpGet]
         [Route("{contentId:int}/history")]
