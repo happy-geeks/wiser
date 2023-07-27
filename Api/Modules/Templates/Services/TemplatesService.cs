@@ -1778,7 +1778,7 @@ LIMIT 1";
             {
                 TemplateId = templateId,
                 TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory, pageNumber, itemsPerPage),
-                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
+                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId, pageNumber, itemsPerPage),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
 

@@ -78,7 +78,7 @@ namespace Api.Modules.Templates.Controllers
         [Route("{contentId:int}/history")]
         [ProducesResponseType(typeof(List<HistoryVersionModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId, int pageNumber = 1, int itemsPerPage = 100)
+        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId, int pageNumber = 1, int itemsPerPage = 50)
         {
             return (await historyService.GetChangesInComponentAsync(contentId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }

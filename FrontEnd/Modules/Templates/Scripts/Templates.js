@@ -2378,26 +2378,27 @@ const moduleSettings = {
                     method: "GET"
                 });
 
-                const historyTab = await Wiser.api({
+                const historyTabHTML = await Wiser.api({
                     method: "POST",
                     contentType: "application/json",
                     url: "/Modules/Templates/HistoryTab",
                     data: JSON.stringify(templateHistory)
                 });
-
-                document.getElementById("historyTab").innerHTML = historyTab;
-                this.lastLoadedHistoryPartNumber = 1;
                 
-                document.getElementById('historyTab').addEventListener('scroll', event => {
+                const historyTab = document.getElementById("historyTab");
+                historyTab.innerHTML = historyTabHTML;
+                this.lastLoadedHistoryPartNumber = 1;
+                this.allHistoryPartsLoaded = false;
+                historyTab.addEventListener('scroll', event => {
                     const {scrollHeight, scrollTop, clientHeight} = event.target;
 
                     // if user scrolled to bottom load next part of the history
-                    let treshold = 1
+                    // < treshold is used to account for rounding of scrollHeight and clientHeight
+                    let treshold = 1;
                     if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
-                        this.loadNextPart()
+                        this.loadNextHistoryPart();
                     }
                 });
-                
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
@@ -2406,7 +2407,7 @@ const moduleSettings = {
             window.processing.removeProcess(process);
         }
         
-        async loadNextPart(){
+        async loadNextHistoryPart(){
             if (this.allHistoryPartsLoaded || this.lastLoadedHistoryPartNumber < 1) {
                 return;
             }
@@ -2420,6 +2421,12 @@ const moduleSettings = {
                     dataType: "json",
                     method: "GET"
                 });
+                
+                if (templateHistory.templateHistory.length === 0) {
+                    this.allHistoryPartsLoaded = true;
+                    window.processing.removeProcess(process);
+                    return;
+                }
 
                 const historyTabPart = await Wiser.api({
                     method: "POST",
@@ -2430,12 +2437,12 @@ const moduleSettings = {
 
                 document.getElementById("historyContainer").insertAdjacentHTML("beforeend", historyTabPart);
                 this.lastLoadedHistoryPartNumber++;
+                window.processing.removeProcess(process);
             } catch (exception) {
+                window.processing.removeProcess(process);
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
-
-            window.processing.removeProcess(process);
         }
 
         /**

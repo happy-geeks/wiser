@@ -58,6 +58,8 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.preview = new Preview(this);
+            this.lastLoadedHistoryPart = 0;
+            this.allPartsLoaded = false;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -556,36 +558,100 @@ const moduleSettings = {
          * Loads the History HTML and updates the right panel.
          * */
         async loadComponentHistory() {
-            const history = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
-                dataType: "json",
-                method: "GET"
-            });
+            try {
+                const history = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
+                    dataType: "json",
+                    method: "GET"
+                });
 
-            const historyHtml = await Wiser.api({
-                url: `/Modules/DynamicContent/History`,
-                method: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(history)
-            });
+                const historyHtml = await Wiser.api({
+                    url: '/Modules/DynamicContent/History',
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(history)
+                });
 
-            document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
-            this.bindHistoryButtons();
+                document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
+                this.lastLoadedHistoryPart = 1;
+                this.allPartsLoaded = false;
+                
+                document.getElementById("right-pane").addEventListener('scroll', event => {
+                    const {scrollHeight, scrollTop, clientHeight} = event.target;
+
+                    // if user scrolled to bottom, load next part of the history
+                    // We don't just compare with 0 to avoid rounding errors
+                    const treshold = 1;
+                    if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
+                        // if history pane is active load next batch of history rows
+                        if (document.getElementsByClassName("historyContainer")[0].parentElement.classList.contains("k-state-active")) {
+                            this.loadNextHistoryPart();
+                        }
+                    }
+                });
+                
+                this.bindHistoryButtons();
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+        }
+        
+        async loadNextHistoryPart() {
+            if (this.allPartsLoaded || this.lastLoadedHistoryPart === 0) {
+                return;
+            }
+
+            const process = `loadDynamicHistoryTabNextPart_${Date.now()}`;
+            window.processing.addProcess(process);
+            try {
+                const history = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history?pageNumber=${this.lastLoadedHistoryPart+1}`,
+                    dataType: "json",
+                    method: "GET"
+                });
+
+                if (history.length === 0) {
+                    this.allPartsLoaded = true;
+                    window.processing.removeProcess(process);
+                    return;
+                }
+
+                const historyRowsHtml = await Wiser.api({
+                    url: '/Modules/DynamicContent/HistoryRow',
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(history)
+                });
+
+                document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
+                this.lastLoadedHistoryPart++;
+                window.processing.removeProcess(process);
+            } catch (exception) {
+                window.processing.removeProcess(process);
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
         }
 
         async loadPreviewTab() {
             // Preview
             await this.preview.loadProfiles();
-            const response = await Wiser.api({
-                method: "GET",
-                url: "/Modules/Templates/PreviewTab"
-            });
+            try {
+                const response = await Wiser.api({
+                    method: "GET",
+                    url: "/Modules/Templates/PreviewTab"
+                });
 
-            document.getElementById("previewTab").innerHTML = response;
+                document.getElementById("previewTab").innerHTML = response;
 
-            this.preview.initPreviewProfileInputs(true, true);
-            this.preview.bindPreviewButtons();
-            this.preview.generatePreview(false);
+                this.preview.initPreviewProfileInputs(true, true);
+                this.preview.bindPreviewButtons();
+                this.preview.generatePreview(false);
+            }  catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
         }
 
         async transformCodeMirrorViews(container = null) {

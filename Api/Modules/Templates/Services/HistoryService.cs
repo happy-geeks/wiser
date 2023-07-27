@@ -84,7 +84,7 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList)
+        public async Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList, int page, int itemsPerPage)
         {
             foreach (var overview in overviewList)
             {
@@ -108,6 +108,11 @@ namespace Api.Modules.Templates.Services
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
             var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId, pageNumber, itemsPerPage);
 
+            if (rawTemplateModels.Count == 0)
+            {
+                return new List<TemplateHistoryModel>();
+            }
+            
             templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
 
             var templateHistory = new List<TemplateHistoryModel>();
@@ -138,9 +143,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
+        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId, int pageNumber, int itemsPerPage)
         {
-            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId);
+            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId, pageNumber, itemsPerPage);
         }
 
         /// <summary>

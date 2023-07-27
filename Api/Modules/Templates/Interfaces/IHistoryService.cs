@@ -30,13 +30,15 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="changesToRevert">Contains the properties and specific versions that need to be reverted.</param>
         /// <returns>The ID of the component that was reverted.</returns>
         Task<ServiceResult<int>> RevertChangesAsync(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert);
-        
+
         /// <summary>
         /// Retrieve the published environments for dynamic content overviews. This method will accept a list of DynamicContentOverviewModel and retrieve the published environments for each dynamic content.
         /// </summary>
         /// <param name="overviewList">A list of DynamicContentOverviewModels which are to be supplied with published environments</param>
+        /// <param name="page"></param>
+        /// <param name="itemsPerPage"></param>
         /// <returns>The list of DynamicContentOverviewModels containing the published environments for each model</returns>
-        Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList);
+        Task<List<DynamicContentOverviewModel>> GetPublishedEnvironmentsOfOverviewModels(List<DynamicContentOverviewModel> overviewList, int page, int itemsPerPage);
 
         /// <summary>
         /// Retrieves a list of versions for the dynamic content containing their publish status and transforms it to a PublishedEnvironmentModel. 
@@ -56,12 +58,14 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="itemsPerPage"></param>
         /// <returns>A list of TemplateHistoryModel containing the history of the template and its linked dynamic content for each version</returns>
         Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent, int pageNumber, int itemsPerPage);
-        
+
         /// <summary>
         /// Retrieves the publish history of a template
         /// </summary>
         /// <param name="templateId">The id of a template</param>
+        /// <param name="pageNumber"></param>
+        /// <param name="itemsPerPage"></param>
         /// <returns></returns>
-        Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId);
+        Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId, int pageNumber, int itemsPerPage);
     }
 }
