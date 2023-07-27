@@ -60,6 +60,7 @@ const moduleSettings = {
             this.preview = new Preview(this);
             this.lastLoadedHistoryPart = 0;
             this.allPartsLoaded = false;
+            this.loadingNextPart = false;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -598,10 +599,10 @@ const moduleSettings = {
         }
         
         async loadNextHistoryPart() {
-            if (this.allPartsLoaded || this.lastLoadedHistoryPart === 0) {
+            if (this.loadingNextPart || this.allPartsLoaded || this.lastLoadedHistoryPart === 0) {
                 return;
             }
-
+            this.loadingNextPart = true;
             const process = `loadDynamicHistoryTabNextPart_${Date.now()}`;
             window.processing.addProcess(process);
             try {
@@ -613,6 +614,7 @@ const moduleSettings = {
 
                 if (history.length === 0) {
                     this.allPartsLoaded = true;
+                    this.loadingNextPart = false;
                     window.processing.removeProcess(process);
                     return;
                 }
@@ -632,6 +634,7 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
+            this.loadingNextPart = false;
         }
 
         async loadPreviewTab() {

@@ -69,7 +69,7 @@ const moduleSettings = {
             this.measurementsLoaded = false;
             this.allHistoryPartsLoaded = false;
             this.lastLoadedHistoryPartNumber = 0;
-
+            this.loadingNextPart = false;
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
                 "HTML": 1,
@@ -2408,9 +2408,10 @@ const moduleSettings = {
         }
         
         async loadNextHistoryPart(){
-            if (this.allHistoryPartsLoaded || this.lastLoadedHistoryPartNumber < 1) {
+            if (this.loadingNextPart || this.allHistoryPartsLoaded || this.lastLoadedHistoryPartNumber < 1) {
                 return;
             }
+            this.loadingNextPart = true;
 
             const process = `loadHistoryTabNextPart_${Date.now()}`;
             window.processing.addProcess(process);
@@ -2424,6 +2425,7 @@ const moduleSettings = {
                 
                 if (templateHistory.templateHistory.length === 0) {
                     this.allHistoryPartsLoaded = true;
+                    this.loadingNextPart = false;
                     window.processing.removeProcess(process);
                     return;
                 }
@@ -2443,6 +2445,7 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
+            this.loadingNextPart = false;
         }
 
         /**
