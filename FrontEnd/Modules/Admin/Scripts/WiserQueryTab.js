@@ -25,7 +25,7 @@ export class WiserQueryTab {
         }).data("kendoDropDownList");
 
         this.queryCombobox.one("dataBound", () => { this.queryListInitialized = true; });
-        
+
         this.rolesWithPermissions = $("#rolesWithPermissions").kendoMultiSelect({
             dataSource: {
                 transport: {
@@ -131,7 +131,7 @@ export class WiserQueryTab {
                 data: JSON.stringify(queryModel),
                 method: "PUT"
             });
-            
+
             this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
             await this.getQueries();
         }
@@ -152,10 +152,10 @@ export class WiserQueryTab {
     }
 
     async addQuery(description) {
-        if (!description) { 
+        if (!description) {
             return;
         }
-        
+
         try {
             const result = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}queries`,
@@ -164,7 +164,7 @@ export class WiserQueryTab {
                 data: JSON.stringify(description),
                 method: "POST"
             });
-            
+
             this.base.showNotification("notification", `Query succesvol toegevoegd`, "success");
             await this.getQueries(true, result.id);
         }
@@ -226,6 +226,9 @@ export class WiserQueryTab {
 
             return false;
         }
+    }
 
+    hasChanges() {
+        return false;
     }
 }

@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
   `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
-  `store_type` enum('normal','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'normal',
+  `store_type` enum('table','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'normal',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
@@ -428,6 +428,19 @@ CREATE TABLE IF NOT EXISTS `wiser_query`  (
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 0,
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_styled_output
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_styled_output`  (
+    `id` int NOT NULL,
+    `format_begin` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `format_item` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `format_end` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `query_id` int NULL DEFAULT NULL,
+    `return_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------

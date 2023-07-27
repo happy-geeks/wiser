@@ -56,6 +56,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.JavaScript;
+using Constants = GeeksCoreLibrary.Modules.Templates.Models.Constants;
 using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Services
@@ -87,6 +88,7 @@ namespace Api.Modules.Templates.Services
         private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IBranchesService branchesService;
         private readonly IMeasurementsDataService measurementsDataService;
+        private readonly IDynamicContentDataService dynamicContentDataService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
@@ -110,7 +112,8 @@ namespace Api.Modules.Templates.Services
             IOptions<ApiSettings> apiSettings,
             IWebHostEnvironment webHostEnvironment,
             IBranchesService branchesService,
-            IMeasurementsDataService measurementsDataService)
+            IMeasurementsDataService measurementsDataService,
+            IDynamicContentDataService dynamicContentDataService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserCustomersService = wiserCustomersService;
@@ -132,6 +135,7 @@ namespace Api.Modules.Templates.Services
             this.webHostEnvironment = webHostEnvironment;
             this.branchesService = branchesService;
             this.measurementsDataService = measurementsDataService;
+            this.dynamicContentDataService = dynamicContentDataService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -239,7 +243,7 @@ namespace Api.Modules.Templates.Services
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE (template.use_in_wiser_html_editors = 1 OR template.load_always = 1)
-AND template.template_type IN (2, 3)
+AND template.template_type IN ({(int)TemplateTypes.Css}, {(int)TemplateTypes.Scss})
 AND otherVersion.id IS NULL
 ORDER BY template.ordering ASC");
 
@@ -407,31 +411,6 @@ WHERE
     AND language_code <> ''
 GROUP BY language_code
 ORDER BY language_code");
-                TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
-SET @new_index = {newIndex};
-SET @id = {currentId}; 
-SET @entity_name = '{entityName}';
-
-# move property to given index
-UPDATE wiser_entityproperty SET ordering = @new_index WHERE id=@id;
-
-# set other items to given index
-UPDATE wiser_entityproperty 
-SET ordering = IF(@old_index > @new_index, ordering, ordering) 
-WHERE ordering > IF(@old_index > @new_index, @new_index, @old_index)
-AND ordering < IF(@old_index > @new_index, @old_index, @new_index)
-AND entity_name = @entity_name
-AND id <> @id;
-
-# update record where index equals the new index value
-UPDATE wiser_entityproperty
-	SET ordering = IF(@old_index > @new_index, ordering+1, ordering-1) 
-WHERE 
-	ordering = @new_index AND 
-	entity_name = @entity_name AND 
-	tab_name =  @tab_name AND
-	id <> @id;
-");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_TABNAMES", @"SELECT id, IF(tab_name = '', 'Gegevens', tab_name) AS tabName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'
 GROUP BY tab_name
@@ -1543,6 +1522,9 @@ LIMIT 1";
                         break;
                     }
                 }
+
+                // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+                await CreateNewVersionAsync(template.TemplateId, version);
             }
 
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
@@ -1553,7 +1535,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
         {
             if (template == null)
             {
@@ -1677,10 +1659,26 @@ LIMIT 1";
             var templates = await templateDataService.GetScssTemplatesThatAreNotIncludesAsync(template.TemplateId);
             foreach (var otherTemplate in templates)
             {
-                await SaveTemplateVersionAsync(identity, otherTemplate);
+                await SaveAsync(identity, otherTemplate);
             }
 
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> CreateNewVersionAsync(int templateId, int versionBeingDeployed = 0)
+        {
+            // ReSharper disable once InvertIf
+            if (versionBeingDeployed > 0)
+            {
+                var latestVersion = await templateDataService.GetLatestVersionAsync(templateId);
+                if (versionBeingDeployed != latestVersion.Version)
+                {
+                    return new ServiceResult<int>(0);
+                }
+            }
+
+            return new ServiceResult<int>(await templateDataService.CreateNewVersionAsync(templateId));
         }
 
         /// <inheritdoc />
@@ -1701,6 +1699,10 @@ LIMIT 1";
 
             // Make sure the ordering is correct.
             await templateDataService.FixTreeViewOrderingAsync(parentId);
+
+            // Do any table updates that might be needed.
+            await templateDataService.KeepTablesUpToDateAsync();
+            await dynamicContentDataService.KeepTablesUpToDateAsync();
 
             // Get templates in correct order.
             var rawSection = await templateDataService.GetTreeViewSectionAsync(parentId);
@@ -1834,7 +1836,7 @@ LIMIT 1";
 
             if (templateDataResponse.ModelObject.Type is not (TemplateTypes.View or TemplateTypes.Routine or TemplateTypes.Trigger))
             {
-                return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
+                return await SaveAsync(identity, templateDataResponse.ModelObject);
             }
 
             // Also rename the view, routine, or trigger that this template is managing.
@@ -1851,7 +1853,7 @@ LIMIT 1";
                     break;
             }
 
-            return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
+            return await SaveAsync(identity, templateDataResponse.ModelObject);
         }
 
         /// <inheritdoc />
@@ -2238,7 +2240,7 @@ LIMIT 1";
                 SELECT template.template_name
                 FROM {WiserTableNames.WiserTemplate} AS template
                 JOIN (SELECT template_id, MAX(version) AS maxVersion FROM {WiserTableNames.WiserTemplate} GROUP BY template_id) AS maxVersion ON template.template_id = maxVersion.template_id AND template.version = maxVersion.maxVersion
-                WHERE template.template_type = 1 AND template.removed = 0 AND template.`{fieldName}` = 1 AND template.template_id <> ?templateId {regexWherePart}
+                WHERE template.template_type = {(int)TemplateTypes.Html} AND template.removed = 0 AND template.`{fieldName}` = 1 AND template.template_id <> ?templateId {regexWherePart}
                 GROUP BY template.template_id
                 LIMIT 1";
 

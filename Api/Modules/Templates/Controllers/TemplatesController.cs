@@ -17,12 +17,11 @@ using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Templates.Enums;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
-using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Controllers
 {
@@ -75,7 +74,7 @@ namespace Api.Modules.Templates.Controllers
 
             return (await templatesService.GetCssForHtmlEditorsAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/css");
         }
-        
+
         /// <summary>
         /// Gets a query from the wiser database and executes it in the customer database.
         /// </summary>
@@ -95,7 +94,7 @@ namespace Api.Modules.Templates.Controllers
 
             return (await templatesService.GetAndExecuteQueryAsync((ClaimsIdentity)User.Identity, templateName, requestPostData)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
         /// </summary>
@@ -108,7 +107,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetTreeViewSectionAsync((ClaimsIdentity)User.Identity, parentId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
         /// </summary>
@@ -121,7 +120,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Retrieve al the preview profiles for an item.
         /// </summary>
@@ -134,7 +133,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Get the meta data (name, changedOn, changedBy etc) from a template.
         /// </summary>
@@ -149,7 +148,7 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Retrieve the latest version of the template. 
+        /// Retrieve the latest version of the template.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve.</param>
         /// <returns>A template model containing the data of the templateversion.</returns>
@@ -216,8 +215,8 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> PublishToEnvironmentAsync(int templateId, Environments environment, int version)
         {
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
-            return currentPublished.StatusCode != HttpStatusCode.OK 
-                ? currentPublished.GetHttpResponseMessage() 
+            return currentPublished.StatusCode != HttpStatusCode.OK
+                ? currentPublished.GetHttpResponseMessage()
                 : (await templatesService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
 
@@ -247,9 +246,9 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> SaveAsync(int templateId, TemplateSettingsModel templateData, bool skipCompilation = false)
         {
             templateData.TemplateId = templateId;
-            return (await templatesService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData, skipCompilation)).GetHttpResponseMessage();
+            return (await templatesService.SaveAsync((ClaimsIdentity)User.Identity, templateData, skipCompilation)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Renames a template. This will create a new version of the template with the name, so that we can always see in the history that the name has been changed.
         /// </summary>
@@ -262,7 +261,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.RenameAsync((ClaimsIdentity)User.Identity, templateId, newName)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
         /// </summary>
@@ -275,7 +274,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.DeleteAsync((ClaimsIdentity)User.Identity, templateId, alsoDeleteChildren)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Search for a template.
         /// </summary>
@@ -287,7 +286,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.SearchAsync((ClaimsIdentity)User.Identity, searchValue)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Moves a template to a new position.
         /// </summary>
@@ -301,7 +300,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.MoveAsync((ClaimsIdentity)User.Identity, sourceId, destinationId, dropPosition)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Retrieve al the preview profiles for an item.
         /// </summary>
@@ -314,7 +313,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Creates a new instance of a preview profile with the given data.
         /// </summary>
@@ -345,7 +344,7 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Delete a profile from the database. 
+        /// Delete a profile from the database.
         /// </summary>
         /// <param name="templateId">The id of the template bound to the profile. This is added a an extra security for the deletion.</param>
         /// <param name="profileId">The id of the profile that is to be deleted</param>
@@ -371,7 +370,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity)User.Identity, 0, startFrom, environment)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Generates a preview for a HTML template.
         /// </summary>
@@ -451,7 +450,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { templateId }, branchId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Get the settings for measurements of a template.
         /// </summary>
@@ -464,7 +463,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetMeasurementSettingsAsync(templateId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Save the settings for measurements of this template.
         /// </summary>
@@ -477,7 +476,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.SaveMeasurementSettingsAsync(settings, templateId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Get rendering logs from database, filtered by the parameters.
         /// </summary>
@@ -498,7 +497,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(MeasurementSettings), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRenderLogsAsync(int templateId, int version = 0,
             string urlRegex = null, Environments? environment = null, ulong userId = 0,
-            string languageCode = null, int pageSize = 500, int pageNumber = 1, 
+            string languageCode = null, int pageSize = 500, int pageNumber = 1,
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
             return (await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end)).GetHttpResponseMessage();

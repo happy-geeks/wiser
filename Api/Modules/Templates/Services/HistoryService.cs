@@ -76,7 +76,7 @@ namespace Api.Modules.Templates.Services
             }
 
             var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
-            await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity, true));
+            await dataService.SaveAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<int>
             {
                 StatusCode = HttpStatusCode.NoContent

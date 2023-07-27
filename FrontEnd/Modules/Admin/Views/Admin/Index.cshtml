@@ -40,11 +40,11 @@
                 <!-- TABS -->
                 <div class="tabstrip k-tabstrip-wrapper" id="MainTabStrip">
                     <ul>
-                        <li class="k-state-active">Modules</li>
-                        <li>Entiteiten</li>
-                        <li>Rollen</li>
-                        <li>Query's</li>
-                        <li>Links</li>
+                        <li class="k-state-active" data-class="moduleTab">Modules</li>
+                        <li data-class="entityTab">Entiteiten</li>
+                        <li data-class="roleTab">Rollen</li>
+                        <li data-class="wiserQueryTab">Query's</li>
+                        <li data-class="wiserLinkTab">Links</li>
                     </ul>
                     <div class="tabSplit">
                         <div class="left-pane">
@@ -186,8 +186,8 @@
                                 <div class="item">
                                     <div class="tabstrip k-tabstrip-wrapper" id="EntityTabStrip">
                                         <ul>
-                                            <li class="k-state-active">Eigenschappen</li>
-                                            <li>Velden</li>
+                                            <li class="k-state-active" data-name="entity">Eigenschappen</li>
+                                            <li data-name="entityProperty">Velden</li>
                                         </ul>
                                         <div>
                                             <div class="pane-content flex-container">
@@ -354,7 +354,7 @@
                                                         <label>Query na toevoegen</label>
                                                         <span class="info" data-type="queryAfterInsert"><ins class="icon-info-full"></ins></span>
                                                     </h4>
-                                                    
+
                                                     <textarea id="queryAfterInsert"></textarea>
                                                 </div>
                                                 <div class="item half">
@@ -403,15 +403,10 @@
                                                 <div class="left-pane">
                                                     <div class="pane-content">
                                                         <div class="item" id="entityPropertyView" style="display: none;">
-                                                            <h4>
-                                                                <label>Tabnaam</label>
-                                                            </h4>
-                                                            <select id="tabnames">
-                                                            </select>
-                                                            <div class="form-hint"><span>Om een nieuwe tab te maken; maak een nieuw veld aan, of wijzig een bestaand veld, en vul bij "Tab" de naam voor de nieuwe tab in.</span></div>
                                                             <ul id="tabNameProperties">
                                                             </ul>
                                                             <div class="form-hint"><span>Sleep items om de volgorde te veranderen</span></div>
+                                                            <div class="form-hint"><span>Om een nieuwe tab te maken; maak een nieuw veld aan, of wijzig een bestaand veld, en vul bij "Tab" de naam voor de nieuwe tab in.</span></div>
                                                             <div class="buttons">
                                                                 <span>
                                                                     <button class="k-primary addBtn" data-type="entityProperty">Toevoegen</button>
@@ -701,6 +696,10 @@
                                                                         <input id="useDropDownList" type="checkbox">
                                                                         <span>Combobox als dropdown gebruiken</span>
                                                                     </label>
+                                                                    <label class="checkbox" data-visible="Combobox MultiSelect">
+                                                                        <input id="saveValueAsItemLink" type="checkbox">
+                                                                        <span>Waarde(s) opslaan in wiser_itemlink ipv wiser_itemdetail.</span>
+                                                                    </label>
                                                                     <label class="checkbox" data-show-for-panel="panel2">
                                                                         <input id="searchInTitle" type="checkbox">
                                                                         <span>Zoeken in titel</span>
@@ -709,15 +708,6 @@
                                                                         <input id="searchEverywhere" type="checkbox">
                                                                         <span>Toon alle items, i.p.v. alleen gekoppelde items</span>
                                                                     </label>
-                                                                </span>
-                                                            </div>
-                                                            <div class="item tagList" data-show-for-panel="panel2">
-                                                                <h4>
-                                                                    <label>Zoek in velden</label>
-                                                                    <span class="info" data-type="searchFields"><ins class="icon-info-full"></ins></span>
-                                                                </h4>
-                                                                <span class="k-widget k-input k-state-default">
-                                                                    <select id="searchFields"></select>
                                                                 </span>
                                                             </div>
                                                             <div class="item" data-visible="TextBox">
@@ -1117,6 +1107,7 @@
                                                                         <option value="panel1" data-value="panel1" selected>Vaste waardes</option>
                                                                         <option value="panel2" data-value="panel2">Lijst van entiteiten</option>
                                                                         <option value="panel3" data-value="panel3">Query</option>
+                                                                        <option value="panel4" data-value="panel4">Data Selector</option>
                                                                     </select>
                                                                     <div class="togglePanel dataSource active" data-panel="panel1">
                                                                         <div class="item">
@@ -1128,11 +1119,21 @@
                                                                     </div>
                                                                     <div class="togglePanel dataSource" data-panel="panel2">
                                                                         <div class="item">
-
                                                                             <h4>
                                                                                 <label>Entiteit</label>
                                                                             </h4>
                                                                             <select id="dataSourceEntities"></select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="togglePanel dataSource" data-panel="panel2">
+                                                                        <div class="item tagList">
+                                                                            <h4>
+                                                                                <label>Zoek in velden</label>
+                                                                                <span class="info" data-type="searchFields"><ins class="icon-info-full"></ins></span>
+                                                                            </h4>
+                                                                            <span class="k-widget k-input k-state-default">
+                                                                                <select id="searchFields"></select>
+                                                                            </span>
                                                                         </div>
                                                                     </div>
                                                                     <div class="togglePanel dataSource" data-panel="panel3">
@@ -1141,8 +1142,16 @@
                                                                                 <label>Query</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
-                                                                            
+
                                                                             <textarea id="queryWindow"></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="togglePanel dataSource" data-panel="panel4">
+                                                                        <div class="item">
+                                                                            <h4>
+                                                                                <label>Data Selector</label>
+                                                                            </h4>
+                                                                            <select id="dataSourceDataSelector"></select>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1175,7 +1184,7 @@
                                                                                 <label>Custom insert-query</label>
                                                                                 <span class="info" data-type="dataQuery"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
-                                                                            
+
                                                                             <textarea id="queryInsert"></textarea>
                                                                         </div>
                                                                     </div>
@@ -1216,7 +1225,7 @@
                                                                     <label>Zoek-query</label>
                                                                     <span class="info" data-type="searchQuery"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
-                                                                
+
                                                                 <textarea id="searchQuery"></textarea>
                                                             </div>
                                                             <div class="item" data-visible="SubEntitiesGrid">
@@ -1575,7 +1584,7 @@
                                                                     <label>Opties JSON</label>
                                                                     <span class="info" data-type="optionsJson"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
-                                                                
+
                                                                 <textarea id="optionsJson"></textarea>
                                                             </div>
                                                         </div>
