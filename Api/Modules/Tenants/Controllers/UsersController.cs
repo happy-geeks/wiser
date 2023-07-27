@@ -8,11 +8,13 @@ using Api.Core.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Models;
+using Google.Apis.Auth;
 using IdentityModel;
 using IdentityServer4;
 using IdentityServer4.Events;
 using IdentityServer4.Services;
 using IdentityServer4.Test;
+using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -34,15 +36,17 @@ namespace Api.Modules.Tenants.Controllers
         private readonly IUsersService usersService;
         private readonly IIdentityServerInteractionService interaction;
         private readonly IEventService events;
+        private readonly ITokenValidator tokenValidator;
 
         /// <summary>
         /// Creates a new instance of UsersController.
         /// </summary>
-        public UsersController(IUsersService usersService, IIdentityServerInteractionService interaction, IEventService events)
+        public UsersController(IUsersService usersService, IIdentityServerInteractionService interaction, IEventService events, ITokenValidator tokenValidator)
         {
             this.usersService = usersService;
             this.interaction = interaction;
             this.events = events;
+            this.tokenValidator = tokenValidator;
         }
 
         /// <summary>
@@ -276,99 +280,67 @@ namespace Api.Modules.Tenants.Controllers
         {
             var properties = new AuthenticationProperties
             {
-                //RedirectUri = "https://localhost:44377", // The URL where the user will be redirected after authentication
-                RedirectUri = Url.Action(nameof(Callback)),
+                RedirectUri = "https://localhost:44377/google-callback.html",
                 AllowRefresh = true,
-                IsPersistent = true
+                IsPersistent = true,
+
             };
 
             return Challenge(properties, provider);
         }
-/*
-        private (TestUser user, string provider, string providerUserId, IEnumerable<Claim> claims) FindUserFromExternalProvider(AuthenticateResult result)
+
+        /// <summary>
+        /// Endpoint for external login providers such as Google.
+        /// This uses IdentityServer4 to handle the authentication.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("external-login")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ExternalLoginPost(ExternalLoginRequestModel data)
         {
-            var externalUser = result.Principal;
-
-            // try to determine the unique id of the external user (issued by the provider)
-            // the most common claim type for that are the sub claim and the NameIdentifier
-            // depending on the external provider, some other claim type might be used
-            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
-                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
-                              throw new Exception("Unknown userid");
-
-            // remove the user id claim so we don't include it as an extra claim if/when we provision the user
-            var claims = externalUser.Claims.ToList();
-            claims.Remove(userIdClaim);
-
-            var provider = result.Properties.Items[".AuthScheme"];
-            var providerUserId = userIdClaim.Value;
-
-            // find external user
-            //var user = _users.FindByExternalProvider(provider, providerUserId);
-            var user = new TestUser()
+            if (!ModelState.IsValid)
             {
-                SubjectId = "1",
-                Username = "Test",
-                Password = "Test",
-                IsActive = true,
-                Claims = new List<Claim>()
-                {
-                    new(ClaimTypes.GivenName, "Test"),
-                    new(ClaimTypes.Name, "Test"),
-                    new(ClaimTypes.Role, "Test"),
-                    new(ClaimTypes.GroupSid, "main"),
-                    new(ClaimTypes.Sid, "Test"),
-                    new(IdentityConstants.AdminAccountName, "Test"),
-                    new(HttpContextConstants.IsTestEnvironmentKey, "true")
-                }
-            };
-
-            return (user, provider, providerUserId, claims);
-        }
-
-        // if the external login is OIDC-based, there are certain things we need to preserve to make logout work
-        // this will be different for WS-Fed, SAML2p or other protocols
-        private void ProcessLoginCallback(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
-        {
-            // if the external system sent a session id claim, copy it over
-            // so we can use it for single sign-out
-            var sid = externalResult.Principal.Claims.FirstOrDefault(x => x.Type == JwtClaimTypes.SessionId);
-            if (sid != null)
-            {
-                localClaims.Add(new Claim(JwtClaimTypes.SessionId, sid.Value));
+                return BadRequest("Invalid data.");
             }
 
-            // if the external provider issued an id_token, we'll keep it for signout
-            var idToken = externalResult.Properties.GetTokenValue("id_token");
-            if (idToken != null)
+            // Validate the Google token with the Google Authentication Service
+            try
             {
-                localSignInProps.StoreTokens(new[] { new AuthenticationToken { Name = "id_token", Value = idToken } });
+                var test1 = await tokenValidator.ValidateAccessTokenAsync(data.Token);
             }
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
+
+            try
+            {
+                var test2 = await tokenValidator.ValidateIdentityTokenAsync(data.Token);
+            }
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
+
+            try
+            {
+                var payload =  await GoogleJsonWebSignature.ValidateAsync(data.Token);
+            }
+            catch (Exception exception)
+            {
+                return BadRequest(exception.Message);
+            }
+            // Perform any necessary operations (e.g., create or retrieve the user in your database)
+
+            // Generate a JWT token
+            //string accessToken = GenerateJwtToken(result);
+
+            // Return the JWT token in the response
+            return Ok(new { AccessToken = "Test", ExpiresAt = DateTime.UtcNow.AddMinutes(15) });
         }
 
-        private TestUser AutoProvisionUser(string provider, string providerUserId, IEnumerable<Claim> claims)
-        {
-            //var user = _users.AutoProvisionUser(provider, providerUserId, claims.ToList());
-            var user = new TestUser()
-            {
-                SubjectId = "1",
-                Username = "Test",
-                Password = "Test",
-                IsActive = true,
-                Claims = new List<Claim>()
-                {
-                    new(ClaimTypes.GivenName, "Test"),
-                    new(ClaimTypes.Name, "Test"),
-                    new(ClaimTypes.Role, "Test"),
-                    new(ClaimTypes.GroupSid, "main"),
-                    new(ClaimTypes.Sid, "Test"),
-                    new(IdentityConstants.AdminAccountName, "Test"),
-                    new(HttpContextConstants.IsTestEnvironmentKey, "true")
-                }
-            };
-            return user;
-        }
-*/
         [HttpGet]
         [Route("external-login-callback")]
         [AllowAnonymous]

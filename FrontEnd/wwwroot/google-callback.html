@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Callback Page</title>
+</head>
+<body>
+<script>
+    // Extract the token from the URL (example for query parameter named "token")
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    // You can use a JavaScript framework like React, Angular, or Vue.js to handle the token and user information
+    // For this example, we'll simply send the token to the API using fetch
+    fetch('https://localhost:44349/api/v3/users/external-login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            token: token,
+            provider: 'Google'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("data", data);
+        alert("OK");
+        // Handle the API response (e.g., store the JWT token in local storage)
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('expiresAt', data.expiresAt);
+        // Redirect the user to the desired page (e.g., dashboard)
+        //window.location.href = '/';
+    });
+</script>
+</body>
+</html>
