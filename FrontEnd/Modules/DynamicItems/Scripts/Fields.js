@@ -660,7 +660,7 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}&encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&isTest=${this.base.settings.isTestEnvironment}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`);
-        let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
+        let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.fromJSDate(new Date(), { locale: "nl-NL" })).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
         event.sender.wrapper.find(".editTitle").click(this.onUploaderEditTitleClick.bind(this));
         event.sender.wrapper.find(".editName").click(this.onUploaderEditNameClick.bind(this));
@@ -2124,7 +2124,7 @@ export class Fields {
                             }
                         }
 
-                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
+                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems, mainItemDetails);
 
                         break;
                     }
@@ -2341,8 +2341,9 @@ export class Fields {
      * @param {any} linkId The item link ID of the opened/selected item.
      * @param {any} propertyId The ID of the property / field that contains the action button.
      * @param {any} selectedItems Array of all selected items in the grid.
+     * @param {any} mainItemDetails The details of the item from which this window is being opened.
      */
-    initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = []) {
+    initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = [], mainItemDetails = {}) {
         return new Promise(async (resolve, reject) => {
             emailData = emailData || {};
 
@@ -2387,7 +2388,6 @@ export class Fields {
                 previewWindow.one("close", (event) => resolve());
 
                 const container = previewWindow.element.find("div.k-content-frame");
-                console.log("container", container);
 
                 // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
                 container.data("emailData", emailData);
@@ -2529,7 +2529,7 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, mainItemDetails);
                             }
 
                             pdfToHtmlData.documentOptions = "";
@@ -2644,8 +2644,9 @@ export class Fields {
                                                         itemId: currentTemplateDetails.id,
                                                         saveInDatabase: true
                                                     };
+
                                                     if (currentAction.pdfFilename) {
-                                                        pdfToHtmlData.fileName = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
+                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, mainItemDetails);
                                                     }
 
                                                     let ajaxOptions = {

@@ -31,7 +31,7 @@ var addFileUrl = function(event) {
         kendo.alert("Vul a.u.b. een URL in.");
         return false;
     }
-    
+
     var fileData = {
         contentUrl: fileUrl,
         name: event.sender.element.find("#fileName").val(),
@@ -45,20 +45,21 @@ var addFileUrl = function(event) {
         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/files/url?itemLinkId={itemLinkId}&propertyName=" + encodeURIComponent("{propertyName}") + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
         data: JSON.stringify(fileData)
     }).then(function(dataResult) {
-        var newFile = { 
+        dataResult.itemId = dataResult.itemId || "{itemIdEncrypted}";
+        dataResult.addedOn = dataResult.addedOn || new Date();
+        var newFile = {
             files: [dataResult],
             name: dataResult.name,
             fileId: dataResult.fileId,
-            size: 0,
-            addedOn: new Date()
+            size: 0
         };
-        
+
         var filesList = container.find(".k-upload-files");
         if (!filesList.length) {
             filesList = $("<ul class='k-upload-files k-reset' />");
             container.find(".k-upload").append(filesList);
         }
-        
+
         var listItem = $("<li class='k-file k-file-success' />");
         listItem.html(fileTemplate(newFile));
         filesList.append(listItem);
@@ -81,7 +82,7 @@ var initialize = function() {
     if (readonly === true || options.queryId) {
         kendoComponent.disable();
     }
-    
+
     var addFileUrlButton = container.find(".addFileUrl");
     if (!options.showAddFileUrlButton) {
         addFileUrlButton.hide();
@@ -104,7 +105,7 @@ var initialize = function() {
             }
         });
     }
-    
+
     // Add drag & drop functionality for changing the order of files.
     container.find(".k-upload-files").kendoSortable({
         cursor: "move",
@@ -136,7 +137,7 @@ var initialize = function() {
             });
         }
     });
-    
+
     {customScript}
 };
 
