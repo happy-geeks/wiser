@@ -33,6 +33,7 @@ namespace Api.Modules.Queries.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IStringReplacementsService stringReplacementsService;
+        private readonly IReplacementsMediator replacementsMediator;
         private readonly IQueriesService queriesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
 
@@ -40,7 +41,7 @@ namespace Api.Modules.Queries.Services
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
         public StyledOutputService(IWiserCustomersService wiserCustomersService,
-            IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService)
+            IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -48,6 +49,7 @@ namespace Api.Modules.Queries.Services
             this.stringReplacementsService = stringReplacementsService;
             this.queriesService = queriesService;
             this.databaseHelpersService = databaseHelpersService;
+            this.replacementsMediator = replacementsMediator;
         }
 
         /// <inheritdoc />
@@ -148,8 +150,13 @@ namespace Api.Modules.Queries.Services
 
             foreach (JObject parsedObject in result.Children<JObject>())
             {
+                // replace simple string info
                 var itemValue = stringReplacementsService.DoReplacements(formatItemValue, parsedObject);
 
+                // replace if then else logic
+                itemValue = replacementsMediator.EvaluateTemplate(itemValue);
+                
+                // replace recursive inline styles
                 itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs);
   
                 combinedResult += itemValue;
