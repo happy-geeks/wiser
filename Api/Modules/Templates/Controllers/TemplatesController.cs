@@ -192,13 +192,11 @@ namespace Api.Modules.Templates.Controllers
         /// Retrieve the dynamic content that is linked to the given template.
         /// </summary>
         /// <param name="templateId">The id of the template of which the linked dynamic content should be retrieved.</param>
-        /// <param name="page">page that needs to be loaded in</param>
-        /// <param name="itemsPerPage">amount of versions per page</param>
         /// <returns>List of dynamic content overview models. This is a condensed version of dynamic content data for creating a overview of linked content.</returns>
         [HttpGet]
         [Route("{templateId:int}/linked-dynamic-content")]
         [ProducesResponseType(typeof(LinkedTemplatesModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetLinkedDynamicContentAsync(int templateId, int page = 1, int itemsPerPage = 50)
+        public async Task<IActionResult> GetLinkedDynamicContentAsync(int templateId)
         {
             var resultOverview = await templatesService.GetLinkedDynamicContentAsync(templateId);
             resultOverview.ModelObject = await historyService.GetPublishedEnvironmentsOfOverviewModels(resultOverview.ModelObject);
