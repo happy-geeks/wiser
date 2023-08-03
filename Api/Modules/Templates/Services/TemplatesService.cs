@@ -1751,7 +1751,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId, int pageNumber, int itemsPerPage)
         {
             if (templateId <= 0)
             {
@@ -1771,14 +1771,14 @@ LIMIT 1";
             var dynamicContentHistory = new Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>>();
             foreach (var dc in dynamicContentOverview.ModelObject)
             {
-                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponentAsync(dc.Id)).ModelObject);
+                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponentAsync(dc.Id, pageNumber, itemsPerPage)).ModelObject);
             }
 
             var overview = new TemplateHistoryOverviewModel
             {
                 TemplateId = templateId,
-                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory),
-                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory, pageNumber, itemsPerPage),
+                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId, pageNumber, itemsPerPage),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
 

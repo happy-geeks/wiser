@@ -152,8 +152,10 @@ namespace Api.Modules.Templates.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
-        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId);
+        Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId, int pageNumber, int itemsPerPage);
 
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.

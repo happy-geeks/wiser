@@ -40,9 +40,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId)
+        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId, int pageNumber, int itemsPerPage)
         {
-            var historyList = await GetHistoryOfComponent(contentId);
+            var historyList = await GetHistoryOfComponent(contentId, pageNumber, itemsPerPage);
             historyList = historyList.OrderByDescending(version => version.Version).ToList();
 
             for (var i = 0; i + 1 < historyList.Count; i++)
@@ -103,11 +103,16 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
+        public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent, int pageNumber, int itemsPerPage)
         {
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
-            var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId);
+            var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId, pageNumber, itemsPerPage);
 
+            if (rawTemplateModels.Count == 0)
+            {
+                return new List<TemplateHistoryModel>();
+            }
+            
             templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
 
             var templateHistory = new List<TemplateHistoryModel>();
@@ -138,9 +143,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
+        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId, int pageNumber, int itemsPerPage)
         {
-            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId);
+            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId, pageNumber, itemsPerPage);
         }
 
         /// <summary>
@@ -245,10 +250,12 @@ namespace Api.Modules.Templates.Services
         /// Get the raw list of versions of the component. These historymodels have a rawdatastring and no generated changes.
         /// </summary>
         /// <param name="templateId">The id of the content to retrieve the versions of.</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>List of HistoryVersionModels forming</returns>
-        private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId)
+        private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId, int pageNumber, int itemsPerPage)
         {
-            var olderVersions = await historyDataService.GetDynamicContentHistoryAsync(templateId);
+            var olderVersions = await historyDataService.GetDynamicContentHistoryAsync(templateId, pageNumber, itemsPerPage);
 
             return olderVersions;
         }

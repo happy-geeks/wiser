@@ -1,0 +1,27 @@
+@using FrontEnd.Modules.Templates.Models
+@model DynamicContentHistoryPaneViewModel
+
+@foreach (var historyVersion in Model.History)
+{
+    <div class="row historyLine" data-history-version="@historyVersion.Version">
+        <div class="col col-12 historyTagline">
+            <span><span class="k-icon k-i-edit"></span> Versie @historyVersion.Version |</span>
+            <span><span class="k-icon k-i-calendar"></span> @historyVersion.GetDisplayChangedOn() |</span>
+            <span><span class="k-icon k-i-user"></span> door @historyVersion.ChangedBy</span>
+        </div>
+        @if (historyVersion.Changes == null || !historyVersion.Changes.Any())
+        {
+            <div class="col col-12">
+                <p>No changes in this version</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var (oldVersion, newVersion) in historyVersion.ChangedFields)
+            {
+                <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="oldVersion" />
+                <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="newVersion" />
+            }
+        }
+    </div>
+}

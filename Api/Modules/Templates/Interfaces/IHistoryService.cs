@@ -17,8 +17,10 @@ namespace Api.Modules.Templates.Interfaces
         /// Retrieve history of the component with generated changes. The versions will be sorted by the HistoryVersion models version(DESC).
         /// </summary>
         /// <param name="contentId">The id of the content</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>List of HistoryVersionModels with generated changes. Sorted by descending version.</returns>
-        Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId);
+        Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId, int pageNumber, int itemsPerPage);
 
         /// <summary>
         /// Retrieves the current settings and applies the List of changes that should be reverted.
@@ -28,7 +30,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="changesToRevert">Contains the properties and specific versions that need to be reverted.</param>
         /// <returns>The ID of the component that was reverted.</returns>
         Task<ServiceResult<int>> RevertChangesAsync(ClaimsIdentity identity, int contentId, List<RevertHistoryModel> changesToRevert);
-        
+
         /// <summary>
         /// Retrieve the published environments for dynamic content overviews. This method will accept a list of DynamicContentOverviewModel and retrieve the published environments for each dynamic content.
         /// </summary>
@@ -50,14 +52,18 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template.</param>
         /// <param name="dynamicContent">A Dictionary containing the overview of dynamic content and its respective history</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>A list of TemplateHistoryModel containing the history of the template and its linked dynamic content for each version</returns>
-        Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent);
-        
+        Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent, int pageNumber, int itemsPerPage);
+
         /// <summary>
         /// Retrieves the publish history of a template
         /// </summary>
         /// <param name="templateId">The id of a template</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns></returns>
-        Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId);
+        Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId, int pageNumber, int itemsPerPage);
     }
 }

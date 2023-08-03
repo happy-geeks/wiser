@@ -14,8 +14,8 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Returns the components history as a dictionary.
         /// </summary>
         /// <returns></returns>
-        Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId);
-        
+        Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId, int page, int itemsPerPage);
+
         /// <summary>
         /// Get a list of versions and their published environments form a dynamic content.
         /// </summary>
@@ -28,13 +28,15 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// </summary>
         /// <param name="templateId">The id of the template which history should be retrieved.</param>
         /// <returns>A list of <see cref="TemplateSettingsModel"/> forming the history of the template. The list is ordered by version number (DESC).</returns>
-        Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId);
-        
+        Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId, int page, int itemsPerPage);
+
         /// <summary>
         /// Get the history of a template from the publish log table. The list will be ordered on date desc.
         /// </summary>
         /// <param name="templateId">The Id of the template whose history to retrieve</param>
+        /// <param name="page"></param>
+        /// <param name="itemsPerPage"></param>
         /// <returns>A list of <see cref="PublishHistoryModel"/> containing the values of the change from the publish log datatable.</returns>
-        Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplateAsync(int templateId);
+        Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplateAsync(int templateId, int page, int itemsPerPage);
     }
 }

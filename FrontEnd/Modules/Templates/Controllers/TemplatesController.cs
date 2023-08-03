@@ -90,6 +90,21 @@ namespace FrontEnd.Modules.Templates.Controllers
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/HistoryTab", tabViewData);
         }
+        
+        [HttpPost, Route("HistoryTabRows")]
+        public IActionResult HistoryTabRows([FromBody]HistoryTabViewModel tabViewData)
+        {
+            foreach (var templateHistory in tabViewData.TemplateHistory)
+            {
+                foreach (var history in templateHistory.DynamicContentChanges)
+                {
+                    history.ChangedFields = dynamicContentService.GenerateChangesListForHistory(history.Changes);
+                }
+            }
+
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Partials/HistoryTabRows", tabViewData);
+        }
 
         [HttpGet, Route("PreviewTab")]
         public IActionResult PreviewTab()
