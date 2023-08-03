@@ -8,10 +8,10 @@ using Api.Core.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Models;
-using Google.Apis.Auth;
 using IdentityModel;
 using IdentityServer4;
 using IdentityServer4.Events;
+using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Test;
 using IdentityServer4.Validation;
@@ -280,10 +280,9 @@ namespace Api.Modules.Tenants.Controllers
         {
             var properties = new AuthenticationProperties
             {
-                RedirectUri = "https://localhost:44377/google-callback.html",
+                RedirectUri = Url.Action(nameof(Callback)),
                 AllowRefresh = true,
-                IsPersistent = true,
-
+                IsPersistent = true
             };
 
             return Challenge(properties, provider);
@@ -298,9 +297,84 @@ namespace Api.Modules.Tenants.Controllers
         [HttpPost]
         [Route("external-login")]
         [AllowAnonymous]
-        public async Task<IActionResult> ExternalLoginPost(ExternalLoginRequestModel data)
+        public async Task<IActionResult> ExternalLoginPost()
         {
-            if (!ModelState.IsValid)
+            // read external identity from the temporary cookie
+            var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+            if (result?.Succeeded != true)
+            {
+                throw new Exception("External authentication error");
+            }
+
+            var externalUser = result.Principal;
+
+            // lookup our user and external provider info
+            // try to determine the unique id of the external user (issued by the provider)
+            // the most common claim type for that are the sub claim and the NameIdentifier
+            // depending on the external provider, some other claim type might be used
+            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
+                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+                              throw new Exception("Unknown userid");
+
+            var provider = result.Properties.Items[".AuthScheme"];
+            var providerUserId = userIdClaim.Value;
+
+            // find external user
+            /*var user = _users.FindByExternalProvider(provider, providerUserId);
+            if (user == null)
+            {
+                // this might be where you might initiate a custom workflow for user registration
+                // in this sample we don't show how that would be done, as our sample implementation
+                // simply auto-provisions new external user
+                //
+                // remove the user id claim so we don't include it as an extra claim if/when we provision the user
+                var claims = externalUser.Claims.ToList();
+                claims.Remove(userIdClaim);
+                user = _users.AutoProvisionUser(provider, providerUserId, claims.ToList());
+            }*/
+            var user = new TestUser()
+            {
+                SubjectId = "1",
+                Username = "Test",
+                Password = "Test",
+                IsActive = true,
+                Claims = new List<Claim>()
+                {
+                    new(ClaimTypes.GivenName, "Test"),
+                    new(ClaimTypes.Name, "Test"),
+                    new(ClaimTypes.Role, "Test"),
+                    new(ClaimTypes.GroupSid, "main"),
+                    new(ClaimTypes.Sid, "Test"),
+                    new(IdentityConstants.AdminAccountName, "Test"),
+                    new(HttpContextConstants.IsTestEnvironmentKey, "true"),
+                    new(JwtClaimTypes.Subject, "1")
+                }
+            };
+
+            // this allows us to collect any additional claims or properties
+            // for the specific protocols used and store them in the local auth cookie.
+            // this is typically used to store data needed for signout from those protocols.
+            var additionalLocalClaims = new List<Claim>
+            {
+                new(JwtClaimTypes.Subject, providerUserId)
+            };
+            var localSignInProps = new AuthenticationProperties();
+            CaptureExternalLoginContext(result, additionalLocalClaims, localSignInProps);
+
+            // issue authentication cookie for user
+            var isuser = new IdentityServerUser(user.SubjectId)
+            {
+                DisplayName = user.Username,
+                IdentityProvider = provider,
+                AdditionalClaims = additionalLocalClaims
+            };
+
+            await HttpContext.SignInAsync(isuser, localSignInProps);
+            var token = localSignInProps.GetTokenValue("id_token");
+            // delete temporary cookie used during external authentication
+            await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+
+            /*if (!ModelState.IsValid)
             {
                 return BadRequest("Invalid data.");
             }
@@ -331,14 +405,14 @@ namespace Api.Modules.Tenants.Controllers
             catch (Exception exception)
             {
                 return BadRequest(exception.Message);
-            }
+            }*/
             // Perform any necessary operations (e.g., create or retrieve the user in your database)
 
             // Generate a JWT token
             //string accessToken = GenerateJwtToken(result);
 
             // Return the JWT token in the response
-            return Ok(new { AccessToken = "Test", ExpiresAt = DateTime.UtcNow.AddMinutes(15) });
+            return Ok(new { AccessToken = token, ExpiresAt = localSignInProps.ExpiresUtc });
         }
 
         [HttpGet]
@@ -422,9 +496,10 @@ namespace Api.Modules.Tenants.Controllers
             await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
 
             // retrieve return URL
+            //var token = localSignInProps.GetTokenValue("id_token") ?? "";
             if (!result.Properties.Items.TryGetValue("returnUrl", out var returnUrl))
             {
-                returnUrl = "https://localhost:44377/";
+                returnUrl = $"https://localhost:44377/";
             }
 
             // check if external login is in the context of an OIDC request
@@ -441,56 +516,18 @@ namespace Api.Modules.Tenants.Controllers
                     return this.LoadingPage(returnUrl);
                 }
             }*/
+            var token = new Token(IdentityServerConstants.TokenTypes.IdentityToken);
+            //var userCredential = new UserCredential(user);
 
+            token.Claims = user.Claims;
+            token.AccessTokenType = AccessTokenType.Reference;
+            token.ClientId = "wiser";
+            token.CreationTime = DateTime.UtcNow;
+            token.Audiences = new[] {"api1"};
+            token.Lifetime = 3600;
+
+            //token.CreateJwtPayload()
             return Redirect(returnUrl);
-
-            // read external identity from the temporary cookie
-            /*var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
-            if (result?.Succeeded != true)
-            {
-                throw new Exception("External authentication error");
-            }
-
-
-            // lookup our user and external provider info
-            var (user, provider, providerUserId, claims) = FindUserFromExternalProvider(result);
-            if (user == null)
-            {
-                // this might be where you might initiate a custom workflow for user registration
-                // in this sample we don't show how that would be done, as our sample implementation
-                // simply auto-provisions new external user
-                user = AutoProvisionUser(provider, providerUserId, claims);
-            }
-
-            // this allows us to collect any additional claims or properties
-            // for the specific protocols used and store them in the local auth cookie.
-            // this is typically used to store data needed for signout from those protocols.
-            var additionalLocalClaims = new List<Claim>();
-            var localSignInProps = new AuthenticationProperties();
-            ProcessLoginCallback(result, additionalLocalClaims, localSignInProps);
-
-            // issue authentication cookie for user
-            var isuser = new IdentityServerUser(user.SubjectId)
-            {
-                DisplayName = user.Username,
-                IdentityProvider = provider,
-                AdditionalClaims = additionalLocalClaims
-            };
-
-            //await HttpContext.SignInAsync(isuser, localSignInProps);
-
-            // delete temporary cookie used during external authentication
-            //await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
-
-            // retrieve return URL
-            var returnUrl = result.Properties.Items["returnUrl"] ?? "~/";
-
-            // check if external login is in the context of an OIDC request
-            var context = await interaction.GetAuthorizationContextAsync(returnUrl);
-            await events.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.SubjectId, user.Username, true, context?.Client.ClientId));
-
-
-            return Redirect(returnUrl);*/
         }
 
         // if the external login is OIDC-based, there are certain things we need to preserve to make logout work
