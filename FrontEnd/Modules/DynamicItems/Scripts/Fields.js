@@ -1262,7 +1262,23 @@ export class Fields {
             return suffixToUse;
         };
 
+        /**
+         * Remove any properties from the previous item so that we don't get confusing conflicts.
+         */
+        function cleanupUserParameters() {
+            if (!userParametersWithValues) {
+                return;
+            }
+
+            for (let key in userParametersWithValues) {
+                if (userParametersWithValues.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
+                    delete userParametersWithValues[key];
+                }
+            }
+        }
+
         let queryActionResult;
+
         for (let index = 0; index < actions.length; index++) {
             const action = actions[index];
             var exception;
@@ -1582,12 +1598,7 @@ export class Fields {
                                     }
                                     // We have an array with selected items, which means this is an action button in a grid and we want to execute this action once for every selected item.
                                     for (let item of selectedItems) {
-                                        // Remove any properties from the previous item so that we don't get confusing conflicts.
-                                        for (let key in userParametersWithValues) {
-                                            if (item.dataItem.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
-                                                delete userParametersWithValues[key];
-                                            }
-                                        }
+                                        cleanupUserParameters();
 
                                         // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                                         const suffixToUse = getSuffixFromSelectedColumn(item);
@@ -1790,6 +1801,9 @@ export class Fields {
                         }
 
                         if (userParametersWithValues) {
+                            
+                            cleanupUserParameters();
+                            
                             for (const parameter in userParametersWithValues) {
                                 if (!userParametersWithValues.hasOwnProperty(parameter)) {
                                     continue;
@@ -1809,6 +1823,8 @@ export class Fields {
                         }
 
                         for (let selectedItem of selectedItems) {
+                            cleanupUserParameters();
+                            
                             // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                             const suffixToUse = getSuffixFromSelectedColumn(selectedItem);
 
@@ -1892,12 +1908,7 @@ export class Fields {
                                 // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                                 const suffixToUse = getSuffixFromSelectedColumn(item);
 
-                                // Remove any properties from the previous item so that we don't get confusing conflicts.
-                                for (let key in userParametersWithValues) {
-                                    if (item.dataItem.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
-                                        delete userParametersWithValues[key];
-                                    }
-                                }
+                                cleanupUserParameters();
 
                                 // Enter the values of all properties in userParametersWithValues, so that they can be used in actions.
                                 for (let key in item.dataItem) {
@@ -2160,12 +2171,7 @@ export class Fields {
                                 // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                                 const suffixToUse = getSuffixFromSelectedColumn(item);
 
-                                // Remove any properties from the previous item so that we don't get confusing conflicts.
-                                for (let key in userParametersWithValues) {
-                                    if (item.dataItem.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
-                                        delete userParametersWithValues[key];
-                                    }
-                                }
+                                cleanupUserParameters();
 
                                 // Enter the values of all properties in userParametersWithValues, so that they can be used in actions.
                                 for (let key in item.dataItem) {
