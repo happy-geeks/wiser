@@ -1551,7 +1551,7 @@ const moduleSettings = {
             const htmlWindow = $("#htmlSourceWindow").clone(true);
             const textArea = htmlWindow.find("textarea").val(this.mainHtmlEditor.value());
             // Prettify code from minified text.
-            const pretty = await require('pretty');
+            const pretty = await require("pretty");
             textArea[0].value = pretty(textArea[0].value, { ocd: false });
             let codeMirrorInstance;
 
@@ -2384,12 +2384,12 @@ const moduleSettings = {
                     url: "/Modules/Templates/HistoryTab",
                     data: JSON.stringify(templateHistory)
                 });
-                
+
                 const historyTab = document.getElementById("historyTab");
                 historyTab.innerHTML = historyTabHTML;
                 this.lastLoadedHistoryPartNumber = 1;
                 this.allHistoryPartsLoaded = false;
-                historyTab.addEventListener('scroll', event => {
+                historyTab.addEventListener("scroll", event => {
                     const {scrollHeight, scrollTop, clientHeight} = event.target;
 
                     // if user scrolled to bottom load next part of the history
@@ -2406,11 +2406,12 @@ const moduleSettings = {
 
             window.processing.removeProcess(process);
         }
-        
-        async loadNextHistoryPart(){
+
+        async loadNextHistoryPart() {
             if (this.loadingNextPart || this.allHistoryPartsLoaded || this.lastLoadedHistoryPartNumber < 1) {
                 return;
             }
+
             this.loadingNextPart = true;
 
             const process = `loadHistoryTabNextPart_${Date.now()}`;
@@ -2422,7 +2423,7 @@ const moduleSettings = {
                     dataType: "json",
                     method: "GET"
                 });
-                
+
                 if (templateHistory.templateHistory.length === 0) {
                     this.allHistoryPartsLoaded = true;
                     this.loadingNextPart = false;
@@ -2439,12 +2440,12 @@ const moduleSettings = {
 
                 document.getElementById("historyContainer").insertAdjacentHTML("beforeend", historyTabPart);
                 this.lastLoadedHistoryPartNumber++;
-                window.processing.removeProcess(process);
             } catch (exception) {
-                window.processing.removeProcess(process);
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
+
+            window.processing.removeProcess(process);
             this.loadingNextPart = false;
         }
 

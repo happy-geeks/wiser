@@ -155,14 +155,14 @@ const moduleSettings = {
          * Sticky header within Dynamic Content.
          */
         stickyHeader() {
-            const elem = document.getElementById('DynamicContentPane');
+            const elem = document.getElementById("DynamicContentPane");
             let lastScrollTop = 0;
 
             elem.onscroll = (e) => {
                 if (elem.scrollTop < lastScrollTop){
-                    elem.classList.add('sticky');
+                    elem.classList.add("sticky");
                 } else {
-                    elem.classList.remove('sticky');
+                    elem.classList.remove("sticky");
                 }
                 lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
             }
@@ -567,7 +567,7 @@ const moduleSettings = {
                 });
 
                 const historyHtml = await Wiser.api({
-                    url: '/Modules/DynamicContent/History',
+                    url: "/Modules/DynamicContent/History",
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(history)
@@ -576,8 +576,8 @@ const moduleSettings = {
                 document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
                 this.lastLoadedHistoryPart = 1;
                 this.allPartsLoaded = false;
-                
-                document.getElementById("right-pane").addEventListener('scroll', event => {
+
+                document.getElementById("right-pane").addEventListener("scroll", event => {
                     const {scrollHeight, scrollTop, clientHeight} = event.target;
 
                     // if user scrolled to bottom, load next part of the history
@@ -590,18 +590,19 @@ const moduleSettings = {
                         }
                     }
                 });
-                
+
                 this.bindHistoryButtons();
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
         }
-        
+
         async loadNextHistoryPart() {
             if (this.loadingNextPart || this.allPartsLoaded || this.lastLoadedHistoryPart === 0) {
                 return;
             }
+
             this.loadingNextPart = true;
             const process = `loadDynamicHistoryTabNextPart_${Date.now()}`;
             window.processing.addProcess(process);
@@ -620,7 +621,7 @@ const moduleSettings = {
                 }
 
                 const historyRowsHtml = await Wiser.api({
-                    url: '/Modules/DynamicContent/HistoryRow',
+                    url: "/Modules/DynamicContent/HistoryRow",
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(history)
@@ -628,12 +629,12 @@ const moduleSettings = {
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
                 this.lastLoadedHistoryPart++;
-                window.processing.removeProcess(process);
             } catch (exception) {
-                window.processing.removeProcess(process);
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
+
+            window.processing.removeProcess(process);
             this.loadingNextPart = false;
         }
 
@@ -717,7 +718,7 @@ const moduleSettings = {
             // Select history changes and change revert button visibility
             $(".col-6>.item").on("click", function (el) {
                 const currentProperty = $(el.currentTarget).find("[data-history-property]").data("historyProperty");
-                $(el.currentTarget.closest(".historyLine")).find(".col-6>.item").has("[data-history-property='" + currentProperty + "']").toggleClass("selected");
+                $(el.currentTarget.closest(".historyLine")).find(".col-6>.item").has(`[data-history-property='${currentProperty}']`).toggleClass("selected");
 
                 if (document.querySelectorAll(".col-6>.item.selected").length) {
                     $("#revertChanges").show();

@@ -31,15 +31,20 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
-            connection.AddParameter("limit", (page-1) * itemsPerPage);
+            connection.AddParameter("limit", (page - 1) * itemsPerPage);
             connection.AddParameter("offset", itemsPerPage);
-            
-            var dataTable = await connection.GetAsync(
-                $@"SELECT wdc.version, wdc.changed_on, wdc.changed_by, wdc.component, wdc.component_mode, wdc.settings 
-                        FROM {WiserTableNames.WiserDynamicContent} wdc 
-                        WHERE content_id = ?contentId 
-                        ORDER BY wdc.version DESC
-                        LIMIT ?limit, ?offset");
+
+            var dataTable = await connection.GetAsync($@"SELECT 
+    version,
+    changed_on,
+    changed_by,
+    component,
+    component_mode,
+    settings 
+FROM {WiserTableNames.WiserDynamicContent} 
+WHERE content_id = ?contentId 
+ORDER BY version DESC
+LIMIT ?limit, ?offset");
 
             var resultDict = new List<HistoryVersionModel>();
             foreach (DataRow row in dataTable.Rows)
@@ -63,9 +68,11 @@ namespace Api.Modules.Templates.Services.DataLayer
             var versionList = new Dictionary<int, int>();
 
             connection.AddParameter("id", templateId);
-            var dataTable = await connection.GetAsync(@$"SELECT wdc.version, wdc.published_environment 
-                                                      FROM `{WiserTableNames.WiserDynamicContent}` wdc
-                                                      WHERE wdc.content_id = ?id");
+            var dataTable = await connection.GetAsync(@$"SELECT 
+    version,
+    published_environment 
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?id");
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -80,9 +87,9 @@ namespace Api.Modules.Templates.Services.DataLayer
         {
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
-            connection.AddParameter("limit", (page-1) * itemsPerPage);
+            connection.AddParameter("limit", (page - 1) * itemsPerPage);
             connection.AddParameter("offset", itemsPerPage);;
-            
+
             var dataTable = await connection.GetAsync($@"SELECT 
     template.template_id, 
     template.parent_id, 
@@ -207,26 +214,34 @@ LIMIT ?limit, ?offset");
         public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplateAsync(int templateId, int page, int itemsPerPage)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
-            connection.AddParameter("limit", (page-1) * itemsPerPage);
+            connection.AddParameter("templateId", templateId);
+            connection.AddParameter("limit", (page - 1) * itemsPerPage);
             connection.AddParameter("offset", itemsPerPage);
-            
-            var dataTable = await connection.GetAsync(
-                
-                $@"
-				    SELECT MIN(changed_on), MAX(changed_on) INTO @min_date, @max_date
-                        FROM (SELECT template.id, template.changed_on FROM {WiserTableNames.WiserTemplate} AS template
-                        WHERE template.template_id=?templateid
-							AND template.removed = 0
-						ORDER BY template.version DESC
-                        LIMIT ?limit, ?offset) t;
+
+            var dataTable = await connection.GetAsync($@"SELECT MIN(changed_on), MAX(changed_on)
+INTO @minDate, @maxDate
+FROM (
+    SELECT template.id, template.changed_on FROM {WiserTableNames.WiserTemplate} AS template
+    WHERE template.template_id = ?templateId
+    AND template.removed = 0
+    ORDER BY template.version DESC
+    LIMIT ?limit, ?offset
+) AS t;
 										
-                    SELECT publink.template_id, publink.old_live, publink.old_accept, publink.old_test, publink.new_live, publink.new_accept, publink.new_test, publink.changed_on, publink.changed_by
-                    FROM {WiserTableNames.WiserTemplatePublishLog} publink 
-                    WHERE publink.template_id=?templateid 
-                        AND publink.changed_on BETWEEN @min_date AND @max_date
-                    ORDER BY publink.changed_on DESC"
-            );
+SELECT 
+    template_id,
+    old_live,
+    old_accept,
+    old_test,
+    new_live,
+    new_accept,
+    new_test,
+    changed_on,
+    changed_by
+FROM {WiserTableNames.WiserTemplatePublishLog} 
+WHERE template_id = ?templateId 
+AND changed_on BETWEEN @minDate AND @maxDate
+ORDER BY changed_on DESC");
 
             var resultList = new List<PublishHistoryModel>();
 
