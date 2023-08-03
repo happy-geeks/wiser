@@ -660,7 +660,7 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}&encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&isTest=${this.base.settings.isTestEnvironment}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`);
-        let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
+        let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.fromJSDate(new Date(), { locale: "nl-NL" })).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
         event.sender.wrapper.find(".editTitle").click(this.onUploaderEditTitleClick.bind(this));
         event.sender.wrapper.find(".editName").click(this.onUploaderEditNameClick.bind(this));
@@ -2585,6 +2585,7 @@ export class Fields {
                                 const dialogElement = $("#sendMailDialog");
                                 const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
+                                const uploadedFiles = [];
 
                                 // Set the initial values from the query.
                                 const currentEmailData = container.data("emailData");
@@ -2657,8 +2658,9 @@ export class Fields {
                                                 }
 
                                                 Promise.all(promises).then((results) => {
-                                                    const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                    const wiserFileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                    const uploadElement = dialogElement.find("input[name=files]");
+                                                    const allFiles = uploadElement.data("kendoUpload").getFiles();
+                                                    const wiserFileAttachments = uploadedFiles.map(file => file.fileId) || [];
 
                                                     for (let fileId of results) {
                                                         wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
@@ -2763,7 +2765,29 @@ export class Fields {
                                 // Always re-create the upload widget because it's not possible to add files to programmatically a widget after it's been initialized, without using weird hacks.
                                 attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
                                     files: files,
-                                    enabled: false
+                                    async: {
+                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=TEMPORARY_FILE_FROM_WISER`,
+                                        removeUrl: "remove", // TODO
+                                        withCredentials: false
+                                    },
+                                    multiple: true,
+                                    upload: (e) => {
+                                        let xhr = e.XMLHttpRequest;
+                                        if (xhr) {
+                                            xhr.addEventListener("readystatechange", (e) => {
+                                                if (xhr.readyState === 1 /* OPENED */) {
+                                                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
+                                                }
+                                            });
+                                        }
+                                    },
+                                    success: (uploadSuccessEvent) => {
+                                        if (uploadSuccessEvent.operation !== "upload") {
+                                            return;
+                                        }
+
+                                        uploadedFiles.push(...uploadSuccessEvent.response);
+                                    }
                                 }).data("kendoUpload");
 
                                 // Initialize the kendo HTML editor.

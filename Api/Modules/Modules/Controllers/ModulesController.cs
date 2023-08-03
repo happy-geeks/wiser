@@ -77,13 +77,14 @@ namespace Api.Modules.Modules.Controllers
         /// Gets settings for a Wiser module.
         /// </summary>
         /// <param name="id">The ID of the module.</param>
+        /// <param name="encryptValues">Optional: Whether to encrypt values in the JSON settings, such as queryId. Default is true. Set to false when getting the settings for the admin module.</param>
         [HttpGet]
         [Route("{id:int}/settings")]
         [ProducesResponseType(typeof(ModuleSettingsModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetSettingsAsync(int id)
+        public async Task<IActionResult> GetSettingsAsync(int id, bool encryptValues = true)
         {
-            return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity, encryptValues)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace Api.Modules.Modules.Controllers
         {
             return (await modulesService.CreateAsync(name, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Exports the data of a Wiser module to Excel. This only works for grid view modules.
         /// </summary>
@@ -136,7 +137,7 @@ namespace Api.Modules.Modules.Controllers
             }
 
             fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.xlsx" : Path.ChangeExtension(fileName, ".xlsx");
-            
+
             return File(exportResult.ModelObject, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 

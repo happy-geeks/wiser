@@ -131,8 +131,8 @@ WHERE query.id = ?id";
                 EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                 Description = dataRow.Field<string>("description"),
                 Query = dataRow.Field<string>("query"),
-                ShowInExportModule = dataRow.Field<bool>("show_in_export_module"),
-                ShowInCommunicationModule = dataRow.Field<bool>("show_in_communication_module"),
+                ShowInExportModule = Convert.ToBoolean(dataRow["show_in_export_module"]),
+                ShowInCommunicationModule = Convert.ToBoolean(dataRow["show_in_communication_module"]),
                 RolesWithPermissions = dataRow.Field<string>("roles_with_permissions")
             };
 

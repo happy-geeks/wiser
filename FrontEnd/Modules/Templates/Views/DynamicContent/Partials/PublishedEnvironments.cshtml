@@ -8,7 +8,8 @@
     <div class="formview full">
         <div class="item version-live">
             <div class="flex-container">
-                <select class="combo-select" placeholder="Maak uw keuze...">
+                <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.Versions.LiveVersion ? "selected" : "")>@version</!option>
@@ -21,7 +22,8 @@
 
         <div class="item version-accept">
             <div class="flex-container">
-                <select class="combo-select" placeholder="Maak uw keuze...">
+                <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.Versions.AcceptVersion ? "selected" : "")>@version</!option>
@@ -34,7 +36,8 @@
 
         <div class="item version-test">
             <div class="flex-container">
-                <select class="combo-select" placeholder="Maak uw keuze...">
+                <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.Versions.TestVersion ? "selected" : "")>@version</!option>
@@ -45,7 +48,7 @@
             </div>
         </div>
     </div>
-        
+
     <div class="formview full">
         <div class="item component-branch-container">
             <div class="flex-container">

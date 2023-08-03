@@ -1812,42 +1812,47 @@ const moduleSettings = {
 
         //Deploy a version to an enviorenment
         async deployEnvironment(environment, templateId, version) {
-            version = version || document.querySelector(`#published-environments .version-${environment} select.combo-select`).value;
-            if (!version) {
-                kendo.alert("U heeft geen geldige versie geselecteerd.");
-                return;
-            }
+            try {
+                version = parseInt(version || document.querySelector(`#published-environments .version-${environment} select.combo-select`).value);
+                if (!version) {
+                    kendo.alert("U heeft geen geldige versie geselecteerd.");
+                    return;
+                }
 
-            let environmentEnum;
-            switch (environment) {
-                case "test":
-                    environmentEnum = 2;
-                    break;
-                case "accept":
-                    environmentEnum = 4;
-                    break;
-                case "live":
-                    environmentEnum = 8;
-                    break;
-                default:
-                    environmentEnum = 1;
-                    break;
-            }
+                let environmentEnum;
+                switch (environment) {
+                    case "test":
+                        environmentEnum = 2;
+                        break;
+                    case "accept":
+                        environmentEnum = 4;
+                        break;
+                    case "live":
+                        environmentEnum = 8;
+                        break;
+                    default:
+                        environmentEnum = 1;
+                        break;
+                }
 
-            await Wiser.api({
-                url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${environmentEnum}/${version}`,
-                dataType: "json",
-                type: "POST",
-                contentType: "application/json"
-            });
+                await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/publish/${environmentEnum}/${version}`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
 
-            // No message needs to be shown if deployed to the development environment because this is default.
-            if (environmentEnum !== 1) {
-                window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+                // No message needs to be shown if deployed to the development environment because this is default.
+                if (environmentEnum !== 1) {
+                    window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
+                }
+                this.historyLoaded = false;
+                this.measurementsLoaded = false;
+                await this.reloadMetaData(templateId);
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert(`Er is een fout opgetreden bij het deployen van de template: ${exception.responseText || exception}`);
             }
-            this.historyLoaded = false;
-            this.measurementsLoaded = false;
-            await this.reloadMetaData(templateId);
         }
 
         async deployDynamicContentEnvironment(environment, contentId, version) {
@@ -1886,7 +1891,6 @@ const moduleSettings = {
             $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
 
-        //Save the template data
         bindEvents() {
             window.addEventListener("beforeunload", async (event) => {
                 if (!this.canUnloadTemplate()) {
