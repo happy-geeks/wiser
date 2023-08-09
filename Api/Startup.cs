@@ -338,6 +338,34 @@ namespace Api
                     Predicate = _ => true
                 });
             });
+
+            LoadPlugins();
+        }
+
+        public void LoadPlugins()
+        {
+            var pluginsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
+
+            if (!Directory.Exists(pluginsDirectory))
+            {
+                // Handle the case when the Plugins directory does not exist
+                return;
+            }
+
+            var dllFiles = Directory.GetFiles(pluginsDirectory, "*.dll");
+
+            foreach (var dllFile in dllFiles)
+            {
+                try
+                {
+                    Assembly.LoadFrom(dllFile);
+                }
+                catch (Exception ex)
+                {
+                    // Handle assembly loading exceptions
+                    Console.WriteLine($"Error loading plugin assembly: {ex}");
+                }
+            }
         }
     }
 #pragma warning restore CS1591
