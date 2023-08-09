@@ -17,8 +17,9 @@ namespace Api.Modules.Queries.Interfaces
         /// <param name="id">The ID from wiser_styled_output.</param>
         /// <param name="parameters">The parameters to set before executing the styled output.</param>
         /// <param name="stripNewlinesAndTabs">replaces \r\n \n and \t when encountered in the format.</param>
+        /// <param name="page">the page number used in pagination-supported styled outputs.</param>
         /// <returns>The results of the query .</returns>
         /// 
-        Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs);
+        Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page = 0);
     }
 }
