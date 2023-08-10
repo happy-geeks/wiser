@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -37,6 +37,9 @@ namespace Api.Modules.Queries.Services
         private readonly IQueriesService queriesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
 
+        // results per page when a styled output supports pagination 
+        private const int resultsPerPage = 500;
+
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
@@ -53,8 +56,21 @@ namespace Api.Modules.Queries.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs)
+        public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page = 0, List<int> inUseStyleIds = null)
         {
+            var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
+
+            if (usedIds.Contains(id))
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.LoopDetected,
+                    ErrorMessage = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}"
+                };  
+            }
+            
+            usedIds.Add(id);
+            
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
             
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -128,16 +144,19 @@ namespace Api.Modules.Queries.Services
             var query = await queriesService.GetAsync(identity, formatQueryId);
             
             clientDatabaseConnection.ClearParameters();
-            
-            if (parameters != null)
-            {
-                foreach (var parameter in parameters)
-                {
-                    clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key),
-                        parameter.Value);
-                }
-            }
 
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * resultsPerPage);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), resultsPerPage);
+            
+            parameters ??= new List<KeyValuePair<string, object>>(parameters);
+         
+            foreach (var parameter in parameters)
+            {
+                clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key),
+                    parameter.Value);
+            }
+            
             dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
             var result = dataTable.Rows.Count == 0 ? new JArray() : dataTable.ToJsonArray(skipNullValues: true);
 
@@ -157,7 +176,7 @@ namespace Api.Modules.Queries.Services
                 itemValue = replacementsMediator.EvaluateTemplate(itemValue);
                 
                 // replace recursive inline styles
-                itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs);
+                itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs, page, usedIds);
   
                 combinedResult += itemValue;
 
@@ -197,8 +216,9 @@ namespace Api.Modules.Queries.Services
         /// <param name="itemValue">The item format value that will get its inline element replaced if present.</param>
         /// <param name="parameters">The parameters send along to the database connection .</param>
         /// <param name="stripNewlinesAndTabs">if true fetched format strings will have their newlines and tabs removed</param>
+        /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null/param>
         /// <returns>Returns the updated string with replacements applied</returns>
-        private async Task<string> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs)
+        private async Task<string> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page, List<int> inUseStyleIds = null)
         {
             var index = 0;
             
@@ -239,7 +259,7 @@ namespace Api.Modules.Queries.Services
                         ));
                     }
                         
-                    var subResult = await GetStyledOutputResultJsonAsync(identity, subStyleId, subParameters, stripNewlinesAndTabs);
+                    var subResult = await GetStyledOutputResultJsonAsync(identity, subStyleId, subParameters, stripNewlinesAndTabs, page, inUseStyleIds);
                     
                     if (subResult.StatusCode == HttpStatusCode.OK)
                     {
