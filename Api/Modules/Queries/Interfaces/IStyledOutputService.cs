@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -18,8 +18,9 @@ namespace Api.Modules.Queries.Interfaces
         /// <param name="parameters">The parameters to set before executing the styled output.</param>
         /// <param name="stripNewlinesAndTabs">replaces \r\n \n and \t when encountered in the format.</param>
         /// <param name="page">the page number used in pagination-supported styled outputs.</param>
+        /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null/param>
         /// <returns>The results of the query .</returns>
         /// 
-        Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page = 0);
+        Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page = 0, List<int> inUseStyleIds = null);
     }
 }
