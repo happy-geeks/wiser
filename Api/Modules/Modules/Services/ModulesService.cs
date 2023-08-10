@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
@@ -44,7 +45,8 @@ namespace Api.Modules.Modules.Services
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
         private readonly IDatabaseHelpersService databaseHelpersService;
-
+        private readonly ICsvService csvService;
+        
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
 
@@ -55,7 +57,8 @@ namespace Api.Modules.Modules.Services
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
-            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
+            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
+            ICsvService csvService)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.gridsService = gridsService;
@@ -67,6 +70,7 @@ namespace Api.Modules.Modules.Services
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
             this.databaseHelpersService = databaseHelpersService;
+            this.csvService = csvService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -629,7 +633,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true)
         {
             var customer = await wiserCustomersService.GetSingleAsync(identity);
             var encryptionKey = customer.ModelObject.EncryptionKey;
@@ -638,8 +642,7 @@ UNION
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            var userItemPermissions =
-                await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
+            var userItemPermissions = await wiserItemsService.GetUserModulePermissions(id, IdentityHelpers.GetWiserUserId(identity));
 
             result.CanRead = (userItemPermissions & AccessRights.Read) == AccessRights.Read;
             result.CanCreate = (userItemPermissions & AccessRights.Create) == AccessRights.Create;
@@ -675,7 +678,11 @@ UNION
             }
 
             var parsedOptionsJson = JToken.Parse(optionsJson);
-            jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+
+            if (encryptValues)
+            {
+                jsonService.EncryptValuesInJson(parsedOptionsJson, encryptionKey, new List<string> {"itemId"});
+            }
 
             result.Options = parsedOptionsJson;
 
@@ -689,13 +696,12 @@ UNION
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", name);
 
-            var query = $@"
-                        SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
-                        INSERT INTO {WiserTableNames.WiserModule}(id,`name`)
-                        VALUES (@newID, ?name); 
-                        INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
-                        VALUES (1, '', 0, 0, 15, @newID);
-                        SELECT @newID;";
+            var query = $@"SET @newID = (SELECT MAX(id)+ 1 FROM wiser_module);
+INSERT INTO {WiserTableNames.WiserModule} (id,`name`)
+VALUES (@newID, ?name); 
+INSERT IGNORE INTO {WiserTableNames.WiserPermission}(role_id,entity_name,item_id,entity_property_id, permissions,module_id)
+VALUES (1, '', 0, 0, 15, @newID);
+SELECT @newID;";
 
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             var id = Convert.ToInt32(dataTable.Rows[0][0]);
@@ -704,7 +710,7 @@ UNION
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<byte[]>> ExportToExcelAsync(int id, ClaimsIdentity identity)
         {
             var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
             if (gridResult.StatusCode != HttpStatusCode.OK)
@@ -736,6 +742,43 @@ UNION
             }
 
             var result = excelService.JsonArrayToExcel(newData);
+            return new ServiceResult<byte[]>(result);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator)
+        {
+            var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
+            if (gridResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<byte[]>
+                {
+                    ErrorMessage = gridResult.ErrorMessage,
+                    StatusCode = gridResult.StatusCode
+                };
+            }
+            
+            var newData = new JArray();
+            var data = gridResult.ModelObject.Data;
+            var columns = gridResult.ModelObject.Columns;
+            foreach (var item in data)
+            {
+                var newObject = new JObject();
+                foreach (var column in columns)
+                {
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    newObject.Add(new JProperty(column.Title, item[column.Field.ToLowerInvariant()]));
+                }
+
+                newData.Add(newObject);
+            }
+
+            var csvString = csvService.JsonArrayToCsv(newData);
+            var result = Encoding.UTF8.GetBytes(csvString);
             return new ServiceResult<byte[]>(result);
         }
 
@@ -789,15 +832,15 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
             var query = $@"UPDATE {WiserTableNames.WiserModule}
-                            SET `id` = ?new_id,
-                                `custom_query` = ?custom_query,
-                                `count_query` = ?count_query,
-                                `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
-                                `name` = ?name,
-                                `icon` = ?icon,
-                                `type` = ?type,
-                                `group` = ?group
-                        WHERE id = ?id";
+SET `id` = ?new_id,
+    `custom_query` = ?custom_query,
+    `count_query` = ?count_query,
+    `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
+    `name` = ?name,
+    `icon` = ?icon,
+    `type` = ?type,
+    `group` = ?group
+WHERE id = ?id";
 
             await clientDatabaseConnection.ExecuteAsync(query);
             return new ServiceResult<bool>(true)

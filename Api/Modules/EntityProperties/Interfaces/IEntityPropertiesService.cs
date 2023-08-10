@@ -1,9 +1,9 @@
-﻿using Api.Core.Services;
-using Api.Modules.EntityProperties.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Services;
 using Api.Modules.EntityProperties.Enums;
+using Api.Modules.EntityProperties.Models;
 
 namespace Api.Modules.EntityProperties.Interfaces
 {
@@ -13,14 +13,14 @@ namespace Api.Modules.EntityProperties.Interfaces
     public interface IEntityPropertiesService
     {
         /// <summary>
-        /// Get all entity properties. 
+        /// Get all entity properties.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A List of <see cref="EntityPropertyModel"/> with all settings.</returns>
         Task<ServiceResult<List<EntityPropertyModel>>> GetAsync(ClaimsIdentity identity);
 
         /// <summary>
-        /// Get entity property based on ID. 
+        /// Get entity property based on ID.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the settings from wiser_entityproperty.</param>
@@ -31,12 +31,21 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// Get all entity properties of a specific entity.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="entityName">The name of the entity.</param>
+        /// <param name="entityType">The name of the entity.</param>
         /// <param name="onlyEntityTypesWithDisplayName">Only get properties with a display name.</param>
         /// <param name="onlyEntityTypesWithPropertyName">Only get properties with a property name.</param>
         /// <param name="addIdProperty">Add a property for the id.</param>
+        /// <param name="orderByName">Optional: Whether to order by name (true) or by order number (false). Default value is true.</param>
         /// <returns>A <see cref="List{EntityPropertyModel}"/> with all properties of a specific entity.</returns>
-        Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityName, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false);
+        Task<ServiceResult<List<EntityPropertyModel>>> GetPropertiesOfEntityAsync(ClaimsIdentity identity, string entityType, bool onlyEntityTypesWithDisplayName = true, bool onlyEntityTypesWithPropertyName = true, bool addIdProperty = false, bool orderByName = true);
+
+        /// <summary>
+        /// Get all entity properties of a specific entity, grouped by tab name.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityName">The name of the entity.</param>
+        /// <returns>A <see cref="List{EntityPropertyTabModel}"/> with all tabs of a specific entity. Each tab contains all fields of that tab.</returns>
+        Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName);
 
         /// <summary>
         /// Creates a new entity property.
@@ -84,5 +93,31 @@ namespace Api.Modules.EntityProperties.Interfaces
         /// <param name="entityType">Optional: The entity type to fix the ordering for. Leave empty if you want to do it for link fields instead of entity fields.</param>
         /// <param name="linkType">Optional: The link type to fix the ordering for. Leave empty if you want to do it for entity fields instead of link fields.</param>
         Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0);
+
+        /// <summary>
+        /// Gets all unique values for a specific property of a specific entity type.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityType">The entity type that the property belongs to.</param>
+        /// <param name="propertyName">The name (key) of the property.</param>
+        /// <param name="languageCode">Optional: Enter a language code here if you only want values of a specific language.</param>
+        /// <param name="maxResults">The maximum amount of results to return, default is 500.</param>
+        /// <returns>A list with unique values of the property.</returns>
+        Task<ServiceResult<List<string>>> GetUniquePropertyValuesAsync(ClaimsIdentity identity, string entityType, string propertyName, string languageCode = null, int maxResults = 500);
+
+        /// <summary>
+        /// Move an entity property to a new position.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="id">The ID of the entity property</param>
+        /// <param name="data">Data required to do the move.</param>
+        Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data);
+
+        /// <summary>
+        /// Move an entity tab with all it's properties to a new position.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="data">Data required to do the move.</param>
+        Task<ServiceResult<bool>> MoveTabAsync(ClaimsIdentity identity, MoveEntityTabRequestModel data);
     }
 }

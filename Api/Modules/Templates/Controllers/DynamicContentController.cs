@@ -71,14 +71,16 @@ namespace Api.Modules.Templates.Controllers
         /// Get the history of the current component.
         /// </summary>
         /// <param name="contentId">The component of the history.</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>History PartialView containing the retrieved history of the component</returns>
         [HttpGet]
         [Route("{contentId:int}/history")]
         [ProducesResponseType(typeof(List<HistoryVersionModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId)
+        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId, int pageNumber = 1, int itemsPerPage = 50)
         {
-            return (await historyService.GetChangesInComponentAsync(contentId)).GetHttpResponseMessage();
+            return (await historyService.GetChangesInComponentAsync(contentId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -92,7 +94,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveSettingsAsync(int id, DynamicContentOverviewModel data)
         {
-            return (await dynamicContentService.SaveNewSettingsAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
+            return (await dynamicContentService.SaveAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
         }
 
         /// <summary>

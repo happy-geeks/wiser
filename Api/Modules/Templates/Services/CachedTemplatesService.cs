@@ -118,9 +118,15 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
         {
-            return await templatesService.SaveTemplateVersionAsync(identity, template, skipCompilation);
+            return await templatesService.SaveAsync(identity, template, skipCompilation);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> CreateNewVersionAsync(int templateId, int versionBeingDeployed = 0)
+        {
+            return await templatesService.CreateNewVersionAsync(templateId, versionBeingDeployed);
         }
 
         /// <inheritdoc />
@@ -136,9 +142,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId, int pageNumber, int itemsPerPage)
         {
-            return await templatesService.GetTemplateHistoryAsync(identity, templateId);
+            return await templatesService.GetTemplateHistoryAsync(identity, templateId, pageNumber, itemsPerPage);
         }
 
         /// <inheritdoc />

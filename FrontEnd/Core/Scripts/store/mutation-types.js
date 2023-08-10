@@ -62,6 +62,9 @@ export const IS_MAIN_BRANCH = "isMainBranch";
 export const GET_BRANCH_CHANGES = "getBranchChanges"
 export const HANDLE_CONFLICT = "handleConflict";
 export const HANDLE_MULTIPLE_CONFLICTS = "handleMultipleConflicts";
+export const DELETE_BRANCH = "deleteBranch";
+export const DELETE_BRANCH_SUCCESS = "deleteBranchSuccess";
+export const DELETE_BRANCH_ERROR = "deleteBranchError";
 
 export const GET_DATA_SELECTORS_FOR_BRANCHES = "getDataSelectorsForBranches";
 

@@ -40,6 +40,14 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int templateId, string branchDatabaseName = null);
 
         /// <summary>
+        /// Get the ID, version number and published environment of the latest version of a template.
+        /// </summary>
+        /// <param name="templateId">The template ID.</param>
+        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <returns>The ID, version number and published environment of the template.</returns>
+        Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null);
+
+        /// <summary>
         /// Publish the template to an environment. This method will execute the publish model instructions it receives, logic for publishing linked environments should be handled in the servicelayer.
         /// </summary>
         /// <param name="templateId">The id of the template of which the environment should be published.</param>
@@ -50,21 +58,21 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
         Task<int> UpdatePublishedEnvironmentAsync(int templateId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null);
-        
+
         /// <summary>
         /// Get the templates linked to the current template and their relation to the current template.
         /// </summary>
         /// <param name="templateId">The id of the template which linked templates should be retrieved.</param>
         /// <returns>Return a list of linked templates in the form of linkedtemplatemodels.</returns>
         Task<List<LinkedTemplateModel>> GetLinkedTemplatesAsync(int templateId);
-        
+
         /// <summary>
         /// Get templates that can be linked to the current template but aren't linked yet.
         /// </summary>
         /// <param name="templateId">The id of the template for which the linkoptions should be retrieved.</param>
         /// <returns>A list of possible links in the form of linkedtemplatemodels.</returns>
         Task<List<LinkedTemplateModel>> GetTemplatesAvailableForLinkingAsync(int templateId);
-        
+
         /// <summary>
         /// Get dynamic content that is linked to the current template.
         /// </summary>
@@ -73,16 +81,24 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<List<LinkedDynamicContentDao>> GetLinkedDynamicContentAsync(int templateId);
 
         /// <summary>
-        /// Saves the template data as a new version of the template.
+        /// Updates the latest version of a template with new data. This method will overwrite this version, unless this version has been published to the live environment,
+        /// then it will create a new version as to not overwrite the live version.
         /// </summary>
         /// <param name="templateSettings">A <see cref="TemplateSettingsModel"/> containing the new data to save as a new template version.</param>
         /// <param name="templateLinks">A comma separated list of all linked javascript/scss/css templates.</param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
-        Task<int> SaveAsync(TemplateSettingsModel templateSettings, string templateLinks, string username);
-        
+        Task SaveAsync(TemplateSettingsModel templateSettings, string templateLinks, string username);
+
         /// <summary>
-        /// Retreives a section of the treeview around the given id. In case the id is 0 the root section of the tree will be retrieved.
+        /// Creates a new version of a template by copying the previous version and increasing the version number by one.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to create a new version for.</param>
+        /// <returns>The ID of the new version.</returns>
+        Task<int> CreateNewVersionAsync(int templateId);
+
+        /// <summary>
+        /// Retrieves a section of the tree view around the given id. In case the id is 0 the root section of the tree will be retrieved.
         /// </summary>
         /// <param name="parentId">The id of the parent element of the treesection that needs to be retrieved</param>
         /// <returns>A list of templatetreeview items that are children of the given id.</returns>
@@ -153,7 +169,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateId">The ID of the SCSS template to get the includes/imports for.</param>
         /// <returns>A <see cref="StringBuilder"/> with the contents of all SCSS in the correct order.</returns>
         Task<StringBuilder> GetScssIncludesForScssTemplateAsync(int templateId);
-        
+
         /// <summary>
         /// Get all SCSS templates that are not include templates. These templates need to be recompiled when someone changes an include template.
         /// </summary>
@@ -182,5 +198,10 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateIds">The IDs of the templates to deploy.</param>
         /// <param name="branchDatabaseName">The name of the database that contains the sub branch.</param>
         Task DeployToBranchAsync(List<int> templateIds, string branchDatabaseName);
+
+        /// <summary>
+        /// Function that makes sure that the database tables needed for templates are up to date with the latest changes.
+        /// </summary>
+        Task KeepTablesUpToDateAsync();
     }
 }

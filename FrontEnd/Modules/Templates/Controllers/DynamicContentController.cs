@@ -81,6 +81,30 @@ namespace FrontEnd.Modules.Templates.Controllers
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/DynamicContentHistoryPane", viewModel);
         }
+        
+        [HttpPost, Route("HistoryRow")]
+        public IActionResult HistoryRow([FromBody]List<HistoryVersionModel> viewData)
+        {
+            var viewModel = new DynamicContentHistoryPaneViewModel { History = new List<HistoryVersionViewModel>() };
+            
+            foreach (var history in viewData)
+            {
+                viewModel.History.Add(new HistoryVersionViewModel
+                {
+                    Changes = history.Changes,
+                    Component = history.Component,
+                    ChangedBy = history.ChangedBy,
+                    Version = history.Version,
+                    ChangedOn = history.ChangedOn,
+                    RawVersionString = history.RawVersionString,
+                    ComponentMode = history.ComponentMode,
+                    ChangedFields = dynamicContentService.GenerateChangesListForHistory(history.Changes)
+                });
+            }
+
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Partials/DynamicContentHistoryRows", viewModel);
+        }
 
         [HttpPost, Route("PublishedEnvironments")]
         public IActionResult PublishedEnvironments([FromBody]DynamicContentOverviewModel tabViewData)

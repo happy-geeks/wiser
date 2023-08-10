@@ -660,7 +660,7 @@ export class Fields {
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .title`).html(kendo.htmlEncode(event.response[0].title || "(leeg)"));
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileContainer`).data("fileId", event.response[0].fileId).data("itemId", event.response[0].itemId);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .name`).attr("href", `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(event.response[0].itemId)}/files/${encodeURIComponent(event.response[0].fileId)}/${encodeURIComponent(event.response[0].name)}?itemLinkId=${event.response[0].itemLinkId || 0}&entityType=${encodeURIComponent(event.response[0].entityType || "")}&linkType=${event.response[0].linkType || 0}&encryptedCustomerId=${encodeURIComponent(this.base.settings.customerId)}&encryptedUserId=${encodeURIComponent(this.base.settings.userId)}&isTest=${this.base.settings.isTestEnvironment}&subDomain=${encodeURIComponent(this.base.settings.subDomain)}`);
-        let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.now()).toLocaleString(Dates.LongDateTimeFormat);
+        let addedOn = (event.response[0].addedOn ? DateTime.fromISO(event.response[0].addedOn, { locale: "nl-NL" }) : DateTime.fromJSDate(new Date(), { locale: "nl-NL" })).toLocaleString(Dates.LongDateTimeFormat);
         event.sender.wrapper.find(`li[data-uid='${event.files[0].uid}'] .fileDate`).html(kendo.htmlEncode(addedOn));
         event.sender.wrapper.find(".editTitle").click(this.onUploaderEditTitleClick.bind(this));
         event.sender.wrapper.find(".editName").click(this.onUploaderEditNameClick.bind(this));
@@ -1262,7 +1262,23 @@ export class Fields {
             return suffixToUse;
         };
 
+        /**
+         * Remove any properties from the previous item so that we don't get confusing conflicts.
+         */
+        function cleanupUserParameters() {
+            if (!userParametersWithValues) {
+                return;
+            }
+
+            for (let key in userParametersWithValues) {
+                if (userParametersWithValues.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
+                    delete userParametersWithValues[key];
+                }
+            }
+        }
+
         let queryActionResult;
+
         for (let index = 0; index < actions.length; index++) {
             const action = actions[index];
             var exception;
@@ -1582,12 +1598,7 @@ export class Fields {
                                     }
                                     // We have an array with selected items, which means this is an action button in a grid and we want to execute this action once for every selected item.
                                     for (let item of selectedItems) {
-                                        // Remove any properties from the previous item so that we don't get confusing conflicts.
-                                        for (let key in userParametersWithValues) {
-                                            if (item.dataItem.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
-                                                delete userParametersWithValues[key];
-                                            }
-                                        }
+                                        cleanupUserParameters();
 
                                         // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                                         const suffixToUse = getSuffixFromSelectedColumn(item);
@@ -1790,6 +1801,9 @@ export class Fields {
                         }
 
                         if (userParametersWithValues) {
+                            
+                            cleanupUserParameters();
+                            
                             for (const parameter in userParametersWithValues) {
                                 if (!userParametersWithValues.hasOwnProperty(parameter)) {
                                     continue;
@@ -1809,6 +1823,8 @@ export class Fields {
                         }
 
                         for (let selectedItem of selectedItems) {
+                            cleanupUserParameters();
+                            
                             // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                             const suffixToUse = getSuffixFromSelectedColumn(selectedItem);
 
@@ -1892,12 +1908,7 @@ export class Fields {
                                 // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                                 const suffixToUse = getSuffixFromSelectedColumn(item);
 
-                                // Remove any properties from the previous item so that we don't get confusing conflicts.
-                                for (let key in userParametersWithValues) {
-                                    if (item.dataItem.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
-                                        delete userParametersWithValues[key];
-                                    }
-                                }
+                                cleanupUserParameters();
 
                                 // Enter the values of all properties in userParametersWithValues, so that they can be used in actions.
                                 for (let key in item.dataItem) {
@@ -2124,7 +2135,7 @@ export class Fields {
                             }
                         }
 
-                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems);
+                        await this.initializeGenerateFileWindow(allUrls, templateDetails, emailData, action, element, userParametersWithValues, itemId, linkId, propertyId, selectedItems, mainItemDetails);
 
                         break;
                     }
@@ -2160,12 +2171,7 @@ export class Fields {
                                 // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                                 const suffixToUse = getSuffixFromSelectedColumn(item);
 
-                                // Remove any properties from the previous item so that we don't get confusing conflicts.
-                                for (let key in userParametersWithValues) {
-                                    if (item.dataItem.hasOwnProperty(key) && key.indexOf("selected_") === 0) {
-                                        delete userParametersWithValues[key];
-                                    }
-                                }
+                                cleanupUserParameters();
 
                                 // Enter the values of all properties in userParametersWithValues, so that they can be used in actions.
                                 for (let key in item.dataItem) {
@@ -2341,8 +2347,9 @@ export class Fields {
      * @param {any} linkId The item link ID of the opened/selected item.
      * @param {any} propertyId The ID of the property / field that contains the action button.
      * @param {any} selectedItems Array of all selected items in the grid.
+     * @param {any} mainItemDetails The details of the item from which this window is being opened.
      */
-    initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = []) {
+    initializeGenerateFileWindow(urls, templateDetails, emailData = {}, action = {}, element = null, userParametersWithValues = {}, itemId = null, linkId = null, propertyId = 0, selectedItems = [], mainItemDetails = {}) {
         return new Promise(async (resolve, reject) => {
             emailData = emailData || {};
 
@@ -2387,7 +2394,6 @@ export class Fields {
                 previewWindow.one("close", (event) => resolve());
 
                 const container = previewWindow.element.find("div.k-content-frame");
-                console.log("container", container);
 
                 // Save the email data in the container, otherwise the email popup will show out dated data after opening it for a second time.
                 container.data("emailData", emailData);
@@ -2529,7 +2535,7 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, mainItemDetails);
                             }
 
                             pdfToHtmlData.documentOptions = "";
@@ -2585,6 +2591,7 @@ export class Fields {
                                 const dialogElement = $("#sendMailDialog");
                                 const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
+                                const uploadedFiles = [];
 
                                 // Set the initial values from the query.
                                 const currentEmailData = container.data("emailData");
@@ -2643,8 +2650,9 @@ export class Fields {
                                                         itemId: currentTemplateDetails.id,
                                                         saveInDatabase: true
                                                     };
+
                                                     if (currentAction.pdfFilename) {
-                                                        pdfToHtmlData.fileName = currentAction.pdfFilename.replace("{itemId}", currentTemplateDetails.id);
+                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, mainItemDetails);
                                                     }
 
                                                     let ajaxOptions = {
@@ -2657,8 +2665,9 @@ export class Fields {
                                                 }
 
                                                 Promise.all(promises).then((results) => {
-                                                    const allFiles = dialogElement.find("input[name=files]").data("kendoUpload").getFiles();
-                                                    const wiserFileAttachments = allFiles.filter(file => file.fileId > 0).map(file => file.fileId) || [];
+                                                    const uploadElement = dialogElement.find("input[name=files]");
+                                                    const allFiles = uploadElement.data("kendoUpload").getFiles();
+                                                    const wiserFileAttachments = uploadedFiles.map(file => file.fileId) || [];
 
                                                     for (let fileId of results) {
                                                         wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
@@ -2763,7 +2772,29 @@ export class Fields {
                                 // Always re-create the upload widget because it's not possible to add files to programmatically a widget after it's been initialized, without using weird hacks.
                                 attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
                                     files: files,
-                                    enabled: false
+                                    async: {
+                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=TEMPORARY_FILE_FROM_WISER`,
+                                        removeUrl: "remove", // TODO
+                                        withCredentials: false
+                                    },
+                                    multiple: true,
+                                    upload: (e) => {
+                                        let xhr = e.XMLHttpRequest;
+                                        if (xhr) {
+                                            xhr.addEventListener("readystatechange", (e) => {
+                                                if (xhr.readyState === 1 /* OPENED */) {
+                                                    xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
+                                                }
+                                            });
+                                        }
+                                    },
+                                    success: (uploadSuccessEvent) => {
+                                        if (uploadSuccessEvent.operation !== "upload") {
+                                            return;
+                                        }
+
+                                        uploadedFiles.push(...uploadSuccessEvent.response);
+                                    }
                                 }).data("kendoUpload");
 
                                 // Initialize the kendo HTML editor.

@@ -30,8 +30,9 @@ namespace Api.Modules.Modules.Interfaces
         /// </summary>
         /// <param name="id">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="encryptValues">Optional: Whether to encrypt values in the JSON settings, such as queryId. Default is true. Set to false when getting the settings for the admin module.</param>
         /// <returns></returns>
-        Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity);
+        Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true);
 
         /// <summary>
         /// Creates a new module
@@ -56,7 +57,16 @@ namespace Api.Modules.Modules.Interfaces
         /// <param name="id">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns></returns>
-        Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity);
+        Task<ServiceResult<byte[]>> ExportToExcelAsync(int id, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Exports a module to Csv. Only works for grid view modules.
+        /// </summary>
+        /// <param name="id">The ID of the module.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="separator">The character used to separate the values</param>
+        /// <returns></returns>
+        Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator = ',');
 
         /// <summary>
         /// Gets a list of all currently used module groups.

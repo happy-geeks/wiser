@@ -77,13 +77,14 @@ namespace Api.Modules.Modules.Controllers
         /// Gets settings for a Wiser module.
         /// </summary>
         /// <param name="id">The ID of the module.</param>
+        /// <param name="encryptValues">Optional: Whether to encrypt values in the JSON settings, such as queryId. Default is true. Set to false when getting the settings for the admin module.</param>
         [HttpGet]
         [Route("{id:int}/settings")]
         [ProducesResponseType(typeof(ModuleSettingsModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetSettingsAsync(int id)
+        public async Task<IActionResult> GetSettingsAsync(int id, bool encryptValues = true)
         {
-            return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            return (await modulesService.GetSettingsAsync(id, (ClaimsIdentity)User.Identity, encryptValues)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -111,20 +112,26 @@ namespace Api.Modules.Modules.Controllers
         {
             return (await modulesService.CreateAsync(name, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
-        /// Exports the data of a Wiser module to Excel. This only works for grid view modules.
+        /// Exports the data of a Wiser module to the specified file format. This only works for grid view modules.
         /// </summary>
         /// <param name="id">The ID of the module to export.</param>
+        /// <param name="fileFormat">The format the file should be in</param>
         /// <param name="fileName">Optional: The name that the exported file should be.</param>
         /// <returns></returns>
         [HttpGet]
         [Route("{id:int}/export")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
-        public async Task<IActionResult> ExportAsync(int id, string fileName = null)
+        [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv")]
+        public async Task<IActionResult> ExportAsync(int id, ExportFileFormats fileFormat, string fileName = null)
         {
-            var exportResult = await modulesService.ExportAsync(id, (ClaimsIdentity)User.Identity);
+            var (exportResult, contentType,  extension) = fileFormat switch
+            {
+                ExportFileFormats.Excel => (await modulesService.ExportToExcelAsync(id, (ClaimsIdentity)User.Identity), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                ExportFileFormats.Csv => (await modulesService.ExportToCsvAsync(id, (ClaimsIdentity)User.Identity, ';'), "text/csv", ".csv"),
+                _ => throw new NotImplementedException($"Error in {nameof(ModulesController)}:Export to fileformat {fileFormat} is not implemented")
+            };
             if (exportResult == null)
             {
                 return NotFound(id);
@@ -135,9 +142,9 @@ namespace Api.Modules.Modules.Controllers
                 return exportResult.GetHttpResponseMessage();
             }
 
-            fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.xlsx" : Path.ChangeExtension(fileName, ".xlsx");
-            
-            return File(exportResult.ModelObject, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            fileName = String.IsNullOrWhiteSpace(fileName) ? $"Export{extension}" : Path.ChangeExtension(fileName, extension);
+
+            return File(exportResult.ModelObject, contentType, fileName);
         }
 
         /// <summary>
