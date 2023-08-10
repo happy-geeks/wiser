@@ -25,7 +25,7 @@
     "node-polyfill-webpack-plugin": "^2.0.1",
     "path-browserify": "^1.0.1",
     "pretty": "^2.0.0",
-    "pusher-js": "^7.6.0",
+    "pusher-js": "^8.3.0",
     "trackjs": "^3.10.1",
     "vue": "^3.2.47",
     "vuex": "^4.1.0",
