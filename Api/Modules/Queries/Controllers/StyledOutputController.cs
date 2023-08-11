@@ -36,15 +36,16 @@ namespace Api.Modules.Queries.Controllers
         /// <param name="parameters">The parameters to set before executing the styled output.</param>
         /// <param name="stripNewlinesAndTabs">replaces \r\n \n and \t when encountered in the format.</param>
         /// <param name="page">the page number used in pagination-supported styled outputs.</param>
+        /// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
         /// <returns>The results of the styled output request .</returns>
         [HttpPost]
         [Route("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetStyledOutputResultJson(int id, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false, [FromQuery] int page = 0)
+        public async Task<IActionResult> GetStyledOutputResultJson(int id, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false, [FromQuery] int page = 0, [FromQuery] int resultsPerPage = 0)
         {
-            return (await styledOutputService.GetStyledOutputResultJsonAsync((ClaimsIdentity) User.Identity, id, parameters, stripNewlinesAndTabs, page)).GetHttpResponseMessage();
+            return (await styledOutputService.GetStyledOutputResultJsonAsync((ClaimsIdentity) User.Identity, id, parameters, stripNewlinesAndTabs, page, resultsPerPage)).GetHttpResponseMessage();
         }
     }
 }
