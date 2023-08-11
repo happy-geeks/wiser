@@ -154,6 +154,7 @@ namespace Api
             });
 
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
+            LoadPlugins();
             services.AddGclServices(Configuration, false, true);
             services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>();
 
@@ -338,13 +339,11 @@ namespace Api
                     Predicate = _ => true
                 });
             });
-
-            LoadPlugins();
         }
 
         public void LoadPlugins()
         {
-            var pluginsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
+            var pluginsDirectory = Configuration.GetValue<string>("Api:PluginsDirectory");
 
             if (!Directory.Exists(pluginsDirectory))
             {
