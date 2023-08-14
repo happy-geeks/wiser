@@ -449,7 +449,7 @@ class Main {
                         return "";
                     }
 
-                    if (this.branchActionSettings.selectedAction.id === 'website' && !this.selectedAction.websiteUrl) {
+                    if (this.branchActionSettings.selectedAction.id === 'website' && !this.branchActionSettings.websiteUrl) {
                         return "";
                     }
 
