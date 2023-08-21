@@ -11,6 +11,11 @@
         public int Id { get; set; }
         
         /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        public string Name { get; set; }
+        
+        /// <summary>
         /// Gets or sets the format that gets inserted before the item list starts
         /// </summary>
         public string FormatBegin { get; set; }
@@ -24,6 +29,11 @@
         /// Gets or sets the format that gets inserted at the end of the item list
         /// </summary>
         public string FormatEnd { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the format that gets used instead of format_being, format_item and format_end when no results are given
+        /// </summary>
+        public string FormatEmpty { get; set; }
         
         /// <summary>
         /// Gets or sets the query id that is used to retrieve data, this id should match with a query from the wiser_query table
