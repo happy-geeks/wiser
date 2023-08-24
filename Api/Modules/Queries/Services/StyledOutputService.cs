@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -18,9 +18,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using IdentityServer4.Extensions;
-using Microsoft.AspNetCore.Mvc.Formatters;
 using Newtonsoft.Json.Linq;
-using Task = DocumentFormat.OpenXml.Office2021.DocumentTasks.Task;
 
 namespace Api.Modules.Queries.Services
 {
@@ -36,9 +34,9 @@ namespace Api.Modules.Queries.Services
         private readonly IReplacementsMediator replacementsMediator;
         private readonly IQueriesService queriesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
-
-        // results per page when a styled output supports pagination 
-        private const int resultsPerPage = 500;
+        
+        // even if the user selects a higher value the results will always be capped to this
+        private const int maxResultsPerPage = 500; 
 
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
@@ -56,15 +54,28 @@ namespace Api.Modules.Queries.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page = 0)
+        public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
         {
+            var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
+
+            if (usedIds.Contains(id))
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.LoopDetected,
+                    ErrorMessage = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}"
+                };  
+            }
+            
+            usedIds.Add(id);
+            
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
             
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id); 
             
-            var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, return_type FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
+            var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, format_empty, return_type FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
             
             var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
             if (dataTable.Rows.Count == 0)
@@ -79,6 +90,7 @@ namespace Api.Modules.Queries.Services
             var formatBeginValue = "";
             var formatItemValue = "";
             var formatEndValue = "";
+            var formatEmptyValue = "";
             var formatExpectedReturnJson = "";
             int formatQueryId = -1;
 
@@ -87,6 +99,7 @@ namespace Api.Modules.Queries.Services
                 formatBeginValue = dataTable.Rows[0].Field<string>("format_begin");
                 formatItemValue = dataTable.Rows[0].Field<string>("format_item");
                 formatEndValue = dataTable.Rows[0].Field<string>("format_end");
+                formatEmptyValue = dataTable.Rows[0].Field<string>("format_empty");
                 formatExpectedReturnJson = dataTable.Rows[0].Field<string>("return_type");
 
                 if (stripNewlinesAndTabs)
@@ -94,6 +107,7 @@ namespace Api.Modules.Queries.Services
                     formatBeginValue = formatBeginValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
                     formatItemValue = formatItemValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
                     formatEndValue = formatEndValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
+                    formatEmptyValue = formatEmptyValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
                 }
                 
                 formatQueryId = dataTable.Rows[0].Field<int>("query_id");
@@ -132,9 +146,11 @@ namespace Api.Modules.Queries.Services
             
             clientDatabaseConnection.ClearParameters();
 
+            int pageResultCount = Math.Min(maxResultsPerPage, resultsPerPage);
+            
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
-            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * resultsPerPage);
-            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), resultsPerPage);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * pageResultCount);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), pageResultCount);
             
             parameters ??= new List<KeyValuePair<string, object>>(parameters);
          
@@ -144,55 +160,66 @@ namespace Api.Modules.Queries.Services
                     parameter.Value);
             }
             
-            dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
-            var result = dataTable.Rows.Count == 0 ? new JArray() : dataTable.ToJsonArray(skipNullValues: true);
-
             string combinedResult = "";
-            
-            if (!formatBeginValue.IsNullOrEmpty())
+            JToken parsedJson = "";
+
+            dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
+
+            if (dataTable.Rows.Count == 0)
             {
-                combinedResult += formatBeginValue;
+                combinedResult += formatEmptyValue;
+            }
+            else
+            {
+                var result = dataTable.ToJsonArray(skipNullValues: true);
+
+                if (!formatBeginValue.IsNullOrEmpty())
+                {
+                    combinedResult += formatBeginValue;
+                }
+
+                foreach (JObject parsedObject in result.Children<JObject>())
+                {
+                    // replace simple string info
+                    var itemValue = stringReplacementsService.DoReplacements(formatItemValue, parsedObject);
+
+                    // replace if then else logic
+                    itemValue = replacementsMediator.EvaluateTemplate(itemValue);
+
+                    // replace recursive inline styles
+                    itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs,
+                        resultsPerPage, page, usedIds);
+
+                    combinedResult += itemValue;
+
+                    if (parsedObject != result.Children<JObject>().Last())
+                    {
+                        combinedResult += ", ";
+                    }
+                }
+
+                if (!formatEndValue.IsNullOrEmpty())
+                {
+                    combinedResult += formatEndValue;
+                }
             }
 
-            foreach (JObject parsedObject in result.Children<JObject>())
+            if (combinedResult.Length > 0)
             {
-                // replace simple string info
-                var itemValue = stringReplacementsService.DoReplacements(formatItemValue, parsedObject);
-
-                // replace if then else logic
-                itemValue = replacementsMediator.EvaluateTemplate(itemValue);
-                
-                // replace recursive inline styles
-                itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs, page);
-  
-                combinedResult += itemValue;
-
-                if (parsedObject != result.Children<JObject>().Last())
+                try
                 {
-                    combinedResult += ", ";
+                    parsedJson = JToken.Parse(combinedResult);
+                }
+                catch (Exception e)
+                {
+                    return new ServiceResult<JToken>
+                    {
+                        StatusCode = HttpStatusCode.InternalServerError,
+                        ErrorMessage = $"Wiser styledoutput with ID '{formatQueryId}' could not convert to Json with exception: '{e.ToString()}'"
+                    };
                 }
             }
             
-            if (!formatEndValue.IsNullOrEmpty())
-            {
-                combinedResult += formatEndValue;
-            }
-
-            JToken parsedJson = "";
-            
-            try
-            {
-                parsedJson = JToken.Parse(combinedResult);
-            }
-            catch (Exception e)
-            {
-                return new ServiceResult<JToken>
-                {
-                    StatusCode = HttpStatusCode.InternalServerError,
-                    ErrorMessage = $"Wiser styledoutput with ID '{formatQueryId}' could not convert to Json with exception: '{e.ToString()}'"
-                };
-            }
-
             return new ServiceResult<JToken>(parsedJson);
         }
         
@@ -203,8 +230,11 @@ namespace Api.Modules.Queries.Services
         /// <param name="itemValue">The item format value that will get its inline element replaced if present.</param>
         /// <param name="parameters">The parameters send along to the database connection .</param>
         /// <param name="stripNewlinesAndTabs">if true fetched format strings will have their newlines and tabs removed</param>
+        /// <param name="page">the page number used in pagination-supported styled outputs.</param>
+        /// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
+        /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null/param>
         /// <returns>Returns the updated string with replacements applied</returns>
-        private async Task<string> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int page)
+        private async Task<string> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
         {
             var index = 0;
             
@@ -245,7 +275,7 @@ namespace Api.Modules.Queries.Services
                         ));
                     }
                         
-                    var subResult = await GetStyledOutputResultJsonAsync(identity, subStyleId, subParameters, stripNewlinesAndTabs, page);
+                    var subResult = await GetStyledOutputResultJsonAsync(identity, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
                     
                     if (subResult.StatusCode == HttpStatusCode.OK)
                     {

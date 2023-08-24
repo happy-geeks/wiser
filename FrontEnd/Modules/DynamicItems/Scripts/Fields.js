@@ -1801,9 +1801,9 @@ export class Fields {
                         }
 
                         if (userParametersWithValues) {
-                            
+
                             cleanupUserParameters();
-                            
+
                             for (const parameter in userParametersWithValues) {
                                 if (!userParametersWithValues.hasOwnProperty(parameter)) {
                                     continue;
@@ -1824,7 +1824,7 @@ export class Fields {
 
                         for (let selectedItem of selectedItems) {
                             cleanupUserParameters();
-                            
+
                             // If there is a certain column selected, use only values with the same suffix, that makes it possible to execute action buttons on specific columns instead of an entire row.
                             const suffixToUse = getSuffixFromSelectedColumn(selectedItem);
 
@@ -2359,6 +2359,11 @@ export class Fields {
                 return;
             }
 
+            let itemDetails = mainItemDetails;
+            if (selectedItems.length > 0 && selectedItems[0].dataItem) {
+                itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+            }
+
             const process = `initializeGenerateFileWindow_${Date.now()}`;
             if (element && element.siblings(".grid-loader").length) {
                 element.siblings(".grid-loader").addClass("loading");
@@ -2399,6 +2404,7 @@ export class Fields {
                 container.data("emailData", emailData);
                 container.data("action", action);
                 container.data("templateDetails", templateDetails);
+                container.data("itemDetails", itemDetails);
 
                 // Initialize the tab strip.
                 const tabStripElement = container.find("#previewTabStrip");
@@ -2528,6 +2534,7 @@ export class Fields {
                             const currentTemplateDetails = container.data("templateDetails");
                             const currentAction = container.data("action");
                             const kendoEditor = selectedTabContainer.find(".editor").data("kendoEditor");
+                            const currentItemDetails = container.data("itemDetails");
                             const pdfToHtmlData = {
                                 html: kendo.htmlEncode(kendoEditor.value()),
                                 backgroundPropertyName: currentAction.pdfBackgroundPropertyName || "",
@@ -2535,7 +2542,7 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, mainItemDetails);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
                             }
 
                             pdfToHtmlData.documentOptions = "";
@@ -2597,6 +2604,7 @@ export class Fields {
                                 const currentEmailData = container.data("emailData");
                                 const currentAction = container.data("action");
                                 const currentTemplateDetails = container.data("templateDetails");
+                                const currentItemDetails = container.data("itemDetails");
                                 dialogElement.find("input[name=senderName]").val(currentEmailData.senderName);
                                 dialogElement.find("input[name=senderEmail]").val(currentEmailData.senderEmail);
                                 dialogElement.find("input[name=receiverName]").val(currentEmailData.receiverName);
@@ -2652,7 +2660,7 @@ export class Fields {
                                                     };
 
                                                     if (currentAction.pdfFilename) {
-                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, mainItemDetails);
+                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
                                                     }
 
                                                     let ajaxOptions = {

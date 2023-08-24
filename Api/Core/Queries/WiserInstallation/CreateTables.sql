@@ -435,9 +435,11 @@ CREATE TABLE IF NOT EXISTS `wiser_query`  (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_styled_output`  (
     `id` int NOT NULL,
+    `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
     `format_begin` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `format_item` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `format_end` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `format_empty` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `query_id` int NULL DEFAULT NULL,
     `return_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE

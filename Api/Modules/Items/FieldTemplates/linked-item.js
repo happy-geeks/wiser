@@ -36,7 +36,7 @@ Wiser.api({ url: url }).then(function(results) {
 
         if (result.hasOwnProperty("details")) {
             result.details.forEach((detail) => {
-                const regExp = new RegExp(`\{${regExpEscape(detail.key)}`, "gi");
+                const regExp = new RegExp(`\{${regExpEscape(detail.key)}\}`, "gi");
                 newValue = newValue.replace(regExp, detail.value);
             });
         }
