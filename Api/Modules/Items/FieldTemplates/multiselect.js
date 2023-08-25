@@ -95,6 +95,13 @@ const field = $("#field_{propertyIdWithSuffix}");
 const container = field.closest(".item");
 const readonly = {readonly};
 
+if (options.newItems && options.newItems.allow && (options.newItems.entityType || options.entityType)) {
+    container.find(".newItemButton").removeClass("hidden").kendoButton({
+        icon: "plus",
+        click: window.dynamicItems.dialogs.openCreateItemDialog.bind(window.dynamicItems.dialogs, options.newItems.parentId, null, options.newItems.entityType || options.entityType, false, true, options.newItems.linkTypeNumber, options.newItems.moduleId, kendoComponent)
+    });
+}
+
 if (options.mode === "checkBoxGroup") {
     // Set the main image.
     let mainImageUrl = options.mainImageUrl;
