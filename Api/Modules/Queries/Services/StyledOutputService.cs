@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
@@ -36,8 +37,10 @@ namespace Api.Modules.Queries.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         
         // even if the user selects a higher value the results will always be capped to this
-        private const int maxResultsPerPage = 500; 
+        private const int maxResultsPerPage = 500;
 
+        private const string itemSeperatorString = ", ";
+        
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
@@ -159,15 +162,15 @@ namespace Api.Modules.Queries.Services
                 clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key),
                     parameter.Value);
             }
-            
-            string combinedResult = "";
+
+            StringBuilder combinedResult = new StringBuilder("");
             JToken parsedJson = "";
 
             dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
 
             if (dataTable.Rows.Count == 0)
             {
-                combinedResult += formatEmptyValue;
+                combinedResult.Append(formatEmptyValue);
             }
             else
             {
@@ -175,7 +178,7 @@ namespace Api.Modules.Queries.Services
 
                 if (!formatBeginValue.IsNullOrEmpty())
                 {
-                    combinedResult += formatBeginValue;
+                    combinedResult.Append(formatBeginValue);
                 }
 
                 foreach (JObject parsedObject in result.Children<JObject>())
@@ -190,17 +193,17 @@ namespace Api.Modules.Queries.Services
                     itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs,
                         resultsPerPage, page, usedIds);
 
-                    combinedResult += itemValue;
+                    combinedResult.Append(itemValue);
 
                     if (parsedObject != result.Children<JObject>().Last())
                     {
-                        combinedResult += ", ";
+                        combinedResult.Append(itemSeperatorString);
                     }
                 }
 
                 if (!formatEndValue.IsNullOrEmpty())
                 {
-                    combinedResult += formatEndValue;
+                    combinedResult.Append(formatEndValue);
                 }
             }
 
@@ -208,7 +211,7 @@ namespace Api.Modules.Queries.Services
             {
                 try
                 {
-                    parsedJson = JToken.Parse(combinedResult);
+                    parsedJson = JToken.Parse(combinedResult.ToString());
                 }
                 catch (Exception e)
                 {
