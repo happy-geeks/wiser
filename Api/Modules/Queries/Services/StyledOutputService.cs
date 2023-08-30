@@ -41,6 +41,9 @@ namespace Api.Modules.Queries.Services
 
         private const string itemSeperatorString = ", ";
         
+		private static readonly string[] allowedFormats = { "JSON" };
+		private static readonly string[] allowedSubFormats = { "JSON", "RAW" };
+		
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
@@ -59,11 +62,67 @@ namespace Api.Modules.Queries.Services
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
         {
+            var response = await GetStyledOutputResultAsync(identity, allowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
+		 
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                if (response.ModelObject.Length > 0)
+                {
+                    try
+                    {
+		                return new ServiceResult<JToken>
+		                {
+			                StatusCode = HttpStatusCode.OK,
+			                ModelObject = JToken.Parse(response.ModelObject)
+		                };
+                    }
+	                catch (Exception e)
+                    {
+                        return new ServiceResult<JToken>
+                        {
+                            StatusCode = HttpStatusCode.InternalServerError,
+                            ErrorMessage = $"Wiser styledoutput with ID '{id}' could not convert to Json with exception: '{e.ToString()}'"
+                        };
+                    }
+                }
+                else
+                {
+                    return new ServiceResult<JToken>
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        ModelObject = ""
+                    };              
+                }
+            }
+		    else
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = response.StatusCode,
+                    ErrorMessage = response.ErrorMessage
+                };
+            }
+		}
+		
+		/// <summary>
+		/// private function for handling styledoutput elements
+		/// </summary>
+		/// <param name="identity">The identity for the connection </param>
+		/// <param name="allowedFormats"> the types that can be processed, for endpoint this is only JSON, sub elements also support RAW</param>
+		/// <param name="itemValue">The item format value that will get its inline element replaced if present.</param>
+		/// <param name="parameters">The parameters send along to the database connection .</param>
+		/// <param name="stripNewlinesAndTabs">if true fetched format strings will have their newlines and tabs removed</param>
+		/// <param name="page">the page number used in pagination-supported styled outputs.</param>
+		/// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
+		/// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null/param>
+		/// <returns>Returns the updated string with replacements applied</returns>
+		private async Task<ServiceResult<string>> GetStyledOutputResultAsync(ClaimsIdentity identity, string[] allowedFormats,  int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
+		{
             var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
 
             if (usedIds.Contains(id))
             {
-                return new ServiceResult<JToken>
+                return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.LoopDetected,
                     ErrorMessage = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}"
@@ -83,7 +142,7 @@ namespace Api.Modules.Queries.Services
             var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
             if (dataTable.Rows.Count == 0)
             {
-                return new ServiceResult<JToken>
+                return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
                     ErrorMessage = $"Wiser Styled Output with ID '{id}' does not exist."
@@ -118,16 +177,16 @@ namespace Api.Modules.Queries.Services
             
             if (formatQueryId < 0)
             {
-                return new ServiceResult<JToken>
+                return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
                     ErrorMessage = $"Wiser Styled Output with ID '{id}' does not have a valid query setup."
                 };
             }
 
-            if (formatExpectedReturnJson != "JSON")
+            if (!allowedFormats.Contains(formatExpectedReturnJson))
             {
-                return new ServiceResult<JToken>
+                return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotImplemented,
                     ErrorMessage = $"Wiser Styled Output with ID '{id}' is not setup for JSON response"
@@ -137,7 +196,7 @@ namespace Api.Modules.Queries.Services
             if ((await wiserItemsService.GetUserQueryPermissionsAsync(formatQueryId, IdentityHelpers.GetWiserUserId(identity)) &
                  AccessRights.Read) == AccessRights.Nothing)
             {
-                return new ServiceResult<JToken>
+                return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
                     ErrorMessage =
@@ -164,7 +223,6 @@ namespace Api.Modules.Queries.Services
             }
 
             StringBuilder combinedResult = new StringBuilder("");
-            JToken parsedJson = "";
 
             dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
 
@@ -207,24 +265,12 @@ namespace Api.Modules.Queries.Services
                 }
             }
 
-            if (combinedResult.Length > 0)
+            return new ServiceResult<string>
             {
-                try
-                {
-                    parsedJson = JToken.Parse(combinedResult.ToString());
-                }
-                catch (Exception e)
-                {
-                    return new ServiceResult<JToken>
-                    {
-                        StatusCode = HttpStatusCode.InternalServerError,
-                        ErrorMessage = $"Wiser styledoutput with ID '{formatQueryId}' could not convert to Json with exception: '{e.ToString()}'"
-                    };
-                }
-            }
-            
-            return new ServiceResult<JToken>(parsedJson);
-        }
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = combinedResult.ToString()
+            };
+         }
         
         /// <summary>
         /// private function for handling inline style element replacements
@@ -278,7 +324,7 @@ namespace Api.Modules.Queries.Services
                         ));
                     }
                         
-                    var subResult = await GetStyledOutputResultJsonAsync(identity, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
+                    var subResult = await GetStyledOutputResultAsync(identity, allowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
                     
                     if (subResult.StatusCode == HttpStatusCode.OK)
                     {
