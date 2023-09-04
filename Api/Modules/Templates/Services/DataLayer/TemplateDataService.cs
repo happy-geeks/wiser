@@ -244,7 +244,7 @@ LEFT JOIN {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS otherVersion ON
 WHERE template.template_id = ?templateId
 AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("templateId", templateId);
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.GetAsync(query,  skipCache: true, useWritingConnectionIfAvailable: true);
             if (dataTable.Rows.Count == 0)
             {
                 throw new Exception($"Template with ID {templateId} not found.");
