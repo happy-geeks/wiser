@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Api.Core.Filters;
+using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
@@ -153,8 +154,10 @@ namespace Api
                 }
             });
 
+            // Load plugins for GCL and Wiser.
+            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"));
+
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
-            LoadPlugins();
             services.AddGclServices(Configuration, false, true);
             services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>();
 
@@ -339,32 +342,6 @@ namespace Api
                     Predicate = _ => true
                 });
             });
-        }
-
-        public void LoadPlugins()
-        {
-            var pluginsDirectory = Configuration.GetValue<string>("Api:PluginsDirectory");
-
-            if (!Directory.Exists(pluginsDirectory))
-            {
-                // Handle the case when the Plugins directory does not exist
-                return;
-            }
-
-            var dllFiles = Directory.GetFiles(pluginsDirectory, "*.dll");
-
-            foreach (var dllFile in dllFiles)
-            {
-                try
-                {
-                    Assembly.LoadFrom(dllFile);
-                }
-                catch (Exception ex)
-                {
-                    // Handle assembly loading exceptions
-                    Console.WriteLine($"Error loading plugin assembly: {ex}");
-                }
-            }
         }
     }
 #pragma warning restore CS1591

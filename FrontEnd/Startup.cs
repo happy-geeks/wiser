@@ -1,3 +1,4 @@
+using Api.Core.Helpers;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using FrontEnd.Core.Services;
@@ -95,6 +96,9 @@ namespace FrontEnd
                 options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
                 options.SerializerSettings.Converters.Add(new StringEnumConverter());
             });
+
+            // Load plugins for GCL and Wiser.
+            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("FrontEnd:PluginsDirectory"));
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();
