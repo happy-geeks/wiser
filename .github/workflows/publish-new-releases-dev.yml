@@ -22,7 +22,7 @@ jobs:
       run: dotnet nuget add source --username GilianJuice --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/happy-geeks/index.json"
 
     - name: Add plugins
-      run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator --source github
+      run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator --source github |
         dotnet add Api package GeeksCoreLibrary.Components.Configurator --source github
 
     - name: Copy partner styles
