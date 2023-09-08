@@ -19,6 +19,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using IdentityServer4.Extensions;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
@@ -35,6 +36,7 @@ namespace Api.Modules.Queries.Services
         private readonly IReplacementsMediator replacementsMediator;
         private readonly IQueriesService queriesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly ILogger<StyledOutputService> logger;
         
         // even if the user selects a higher value the results will always be capped to this
         private const int maxResultsPerPage = 500;
@@ -47,8 +49,7 @@ namespace Api.Modules.Queries.Services
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
-        public StyledOutputService(IWiserCustomersService wiserCustomersService,
-            IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService)
+        public StyledOutputService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger)
         {
             this.wiserCustomersService = wiserCustomersService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -57,6 +58,7 @@ namespace Api.Modules.Queries.Services
             this.queriesService = queriesService;
             this.databaseHelpersService = databaseHelpersService;
             this.replacementsMediator = replacementsMediator;
+            this.logger = logger;
         }
 
         /// <inheritdoc />
@@ -66,6 +68,8 @@ namespace Api.Modules.Queries.Services
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
+                logger.LogError($"Non-OK response in GetStyledOutputResultJsonAsync: {response.ErrorMessage}");
+                
                 return new ServiceResult<JToken>
                 {
                     StatusCode = response.StatusCode,
@@ -92,10 +96,14 @@ namespace Api.Modules.Queries.Services
             }
             catch (Exception e)
             {
+                var errorMsg = $"Wiser styledoutput with ID '{id}' could not convert to Json with exception: '{e.ToString()}'";
+                
+                logger.LogError(errorMsg);
+
                 return new ServiceResult<JToken>
                 {
                     StatusCode = HttpStatusCode.InternalServerError,
-                    ErrorMessage =  $"Wiser styledoutput with ID '{id}' could not convert to Json with exception: '{e.ToString()}'"
+                    ErrorMessage =  errorMsg
                 };
             }
         }
@@ -118,10 +126,14 @@ namespace Api.Modules.Queries.Services
 
             if (usedIds.Contains(id))
             {
+                var errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}";
+                
+                logger.LogError(errorMsg);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.LoopDetected,
-                    ErrorMessage = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}"
+                    ErrorMessage = errorMsg
                 };  
             }
             
@@ -138,10 +150,14 @@ namespace Api.Modules.Queries.Services
             var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
             if (dataTable.Rows.Count == 0)
             {
+                var errorMsg = $"Wiser Styled Output with ID '{id}' does not exist.";
+                
+                logger.LogError(errorMsg);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Wiser Styled Output with ID '{id}' does not exist."
+                    ErrorMessage = errorMsg
                 };
             }
             
@@ -173,30 +189,41 @@ namespace Api.Modules.Queries.Services
             
             if (formatQueryId < 0)
             {
+                var errorMsg = $"Wiser Styled Output with ID '{id}' does not have a valid query setup.";
+                
+                logger.LogError(errorMsg);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Wiser Styled Output with ID '{id}' does not have a valid query setup."
+                    ErrorMessage = errorMsg
                 };
             }
 
             if (!allowedFormats.Contains(formatExpectedReturnJson))
             {
+                var errorMsg = $"Wiser Styled Output with ID '{id}' is not setup for JSON response";
+                
+                logger.LogError(errorMsg);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotImplemented,
-                    ErrorMessage = $"Wiser Styled Output with ID '{id}' is not setup for JSON response"
+                    ErrorMessage = errorMsg
                 };             
             }
 
             if ((await wiserItemsService.GetUserQueryPermissionsAsync(formatQueryId, IdentityHelpers.GetWiserUserId(identity)) &
                  AccessRights.Read) == AccessRights.Nothing)
             {
+                var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{formatQueryId}' for styled output '{id}' .";
+                
+                logger.LogError(errorMsg);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
-                    ErrorMessage =
-                        $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{formatQueryId}' for styled output '{id}' ."
+                    ErrorMessage = errorMsg
                 };
             }
 
