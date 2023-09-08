@@ -3610,7 +3610,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                 this.factorNumber.value(getOptionValueAndDeleteForOptionsField("factor"));
 
                 // set decimals from options
-                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals"));
+                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals", 0));
                 // set format dropdown
                 let found = false;
                 const format = getOptionValueAndDeleteForOptionsField("format");
