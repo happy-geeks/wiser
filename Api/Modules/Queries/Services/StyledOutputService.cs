@@ -63,38 +63,8 @@ namespace Api.Modules.Queries.Services
         public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
         {
             var response = await GetStyledOutputResultAsync(identity, allowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
-		 
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                if (response.ModelObject.Length > 0)
-                {
-                    try
-                    {
-		                return new ServiceResult<JToken>
-		                {
-			                StatusCode = HttpStatusCode.OK,
-			                ModelObject = JToken.Parse(response.ModelObject)
-		                };
-                    }
-	                catch (Exception e)
-                    {
-                        return new ServiceResult<JToken>
-                        {
-                            StatusCode = HttpStatusCode.InternalServerError,
-                            ErrorMessage = $"Wiser styledoutput with ID '{id}' could not convert to Json with exception: '{e.ToString()}'"
-                        };
-                    }
-                }
-                else
-                {
-                    return new ServiceResult<JToken>
-                    {
-                        StatusCode = HttpStatusCode.OK,
-                        ModelObject = ""
-                    };              
-                }
-            }
-		    else
+
+            if (response.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<JToken>
                 {
@@ -102,7 +72,33 @@ namespace Api.Modules.Queries.Services
                     ErrorMessage = response.ErrorMessage
                 };
             }
-		}
+
+            if (response.ModelObject.Length == 0)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    ModelObject = ""
+                };
+            }
+
+            try
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    ModelObject = JToken.Parse(response.ModelObject)
+                };
+            }
+            catch (Exception e)
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    ErrorMessage =  $"Wiser styledoutput with ID '{id}' could not convert to Json with exception: '{e.ToString()}'"
+                };
+            }
+        }
 		
 		/// <summary>
 		/// private function for handling styledoutput elements
