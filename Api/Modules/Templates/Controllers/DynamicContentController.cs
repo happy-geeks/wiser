@@ -179,7 +179,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteAsync(int contentId)
         {
-            return (await dynamicContentService.DeleteAsync(contentId)).GetHttpResponseMessage();
+            return (await dynamicContentService.DeleteAsync((ClaimsIdentity)User.Identity, contentId)).GetHttpResponseMessage();
         }
 
         /// <summary>

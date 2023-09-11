@@ -394,11 +394,33 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
         }
 
         /// <inheritdoc />
-        public async Task DeleteAsync(int contentId)
+        public async Task DeleteAsync(string username, int contentId)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("contentId", contentId);
-            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
+            
+            var query = $@"SELECT component, component_mode, title, version, removed
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?contentId
+ORDER BY version DESC
+LIMIT 1";
+            
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0 || Convert.ToBoolean(dataTable.Rows[0]["removed"]))
+            {
+                return;
+            }
+            
+            clientDatabaseConnection.AddParameter("component", dataTable.Rows[0].Field<string>("component"));
+            clientDatabaseConnection.AddParameter("componentMode", dataTable.Rows[0].Field<string>("component_mode"));
+            clientDatabaseConnection.AddParameter("title", dataTable.Rows[0].Field<string>("title"));
+            clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
+            clientDatabaseConnection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+
+            query = $@"INSERT INTO {WiserTableNames.WiserDynamicContent} (content_id, component, component_mode, title, version, changed_on, changed_by, removed, is_dirty)
+VALUES(?contentId, ?component, ?componentMode, ?title, ?version, ?now, ?username, TRUE, TRUE)";
+
             await clientDatabaseConnection.ExecuteAsync(query);
         }
 

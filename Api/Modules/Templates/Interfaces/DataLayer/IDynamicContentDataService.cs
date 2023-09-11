@@ -112,8 +112,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Deletes a dynamic component by putting the field 'removed' to 1
         /// </summary>
+        /// <param name="username">The name of the user deleting the dynamic component.</param>
         /// <param name="contentId"> The ID of the dynamic component</param>
-        Task DeleteAsync(int contentId);
+        Task DeleteAsync(string username, int contentId);
 
         /// <summary>
         /// Deploys one or more templates from the main branch to a sub branch.
