@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Api.Core.Filters;
-using Api.Core.Helpers;
+using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
@@ -154,9 +154,6 @@ namespace Api
                 }
             });
 
-            // Load plugins for GCL and Wiser.
-            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"), webHostEnvironment);
-
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, false, true);
             services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>();
@@ -281,7 +278,7 @@ namespace Api
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger, IPluginsService pluginService)
         {
             if (env.IsDevelopment())
             {
@@ -342,6 +339,9 @@ namespace Api
                     Predicate = _ => true
                 });
             });
+
+            // Load plugins for GCL and Wiser.
+            pluginService.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"));
         }
     }
 #pragma warning restore CS1591
