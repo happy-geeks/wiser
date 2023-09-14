@@ -155,7 +155,7 @@ namespace Api
             });
 
             // Load plugins for GCL and Wiser.
-            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"));
+            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"), webHostEnvironment);
 
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, false, true);

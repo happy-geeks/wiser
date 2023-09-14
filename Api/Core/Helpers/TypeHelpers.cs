@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Api.Core.Helpers
 {
@@ -29,8 +30,19 @@ namespace Api.Core.Helpers
         /// we will need to extend this function with some security checks and load the plugins in isolated contexts.
         /// </remarks>
         /// <param name="pluginsDirectory">The directory that contains the plugins.</param>
-        public static void LoadPlugins(string pluginsDirectory)
+        /// <param name="webHostEnvironment">The IWebHostEnvironment to access the Content Root Path.</param>
+        public static void LoadPlugins(string pluginsDirectory, IWebHostEnvironment webHostEnvironment)
         {
+            if (String.IsNullOrWhiteSpace(pluginsDirectory))
+            {
+                return;
+            }
+
+            if (!Path.IsPathRooted(pluginsDirectory))
+            {
+                pluginsDirectory = Path.Combine(webHostEnvironment.ContentRootPath, pluginsDirectory);
+            }
+
             if (!Directory.Exists(pluginsDirectory))
             {
                 // Handle the case when the Plugins directory does not exist

@@ -55,9 +55,12 @@ namespace FrontEnd
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(Configuration)
                 .CreateLogger();
+
+            this.webHostEnvironment = webHostEnvironment;
         }
 
         public IConfiguration Configuration { get; }
+        private readonly IWebHostEnvironment webHostEnvironment;
 
         // This method gets called by the runtime. Use this method to add services to the container.
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
@@ -98,7 +101,7 @@ namespace FrontEnd
             });
 
             // Load plugins for GCL and Wiser.
-            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("FrontEnd:PluginsDirectory"));
+            TypeHelpers.LoadPlugins(Configuration.GetValue<string>("FrontEnd:PluginsDirectory"), webHostEnvironment);
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();
