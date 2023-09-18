@@ -133,7 +133,7 @@ export class WiserQueryTab {
             });
 
             this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
-            await this.getQueries();
+            await this.getQueries(true, id);
         }
         catch (exception) {
             console.error("Error while updating query", exception);
