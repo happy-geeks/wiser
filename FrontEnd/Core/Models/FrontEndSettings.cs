@@ -63,5 +63,10 @@ namespace FrontEnd.Core.Models
         /// This value is not used when not using multi tenancy.
         /// </summary>
         public string MainSubDomain { get; set; } = "main";
+
+        /// <summary>
+        /// Gets or sets the directory where the plugins are located.
+        /// </summary>
+        public string PluginsDirectory { get; set; }
     }
 }

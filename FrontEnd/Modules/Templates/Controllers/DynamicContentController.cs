@@ -62,7 +62,7 @@ namespace FrontEnd.Modules.Templates.Controllers
         public IActionResult History([FromBody]List<HistoryVersionModel> viewData)
         {
             var viewModel = new DynamicContentHistoryPaneViewModel { History = new List<HistoryVersionViewModel>() };
-            
+
             foreach (var history in viewData)
             {
                 viewModel.History.Add(new HistoryVersionViewModel
@@ -81,12 +81,12 @@ namespace FrontEnd.Modules.Templates.Controllers
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/DynamicContentHistoryPane", viewModel);
         }
-        
+
         [HttpPost, Route("HistoryRow")]
         public IActionResult HistoryRow([FromBody]List<HistoryVersionModel> viewData)
         {
             var viewModel = new DynamicContentHistoryPaneViewModel { History = new List<HistoryVersionViewModel>() };
-            
+
             foreach (var history in viewData)
             {
                 viewModel.History.Add(new HistoryVersionViewModel
@@ -112,29 +112,30 @@ namespace FrontEnd.Modules.Templates.Controllers
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/PublishedEnvironments", tabViewData);
         }
-        
+
         /// <summary>
-        /// Get all possible components. These components should are retrieved from the assembly and should have the basetype CmsComponent&lt;CmsSettings, Enum&gt;
+        /// Get all possible components. These components should are retrieved from the assembly and any plugins and should have the base type CmsComponent&lt;CmsSettings, Enum&gt;
         /// </summary>
-        /// <returns>Dictionary of typeinfos and object attributes of all the components found in the GCL.</returns>
+        /// <returns>Dictionary of type infos and object attributes of all the components found in the GCL.</returns>
         private Dictionary<TypeInfo, CmsObjectAttribute> GetComponents()
         {
             var componentType = typeof(CmsComponent<CmsSettings, Enum>);
-            var assembly = componentType.Assembly;
-
-            var typeInfoList = assembly.DefinedTypes.Where(
-                type => type.BaseType != null
-                        && type.BaseType.IsGenericType
-                        && componentType.IsGenericType
-                        && type.BaseType.GetGenericTypeDefinition() == componentType.GetGenericTypeDefinition()
-            ).OrderBy(type => type.Name).ToList();
-
             var resultDictionary = new Dictionary<TypeInfo, CmsObjectAttribute>();
-
-            foreach (var typeInfo in typeInfoList)
+            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.FullName!.StartsWith("GeeksCoreLibrary"));
+            foreach (var assembly in loadedAssemblies)
             {
-                resultDictionary.Add(typeInfo, typeInfo.GetCustomAttribute<CmsObjectAttribute>());
+                var typeInfoList = assembly.DefinedTypes.Where(
+                    type => type.BaseType is {IsGenericType: true}
+                            && componentType.IsGenericType
+                            && type.BaseType.GetGenericTypeDefinition() == componentType.GetGenericTypeDefinition()
+                ).OrderBy(type => type.Name).ToList();
+
+                foreach (var typeInfo in typeInfoList)
+                {
+                    resultDictionary.Add(typeInfo, typeInfo.GetCustomAttribute<CmsObjectAttribute>());
+                }
             }
+
             return resultDictionary;
         }
     }
