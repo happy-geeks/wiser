@@ -2032,7 +2032,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null)
+        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null, int linkType = 0)
         {
             if (moduleId <= 0)
             {
@@ -2112,7 +2112,12 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             if (checkId > 0)
             {
                 checkIdJoin = $@"# Check if item needs to be checked in item-linker field.
-                                    LEFT JOIN {WiserTableNames.WiserItemLink} AS checked ON checked.item_id = item.id AND checked.destination_item_id = ?checkId";
+LEFT JOIN {WiserTableNames.WiserItemLink} AS checked ON checked.item_id = item.id AND checked.destination_item_id = ?checkId";
+                if (linkType > 0)
+                {
+                    clientDatabaseConnection.AddParameter("linkType", linkType);
+                    checkIdJoin += " AND checked.type = ?linkType";
+                }
             }
 
             // Get items via wiser_itemlink.
