@@ -270,10 +270,8 @@ export class EntityTab {
             this.base.showNotification("notification", `Entiteit succesvol toegevoegd`, "success");
             await this.reloadEntityList(true);
 
-            this.entitiesCombobox.one("dataBound", () => {
-                this.entitiesCombobox.select((dataItem) => {
-                    return dataItem.name === name;
-                });
+            this.entitiesCombobox.select((dataItem) => {
+                return dataItem.name === name;
             });
 
             // Select the entity tab again after creating a new entity.
