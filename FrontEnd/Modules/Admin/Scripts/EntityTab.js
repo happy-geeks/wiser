@@ -1769,7 +1769,7 @@ export class EntityTab {
         let tabStrip = popUpHtml.find(".tabStripActionButton");
         let userParametersGrid = popUpHtml.find(".actionButtonUserParametersGrid");
         let itemLink = popUpHtml.find(".actionButtonItemLink");
-        let actionQueryId = popUpHtml.find("#actionButtonQueryItemId");
+        let actionQueryList = popUpHtml.find("#actionButtonQueryList");
         let dataSelectorId = popUpHtml.find("#dataSelectorId");
         let actionButtonUrlWindowHeight = popUpHtml.find("#actionButtonUrlWindowHeight");
         let actionButtonUrlWindowWidth = popUpHtml.find("#actionButtonUrlWindowWidth");
@@ -1811,7 +1811,7 @@ export class EntityTab {
             this.actionButtonUrlWindowHeight.value("");
             this.actionButtonUrlWindowWidth.value("");
             // query
-            this.actionButtonQueryItemId.value("");
+            this.actionButtonQueryList.value("");
             // hide extra fields
             popUpHtml.find("[data-visible]").hide();
             // empty generate file fields
@@ -1959,11 +1959,25 @@ export class EntityTab {
                 format: "#"
             }).data("kendoNumericTextBox");
 
-            this.actionButtonQueryItemId = actionQueryId.kendoNumericTextBox({
-                decimals: 0,
-                min: 0,
-                format: "#"
-            }).data("kendoNumericTextBox");
+            this.actionButtonQueryList = actionQueryList.kendoDropDownList({
+                placeholder: "Select een query...",
+                clearButton: false,
+                height: 400,
+                dataTextField: "description",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    description: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: {},
+                cascade: (event) => {
+                    // update id label when selection changes
+                    let item = event.sender.dataItem();
+                    document.getElementById("actionButtonQueryIdLbl").innerHTML = "id: " + (item !== undefined ? item.id : -1);
+                }
+            }).data("kendoDropDownList");
 
             this.dataSelectorId = dataSelectorId.kendoNumericTextBox({
                 decimals: 0,
@@ -2031,6 +2045,9 @@ export class EntityTab {
         tagGroup.find(`[data-visible*=${gridDataItem.type}]`).show().trigger("click");
         tagStrip.activateTab(tagGroup.find(`[data-visible*=${gridDataItem.type}]`));
 
+        // load existing queries into combobox
+        this.actionButtonQueryList.setDataSource(this.base.wiserQueryTab.queryList);
+        
         // set properties accordingly
         if (gridDataItem.action) {
             const actionTypes = this.base.actionButtonTypes;
@@ -2051,7 +2068,9 @@ export class EntityTab {
                 case actionTypes.EXECUTEQUERY.id:
                 case actionTypes.EXECUTEQUERYONCE.id:
                 case actionTypes.GENERATEFILE.id: {
-                    this.actionButtonQueryItemId.value(gridDataItem.action.queryId);
+                    this.actionButtonQueryList.select((dataItem) => {
+                        return dataItem.id === gridDataItem.action.queryId;
+                    });
                     let up = gridDataItem.action.userParameters;
                     let rows = [];
 
@@ -2177,8 +2196,8 @@ export class EntityTab {
             case actionTypes.EXECUTEQUERY.id:
             case actionTypes.EXECUTEQUERYONCE.id:
             case actionTypes.GENERATEFILE.id:
-                // shared among executequery and generate file
-                action.queryId = this.actionButtonQueryItemId.value();
+                // shared among execute query and generate file
+                action.queryId = this.actionButtonQueryList.dataItem() !== undefined ? this.actionButtonQueryList.dataItem().id : 0;
                 action.userParameters = [];
                 var upg = this.userParametersGrid.dataSource.data();
                 for (let i = 0; i < upg.length; i++) {
