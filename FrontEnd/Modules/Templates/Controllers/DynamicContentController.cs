@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+﻿using System.Collections.Generic;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
-using GeeksCoreLibrary.Core.Cms;
-using GeeksCoreLibrary.Core.Cms.Attributes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FrontEnd.Modules.Templates.Controllers
@@ -38,7 +33,7 @@ namespace FrontEnd.Modules.Templates.Controllers
             var viewModel = baseService.CreateBaseViewModel<DynamicContentViewModel>();
             viewModel.ContentId = id;
             viewModel.TemplateId = templateId;
-            viewModel.Components = GetComponents();
+            viewModel.Components = ReflectionHelper.GetComponents();
             return View(viewModel);
         }
 
@@ -111,32 +106,6 @@ namespace FrontEnd.Modules.Templates.Controllers
         {
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/PublishedEnvironments", tabViewData);
-        }
-
-        /// <summary>
-        /// Get all possible components. These components should are retrieved from the assembly and any plugins and should have the base type CmsComponent&lt;CmsSettings, Enum&gt;
-        /// </summary>
-        /// <returns>Dictionary of type infos and object attributes of all the components found in the GCL.</returns>
-        private Dictionary<TypeInfo, CmsObjectAttribute> GetComponents()
-        {
-            var componentType = typeof(CmsComponent<CmsSettings, Enum>);
-            var resultDictionary = new Dictionary<TypeInfo, CmsObjectAttribute>();
-            var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().Where(assembly => assembly.FullName!.StartsWith("GeeksCoreLibrary"));
-            foreach (var assembly in loadedAssemblies)
-            {
-                var typeInfoList = assembly.DefinedTypes.Where(
-                    type => type.BaseType is {IsGenericType: true}
-                            && componentType.IsGenericType
-                            && type.BaseType.GetGenericTypeDefinition() == componentType.GetGenericTypeDefinition()
-                ).OrderBy(type => type.Name).ToList();
-
-                foreach (var typeInfo in typeInfoList)
-                {
-                    resultDictionary.Add(typeInfo, typeInfo.GetCustomAttribute<CmsObjectAttribute>());
-                }
-            }
-
-            return resultDictionary;
         }
     }
 }
