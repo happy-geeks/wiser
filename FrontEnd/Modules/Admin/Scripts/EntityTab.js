@@ -3232,7 +3232,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
         // numeric default
         this.defaultNumeric.value(0);
-        this.numberOfDec.value(2);
+        this.numberOfDec.value(0);
         this.numberFormat.select("");
         $("#differentFormatHolder").hide();
         document.getElementById("differentFormat").value = "";
