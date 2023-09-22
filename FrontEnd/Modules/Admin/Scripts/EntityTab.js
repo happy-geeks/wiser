@@ -2827,7 +2827,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                         const data = this.grid.dataSource.data();
                         const dataSource = [];
                         // specific check if all itemrows are filled.
-                        for (const i = 0; i < data.length; i++) {
+                        for (let i = 0; i < data.length; i++) {
                             if (data[i].id == null || data[i].id === "" || data[i].name == null || data[i].name === "") {
                                 this.base.showNotification("notification", `Vul bij "Vaste waardes" alle items met naam en id in!`, "error");
                                 return;
