@@ -3613,7 +3613,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                 this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals", 0));
                 // set format dropdown
                 let found = false;
-                const format = getOptionValueAndDeleteForOptionsField("format");
+                const format = getOptionValueAndDeleteForOptionsField("format", "");
                 this.numberFormat.select((dataItem) => {
                     if (dataItem.value === format) {
                         return found = true;
