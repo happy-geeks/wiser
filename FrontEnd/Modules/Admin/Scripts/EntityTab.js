@@ -3160,7 +3160,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
     selectTabInTreeView(tabName, alsoExpand = false) {
         const selectedTab = this.propertiesTreeView.dataSource.get(tabName);
         if (selectedTab === undefined) {
-            console.warn("Unable to open tab " + tabName + " in tree view");
+            console.warn(`Unable to open tab ${tabName} in tree view`);
             return;
         }
         const nodeToSelect = this.propertiesTreeView.findByUid(selectedTab.uid);
