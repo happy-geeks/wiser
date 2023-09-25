@@ -1960,7 +1960,7 @@ export class EntityTab {
             }).data("kendoNumericTextBox");
 
             this.actionButtonQueryList = actionQueryList.kendoDropDownList({
-                placeholder: "Select een query...",
+                placeholder: "Selecteer een query...",
                 clearButton: false,
                 height: 400,
                 dataTextField: "description",
@@ -1974,8 +1974,8 @@ export class EntityTab {
                 dataSource: {},
                 cascade: (event) => {
                     // update id label when selection changes
-                    let item = event.sender.dataItem();
-                    document.getElementById("actionButtonQueryIdLbl").innerHTML = "id: " + (item !== undefined ? item.id : -1);
+                    let selectedQueryID = event.sender.dataItem() !== undefined ? event.sender.dataItem().id : -1;
+                    document.getElementById("actionButtonQueryIdLbl").innerHTML = `id: ${selectedQueryID}`;
                 }
             }).data("kendoDropDownList");
 
