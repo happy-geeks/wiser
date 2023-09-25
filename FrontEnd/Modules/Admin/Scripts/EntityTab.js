@@ -1797,7 +1797,7 @@ export class EntityTab {
             // open window and set to default
             $("#actionButtonPopupHtml").show();
             window.setOptions({
-                width: 1000,
+                width: 1200,
                 height: 800
             });
             // set to fields default
@@ -1829,7 +1829,7 @@ export class EntityTab {
             this.userParametersGrid.setDataSource(resetDs);
         } else {
             window = $("#actionButtonPopupHtml").kendoWindow({
-                width: 1000,
+                width: 1200,
                 height: 800
             }).data("kendoWindow");
 
@@ -1892,7 +1892,8 @@ export class EntityTab {
                 columns: [
                     {
                         field: "name",
-                        title: "Naam parameter"
+                        title: "Naam parameter",
+                        width: "200px"
                     },
                     {
                         field: "question",
@@ -1904,23 +1905,28 @@ export class EntityTab {
                         editor: fieldTypeDropDownList,
                         template: (event) => {
                             return event.fieldTypeId === "" ? event.fieldType.text : this.base.fieldTypesDropDown[event.fieldTypeId.toUpperCase()].text;
-                        }
+                        },
+                        width: "125px"
                     },
                     {
                         field: "value",
-                        title: "Standaardwaarde"
+                        title: "Standaardwaarde",
+                        width: "150px"
                     },
                     {
                         field: "format",
-                        title: "Format"
+                        title: "Format",
+                        width: "100px"
                     },
                     {
                         field: "queryId",
-                        title: "Query id"
+                        title: "Query id",
+                        width: "75px"
                     },
                     {
                         field: "gridHeight",
-                        title: "Grid hoogte"
+                        title: "Grid hoogte",
+                        width: "95px"
                     },
                     {
                         field: "dataTextField",
@@ -1944,8 +1950,9 @@ export class EntityTab {
                         command: [
                             { text: "↑", click: this.base.moveUp.bind(this.base) },
                             { text: "↓", click: this.base.moveDown.bind(this.base) },
-                            "destroy"
-                        ]
+                            { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
+                        ],
+                        width: "152px" // minimum needed to not have the delete button disappear
                     }
 
                 ]
