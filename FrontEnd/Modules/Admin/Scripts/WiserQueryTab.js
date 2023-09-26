@@ -9,7 +9,7 @@ export class WiserQueryTab {
 
     async initializeKendoComponents() {
         this.queryCombobox = $("#queryList").kendoDropDownList({
-            placeholder: "Select een query...",
+            placeholder: "Selecteer een query...",
             clearButton: false,
             height: 400,
             dataTextField: "description",
