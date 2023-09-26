@@ -888,8 +888,7 @@ dd {
 .radio span {
 	display: inline-block;
 	line-height: 1em;
-	min-height: 28px;
-	padding: 12px 5px 12px 28px;
+	padding: 8px 5px 5px 28px;
 	position: relative;
 }
 .checkbox span:before,
@@ -900,7 +899,7 @@ dd {
 	height: 18px;
 	position: absolute;
 	left: 0;
-	top: 8px;
+	top: 4px;
 	width: 18px;
 }
 .toggle input:checked + label > span:after,
@@ -912,7 +911,7 @@ input:checked + .checkbox span:after,
 	height: 10px;
 	position: absolute;
 	left: 5px;
-	top: 13px;
+	top: 9px;
 	width: 10px;
 }
 .radio span:before,
