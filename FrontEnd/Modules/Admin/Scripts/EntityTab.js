@@ -318,13 +318,13 @@ export class EntityTab {
             await Promise.all(promises);
 
             await this.onEntitiesComboBoxSelect();
-
-            this.selectTabInTreeView(tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol aangemaakt, probeer het opnieuw`, "error");
         }
+        
+        this.selectTabInTreeView(tabName === "" ? "Gegevens" : tabName, true);
     }
 
     /**
@@ -354,12 +354,13 @@ export class EntityTab {
             this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
 
             await this.onEntitiesComboBoxSelect(this);
-            this.selectTabInTreeView(selectedProperty.tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol verwijderd, probeer het opnieuw`, "error");
         }
+        
+        this.selectTabInTreeView(selectedProperty.tabName, true);
     }
 
     /**
@@ -3182,6 +3183,10 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
     selectTabInTreeView(tabName, alsoExpand = false) {
         const selectedTab = this.propertiesTreeView.dataSource.get(tabName);
+        if (selectedTab === undefined) {
+            console.warn(`Unable to open tab ${tabName} in tree view`);
+            return;
+        }
         const nodeToSelect = this.propertiesTreeView.findByUid(selectedTab.uid);
         this.propertiesTreeView.select(nodeToSelect);
         if (!alsoExpand) {
