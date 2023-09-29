@@ -794,7 +794,7 @@ LIMIT 1";
                             break;
                         }
 
-                        var itemIdFromFile = fileDataTable.Rows[0].Field<ulong>("item_id");
+                        var itemIdFromFile = Convert.ToUInt64(fileDataTable.Rows[0]["item_id"]);
                         if (itemIdFromFile > 0)
                         {
                             var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemIdFromFile);
@@ -803,7 +803,7 @@ LIMIT 1";
                         }
 
                         // First get the source item ID and destination item ID of the link.
-                        var linkIdFromFile = fileDataTable.Rows[0].Field<ulong>("itemlink_id");
+                        var linkIdFromFile = Convert.ToUInt64(fileDataTable.Rows[0]["itemlink_id"]);
                         var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
                         if (!linkData.HasValue)
                         {
@@ -1729,7 +1729,7 @@ LIMIT 1";
                 var sourceDataTable = new DataTable();
                 using var sourceAdapter = new MySqlDataAdapter(command);
                 await sourceAdapter.FillAsync(sourceDataTable);
-                if (sourceDataTable.Rows.Count == 0 || !String.Equals(sourceDataTable.Rows[0].Field<string>("entity_type"), linkTypeSettings.SourceEntityType))
+                if (sourceDataTable.Rows.Count == 0 || !String.Equals(sourceDataTable.Rows[0].Field<string>("entity_type"), linkTypeSettings.SourceEntityType, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -1742,7 +1742,7 @@ LIMIT 1";
                 var destinationDataTable = new DataTable();
                 using var destinationAdapter = new MySqlDataAdapter(command);
                 await destinationAdapter.FillAsync(destinationDataTable);
-                if (destinationDataTable.Rows.Count == 0 || !String.Equals(destinationDataTable.Rows[0].Field<string>("entity_type"), linkTypeSettings.DestinationEntityType))
+                if (destinationDataTable.Rows.Count == 0 || !String.Equals(destinationDataTable.Rows[0].Field<string>("entity_type"), linkTypeSettings.DestinationEntityType, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
