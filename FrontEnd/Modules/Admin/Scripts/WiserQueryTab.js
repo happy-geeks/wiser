@@ -9,7 +9,7 @@ export class WiserQueryTab {
 
     async initializeKendoComponents() {
         this.queryCombobox = $("#queryList").kendoDropDownList({
-            placeholder: "Select een query...",
+            placeholder: "Selecteer een query...",
             clearButton: false,
             height: 400,
             dataTextField: "description",
@@ -192,6 +192,7 @@ export class WiserQueryTab {
     }
 
     async setQueryProperties(resultSet) {
+        document.getElementById("queryIdLbl").innerHTML = `id: ${resultSet.id}`;
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.showInExportModule;
         document.getElementById("showInCommunicationModule").checked = resultSet.showInCommunicationModule;

@@ -80,7 +80,7 @@ ORDER BY isDirectory DESC, name ASC";
             model.ExpandedSpriteCssClass = Constants.OpenedDirectoryIconClass;
             model.Html = dataRow.Field<string>("html");
             model.PropertyName = dataRow.Field<string>("propertyName");
-            model.ItemId = dataRow.Field<ulong>("itemId");
+            model.ItemId = Convert.ToUInt64(dataRow["itemId"]);
             model.ContentType = dataRow.Field<string>("contentType");
             return model;
         }).ToList();
