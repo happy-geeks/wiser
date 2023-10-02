@@ -82,7 +82,7 @@
                         }
 
                         <div id="right-pane" style="background-color: #eeeeee;">
-                            <div class="tabstrip k-tabstrip-wrapper">
+                            <div id="tabStrip" class="tabstrip k-tabstrip-wrapper">
                                 <ul>
                                     <li class="development-tab k-state-active" data-name="development">Development</li>
                                     <li class="config-tab" data-name="configuration">Configuration</li>
@@ -92,7 +92,7 @@
                                 </ul>
                                 <div id="developmentTab"></div>
                                 <div id="wtsConfigurationTab">
-                                    <partial name="Tabs/WtsConfigurationTab"/>
+                                    @* <partial name="Tabs/WtsConfigurationTab"/> *@
                                 </div>
                                 <div id="dynamicContentTab">
                                     <partial name="Tabs/DynamicContentTab"/>

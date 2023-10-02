@@ -75,6 +75,13 @@ namespace FrontEnd.Modules.Templates.Controllers
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/DevelopmentTab", tabViewData);
         }
+        
+        [HttpPost, Route("WtsConfigurationTab")]
+        public IActionResult WtsConfigurationTab([FromBody]WtsConfigurationTabViewModel tabViewData)
+        {
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Tabs/WtsConfigurationTab", tabViewData);
+        }
 
         [HttpPost, Route("HistoryTab")]
         public IActionResult HistoryTab([FromBody]HistoryTabViewModel tabViewData)

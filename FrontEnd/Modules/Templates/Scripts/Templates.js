@@ -1,4 +1,4 @@
-﻿import {TrackJS} from "trackjs";
+import {TrackJS} from "trackjs";
 import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
@@ -3042,6 +3042,102 @@ const moduleSettings = {
             window.processing.removeProcess(process);
         }
     }
+
+    // Q: Does this initiliaze the tabstrip so we can use the .select() method later on?
+    let tabStrip = $("#tabStrip").kendoTabStrip().data("kendoTabStrip");
+    // Keep track of the last selected tab so we don't do anything if the same tab is selected again.
+    let lastSelectedTab = null;
+    
+    // When the tab is selected, do something
+    $("#tabStrip").on("click", async function () {
+        const selectedTab = tabStrip.select(); // Get the selected tab
+        const tabName = selectedTab.attr("data-name"); // Get the name of the selected tab
+        // Check if selected tab is the same as the last selected tab
+        if (lastSelectedTab === tabName) {
+            // If it is, do nothing
+            return;
+        }
+        // If it isn't, set the last selected tab to the current selected tab
+        lastSelectedTab = tabName;
+        // Check if the selected tab is the configuration tab
+        if (tabName == "configuration") {
+            console.log("Configuration tab has been selected");
+            // ==============================================================================
+            // **                                                                          **
+            //    Maybe this is a good place to request all data
+            //    required for the configuration?
+            //    Reason could be that every time the tab is selected it has to
+            //    load in updated information since changes could be made in
+            //    the development tab.
+            // **                                                                          **
+            // ==============================================================================
+            let promises = null;
+            let templateSettings1 = null;
+
+            // Set promise for a call to the api
+            promises = [
+                Wiser.api({
+                    url: `https://localhost:44349/api/v3/templates/146/settings`,
+                    dataType: "json",
+                    method: "GET"
+                })
+            ];
+
+            // Get the data from the api
+            try {
+                templateSettings1 = await Promise.all(promises);
+            }
+            catch (e) {
+                console.error("Error on contacting API", e);
+                return;
+            }
+            
+            // Set the data to the class
+            // Q: Why is this an array?
+            console.log("Settings from API", templateSettings1[0]);
+            
+            // Now that we have the data, we can start to build the configuration tab view
+            // Empty promises
+            promises = [];
+            
+            // Set promise for a call to the api
+            promises.push(
+                Wiser.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/WtsConfigurationTab",
+                    data: JSON.stringify({
+                        TemplateSettings: templateSettings1[0]
+                    })
+                }).then(async (response) => {
+                    console.log("Configuration tab data:");
+                    console.log(response);
+                    document.getElementById("wtsConfigurationTab").innerHTML = response;
+                    // Initiliaze configuration script so the kendo controls can be used
+                    // Q: We now call a different file that contains the configuration script
+                    // Should we move most part of this function to that file?
+                    // I understand why we have to init this here but why is it initialized when
+                    // it is loaded from a partial?
+                    let wtsConfigurationScript = new WtsConfiguration();
+                    wtsConfigurationScript.initializeKendoComponents();
+                    // Initiliaze the tabstrip
+                    // Q: Why do we need to do this? This wasn't necesarry when loading the config script from a partial
+                    $("#tabStripConfiguration").kendoTabStrip().data("kendoTabStrip");
+                })
+            );
+            
+            // Run the promises
+            try {
+                await Promise.all(promises);
+            }
+            catch (e) {
+                // Log the error
+                console.error("Error on grabbing view data", e);
+                // Show the error
+                document.getElementById("wtsConfigurationTab").innerHTML = "Error on grabbing view data";
+            }
+        }
+    });
 
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.Templates = new Templates(settings);
