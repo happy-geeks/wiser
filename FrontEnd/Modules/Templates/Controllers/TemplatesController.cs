@@ -4,8 +4,10 @@ using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
+using FrontEnd.Modules.Templates.Services;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 
 namespace FrontEnd.Modules.Templates.Controllers
 {
@@ -77,8 +79,12 @@ namespace FrontEnd.Modules.Templates.Controllers
         }
         
         [HttpPost, Route("WtsConfigurationTab")]
-        public IActionResult WtsConfigurationTab([FromBody]WtsConfigurationTabViewModel tabViewData)
+        public IActionResult WtsConfigurationTab([FromBody]WtsConfigurationModel data)
         {
+            // Parse the incoming xml to a model
+            XmlParsingService parser = new XmlParsingService();
+            WtsConfigurationTabViewModel tabViewData = parser.formatXmlToModel(data.TemplateSettings.EditorValue);
+            
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/WtsConfigurationTab", tabViewData);
         }

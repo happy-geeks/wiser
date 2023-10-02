@@ -3049,7 +3049,8 @@ const moduleSettings = {
     let lastSelectedTab = null;
     
     // When the tab is selected, do something
-    $("#tabStrip").on("click", async function () {
+    $("#tabStrip").on("click", async function (event) {
+        // Q: Is this the most efficient way to get the currently selected tab?
         const selectedTab = tabStrip.select(); // Get the selected tab
         const tabName = selectedTab.attr("data-name"); // Get the name of the selected tab
         // Check if selected tab is the same as the last selected tab
@@ -3062,6 +3063,9 @@ const moduleSettings = {
         // Check if the selected tab is the configuration tab
         if (tabName == "configuration") {
             console.log("Configuration tab has been selected");
+            // Tell the user that the tab is loading
+            document.getElementById("wtsConfigurationTab").innerHTML = "Loading...";
+            
             // ==============================================================================
             // **                                                                          **
             //    Maybe this is a good place to request all data
@@ -3069,6 +3073,9 @@ const moduleSettings = {
             //    Reason could be that every time the tab is selected it has to
             //    load in updated information since changes could be made in
             //    the development tab.
+            //
+            //    Q: This means the development tab should also behave this way,
+            //    how do we do this?
             // **                                                                          **
             // ==============================================================================
             let promises = null;
@@ -3110,8 +3117,6 @@ const moduleSettings = {
                         TemplateSettings: templateSettings1[0]
                     })
                 }).then(async (response) => {
-                    console.log("Configuration tab data:");
-                    console.log(response);
                     document.getElementById("wtsConfigurationTab").innerHTML = response;
                     // Initiliaze configuration script so the kendo controls can be used
                     // Q: We now call a different file that contains the configuration script
@@ -3132,9 +3137,9 @@ const moduleSettings = {
             }
             catch (e) {
                 // Log the error
-                console.error("Error on grabbing view data", e);
+                console.error("Error on getting view data", e);
                 // Show the error
-                document.getElementById("wtsConfigurationTab").innerHTML = "Error on grabbing view data";
+                document.getElementById("wtsConfigurationTab").innerHTML = "Error on getting view data";
             }
         }
     });

@@ -1,4 +1,5 @@
-﻿@using GeeksCoreLibrary.Modules.Templates.Enums
+﻿@using DocumentFormat.OpenXml.EMMA
+@using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.WtsConfigurationTabViewModel
 @* <div class="configContainer"> *@
     <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
@@ -13,12 +14,12 @@
             <div class="formview compact">
                 <div class="item">
                     <h4><label>Naam</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="@Model.getServiceName()" />
+                    <input id="wts-name" type="text" class="k-input" value="@Model.ServiceName" />
                     <div class="form-hint"><span>Dit is de naam van de service</span></div>
                 </div>
                 <div class="item">
                     <h4><label>Connectiestring</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="@Model.getConnectionString()" />
+                    <input id="wts-name" type="text" class="k-input" value="@Model.ConnectionString" />
                     <div class="form-hint"><span>MySQL Connectiestring</span></div>
                 </div>
                 
