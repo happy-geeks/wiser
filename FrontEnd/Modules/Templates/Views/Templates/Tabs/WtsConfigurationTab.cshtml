@@ -1,8 +1,10 @@
-﻿<div class="configContainer">
-    <div class="tabstrip k-tabstrip-wrapper">
-        <ul>
-            <li class="service-tab" data-name="wts-service">Service</li>
-            <li class="timers-tab k-state-active" data-name="wts-timers">Timers</li>
+﻿@using GeeksCoreLibrary.Modules.Templates.Enums
+@model FrontEnd.Modules.Templates.Models.WtsConfigurationTabViewModel
+@* <div class="configContainer"> *@
+    <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
+        <ul class="k-tabstrip-items k-reset" role="none">
+            <li class="service-tab k-state-active" data-name="wts-service">Service</li>
+            <li class="timers-tab" data-name="wts-timers">Timers</li>
             <li class="actions-tab" data-name="wts-actions">Actions</li>
             <li class="statistic-tab" data-name="wts-statistic">Statistiek</li>
             <li class="logging-tab" data-name="wts-logging">Logging</li>
@@ -11,12 +13,12 @@
             <div class="formview compact">
                 <div class="item">
                     <h4><label>Naam</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="" />
+                    <input id="wts-name" type="text" class="k-input" value="@Model.getServiceName()" />
                     <div class="form-hint"><span>Dit is de naam van de service</span></div>
                 </div>
                 <div class="item">
                     <h4><label>Connectiestring</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="" />
+                    <input id="wts-name" type="text" class="k-input" value="@Model.getConnectionString()" />
                     <div class="form-hint"><span>MySQL Connectiestring</span></div>
                 </div>
                 
@@ -190,4 +192,4 @@
                 op periode filteren...</em>
         </div>
     </div>
-</div>
+@* </div> *@
