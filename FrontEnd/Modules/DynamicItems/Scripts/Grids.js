@@ -1504,6 +1504,8 @@ export class Grids {
         }
 
         grid.dataSource.filter({});
+        // manually trigger the filter event to save the state because the above call doesn't do so
+        grid.trigger("filter", { filter: null, field: null });
     }
 
     /**
