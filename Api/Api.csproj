@@ -155,7 +155,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.0.0" />
+    <PackageReference Include="GeeksCoreLibrary" Version="4.0.1" />
     <PackageReference Include="GeeksCoreLibrary.Components.Configurator" Version="1.0.2" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.2.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.1.0" />
