@@ -343,6 +343,7 @@ export class WiserLinkTab {
                 data: JSON.stringify(linkSettingsModel),
                 method: "PUT"
             });
+            await this.reloadWiserLinkList();
             this.base.showNotification("notification", "Wiser Link succesvol aangepast", "success");
         }
         catch (exception) {

@@ -405,13 +405,14 @@ namespace Api.Modules.Items.Controllers
         /// <param name="encryptedItemId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
+        /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
         /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
         [HttpGet]
         [Route("tree-view")]
         [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null)
+        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null, [FromQuery] int linkType = 0)
         {
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encryptedItemId, orderBy, checkId)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encryptedItemId, orderBy, checkId, linkType)).GetHttpResponseMessage();
         }
 
         /// <summary>

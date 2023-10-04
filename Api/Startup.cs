@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Api.Core.Filters;
+using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Customers.Interfaces;
@@ -277,7 +278,7 @@ namespace Api
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger, IPluginsService pluginService)
         {
             if (env.IsDevelopment())
             {
@@ -338,6 +339,9 @@ namespace Api
                     Predicate = _ => true
                 });
             });
+
+            // Load plugins for GCL and Wiser.
+            pluginService.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"));
         }
     }
 #pragma warning restore CS1591
