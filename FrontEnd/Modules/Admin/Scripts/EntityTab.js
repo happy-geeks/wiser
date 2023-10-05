@@ -3261,7 +3261,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
         // numeric default
         this.defaultNumeric.value(0);
-        this.numberOfDec.value(2);
+        this.numberOfDec.value(0);
         this.numberFormat.select("");
         $("#differentFormatHolder").hide();
         document.getElementById("differentFormat").value = "";
@@ -3639,10 +3639,10 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                 this.factorNumber.value(getOptionValueAndDeleteForOptionsField("factor"));
 
                 // set decimals from options
-                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals"));
+                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals", 0));
                 // set format dropdown
                 let found = false;
-                const format = getOptionValueAndDeleteForOptionsField("format");
+                const format = getOptionValueAndDeleteForOptionsField("format", "");
                 this.numberFormat.select((dataItem) => {
                     if (dataItem.value === format) {
                         return found = true;
