@@ -1068,13 +1068,15 @@ export class EntityTab {
                 title: "Id"
             }, {
                 command: [
-
-                    { text: "↑", click: this.base.moveUp.bind(this.base) },
-                    { text: "↓", click: this.base.moveDown.bind(this.base) },
-                    "destroy"
+                    { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                    { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                    { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
                 ]
             }]
         }).data("kendoGrid");
+        $("#valuegrid").kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        $("#valuegrid").kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        $("#valuegrid").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         ////COMBOBOX - GENERAL
         $("#checkedCheckbox").kendoDropDownList().data("kendoDropDownList");
@@ -1454,11 +1456,11 @@ export class EntityTab {
                     dataValueField: "id",
                     valuePrimitive: true,
                     select: (e) => {
-                        const editButton = e.sender.element.closest("tr[role=row]").find("td.k-command-cell a[role=button].k-grid-Wijzigen");
+                        const editButton = e.sender.element.closest("tr[role=row]").find(".k-grid-edit");
                         if (e.dataItem.id === "refreshCurrentItem" || e.dataItem.id === "custom") {
-                            editButton.hide();
+                            editButton.addClass("k-disabled");
                         } else {
-                            editButton.show();
+                            editButton.removeClass("k-disabled");
                         }
                     },
                     optionLabel: {
@@ -1504,21 +1506,30 @@ export class EntityTab {
                 },
                 {
                     command: [
-                        {
-                            text: "Wijzigen",
-                            click: this.onActionButtonGridEditButtonClick.bind(this),
-                            visible: function (dataItem) {
-                                // NOTE: Don't use arrow function here because Kendo throws an error with it.
-                                return dataItem.type !== "refreshCurrentItem" && dataItem.type !== "custom";
-                            }
-                        },
-                        { text: "↑", click: this.base.moveUp.bind(this.base) },
-                        { text: "↓", click: this.base.moveDown.bind(this.base) },
-                        "destroy"],
+                        { name: "edit", text: "", iconClass: "k-icon k-i-edit", click: this.onActionButtonGridEditButtonClick.bind(this) },
+                        { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                        { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                        { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
+                    ],
                     title: " ",
                     width: "170px"
-                }]
+                }],
+            dataBound: function (event) {
+                let grid = event.sender;
+                let dataSource = grid.dataSource;
+                //Loop through each record in a Kendo Grid to disable the edit buttons for refresh and custom items
+                $.each(grid.items(), function(index, item) {
+                    let uid = $(item).data("uid");
+                    let dataItem = dataSource.getByUid(uid);
+                    if (dataItem.type === "refreshCurrentItem" || dataItem.type === "custom")
+                        $(item).find(".k-grid-edit").addClass("k-disabled");
+                });
+            }
         }).data("kendoGrid");
+        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         this.actionButtonGrid = $("#actionButtonGrid").kendoGrid({
             dataSource: {},
@@ -1552,18 +1563,19 @@ export class EntityTab {
                 },
                 {
                     command: [
-                        {
-                            text: "Wijzigen",
-                            click: this.onActionGridEditButtonClick.bind(this)
-                        },
-                        { text: "↑", click: this.base.moveUp.bind(this.base) },
-                        { text: "↓", click: this.base.moveDown.bind(this.base) },
-                        "destroy"
+                        { name: "edit", text: "", iconClass: "k-icon k-i-edit", click: this.onActionGridEditButtonClick.bind(this) },
+                        { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                        { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                        { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
                     ],
                     title: " ",
                     width: "250px"
                 }]
         }).data("kendoGrid");
+        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         this.subEntityGridEntity = $("#subEntityGridEntity").kendoDropDownList({
             autoClose: false,
@@ -1949,8 +1961,8 @@ export class EntityTab {
                     },
                     {
                         command: [
-                            { text: "↑", click: this.base.moveUp.bind(this.base) },
-                            { text: "↓", click: this.base.moveDown.bind(this.base) },
+                            { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                            { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
                             { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
                         ],
                         width: "152px" // minimum needed to not have the delete button disappear
@@ -1958,6 +1970,9 @@ export class EntityTab {
 
                 ]
             }).data("kendoGrid");
+            userParametersGrid.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+            userParametersGrid.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+            userParametersGrid.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
             this.actionButtonItemLink = itemLink.kendoNumericTextBox({
                 decimals: 0,

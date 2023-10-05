@@ -1208,7 +1208,7 @@ const moduleSettings = {
                     columns: [
                         { field: "k", title: "Naam" },
                         { field: "v", title: "Waarde" },
-                        { command: { name: "destroy", text: "Verwijder" }, width: 150 }
+                        { command: { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }, width: 150 }
                     ],
                     editable: {
                         mode: "incell",
@@ -1217,6 +1217,7 @@ const moduleSettings = {
                     },
                     selectable: true
                 }).getKendoGrid();
+                $("<div />").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
                 const closeButton = $('<button type="button" style="margin-top: 1em;">Sluiten</button>').kendoButton().getKendoButton();
 
