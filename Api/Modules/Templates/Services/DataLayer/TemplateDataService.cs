@@ -1425,6 +1425,15 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc />
+        public Task<string> DecryptXml(string encryptionKey, string xml)
+        {
+            if (!String.IsNullOrWhiteSpace(xml) && !xml.Trim().StartsWith("<"))
+            {
+                return Task.FromResult<string>(xml.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true));
+            }
+        }
+
+        /// <inheritdoc />
         public async Task DeployToBranchAsync(List<int> templateIds, string branchDatabaseName)
         {
             var temporaryTableName = $"temp_templates_{Guid.NewGuid():N}";

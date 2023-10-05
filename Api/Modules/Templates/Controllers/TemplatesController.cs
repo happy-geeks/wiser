@@ -145,6 +145,20 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetTemplateSettingsAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
+        
+        /// <summary>
+        /// Retrieve the latest version of the editor value of the template in an object instead of raw XML.
+        /// Also add the options for the available fields.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the editor value of.</param>
+        /// <returns>A object model containing the data of the template editor value.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/parsedXml")]
+        [ProducesResponseType(typeof(TemplateParsedXmlModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetParsedXmlAsync(int templateId)
+        {
+            return (await templatesService.GetTemplateParsedXmlAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+        }
 
         /// <summary>
         /// Retrieve the published environments of a template, this includes a list of all version options.

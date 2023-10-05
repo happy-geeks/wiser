@@ -23,115 +23,79 @@ export class WtsConfiguration {
 
     /**
      * Initializes a new instance of DynamicContent.
-     * @param {any} settings An object containing the settings for this class.
+     * @param {any} base The base Template class.
      */
-    constructor(settings) {
-        this.base = this;
-
-        // Kendo components.
-        this.mainSplitter = null;
-        this.mainWindow = null;
-        this.componentTypeComboBox = null;
-        this.componentModeComboBox = null;
-        this.selectedComponentData = null;
-        this.saving = false;
-        this.changesTimeout = null;
-
-        // Default settings
-        this.settings = {
-            moduleId: 0,
-            customerId: 0,
-            username: "Onbekend",
-            userEmailAddress: "",
-            userType: ""
-        };
-        Object.assign(this.settings, settings);
-
-        // Other.
-        this.mainLoader = null;
-
-        // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
-        kendo.culture("nl-NL");
-
-        // Add logged in user access token to default authorization headers for all jQuery ajax requests.
-        $.ajaxSetup({
-            headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
-        });
-
-        // Fire event on page ready for direct actions
-        $(document).ready(() => {
-            this.onPageReady();
-        });
+    constructor(base) {
+        this.base = base;
+    
+        // TODO: Add all the fields that are used in the configuration tab and initialize them here
+        this.commitEnvironmentField = null;
     }
 
-    /**
-     * Event that will be fired when the page is ready.
-     */
-    async onPageReady() {
-        this.mainLoader = $("#mainLoader");
-
-        // Setup processing.
-        document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
-        document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
-
-        const process = `initialize_${Date.now()}`;
-        window.processing.addProcess(process);
-
-        // Fullscreen event for elements that can go fullscreen, such as HTML editors.
-        const classHolder = $(document.documentElement);
-        const fullscreenChange = "webkitfullscreenchange mozfullscreenchange fullscreenchange MSFullscreenChange";
-        $(document).bind(fullscreenChange, $.proxy(classHolder.toggleClass, classHolder, "k-fullscreen"));
-
-        // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
-        Object.assign(this.settings, $("body").data());
-        this.selectedId = this.settings.templateId;
-
-        if (this.settings.trackJsToken) {
-            TrackJS.install({
-                token: this.settings.trackJsToken
+    async reloadWtsConfigurationTab(id) {
+        // Empty the tab
+        document.getElementById("wtsConfigurationTab").innerHTML = "";
+        
+        // First check to see if id is set
+        if (id === undefined || id === null || id === 0) {
+            console.error("id is not set");
+            return;
+        }
+        
+        // Tell the user that the tab is loading
+        this.base.toggleMainLoader(true);
+        
+        let templateSettings = null;
+        
+        // Get the data from the api
+        try {
+            templateSettings = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}templates/${id}/parsedXml`,
+                dataType: "json",
+                method: "GET"
             });
         }
-
-        const user = JSON.parse(localStorage.getItem("userData"));
-        this.settings.oldStyleUserId = user.oldStyleUserId;
-        this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-        this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-
-        const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
-        this.settings.userId = userData.encryptedId;
-        this.settings.customerId = userData.encryptedCustomerId;
-        this.settings.zeroEncrypted = userData.zeroEncrypted;
-        this.settings.filesRootId = userData.filesRootId;
-        this.settings.imagesRootId = userData.imagesRootId;
-        this.settings.templatesRootId = userData.templatesRootId;
-        this.settings.mainDomain = userData.mainDomain;
-
-        if (!this.settings.wiserApiRoot.endsWith("/")) {
-            this.settings.wiserApiRoot += "/";
+        catch (e) {
+            console.error(e);
+            this.base.toggleMainLoader(false); // Hide the loader
+            kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+            return;
         }
-
+        
+        // Build the view
+        try {
+            await Wiser.api({
+                method: "POST",
+                contentType: "application/json",
+                url: "/Modules/Templates/WtsConfigurationTab",
+                data: JSON.stringify({
+                    TemplateSettings: templateSettings
+                })
+            }).then(async (response) => {
+                this.base.toggleMainLoader(false); // Hide the loader
+                document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the html to the tab
+                $("#tabStripConfiguration").kendoTabStrip().data("kendoTabStrip"); // Initialize the tabstrip
+            })
+        }
+        catch (e) {
+            console.error(e);
+            this.base.toggleMainLoader(false); // Hide the loader
+            kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+        }
+        
         this.initializeKendoComponents();
-
-        window.processing.removeProcess(process);
+        
+        // TODO: use the correct input types for the different fields
     }
 
     /**
      * Initializes all kendo components for the base class.
      */
     initializeKendoComponents() {
-        window.popupNotification = $("#popupNotification").kendoNotification().data("kendoNotification");
-
         this.commitEnvironmentField = $("#wts-log-level").kendoDropDownList({
             optionLabel: "Selecteer log level",
             dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "Debug", value: 1},
-                {text: "Information", value: 2},
-                {text: "Warning", value: 3},
-                {text: "Error", value: 4},
-                {text: "Critical", value: 5}
-            ]
+            dataValueField: "value"
         }).data("kendoDropDownList");
 
         this.commitEnvironmentField = $("#wts-timing-type").kendoDropDownList({

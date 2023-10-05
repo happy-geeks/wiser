@@ -78,6 +78,15 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the template data of the latest version.</returns>
         Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null);
+        
+        /// <summary>
+        /// Get the latest version of the editor value parsed as an object for a given template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="templateId">The id of the template.</param>
+        /// <param name="environment">The environment the template needs to be active on.</param>
+        /// <returns>A <see cref="TemplateParsedXmlModel"/> containing the object of the parsed editor value of the latest version.</returns>
+        Task<ServiceResult<TemplateParsedXmlModel>> GetTemplateParsedXmlAsync(ClaimsIdentity identity, int templateId, Environments? environment = null);
 
         /// <summary>
         /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel

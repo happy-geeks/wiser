@@ -30,6 +30,16 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="version">Optional: If you want to get a specific version, enter that version number here.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the current template data of the template with the given id.</returns>
         Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null, int? version = null);
+        
+        /// <summary>
+        /// Get the editor value of a template and parse it from XML to an object.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the data from.</param>
+        /// <param name="environment">Optional: The environment the template needs to be active on. Get the latest version if no environment has been given.</param>
+        /// <param name="version">Optional: If you want to get a specific version, enter that version number here.</param>
+        /// <returns>A <see cref="TemplateParsedXmlModel"/> containing the current parsed xml object of the template with the given id.</returns>
+        Task<TemplateParsedXmlModel> GetParsedXmlAsync(int templateId, Environments? environment = null, int? version = null);
+
 
         /// <summary>
         /// Get published environments from a template.
@@ -192,6 +202,14 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="encryptionKey">The key used for encryption.</param>
         /// <param name="rawTemplateModel">The <see cref="TemplateSettingsModel"/> to perform the decryption on.</param>
         void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel);
+        
+        /// <summary>
+        /// Decrypt xml that has been encrypted.
+        /// </summary>
+        /// <param name="encryptionKey">The key used for encryption.</param>
+        /// <param name="xml">The incoming xml string.</param>
+        /// <returns>The decrypted xml string.</returns>
+        Task<string> DecryptXml(string encryptionKey, string xml);
 
         /// <summary>
         /// Deploy one or more templates from the main branch to a sub branch.
