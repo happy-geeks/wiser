@@ -405,10 +405,9 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
         /// <inheritdoc />
         public async Task DeployToBranchAsync(List<int> dynamicContentIds, string branchDatabaseName)
         {
-            const string TemporaryTableName = "temp_dynamic_content";
+            var temporaryTableName = $"temp_dynamic_content_{Guid.NewGuid():N}";
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
-            var query = $@"DROP TEMPORARY TABLE IF EXISTS `{branchDatabaseName}`.`{TemporaryTableName}`;
-CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{TemporaryTableName}`
+            var query = $@"CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{temporaryTableName}`
 SELECT content.*
 FROM {WiserTableNames.WiserDynamicContent} AS content
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
@@ -416,7 +415,7 @@ WHERE content.content_id IN ({String.Join(", ", dynamicContentIds)})
 AND otherVersion.id IS NULL;
 
 UPDATE `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent} AS content
-JOIN `{branchDatabaseName}`.`{TemporaryTableName}` AS temp ON temp.content_id = content.content_id AND temp.version = content.version
+JOIN `{branchDatabaseName}`.`{temporaryTableName}` AS temp ON temp.content_id = content.content_id AND temp.version = content.version
 SET content.settings = temp.settings, content.component = temp.component, content.component_mode = temp.component_mode, content.title = temp.title, content.changed_on = temp.changed_on, content.changed_by = temp.changed_by, content.removed = temp.removed, content.is_dirty = temp.is_dirty;
 
 INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent} (
@@ -444,13 +443,15 @@ SELECT
 	published_environment,
 	removed,
 	is_dirty
-FROM `{branchDatabaseName}`.`{TemporaryTableName}` AS temp
+FROM `{branchDatabaseName}`.`{temporaryTableName}` AS temp
 WHERE NOT EXISTS (
     SELECT 1
     FROM `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent} AS content
     WHERE content.content_id = temp.content_id
     AND content.version = temp.version
-);";
+);
+
+DROP TEMPORARY TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`;";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Also copy all links of dynamic content to template to the branch.
