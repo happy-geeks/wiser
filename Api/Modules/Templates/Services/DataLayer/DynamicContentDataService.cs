@@ -228,7 +228,7 @@ LIMIT 1");
 
             return dataTable.Rows.Count == 0 ? null : new DynamicContentOverviewModel
             {
-                Id = dataTable.Rows[0].Field<int>("id"),
+                Id = contentId,
                 Component = dataTable.Rows[0].Field<string>("component"),
                 ComponentMode = dataTable.Rows[0].Field<string>("component_mode"),
                 LatestVersion = dataTable.Rows[0].Field<int>("version"),
