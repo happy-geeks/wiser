@@ -405,13 +405,52 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
         /// <inheritdoc />
         public async Task DeployToBranchAsync(List<int> dynamicContentIds, string branchDatabaseName)
         {
+            const string TemporaryTableName = "temp_dynamic_content";
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
-            var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent}
+            var query = $@"DROP TEMPORARY TABLE IF EXISTS `{branchDatabaseName}`.`{TemporaryTableName}`;
+CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{TemporaryTableName}`
 SELECT content.*
 FROM {WiserTableNames.WiserDynamicContent} AS content
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
 WHERE content.content_id IN ({String.Join(", ", dynamicContentIds)})
-AND otherVersion.id IS NULL";
+AND otherVersion.id IS NULL;
+
+UPDATE `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent} AS content
+JOIN `{branchDatabaseName}`.`{TemporaryTableName}` AS temp ON temp.content_id = content.content_id AND temp.version = content.version
+SET content.settings = temp.settings, content.component = temp.component, content.component_mode = temp.component_mode, content.title = temp.title, content.changed_on = temp.changed_on, content.changed_by = temp.changed_by, content.removed = temp.removed, content.is_dirty = temp.is_dirty;
+
+INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent} (
+	content_id,
+	settings,
+	component,
+	component_mode,
+	version,
+	title,
+	changed_on,
+	changed_by,
+	published_environment,
+	removed,
+	is_dirty
+) 
+SELECT 
+	content_id,
+	settings,
+	component,
+	component_mode,
+	version,
+	title,
+	changed_on,
+	changed_by,
+	published_environment,
+	removed,
+	is_dirty
+FROM `{branchDatabaseName}`.`{TemporaryTableName}` AS temp
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `{branchDatabaseName}`.{WiserTableNames.WiserDynamicContent} AS content
+    WHERE content.content_id = temp.content_id
+    AND content.version = temp.version
+);";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Also copy all links of dynamic content to template to the branch.
@@ -461,7 +500,7 @@ AND componentCommit.id IS NULL";
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("contentId", contentId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT settings, title, removed FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId ORDER BY version DESC LIMIT 1");
+            var dataTable = await clientDatabaseConnection.GetAsync($"SELECT settings, title, removed FROM {WiserTableNames.WiserDynamicContent} WHERE content_id = ?contentId ORDER BY version DESC LIMIT 1");
             if (Convert.ToBoolean(dataTable.Rows[0]["removed"]))
             {
                 return new KeyValuePair<string, string>(null, null);
