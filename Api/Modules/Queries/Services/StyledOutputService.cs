@@ -304,7 +304,7 @@ namespace Api.Modules.Queries.Services
         /// <param name="stripNewlinesAndTabs">if true fetched format strings will have their newlines and tabs removed</param>
         /// <param name="page">the page number used in pagination-supported styled outputs.</param>
         /// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
-        /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null/param>
+        /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null</param>
         /// <returns>Returns the updated string with replacements applied</returns>
         private async Task<string> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
         {
