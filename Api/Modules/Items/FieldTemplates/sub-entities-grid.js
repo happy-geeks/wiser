@@ -229,6 +229,35 @@ if (customQueryGrid) {
     }
 }
     
+function mergeFilterData(data, newData){
+    // if grid had no filter data yet, the newData is all we have!
+    if (data === undefined) {
+        return newData;
+    }
+    
+    // newData.filters is usually length 1, but it doesn't hurt to support >1
+    newData.filters.forEach(newFilter => {
+        let i = data.filters.findIndex((f) => f.field === newFilter.field);
+        
+        // if the existing data already has a filter configured for this field, we are either removing it or changing it
+        if (i >= 0) {
+            // we are removing this filter
+            if (newFilter.operator == null) {
+                data.filters.splice(i, 1);
+            }
+            // it exists and need to be changed
+            else {
+                data.filters[i].operator = newFilter.operator;
+                data.filters[i].value = newFilter.value;
+            }
+        }
+        // existing data does not have this filter, add it (if it's not a removal somehow)
+        else if (newFilter.operator != null) {
+            data.filters.push(newFilter);
+        }
+    });
+    return data;
+}
 async function generateGrid(data, model, columns) {
     var toolbar = [];
     if (!options.toolbar || !options.toolbar.hideExportButton) {
@@ -858,9 +887,22 @@ async function generateGrid(data, model, columns) {
                 });
             }
         },
-        filter: function (event) {
+        filter: function (event) {            
             if (options.keepFiltersState !== false) {
-                dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", kendo.stringify(event.filter));
+                try {
+                    if (event.field == null) { // manual event trigger, all filters were removed
+                        dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", "{}");
+                    }
+                    else {
+                        let mergedData = event.filter != null ?
+                            mergeFilterData(event.sender.dataSource.filter(), event.filter) : // filter was added
+                            mergeFilterData(event.sender.dataSource.filter(), { "filters": [{ "field": event.field, "operator": null }]}); // filter was removed
+                        dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", kendo.stringify(mergedData));
+                    }
+                } catch (exception) {
+                    kendo.alert("Er is iets fout gegaan tijdens het opslaan van de filter instellingen voor dit grid. Probeer het nogmaals, of neem contact op met ons.");
+                    console.error(exception);
+                }
             }
         },
         change: dynamicItems.grids.onGridSelectionChange.bind(dynamicItems.grids)

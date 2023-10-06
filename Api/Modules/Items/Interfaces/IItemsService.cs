@@ -218,8 +218,9 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="encryptedParentId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="encryptedCheckId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
+        /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
         /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
-        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null);
+        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null, int linkType = 0);
 
         /// <summary>
         /// Move an item to a different position in the tree view.

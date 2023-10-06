@@ -45,7 +45,7 @@ namespace Api.Core.Models
         public string PusherAppId { get; set; }
 
         /// <summary>
-        /// The app key used for the Pusher server. 
+        /// The app key used for the Pusher server.
         /// </summary>
         public string PusherAppKey { get; set; }
 
@@ -74,5 +74,10 @@ namespace Api.Core.Models
         /// Gets or sets whether the NPM package 'terser' should be used when minifying scripts saved in the templates module.
         /// </summary>
         public bool UseTerserForTemplateScriptMinification { get; set; }
+
+        /// <summary>
+        /// Gets or sets the directory where the plugins are located.
+        /// </summary>
+        public string PluginsDirectory { get; set; }
     }
 }

@@ -270,10 +270,8 @@ export class EntityTab {
             this.base.showNotification("notification", `Entiteit succesvol toegevoegd`, "success");
             await this.reloadEntityList(true);
 
-            this.entitiesCombobox.one("dataBound", () => {
-                this.entitiesCombobox.select((dataItem) => {
-                    return dataItem.name === name;
-                });
+            this.entitiesCombobox.select((dataItem) => {
+                return dataItem.name === name;
             });
 
             // Select the entity tab again after creating a new entity.
@@ -320,13 +318,13 @@ export class EntityTab {
             await Promise.all(promises);
 
             await this.onEntitiesComboBoxSelect();
-
-            this.selectTabInTreeView(tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol aangemaakt, probeer het opnieuw`, "error");
         }
+        
+        this.selectTabInTreeView(tabName === "" ? "Gegevens" : tabName, true);
     }
 
     /**
@@ -356,12 +354,13 @@ export class EntityTab {
             this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
 
             await this.onEntitiesComboBoxSelect(this);
-            this.selectTabInTreeView(selectedProperty.tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol verwijderd, probeer het opnieuw`, "error");
         }
+        
+        this.selectTabInTreeView(selectedProperty.tabName, true);
     }
 
     /**
@@ -1769,7 +1768,7 @@ export class EntityTab {
         let tabStrip = popUpHtml.find(".tabStripActionButton");
         let userParametersGrid = popUpHtml.find(".actionButtonUserParametersGrid");
         let itemLink = popUpHtml.find(".actionButtonItemLink");
-        let actionQueryId = popUpHtml.find("#actionButtonQueryItemId");
+        let actionQueryList = popUpHtml.find("#actionButtonQueryList");
         let dataSelectorId = popUpHtml.find("#dataSelectorId");
         let actionButtonUrlWindowHeight = popUpHtml.find("#actionButtonUrlWindowHeight");
         let actionButtonUrlWindowWidth = popUpHtml.find("#actionButtonUrlWindowWidth");
@@ -1799,7 +1798,7 @@ export class EntityTab {
             // open window and set to default
             $("#actionButtonPopupHtml").show();
             window.setOptions({
-                width: 1000,
+                width: 1200,
                 height: 800
             });
             // set to fields default
@@ -1811,7 +1810,7 @@ export class EntityTab {
             this.actionButtonUrlWindowHeight.value("");
             this.actionButtonUrlWindowWidth.value("");
             // query
-            this.actionButtonQueryItemId.value("");
+            this.actionButtonQueryList.value("");
             // hide extra fields
             popUpHtml.find("[data-visible]").hide();
             // empty generate file fields
@@ -1831,7 +1830,7 @@ export class EntityTab {
             this.userParametersGrid.setDataSource(resetDs);
         } else {
             window = $("#actionButtonPopupHtml").kendoWindow({
-                width: 1000,
+                width: 1200,
                 height: 800
             }).data("kendoWindow");
 
@@ -1894,7 +1893,8 @@ export class EntityTab {
                 columns: [
                     {
                         field: "name",
-                        title: "Naam parameter"
+                        title: "Naam parameter",
+                        width: "200px"
                     },
                     {
                         field: "question",
@@ -1906,23 +1906,28 @@ export class EntityTab {
                         editor: fieldTypeDropDownList,
                         template: (event) => {
                             return event.fieldTypeId === "" ? event.fieldType.text : this.base.fieldTypesDropDown[event.fieldTypeId.toUpperCase()].text;
-                        }
+                        },
+                        width: "125px"
                     },
                     {
                         field: "value",
-                        title: "Standaardwaarde"
+                        title: "Standaardwaarde",
+                        width: "150px"
                     },
                     {
                         field: "format",
-                        title: "Format"
+                        title: "Format",
+                        width: "100px"
                     },
                     {
                         field: "queryId",
-                        title: "Query id"
+                        title: "Query id",
+                        width: "75px"
                     },
                     {
                         field: "gridHeight",
-                        title: "Grid hoogte"
+                        title: "Grid hoogte",
+                        width: "95px"
                     },
                     {
                         field: "dataTextField",
@@ -1946,8 +1951,9 @@ export class EntityTab {
                         command: [
                             { text: "↑", click: this.base.moveUp.bind(this.base) },
                             { text: "↓", click: this.base.moveDown.bind(this.base) },
-                            "destroy"
-                        ]
+                            { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
+                        ],
+                        width: "152px" // minimum needed to not have the delete button disappear
                     }
 
                 ]
@@ -1959,11 +1965,25 @@ export class EntityTab {
                 format: "#"
             }).data("kendoNumericTextBox");
 
-            this.actionButtonQueryItemId = actionQueryId.kendoNumericTextBox({
-                decimals: 0,
-                min: 0,
-                format: "#"
-            }).data("kendoNumericTextBox");
+            this.actionButtonQueryList = actionQueryList.kendoDropDownList({
+                placeholder: "Selecteer een query...",
+                clearButton: false,
+                height: 400,
+                dataTextField: "description",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    description: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: {},
+                cascade: (event) => {
+                    // update id label when selection changes
+                    let selectedQueryID = event.sender.dataItem() !== undefined ? event.sender.dataItem().id : -1;
+                    document.getElementById("actionButtonQueryIdLbl").innerHTML = `id: ${selectedQueryID}`;
+                }
+            }).data("kendoDropDownList");
 
             this.dataSelectorId = dataSelectorId.kendoNumericTextBox({
                 decimals: 0,
@@ -2031,6 +2051,9 @@ export class EntityTab {
         tagGroup.find(`[data-visible*=${gridDataItem.type}]`).show().trigger("click");
         tagStrip.activateTab(tagGroup.find(`[data-visible*=${gridDataItem.type}]`));
 
+        // load existing queries into combobox
+        this.actionButtonQueryList.setDataSource(this.base.wiserQueryTab.queryList);
+        
         // set properties accordingly
         if (gridDataItem.action) {
             const actionTypes = this.base.actionButtonTypes;
@@ -2051,7 +2074,9 @@ export class EntityTab {
                 case actionTypes.EXECUTEQUERY.id:
                 case actionTypes.EXECUTEQUERYONCE.id:
                 case actionTypes.GENERATEFILE.id: {
-                    this.actionButtonQueryItemId.value(gridDataItem.action.queryId);
+                    this.actionButtonQueryList.select((dataItem) => {
+                        return dataItem.id === gridDataItem.action.queryId;
+                    });
                     let up = gridDataItem.action.userParameters;
                     let rows = [];
 
@@ -2177,8 +2202,8 @@ export class EntityTab {
             case actionTypes.EXECUTEQUERY.id:
             case actionTypes.EXECUTEQUERYONCE.id:
             case actionTypes.GENERATEFILE.id:
-                // shared among executequery and generate file
-                action.queryId = this.actionButtonQueryItemId.value();
+                // shared among execute query and generate file
+                action.queryId = this.actionButtonQueryList.dataItem() !== undefined ? this.actionButtonQueryList.dataItem().id : 0;
                 action.userParameters = [];
                 var upg = this.userParametersGrid.dataSource.data();
                 for (let i = 0; i < upg.length; i++) {
@@ -2827,7 +2852,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                         const data = this.grid.dataSource.data();
                         const dataSource = [];
                         // specific check if all itemrows are filled.
-                        for (const i = 0; i < data.length; i++) {
+                        for (let i = 0; i < data.length; i++) {
                             if (data[i].id == null || data[i].id === "" || data[i].name == null || data[i].name === "") {
                                 this.base.showNotification("notification", `Vul bij "Vaste waardes" alle items met naam en id in!`, "error");
                                 return;
@@ -3158,6 +3183,10 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
     selectTabInTreeView(tabName, alsoExpand = false) {
         const selectedTab = this.propertiesTreeView.dataSource.get(tabName);
+        if (selectedTab === undefined) {
+            console.warn(`Unable to open tab ${tabName} in tree view`);
+            return;
+        }
         const nodeToSelect = this.propertiesTreeView.findByUid(selectedTab.uid);
         this.propertiesTreeView.select(nodeToSelect);
         if (!alsoExpand) {
@@ -3232,7 +3261,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
         // numeric default
         this.defaultNumeric.value(0);
-        this.numberOfDec.value(2);
+        this.numberOfDec.value(0);
         this.numberFormat.select("");
         $("#differentFormatHolder").hide();
         document.getElementById("differentFormat").value = "";
@@ -3610,10 +3639,10 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                 this.factorNumber.value(getOptionValueAndDeleteForOptionsField("factor"));
 
                 // set decimals from options
-                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals"));
+                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals", 0));
                 // set format dropdown
                 let found = false;
-                const format = getOptionValueAndDeleteForOptionsField("format");
+                const format = getOptionValueAndDeleteForOptionsField("format", "");
                 this.numberFormat.select((dataItem) => {
                     if (dataItem.value === format) {
                         return found = true;
