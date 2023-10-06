@@ -230,7 +230,7 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null)
+        public async Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null)
         {
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
 
@@ -238,7 +238,8 @@ LIMIT 1");
             var query = $@"SELECT 
     template.id,
     template.version,
-    template.published_environment
+    template.published_environment,
+    template.removed
 FROM {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.template_id = ?templateId
@@ -253,7 +254,8 @@ AND otherVersion.id IS NULL";
             var id = Convert.ToInt32(dataTable.Rows[0]["id"]);
             var version = Convert.ToInt32(dataTable.Rows[0]["version"]);
             var publishedEnvironment = (Environments)Convert.ToInt32(dataTable.Rows[0]["published_environment"]);
-            return (id, version, publishedEnvironment);
+            var removed = Convert.ToBoolean(dataTable.Rows[0]["removed"]);
+            return (id, version, publishedEnvironment, removed);
         }
 
         /// <inheritdoc />

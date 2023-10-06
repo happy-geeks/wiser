@@ -178,7 +178,7 @@ namespace Api.Modules.Templates.Services
             if (versionBeingDeployed > 0)
             {
                 var latestVersion = await dataService.GetLatestVersionAsync(contentId);
-                if (versionBeingDeployed != latestVersion.Version)
+                if (versionBeingDeployed != latestVersion.Version || latestVersion.Removed)
                 {
                     return new ServiceResult<int>(0);
                 }

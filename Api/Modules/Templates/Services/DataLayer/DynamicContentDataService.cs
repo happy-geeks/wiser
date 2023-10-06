@@ -90,7 +90,7 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null)
+        public async Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null)
         {
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
 
@@ -98,7 +98,8 @@ ORDER BY templatePath ASC, component.title ASC";
             var query = $@"SELECT 
     component.id,
     component.version,
-    component.published_environment
+    component.published_environment,
+    component.removed
 FROM {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} AS component
 LEFT JOIN {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = component.content_id AND otherVersion.version > component.version
 WHERE component.content_id = ?contentId
@@ -113,7 +114,8 @@ AND otherVersion.id IS NULL";
             var id = Convert.ToInt32(dataTable.Rows[0]["id"]);
             var version = Convert.ToInt32(dataTable.Rows[0]["version"]);
             var publishedEnvironment = (Environments)Convert.ToInt32(dataTable.Rows[0]["published_environment"]);
-            return (id, version, publishedEnvironment);
+            var removed = Convert.ToBoolean(dataTable.Rows[0]["removed"]);
+            return (id, version, publishedEnvironment, removed);
         }
 
         /// <inheritdoc />
