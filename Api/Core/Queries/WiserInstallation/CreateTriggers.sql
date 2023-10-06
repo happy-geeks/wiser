@@ -1118,6 +1118,11 @@ CREATE TRIGGER `EntityInsert` AFTER INSERT ON `wiser_entity` FOR EACH ROW BEGIN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', NULL, NEW.`dedicated_table_prefix`);
     END IF;
+
+    IF IFNULL(NEW.`store_type`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', NULL, NEW.`store_type`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `EntityUpdate`;
@@ -1245,6 +1250,11 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`dedicated_table_prefix`, '') <> IFNULL(OLD.`dedicated_table_prefix`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', OLD.`dedicated_table_prefix`, NEW.`dedicated_table_prefix`);
+    END IF;
+
+    IF IFNULL(NEW.`store_type`, '') <> IFNULL(OLD.`store_type`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', NULL, NEW.`store_type`);
     END IF;
 END;
 
