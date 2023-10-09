@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Serialization;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
@@ -180,8 +179,7 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null,
-            int? version = null)
+        public async Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null)
         {
             // Clear any parameters that might be set.
             clientDatabaseConnection.ClearParameters();
@@ -1506,6 +1504,7 @@ AND otherVersion.id IS NULL";
         /// <inheritdoc />
         public Task<TemplateParsedXmlModel> ParseXml(string xml)
         {
+            // Q: Should this exist in a different service?
             XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
 
             using (StringReader stringReader = new StringReader(xml))

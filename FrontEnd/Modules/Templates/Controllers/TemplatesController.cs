@@ -4,10 +4,8 @@ using Api.Modules.Templates.Models.Template;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
-using FrontEnd.Modules.Templates.Services;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 
 namespace FrontEnd.Modules.Templates.Controllers
 {
