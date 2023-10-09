@@ -32,13 +32,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<TemplateSettingsModel> GetDataAsync(int templateId, Environments? environment = null, int? version = null);
         
         /// <summary>
-        /// Get the editor value of a template and parse it from XML to an object.
+        /// Get the editor value of a template to an object.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
         /// <param name="environment">Optional: The environment the template needs to be active on. Get the latest version if no environment has been given.</param>
         /// <param name="version">Optional: If you want to get a specific version, enter that version number here.</param>
-        /// <returns>A <see cref="TemplateParsedXmlModel"/> containing the current parsed xml object of the template with the given id.</returns>
-        Task<TemplateParsedXmlModel> GetParsedXmlAsync(int templateId, Environments? environment = null, int? version = null);
+        /// <returns>A <see cref="TemplateParsedXmlModel"/> containing the current editor value object of the template with the given id.</returns>
+        Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null);
 
 
         /// <summary>
@@ -210,6 +210,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="xml">The incoming xml string.</param>
         /// <returns>The decrypted xml string.</returns>
         Task<string> DecryptXml(string encryptionKey, string xml);
+        
+        /// <summary>
+        /// Parse xml to an object.
+        /// </summary>
+        /// <param name="xml">The incoming xml string.</param>
+        /// <returns>The parsed xml</returns>
+        Task<TemplateParsedXmlModel> ParseXml(string xml);
 
         /// <summary>
         /// Deploy one or more templates from the main branch to a sub branch.

@@ -1413,7 +1413,8 @@ LIMIT 1";
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var templateData = await templateDataService.GetParsedXmlAsync(templateId, environment);
+            // Grab the encrypted xml from the database.
+            var templateData = await templateDataService.GetXmlAsync(templateId, environment);
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
@@ -1426,9 +1427,13 @@ LIMIT 1";
 
             // Q: What is this for?
             // templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+            
+            // Grab the encryption key from the database.
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            
             // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
             logger.LogDebug($"Encrypting template value for template ID {templateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
+            
             // Q: Should this function be rewritten to simply accept xml as input and return xml as output?
             // If so, where should the check be done to know if what we're sending there is of type xml?
             // Do we send the type as a parameter or check that here?
@@ -1441,11 +1446,12 @@ LIMIT 1";
             // For now we'll create a separate function that accepts xml as input and returns xml as output.
             // To not break anything, we'll keep the other function as well.
             
-            // TODO: Figure out how to send the xml here since the templateparsedxml model does not contain the xml.
-            // Maybe we shouldn't use the TemplateParsedXmlModel yet?
-            templateDataService.DecryptXml(encryptionKey, templateData.);
+            // Decrypt the xml.
+            var decryptedXml = await templateDataService.DecryptXml(encryptionKey, templateData.EditorValue);
 
-            return new ServiceResult<TemplateParsedXmlModel>(templateData);
+            var templateXml = await templateDataService.ParseXml(decryptedXml);
+            
+            return new ServiceResult<TemplateParsedXmlModel>(templateXml);
         }
 
         /// <inheritdoc />

@@ -1,7 +1,7 @@
 namespace Api.Modules.Templates.Models.Template
 {
     /// <summary>
-    /// A model for all settings of a template.
+    /// A model for parsed xml of a template.
     /// </summary>
     public class TemplateParsedXmlModel
     {

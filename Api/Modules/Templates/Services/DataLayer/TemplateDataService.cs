@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -173,6 +174,70 @@ LIMIT 1");
             }
 
             return TemplateHelpers.DataRowToTemplateSettingsModel(dataTable.Rows[0]);
+        }
+
+        /// <inheritdoc />
+        public async Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null,
+            int? version = null)
+        {
+            // Clear any parameters that might be set.
+            clientDatabaseConnection.ClearParameters();
+            
+            string publishedVersionWhere;
+            
+            // Check if we're looking for a specific version.
+            if (version.HasValue)
+            {
+                // Use the version parameter to get the specific version.
+                clientDatabaseConnection.AddParameter("version", version.Value);
+                publishedVersionWhere = "AND template.version = ?version";
+            }
+            else
+            {
+                // If no version is specified, check if we're looking for a specific environment.
+                publishedVersionWhere = environment switch
+                {
+                    null => "",
+                    Environments.Hidden => "AND template.published_environment = 0",
+                    _ => $"AND (template.published_environment & {(int) environment}) = {(int) environment}"
+                };
+            }
+
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
+                template.template_id,
+                template.template_data
+            FROM {WiserTableNames.WiserTemplate} AS template 
+            WHERE template.template_id = ?templateId
+            {publishedVersionWhere}
+            AND template.removed = 0
+            ORDER BY template.version DESC 
+            LIMIT 1");
+
+            // If no rows are returned, return an empty model.
+            if (dataTable.Rows.Count == 0)
+            {
+                return new TemplateXmlModel()
+                {
+                    TemplateId = templateId
+                };
+            }
+
+            // If a row is returned, return the model with the data.
+            var templateData = new TemplateXmlModel
+            {
+                TemplateId = dataTable.Rows[0].Field<int>("template_id"),
+                EditorValue = dataTable.Rows[0].Field<string>("template_data")
+            };
+
+            // Q: I couldn't figure out the purpose of this code, something to do with authentication?
+            // var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
+            // if (!String.IsNullOrWhiteSpace(loginRolesString))
+            // {
+            //     templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
+            // }
+
+            return templateData;
         }
 
         /// <inheritdoc />
@@ -1427,10 +1492,34 @@ AND otherVersion.id IS NULL";
         /// <inheritdoc />
         public Task<string> DecryptXml(string encryptionKey, string xml)
         {
-            if (!String.IsNullOrWhiteSpace(xml) && !xml.Trim().StartsWith("<"))
+            if (String.IsNullOrWhiteSpace(xml) && xml.Trim().StartsWith("<"))
             {
-                return Task.FromResult<string>(xml.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true));
+                return null;
             }
+            
+            return Task.FromResult<string>(xml.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true));
+        }
+
+        /// <inheritdoc />
+        public Task<TemplateParsedXmlModel> ParseXml(string xml)
+        {
+            // Create an XmlDocument instance and load the XML string
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(xml);
+        
+            // Get all the nodes in the XML file
+            XmlNode serviceNameNode = xmlDoc.SelectSingleNode("/Configuration/ServiceName"); // Mandatory
+            XmlNode connectionStringNode = xmlDoc.SelectSingleNode("/Configuration/ConnectionString"); // Mandatory
+        
+            // Create a new TemplateParsedXmlModel instance
+            TemplateParsedXmlModel model = new TemplateParsedXmlModel
+            {
+                ServiceName = serviceNameNode.InnerText,
+                ConnectionString = connectionStringNode.InnerText
+            };
+        
+            // Return the model
+            return Task.FromResult<TemplateParsedXmlModel>(model);
         }
 
         /// <inheritdoc />
