@@ -1446,10 +1446,14 @@ LIMIT 1";
             // For now we'll create a separate function that accepts xml as input and returns xml as output.
             // To not break anything, we'll keep the other function as well.
             
-            // Decrypt the xml.
+            // Decrypt the xml
             var decryptedXml = await templateDataService.DecryptXml(encryptionKey, templateData.EditorValue);
 
+            // Parse the xml
             var templateXml = await templateDataService.ParseXml(decryptedXml);
+            
+            // Add the available input values to the xml
+            templateDataService.AddInputValues(templateXml);
             
             return new ServiceResult<TemplateParsedXmlModel>(templateXml);
         }

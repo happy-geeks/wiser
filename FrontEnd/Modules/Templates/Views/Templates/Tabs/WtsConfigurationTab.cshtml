@@ -26,29 +26,58 @@
                 <div class="item">
                     <h4><label>Minimal log level</label></h4>
                     <select id="wts-log-level">
-                        <option value="xander1">xander1</option>
-                        <option value="xander2" selected>xander2</option>
-                        <option value="xander3">xander3</option>
+                        @foreach (string logLevel in Model.LogMinimumLevels)
+                        {
+                            if (logLevel == Model.ConfigurationSettings.LogMinimumLevel)
+                            {
+                                <option value="@logLevel" selected>@logLevel</option>
+                            }
+                            else
+                            {
+                                <option value="@logLevel">@logLevel</option>
+                            }
+                        }
                     </select>
                 </div>
                 
                 <div class="item">
                     <label class="checkbox">
-                        <input type="checkbox" id="wts-log-stop-start" checked/>
+                        @if (Model.ConfigurationSettings.LogStartAndStop)
+                        {
+                            <input type="checkbox" id="wts-log-stop-start" checked/>
+                        }
+                        else
+                        {
+                            <input type="checkbox" id="wts-log-stop-start"/>
+                        }
                         <span>Log bij opstarten en afsluiten</span>
                     </label>
                 </div>
                 
                 <div class="item">
                     <label class="checkbox">
-                        <input type="checkbox" id="wts-log-run-cyclus" />
+                        @if (Model.ConfigurationSettings.LogRunStartAndStop)
+                        {
+                            <input type="checkbox" id="wts-log-run-cyclus" checked/>
+                        }
+                        else
+                        {
+                            <input type="checkbox" id="wts-log-run-cyclus"/>
+                        }
                         <span>Log bij het begin en einde van de run-cyclus</span>
                     </label>
                 </div>
                 
                 <div class="item">
                     <label class="checkbox">
-                        <input type="checkbox" id="wts-log-body" />
+                        @if (Model.ConfigurationSettings.LogRunBody)
+                        {
+                            <input type="checkbox" id="wts-log-body" checked/>
+                        }
+                        else
+                        {
+                            <input type="checkbox" id="wts-log-body"/>
+                        }
                         <span>Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)</span>
                     </label>
                 </div>

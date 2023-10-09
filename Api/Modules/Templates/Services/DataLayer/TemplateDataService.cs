@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
+using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
@@ -1510,16 +1511,37 @@ AND otherVersion.id IS NULL";
             // Get all the nodes in the XML file
             XmlNode serviceNameNode = xmlDoc.SelectSingleNode("/Configuration/ServiceName"); // Mandatory
             XmlNode connectionStringNode = xmlDoc.SelectSingleNode("/Configuration/ConnectionString"); // Mandatory
+            XmlNode configurationLogSettingsLogMinimumLevel = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogMinimumLevel"); // Optional
+            XmlNode configurationLogSettingsLogStartAndStop = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogStartAndStop"); // Optional
+            XmlNode configurationLogSettingsLogRunStartAndStop = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogRunStartAndStop"); // Optional
+            XmlNode configurationLogSettingsLogRunBody = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogRunBody"); // Optional
         
             // Create a new TemplateParsedXmlModel instance
             TemplateParsedXmlModel model = new TemplateParsedXmlModel
             {
                 ServiceName = serviceNameNode.InnerText,
-                ConnectionString = connectionStringNode.InnerText
+                ConnectionString = connectionStringNode.InnerText,
+                ConfigurationSettings = new LogSettings
+                {
+                    LogMinimumLevel = (LogMinimumLevels)Enum.Parse(typeof(LogMinimumLevels), configurationLogSettingsLogMinimumLevel.InnerText),
+                    LogStartAndStop = bool.Parse(configurationLogSettingsLogStartAndStop.InnerText),
+                    LogRunStartAndStop = bool.Parse(configurationLogSettingsLogRunStartAndStop.InnerText),
+                    LogRunBody = bool.Parse(configurationLogSettingsLogRunBody.InnerText)
+                }
             };
         
             // Return the model
             return Task.FromResult<TemplateParsedXmlModel>(model);
+        }
+
+        /// <inheritdoc />
+        public void AddInputValues(TemplateParsedXmlModel template)
+        {
+            // TODO: Add input values to DB and grab them from there instead of local enums
+            
+            // Grab the input values from local enums
+            template.LogMinimumLevels = Enum.GetNames(typeof(LogMinimumLevels));
+            template.RunSchemeTypes = Enum.GetNames(typeof(RunSchemeTypes));
         }
 
         /// <inheritdoc />
