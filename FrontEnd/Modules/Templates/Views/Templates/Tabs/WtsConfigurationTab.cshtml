@@ -19,11 +19,11 @@
             <div class="item">
                 <h4><label>Connectiestring</label></h4>
                 <input id="wts-name" type="text" class="k-input" value="@Model.ConnectionString" />
-                <div class="form-hint"><span>MySQL Connectiestring</span></div>
+                <div class="form-hint"><span>MySQL Connectiestring voor de verbinding aan een database</span></div>
             </div>
             
             <div class="item">
-                <h4><label>Minimal log level</label></h4>
+                <h4><label>Minimaal log level</label></h4>
                 <select id="wts-log-level">
                     @foreach (string logLevel in Model.LogMinimumLevels)
                     {
@@ -99,7 +99,7 @@
             <div class="item">
                 <h4><label>ID</label></h4>
                 <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-                <div class="form-hint"><span>MySQL Connectiestring</span></div>
+                <div class="form-hint"><span>Unieke nummer van de timer</span></div>
             </div>
 
             <div class="item">
