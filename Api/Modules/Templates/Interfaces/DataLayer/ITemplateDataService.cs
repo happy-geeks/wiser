@@ -212,6 +212,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<string> DecryptXml(string encryptionKey, string xml);
         
         /// <summary>
+        /// Get all available input values and add them to the template.
+        /// </summary>
+        /// <param name="template">The template to add the input values to.</param>
+        void AddInputValues(TemplateParsedXmlModel template);
+        
+        /// <summary>
         /// Parse xml to an object.
         /// </summary>
         /// <param name="xml">The incoming xml string.</param>

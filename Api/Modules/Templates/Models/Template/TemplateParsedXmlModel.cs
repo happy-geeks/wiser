@@ -19,5 +19,20 @@ namespace Api.Modules.Templates.Models.Template
         /// Gets or sets the connection string of the editor value of the template.
         /// </summary>
         public string ConnectionString { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the log settings for the configuration (Global if not overwritten)
+        /// </summary>
+        public LogSettings ConfigurationSettings { get; set; }
+        
+        /// <summary>
+        /// All levels of minimum logging
+        /// </summary>
+        public string[] LogMinimumLevels { get; set; }
+        
+        /// <summary>
+        /// All run scheme types
+        /// </summary>
+        public string[] RunSchemeTypes { get; set; }
     }
 }
