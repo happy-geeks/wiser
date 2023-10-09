@@ -79,14 +79,10 @@ namespace FrontEnd.Modules.Templates.Controllers
         }
         
         [HttpPost, Route("WtsConfigurationTab")]
-        public IActionResult WtsConfigurationTab([FromBody]WtsConfigurationModel data)
+        public IActionResult WtsConfigurationTab([FromBody]WtsConfigurationTabViewModel data)
         {
-            // Parse the incoming xml to a model
-            XmlParsingService parser = new XmlParsingService();
-            WtsConfigurationTabViewModel tabViewData = parser.formatXmlToModel(data.TemplateSettings.EditorValue);
-            
             // ReSharper disable once Mvc.PartialViewNotResolved
-            return PartialView("Tabs/WtsConfigurationTab", tabViewData);
+            return PartialView("Tabs/WtsConfigurationTab", data);
         }
 
         [HttpPost, Route("HistoryTab")]

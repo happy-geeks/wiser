@@ -92,6 +92,12 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.GetTemplateSettingsAsync(identity, templateId, environment);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateParsedXmlModel>> GetTemplateParsedXmlAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        {
+            return await templatesService.GetTemplateParsedXmlAsync(identity, templateId, environment);
+        }
 
         /// <inheritdoc />
         public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName)

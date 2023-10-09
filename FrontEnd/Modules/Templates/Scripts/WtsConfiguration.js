@@ -54,6 +54,7 @@ export class WtsConfiguration {
                 dataType: "json",
                 method: "GET"
             });
+            console.log(templateSettings);
         }
         catch (e) {
             console.error(e);
@@ -68,9 +69,7 @@ export class WtsConfiguration {
                 method: "POST",
                 contentType: "application/json",
                 url: "/Modules/Templates/WtsConfigurationTab",
-                data: JSON.stringify({
-                    TemplateSettings: templateSettings
-                })
+                data: JSON.stringify(templateSettings)
             }).then(async (response) => {
                 this.base.toggleMainLoader(false); // Hide the loader
                 document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the html to the tab
