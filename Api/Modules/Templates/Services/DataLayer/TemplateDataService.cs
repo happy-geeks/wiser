@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Serialization;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Enums;
@@ -1504,34 +1506,14 @@ AND otherVersion.id IS NULL";
         /// <inheritdoc />
         public Task<TemplateParsedXmlModel> ParseXml(string xml)
         {
-            // Create an XmlDocument instance and load the XML string
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(xml);
-        
-            // Get all the nodes in the XML file
-            XmlNode serviceNameNode = xmlDoc.SelectSingleNode("/Configuration/ServiceName"); // Mandatory
-            XmlNode connectionStringNode = xmlDoc.SelectSingleNode("/Configuration/ConnectionString"); // Mandatory
-            XmlNode configurationLogSettingsLogMinimumLevel = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogMinimumLevel"); // Optional
-            XmlNode configurationLogSettingsLogStartAndStop = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogStartAndStop"); // Optional
-            XmlNode configurationLogSettingsLogRunStartAndStop = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogRunStartAndStop"); // Optional
-            XmlNode configurationLogSettingsLogRunBody = xmlDoc.SelectSingleNode("/Configuration/LogSettings/LogRunBody"); // Optional
-        
-            // Create a new TemplateParsedXmlModel instance
-            TemplateParsedXmlModel model = new TemplateParsedXmlModel
+            XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
+
+            using (StringReader stringReader = new StringReader(xml))
             {
-                ServiceName = serviceNameNode.InnerText,
-                ConnectionString = connectionStringNode.InnerText,
-                ConfigurationSettings = new LogSettings
-                {
-                    LogMinimumLevel = (LogMinimumLevels)Enum.Parse(typeof(LogMinimumLevels), configurationLogSettingsLogMinimumLevel.InnerText),
-                    LogStartAndStop = bool.Parse(configurationLogSettingsLogStartAndStop.InnerText),
-                    LogRunStartAndStop = bool.Parse(configurationLogSettingsLogRunStartAndStop.InnerText),
-                    LogRunBody = bool.Parse(configurationLogSettingsLogRunBody.InnerText)
-                }
-            };
-        
-            // Return the model
-            return Task.FromResult<TemplateParsedXmlModel>(model);
+                TemplateParsedXmlModel configuration = (TemplateParsedXmlModel)serializer.Deserialize(stringReader);
+
+                return Task.FromResult(configuration);
+            }
         }
 
         /// <inheritdoc />
