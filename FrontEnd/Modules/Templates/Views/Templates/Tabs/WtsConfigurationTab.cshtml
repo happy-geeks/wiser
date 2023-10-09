@@ -1,231 +1,229 @@
 ﻿@using DocumentFormat.OpenXml.EMMA
 @using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.WtsConfigurationTabViewModel
-@* <div class="configContainer"> *@
-    <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
-        <ul class="k-tabstrip-items k-reset" role="none">
-            <li class="service-tab k-state-active" data-name="wts-service">Service</li>
-            <li class="timers-tab" data-name="wts-timers">Timers</li>
-            <li class="actions-tab" data-name="wts-actions">Actions</li>
-            <li class="statistic-tab" data-name="wts-statistic">Statistiek</li>
-            <li class="logging-tab" data-name="wts-logging">Logging</li>
-        </ul>
-        <div id="serviceTab">
-            <div class="formview compact">
-                <div class="item">
-                    <h4><label>Naam</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="@Model.ServiceName" />
-                    <div class="form-hint"><span>Dit is de naam van de service</span></div>
-                </div>
-                <div class="item">
-                    <h4><label>Connectiestring</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="@Model.ConnectionString" />
-                    <div class="form-hint"><span>MySQL Connectiestring</span></div>
-                </div>
-                
-                <div class="item">
-                    <h4><label>Minimal log level</label></h4>
-                    <select id="wts-log-level">
-                        @foreach (string logLevel in Model.LogMinimumLevels)
+<div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
+    <ul class="k-tabstrip-items k-reset" role="none">
+        <li class="service-tab k-state-active" data-name="wts-service">Service</li>
+        <li class="timers-tab" data-name="wts-timers">Timers</li>
+        <li class="actions-tab" data-name="wts-actions">Actions</li>
+        <li class="statistic-tab" data-name="wts-statistic">Statistiek</li>
+        <li class="logging-tab" data-name="wts-logging">Logging</li>
+    </ul>
+    <div id="serviceTab">
+        <div class="formview compact">
+            <div class="item">
+                <h4><label>Naam</label></h4>
+                <input id="wts-name" type="text" class="k-input" value="@Model.ServiceName" />
+                <div class="form-hint"><span>Dit is de naam van de service</span></div>
+            </div>
+            <div class="item">
+                <h4><label>Connectiestring</label></h4>
+                <input id="wts-name" type="text" class="k-input" value="@Model.ConnectionString" />
+                <div class="form-hint"><span>MySQL Connectiestring</span></div>
+            </div>
+            
+            <div class="item">
+                <h4><label>Minimal log level</label></h4>
+                <select id="wts-log-level">
+                    @foreach (string logLevel in Model.LogMinimumLevels)
+                    {
+                        if (logLevel == Model.ConfigurationSettings.LogMinimumLevel)
                         {
-                            if (logLevel == Model.ConfigurationSettings.LogMinimumLevel)
-                            {
-                                <option value="@logLevel" selected>@logLevel</option>
-                            }
-                            else
-                            {
-                                <option value="@logLevel">@logLevel</option>
-                            }
-                        }
-                    </select>
-                </div>
-                
-                <div class="item">
-                    <label class="checkbox">
-                        @if (Model.ConfigurationSettings.LogStartAndStop)
-                        {
-                            <input type="checkbox" id="wts-log-stop-start" checked/>
+                            <option value="@logLevel" selected>@logLevel</option>
                         }
                         else
                         {
-                            <input type="checkbox" id="wts-log-stop-start"/>
+                            <option value="@logLevel">@logLevel</option>
                         }
-                        <span>Log bij opstarten en afsluiten</span>
-                    </label>
-                </div>
-                
-                <div class="item">
-                    <label class="checkbox">
-                        @if (Model.ConfigurationSettings.LogRunStartAndStop)
-                        {
-                            <input type="checkbox" id="wts-log-run-cyclus" checked/>
-                        }
-                        else
-                        {
-                            <input type="checkbox" id="wts-log-run-cyclus"/>
-                        }
-                        <span>Log bij het begin en einde van de run-cyclus</span>
-                    </label>
-                </div>
-                
-                <div class="item">
-                    <label class="checkbox">
-                        @if (Model.ConfigurationSettings.LogRunBody)
-                        {
-                            <input type="checkbox" id="wts-log-body" checked/>
-                        }
-                        else
-                        {
-                            <input type="checkbox" id="wts-log-body"/>
-                        }
-                        <span>Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)</span>
-                    </label>
-                </div>
+                    }
+                </select>
             </div>
-        </div>
-        <div id="timersTab">
-            <div class="formview compact">
-                
-                <div class="item full">
-                    <h4><label>Beschikbare timers</label></h4>
-                    <div id="wtsTimers" class="grid"></div>
-                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe timer toevoegen</span></button>
-                </div>
-
-                <div class="item dynamic havingList">
-                    <h3>Gegevens timer</h3>
-                </div>
-
-
-                <div class="item">
-                    <h4><label>ID</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-                    <div class="form-hint"><span>MySQL Connectiestring</span></div>
-                </div>
-
-                <div class="item">
-                    <h4><label>Type</label></h4>
-                    <select id="wts-timing-type">
-                        
-                    </select>
-                    <select id="wts-timing-weekly"></select>
-                    <select id="wts-timing-monthly"></select>
-
-                    <div>
-                        <label>
-                            <span>om</span>
-                            <select id="wts-continuous-start"></select>
-                        </label>
-                        <label>
-                            <span>tussen</span>
-                            <select id="wts-continuous-from"></select>
-                        </label>
-                        <label>
-                            <span>en</span>
-                            <select id="wts-continuous-till"></select>
-                        </label>
-                        <label>
-                            <span>met tussepozen van</span>
-                            <select id="wts-continuous-interval"></select>
-                        </label>
-                    </div>
-
-                    <div>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-autostart-runonce" checked/>
-                            <span>Loopt direct eenmalig bij opstarten van de service</span>
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-weekend-disabled" checked/>
-                            <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="item">
-                    <h4><label>Niet draaien op</label></h4>
-                    <select id="wts-timing-hold"></select>
-                </div>
-
-                <div class="item">
-                    <h4><label>Minimal log events</label></h4>
-                    <select id="wts-timing-log"></select>
-                </div>
-                <div class="item">
-                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="save"><span>Wijzigingen opslaan</span></button>
-                </div>
-
-                <div class="item">
-                    <h4><label>Gekoppelde acties</label></h4>
-                    <div id="wtsLinkedActions" class="grid"></div>
-                </div>
+            
+            <div class="item">
+                <label class="checkbox">
+                    @if (Model.ConfigurationSettings.LogStartAndStop)
+                    {
+                        <input type="checkbox" id="wts-log-stop-start" checked/>
+                    }
+                    else
+                    {
+                        <input type="checkbox" id="wts-log-stop-start"/>
+                    }
+                    <span>Log bij opstarten en afsluiten</span>
+                </label>
             </div>
-        </div>
-        
-        <div id="actionsTab">
-            <div class="formview compact">
-                <div class="item">
-                    <h4><label>Acties van de service</label></h4>
-                    <div id="wtsServiceActions" class="grid"></div>
-                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie toevoegen</span></button>
-                </div>
-                <div class="item">
-                    <h4><label>ID</label></h4>
-                    <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-                
-                    <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-                    <div class="form-hint"><span>MySQL Connectiestring</span></div>
-                </div>
-                
-                <div class="item">
-                    <h4><label>Type</label></h4>
-                    <select id="wts-timing-type"></select>
-                    <select id="wts-timing-weekly"></select>
-                    <select id="wts-timing-monthly"></select>
-
-                    <div>
-                        <label>
-                            <span>om</span>
-                            <select id="wts-continuous-start"></select>
-                        </label>
-                        <label>
-                            <span>tussen</span>
-                            <select id="wts-continuous-from"></select>
-                        </label>
-                        <label>
-                            <span>en</span>
-                            <select id="wts-continuous-till"></select>
-                        </label>
-                        <label>
-                            <span>met tussepozen van</span>
-                            <select id="wts-continuous-interval"></select>
-                        </label>
-                    </div>
-
-                    <div>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-autostart-runonce" checked/>
-                            <span>Loopt direct eenmalig bij opstarten van de service</span>
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-weekend-disabled" checked/>
-                            <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
-                        </label>
-                    </div>
-                </div>
+            
+            <div class="item">
+                <label class="checkbox">
+                    @if (Model.ConfigurationSettings.LogRunStartAndStop)
+                    {
+                        <input type="checkbox" id="wts-log-run-cyclus" checked/>
+                    }
+                    else
+                    {
+                        <input type="checkbox" id="wts-log-run-cyclus"/>
+                    }
+                    <span>Log bij het begin en einde van de run-cyclus</span>
+                </label>
             </div>
-        </div>
-        
-        <div id="statisticTab">
-            <em>Informatie over hoe lang de service erover deed
-                om te draaien komt hier te staan. Liefst in een
-                grafiek met de laatste x-keer dat deze gedraaid
-                heeft. En of er fouten waren en zo ja welke</em>
-        </div>
-        <div id="loggingTab">
-            <em>Hier worden de logs geopend van deze service.
-                Per actie moet je de logs kunnen filteren. Tevens
-                op periode filteren...</em>
+            
+            <div class="item">
+                <label class="checkbox">
+                    @if (Model.ConfigurationSettings.LogRunBody)
+                    {
+                        <input type="checkbox" id="wts-log-body" checked/>
+                    }
+                    else
+                    {
+                        <input type="checkbox" id="wts-log-body"/>
+                    }
+                    <span>Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)</span>
+                </label>
+            </div>
         </div>
     </div>
-@* </div> *@
+    <div id="timersTab">
+        <div class="formview compact">
+            
+            <div class="item full">
+                <h4><label>Beschikbare timers</label></h4>
+                <div id="wtsTimers" class="grid"></div>
+                <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe timer toevoegen</span></button>
+            </div>
+
+            <div class="item dynamic havingList">
+                <h3>Gegevens timer</h3>
+            </div>
+
+
+            <div class="item">
+                <h4><label>ID</label></h4>
+                <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
+                <div class="form-hint"><span>MySQL Connectiestring</span></div>
+            </div>
+
+            <div class="item">
+                <h4><label>Type</label></h4>
+                <select id="wts-timing-type">
+                    
+                </select>
+                <select id="wts-timing-weekly"></select>
+                <select id="wts-timing-monthly"></select>
+
+                <div>
+                    <label>
+                        <span>om</span>
+                        <select id="wts-continuous-start"></select>
+                    </label>
+                    <label>
+                        <span>tussen</span>
+                        <select id="wts-continuous-from"></select>
+                    </label>
+                    <label>
+                        <span>en</span>
+                        <select id="wts-continuous-till"></select>
+                    </label>
+                    <label>
+                        <span>met tussepozen van</span>
+                        <select id="wts-continuous-interval"></select>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="checkbox">
+                        <input type="checkbox" id="wts-autostart-runonce" checked/>
+                        <span>Loopt direct eenmalig bij opstarten van de service</span>
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" id="wts-weekend-disabled" checked/>
+                        <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="item">
+                <h4><label>Niet draaien op</label></h4>
+                <select id="wts-timing-hold"></select>
+            </div>
+
+            <div class="item">
+                <h4><label>Minimal log events</label></h4>
+                <select id="wts-timing-log"></select>
+            </div>
+            <div class="item">
+                <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="save"><span>Wijzigingen opslaan</span></button>
+            </div>
+
+            <div class="item">
+                <h4><label>Gekoppelde acties</label></h4>
+                <div id="wtsLinkedActions" class="grid"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="actionsTab">
+        <div class="formview compact">
+            <div class="item">
+                <h4><label>Acties van de service</label></h4>
+                <div id="wtsServiceActions" class="grid"></div>
+                <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie toevoegen</span></button>
+            </div>
+            <div class="item">
+                <h4><label>ID</label></h4>
+                <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
+            
+                <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
+                <div class="form-hint"><span>MySQL Connectiestring</span></div>
+            </div>
+            
+            <div class="item">
+                <h4><label>Type</label></h4>
+                <select id="wts-timing-type"></select>
+                <select id="wts-timing-weekly"></select>
+                <select id="wts-timing-monthly"></select>
+
+                <div>
+                    <label>
+                        <span>om</span>
+                        <select id="wts-continuous-start"></select>
+                    </label>
+                    <label>
+                        <span>tussen</span>
+                        <select id="wts-continuous-from"></select>
+                    </label>
+                    <label>
+                        <span>en</span>
+                        <select id="wts-continuous-till"></select>
+                    </label>
+                    <label>
+                        <span>met tussepozen van</span>
+                        <select id="wts-continuous-interval"></select>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="checkbox">
+                        <input type="checkbox" id="wts-autostart-runonce" checked/>
+                        <span>Loopt direct eenmalig bij opstarten van de service</span>
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" id="wts-weekend-disabled" checked/>
+                        <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="statisticTab">
+        <em>Informatie over hoe lang de service erover deed
+            om te draaien komt hier te staan. Liefst in een
+            grafiek met de laatste x-keer dat deze gedraaid
+            heeft. En of er fouten waren en zo ja welke</em>
+    </div>
+    <div id="loggingTab">
+        <em>Hier worden de logs geopend van deze service.
+            Per actie moet je de logs kunnen filteren. Tevens
+            op periode filteren...</em>
+    </div>
+</div>

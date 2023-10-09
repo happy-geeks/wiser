@@ -36,7 +36,7 @@ export class WtsConfiguration {
         // Empty the tab
         document.getElementById("wtsConfigurationTab").innerHTML = "";
         
-        // First check to see if id is set
+        // Check to see if id is set
         if (id === undefined || id === null || id === 0) {
             console.error("id is not set");
             return;
@@ -83,14 +83,14 @@ export class WtsConfiguration {
         }
         
         this.initializeKendoComponents();
-        
-        // TODO: use the correct input types for the different fields
     }
 
     /**
      * Initializes all kendo components for the base class.
      */
     initializeKendoComponents() {
+        // TODO: use the correct input types for the different fields
+        
         this.commitEnvironmentField = $("#wts-log-level").kendoDropDownList({
             optionLabel: "Selecteer log level",
             dataTextField: "text",
