@@ -1962,7 +1962,13 @@ const moduleSettings = {
                     event.preventDefault();
 
                     if (!this.dynamicContentWindowIsOpen()) {
-                        this.saveTemplate();
+                        // Make a check to see if we're trying to save a configuration in the config tab
+                        if (this.mainTabStrip.select().data("name") == "configuration") {
+                            this.saveConfigurationTemplate();
+                            return;
+                        } else {
+                            this.saveTemplate();
+                        }
                     } else {
                         const dynamicContentIframe = document.querySelector("#dynamicContentWindow iframe");
                         if (!dynamicContentIframe || !dynamicContentIframe.contentWindow || !dynamicContentIframe.contentWindow.DynamicContent) {
@@ -2317,6 +2323,98 @@ const moduleSettings = {
             this.saving = false;
             window.processing.removeProcess(process);
             return success;
+        }
+        
+        // Q: Should this function exist here instead of in wtsconfiguration?
+        // Reason could be that we can use the same keybind (ctrl+s) for saving the config template
+        async saveConfigurationTemplate() {
+            // Stop if we're already saving.
+            if (this.saving) {
+                return false;
+            }
+            console.log("Now saving config template");
+            
+            // Make sure the selected item isn't a folder
+            const selectedTabIndex = this.treeViewTabStrip.select().index();
+            const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
+            const treeViewElement = selectedTabContentElement.querySelector("ul");
+            const treeView = $(treeViewElement).data("kendoTreeView");
+            const dataItem = treeView.dataItem(treeView.select());
+            if (!dataItem || dataItem.isFolder) {
+                return false;
+            }
+            
+            // Add the process
+            const process = `saveTemplate_${Date.now()}`;
+            window.processing.addProcess(process);
+            
+            // Set variables
+            let success = true; // This will set to false if something goes wrong
+            let templateId; // The ID of the template
+            let reloadTemplateAfterSave = false; // If the template needs to be reloaded after saving
+            
+            // Start saving
+            try {
+                // Q: In the other function there is something about a virtual item, what is that?
+                // Assuming that it isn't needed here for now
+                
+                templateId = this.selectedId; // Set the template ID to the selected ID
+                
+                // Make sure that the template ID is set
+                if (!templateId) {
+                    window.processing.removeProcess(process);
+                    return false;
+                }
+                
+                // Get the current configuration settings
+                const data = this.wtsConfiguration.getCurrentSettings();
+                
+                console.log(data);
+                
+                // Q: At this point there is a check for a default header.
+                // Assuming that the check isn't needed here for now.
+                // (Could be a HTML thing)
+                
+                // TODO: Check to see if setting saving to true is necesarry here
+                this.saving = true;
+                
+                // Send the data to the API
+                const response = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${templateId}/configuration`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(data)
+                });
+                
+                // Tell the user the save was succesful
+                // Q: What is "info" here?
+                window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
+                
+                // Reset the history part number
+                this.lastLoadedHistoryPartNumber = 0;
+                
+                // Add to the version
+                const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                
+                // Deploy the environment
+                await this.deployEnvironment("development", templateId, version);
+                
+                // Reload the template (if requested)
+                if (reloadTemplateAfterSave) {
+                    await this.wtsConfiguration.reloadWtsConfigurationTab(templateId);
+                } else {
+                    // Q: What does this exactly do?
+                    await this.reloadMetaData(templateId);
+                }
+                
+                // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
+                this.initialTemplateSettings = data;
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
+                success = false;
+            }
         }
 
         /**

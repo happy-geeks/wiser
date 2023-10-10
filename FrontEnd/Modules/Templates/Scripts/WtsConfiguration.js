@@ -48,7 +48,7 @@ export class WtsConfiguration {
         // Get the data from the api
         try {
             templateSettings = await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}templates/${id}/parsedXml`,
+                url: `${this.base.settings.wiserApiRoot}templates/${id}/configuration`,
                 dataType: "json",
                 method: "GET"
             });
@@ -370,6 +370,33 @@ export class WtsConfiguration {
                 }
             ],
         }).data("kendoGrid");
+    }
+
+    /**
+     * Gathers the values of the input fields and returns them as an object.
+     * @returns {any} The object containing the values of the input fields.
+     */
+    getCurrentSettings() {
+        const serviceName = document.getElementById("wts-name").value;
+        const connectionString = document.getElementById("wts-connection-string").value;
+        const logLevelField = document.getElementById('wts-log-level');
+        const logLevelSelectedIndex = logLevelField.selectedIndex;
+        const logLevel = logLevelField.options[logLevelSelectedIndex].value;
+        const logStopStart = document.getElementById("wts-log-stop-start").checked;
+        const logRunCyclus = document.getElementById("wts-log-run-cyclus").checked;
+        const logBody = document.getElementById("wts-log-body").checked;
+        
+        // Create the object according to the model
+        return {
+            "ServiceName": serviceName,
+            "ConnectionString": connectionString,
+            "LogSettings": {
+                "LogLevel": logLevel,
+                "LogStopStart": logStopStart,
+                "LogRunCyclus": logRunCyclus,
+                "LogBody": logBody
+            }
+        };
     }
 
     /**

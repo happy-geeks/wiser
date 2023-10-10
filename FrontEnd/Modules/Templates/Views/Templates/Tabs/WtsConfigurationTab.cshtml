@@ -18,7 +18,7 @@
             </div>
             <div class="item">
                 <h4><label>Connectiestring</label></h4>
-                <input id="wts-name" type="text" class="k-input" value="@Model.ConnectionString" />
+                <input id="wts-connection-string" type="text" class="k-input" value="@Model.ConnectionString" />
                 <div class="form-hint"><span>MySQL Connectiestring voor de verbinding aan een database</span></div>
             </div>
             
@@ -27,7 +27,7 @@
                 <select id="wts-log-level">
                     @foreach (string logLevel in Model.LogMinimumLevels)
                     {
-                        if (logLevel == Model.ConfigurationSettings.LogMinimumLevel)
+                        if (logLevel == Model.LogSettings.LogMinimumLevel)
                         {
                             <option value="@logLevel" selected>@logLevel</option>
                         }
@@ -41,7 +41,7 @@
             
             <div class="item">
                 <label class="checkbox">
-                    @if (Model.ConfigurationSettings.LogStartAndStop)
+                    @if (Model.LogSettings.LogStartAndStop)
                     {
                         <input type="checkbox" id="wts-log-stop-start" checked/>
                     }
@@ -55,7 +55,7 @@
             
             <div class="item">
                 <label class="checkbox">
-                    @if (Model.ConfigurationSettings.LogRunStartAndStop)
+                    @if (Model.LogSettings.LogRunStartAndStop)
                     {
                         <input type="checkbox" id="wts-log-run-cyclus" checked/>
                     }
@@ -69,7 +69,7 @@
             
             <div class="item">
                 <label class="checkbox">
-                    @if (Model.ConfigurationSettings.LogRunBody)
+                    @if (Model.LogSettings.LogRunBody)
                     {
                         <input type="checkbox" id="wts-log-body" checked/>
                     }
