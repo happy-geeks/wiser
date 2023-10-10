@@ -9,11 +9,6 @@ namespace Api.Modules.Templates.Models.Template
     public class TemplateParsedXmlModel
     {
         /// <summary>
-        /// Gets or sets the ID of the template.
-        /// </summary>
-        public int TemplateId { get; set; }
-        
-        /// <summary>
         /// Gets or sets the service name of the editor value of the template.
         /// </summary>
         [XmlElement("ServiceName")]
@@ -28,8 +23,7 @@ namespace Api.Modules.Templates.Models.Template
         /// <summary>
         /// Gets or sets the log settings for the configuration (Global if not overwritten)
         /// </summary>
-        [XmlElement("LogSettings")]
-        public LogSettings ConfigurationSettings { get; set; }
+        public LogSettings LogSettings { get; set; }
         
         /// <summary>
         /// All levels of minimum logging

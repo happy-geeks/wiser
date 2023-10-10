@@ -153,11 +153,23 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="templateId">The id of the template to retrieve the editor value of.</param>
         /// <returns>A object model containing the data of the template editor value.</returns>
         [HttpGet]
-        [Route("{templateId:int}/parsedXml")]
+        [Route("{templateId:int}/configuration")]
         [ProducesResponseType(typeof(TemplateParsedXmlModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetParsedXmlAsync(int templateId)
         {
             return (await templatesService.GetTemplateParsedXmlAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Save the configuration for the given template.
+        /// </summary>
+        /// <param name="templateId">The id of the template to save the configuration to.</param>
+        [HttpPost]
+        [Route("{templateId:int}/configuration")]
+        [ProducesResponseType(typeof(TemplateParsedXmlModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveConfiguration(int templateId, TemplateParsedXmlModel data)
+        {
+            return (await templatesService.SaveConfigurationAsync((ClaimsIdentity)User.Identity, templateId, data)).GetHttpResponseMessage();
         }
 
         /// <summary>

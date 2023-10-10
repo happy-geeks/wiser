@@ -1450,13 +1450,87 @@ LIMIT 1";
             var decryptedXml = await templateDataService.DecryptXml(encryptionKey, templateData.EditorValue);
 
             // Parse the xml
-            var templateXml = await templateDataService.ParseXml(decryptedXml);
-            // Re-add the id since we lose it during parsing
+            var templateXml = await templateDataService.ParseXmlToObject(decryptedXml);
             
+            // Re-add the id since we lose it during parsing
+            // templateXml.TemplateId = templateId;
+                
             // Add the available input values to the xml
             templateDataService.AddInputValues(templateXml);
             
             return new ServiceResult<TemplateParsedXmlModel>(templateXml);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveConfigurationAsync(ClaimsIdentity identity, int templateId, TemplateParsedXmlModel data)
+        {
+            // Make sure the template ID is valid
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+            
+            // Make sure data is sent
+            if (data == null)
+            {
+                throw new ArgumentException("Configuration cannot be empty.");
+            }
+
+            // Compile / minify data
+            // Q: Is this the optimal place to do this?
+            // TODO: Trim every string we can find in the data object
+            TrimAllStringsInObject(data);
+            
+            // Parse the data to raw XML
+            // TODO: Parse the data to raw XML
+            string xml = await templateDataService.ParseObjectToXml(data);
+            string test = "testing";
+
+            // Get the encryption key from the database
+            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            
+            // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
+            logger.LogDebug($"Encrypting template value for template ID {templateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
+            
+            // TODO: Encrypt the xml once it has been parsed from an object to raw XML
+            // template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
+            
+            // TODO: Send the xml to the database
+            //  templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
+
+            // Return the result (success)
+            return new ServiceResult<bool>(true);
+        }
+        
+        // Q: This is most likely not the right place for this to exist, should stuff related to this be placed in something
+        // Like a xml parsing service or something like that?
+        public static void TrimAllStringsInObject(object model)
+        {
+            if (model is string)
+            {
+                (model as string)!.Trim();
+            }
+            else if (model is IEnumerable<object> enumerable)
+            {
+                foreach (object item in enumerable)
+                {
+                    TrimAllStringsInObject(item);
+                }
+            }
+            else if (model is object obj)
+            {
+                foreach (var property in obj.GetType().GetProperties())
+                {
+                    if (property.PropertyType == typeof(string))
+                    {
+                        (property.GetValue(obj) as string)!.Trim();
+                    }
+                    else if (property.PropertyType.IsClass)
+                    {
+                        TrimAllStringsInObject(property.GetValue(obj));
+                    }
+                }
+            }
         }
 
         /// <inheritdoc />

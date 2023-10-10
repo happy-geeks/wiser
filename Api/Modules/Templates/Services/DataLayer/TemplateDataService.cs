@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Serialization;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
@@ -1502,7 +1503,7 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc />
-        public Task<TemplateParsedXmlModel> ParseXml(string xml)
+        public Task<TemplateParsedXmlModel> ParseXmlToObject(string xml)
         {
             // Q: Should this exist in a different service?
             XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
@@ -1512,6 +1513,26 @@ AND otherVersion.id IS NULL";
                 TemplateParsedXmlModel configuration = (TemplateParsedXmlModel)serializer.Deserialize(stringReader);
 
                 return Task.FromResult(configuration);
+            }
+        }
+
+        /// <inheritdoc />
+        public Task<string> ParseObjectToXml(TemplateParsedXmlModel data)
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
+
+            using (StringWriter stringWriter = new StringWriter())
+            {
+                XmlWriterSettings settings = new XmlWriterSettings();
+                settings.OmitXmlDeclaration = true;
+
+                XmlWriter writer = XmlWriter.Create(stringWriter, settings);
+
+                serializer.Serialize(writer, data);
+
+                string xml = stringWriter.ToString();
+
+                return Task.FromResult(xml);
             }
         }
 
