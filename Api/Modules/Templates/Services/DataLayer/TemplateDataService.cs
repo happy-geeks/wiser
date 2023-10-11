@@ -676,6 +676,39 @@ WHERE id = ?id";
         }
 
         /// <inheritdoc />
+        public async Task SaveConfigurationAsync(int templateId, string xml, string username)
+        {
+            // Debug log whats going
+            System.Diagnostics.Debug.WriteLine("Start SaveConfigurationAsync");
+            
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("templateId", templateId);
+            
+            // Get the ID and published environment of the latest version of the template.
+            var latestVersion = await GetLatestVersionAsync(templateId);
+            
+            // If the latest version is published to live, create a new version, because we never want to edit the version that is published to live directly.
+            if ((latestVersion.Environment & Environments.Live) == Environments.Live)
+            {
+                latestVersion.Id = await CreateNewVersionAsync(templateId);
+            }
+            
+            clientDatabaseConnection.AddParameter("id", latestVersion.Id);
+            clientDatabaseConnection.AddParameter("editorValue", xml);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+            clientDatabaseConnection.AddParameter("username", username);
+
+            var query = $@"UPDATE {WiserTableNames.WiserTemplate}
+                SET template_data = ?editorValue,
+                changed_on = ?now,
+                changed_by = ?username,
+                is_dirty = TRUE
+                WHERE id = ?id";
+            
+            await clientDatabaseConnection.ExecuteAsync(query);
+        }
+
+        /// <inheritdoc />
         public async Task<int> CreateNewVersionAsync(int templateId)
         {
             clientDatabaseConnection.ClearParameters();
@@ -1524,11 +1557,16 @@ AND otherVersion.id IS NULL";
             using (StringWriter stringWriter = new StringWriter())
             {
                 XmlWriterSettings settings = new XmlWriterSettings();
-                settings.OmitXmlDeclaration = true;
+                settings.OmitXmlDeclaration = true; // Remove the XML declaration
+                settings.Indent = true; // Indent the XML output
+                settings.IndentChars = "    "; // Set the indent size to 4 spaces.
+
+                XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces();
+                namespaces.Add("", ""); // Remove the xmlns attribute
 
                 XmlWriter writer = XmlWriter.Create(stringWriter, settings);
 
-                serializer.Serialize(writer, data);
+                serializer.Serialize(writer, data, namespaces);
 
                 string xml = stringWriter.ToString();
 

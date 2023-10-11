@@ -99,6 +99,16 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="username">The name of the authenticated user.</param>
         /// <returns>An int confirming the affected rows of the query.</returns>
         Task SaveAsync(TemplateSettingsModel templateSettings, string templateLinks, string username);
+        
+        /// <summary>
+        /// Updates the latest version of a template with the new configuration. This method will overwrite this version, unless this version has been published to the live environment,
+        /// then it will create a new version as to not overwrite the live version.
+        /// </summary>
+        /// <param name="templateId">The id of the template to save to</param>
+        /// <param name="xml">The new configuration to save to the template</param>
+        /// <param name="username">The name of the authenticated user.</param>
+        /// <returns>An int confirming the affected rows of the query.</returns>
+        Task SaveConfigurationAsync(int templateId, string xml, string username);
 
         /// <summary>
         /// Creates a new version of a template by copying the previous version and increasing the version number by one.
