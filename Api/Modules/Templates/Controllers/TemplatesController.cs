@@ -164,6 +164,7 @@ namespace Api.Modules.Templates.Controllers
         /// Save the configuration for the given template.
         /// </summary>
         /// <param name="templateId">The id of the template to save the configuration to.</param>
+        /// <param name="data"> A <see cref="TemplateParsedXmlModel"/> containing the data of the template editor value.</param>
         [HttpPost]
         [Route("{templateId:int}/configuration")]
         [ProducesResponseType(typeof(TemplateParsedXmlModel), StatusCodes.Status200OK)]

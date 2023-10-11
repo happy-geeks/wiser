@@ -2369,14 +2369,9 @@ const moduleSettings = {
                 // Get the current configuration settings
                 const data = this.wtsConfiguration.getCurrentSettings();
                 
-                console.log(data);
-                
                 // Q: At this point there is a check for a default header.
                 // Assuming that the check isn't needed here for now.
                 // (Could be a HTML thing)
-                
-                // TODO: Check to see if setting saving to true is necesarry here
-                this.saving = true;
                 
                 // Send the data to the API
                 const response = await Wiser.api({
@@ -2389,7 +2384,8 @@ const moduleSettings = {
                 
                 // Tell the user the save was succesful
                 // Q: What is "info" here?
-                window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
+                // Q: I grabbed the name from a different variable, but it boils down to the same thing. Is it okay like this?
+                window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
                 
                 // Reset the history part number
                 this.lastLoadedHistoryPartNumber = 0;
@@ -2415,6 +2411,10 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
                 success = false;
             }
+
+            this.saving = false;
+            window.processing.removeProcess(process);
+            return success;
         }
 
         /**

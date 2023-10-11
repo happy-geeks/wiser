@@ -381,20 +381,20 @@ export class WtsConfiguration {
         const connectionString = document.getElementById("wts-connection-string").value;
         const logLevelField = document.getElementById('wts-log-level');
         const logLevelSelectedIndex = logLevelField.selectedIndex;
-        const logLevel = logLevelField.options[logLevelSelectedIndex].value;
-        const logStopStart = document.getElementById("wts-log-stop-start").checked;
-        const logRunCyclus = document.getElementById("wts-log-run-cyclus").checked;
-        const logBody = document.getElementById("wts-log-body").checked;
+        const logMinimumLevel = logLevelField.options[logLevelSelectedIndex].value;
+        const logStartAndStop = document.getElementById("wts-log-stop-start").checked;
+        const logRunStartAndStop = document.getElementById("wts-log-run-cyclus").checked;
+        const logRunBody = document.getElementById("wts-log-body").checked;
         
         // Create the object according to the model
         return {
             "ServiceName": serviceName,
             "ConnectionString": connectionString,
             "LogSettings": {
-                "LogLevel": logLevel,
-                "LogStopStart": logStopStart,
-                "LogRunCyclus": logRunCyclus,
-                "LogBody": logBody
+                "LogMinimumLevel": logMinimumLevel,
+                "LogStartAndStop": logStartAndStop,
+                "LogRunStartAndStop": logRunStartAndStop,
+                "LogRunBody": logRunBody
             }
         };
     }

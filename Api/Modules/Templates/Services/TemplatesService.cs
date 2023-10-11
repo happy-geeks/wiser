@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using System.Xml;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
@@ -1451,9 +1452,6 @@ LIMIT 1";
 
             // Parse the xml
             var templateXml = await templateDataService.ParseXmlToObject(decryptedXml);
-            
-            // Re-add the id since we lose it during parsing
-            // templateXml.TemplateId = templateId;
                 
             // Add the available input values to the xml
             templateDataService.AddInputValues(templateXml);
@@ -1478,13 +1476,10 @@ LIMIT 1";
 
             // Compile / minify data
             // Q: Is this the optimal place to do this?
-            // TODO: Trim every string we can find in the data object
             TrimAllStringsInObject(data);
             
             // Parse the data to raw XML
-            // TODO: Parse the data to raw XML
             string xml = await templateDataService.ParseObjectToXml(data);
-            string test = "testing";
 
             // Get the encryption key from the database
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
@@ -1492,11 +1487,11 @@ LIMIT 1";
             // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
             logger.LogDebug($"Encrypting template value for template ID {templateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
             
-            // TODO: Encrypt the xml once it has been parsed from an object to raw XML
-            // template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
+            // Encrypt the xml
+            xml = xml.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
             
-            // TODO: Send the xml to the database
-            //  templateDataService.SaveAsync(template, templateLinks, IdentityHelpers.GetUserName(identity, true));
+            // Send the xml to the database
+            await templateDataService.SaveConfigurationAsync(templateId, xml, IdentityHelpers.GetUserName(identity, true));
 
             // Return the result (success)
             return new ServiceResult<bool>(true);
@@ -1504,7 +1499,7 @@ LIMIT 1";
         
         // Q: This is most likely not the right place for this to exist, should stuff related to this be placed in something
         // Like a xml parsing service or something like that?
-        public static void TrimAllStringsInObject(object model)
+        private static void TrimAllStringsInObject(object model)
         {
             if (model is string)
             {
