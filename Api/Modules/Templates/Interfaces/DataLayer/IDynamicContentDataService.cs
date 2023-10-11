@@ -38,8 +38,8 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// </summary>
         /// <param name="contentId">The template ID.</param>
         /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
-        /// <returns>The ID, version number and published environment of the template.</returns>
-        Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null);
+        /// <returns>The ID, version number, published environment of the template and if it is removed.</returns>
+        Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null);
 
         /// <summary>
         /// Updates the latest version of a template with new data. This method will overwrite this version, unless this version has been published to the live environment,
@@ -112,8 +112,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Deletes a dynamic component by putting the field 'removed' to 1
         /// </summary>
+        /// <param name="username">The name of the user deleting the dynamic component.</param>
         /// <param name="contentId"> The ID of the dynamic component</param>
-        Task DeleteAsync(int contentId);
+        Task DeleteAsync(string username, int contentId);
 
         /// <summary>
         /// Deploys one or more templates from the main branch to a sub branch.

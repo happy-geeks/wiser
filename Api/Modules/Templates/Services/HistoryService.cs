@@ -95,9 +95,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId)
+        public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int contentId)
         {
-            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(templateId);
+            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(contentId);
 
             return PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished);
         }
@@ -112,7 +112,7 @@ namespace Api.Modules.Templates.Services
             {
                 return new List<TemplateHistoryModel>();
             }
-            
+
             templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
 
             var templateHistory = new List<TemplateHistoryModel>();

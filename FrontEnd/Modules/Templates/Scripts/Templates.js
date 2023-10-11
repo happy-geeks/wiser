@@ -1306,7 +1306,7 @@ const moduleSettings = {
                     toolbar: ["create"],
                     columns: [
                         { field: "url" },
-                        { command: "destroy", width: 140 }
+                        { command: { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }, width: 140 }
                     ],
                     dataSource: dataSource,
                     edit: function (e) {
@@ -1316,6 +1316,7 @@ const moduleSettings = {
                         e.model.__ordering = newOrdering;
                     }
                 });
+                externalFilesGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
                 const externalFilesGrid = $(externalFilesGridElement).getKendoGrid();
                 externalFilesGrid.table.kendoSortable({
