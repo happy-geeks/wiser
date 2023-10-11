@@ -986,7 +986,7 @@ CREATE TRIGGER `QueryUpdate` AFTER UPDATE ON `wiser_query` FOR EACH ROW BEGIN
 
     IF IFNULL(NEW.`show_in_communication_module`, '') <> IFNULL(OLD.`show_in_communication_module`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_communication_module', NULL, NEW.`show_in_communication_module`);
+        VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_communication_module', OLD.`show_in_communication_module`, NEW.`show_in_communication_module`);
     END IF;
 END;
 
