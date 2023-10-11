@@ -140,7 +140,7 @@ namespace Api.Modules.Customers.Services
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             if (IsMainDatabase(subDomain))
             {
-                return new ServiceResult<string>(String.IsNullOrWhiteSpace(gclSettings.ExpiringEncryptionKey) ? gclSettings.DefaultEncryptionKey : gclSettings.ExpiringEncryptionKey);
+                return new ServiceResult<string>(String.IsNullOrWhiteSpace(apiSettings.DatabasePasswordEncryptionKey) ? gclSettings.DefaultEncryptionKey : apiSettings.DatabasePasswordEncryptionKey);
             }
 
             // Get the customer data.
