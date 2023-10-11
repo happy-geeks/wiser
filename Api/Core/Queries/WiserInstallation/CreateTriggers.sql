@@ -1254,7 +1254,7 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
 
     IF IFNULL(NEW.`store_type`, '') <> IFNULL(OLD.`store_type`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', NULL, NEW.`store_type`);
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', OLD.`store_type`, NEW.`store_type`);
     END IF;
 END;
 
