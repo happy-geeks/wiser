@@ -585,7 +585,7 @@ export class RoleTab {
                         this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
                     } else if (selectedTab === "modules") {
                         this.initializeOrRefreshRolesModulesGrid(dataItem.id);
-                    }else if (selectedTab === "queries") {
+                    } else if (selectedTab === "queries") {
                         this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
                     }
                 }

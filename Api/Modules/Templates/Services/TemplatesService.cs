@@ -787,6 +787,7 @@ WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
 ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
+                
                 TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,
@@ -815,8 +816,7 @@ ORDER BY moduleName ASC
      {moduleId}
  )
 ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
-                
-                
+ 
                 TemplateQueryStrings.Add("GET_QUERY_PERMISSIONS", @"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,
