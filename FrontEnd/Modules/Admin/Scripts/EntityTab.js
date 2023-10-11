@@ -101,11 +101,16 @@ export class EntityTab {
                     title: "Kopieren naar andere talen",
                     closable: true,
                     modal: true,
-                    content: "<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?<p>",
+                    content: `<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?<p> 
+<div class="form-hint">
+    <p>Gegevens tab: de velden voor de verschillende talen komen onder elkaar te staan in de tab 'gegevens</p>
+    <p>Tab per taalcode: er komt een tab per taalcode, bijvoorbeeld 'NL, EN, etc.'</p>
+    <p>Tab per taal: er komt een tab per taal, bijvoorbeeld 'nederlands, engels, etc'</p>
+</div>`,
                     actions: [
-                        { text: "Gegevens tab", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 0) } },
-                        { text: "Tab per taal (taalcode)", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 1) } },
-                        { text: "Tab per taal (taalnaam)", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 2) } }
+                        { text: "Tab 'gegevens'", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 0) } },
+                        { text: "Tab per taalcode", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 1) } },
+                        { text: "Tab per taal", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 2) } }
                     ],
                 }).data("kendoDialog").open();
             },
