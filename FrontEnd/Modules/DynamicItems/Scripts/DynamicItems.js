@@ -699,7 +699,7 @@ const moduleSettings = {
 
             // Switch to the tab sheet that contains the first error.
             const fieldName = Object.keys(event.sender._errors)[0];
-            const tabSheet = tabStrip.element.find(`[name=${fieldName}]`).closest("div[role=tabpanel]");
+            const tabSheet = tabStrip.element.find(`[name='${fieldName}']`).closest("div[role=tabpanel]");
             tabStrip.select(tabSheet.index() - 1); // -1 because the first element is the <ul> with tab names, which we don't want to count.
         }
 
@@ -1821,7 +1821,7 @@ const moduleSettings = {
                             return;
                         }
 
-                        const field = fieldsContainer.find(`[name=${itemDetail.key}]`);
+                        const field = fieldsContainer.find(`[name='${itemDetail.key}']`);
                         if (field.is(":disabled,[readonly]")) {
                             field.val(itemDetail.value);
                         }
