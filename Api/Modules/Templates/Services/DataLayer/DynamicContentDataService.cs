@@ -90,7 +90,7 @@ ORDER BY templatePath ASC, component.title ASC";
         }
 
         /// <inheritdoc />
-        public async Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null)
+        public async Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null)
         {
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
 
@@ -98,7 +98,8 @@ ORDER BY templatePath ASC, component.title ASC";
             var query = $@"SELECT 
     component.id,
     component.version,
-    component.published_environment
+    component.published_environment,
+    component.removed
 FROM {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} AS component
 LEFT JOIN {databaseNamePrefix}{WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = component.content_id AND otherVersion.version > component.version
 WHERE component.content_id = ?contentId
@@ -113,7 +114,8 @@ AND otherVersion.id IS NULL";
             var id = Convert.ToInt32(dataTable.Rows[0]["id"]);
             var version = Convert.ToInt32(dataTable.Rows[0]["version"]);
             var publishedEnvironment = (Environments)Convert.ToInt32(dataTable.Rows[0]["published_environment"]);
-            return (id, version, publishedEnvironment);
+            var removed = Convert.ToBoolean(dataTable.Rows[0]["removed"]);
+            return (id, version, publishedEnvironment, removed);
         }
 
         /// <inheritdoc />
@@ -394,11 +396,33 @@ VALUES (?newContentId, ?templateId, ?now, ?username);";
         }
 
         /// <inheritdoc />
-        public async Task DeleteAsync(int contentId)
+        public async Task DeleteAsync(string username, int contentId)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("contentId", contentId);
-            var query = $@"UPDATE {WiserTableNames.WiserDynamicContent} SET removed = 1 WHERE content_id = ?contentID";
+            
+            var query = $@"SELECT component, component_mode, title, version, removed
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?contentId
+ORDER BY version DESC
+LIMIT 1";
+            
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0 || Convert.ToBoolean(dataTable.Rows[0]["removed"]))
+            {
+                return;
+            }
+            
+            clientDatabaseConnection.AddParameter("component", dataTable.Rows[0].Field<string>("component"));
+            clientDatabaseConnection.AddParameter("componentMode", dataTable.Rows[0].Field<string>("component_mode"));
+            clientDatabaseConnection.AddParameter("title", dataTable.Rows[0].Field<string>("title"));
+            clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
+            clientDatabaseConnection.AddParameter("username", username);
+            clientDatabaseConnection.AddParameter("now", DateTime.Now);
+
+            query = $@"INSERT INTO {WiserTableNames.WiserDynamicContent} (content_id, component, component_mode, title, version, changed_on, changed_by, removed, is_dirty)
+VALUES(?contentId, ?component, ?componentMode, ?title, ?version, ?now, ?username, TRUE, TRUE)";
+
             await clientDatabaseConnection.ExecuteAsync(query);
         }
 

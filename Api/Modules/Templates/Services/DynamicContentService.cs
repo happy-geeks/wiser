@@ -178,7 +178,7 @@ namespace Api.Modules.Templates.Services
             if (versionBeingDeployed > 0)
             {
                 var latestVersion = await dataService.GetLatestVersionAsync(contentId);
-                if (versionBeingDeployed != latestVersion.Version)
+                if (versionBeingDeployed != latestVersion.Version || latestVersion.Removed)
                 {
                     return new ServiceResult<int>(0);
                 }
@@ -277,13 +277,13 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteAsync(int contentId)
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int contentId)
         {
             if (contentId <= 0)
             {
                 throw new ArgumentException("The Id is invalid");
             }
-            await dataService.DeleteAsync(contentId);
+            await dataService.DeleteAsync(IdentityHelpers.GetUserName(identity, true), contentId);
             return new ServiceResult<bool>(true);
         }
 

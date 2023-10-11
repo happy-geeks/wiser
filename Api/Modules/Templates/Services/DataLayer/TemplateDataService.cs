@@ -230,7 +230,7 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null)
+        public async Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null)
         {
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
 
@@ -238,7 +238,8 @@ LIMIT 1");
             var query = $@"SELECT 
     template.id,
     template.version,
-    template.published_environment
+    template.published_environment,
+    template.removed
 FROM {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.template_id = ?templateId
@@ -253,7 +254,8 @@ AND otherVersion.id IS NULL";
             var id = Convert.ToInt32(dataTable.Rows[0]["id"]);
             var version = Convert.ToInt32(dataTable.Rows[0]["version"]);
             var publishedEnvironment = (Environments)Convert.ToInt32(dataTable.Rows[0]["published_environment"]);
-            return (id, version, publishedEnvironment);
+            var removed = Convert.ToBoolean(dataTable.Rows[0]["removed"]);
+            return (id, version, publishedEnvironment, removed);
         }
 
         /// <inheritdoc />
@@ -1363,14 +1365,14 @@ LIMIT 1";
             clientDatabaseConnection.AddParameter("ordering", dataTable.Rows[0].Field<int>("ordering"));
             clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
 
-            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
-VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username)";
+            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by, is_dirty)
+VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username, TRUE)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             if (alsoDeleteChildren)
             {
                 // Delete all children of the template by also adding new versions with removed = 1 for them.
-                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
+                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by, is_dirty)
 SELECT 
     template.template_id,
     template.parent_id,
@@ -1380,7 +1382,8 @@ SELECT
     template.version + 1,
     1,
     ?now,
-    ?username
+    ?username,
+    TRUE
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.parent_id = ?templateId
