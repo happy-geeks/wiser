@@ -63,11 +63,11 @@ LIMIT ?limit, ?offset");
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int templateId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int contentId)
         {
             var versionList = new Dictionary<int, int>();
 
-            connection.AddParameter("id", templateId);
+            connection.AddParameter("id", contentId);
             var dataTable = await connection.GetAsync(@$"SELECT 
     version,
     published_environment 

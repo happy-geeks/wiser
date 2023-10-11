@@ -19,9 +19,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Get a list of versions and their published environments form a dynamic content.
         /// </summary>
-        /// <param name="templateId">The id of the dynamic content.</param>
+        /// <param name="contentId">The id of the dynamic content.</param>
         /// <returns>List of version numbers and their published environment.</returns>
-        Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int templateId);
+        Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int contentId);
         
         /// <summary>
         /// Get the history of a template. This will retrieve all versions of the template which can be compared for changes.

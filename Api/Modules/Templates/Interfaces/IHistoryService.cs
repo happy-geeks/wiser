@@ -41,9 +41,9 @@ namespace Api.Modules.Templates.Interfaces
         /// <summary>
         /// Retrieves a list of versions for the dynamic content containing their publish status and transforms it to a PublishedEnvironmentModel. 
         /// </summary>
-        /// <param name="templateId">The id of the content.</param>
+        /// <param name="contentId">The id of the content.</param>
         /// <returns>A PublishedEnvironmentModel containing the published environments of dynamic content</returns>
-        Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId);
+        Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int contentId);
 
         /// <summary>
         /// Retrieve the history of a template. This will start by retrieving the history of the template. 
