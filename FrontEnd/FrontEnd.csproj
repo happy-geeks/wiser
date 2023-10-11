@@ -25,12 +25,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.0.1" />
     <PackageReference Include="GoogleAuthenticator" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Api\Api.csproj" />
+    <ProjectReference Include="..\..\geeks-core-library\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>
