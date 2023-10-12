@@ -1531,21 +1531,21 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc />
-        public Task<TemplateParsedXmlModel> ParseXmlToObject(string xml)
+        public TemplateParsedXmlModel ParseXmlToObject(string xml)
         {
             // Q: Should this exist in a different service?
             var serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
 
             using (var stringReader = new StringReader(xml))
             {
-                TemplateParsedXmlModel configuration = (TemplateParsedXmlModel)serializer.Deserialize(stringReader);
+                var configuration = (TemplateParsedXmlModel)serializer.Deserialize(stringReader);
 
-                return Task.FromResult(configuration);
+                return configuration;
             }
         }
 
         /// <inheritdoc />
-        public Task<string> ParseObjectToXml(TemplateParsedXmlModel data)
+        public string ParseObjectToXml(TemplateParsedXmlModel data)
         {
             XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
 
@@ -1565,7 +1565,7 @@ AND otherVersion.id IS NULL";
 
                 string xml = stringWriter.ToString();
 
-                return Task.FromResult(xml);
+                return xml;
             }
         }
 
