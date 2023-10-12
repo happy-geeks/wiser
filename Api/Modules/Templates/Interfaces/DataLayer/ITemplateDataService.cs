@@ -233,14 +233,14 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// </summary>
         /// <param name="xml">The incoming xml string.</param>
         /// <returns>The parsed object</returns>
-        Task<TemplateParsedXmlModel> ParseXmlToObject(string xml);
+        TemplateParsedXmlModel ParseXmlToObject(string xml);
         
         /// <summary>
         /// Parse an object to xml.
         /// </summary>
         /// <param name="data">The incoming object with data.</param>
         /// <returns>The parsed xml</returns>
-        Task<string> ParseObjectToXml(TemplateParsedXmlModel data);
+        string ParseObjectToXml(TemplateParsedXmlModel data);
 
         /// <summary>
         /// Deploy one or more templates from the main branch to a sub branch.

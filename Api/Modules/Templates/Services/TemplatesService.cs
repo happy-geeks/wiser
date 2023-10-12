@@ -1448,7 +1448,7 @@ LIMIT 1";
             var decryptedXml = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData.EditorValue);
 
             // Parse the xml
-            var templateXml = await templateDataService.ParseXmlToObject(decryptedXml);
+            var templateXml = templateDataService.ParseXmlToObject(decryptedXml);
                 
             // Add the available input values to the xml
             templateDataService.AddInputValues(templateXml);
@@ -1476,7 +1476,7 @@ LIMIT 1";
             TrimAllStringsInObject(data);
             
             // Parse the data to raw XML
-            string xml = await templateDataService.ParseObjectToXml(data);
+            string xml = templateDataService.ParseObjectToXml(data);
 
             // Get the encryption key from the database
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
