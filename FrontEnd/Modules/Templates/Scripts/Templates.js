@@ -1962,13 +1962,7 @@ const moduleSettings = {
                     event.preventDefault();
 
                     if (!this.dynamicContentWindowIsOpen()) {
-                        // Make a check to see if we're trying to save a configuration in the config tab
-                        if (this.mainTabStrip.select().data("name") == "configuration") {
-                            this.saveConfigurationTemplate();
-                            return;
-                        } else {
-                            this.saveTemplate();
-                        }
+                        this.saveTemplate()
                     } else {
                         const dynamicContentIframe = document.querySelector("#dynamicContentWindow iframe");
                         if (!dynamicContentIframe || !dynamicContentIframe.contentWindow || !dynamicContentIframe.contentWindow.DynamicContent) {
@@ -2273,34 +2267,52 @@ const moduleSettings = {
                     return false;
                 }
 
-                const data = this.getCurrentTemplateSettings();
+                // Make a check to see if we're only uploading xml or the whole template
+                let data = null;
+                if (this.mainTabStrip.select().data("name") === "configuration") {
+                    data = this.wtsConfiguration.getCurrentSettings();
+                    this.saving = true;
+                    
+                    const response = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/configuration`,
+                        dataType: "json",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(data)
+                    });
+                    reloadTemplateAfterSave = true;
+                } else {
+                    data = this.getCurrentTemplateSettings();
+                    
+                    // Check if there's a conflict if the template is marked as default header and/or footer.
+                    const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
+                    const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
+                    if (defaultHeaderCheckbox && defaultFooterCheckbox) {
+                        const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
+                        const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
 
-                // Check if there's a conflict if the template is marked as default header and/or footer.
-                const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
-                const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
-                if (defaultHeaderCheckbox && defaultFooterCheckbox) {
-                    const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
-                    const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
-
-                    if (conflictCheck.hasConflict) {
-                        kendo.alert(`Er is al een standaard header en/of footer met dezelfde regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
-                        window.processing.removeProcess(process);
-                        return false;
+                        if (conflictCheck.hasConflict) {
+                            kendo.alert(`Er is al een standaard header en/of footer met dezelfde regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
+                            window.processing.removeProcess(process);
+                            return false;
+                        }
                     }
+
+                    // No conflicts, continue saving.
+                    this.saving = true;
+
+                    const response = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}`,
+                        dataType: "json",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(data)
+                    });
                 }
 
-                // No conflicts, continue saving.
-                this.saving = true;
-
-                const response = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}templates/${templateId}`,
-                    dataType: "json",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify(data)
-                });
-
-                window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
+                // Q: Replaced the data.name since data from wtsconfiguration doesn't grab that same name
+                // and what data.name used is what is used here now. Is that okay?
+                window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
                 this.lastLoadedHistoryPartNumber = 0;
 
                 const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
@@ -2313,99 +2325,10 @@ const moduleSettings = {
                 }
 
                 // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
-                this.initialTemplateSettings = data;
-            } catch (exception) {
-                console.error(exception);
-                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
-                success = false;
-            }
-
-            this.saving = false;
-            window.processing.removeProcess(process);
-            return success;
-        }
-        
-        // Q: Should this function exist here instead of in wtsconfiguration?
-        // Reason could be that we can use the same keybind (ctrl+s) for saving the config template
-        async saveConfigurationTemplate() {
-            // Stop if we're already saving.
-            if (this.saving) {
-                return false;
-            }
-            console.log("Now saving config template");
-            
-            // Make sure the selected item isn't a folder
-            const selectedTabIndex = this.treeViewTabStrip.select().index();
-            const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
-            const treeViewElement = selectedTabContentElement.querySelector("ul");
-            const treeView = $(treeViewElement).data("kendoTreeView");
-            const dataItem = treeView.dataItem(treeView.select());
-            if (!dataItem || dataItem.isFolder) {
-                return false;
-            }
-            
-            // Add the process
-            const process = `saveTemplate_${Date.now()}`;
-            window.processing.addProcess(process);
-            
-            // Set variables
-            let success = true; // This will set to false if something goes wrong
-            let templateId; // The ID of the template
-            let reloadTemplateAfterSave = false; // If the template needs to be reloaded after saving
-            
-            // Start saving
-            try {
-                // Q: In the other function there is something about a virtual item, what is that?
-                // Assuming that it isn't needed here for now
-                
-                templateId = this.selectedId; // Set the template ID to the selected ID
-                
-                // Make sure that the template ID is set
-                if (!templateId) {
-                    window.processing.removeProcess(process);
-                    return false;
+                if (this.mainTabStrip.select().data("name") !== "configuration") {
+                    // Q: This currently only works for the development tab, should a feature be added to also make this work for the configuration tab?
+                    this.initialTemplateSettings = data;
                 }
-                
-                // Get the current configuration settings
-                const data = this.wtsConfiguration.getCurrentSettings();
-                
-                // Q: At this point there is a check for a default header.
-                // Assuming that the check isn't needed here for now.
-                // (Could be a HTML thing)
-                
-                // Send the data to the API
-                const response = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}templates/${templateId}/configuration`,
-                    dataType: "json",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify(data)
-                });
-                
-                // Tell the user the save was succesful
-                // Q: What is "info" here?
-                // Q: I grabbed the name from a different variable, but it boils down to the same thing. Is it okay like this?
-                window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
-                
-                // Reset the history part number
-                this.lastLoadedHistoryPartNumber = 0;
-                
-                // Add to the version
-                const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
-                
-                // Deploy the environment
-                await this.deployEnvironment("development", templateId, version);
-                
-                // Reload the template (if requested)
-                if (reloadTemplateAfterSave) {
-                    await this.wtsConfiguration.reloadWtsConfigurationTab(templateId);
-                } else {
-                    // Q: What does this exactly do?
-                    await this.reloadMetaData(templateId);
-                }
-                
-                // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
-                this.initialTemplateSettings = data;
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
