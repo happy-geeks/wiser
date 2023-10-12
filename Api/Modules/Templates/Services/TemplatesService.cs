@@ -1426,23 +1426,11 @@ LIMIT 1";
                 };
             }
 
-            // Q: What is this for? (L.o.t)
+            // Q: What is this for? (Later op terugkomen)
             // templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
             
             // Grab the encryption key from the database.
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
-            
-            // Q: Should this function be rewritten to simply accept xml as input and return xml as output?
-            // If so, where should the check be done to know if what we're sending there is of type xml?
-            // Do we send the type as a parameter or check that here?
-            
-            // Maybe a second function should be created that accepts xml as input and directly edits the data.
-            // That would mean we accept the existence of functions that directly edit the data instead of 
-            // Being more modular and having an in and output.
-            // templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
-            
-            // For now we'll create a separate function that accepts xml as input and returns xml as output.
-            // To not break anything, we'll keep the other function as well.
             
             // Decrypt the xml
             var decryptedXml = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData.EditorValue);
@@ -1451,7 +1439,7 @@ LIMIT 1";
             var templateXml = templateDataService.ParseXmlToObject(decryptedXml);
                 
             // Add the available input values to the xml
-            templateDataService.AddInputValues(templateXml);
+            (templateXml.LogMinimumLevels, templateXml.RunSchemeTypes) = templateDataService.GetInputValues();
             
             return new ServiceResult<TemplateParsedXmlModel>(templateXml);
         }
@@ -1470,10 +1458,6 @@ LIMIT 1";
             {
                 throw new ArgumentException("Configuration cannot be empty.");
             }
-
-            // Compile / minify data
-            // Q: Is this the optimal place to do this?
-            TrimAllStringsInObject(data);
             
             // Parse the data to raw XML
             string xml = templateDataService.ParseObjectToXml(data);
@@ -1489,37 +1473,6 @@ LIMIT 1";
 
             // Return the result (success)
             return new ServiceResult<bool>(true);
-        }
-        
-        // Q: This is most likely not the right place for this to exist, should stuff related to this be placed in something
-        // Like a xml parsing service or something like that?
-        private static void TrimAllStringsInObject(object model)
-        {
-            if (model is string)
-            {
-                (model as string)!.Trim();
-            }
-            else if (model is IEnumerable<object> enumerable)
-            {
-                foreach (object item in enumerable)
-                {
-                    TrimAllStringsInObject(item);
-                }
-            }
-            else if (model is object obj)
-            {
-                foreach (var property in obj.GetType().GetProperties())
-                {
-                    if (property.PropertyType == typeof(string))
-                    {
-                        (property.GetValue(obj) as string)!.Trim();
-                    }
-                    else if (property.PropertyType.IsClass)
-                    {
-                        TrimAllStringsInObject(property.GetValue(obj));
-                    }
-                }
-            }
         }
 
         /// <inheritdoc />
