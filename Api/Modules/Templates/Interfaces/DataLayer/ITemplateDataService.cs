@@ -207,11 +207,12 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<bool> DeleteAsync(int templateId, string username, bool alsoDeleteChildren = true);
 
         /// <summary>
-        /// Decrypt editor values that have been encrypted.
+        /// Check if editor value is xml and if so, decrypt it.
         /// </summary>
         /// <param name="encryptionKey">The key used for encryption.</param>
         /// <param name="rawTemplateModel">The <see cref="TemplateSettingsModel"/> to perform the decryption on.</param>
-        void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel);
+        /// <returns>The decrypted xml string.</returns>
+        string DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel);
         
         /// <summary>
         /// Decrypt xml that has been encrypted.
@@ -219,7 +220,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="encryptionKey">The key used for encryption.</param>
         /// <param name="xml">The incoming xml string.</param>
         /// <returns>The decrypted xml string.</returns>
-        Task<string> DecryptXml(string encryptionKey, string xml);
+        string DecryptEditorValueIfEncrypted(string encryptionKey, string xml);
         
         /// <summary>
         /// Get all available input values and add them to the template.
