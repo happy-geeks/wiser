@@ -1426,14 +1426,11 @@ LIMIT 1";
                 };
             }
 
-            // Q: What is this for?
+            // Q: What is this for? (L.o.t)
             // templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
             
             // Grab the encryption key from the database.
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
-            
-            // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
-            logger.LogDebug($"Encrypting template value for template ID {templateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
             
             // Q: Should this function be rewritten to simply accept xml as input and return xml as output?
             // If so, where should the check be done to know if what we're sending there is of type xml?
@@ -1448,7 +1445,7 @@ LIMIT 1";
             // To not break anything, we'll keep the other function as well.
             
             // Decrypt the xml
-            var decryptedXml = await templateDataService.DecryptXml(encryptionKey, templateData.EditorValue);
+            var decryptedXml = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData.EditorValue);
 
             // Parse the xml
             var templateXml = await templateDataService.ParseXmlToObject(decryptedXml);
@@ -1483,9 +1480,6 @@ LIMIT 1";
 
             // Get the encryption key from the database
             var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
-            
-            // TODO: Remove this log once we figured out why encrypting/decrypting the XML takes does not work properly on main.wiser3.nl.
-            logger.LogDebug($"Encrypting template value for template ID {templateId}, sub domain {IdentityHelpers.GetSubDomain(identity)}, user ID: {IdentityHelpers.GetWiserUserId(identity)}, encryption key: {encryptionKey}");
             
             // Encrypt the xml
             xml = xml.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);

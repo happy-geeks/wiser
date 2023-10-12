@@ -232,13 +232,6 @@ LIMIT 1");
                 EditorValue = dataTable.Rows[0].Field<string>("template_data")
             };
 
-            // Q: I couldn't figure out the purpose of this code, something to do with authentication?
-            // var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
-            // if (!String.IsNullOrWhiteSpace(loginRolesString))
-            // {
-            //     templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
-            // }
-
             return templateData;
         }
 
@@ -1516,32 +1509,34 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc />
-        public void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
+        public string DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
         {
-            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.Trim().StartsWith("<"))
+            if (rawTemplateModel.Type == TemplateTypes.Xml)
             {
-                rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
+                return DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModel.EditorValue);
             }
+
+            return null;
         }
 
         /// <inheritdoc />
-        public Task<string> DecryptXml(string encryptionKey, string xml)
+        public string DecryptEditorValueIfEncrypted(string encryptionKey, string xml)
         {
             if (String.IsNullOrWhiteSpace(xml) && xml.Trim().StartsWith("<"))
             {
-                return null;
+                return xml;
             }
             
-            return Task.FromResult<string>(xml.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true));
+            return xml.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
         }
 
         /// <inheritdoc />
         public Task<TemplateParsedXmlModel> ParseXmlToObject(string xml)
         {
             // Q: Should this exist in a different service?
-            XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
+            var serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
 
-            using (StringReader stringReader = new StringReader(xml))
+            using (var stringReader = new StringReader(xml))
             {
                 TemplateParsedXmlModel configuration = (TemplateParsedXmlModel)serializer.Deserialize(stringReader);
 
@@ -1577,8 +1572,6 @@ AND otherVersion.id IS NULL";
         /// <inheritdoc />
         public void AddInputValues(TemplateParsedXmlModel template)
         {
-            // TODO: Add input values to DB and grab them from there instead of local enums
-            
             // Grab the input values from local enums
             template.LogMinimumLevels = Enum.GetNames(typeof(LogMinimumLevels));
             template.RunSchemeTypes = Enum.GetNames(typeof(RunSchemeTypes));
