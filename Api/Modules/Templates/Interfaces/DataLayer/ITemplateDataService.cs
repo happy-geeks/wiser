@@ -223,10 +223,10 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         string DecryptEditorValueIfEncrypted(string encryptionKey, string xml);
         
         /// <summary>
-        /// Get all available input values and add them to the template.
+        /// Get all available input values.
         /// </summary>
-        /// <param name="template">The template to add the input values to.</param>
-        void AddInputValues(TemplateParsedXmlModel template);
+        /// <returns>Two arrays containing the names from: <see cref="LogMinimumLevels"> and <see cref="RunSchemeTypes"> </returns>
+        (string[], string[]) GetInputValues();
         
         /// <summary>
         /// Parse xml to an object.

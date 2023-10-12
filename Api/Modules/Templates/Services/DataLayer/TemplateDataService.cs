@@ -1547,34 +1547,36 @@ AND otherVersion.id IS NULL";
         /// <inheritdoc />
         public string ParseObjectToXml(TemplateParsedXmlModel data)
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
+            var serializer = new XmlSerializer(typeof(TemplateParsedXmlModel));
 
             using (StringWriter stringWriter = new StringWriter())
             {
-                XmlWriterSettings settings = new XmlWriterSettings();
+                var settings = new XmlWriterSettings();
                 settings.OmitXmlDeclaration = true; // Remove the XML declaration
                 settings.Indent = true; // Indent the XML output
                 settings.IndentChars = "    "; // Set the indent size to 4 spaces.
 
-                XmlSerializerNamespaces namespaces = new XmlSerializerNamespaces();
+                var namespaces = new XmlSerializerNamespaces();
                 namespaces.Add("", ""); // Remove the xmlns attribute
 
-                XmlWriter writer = XmlWriter.Create(stringWriter, settings);
+                var writer = XmlWriter.Create(stringWriter, settings);
 
                 serializer.Serialize(writer, data, namespaces);
 
-                string xml = stringWriter.ToString();
+                var xml = stringWriter.ToString();
 
                 return xml;
             }
         }
 
         /// <inheritdoc />
-        public void AddInputValues(TemplateParsedXmlModel template)
+        public (string[], string[]) GetInputValues()
         {
             // Grab the input values from local enums
-            template.LogMinimumLevels = Enum.GetNames(typeof(LogMinimumLevels));
-            template.RunSchemeTypes = Enum.GetNames(typeof(RunSchemeTypes));
+            var logMinimumLevels = Enum.GetNames(typeof(LogMinimumLevels));
+            var runSchemeTypes = Enum.GetNames(typeof(RunSchemeTypes));
+            
+            return (logMinimumLevels, runSchemeTypes);
         }
 
         /// <inheritdoc />
