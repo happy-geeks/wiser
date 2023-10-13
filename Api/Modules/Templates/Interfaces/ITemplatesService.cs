@@ -85,16 +85,8 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateId">The id of the template.</param>
         /// <param name="environment">The environment the template needs to be active on.</param>
-        /// <returns>A <see cref="TemplateParsedXmlModel"/> containing the object of the parsed editor value of the latest version.</returns>
-        Task<ServiceResult<TemplateParsedXmlModel>> GetTemplateParsedXmlAsync(ClaimsIdentity identity, int templateId, Environments? environment = null);
-        
-        /// <summary>
-        /// Save the configuration to the given template.
-        /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="templateId">The id of the template.</param>
-        /// <param name="data">The data that contains the configuration.</param>
-        Task<ServiceResult<bool>> SaveConfigurationAsync(ClaimsIdentity identity, int templateId, TemplateParsedXmlModel data);
+        /// <returns>A <see cref="TemplateWtsConfigurationModel"/> containing the object of the parsed editor value of the latest version.</returns>
+        Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null);
 
         /// <summary>
         /// Get the template environments. This will retrieve a list of versions and their published environments and convert it to a PublishedEnvironmentModel
@@ -132,6 +124,14 @@ namespace Api.Modules.Templates.Interfaces
         /// <returns>A int of the rows affected.</returns>
         Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null);
 
+        /// <summary>
+        /// Updates the latest version of a template with a new wts configuration. This method will grab the latest version and apply the new wts configuration.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="templateId">The id of the give template.</param>
+        /// <param name="configuration">A <see cref="TemplateWtsConfigurationModel"/> containing the data of the configuration that is to be saved as a new version</param>
+        Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration);
+        
         /// <summary>
         /// Updates the latest version of a template with new data. This method will overwrite this version, unless this version has been published to the live environment,
         /// then it will create a new version as to not overwrite the live version.

@@ -37,7 +37,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="templateId">The id of the template to retrieve the data from.</param>
         /// <param name="environment">Optional: The environment the template needs to be active on. Get the latest version if no environment has been given.</param>
         /// <param name="version">Optional: If you want to get a specific version, enter that version number here.</param>
-        /// <returns>A <see cref="TemplateParsedXmlModel"/> containing the current editor value object of the template with the given id.</returns>
+        /// <returns>A <see cref="TemplateWtsConfigurationModel"/> containing the current editor value object of the template with the given id.</returns>
         Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null);
 
 
@@ -221,26 +221,6 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="xml">The incoming xml string.</param>
         /// <returns>The decrypted xml string.</returns>
         string DecryptEditorValueIfEncrypted(string encryptionKey, string xml);
-        
-        /// <summary>
-        /// Get all available input values.
-        /// </summary>
-        /// <returns>Two arrays containing the names from: <see cref="LogMinimumLevels"> and <see cref="RunSchemeTypes"> </returns>
-        (string[], string[]) GetInputValues();
-        
-        /// <summary>
-        /// Parse xml to an object.
-        /// </summary>
-        /// <param name="xml">The incoming xml string.</param>
-        /// <returns>The parsed object</returns>
-        TemplateParsedXmlModel ParseXmlToObject(string xml);
-        
-        /// <summary>
-        /// Parse an object to xml.
-        /// </summary>
-        /// <param name="data">The incoming object with data.</param>
-        /// <returns>The parsed xml</returns>
-        string ParseObjectToXml(TemplateParsedXmlModel data);
 
         /// <summary>
         /// Deploy one or more templates from the main branch to a sub branch.

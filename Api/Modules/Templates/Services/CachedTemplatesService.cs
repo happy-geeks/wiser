@@ -94,15 +94,9 @@ namespace Api.Modules.Templates.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateParsedXmlModel>> GetTemplateParsedXmlAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
-            return await templatesService.GetTemplateParsedXmlAsync(identity, templateId, environment);
-        }
-        
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveConfigurationAsync(ClaimsIdentity identity, int templateId, TemplateParsedXmlModel data)
-        {
-            return await templatesService.SaveConfigurationAsync(identity, templateId, data);
+            return await templatesService.GetTemplateWtsConfigurationAsync(identity, templateId, environment);
         }
 
         /// <inheritdoc />
@@ -127,6 +121,12 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName)
         {
             return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished, branchDatabaseName);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            return await templatesService.SaveAsync(identity, templateId, configuration);
         }
 
         /// <inheritdoc />

@@ -48,7 +48,7 @@ export class WtsConfiguration {
         // Get the data from the api
         try {
             templateSettings = await Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}templates/${id}/configuration`,
+                url: `${this.base.settings.wiserApiRoot}templates/${id}/wtsconfiguration`,
                 dataType: "json",
                 method: "GET"
             });

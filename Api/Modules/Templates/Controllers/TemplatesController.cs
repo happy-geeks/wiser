@@ -153,24 +153,24 @@ namespace Api.Modules.Templates.Controllers
         /// <param name="templateId">The id of the template to retrieve the editor value of.</param>
         /// <returns>A object model containing the data of the template editor value.</returns>
         [HttpGet]
-        [Route("{templateId:int}/configuration")]
-        [ProducesResponseType(typeof(TemplateParsedXmlModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetParsedXmlAsync(int templateId)
+        [Route("{templateId:int}/wtsconfiguration")]
+        [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetWtsConfigurationAsync(int templateId)
         {
-            return (await templatesService.GetTemplateParsedXmlAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateWtsConfigurationAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
         /// Save the configuration for the given template.
         /// </summary>
         /// <param name="templateId">The id of the template to save the configuration to.</param>
-        /// <param name="data"> A <see cref="TemplateParsedXmlModel"/> containing the data of the template editor value.</param>
+        /// <param name="data"> A <see cref="TemplateWtsConfigurationModel"/> containing the data of the template editor value.</param>
         [HttpPost]
-        [Route("{templateId:int}/configuration")]
-        [ProducesResponseType(typeof(TemplateParsedXmlModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveConfiguration(int templateId, TemplateParsedXmlModel data)
+        [Route("{templateId:int}/wtsconfiguration")]
+        [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveConfiguration(int templateId, TemplateWtsConfigurationModel data)
         {
-            return (await templatesService.SaveConfigurationAsync((ClaimsIdentity)User.Identity, templateId, data)).GetHttpResponseMessage();
+            return (await templatesService.SaveAsync((ClaimsIdentity)User.Identity, templateId, data)).GetHttpResponseMessage();
         }
 
         /// <summary>
