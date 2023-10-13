@@ -2267,14 +2267,14 @@ const moduleSettings = {
                     return false;
                 }
 
-                // Make a check to see if we're only uploading xml or the whole template
+                // Check to see if we're only uploading xml or the whole template
                 let data = null;
                 if (this.mainTabStrip.select().data("name") === "configuration") {
                     data = this.wtsConfiguration.getCurrentSettings();
                     this.saving = true;
                     
                     const response = await Wiser.api({
-                        url: `${this.settings.wiserApiRoot}templates/${templateId}/configuration`,
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/wtsconfiguration`,
                         dataType: "json",
                         type: "POST",
                         contentType: "application/json",

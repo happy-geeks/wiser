@@ -98,6 +98,7 @@ namespace Api.Modules.Templates.Services
         private readonly IBranchesService branchesService;
         private readonly IMeasurementsDataService measurementsDataService;
         private readonly IDynamicContentDataService dynamicContentDataService;
+        private readonly IWtsConfigurationService wtsConfigurationService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
@@ -122,7 +123,8 @@ namespace Api.Modules.Templates.Services
             IWebHostEnvironment webHostEnvironment,
             IBranchesService branchesService,
             IMeasurementsDataService measurementsDataService,
-            IDynamicContentDataService dynamicContentDataService)
+            IDynamicContentDataService dynamicContentDataService,
+            IWtsConfigurationService wtsConfigurationService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserTenantsService = wiserTenantsService;
@@ -145,6 +147,7 @@ namespace Api.Modules.Templates.Services
             this.branchesService = branchesService;
             this.measurementsDataService = measurementsDataService;
             this.dynamicContentDataService = dynamicContentDataService;
+            this.wtsConfigurationService = wtsConfigurationService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -1407,7 +1410,7 @@ LIMIT 1";
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateParsedXmlModel>> GetTemplateParsedXmlAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
             if (templateId <= 0)
             {
@@ -1419,7 +1422,7 @@ LIMIT 1";
             var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
             if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
             {
-                return new ServiceResult<TemplateParsedXmlModel>
+                return new ServiceResult<TemplateWtsConfigurationModel>
                 {
                     ErrorMessage = templateEnvironmentsResult.ErrorMessage,
                     StatusCode = templateEnvironmentsResult.StatusCode
@@ -1436,43 +1439,12 @@ LIMIT 1";
             var decryptedXml = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData.EditorValue);
 
             // Parse the xml
-            var templateXml = templateDataService.ParseXmlToObject(decryptedXml);
+            var templateXml = wtsConfigurationService.ParseXmlToObject(decryptedXml);
                 
             // Add the available input values to the xml
-            (templateXml.LogMinimumLevels, templateXml.RunSchemeTypes) = templateDataService.GetInputValues();
+            (templateXml.LogMinimumLevels, templateXml.RunSchemeTypes) = wtsConfigurationService.GetInputValues();
             
-            return new ServiceResult<TemplateParsedXmlModel>(templateXml);
-        }
-        
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveConfigurationAsync(ClaimsIdentity identity, int templateId, TemplateParsedXmlModel data)
-        {
-            // Make sure the template ID is valid
-            if (templateId <= 0)
-            {
-                throw new ArgumentException("The Id cannot be zero.");
-            }
-            
-            // Make sure data is sent
-            if (data == null)
-            {
-                throw new ArgumentException("Configuration cannot be empty.");
-            }
-            
-            // Parse the data to raw XML
-            string xml = templateDataService.ParseObjectToXml(data);
-
-            // Get the encryption key from the database
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
-            
-            // Encrypt the xml
-            xml = xml.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
-            
-            // Send the xml to the database
-            await templateDataService.SaveConfigurationAsync(templateId, xml, IdentityHelpers.GetUserName(identity, true));
-
-            // Return the result (success)
-            return new ServiceResult<bool>(true);
+            return new ServiceResult<TemplateWtsConfigurationModel>(templateXml);
         }
 
         /// <inheritdoc />
@@ -1544,6 +1516,24 @@ LIMIT 1";
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
             return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            // Convert the configuration object to raw XML
+            var updatedEditorValue = wtsConfigurationService.ParseObjectToXml(configuration);
+            
+            // Get the latest version of the template
+            var latestVersion = await GetTemplateSettingsAsync(identity, templateId);
+            
+            // Convert the latest version to a model we can work with
+            var latestVersionModel = latestVersion.ModelObject;
+            
+            // Update the model with the new configuration
+            latestVersionModel.EditorValue = updatedEditorValue;
+
+            return await SaveAsync(identity, latestVersionModel);
         }
 
         /// <inheritdoc />
@@ -1637,6 +1627,9 @@ LIMIT 1";
                     {
                         break;
                     }
+                    
+                    // Make sure all true/false values are lowercase, because the XML parser is case-sensitive.
+                    trimmedValue = Regex.Replace(trimmedValue, @"(?i)(true|false)", match => match.Value.ToLower());
 
                     var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
                     template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);

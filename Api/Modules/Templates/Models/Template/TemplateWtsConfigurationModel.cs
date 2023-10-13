@@ -6,7 +6,7 @@ namespace Api.Modules.Templates.Models.Template
     /// A model for parsed xml of a template.
     /// </summary>
     [XmlRoot("Configuration", Namespace = "")]
-    public class TemplateParsedXmlModel
+    public class TemplateWtsConfigurationModel
     {
         /// <summary>
         /// Gets or sets the service name of the editor value of the template.
