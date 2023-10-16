@@ -52,7 +52,6 @@ export class WtsConfiguration {
                 dataType: "json",
                 method: "GET"
             });
-            console.log(templateSettings);
         }
         catch (e) {
             console.error(e);
@@ -81,12 +80,30 @@ export class WtsConfiguration {
         }
         
         this.initializeKendoComponents();
+        this.bindEvents();
+    }
+    
+    /**
+     * Add the events to the elements
+     */
+    bindEvents() {
+        document.getElementById("saveButtonWtsConfiguration").addEventListener("click", () => {
+            this.base.saveTemplate(false);
+        });
+        document.getElementById("saveAndDeployToTestButtonWtsConfiguration").addEventListener("click", () => {
+            this.base.saveTemplate(true)
+        });
     }
 
     /**
      * Initializes all kendo components for the base class.
      */
     initializeKendoComponents() {
+        $("#saveButtonWtsConfiguration").kendoButton({
+            icon: "save"
+        });
+        $("#saveAndDeployToTestButtonWtsConfiguration").kendoButton();
+        
         // TODO: use the correct input types for the different fields
         
         this.commitEnvironmentField = $("#wts-log-level").kendoDropDownList({
