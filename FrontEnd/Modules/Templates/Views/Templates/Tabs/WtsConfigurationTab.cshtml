@@ -1,4 +1,5 @@
 ﻿@using DocumentFormat.OpenXml.EMMA
+@using FrontEnd.Modules.Templates.Models.WtsModels
 @using GeeksCoreLibrary.Modules.Templates.Enums
 @model FrontEnd.Modules.Templates.Models.WtsConfigurationTabViewModel
 <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
@@ -25,7 +26,7 @@
             <div class="item">
                 <h4><label>Minimaal log level</label></h4>
                 <select id="wts-log-level">
-                    @foreach (string logLevel in Model.LogMinimumLevels)
+                    @foreach (var logLevel in Model.LogMinimumLevels)
                     {
                         if (logLevel == Model.LogSettings.LogMinimumLevel)
                         {
@@ -91,72 +92,73 @@
                 <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe timer toevoegen</span></button>
             </div>
 
-            <div class="item dynamic havingList">
-                <h3>Gegevens timer</h3>
-            </div>
-
-
-            <div class="item">
-                <h4><label>ID</label></h4>
-                <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-                <div class="form-hint"><span>Unieke nummer van de timer</span></div>
-            </div>
-
-            <div class="item">
-                <h4><label>Type</label></h4>
-                <select id="wts-timing-type">
-                    
-                </select>
-                <select id="wts-timing-weekly"></select>
-                <select id="wts-timing-monthly"></select>
-
-                <div>
-                    <label>
-                        <span>om</span>
-                        <select id="wts-continuous-start"></select>
-                    </label>
-                    <label>
-                        <span>tussen</span>
-                        <select id="wts-continuous-from"></select>
-                    </label>
-                    <label>
-                        <span>en</span>
-                        <select id="wts-continuous-till"></select>
-                    </label>
-                    <label>
-                        <span>met tussepozen van</span>
-                        <select id="wts-continuous-interval"></select>
-                    </label>
+            <div id="wtsTimersFields">
+                <div class="item dynamic havingList">
+                    <h3>Gegevens timer</h3>
+                </div>
+                
+                <div class="item">
+                    <h4><label>ID</label></h4>
+                    <input id="wts-time-id" type="text" class="k-input" value="" disabled/>
+                    <div class="form-hint"><span>Unieke nummer van de timer</span></div>
                 </div>
 
-                <div>
-                    <label class="checkbox">
-                        <input type="checkbox" id="wts-autostart-runonce" checked/>
-                        <span>Loopt direct eenmalig bij opstarten van de service</span>
-                    </label>
-                    <label class="checkbox">
-                        <input type="checkbox" id="wts-weekend-disabled" checked/>
-                        <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
-                    </label>
+                <div class="item">
+                    <h4><label>Type</label></h4>
+                    <select id="wts-timing-type">
+                        
+                    </select>
+                    <select id="wts-timing-weekly"></select>
+                    <select id="wts-timing-monthly"></select>
+
+                    <div>
+                        <label>
+                            <span>om</span>
+                            <select id="wts-continuous-start"></select>
+                        </label>
+                        <label>
+                            <span>tussen</span>
+                            <select id="wts-continuous-from"></select>
+                        </label>
+                        <label>
+                            <span>en</span>
+                            <select id="wts-continuous-till"></select>
+                        </label>
+                        <label>
+                            <span>met tussepozen van</span>
+                            <select id="wts-continuous-interval"></select>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="checkbox">
+                            <input type="checkbox" id="wts-autostart-runonce" checked/>
+                            <span>Loopt direct eenmalig bij opstarten van de service</span>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" id="wts-weekend-disabled" checked/>
+                            <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <div class="item">
-                <h4><label>Niet draaien op</label></h4>
-                <select id="wts-timing-hold"></select>
-            </div>
+                <div class="item">
+                    <h4><label>Niet draaien op</label></h4>
+                    <select id="wts-timing-hold"></select>
+                </div>
 
-            <div class="item">
-                <h4><label>Minimal log events</label></h4>
-                <select id="wts-timing-log"></select>
-            </div>
-            <div class="item">
-                <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="save"><span>Wijzigingen opslaan</span></button>
-            </div>
+                <div class="item">
+                    <h4><label>Minimal log events</label></h4>
+                    <select id="wts-timing-log"></select>
+                </div>
+                <div class="item">
+                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="save"><span>Wijzigingen opslaan</span></button>
+                </div>
 
-            <div class="item">
-                <h4><label>Gekoppelde acties</label></h4>
-                <div id="wtsLinkedActions" class="grid"></div>
+                <div class="item">
+                    <h4><label>Gekoppelde acties</label></h4>
+                    <div id="wtsLinkedActions" class="grid"></div>
+                </div>
             </div>
         </div>
     </div>

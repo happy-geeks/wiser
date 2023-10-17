@@ -15,7 +15,6 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public TemplateWtsConfigurationModel ParseXmlToObject(string xml)
         {
-            // Q: Should this exist in a different service?
             var serializer = new XmlSerializer(typeof(TemplateWtsConfigurationModel));
 
             using (var stringReader = new StringReader(xml))

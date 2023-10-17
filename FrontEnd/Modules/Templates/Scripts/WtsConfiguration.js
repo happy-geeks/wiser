@@ -27,6 +27,7 @@ export class WtsConfiguration {
         this.base = base;
     
         // TODO: Add all the fields that are used in the configuration tab and initialize them here
+        this.template = null;
         this.commitEnvironmentField = null;
     }
 
@@ -52,6 +53,8 @@ export class WtsConfiguration {
                 dataType: "json",
                 method: "GET"
             });
+            this.template = templateSettings;
+            console.log(templateSettings);
         }
         catch (e) {
             console.error(e);
@@ -81,6 +84,7 @@ export class WtsConfiguration {
         
         this.initializeKendoComponents();
         this.bindEvents();
+        this.onTimerChange();
     }
     
     /**
@@ -91,8 +95,47 @@ export class WtsConfiguration {
             this.base.saveTemplate(false);
         });
         document.getElementById("saveAndDeployToTestButtonWtsConfiguration").addEventListener("click", () => {
-            this.base.saveTemplate(true)
+            this.onTimerChange();
+            // this.base.saveTemplate(true);
         });
+    }
+    
+    onTimerChange(e) {
+        // Check if event was sent
+        if (!e) {
+            this.emptyAndHideTimerFields();
+            return;
+        }
+        // Get the selected row
+        var row = e.sender.select().first();
+        if (!row) {
+            this.emptyAndHideTimerFields();
+            return;
+        }
+        // Get the selected timer
+        var grid = $("#wtsTimers").data("kendoGrid");
+        var selectedTimer = grid.dataItem(row);
+        if (!selectedTimer) {
+            this.emptyAndHideTimerFields();
+            return;
+        }
+
+        console.log("Selected timer: ", selectedTimer);
+        
+        // Show input fields
+        $("#wtsTimersFields").show();
+        // Fill in the fields
+        $("#wts-time-id").val(selectedTimer["timeId"]);
+    }
+    
+    emptyAndHideTimerFields() {
+        $("#wtsTimersFields").hide();
+        $("#wts-time-id").val("");
+    }
+
+    onTimerDelete(e) {
+        // TODO: Add a function for removing a runscheme, or should it exist as a button below the grid in the detail view?
+        console.log("Removing: ", e);
     }
 
     /**
@@ -111,6 +154,33 @@ export class WtsConfiguration {
             dataTextField: "text",
             dataValueField: "value"
         }).data("kendoDropDownList");
+
+        this.wtsTimersGrid = $("#wtsTimers").kendoGrid({
+            resizable: true,
+            height: 280,
+            selectable: "row",
+            dataSource: this.template.runSchemes,
+            change: this.onTimerChange,
+            columns: [
+                {
+                    field: "timeId",
+                    title: "ID"
+                }, {
+                    field: "type",
+                    title: "Type"
+                }, {
+                    field: "delay",
+                    title: "Wachttijd"
+                }, {
+                    field: "runImmediately",
+                    title: "Direct uitvoeren"
+                }, {
+                    command: "destroy",
+                    title: "&nbsp;",
+                    width: 120
+                }
+            ],
+        }).data("kendoGrid");
 
         this.commitEnvironmentField = $("#wts-timing-type").kendoDropDownList({
             optionLabel: "Selecteer herhaling",
@@ -316,30 +386,6 @@ export class WtsConfiguration {
             ]
         }).data("kendoDropDownList");
 
-        this.wtsTimersGrid = $("#wtsTimers").kendoGrid({
-            resizable: true,
-            height: 280,
-            columns: [
-                {
-                    field: "ID",
-                    title: "ID"
-                }, {
-                    field: "Type",
-                    title: "Type"
-                }, {
-                    field: "Moment",
-                    title: "Moment"
-                }, {
-                    field: "LogLevel",
-                    title: "Log level"
-                }, {
-                    command: "destroy",
-                    title: "&nbsp;",
-                    width: 120
-                }
-            ],
-        }).data("kendoGrid");
-
         this.wtsLinkedActionsGrid = $("#wtsLinkedActions").kendoGrid({
             resizable: true,
             height: 280,
@@ -394,6 +440,9 @@ export class WtsConfiguration {
      * @returns {any} The object containing the values of the input fields.
      */
     getCurrentSettings() {
+        // TODO: Maybe rework this to edit this.template directly instead of creating a new object?
+        // TODO: Might not be possible since this.template is lower case and the model is upper case
+        // TODO: Maybe there is a way to uppercase this.template?
         const serviceName = document.getElementById("wts-name").value;
         const connectionString = document.getElementById("wts-connection-string").value;
         const logLevelField = document.getElementById('wts-log-level');
