@@ -620,8 +620,26 @@ dd {
 	left: 0;
 	bottom: calc(100% + 4px);
 }
+.item[data-label-style="normal"] .k-widget {
+	flex-wrap: wrap;
+}
+.item[data-label-style="normal"] .k-widget .k-form-error {
+	background: var(--item-bg-color);
+	margin: 0;
+	padding-left: 5px;
+	width: 100%;
+}
+.item[data-label-style="normal"] .k-input:focus + .k-form-error {
+	background: var(--error-bg-color);
+	color: var(--white-color);
+	
+}
+.item.error[data-label-style="normal"] h4,
+.item.error[data-label-style="normal"] h4 > label {
+	color: var(--white-color);
+}
 
-/* INLINE LABELS */
+	/* INLINE LABELS */
 .item[data-label-style="inline"] {
 	display: flex;
 	flex-wrap: wrap;
