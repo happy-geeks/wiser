@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Xml.Serialization;
 
 namespace Api.Modules.Templates.Models.Template
@@ -24,6 +25,11 @@ namespace Api.Modules.Templates.Models.Template
         /// Gets or sets the log settings for the configuration (Global if not overwritten)
         /// </summary>
         public LogSettings LogSettings { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the run schemes settings for the configuration
+        /// </summary>
+        public List<RunScheme> RunSchemes { get; set; }
         
         /// <summary>
         /// All levels of minimum logging
