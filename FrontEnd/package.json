@@ -4,7 +4,8 @@
   "author": "Happy Geeks B.V.",
   "scripts": {
     "build-dev": "webpack --mode=development",
-    "build-prod": "webpack --mode=production"
+    "build-prod": "webpack --mode=production",
+    "watch": "node_modules\\.bin\\webpack --mode=development -w"
   },
   "main": "main.js",
   "dependencies": {
@@ -40,8 +41,7 @@
     "sass-loader": "^13.2.1",
     "style-loader": "^3.3.3",
     "vue-cli-plugin-vue-next": "~0.1.4",
-    "webpack": "^5.76.2",
-    "webpack-cli": "^5.0.1"
+    "webpack-cli": "^5.1.4"
   },
   "license": "ISC"
 }

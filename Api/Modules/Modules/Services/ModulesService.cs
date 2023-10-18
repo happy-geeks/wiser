@@ -822,7 +822,6 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
-            clientDatabaseConnection.AddParameter("new_id", moduleSettingsModel.Id);
             clientDatabaseConnection.AddParameter("custom_query", moduleSettingsModel.CustomQuery);
             clientDatabaseConnection.AddParameter("count_query", moduleSettingsModel.CountQuery);
             clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
@@ -832,8 +831,7 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
             var query = $@"UPDATE {WiserTableNames.WiserModule}
-SET `id` = ?new_id,
-    `custom_query` = ?custom_query,
+SET `custom_query` = ?custom_query,
     `count_query` = ?count_query,
     `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
     `name` = ?name,

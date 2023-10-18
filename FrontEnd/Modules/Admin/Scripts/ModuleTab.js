@@ -12,9 +12,9 @@ export class ModuleTab {
     }
 
     /**
-    * Setup all basis bindings for this module.
-    * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
-    */
+     * Setup all basis bindings for this module.
+     * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
+     */
     setupBindings() {
         $(".addModuleBtn").kendoButton({
             click: () => {
@@ -611,7 +611,7 @@ export class ModuleTab {
     }
 
     async setModulePropertiesToDefault() {
-        document.getElementById("moduleId").value = "";
+        document.getElementById("moduleId").innerHTML  = "";
         document.getElementById("moduleName").value = "";
 
         this.moduleType.value("");
@@ -624,7 +624,7 @@ export class ModuleTab {
     }
 
     async setModuleProperties(resultSet) {
-        document.getElementById("moduleId").value = resultSet.id;
+        document.getElementById("moduleId").innerHTML  = resultSet.id;
         document.getElementById("moduleName").value = typeof (resultSet.name) === "undefined" ? "" : resultSet.name;
 
         this.moduleIcon.value(resultSet.icon);
@@ -665,7 +665,9 @@ export class ModuleTab {
      */
     getCurrentModuleSettings() {
         const moduleIdElement = document.getElementById("moduleId");
-        if (moduleIdElement == null || isNaN(moduleIdElement.value)) {
+        const moduleId = parseInt(moduleIdElement.innerHTML);
+        
+        if (isNaN(moduleId)) {
             return null;
         }
 
@@ -692,7 +694,6 @@ export class ModuleTab {
             delete moduleOptions.entityType;
         }
 
-        const moduleId = parseInt(moduleIdElement.value);
         return new ModuleSettingsModel(
             moduleId,
             this.moduleCustomQuery.getValue(),
