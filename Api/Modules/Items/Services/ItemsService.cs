@@ -666,10 +666,30 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             var result = new CreateItemResultModel();
-            WiserItemModel newItem;
             try
             {
-                newItem = await wiserItemsService.CreateAsync(item, parentId, linkType, userId, username, encryptionKey);
+                await clientDatabaseConnection.BeginTransactionAsync();
+                var newItem = await wiserItemsService.CreateAsync(item, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false);
+
+                result.NewLinkId = await wiserItemsService.AddItemLinkAsync(newItem.Id, parentId, linkType, userId: userId, username: username, skipPermissionsCheck: true);
+                result.NewItemId = newItem.EncryptedId;
+                result.NewItemIdPlain = newItem.Id;
+
+                clientDatabaseConnection.AddParameter("entityType", newItem.EntityType);
+                var dataTable = await clientDatabaseConnection.GetAsync($"SELECT icon FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
+                if (dataTable.Rows.Count > 0)
+                {
+                    result.Icon = dataTable.Rows[0].Field<string>("icon");
+                }
+
+                if (newItem.Details != null && newItem.Details.Any())
+                {
+                    // Note: skipPermissionsCheck is set to true here, because otherwise the update permissions will be checked,
+                    // but this is for creating an item and those permissions are already checked in the CreateAsync method that we call above.
+                    await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
+                }
+
+                await clientDatabaseConnection.CommitTransactionAsync(false);
             }
             catch (InvalidAccessPermissionsException exception)
             {
@@ -679,17 +699,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
-
-            var dataTable = await clientDatabaseConnection.GetAsync("SELECT LAST_INSERT_ID();");
-            result.NewLinkId = Convert.ToUInt64(dataTable.Rows[0][0]);
-            result.NewItemId = newItem.EncryptedId;
-            result.NewItemIdPlain = newItem.Id;
-
-            clientDatabaseConnection.AddParameter("entityType", newItem.EntityType);
-            dataTable = await clientDatabaseConnection.GetAsync($"SELECT icon FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
-            if (dataTable.Rows.Count > 0)
+            catch
             {
-                result.Icon = dataTable.Rows[0].Field<string>("icon");
+                await clientDatabaseConnection.RollbackTransactionAsync(false);
+                throw;
             }
 
             return new ServiceResult<CreateItemResultModel>(result);
