@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 
 namespace Api.Core.Models
 {
@@ -15,7 +15,7 @@ namespace Api.Core.Models
         public string AdminUsersEncryptionKey { get; set; }
 
         /// <summary>
-        /// Gets or sets the encryption key for encrypting and decrypting the database password that is saved in easy_customers.
+        /// Gets or sets the encryption key for encrypting and decrypting the database password that is saved in easy_tenants.
         /// </summary>
         public string DatabasePasswordEncryptionKey { get; set; }
 
@@ -35,7 +35,7 @@ namespace Api.Core.Models
         public List<string> JsonPropertiesToAlwaysEncrypt { get; set; }
 
         /// <summary>
-        /// The amount of time to cache results from functions of <see cref="IUsersService"/> and <see cref="IWiserCustomersService"/>.
+        /// The amount of time to cache results from functions of <see cref="IUsersService"/> and <see cref="IWiserTenantService"/>.
         /// </summary>
         public TimeSpan DefaultUsersCacheDuration { get; set; } = new(1, 0, 0);
 
@@ -60,7 +60,7 @@ namespace Api.Core.Models
         public string PusherSalt { get; set; }
 
         /// <summary>
-        /// The sub domain that should be used to login to the main wiser database (the one that contains the table "easy_customers"), when using multi tenancy.
+        /// The sub domain that should be used to login to the main wiser database (the one that contains the table "easy_tenants"), when using multi tenancy.
         /// This value is not used when not using multi tenancy.
         /// </summary>
         public string MainSubDomain { get; set; } = "main";

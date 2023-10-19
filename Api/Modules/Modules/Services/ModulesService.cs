@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
@@ -34,7 +34,7 @@ namespace Api.Modules.Modules.Services
     /// </summary>
     public class ModulesService : IModulesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IJsonService jsonService;
@@ -53,14 +53,14 @@ namespace Api.Modules.Modules.Services
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService,
+        public ModulesService(IWiserTenantsService wiserTenantsService, IGridsService gridsService,
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
             ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
             ICsvService csvService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.gridsService = gridsService;
             this.wiserItemsService = wiserItemsService;
             this.jsonService = jsonService;
@@ -332,7 +332,7 @@ UNION
                 results[groupName].Add(rightsModel);
             }
 
-            // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this customer.
+            // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this tenant.
             if (isAdminAccount)
             {
                 foreach (var moduleId in modulesForAdmins.Where(moduleId => !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
@@ -635,8 +635,8 @@ UNION
         /// <inheritdoc />
         public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             var result = new ModuleSettingsModel {Id = id};
 

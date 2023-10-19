@@ -44,17 +44,17 @@ export default class ContentBuildersService extends BaseService {
      * Gets the custom content builder snippets.
      * @returns {any} An array with all custom snippets.
      */
-    async getCustomerSnippets() {
+    async getTenantSnippets() {
         const result = {};
 
         try {
             const response = await this.base.api.get(`/api/v3/content-builder/snippets`);
             result.success = true;
 
-            const customerSnippets = response.data;
+            const tenantSnippets = response.data;
             
             const snippetCategories = [];
-            for (let snippet of customerSnippets) {
+            for (let snippet of tenantSnippets) {
                 snippet.fromWiser = true;
                 const existingCategory = snippetCategories.filter(c => c[1].toLowerCase() === snippet.category.toLowerCase());
                 if (!existingCategory.length) {
@@ -66,7 +66,7 @@ export default class ContentBuildersService extends BaseService {
             }
 
             result.data = {
-                customerSnippets: customerSnippets,
+                tenantSnippets: tenantSnippets,
                 snippetCategories: snippetCategories
             };
         } catch (error) {

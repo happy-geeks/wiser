@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-namespace Api.Modules.Customers.Models
+namespace Api.Modules.Tenants.Models
 {
     /// <summary>
-    /// A model for the result for synchronising changes from an environment to the production environment of a customer/tenant.
+    /// A model for the result for synchronising changes from an environment to the production environment of a tenant/tenant.
     /// </summary>
     public class MergeChangesToMainBranchResultModel
     {

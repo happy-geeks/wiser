@@ -16,14 +16,14 @@
         public const string AdministratorRole = "Admin";
 
         /// <summary>
-        /// The name of the customer role.
+        /// The name of the tenant role.
         /// </summary>
-        public const string CustomerRole = "Customer";
+        public const string TenantRole = "Tenant";
 
         /// <summary>
-        /// The names of the customer and admin roles.
+        /// The names of the tenant and admin roles.
         /// </summary>
-        public const string CustomerOrAdminRole = "Customer, Admin";
+        public const string TenantOrAdminRole = "Tenant, Admin";
 
         /// <summary>
         /// The name for the admin accounts role.

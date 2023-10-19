@@ -5,7 +5,7 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Models;
 using Api.Modules.Items.Controllers;
@@ -108,7 +108,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="itemId">The encrypted ID of the item to get the file of.</param>
         /// <param name="fileId">The ID of the file to get.</param>
         /// <param name="fileName">The full file name to return (including extension).</param>
-        /// <param name="customerInformation">Information about the authenticated user, such as the encrypted user ID.</param>
+        /// <param name="tenantInformation">Information about the authenticated user, such as the encrypted user ID.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
@@ -120,18 +120,18 @@ namespace Api.Modules.Files.Controllers
         [ProducesResponseType(StatusCodes.Status302Found)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Produces(MediaTypeNames.Application.Octet)]
-        public async Task<IActionResult> GetFileAsync(string itemId, int fileId, string fileName, [FromQuery] CustomerInformationModel customerInformation, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+        public async Task<IActionResult> GetFileAsync(string itemId, int fileId, string fileName, [FromQuery] TenantInformationModel tenantInformation, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
-            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+            var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, userId.ToString()),
-                new(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
+                new(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
             };
             var dummyClaimsIdentity = new ClaimsIdentity(claims);
             //Set the sub domain for the database connection.
-            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
+            HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
             var imageResult = await filesService.GetAsync(itemId, fileId, dummyClaimsIdentity, itemLinkId, entityType, linkType);
             var result = imageResult.GetHttpResponseMessage();

@@ -20,7 +20,7 @@ namespace Api.Modules.Items.Models
 
         /// <summary>
         /// Gets or sets the encrypted ID of an item.
-        /// This should be encrypted via the method JCLEUtils.AESEncode(), with the encryption key unique to the customer and the parameter "withdate" set to true.
+        /// This should be encrypted via the method JCLEUtils.AESEncode(), with the encryption key unique to the tenant and the parameter "withdate" set to true.
         /// </summary>
         public string EncryptedId { get; set; }
 
