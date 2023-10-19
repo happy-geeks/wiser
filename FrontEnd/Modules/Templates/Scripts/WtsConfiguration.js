@@ -28,7 +28,31 @@ export class WtsConfiguration {
     
         // TODO: Add all the fields that are used in the configuration tab and initialize them here
         this.template = null;
-        this.commitEnvironmentField = null;
+        this.selectedTimer = null;
+        this.serviceName = null;
+        this.connectionString = null;
+        this.logLevel = null;
+        this.logStartAndStop = null;
+        this.logRunStartAndStop = null;
+        this.logRunBody = null;
+        this.wtsTimersGrid = null;
+        this.timingId = null;
+        this.timingType = null;
+        this.timingDayOfWeek = null;
+        this.timingDayOfMonth = null;
+        this.timingStart = null;
+        this.timingStop = null;
+        this.timingDelay = null;
+        this.timingHour = null;
+        this.timingRunImmediately = null;
+        this.timingSkipWeekend = null;
+        this.timingSkipDays = null;
+        this.timingLogMinimumLevel = null;
+        this.timingLogStartAndStop = null;
+        this.timingLogRunStartAndStop = null;
+        this.timingLogRunBody = null;
+        this.wtsLinkedActionsGrid = null;
+        this.wtsServiceActions = null;
     }
 
     async reloadWtsConfigurationTab(id) {
@@ -91,46 +115,135 @@ export class WtsConfiguration {
      * Add the events to the elements
      */
     bindEvents() {
+        document.getElementById("wtsDebuggerButton").addEventListener("click", () => {
+            console.log("After changes: ", this.getCurrentSettings());
+        });
+        
         document.getElementById("saveButtonWtsConfiguration").addEventListener("click", () => {
             this.base.saveTemplate(false);
         });
         document.getElementById("saveAndDeployToTestButtonWtsConfiguration").addEventListener("click", () => {
-            this.onTimerChange();
-            // this.base.saveTemplate(true);
+            this.base.saveTemplate(true);
         });
     }
     
     onTimerChange(e) {
+        // Hide input view
+        $("#wts-timing-fields").hide();
+        this.resetAndHideTimerFields(true);
+        
         // Check if event was sent
         if (!e) {
-            this.emptyAndHideTimerFields();
             return;
         }
         // Get the selected row
         var row = e.sender.select().first();
         if (!row) {
-            this.emptyAndHideTimerFields();
             return;
         }
         // Get the selected timer
-        var grid = $("#wtsTimers").data("kendoGrid");
-        var selectedTimer = grid.dataItem(row);
-        if (!selectedTimer) {
-            this.emptyAndHideTimerFields();
+        this.selectedTimer = this.wtsTimersGrid.dataItem(row);
+        if (!this.selectedTimer) {
             return;
         }
-
-        console.log("Selected timer: ", selectedTimer);
+        console.log("Selected timer: ", this.selectedTimer);
         
-        // Show input fields
-        $("#wtsTimersFields").show();
-        // Fill in the fields
-        $("#wts-time-id").val(selectedTimer["timeId"]);
+        // Show input view
+        $("#wts-timing-fields").show();
+        
+        // Fill in the fields that are always shown
+        this.timingId.val(this.selectedTimer["timeId"]);
+        this.timingType.value(this.selectedTimer["type"]);
+        this.timingRunImmediately.value(this.selectedTimer["runImmediately"]);
+        this.timingSkipWeekend.value(this.selectedTimer["skipWeekend"]);
+        
+        // Convert the skipdays string of numbers to an array of numbers if it exists
+        let skipDays = [];
+        if (this.selectedTimer["skipDays"]) {
+            skipDays = this.selectedTimer["skipDays"].split(",");
+        }
+        this.timingSkipDays.value(skipDays);
+        
+        if (this.selectedTimer["logSettings"]) {
+            this.timingLogMinimumLevel.value(this.selectedTimer["logSettings"]["logMinimumLevel"] ?? "");
+            this.timingLogStartAndStop.value(this.selectedTimer["logSettings"]["logStartAndStop"] ?? "");
+            this.timingLogRunStartAndStop.value(this.selectedTimer["logSettings"]["logRunStartAndStop"] ?? "");
+            this.timingLogRunBody.value(this.selectedTimer["logSettings"]["logRunBody"] ?? "");
+        }
+        
+        // Fill in the fields that are shown based on the type
+        this.showAndFillTypeFields(this.selectedTimer["type"], this.selectedTimer);
+    }
+
+    onTimingTypeChange(e) {
+        console.log("Type has changed: ", this.timingType.value());
+        if (this.selectedTimer !== null) {
+            this.showAndFillTypeFields(this.timingType.value(), this.selectedTimer);
+        }
     }
     
-    emptyAndHideTimerFields() {
-        $("#wtsTimersFields").hide();
-        $("#wts-time-id").val("");
+    showAndFillTypeFields(type, timer) {
+        // Clear the previous fields
+        this.resetAndHideTimerFields(false);
+        // Fill in the fields that are shown based on the type
+        switch (type) {
+            case "Continuous":
+                $("#wts-timing-delay").show();
+                this.timingDelay.value(timer["delay"]);
+                $("#wts-timing-start").parent().parent().show();
+                this.timingStart.value(timer["startTime"]);
+                $("#wts-timing-stop").parent().parent().show();
+                this.timingStop.value(timer["stopTime"]);
+                $("#wts-timing-delay").parent().parent().show();
+                this.timingDelay.value(timer["delay"]);
+                break;
+            case "Daily":
+                $("#wts-timing-hour").parent().parent().show();
+                this.timingHour.value(timer["hour"]);
+                break;
+            case "Weekly":
+                $("#wts-timing-dayofweek").parent().show();
+                this.timingDayOfWeek.value(timer["dayOfWeek"]);
+                break;
+            case "Monthly":
+                $("#wts-timing-dayofmonth").parent().parent().show();
+                this.timingDayOfMonth.value(timer["dayOfMonth"]);
+                break;
+        }
+    }
+
+    resetAndHideTimerFields(resetAll) {
+        if (resetAll) {
+            // These fields are always shown
+            this.timingId.val("");
+            this.timingType.value("");
+            this.timingRunImmediately.value(false);
+            this.timingSkipWeekend.value(false);
+            this.timingSkipDays.value("");
+            this.timingLogMinimumLevel.value("");
+            this.timingLogStartAndStop.value(false);
+            this.timingLogRunStartAndStop.value(false);
+            this.timingLogRunBody.value(false);
+        }
+        
+        // These fields are only shown with their corresponding type
+        $("#wts-timing-dayofweek").parent().hide();
+        this.timingDayOfWeek.value("");
+        
+        $("#wts-timing-dayofmonth").parent().parent().hide();
+        this.timingDayOfMonth.value("");
+        
+        $("#wts-timing-start").parent().parent().hide();
+        this.timingStart.value("");
+        
+        $("#wts-timing-stop").parent().parent().hide();
+        this.timingStop.value("");
+        
+        $("#wts-timing-delay").parent().parent().hide();
+        this.timingDelay.value("");
+        
+        $("#wts-timing-hour").parent().parent().hide();
+        this.timingHour.value("");
     }
 
     onTimerDelete(e) {
@@ -142,6 +255,7 @@ export class WtsConfiguration {
      * Initializes all kendo components for the base class.
      */
     initializeKendoComponents() {
+        $("#wtsDebuggerButton").kendoButton();
         $("#saveButtonWtsConfiguration").kendoButton({
             icon: "save"
         });
@@ -149,18 +263,28 @@ export class WtsConfiguration {
         
         // TODO: use the correct input types for the different fields
         
-        this.commitEnvironmentField = $("#wts-log-level").kendoDropDownList({
+        this.serviceName = $("#wts-name").kendoTextBox();
+        
+        this.connectionString = $("#wts-connection-string").kendoTextBox();
+        
+        this.logLevel = $("#wts-log-level").kendoDropDownList({
             optionLabel: "Selecteer log level",
             dataTextField: "text",
             dataValueField: "value"
         }).data("kendoDropDownList");
+        
+        this.logStartAndStop = $("#wts-log-start-stop").kendoCheckBox().data("kendoCheckBox");
+        
+        this.logRunStartAndStop = $("#wts-log-run-startandstop").kendoCheckBox().data("kendoCheckBox");
+        
+        this.logRunBody = $("#wts-log-body").kendoCheckBox().data("kendoCheckBox");
 
         this.wtsTimersGrid = $("#wtsTimers").kendoGrid({
             resizable: true,
             height: 280,
             selectable: "row",
             dataSource: this.template.runSchemes,
-            change: this.onTimerChange,
+            change: this.onTimerChange.bind(this),
             columns: [
                 {
                     field: "timeId",
@@ -168,33 +292,20 @@ export class WtsConfiguration {
                 }, {
                     field: "type",
                     title: "Type"
-                }, {
-                    field: "delay",
-                    title: "Wachttijd"
-                }, {
-                    field: "runImmediately",
-                    title: "Direct uitvoeren"
-                }, {
-                    command: "destroy",
-                    title: "&nbsp;",
-                    width: 120
                 }
-            ],
+            ]
         }).data("kendoGrid");
 
-        this.commitEnvironmentField = $("#wts-timing-type").kendoDropDownList({
-            optionLabel: "Selecteer herhaling",
+        this.timingId = $("#wts-timing-id").kendoTextBox();
+        
+        this.timingType = $("#wts-timing-type").kendoDropDownList({
+            optionLabel: "Selecteer type",
             dataTextField: "text",
             dataValueField: "value",
-            dataSource: [
-                {text: "Loopt continue", value: 1},
-                {text: "Dagelijks", value: 2},
-                {text: "Wekelijks", value: 3},
-                {text: "Maandelijks", value: 4}
-            ]
+            change: this.onTimingTypeChange.bind(this)
         }).data("kendoDropDownList");
 
-        this.commitEnvironmentField = $("#wts-timing-weekly").kendoDropDownList({
+        this.timingDayOfWeek = $("#wts-timing-dayofweek").kendoDropDownList({
             optionLabel: "Selecteer dag",
             dataTextField: "text",
             dataValueField: "value",
@@ -209,182 +320,68 @@ export class WtsConfiguration {
             ]
         }).data("kendoDropDownList");
 
-        this.commitEnvironmentField = $("#wts-timing-monthly").kendoDropDownList({
-            optionLabel: "Selecteer herhaal dag",
-            dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "Op 1e dag van de maand", value: 1},
-                {text: "Op 2e dag van de maand", value: 2},
-                {text: "Op 3e dag van de maand", value: 3},
-                {text: "Op 4e dag van de maand", value: 4},
-                {text: "Op 5e dag van de maand", value: 5},
-                {text: "Op 6e dag van de maand", value: 6},
-                {text: "Op 7e dag van de maand", value: 7},
-                {text: "Op 8e dag van de maand", value: 8},
-                {text: "Op 9e dag van de maand", value: 9},
-                {text: "Op 10e dag van de maand", value: 10}
-            ]
-        }).data("kendoDropDownList");
+        this.timingDayOfMonth = $("#wts-timing-dayofmonth").kendoNumericTextBox({
+            format: "#",
+            decimals: 0,
+            min: 1,
+            max: 31
+        }).data("kendoNumericTextBox");
 
-        this.commitEnvironmentField = $("#wts-timing-log").kendoDropDownList({
-            optionLabel: "Selecteer herhaling",
-            dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "Loopt continue", value: 1},
-                {text: "Dagelijks", value: 2},
-                {text: "Wekelijks", value: 3},
-                {text: "Maandelijks", value: 4}
-            ]
-        }).data("kendoDropDownList");
+        this.timingStart = $("#wts-timing-start").kendoTimePicker({
+            dateInput: true,
+            componentType: "modern",
+            format: "HH:mm:ss"
+        }).data("kendoTimePicker");
 
-        this.commitEnvironmentField = $("#wts-timing-hold").kendoDropDownList({
-            optionLabel: "Selecteer dag",
-            dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "Op maandag", value: 1},
-                {text: "Op dinsdag", value: 2},
-                {text: "Op woensdag", value: 3},
-                {text: "Op donderdag", value: 4},
-                {text: "Op vrijdag", value: 5},
-                {text: "Op zaterdag", value: 6},
-                {text: "Op zondag", value: 7}
-            ]
-        }).data("kendoDropDownList");
+        this.timingStop = $("#wts-timing-stop").kendoTimePicker({
+            dateInput: true,
+            componentType: "modern",
+            format: "HH:mm:ss"
+        }).data("kendoTimePicker");
 
-        this.commitEnvironmentField = $("#wts-continuous-start").kendoDropDownList({
-            optionLabel: "Start tijd",
+        this.timingDelay = $("#wts-timing-delay").kendoTimePicker({
+            dateInput: true,
+            componentType: "modern",
+            format: "HH:mm:ss"
+        }).data("kendoTimePicker");
+        
+        this.timingHour = $("#wts-timing-hour").kendoTimePicker({
+            dateInput: true,
+            componentType: "modern",
+            format: "HH:mm:ss"
+        }).data("kendoTimePicker");
+        
+        this.timingRunImmediately = $("#wts-timing-runimmediately").kendoCheckBox().data("kendoCheckBox");
+        
+        this.timingSkipWeekend = $("#wts-timing-skipweekend").kendoCheckBox().data("kendoCheckBox");
+        
+        this.timingSkipDays = $("#wts-timing-skipdays").kendoMultiSelect({
+            placeholder: "Selecteer dag(en)",
+            downArrow: true,
             dataTextField: "text",
             dataValueField: "value",
             dataSource: [
-                {text: "0:00", value: 1},
-                {text: "0:30", value: 2},
-                {text: "1:00", value: 3},
-                {text: "1:30", value: 4},
-                {text: "2:00", value: 5},
-                {text: "2:30", value: 6},
-                {text: "3:00", value: 7},
-                {text: "3:30", value: 8},
-                {text: "4:00", value: 9},
-                {text: "4:30", value: 10},
-                {text: "5:00", value: 11},
-                {text: "5:30", value: 12},
-                {text: "6:00", value: 13},
-                {text: "6:30", value: 14},
-                {text: "7:00", value: 15},
-                {text: "7:30", value: 16},
-                {text: "8:00", value: 17},
-                {text: "8:30", value: 18},
-                {text: "9:00", value: 19},
-                {text: "9:30", value: 20},
-                {text: "10:00", value: 21},
-                {text: "10:30", value: 22},
-                {text: "11:00", value: 23},
-                {text: "11:30", value: 24},
-                {text: "12:00", value: 25},
+                {text: "Maandag", value: 1},
+                {text: "Dinsdag", value: 2},
+                {text: "Woensdag", value: 3},
+                {text: "Donderdag", value: 4},
+                {text: "Vrijdag", value: 5},
+                {text: "Zaterdag", value: 6},
+                {text: "Zondag", value: 7}
             ]
-        }).data("kendoDropDownList");
-
-        this.commitEnvironmentField = $("#wts-continuous-from").kendoDropDownList({
-            optionLabel: "Start tijd",
+        }).data("kendoMultiSelect");
+        
+        this.timingLogMinimumLevel = $("#wts-timing-logminimumlevel").kendoDropDownList({
+            optionLabel: "Selecteer log level",
             dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "0:00", value: 1},
-                {text: "0:30", value: 2},
-                {text: "1:00", value: 3},
-                {text: "1:30", value: 4},
-                {text: "2:00", value: 5},
-                {text: "2:30", value: 6},
-                {text: "3:00", value: 7},
-                {text: "3:30", value: 8},
-                {text: "4:00", value: 9},
-                {text: "4:30", value: 10},
-                {text: "5:00", value: 11},
-                {text: "5:30", value: 12},
-                {text: "6:00", value: 13},
-                {text: "6:30", value: 14},
-                {text: "7:00", value: 15},
-                {text: "7:30", value: 16},
-                {text: "8:00", value: 17},
-                {text: "8:30", value: 18},
-                {text: "9:00", value: 19},
-                {text: "9:30", value: 20},
-                {text: "10:00", value: 21},
-                {text: "10:30", value: 22},
-                {text: "11:00", value: 23},
-                {text: "11:30", value: 24},
-                {text: "12:00", value: 25},
-            ]
+            dataValueField: "value"
         }).data("kendoDropDownList");
-
-        this.commitEnvironmentField = $("#wts-continuous-till").kendoDropDownList({
-            optionLabel: "Start tijd",
-            dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "0:00", value: 1},
-                {text: "0:30", value: 2},
-                {text: "1:00", value: 3},
-                {text: "1:30", value: 4},
-                {text: "2:00", value: 5},
-                {text: "2:30", value: 6},
-                {text: "3:00", value: 7},
-                {text: "3:30", value: 8},
-                {text: "4:00", value: 9},
-                {text: "4:30", value: 10},
-                {text: "5:00", value: 11},
-                {text: "5:30", value: 12},
-                {text: "6:00", value: 13},
-                {text: "6:30", value: 14},
-                {text: "7:00", value: 15},
-                {text: "7:30", value: 16},
-                {text: "8:00", value: 17},
-                {text: "8:30", value: 18},
-                {text: "9:00", value: 19},
-                {text: "9:30", value: 20},
-                {text: "10:00", value: 21},
-                {text: "10:30", value: 22},
-                {text: "11:00", value: 23},
-                {text: "11:30", value: 24},
-                {text: "12:00", value: 25},
-            ]
-        }).data("kendoDropDownList");
-
-        this.commitEnvironmentField = $("#wts-continuous-interval").kendoDropDownList({
-            optionLabel: "Start tijd",
-            dataTextField: "text",
-            dataValueField: "value",
-            dataSource: [
-                {text: "0:00", value: 1},
-                {text: "0:30", value: 2},
-                {text: "1:00", value: 3},
-                {text: "1:30", value: 4},
-                {text: "2:00", value: 5},
-                {text: "2:30", value: 6},
-                {text: "3:00", value: 7},
-                {text: "3:30", value: 8},
-                {text: "4:00", value: 9},
-                {text: "4:30", value: 10},
-                {text: "5:00", value: 11},
-                {text: "5:30", value: 12},
-                {text: "6:00", value: 13},
-                {text: "6:30", value: 14},
-                {text: "7:00", value: 15},
-                {text: "7:30", value: 16},
-                {text: "8:00", value: 17},
-                {text: "8:30", value: 18},
-                {text: "9:00", value: 19},
-                {text: "9:30", value: 20},
-                {text: "10:00", value: 21},
-                {text: "10:30", value: 22},
-                {text: "11:00", value: 23},
-                {text: "11:30", value: 24},
-                {text: "12:00", value: 25},
-            ]
-        }).data("kendoDropDownList");
+        
+        this.timingLogStartAndStop = $("#wts-timing-logstartstop").kendoCheckBox().data("kendoCheckBox");
+        
+        this.timingLogRunStartAndStop = $("#wts-timing-logrunstartandstop").kendoCheckBox().data("kendoCheckBox");
+        
+        this.timingLogRunBody = $("#wts-timing-logrunbody").kendoCheckBox().data("kendoCheckBox");
 
         this.wtsLinkedActionsGrid = $("#wtsLinkedActions").kendoGrid({
             resizable: true,
@@ -407,8 +404,8 @@ export class WtsConfiguration {
                     title: "&nbsp;",
                     width: 120
                 }
-            ],
-        }).data("kendoGrid");
+            ]
+        }).data("kendoGrid")
 
         this.wtsServiceActions = $("#wtsServiceActions").kendoGrid({
             resizable: true,
@@ -431,7 +428,7 @@ export class WtsConfiguration {
                     title: "&nbsp;",
                     width: 120
                 }
-            ],
+            ]
         }).data("kendoGrid");
     }
 
@@ -440,29 +437,15 @@ export class WtsConfiguration {
      * @returns {any} The object containing the values of the input fields.
      */
     getCurrentSettings() {
-        // TODO: Maybe rework this to edit this.template directly instead of creating a new object?
-        // TODO: Might not be possible since this.template is lower case and the model is upper case
-        // TODO: Maybe there is a way to uppercase this.template?
-        const serviceName = document.getElementById("wts-name").value;
-        const connectionString = document.getElementById("wts-connection-string").value;
+        this.template.serviceName = document.getElementById("wts-name").value; // Service name
+        this.template.connectionString = document.getElementById("wts-connection-string").value; // Connection string
         const logLevelField = document.getElementById('wts-log-level');
         const logLevelSelectedIndex = logLevelField.selectedIndex;
-        const logMinimumLevel = logLevelField.options[logLevelSelectedIndex].value;
-        const logStartAndStop = document.getElementById("wts-log-stop-start").checked;
-        const logRunStartAndStop = document.getElementById("wts-log-run-cyclus").checked;
-        const logRunBody = document.getElementById("wts-log-body").checked;
-        
-        // Create the object according to the model
-        return {
-            "ServiceName": serviceName,
-            "ConnectionString": connectionString,
-            "LogSettings": {
-                "LogMinimumLevel": logMinimumLevel,
-                "LogStartAndStop": logStartAndStop,
-                "LogRunStartAndStop": logRunStartAndStop,
-                "LogRunBody": logRunBody
-            }
-        };
+        this.template.logSettings.logMinimumLevel = logLevelField.options[logLevelSelectedIndex].value; // Log minimum level
+        this.template.logSettings.logStartAndStop = document.getElementById("wts-log-start-stop").checked; // Log start and stop
+        this.template.logSettings.logRunStartAndStop = document.getElementById("wts-log-run-startandstop").checked; // Log run start and stop
+        this.template.logSettings.logRunBody = document.getElementById("wts-log-body").checked; // Log run body
+        return this.template;
     }
 
     /**

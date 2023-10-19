@@ -46,6 +46,12 @@ namespace Api.Modules.Templates.Models.Template
         /// Whether to run the run scheme on the weekend.
         /// </summary>
         public bool? SkipWeekend { get; set; }
+
+        [XmlIgnore]
+        public bool SkipWeekendSpecified
+        {
+            get { return SkipWeekend.HasValue; }
+        }
         
         /// <summary>
         /// Whether the run scheme should not be executed on specific days.
@@ -58,10 +64,22 @@ namespace Api.Modules.Templates.Models.Template
         /// </summary>
         public int? DayOfWeek { get; set; }
         
+        [XmlIgnore]
+        public bool DayOfWeekSpecified
+        {
+            get { return DayOfWeek.HasValue; }
+        }
+        
         /// <summary>
         /// The day of the month on which the run scheme should run.
         /// </summary>
         public int? DayOfMonth { get; set; }
+        
+        [XmlIgnore]
+        public bool DayOfMonthSpecified
+        {
+            get { return DayOfMonth.HasValue; }
+        }
         
         /// <summary>
         /// The time at which the run scheme is to be executed.
@@ -81,5 +99,11 @@ namespace Api.Modules.Templates.Models.Template
         /// If the run scheme should be run immediately on start up of the wts.
         /// </summary>
         public bool? RunImmediately { get; set; }
+        
+        [XmlIgnore]
+        public bool RunImmediatelySpecified
+        {
+            get { return RunImmediately.HasValue; }
+        }
     }
 }
