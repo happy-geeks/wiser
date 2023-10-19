@@ -41,7 +41,7 @@ jobs:
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_TEST }}\_App_Offline.htm" -NewName "App_Offline.htm"
 
     - name: dotnet publish API
-      run: dotnet publish API -c Release -o "${{ secrets.PUBLISH_LOCATION_API_TEST }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
+      run: dotnet publish API -c Release -o "${{ secrets.PUBLISH_LOCATION_API_TEST }}" --self-contained true  -r win-x64 /p:EnvironmentName=Test
 
     - name: Install NPM modules
       run: npm install
@@ -58,7 +58,7 @@ jobs:
       working-directory: 'FrontEnd'
 
     - name: dotnet publish front-end
-      run: dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_TEST }}" --self-contained true  -r win-x64 /p:EnvironmentName=Acceptance
+      run: dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_TEST }}" --self-contained true  -r win-x64 /p:EnvironmentName=Test
       
     - name: Disable maintenance notice API
       if: ${{ always() }}
