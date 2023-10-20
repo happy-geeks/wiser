@@ -41,8 +41,10 @@ namespace Api.Modules.Templates.Services.DataLayer
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
     template.parent_id,
     template.template_type,
-    template.template_name, 
-    template.version, 
+    template.template_name,
+    template.version,
+    template.added_on, 
+    template.added_by, 
     template.changed_on, 
     template.changed_by, 
     template.ordering
@@ -60,6 +62,8 @@ LIMIT 1");
                 Type = dataTable.Rows[0].Field<TemplateTypes>("template_type"),
                 Name = dataTable.Rows[0].Field<string>("template_name"),
                 Version = dataTable.Rows[0].Field<int>("version"),
+                AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
+                AddedBy = dataTable.Rows[0].Field<string>("added_by"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
                 Ordering = dataTable.Rows[0].Field<int>("ordering")
@@ -94,7 +98,9 @@ LIMIT 1");
     template.template_type, 
     template.template_name, 
     template.template_data, 
-    template.version, 
+    template.version,
+    template.added_on, 
+    template.added_by,
     template.changed_on, 
     template.changed_by,
     template.cache_per_url,
@@ -158,6 +164,8 @@ LIMIT 1");
                 Name = dataTable.Rows[0].Field<string>("template_name"),
                 EditorValue = dataTable.Rows[0].Field<string>("template_data"),
                 Version = dataTable.Rows[0].Field<int>("version"),
+                AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
+                AddedBy = dataTable.Rows[0].Field<string>("added_by"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
                 CachePerUrl =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_url"]),
@@ -439,6 +447,8 @@ ORDER BY template.template_type ASC, template.template_name ASC");
     wdc.component, 
     wdc.component_mode, 
     GROUP_CONCAT(DISTINCT otherdc.`usages`) AS `usages`,
+    wdc.added_on,
+    wdc.added_by,
     wdc.changed_on,
     wdc.changed_by,
     wdc.`title`
@@ -462,10 +472,11 @@ GROUP BY wdc.content_id");
                 resultDao.Component = row.Field<string>("component");
                 resultDao.ComponentMode = row.Field<string>("component_mode");
                 resultDao.Usages = row.Field<string>("usages");
+                resultDao.AddedOn = row.Field<DateTime>("added_on");
+                resultDao.AddedBy = row.Field<string>("added_by");
                 resultDao.ChangedOn = row.Field<DateTime>("changed_on");
                 resultDao.ChangedBy = row.Field<string>("changed_by");
                 resultDao.Title = row.Field<string>("title");
-
 
                 resultList.Add(resultDao);
             }
@@ -594,6 +605,8 @@ WHERE id = ?id";
     template_type,
     version,
     template_id,
+    added_on,
+    added_by,
     changed_on,
     changed_by,
     published_environment,
@@ -646,6 +659,8 @@ SELECT
     template.template_type,
     template.version + 1 AS version,
     template.template_id,
+    ?now AS added_on,
+    'Wiser' AS added_by,
     ?now AS changed_on,
     'Wiser' AS changed_by,
     0 AS published_environment,
@@ -988,8 +1003,8 @@ AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("editorval", editorValue);
 
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
-                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering, ?editorval, -1);
+                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, added_on, added_by, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
+                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, ?now, ?username, 1, ?ordering, ?editorval, -1);
                                                             SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
@@ -1228,7 +1243,9 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.template_type, 
     template.template_name, 
     template.template_data, 
-    template.version, 
+    template.version,
+    template.added_on, 
+    template.added_by,   
     template.changed_on, 
     template.changed_by,   
     template.cache_per_url,   
@@ -1286,6 +1303,8 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                     Name = dataRow.Field<string>("template_name"),
                     EditorValue = dataRow.Field<string>("template_data"),
                     Version = dataRow.Field<int>("version"),
+                    AddedOn = dataRow.Field<DateTime>("added_on"),
+                    AddedBy = dataRow.Field<string>("added_by"),
                     ChangedOn = dataRow.Field<DateTime>("changed_on"),
                     ChangedBy = dataRow.Field<string>("changed_by"),
                     CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
@@ -1365,14 +1384,14 @@ LIMIT 1";
             clientDatabaseConnection.AddParameter("ordering", dataTable.Rows[0].Field<int>("ordering"));
             clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
 
-            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by, is_dirty)
-VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username, TRUE)";
+            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, added_on, added_by, changed_on, changed_by, is_dirty)
+VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username, ?now, ?username, TRUE)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             if (alsoDeleteChildren)
             {
                 // Delete all children of the template by also adding new versions with removed = 1 for them.
-                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by, is_dirty)
+                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, added_on, added_by, changed_on, changed_by, is_dirty)
 SELECT 
     template.template_id,
     template.parent_id,
@@ -1381,6 +1400,8 @@ SELECT
     template.ordering,
     template.version + 1,
     1,
+    ?now,
+    ?username,
     ?now,
     ?username,
     TRUE
@@ -1439,6 +1460,8 @@ SET template.parent_id = temp.parent_id,
     template.template_type = temp.template_type,
     template.version = temp.version,
     template.template_id = temp.template_id,
+    template.added_on = temp.added_on,
+    template.added_by = temp.added_by,
     template.changed_on = temp.changed_on,
     template.changed_by = temp.changed_by,
     template.published_environment = temp.published_environment,
@@ -1502,6 +1525,8 @@ INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate} (
     template_type,
     version,
     template_id,
+    added_on,
+    added_by,
     changed_on,
     changed_by,
     published_environment,
@@ -1565,6 +1590,8 @@ SELECT
     template_type,
     version,
     template_id,
+    added_on,
+    added_by,
     changed_on,
     changed_by,
     published_environment,

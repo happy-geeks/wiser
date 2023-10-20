@@ -44,6 +44,16 @@ namespace Api.Modules.Templates.Models.Template
         public int Version { get; set; }
 
         /// <summary>
+        /// Gets or sets the date and time that the template was created.
+        /// </summary>
+        public DateTime AddedOn { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the user that created the template.
+        /// </summary>
+        public string AddedBy { get; set; }
+
+        /// <summary>
         /// Gets or sets the date and time that the template was last changed.
         /// </summary>
         public DateTime ChangedOn { get; set; }
