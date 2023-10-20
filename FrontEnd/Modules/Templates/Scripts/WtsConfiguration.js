@@ -29,6 +29,7 @@ export class WtsConfiguration {
         // TODO: Add all the fields that are used in the configuration tab and initialize them here
         this.template = null;
         this.selectedTimer = null;
+        this.deleteConfirmationWindow = null;
         this.serviceName = null;
         this.connectionString = null;
         this.logLevel = null;
@@ -51,6 +52,8 @@ export class WtsConfiguration {
         this.timingLogStartAndStop = null;
         this.timingLogRunStartAndStop = null;
         this.timingLogRunBody = null;
+        this.timingSaveChanges = null;
+        this.timingDelete = null;
         this.wtsLinkedActionsGrid = null;
         this.wtsServiceActions = null;
     }
@@ -115,8 +118,17 @@ export class WtsConfiguration {
      * Add the events to the elements
      */
     bindEvents() {
+        document.getElementById("wtsTimingSaveChanges").addEventListener("click", () => {
+            this.applyTimerChanges();
+        });
+        
+        document.getElementById("wtsTimingDelete").addEventListener("click", () => {
+            this.deleteTimer();
+        });
+        
         document.getElementById("wtsDebuggerButton").addEventListener("click", () => {
-            console.log("After changes: ", this.getCurrentSettings());
+            const timerIndex = this.template.runSchemes.findIndex((timer) => timer.timeId === this.selectedTimer.timeId);
+            console.log("timer before changes: ", this.template.runSchemes[timerIndex]);
         });
         
         document.getElementById("saveButtonWtsConfiguration").addEventListener("click", () => {
@@ -137,7 +149,7 @@ export class WtsConfiguration {
             return;
         }
         // Get the selected row
-        var row = e.sender.select().first();
+        let row = e.sender.select().first();
         if (!row) {
             return;
         }
@@ -152,7 +164,7 @@ export class WtsConfiguration {
         $("#wts-timing-fields").show();
         
         // Fill in the fields that are always shown
-        this.timingId.val(this.selectedTimer["timeId"]);
+        this.timingId.value(this.selectedTimer["timeId"]);
         this.timingType.value(this.selectedTimer["type"]);
         this.timingRunImmediately.value(this.selectedTimer["runImmediately"]);
         this.timingSkipWeekend.value(this.selectedTimer["skipWeekend"]);
@@ -204,10 +216,14 @@ export class WtsConfiguration {
             case "Weekly":
                 $("#wts-timing-dayofweek").parent().show();
                 this.timingDayOfWeek.value(timer["dayOfWeek"]);
+                $("#wts-timing-hour").parent().parent().show();
+                this.timingHour.value(timer["hour"]);
                 break;
             case "Monthly":
                 $("#wts-timing-dayofmonth").parent().parent().show();
                 this.timingDayOfMonth.value(timer["dayOfMonth"]);
+                $("#wts-timing-hour").parent().parent().show();
+                this.timingHour.value(timer["hour"]);
                 break;
         }
     }
@@ -215,7 +231,7 @@ export class WtsConfiguration {
     resetAndHideTimerFields(resetAll) {
         if (resetAll) {
             // These fields are always shown
-            this.timingId.val("");
+            this.timingId.value("");
             this.timingType.value("");
             this.timingRunImmediately.value(false);
             this.timingSkipWeekend.value(false);
@@ -229,32 +245,152 @@ export class WtsConfiguration {
         // These fields are only shown with their corresponding type
         $("#wts-timing-dayofweek").parent().hide();
         this.timingDayOfWeek.value("");
-        
         $("#wts-timing-dayofmonth").parent().parent().hide();
         this.timingDayOfMonth.value("");
-        
         $("#wts-timing-start").parent().parent().hide();
         this.timingStart.value("");
-        
         $("#wts-timing-stop").parent().parent().hide();
         this.timingStop.value("");
-        
         $("#wts-timing-delay").parent().parent().hide();
         this.timingDelay.value("");
-        
         $("#wts-timing-hour").parent().parent().hide();
         this.timingHour.value("");
     }
+    
+    applyTimerChanges() {
+        // Find the timer in the array
+        const timerIndex = this.template.runSchemes.findIndex((timer) => timer.timeId === this.selectedTimer.timeId);
+        console.log("timerIndex: ", timerIndex);
+        this.template.runSchemes[timerIndex].timeId = this.timingId.value();
+        this.template.runSchemes[timerIndex].type = this.timingType.value();
+        if (this.timingRunImmediately.value() != false) {
+            this.template.runSchemes[timerIndex].runImmediately = this.timingRunImmediately.value();
+        }
+        else {
+            delete this.template.runSchemes[timerIndex].runImmediately;
+        }
+        if (this.timingSkipWeekend.value() != false) {
+            this.template.runSchemes[timerIndex].skipWeekend = this.timingSkipWeekend.value();
+        }
+        else {
+            delete this.template.runSchemes[timerIndex].skipWeekend;
+        }
+        if (this.timingSkipDays.value().length > 0) {
+            this.template.runSchemes[timerIndex].skipDays = this.timingSkipDays.value().sort((a, b) => a - b).join(",");
+        }
+        else {
+            delete this.template.runSchemes[timerIndex].skipDays;
+        }
+        // Check if any log settings are set
+        if (this.timingLogMinimumLevel.value() != "" || this.timingLogStartAndStop.value() != false || this.timingLogRunStartAndStop.value() != false || this.timingLogRunBody.value() != false) {
+            if (this.template.runSchemes[timerIndex].logSettings === undefined) {
+                this.template.runSchemes[timerIndex].logSettings = {};
+            }
+            this.template.runSchemes[timerIndex].logSettings.logMinimumLevel = this.timingLogMinimumLevel.value();
+            this.template.runSchemes[timerIndex].logSettings.logStartAndStop = this.timingLogStartAndStop.value();
+            this.template.runSchemes[timerIndex].logSettings.logRunStartAndStop = this.timingLogRunStartAndStop.value();
+            this.template.runSchemes[timerIndex].logSettings.logRunBody = this.timingLogRunBody.value();
+        }
+        else {
+            // Remove the log settings if they are not set
+            delete this.template.runSchemes[timerIndex].logSettings;
+        }
+        // Check the type and set the corresponding fields
+        switch (this.timingType.value()) {
+            case "Continuous":
+                // Set the new values
+                this.template.runSchemes[timerIndex].startTime = this.getTimeOnly(this.timingStart.value());
+                this.template.runSchemes[timerIndex].stopTime = this.getTimeOnly(this.timingStop.value());
+                this.template.runSchemes[timerIndex].delay = this.getTimeOnly(this.timingDelay.value());
+                // Remove the fields that are not used
+                delete this.template.runSchemes[timerIndex].hour;
+                delete this.template.runSchemes[timerIndex].dayOfWeek;
+                delete this.template.runSchemes[timerIndex].dayOfMonth;
+                break;
+            case "Daily":
+                // Set the new values
+                this.template.runSchemes[timerIndex].hour = this.getTimeOnly(this.timingHour.value());
+                // Remove the fields that are not used
+                delete this.template.runSchemes[timerIndex].startTime;
+                delete this.template.runSchemes[timerIndex].stopTime;
+                delete this.template.runSchemes[timerIndex].delay;
+                delete this.template.runSchemes[timerIndex].dayOfWeek;
+                delete this.template.runSchemes[timerIndex].dayOfMonth;
+                break;
+            case "Weekly":
+                // Set the new values
+                this.template.runSchemes[timerIndex].dayOfWeek = this.timingDayOfWeek.value();
+                this.template.runSchemes[timerIndex].hour = this.getTimeOnly(this.timingHour.value());
+                // Remove the fields that are not used
+                delete this.template.runSchemes[timerIndex].startTime;
+                delete this.template.runSchemes[timerIndex].stopTime;
+                delete this.template.runSchemes[timerIndex].delay;
+                delete this.template.runSchemes[timerIndex].dayOfMonth;
+                break;
+            case "Monthly":
+                // Set the new values
+                this.template.runSchemes[timerIndex].dayOfMonth = this.timingDayOfMonth.value();
+                this.template.runSchemes[timerIndex].hour = this.getTimeOnly(this.timingHour.value());
+                // Remove the fields that are not used
+                delete this.template.runSchemes[timerIndex].startTime;
+                delete this.template.runSchemes[timerIndex].stopTime;
+                delete this.template.runSchemes[timerIndex].delay;
+                delete this.template.runSchemes[timerIndex].dayOfWeek;
+                break;
+        }
+        
+        // Refresh the grid
+        this.wtsTimersGrid.dataSource.read();
+        
+        this.resetAndHideTimerFields(true);
+        // Hide the input view
+        $("#wts-timing-fields").hide();
+    }
+    
+    getTimeOnly(time) {
+        const dateTime = new Date(time);
+        const hours = dateTime.getHours();
+        const minutes = dateTime.getMinutes();
+        const seconds = dateTime.getSeconds();
 
-    onTimerDelete(e) {
-        // TODO: Add a function for removing a runscheme, or should it exist as a button below the grid in the detail view?
-        console.log("Removing: ", e);
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    async deleteTimer() {
+        // Get the current selected timer
+        const timer = this.wtsTimersGrid.dataItem(this.wtsTimersGrid.select().first());
+        if (!timer) {
+            return;
+        }
+        
+        // Show confirmation dialog
+        try {
+            await Wiser.showConfirmDialog(`Weet u zeker dat u timer ${timer.timeId} wilt verwijderen?`);
+        } catch (error) {
+            // User canceled the dialog
+            return;
+        }
+        
+        // Remove the timer from the template
+        this.template.runSchemes = this.template.runSchemes.filter((t) => t.timeId !== timer.timeId);
+
+        // Remove timer from the grid
+        this.wtsTimersGrid.dataSource.remove(timer);
+
+        // Reset the fields
+        this.resetAndHideTimerFields(true);
+
+        // Hide the input view
+        $("#wts-timing-fields").hide();
     }
 
     /**
      * Initializes all kendo components for the base class.
      */
     initializeKendoComponents() {
+        $("#wtsTimingDelete").kendoButton({
+                icon: "delete"
+        });
         $("#wtsDebuggerButton").kendoButton();
         $("#saveButtonWtsConfiguration").kendoButton({
             icon: "save"
@@ -296,7 +432,12 @@ export class WtsConfiguration {
             ]
         }).data("kendoGrid");
 
-        this.timingId = $("#wts-timing-id").kendoTextBox();
+        this.timingId = $("#wts-timing-id").kendoNumericTextBox({
+            format: "#",
+            decimals: 0,
+            min: 1,
+            max: 31
+        }).data("kendoNumericTextBox");
         
         this.timingType = $("#wts-timing-type").kendoDropDownList({
             optionLabel: "Selecteer type",
@@ -382,6 +523,14 @@ export class WtsConfiguration {
         this.timingLogRunStartAndStop = $("#wts-timing-logrunstartandstop").kendoCheckBox().data("kendoCheckBox");
         
         this.timingLogRunBody = $("#wts-timing-logrunbody").kendoCheckBox().data("kendoCheckBox");
+        
+        this.timingSaveChanges = $("#wtsTimingSaveChanges").kendoButton({
+            icon: "edit"
+        }).data("kendoButton");
+        
+        this.timingDelete = $("#wtsTimingDelete").kendoButton({
+            icon: "delete"
+        }).data("kendoButton");
 
         this.wtsLinkedActionsGrid = $("#wtsLinkedActions").kendoGrid({
             resizable: true,
