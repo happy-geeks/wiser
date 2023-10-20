@@ -85,7 +85,6 @@
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            
             <div class="item full">
                 <h4><label>Beschikbare timers</label></h4>
                 <div id="wtsTimers" class="grid"></div>
@@ -96,7 +95,7 @@
                 <div class="item dynamic havingList">
                     <h3>Gegevens timer</h3>
                 </div>
-                
+
                 <div class="item">
                     <h4><label>ID</label></h4>
                     <span>
@@ -117,27 +116,29 @@
                     <div>
                         <label>
                             <span>Tussen</span>
-                            <input id="wts-timing-start" />
+                            <input id="wts-timing-start"/>
                         </label>
                         <label>
                             <span>en</span>
-                            <input id="wts-timing-stop" />
+                            <input id="wts-timing-stop"/>
                         </label>
                         <label>
                             <span>met tussenpozen van</span>
-                            <input id="wts-timing-delay" />
+                            <input id="wts-timing-delay"/>
                         </label>
                     </div>
                     <div>
-                        <label>
-                            <span>Hoelaat</span>
-                            <input id="wts-timing-hour"/>
-                        </label>
+                        <!-- This could be rewritten to have an hour input for week and month to have a more seamless ux since now they're spaced far apart -->
                         <select id="wts-timing-dayofweek"></select>
                         <label>
-                            <span>Op de </span>
-                            <input id="wts-timing-dayofmonth" />
-                            <span>e dag van de maand</span>
+                            <span>Op de</span>
+                            <input id="wts-timing-dayofmonth"/>
+                            <span>van de maand</span>
+                        </label>
+                        <label>
+                            <span>Om</span>
+                            <input id="wts-timing-hour"/>
+                            <span>uur</span>
                         </label>
                     </div>
 
@@ -188,13 +189,15 @@
                     </div>
                     <div class="form-hint"><span>Het invullen van deze velden overschrijft de globale log instellingen als deze eerder ingesteld zijn</span></div>
                 </div>
-                
+
                 <div class="item">
-                    <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="save"><span>Wijzigingen opslaan</span></button>
+                    <button id="wtsTimingSaveChanges" type="button" class="k-primary saveButton">Wijzigingen opslaan</button>
+                    <button id="wtsTimingDelete" type="button" class="k-button-solid-primary delete-button deleteButton">Timer verwijderen</button>
                 </div>
 
                 <div class="item">
                     <h4><label>Gekoppelde acties</label></h4>
+                    <div class="form-hint"><span>Deze acties staan gekoppeld aan de geselecteerde timer</span></div>
                     <div id="wtsLinkedActions" class="grid"></div>
                 </div>
             </div>
