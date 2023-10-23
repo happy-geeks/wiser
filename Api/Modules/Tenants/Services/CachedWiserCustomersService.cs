@@ -43,7 +43,7 @@ namespace Api.Modules.Tenants.Services
         public async Task<ServiceResult<TenantModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
-            return await cache.GetOrAddAsync($"tenant_{subDomain}_{includeDatabaseInformation}",
+            return await cache.GetOrAddAsync($"customer_{subDomain}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
@@ -54,7 +54,7 @@ namespace Api.Modules.Tenants.Services
         /// <inheritdoc />
         public async Task<ServiceResult<TenantModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
         {
-            return await cache.GetOrAddAsync($"tenant_{id}_{includeDatabaseInformation}",
+            return await cache.GetOrAddAsync($"customer_{id}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
@@ -116,7 +116,7 @@ namespace Api.Modules.Tenants.Services
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetTitleAsync(string subDomain)
         {
-            return await cache.GetOrAddAsync($"tenant_title_{subDomain}",
+            return await cache.GetOrAddAsync($"customer_title_{subDomain}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;

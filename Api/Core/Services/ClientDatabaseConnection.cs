@@ -27,7 +27,7 @@ using Newtonsoft.Json;
 namespace Api.Core.Services
 {
     /// <summary>
-    /// This is meant to be used as a decorator pattern. This will use the original <see cref="IDatabaseConnection"/> to access the main Wiser database and find the tenant's info in easy_tenants.
+    /// This is meant to be used as a decorator pattern. This will use the original <see cref="IDatabaseConnection"/> to access the main Wiser database and find the tenant's info in easy_customers.
     /// It will then create a new connection string for that tenant and open a connection to that database. This means that using this class, you will always have access to the tenant database.
     /// </summary>
     public class ClientDatabaseConnection : IDatabaseConnection, IScopedService

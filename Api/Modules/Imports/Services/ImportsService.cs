@@ -318,7 +318,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                clientDatabaseConnection.AddParameter("tenant_id", tenant.TenantId);
+                clientDatabaseConnection.AddParameter("customer_id", tenant.TenantId);
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);

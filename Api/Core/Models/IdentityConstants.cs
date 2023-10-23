@@ -18,12 +18,12 @@
         /// <summary>
         /// The name of the tenant role.
         /// </summary>
-        public const string TenantRole = "Tenant";
+        public const string TenantRole = "Customer";
 
         /// <summary>
         /// The names of the tenant and admin roles.
         /// </summary>
-        public const string TenantOrAdminRole = "Tenant, Admin";
+        public const string TenantOrAdminRole = "Customer, Admin";
 
         /// <summary>
         /// The name for the admin accounts role.

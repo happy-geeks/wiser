@@ -59,7 +59,7 @@ namespace FrontEnd.Core.Models
         public List<string> WiserHostNames { get; set; } = new();
 
         /// <summary>
-        /// The sub domain that should be used to login to the main wiser database (the one that contains the table "easy_tenants"), when using multi tenancy.
+        /// The sub domain that should be used to login to the main wiser database (the one that contains the table "easy_customers"), when using multi tenancy.
         /// This value is not used when not using multi tenancy.
         /// </summary>
         public string MainSubDomain { get; set; } = "main";

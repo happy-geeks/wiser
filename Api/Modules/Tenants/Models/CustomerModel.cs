@@ -64,7 +64,7 @@ namespace Api.Modules.Tenants.Models
             var result = new TenantModel
             {
                 Id = dataRow.Field<int>("id"),
-                TenantId = dataRow.Field<int>("tenantid"),
+                TenantId = dataRow.Field<int>("customerid"),
                 Name = dataRow.Field<string>("name"),
                 EncryptionKey = dataRow.Field<string>("encryption_key"),
                 SubDomain = dataRow.Field<string>("subdomain"),

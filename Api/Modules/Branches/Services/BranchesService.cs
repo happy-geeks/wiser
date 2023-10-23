@@ -82,7 +82,7 @@ namespace Api.Modules.Branches.Services
             // Then we want to get the sub domain of the main/production environment of the Tenant, to use as base for the new sub domain for the new environment.
             if (currentTenant.Id != currentTenant.TenantId)
             {
-                wiserDatabaseConnection.AddParameter("TenantId", currentTenant.TenantId);
+                wiserDatabaseConnection.AddParameter("tenantId", currentTenant.TenantId);
                 var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT subdomain, name, wiser_title FROM {ApiTableNames.WiserTenants} WHERE id = ?tenantId");
                 if (dataTable.Rows.Count == 0)
                 {
@@ -143,7 +143,7 @@ namespace Api.Modules.Branches.Services
             settings.WiserTitle = newTenantTitle;
             settings.DatabaseName = databaseName;
 
-            // Add the new tenant environment to easy_tenants. We do this here already so that the WTS doesn't need access to the main wiser database.
+            // Add the new tenant environment to easy_customers. We do this here already so that the WTS doesn't need access to the main wiser database.
             var newTenant = new TenantModel
             {
                 TenantId = currentTenant.TenantId,
@@ -194,7 +194,7 @@ namespace Api.Modules.Branches.Services
 
             var query = $@"SELECT id, name, subdomain, db_dbname
 FROM {ApiTableNames.WiserTenants}
-WHERE tenantid = ?id
+WHERE customerId = ?id
 AND id <> ?id
 ORDER BY id DESC";
 
@@ -1073,7 +1073,7 @@ VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
 VALUES (?id, ?name, 'delete', ?now, ?username, ?userId, ?now, ?data)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            // Delete the row from easy_tenants, so that the WTS doesn't need to access the main Wiser database.
+            // Delete the row from easy_customers, so that the WTS doesn't need to access the main Wiser database.
             query = $@"DELETE FROM {ApiTableNames.WiserTenants} WHERE id = ?id";
             wiserDatabaseConnection.AddParameter("id", id);
             await wiserDatabaseConnection.ExecuteAsync(query);

@@ -79,7 +79,7 @@ namespace Api.Modules.Tenants.Services
 
             var query = $@"SELECT
                             id,
-                            tenantid,
+                            customerid,
                             name,
                             {(IdentityHelpers.IsTestEnvironment(identity) ? "encryption_key_test" : "encryption_key")} AS encryption_key,
                             subdomain,
@@ -413,7 +413,7 @@ namespace Api.Modules.Tenants.Services
             }
             catch (MySqlException mySqlException)
             {
-                // If easy_tenants does not exist, just return null.
+                // If easy_customers does not exist, just return null.
                 if (mySqlException.Number is (int)MySqlErrorCode.UnknownTable or (int)MySqlErrorCode.NoSuchTable)
                 {
                     return new ServiceResult<string>(null);
@@ -440,7 +440,7 @@ namespace Api.Modules.Tenants.Services
         {
             // Note: Passwords should be encrypted by Wiser before sending them to the API.
             wiserDatabaseConnection.ClearParameters();
-            wiserDatabaseConnection.AddParameter("tenantid", tenant.TenantId);
+            wiserDatabaseConnection.AddParameter("customerid", tenant.TenantId);
             wiserDatabaseConnection.AddParameter("name", tenant.Name);
             wiserDatabaseConnection.AddParameter("db_host", tenant.Database.Host);
             wiserDatabaseConnection.AddParameter("db_login", tenant.Database.Username);
