@@ -88,14 +88,10 @@
             <div class="item full">
                 <h4><label>Beschikbare timers</label></h4>
                 <div id="wtsTimers" class="grid"></div>
-                <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe timer toevoegen</span></button>
+                <button id="wtsTimingCreateButton" type="button" class="kendoButton scope-button add-scope-button k-button k-blue"><span>Nieuwe timer aanmaken</span></button>
             </div>
 
-            <div id="wts-timing-fields">
-                <div class="item dynamic havingList">
-                    <h3>Gegevens timer</h3>
-                </div>
-
+            <div id="wts-timing-form">
                 <div class="item">
                     <h4><label>ID</label></h4>
                     <span>
@@ -192,7 +188,6 @@
 
                 <div class="item">
                     <button id="wtsTimingSaveChanges" type="button" class="k-primary saveButton">Wijzigingen opslaan</button>
-                    <button id="wtsTimingDelete" type="button" class="k-button-solid-primary delete-button deleteButton">Timer verwijderen</button>
                 </div>
 
                 <div class="item">
@@ -206,55 +201,55 @@
     
     <div id="actionsTab">
         <div class="formview compact">
-            <div class="item">
-                <h4><label>Acties van de service</label></h4>
-                <div id="wtsServiceActions" class="grid"></div>
-                <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie toevoegen</span></button>
-            </div>
-            <div class="item">
-                <h4><label>ID</label></h4>
-                <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-            
-                <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/>
-                <div class="form-hint"><span>MySQL Connectiestring</span></div>
-            </div>
-            
-            <div class="item">
-                <h4><label>Type</label></h4>
-                <select id="wts-timing-type"></select>
-                <select id="wts-timing-weekly"></select>
-                <select id="wts-timing-monthly"></select>
-
-                <div>
-                    <label>
-                        <span>om</span>
-                        <select id="wts-continuous-start"></select>
-                    </label>
-                    <label>
-                        <span>tussen</span>
-                        <select id="wts-continuous-from"></select>
-                    </label>
-                    <label>
-                        <span>en</span>
-                        <select id="wts-continuous-till"></select>
-                    </label>
-                    <label>
-                        <span>met tussenpozen van</span>
-                        <select id="wts-continuous-interval"></select>
-                    </label>
-                </div>
-
-                <div>
-                    <label class="checkbox">
-                        <input type="checkbox" id="wts-autostart-runonce" checked/>
-                        <span>Loopt direct eenmalig bij opstarten van de service</span>
-                    </label>
-                    <label class="checkbox">
-                        <input type="checkbox" id="wts-weekend-disabled" checked/>
-                        <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
-                    </label>
-                </div>
-            </div>
+            @* <div class="item"> *@
+            @*     <h4><label>Acties van de service</label></h4> *@
+            @*     <div id="wtsServiceActions" class="grid"></div> *@
+            @*     <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie toevoegen</span></button> *@
+            @* </div> *@
+            @* <div class="item"> *@
+            @*     <h4><label>ID</label></h4> *@
+            @*     <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/> *@
+            @* *@
+            @*     <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/> *@
+            @*     <div class="form-hint"><span>MySQL Connectiestring</span></div> *@
+            @* </div> *@
+            @* *@
+            @* <div class="item"> *@
+            @*     <h4><label>Type</label></h4> *@
+            @*     <select id="wts-timing-type"></select> *@
+            @*     <select id="wts-timing-weekly"></select> *@
+            @*     <select id="wts-timing-monthly"></select> *@
+            @* *@
+            @*     <div> *@
+            @*         <label> *@
+            @*             <span>om</span> *@
+            @*             <select id="wts-continuous-start"></select> *@
+            @*         </label> *@
+            @*         <label> *@
+            @*             <span>tussen</span> *@
+            @*             <select id="wts-continuous-from"></select> *@
+            @*         </label> *@
+            @*         <label> *@
+            @*             <span>en</span> *@
+            @*             <select id="wts-continuous-till"></select> *@
+            @*         </label> *@
+            @*         <label> *@
+            @*             <span>met tussenpozen van</span> *@
+            @*             <select id="wts-continuous-interval"></select> *@
+            @*         </label> *@
+            @*     </div> *@
+            @* *@
+            @*     <div> *@
+            @*         <label class="checkbox"> *@
+            @*             <input type="checkbox" id="wts-autostart-runonce" checked/> *@
+            @*             <span>Loopt direct eenmalig bij opstarten van de service</span> *@
+            @*         </label> *@
+            @*         <label class="checkbox"> *@
+            @*             <input type="checkbox" id="wts-weekend-disabled" checked/> *@
+            @*             <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span> *@
+            @*         </label> *@
+            @*     </div> *@
+            @* </div> *@
         </div>
     </div>
     
