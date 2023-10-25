@@ -55,6 +55,8 @@ export class WtsConfiguration {
         this.timingSaveChanges = null;
         this.wtsLinkedActionsGrid = null;
         this.wtsServiceActions = null;
+        this.wtsActionTimerId = null;
+        this.wtsActionOrder = null;
     }
 
     async reloadWtsConfigurationTab(id) {
@@ -116,40 +118,59 @@ export class WtsConfiguration {
      * Add the events to the elements
      */
     bindEvents() {
-        console.log("Removing all bindings");
         // Remove all bindings first
         let wtsTimingCreateButton = document.getElementById("wtsTimingCreateButton");
         let wtsTimingSaveChanges = document.getElementById("wtsTimingSaveChanges");
-        let wtsDebuggerButton = document.getElementById("wtsDebuggerButton");
         let saveButtonWtsConfiguration = document.getElementById("saveButtonWtsConfiguration");
         let saveAndDeployToTestButtonWtsConfiguration = document.getElementById("saveAndDeployToTestButtonWtsConfiguration");
-        wtsTimingCreateButton.removeEventListener(null, null);
-        wtsTimingSaveChanges.removeEventListener(null, null);
-        wtsDebuggerButton.removeEventListener(null, null);
-        saveButtonWtsConfiguration.removeEventListener(null, null);
-        saveAndDeployToTestButtonWtsConfiguration.removeEventListener(null, null);
-
-        console.log("Reapplying all bindings");
-        wtsTimingCreateButton.addEventListener("click", () => {
-            console.log("Opening popup");
-            this.wtsTimersForm.open().center();
-        });
-        
-        wtsTimingSaveChanges.addEventListener("click", () => {
-            this.applyTimerChanges();
-        });
-
-        wtsDebuggerButton.addEventListener("click", () => {
-            // const timerIndex = this.template.runSchemes.findIndex((timer) => timer.timeId === this.selectedTimer.timeId);
-            // console.log("timer before changes: ", this.template.runSchemes[timerIndex]);
-        });
-        
-        saveButtonWtsConfiguration.addEventListener("click", () => {
-            this.base.saveTemplate(false);
-        });
-        saveAndDeployToTestButtonWtsConfiguration.addEventListener("click", () => {
-            this.base.saveTemplate(true);
-        });
+        if (wtsTimingCreateButton) {
+            wtsTimingCreateButton.removeEventListener(null, null);
+            wtsTimingCreateButton.addEventListener("click", () => {
+                // Clear the selected timer
+                this.selectedTimer = null;
+                // Initialize all the components in the window
+                this.initializeTimersFormWindow();
+                // Clear the previous fields
+                this.resetAndHideTimerFields(true);
+                // Find the highest ID and add 1 to it, this will be the new ID
+                const highestId = Math.max.apply(Math, this.template.runSchemes.map((timer) => timer.timeId));
+                this.timingId.value(highestId + 1);
+                // Show form window
+                this.wtsTimersForm.open().center();
+                this.wtsTimersForm.wrapper.find('.k-window-content').scrollTop(0);
+            });
+        }
+        if (wtsTimingSaveChanges) {
+            wtsTimingSaveChanges.removeEventListener(null, null);
+            wtsTimingSaveChanges.addEventListener("click", () => {
+                // Check if we're creating a new timer or editing an existing one
+                if (this.selectedTimer === null) {
+                    // Creating a new timer
+                    try {
+                        this.saveTimer();
+                    } catch (e) {
+                        kendo.alert(e.message);
+                    }
+                    console.log("All timers: ", this.template.runSchemes);
+                }
+                else {
+                    // Editing an existing timer
+                    this.editTimer();
+                }
+            });
+        }
+        if (saveButtonWtsConfiguration) {
+            saveButtonWtsConfiguration.removeEventListener(null, null);
+            saveButtonWtsConfiguration.addEventListener("click", () => {
+                this.base.saveTemplate(false);
+            });
+        }
+        if (saveAndDeployToTestButtonWtsConfiguration) {
+            saveAndDeployToTestButtonWtsConfiguration.removeEventListener(null, null);
+            saveAndDeployToTestButtonWtsConfiguration.addEventListener("click", () => {
+                this.base.saveTemplate(true);
+            });
+        }
     }
 
     onEditTimer(e) {
@@ -171,23 +192,23 @@ export class WtsConfiguration {
         this.wtsTimersForm.wrapper.find('.k-window-content').scrollTop(0); // Scroll to the top of the window
 
         // Fill in the fields that are always shown
-        this.timingId.value(this.selectedTimer["timeId"]);
-        this.timingType.value(this.selectedTimer["type"]);
-        this.timingRunImmediately.value(this.selectedTimer["runImmediately"]);
-        this.timingSkipWeekend.value(this.selectedTimer["skipWeekend"]);
+        this.timingId.value(this.selectedTimer?.timeId ?? "");
+        this.timingType.value(this.selectedTimer?.type ?? "");
+        this.timingRunImmediately.value(this.selectedTimer?.runImmediately ?? "");
+        this.timingSkipWeekend.value(this.selectedTimer?.skipWeekend ?? "");
 
         // Convert the skipdays string of numbers to an array of numbers if it exists
         let skipDays = [];
-        if (this.selectedTimer["skipDays"]) {
-            skipDays = this.selectedTimer["skipDays"].split(",");
+        if (this.selectedTimer?.skipDays) {
+            skipDays = this.selectedTimer.skipDays.split(",");
         }
         this.timingSkipDays.value(skipDays);
 
-        if (this.selectedTimer["logSettings"]) {
-            this.timingLogMinimumLevel.value(this.selectedTimer["logSettings"]["logMinimumLevel"] ?? "");
-            this.timingLogStartAndStop.value(this.selectedTimer["logSettings"]["logStartAndStop"] ?? "");
-            this.timingLogRunStartAndStop.value(this.selectedTimer["logSettings"]["logRunStartAndStop"] ?? "");
-            this.timingLogRunBody.value(this.selectedTimer["logSettings"]["logRunBody"] ?? "");
+        if (this.selectedTimer?.logSettings) {
+            this.timingLogMinimumLevel.value(this.selectedTimer?.logSettings?.logMinimumLevel ?? "");
+            this.timingLogStartAndStop.value(this.selectedTimer?.logSettings?.logStartAndStop ?? "");
+            this.timingLogRunStartAndStop.value(this.selectedTimer?.logSettings?.logRunStartAndStop ?? "");
+            this.timingLogRunBody.value(this.selectedTimer?.logSettings?.logRunBody ?? "");
         }
 
         // Fill in the fields that are shown based on the type
@@ -226,7 +247,7 @@ export class WtsConfiguration {
     showAndFillTypeFields(timer, type) {
         // Check if type was given, if not use the type of the timer
         if (type === undefined || type === null) {
-            type = timer["type"];
+            type = timer?.type;
         }
         // Clear the previous fields
         this.resetAndHideTimerFields(false);
@@ -234,29 +255,29 @@ export class WtsConfiguration {
         switch (type) {
             case "Continuous":
                 $("#wts-timing-delay").show();
-                this.timingDelay.value(timer["delay"]);
+                this.timingDelay.value(timer?.delay ?? "");
                 $("#wts-timing-start").parent().parent().show();
-                this.timingStart.value(timer["startTime"]);
+                this.timingStart.value(timer?.startTime ?? "");
                 $("#wts-timing-stop").parent().parent().show();
-                this.timingStop.value(timer["stopTime"]);
+                this.timingStop.value(timer?.stopTime ?? "");
                 $("#wts-timing-delay").parent().parent().show();
-                this.timingDelay.value(timer["delay"]);
+                this.timingDelay.value(timer?.delay ?? "");
                 break;
             case "Daily":
                 $("#wts-timing-hour").parent().parent().show();
-                this.timingHour.value(timer["hour"]);
+                this.timingHour.value(timer?.hour ?? "");
                 break;
             case "Weekly":
                 $("#wts-timing-dayofweek").parent().show();
-                this.timingDayOfWeek.value(timer["dayOfWeek"]);
+                this.timingDayOfWeek.value(timer?.dayOfWeek ?? "");
                 $("#wts-timing-hour").parent().parent().show();
-                this.timingHour.value(timer["hour"]);
+                this.timingHour.value(timer?.hour ?? "");
                 break;
             case "Monthly":
                 $("#wts-timing-dayofmonth").parent().parent().show();
-                this.timingDayOfMonth.value(timer["dayOfMonth"]);
+                this.timingDayOfMonth.value(timer?.dayOfMonth ?? "");
                 $("#wts-timing-hour").parent().parent().show();
-                this.timingHour.value(timer["hour"]);
+                this.timingHour.value(timer?.hour ?? "");
                 break;
         }
     }
@@ -290,7 +311,71 @@ export class WtsConfiguration {
         this.timingHour.value("");
     }
     
-    applyTimerChanges() {
+    saveTimer() {
+        // Check if the timer already exists
+        const timerExists = this.template.runSchemes.some((timer) => timer.timeId === this.timingId.value());
+        if (timerExists) {
+            // Timer already exists, show confirmation dialog
+            throw new Error("Het gebruikte ID bestaat al. Gebruik een ander ID of bewerk de bestaande timer.");
+        }
+        console.log("Creating a new timer");
+        // Create a new timer
+        const newTimer = {
+            timeId: this.timingId.value(),
+            type: this.timingType.value()
+        };
+        
+        // Check the type and get the corresponding values
+        switch (this.timingType.value()) {
+            case "Continuous":
+                newTimer.startTime = this.getTimeOnly(this.timingStart.value());
+                newTimer.stopTime = this.getTimeOnly(this.timingStop.value());
+                newTimer.delay = this.getTimeOnly(this.timingDelay.value());
+                break;
+            case "Daily":
+                newTimer.hour = this.getTimeOnly(this.timingHour.value());
+                break;
+            case "Weekly":
+                newTimer.dayOfWeek = this.timingDayOfWeek.value();
+                newTimer.hour = this.getTimeOnly(this.timingHour.value());
+                break;
+            case "Monthly":
+                newTimer.dayOfMonth = this.timingDayOfMonth.value();
+                newTimer.hour = this.getTimeOnly(this.timingHour.value());
+                break;
+        }
+        
+        // Only set the runImmediately, skipWeekend and skipDays if they are not null/false (Default value is false)
+        if (this.timingRunImmediately.value() !== false) {
+            newTimer.runImmediately = this.timingRunImmediately.value();
+        }
+        if (this.timingSkipWeekend.value() !== false) {
+            newTimer.skipWeekend = this.timingSkipWeekend.value();
+        }
+        if (this.timingSkipDays.value().length > 0) {
+            newTimer.skipDays = this.timingSkipDays.value().sort((a, b) => a - b).join(",");
+        }
+        
+        // Check if any log settings are set
+        if (this.timingLogMinimumLevel.value() !== "" || this.timingLogStartAndStop.value() !== false || this.timingLogRunStartAndStop.value() !== false || this.timingLogRunBody.value() !== false) {
+            newTimer.logSettings = {};
+            newTimer.logSettings.logMinimumLevel = this.timingLogMinimumLevel.value();
+            newTimer.logSettings.logStartAndStop = this.timingLogStartAndStop.value();
+            newTimer.logSettings.logRunStartAndStop = this.timingLogRunStartAndStop.value();
+            newTimer.logSettings.logRunBody = this.timingLogRunBody.value();
+        }
+        
+        // Add the new timer to the template
+        this.template.runSchemes.push(newTimer);
+        
+        // Refresh the grid
+        this.wtsTimersGrid.dataSource.read();
+        
+        // Close the popup
+        this.wtsTimersForm.close();
+    }
+    
+    editTimer() {
         // Find the timer in the array
         const timerIndex = this.template.runSchemes.findIndex((timer) => timer.timeId === this.selectedTimer.timeId);
 
@@ -405,6 +490,10 @@ export class WtsConfiguration {
             icon: "save"
         });
         $("#saveAndDeployToTestButtonWtsConfiguration").kendoButton();
+
+        // Don't initialize these windows here, because it will be initialized when the user clicks on the edit or create button
+        $("#wts-timing-form").hide();
+        $("#wts-action-form").hide();
         
         this.serviceName = $("#wts-name").kendoTextBox();
         
@@ -451,10 +540,6 @@ export class WtsConfiguration {
                 }
             ]
         }).data("kendoGrid");
-
-        // Don't initialize the window here, because it will be initialized when the user clicks on the edit or create button
-        // Hide the window
-        $("#wts-timing-form").hide();
 
         this.timingId = $("#wts-timing-id").kendoNumericTextBox({
             format: "#",
@@ -597,6 +682,16 @@ export class WtsConfiguration {
                 }
             ]
         }).data("kendoGrid");
+        
+        this.wtsActionTimerId = $("#wts-action-timerid").kendoNumericTextBox({
+            format: "#",
+            decimals: 0
+        }).data("kendoNumericTextBox");
+        
+        this.wtsActionOrder = $("#wts-action-order").kendoNumericTextBox({
+            format: "#",
+            decimals: 0
+        }).data("kendoNumericTextBox");
     }
     
     initializeTimersFormWindow() {
@@ -617,25 +712,41 @@ export class WtsConfiguration {
         // TODO: FIX THIS STUFF
         // This part seems to do something atleast but it's not working properly yet
         // Swapping to another tab and back to this tab will cause the type and fields below to be all messed up
-        // But closing the window and opening it again will fix it
+        // But closing the window and opening it again will fix it (partly)
         
-        // Uninitialize the type dropdownlist
-        this.timingType.destroy();
+        // // Uninitialize the type dropdownlist
+        // this.timingType.destroy();
+        //
+        // // Reinitialize the type dropdownlist
+        // this.timingType = $("#wts-timing-type").kendoDropDownList({
+        //     optionLabel: "Selecteer type",
+        //     dataTextField: "text",
+        //     dataValueField: "value",
+        //     change: this.onTimingTypeChange.bind(this),
+        //     value: this.selectedTimer["type"],
+        //     dataSource: [
+        //         {text: "Continu", value: "Continuous"},
+        //         {text: "Dagelijks", value: "Daily"},
+        //         {text: "Wekelijks", value: "Weekly"},
+        //         {text: "Maandelijks", value: "Monthly"}
+        //     ]
+        // }).data("kendoDropDownList");
+    }
 
-        // Reinitialize the type dropdownlist
-        this.timingType = $("#wts-timing-type").kendoDropDownList({
-            optionLabel: "Selecteer type",
-            dataTextField: "text",
-            dataValueField: "value",
-            change: this.onTimingTypeChange.bind(this),
-            value: this.selectedTimer["type"],
-            dataSource: [
-                {text: "Continu", value: "Continuous"},
-                {text: "Dagelijks", value: "Daily"},
-                {text: "Wekelijks", value: "Weekly"},
-                {text: "Maandelijks", value: "Monthly"}
-            ]
-        }).data("kendoDropDownList");
+    initializeActionsFormWindow() {
+        this.wtsActionForm = $("#wts-action-form").kendoWindow({
+            title: "Nieuwe actie aanmaken",
+            width: 800,
+            height: 700,
+            center: true,
+            visible: false,
+            modal: true,
+            close: () => {
+                // Refresh the grid
+                console.log("Closed popup");
+                this.selectedAction = null;
+            }
+        }).data("kendoWindow");
     }
 
     /**
