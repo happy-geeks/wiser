@@ -31,7 +31,7 @@
                 <select id="wts-log-level">
                     @foreach (var logLevel in Model.LogMinimumLevels)
                     {
-                        if (logLevel == Model.LogSettings.LogMinimumLevel)
+                        if (Model.LogSettings != null && Model.LogSettings.LogMinimumLevel != null && logLevel == Model.LogSettings.LogMinimumLevel)
                         {
                             <option value="@logLevel" selected>@logLevel</option>
                         }
@@ -86,7 +86,7 @@
     <div id="timersTab">
         <div class="formview compact">
             <div class="item full">
-                <h4><label>Beschikbare timers</label></h4>
+                <h4><label>Timers</label></h4>
                 <div id="wtsTimers" class="grid"></div>
                 <button id="wtsTimingCreateButton" type="button" class="kendoButton scope-button add-scope-button k-button k-blue"><span>Nieuwe timer aanmaken</span></button>
             </div>
@@ -201,55 +201,23 @@
     
     <div id="actionsTab">
         <div class="formview compact">
-            @* <div class="item"> *@
-            @*     <h4><label>Acties van de service</label></h4> *@
-            @*     <div id="wtsServiceActions" class="grid"></div> *@
-            @*     <button type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie toevoegen</span></button> *@
-            @* </div> *@
-            @* <div class="item"> *@
-            @*     <h4><label>ID</label></h4> *@
-            @*     <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/> *@
-            @* *@
-            @*     <input id="wts-name" type="text" class="k-input" value="readonly ID" disabled/> *@
-            @*     <div class="form-hint"><span>MySQL Connectiestring</span></div> *@
-            @* </div> *@
-            @* *@
-            @* <div class="item"> *@
-            @*     <h4><label>Type</label></h4> *@
-            @*     <select id="wts-timing-type"></select> *@
-            @*     <select id="wts-timing-weekly"></select> *@
-            @*     <select id="wts-timing-monthly"></select> *@
-            @* *@
-            @*     <div> *@
-            @*         <label> *@
-            @*             <span>om</span> *@
-            @*             <select id="wts-continuous-start"></select> *@
-            @*         </label> *@
-            @*         <label> *@
-            @*             <span>tussen</span> *@
-            @*             <select id="wts-continuous-from"></select> *@
-            @*         </label> *@
-            @*         <label> *@
-            @*             <span>en</span> *@
-            @*             <select id="wts-continuous-till"></select> *@
-            @*         </label> *@
-            @*         <label> *@
-            @*             <span>met tussenpozen van</span> *@
-            @*             <select id="wts-continuous-interval"></select> *@
-            @*         </label> *@
-            @*     </div> *@
-            @* *@
-            @*     <div> *@
-            @*         <label class="checkbox"> *@
-            @*             <input type="checkbox" id="wts-autostart-runonce" checked/> *@
-            @*             <span>Loopt direct eenmalig bij opstarten van de service</span> *@
-            @*         </label> *@
-            @*         <label class="checkbox"> *@
-            @*             <input type="checkbox" id="wts-weekend-disabled" checked/> *@
-            @*             <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span> *@
-            @*         </label> *@
-            @*     </div> *@
-            @* </div> *@
+            <div class="item">
+                <h4><label>Acties</label></h4>
+                <div id="wtsServiceActions" class="grid"></div>
+                <button id="wtsActionCreateButton" type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie aanmaken</span></button>
+            </div>
+            <div id="wts-action-form">
+                <div class="item">
+                    <h4><label>Timer</label></h4>
+                    <input id="wts-action-timerid" type="text" class="k-input" value="Timer ID" disabled/>
+                    <input id="wts-action-order" type="text" class="k-input" value="Volgorde" disabled/>
+                    <div class="form-hint"><span>Dit bepaalt op welke volgorde acties moeten draaien die dezelfde timer gebruiken.</span></div>
+                </div>
+                
+                <div class="item">
+                    <h4><label>Actie</label></h4>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -268,7 +236,6 @@
 
 <footer>
     <div class="version-actions">
-        <button id="wtsDebuggerButton" class="k-primary saveButton">Debugger</button>
         <button id="saveAndDeployToTestButtonWtsConfiguration" class="k-primary saveButton" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button>
         <button id="saveButtonWtsConfiguration" class="k-primary saveButton">Configuratie opslaan</button>
     </div>
