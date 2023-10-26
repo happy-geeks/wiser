@@ -31,7 +31,7 @@
                 <select id="wts-log-level">
                     @foreach (var logLevel in Model.LogMinimumLevels)
                     {
-                        if (Model.LogSettings != null && Model.LogSettings.LogMinimumLevel != null && logLevel == Model.LogSettings.LogMinimumLevel)
+                        if (logLevel == Model.LogSettings?.LogMinimumLevel)
                         {
                             <option value="@logLevel" selected>@logLevel</option>
                         }
@@ -43,7 +43,7 @@
                 </select>
                 <div>
                     <label class="checkbox">
-                        @if (Model.LogSettings.LogStartAndStop)
+                        @if (Model.LogSettings?.LogRunStartAndStop == true)
                         {
                             <input type="checkbox" id="wts-log-start-stop" checked/>
                         }
@@ -56,7 +56,7 @@
                 </div>
                 <div class="item">
                     <label class="checkbox">
-                        @if (Model.LogSettings.LogRunStartAndStop)
+                        @if (Model.LogSettings?.LogRunStartAndStop == true)
                         {
                             <input type="checkbox" id="wts-log-run-startandstop" checked/>
                         }
@@ -69,7 +69,7 @@
                 </div>
                 <div>
                     <label class="checkbox">
-                        @if (Model.LogSettings.LogRunBody)
+                        @if (Model.LogSettings?.LogRunBody == true)
                         {
                             <input type="checkbox" id="wts-log-body" checked/>
                         }
