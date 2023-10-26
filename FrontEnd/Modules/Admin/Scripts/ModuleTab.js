@@ -624,7 +624,8 @@ export class ModuleTab {
     }
 
     async setModuleProperties(resultSet) {
-        document.getElementById("moduleId").innerHTML  = resultSet.id;
+        document.getElementById("moduleIdLabel").innerHTML = resultSet.id;
+        document.getElementById("moduleId").value = resultSet.id;
         document.getElementById("moduleName").value = typeof (resultSet.name) === "undefined" ? "" : resultSet.name;
 
         this.moduleIcon.value(resultSet.icon);
@@ -664,8 +665,7 @@ export class ModuleTab {
      * @returns {ModuleSettingsModel|null} The settings for the module, or null if no module has been selected.
      */
     getCurrentModuleSettings() {
-        const moduleIdElement = document.getElementById("moduleId");
-        const moduleId = parseInt(moduleIdElement.innerHTML);
+        const moduleId = Number.parseInt(document.getElementById("moduleId").value);
         
         if (isNaN(moduleId)) {
             return null;
