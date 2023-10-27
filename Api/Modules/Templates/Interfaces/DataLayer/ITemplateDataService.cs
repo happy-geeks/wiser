@@ -5,6 +5,7 @@ using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 

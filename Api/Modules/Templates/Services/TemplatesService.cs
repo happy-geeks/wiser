@@ -43,6 +43,7 @@ using GeeksCoreLibrary.Components.WebForm.Models;
 using GeeksCoreLibrary.Components.WebPage;
 using GeeksCoreLibrary.Components.WebPage.Models;
 using GeeksCoreLibrary.Core.Cms;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
