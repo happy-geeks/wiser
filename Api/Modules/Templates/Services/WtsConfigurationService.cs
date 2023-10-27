@@ -4,7 +4,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces;
-using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 
 namespace Api.Modules.Templates.Services
@@ -15,6 +15,15 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public TemplateWtsConfigurationModel ParseXmlToObject(string xml)
         {
+            // For backwards compatibility, we need to remove queries elements from the xml
+            // This is because query elements are now allowed to exist within configuration instead of just configuration > queries
+            xml = xml.Replace("<Queries>", "");
+            xml = xml.Replace("</Queries>", "");
+            
+            // Do the same for http api's
+            xml = xml.Replace("<HttpApis>", "");
+            xml = xml.Replace("</HttpApis>", "");
+            
             var serializer = new XmlSerializer(typeof(TemplateWtsConfigurationModel));
 
             using (var stringReader = new StringReader(xml))
@@ -61,4 +70,3 @@ namespace Api.Modules.Templates.Services
         }
     }
 }
-

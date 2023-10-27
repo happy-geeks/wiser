@@ -1,4 +1,4 @@
-namespace Api.Modules.Templates.Models.Template
+namespace Api.Modules.Templates.Models.Template.WtsModels
 {
     /// <summary>
     /// A model for xml of a template.

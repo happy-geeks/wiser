@@ -1,5 +1,6 @@
 using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 
 namespace Api.Modules.Templates.Interfaces
 {
