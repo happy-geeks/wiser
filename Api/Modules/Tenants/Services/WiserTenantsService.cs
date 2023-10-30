@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -63,13 +64,26 @@ namespace Api.Modules.Tenants.Services
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             if (IsMainDatabase(subDomain))
             {
+                var connectionString = new DbConnectionStringBuilder
+                {
+                    ConnectionString = gclSettings.ConnectionString
+                };
+
                 return new ServiceResult<TenantModel>(new TenantModel
                 {
                     TenantId = 1,
                     Id = 1,
                     Name = "Main",
                     SubDomain = apiSettings.MainSubDomain,
-                    EncryptionKey = String.IsNullOrWhiteSpace(gclSettings.ExpiringEncryptionKey) ? gclSettings.DefaultEncryptionKey : gclSettings.ExpiringEncryptionKey
+                    EncryptionKey = String.IsNullOrWhiteSpace(gclSettings.ExpiringEncryptionKey) ? gclSettings.DefaultEncryptionKey : gclSettings.ExpiringEncryptionKey,
+                    Database = new ConnectionInformationModel
+                    {
+                        DatabaseName = connectionString["database"].ToString(),
+                        PortNumber = Convert.ToInt32(connectionString["port"]),
+                        Host = connectionString["server"].ToString(),
+                        Username = connectionString["uid"].ToString(),
+                        Password = connectionString["pwd"].ToString()
+                    }
                 });
             }
 
@@ -98,7 +112,7 @@ namespace Api.Modules.Tenants.Services
                 };
             }
 
-            var result  =TenantModel.FromDataRow(tenantsDataTable.Rows[0]);
+            var result = TenantModel.FromDataRow(tenantsDataTable.Rows[0]);
             return new ServiceResult<TenantModel>(result);
         }
 
