@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 using Api.Core.Enums;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Models;
 using Api.Modules.Imports.Interfaces;
@@ -37,7 +37,7 @@ namespace Api.Modules.Imports.Services
     {
         private readonly IWiserItemsService wiserItemsService;
         private readonly IUsersService usersService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IExcelService excelService;
         private readonly ILogger<ImportsService> logger;
@@ -47,11 +47,11 @@ namespace Api.Modules.Imports.Services
         /// <summary>
         /// Creates a new instance of <see cref="ImportsService"/>.
         /// </summary>
-        public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IExcelService excelService, ILogger<ImportsService> logger)
+        public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IExcelService excelService, ILogger<ImportsService> logger)
         {
             this.wiserItemsService = wiserItemsService;
             this.usersService = usersService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.excelService = excelService;
             this.logger = logger;
@@ -78,7 +78,7 @@ namespace Api.Modules.Imports.Services
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             var entityType = importRequest.ImportSettings.Count > 0 ? Convert.ToString(importRequest.ImportSettings.First()["entityType"]) : "";
             var moduleId = importRequest.ImportSettings.Count > 0 ? Convert.ToInt32(importRequest.ImportSettings.First()["moduleId"]) : 0;
             var importResult = new ImportResultModel();
@@ -150,7 +150,7 @@ namespace Api.Modules.Imports.Services
                         break;
                     }
 
-                    await ProcessLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
+                    await ProcessLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, tenant, subDomain);
                     rowsHandled++;
                 }
             }
@@ -194,7 +194,7 @@ namespace Api.Modules.Imports.Services
                             rowsHandled += 1;
 
                             var lineFields = reader.ReadFields();
-                            await ProcessLineAsync(importResult, lineFields, identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, customer, subDomain);
+                            await ProcessLineAsync(importResult, lineFields, identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, tenant, subDomain);
                         }
                     }
                 }
@@ -318,7 +318,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                clientDatabaseConnection.AddParameter("customer_id", customer.CustomerId);
+                clientDatabaseConnection.AddParameter("customer_id", tenant.TenantId);
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
@@ -359,7 +359,7 @@ namespace Api.Modules.Imports.Services
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            var basePath = $@"C:\temp\WTS Import\{customer.CustomerId}\{wiserImportId}\";
+            var basePath = $@"C:\temp\WTS Import\{tenant.TenantId}\{wiserImportId}\";
 
             var imagesDirectory = new DirectoryInfo(basePath);
             imagesDirectory.Create();
@@ -410,7 +410,7 @@ namespace Api.Modules.Imports.Services
         /// <param name="importRequest">The <see cref="ImportRequestModel"/> with the information filled in in Wiser.</param>
         /// <param name="comboBoxFields">The information of combobox fields in the entity to be set.</param>
         /// <param name="properties">The information of the properties in the entity to be set.</param>
-        /// <param name="customer">The logged in user.</param>
+        /// <param name="tenant">The logged in user.</param>
         /// <param name="subDomain">The sub domain where the import is prepared.</param>
         private async Task ProcessLineAsync(ImportResultModel importResult,
             string[] lineFields,
@@ -425,7 +425,7 @@ namespace Api.Modules.Imports.Services
             ImportRequestModel importRequest,
             List<ComboBoxDataModel> comboBoxFields,
             List<(string PropertyName, string LanguageCode, string InputType, JObject Options)> properties,
-            CustomerModel customer,
+            TenantModel tenant,
             string subDomain)
         {
             if (lineFields.All(String.IsNullOrWhiteSpace))
@@ -494,7 +494,7 @@ namespace Api.Modules.Imports.Services
                         }
                         else
                         {
-                            var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item.Details, propertyName, lineFields[i], importResult, subDomain, identity, customer, false);
+                            var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item.Details, propertyName, lineFields[i], importResult, subDomain, identity, tenant, false);
                             if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
                             {
                                 continue;
@@ -630,7 +630,7 @@ namespace Api.Modules.Imports.Services
                 }
                 else if (!String.IsNullOrWhiteSpace(propertyName))
                 {
-                    var value = await HandleComboBoxFieldAsync(currentLinkComboBoxFields, languageCode, importItem, itemLink.Details, propertyName, lineFields[i], importResult, subDomain, identity, customer, true);
+                    var value = await HandleComboBoxFieldAsync(currentLinkComboBoxFields, languageCode, importItem, itemLink.Details, propertyName, lineFields[i], importResult, subDomain, identity, tenant, true);
                     if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
                     {
                         continue;
@@ -822,7 +822,7 @@ namespace Api.Modules.Imports.Services
                                                             ImportResultModel importResult,
                                                             string subDomain,
                                                             ClaimsIdentity identity,
-                                                            CustomerModel customer,
+                                                            TenantModel tenant,
                                                             bool isLinkProperty)
         {
             // If this is a property with input type combobox or multi select, then allow the users to import the text value. We will lookup the corresponding ID and import that ID.
@@ -832,7 +832,7 @@ namespace Api.Modules.Imports.Services
                 return value;
             }
 
-            await AddComboBoxValuesAsync(comboBoxField, subDomain, identity, customer);
+            await AddComboBoxValuesAsync(comboBoxField, subDomain, identity, tenant);
             var allValues = value.Split(',');
             var ids = new List<string>();
             var names = new List<string>();
@@ -890,7 +890,7 @@ namespace Api.Modules.Imports.Services
             return value;
         }
 
-        private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, CustomerModel customer)
+        private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, TenantModel tenant)
         {
             if (comboBox.Values != null && comboBox.Values.Any())
             {
@@ -967,10 +967,10 @@ namespace Api.Modules.Imports.Services
             else if (!String.IsNullOrWhiteSpace(dataSelectorId))
             {
                 throw new NotImplementedException("TODO: Use data selector via GCL once it's implemented. Don't call get_items.jcl, that creates unneeded extra overhead.");
-                /*var wiser2DataUrl = customer.Wiser2DataUrl;
+                /*var wiser2DataUrl = tenant.Wiser2DataUrl;
                 var restClient = new RestClient(wiser2DataUrl);
 
-                var restRequest = new RestRequest($"get_items.jcl?dataselectorid={dataSelectorId.EncryptWithAesWithSalt(customer.EncryptionKey, true)}&trace=false", Method.GET);
+                var restRequest = new RestRequest($"get_items.jcl?dataselectorid={dataSelectorId.EncryptWithAesWithSalt(tenant.EncryptionKey, true)}&trace=false", Method.GET);
 
                 var restResponse = await restClient.ExecuteAsync(restRequest);
                 if (restResponse.StatusCode != HttpStatusCode.OK)

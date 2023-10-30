@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Enums;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Enums;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -20,18 +20,18 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 
-namespace Api.Modules.Customers.Services
+namespace Api.Modules.Tenants.Services
 {
     /// <summary>
-    /// Service for operations related to Wiser customers.
+    /// Service for operations related to Wiser tenants.
     /// </summary>
-    public class WiserCustomersService : IWiserCustomersService, IScopedService
+    public class WiserTenantsService : IWiserTenantsService, IScopedService
     {
         #region Private fields
 
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseHelpersService databaseHelpersService;
-        private readonly ILogger<WiserCustomersService> logger;
+        private readonly ILogger<WiserTenantsService> logger;
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly GclSettings gclSettings;
         private readonly ApiSettings apiSettings;
@@ -40,9 +40,9 @@ namespace Api.Modules.Customers.Services
         #endregion
 
         /// <summary>
-        /// Creates a new instance of WiserCustomersService.
+        /// Creates a new instance of WiserTenantsService.
         /// </summary>
-        public WiserCustomersService(IDatabaseConnection connection, IOptions<ApiSettings> apiSettings, IOptions<GclSettings> gclSettings, IDatabaseHelpersService databaseHelpersService, ILogger<WiserCustomersService> logger, IHttpContextAccessor httpContextAccessor)
+        public WiserTenantsService(IDatabaseConnection connection, IOptions<ApiSettings> apiSettings, IOptions<GclSettings> gclSettings, IDatabaseHelpersService databaseHelpersService, ILogger<WiserTenantsService> logger, IHttpContextAccessor httpContextAccessor)
         {
             clientDatabaseConnection = connection;
             this.databaseHelpersService = databaseHelpersService;
@@ -58,14 +58,14 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
+        public async Task<ServiceResult<TenantModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             if (IsMainDatabase(subDomain))
             {
-                return new ServiceResult<CustomerModel>(new CustomerModel
+                return new ServiceResult<TenantModel>(new TenantModel
                 {
-                    CustomerId = 1,
+                    TenantId = 1,
                     Id = 1,
                     Name = "Main",
                     SubDomain = apiSettings.MainSubDomain,
@@ -73,7 +73,7 @@ namespace Api.Modules.Customers.Services
                 });
             }
 
-            // Get the customer data.
+            // Get the tenant data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", subDomain);
 
@@ -85,53 +85,53 @@ namespace Api.Modules.Customers.Services
                             subdomain,
                             wiser_title
                             {(includeDatabaseInformation ? ", db_host, db_login, db_passencrypted, db_port, db_dbname" : "")}
-                        FROM {ApiTableNames.WiserCustomers} 
+                        FROM {ApiTableNames.WiserTenants} 
                         WHERE subdomain = ?name";
 
-            var customersDataTable = await wiserDatabaseConnection.GetAsync(query);
-            if (customersDataTable.Rows.Count == 0)
+            var tenantsDataTable = await wiserDatabaseConnection.GetAsync(query);
+            if (tenantsDataTable.Rows.Count == 0)
             {
-                return new ServiceResult<CustomerModel>
+                return new ServiceResult<TenantModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Customer with sub domain '{subDomain}' not found."
+                    ErrorMessage = $"Tenant with sub domain '{subDomain}' not found."
                 };
             }
 
-            var result = CustomerModel.FromDataRow(customersDataTable.Rows[0]);
-            return new ServiceResult<CustomerModel>(result);
+            var result  =TenantModel.FromDataRow(tenantsDataTable.Rows[0]);
+            return new ServiceResult<TenantModel>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
+        public async Task<ServiceResult<TenantModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
         {
-            // Get the customer data.
+            // Get the tenant data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("id", id);
 
             var query = $@"SELECT
                             id,
-                            customerid,
+                            tenantid,
                             name,
                             encryption_key,
                             subdomain,
                             wiser_title
                             {(includeDatabaseInformation ? ", db_host, db_login, db_passencrypted, db_port, db_dbname" : "")}
-                        FROM {ApiTableNames.WiserCustomers} 
+                        FROM {ApiTableNames.WiserTenants} 
                         WHERE id = ?id";
 
-            var customersDataTable = await wiserDatabaseConnection.GetAsync(query);
-            if (customersDataTable.Rows.Count == 0)
+            var tenantsDataTable = await wiserDatabaseConnection.GetAsync(query);
+            if (tenantsDataTable.Rows.Count == 0)
             {
-                return new ServiceResult<CustomerModel>
+                return new ServiceResult<TenantModel>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Customer with ID '{id}' not found."
+                    ErrorMessage = $"Tenant with ID '{id}' not found."
                 };
             }
 
-            var result = CustomerModel.FromDataRow(customersDataTable.Rows[0]);
-            return new ServiceResult<CustomerModel>(result);
+            var result = TenantModel.FromDataRow(tenantsDataTable.Rows[0]);
+            return new ServiceResult<TenantModel>(result);
         }
 
         /// <inheritdoc />
@@ -143,57 +143,57 @@ namespace Api.Modules.Customers.Services
                 return new ServiceResult<string>(String.IsNullOrWhiteSpace(apiSettings.DatabasePasswordEncryptionKey) ? gclSettings.DefaultEncryptionKey : apiSettings.DatabasePasswordEncryptionKey);
             }
 
-            // Get the customer data.
+            // Get the tenant data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", subDomain);
 
             var query = $@"SELECT {(IdentityHelpers.IsTestEnvironment(identity) && !forceLiveKey ? "encryption_key_test" : "encryption_key")} AS encryption_key
-                        FROM {ApiTableNames.WiserCustomers} 
+                        FROM {ApiTableNames.WiserTenants} 
                         WHERE subdomain = ?name";
 
-            var customersDataTable = await wiserDatabaseConnection.GetAsync(query);
-            if (customersDataTable.Rows.Count == 0)
+            var tenantsDataTable = await wiserDatabaseConnection.GetAsync(query);
+            if (tenantsDataTable.Rows.Count == 0)
             {
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Customer with sub domain '{subDomain}' not found."
+                    ErrorMessage = $"Tenant with sub domain '{subDomain}' not found."
                 };
             }
 
-            return new ServiceResult<string>(customersDataTable.Rows[0].Field<string>("encryption_key"));
+            return new ServiceResult<string>(tenantsDataTable.Rows[0].Field<string>("encryption_key"));
         }
 
         /// <inheritdoc />
         public async Task<T> DecryptValue<T>(string encryptedValue, ClaimsIdentity identity)
         {
-            var customer = await GetSingleAsync(identity);
+            var tenant = await GetSingleAsync(identity);
 
-            return DecryptValue<T>(encryptedValue, customer.ModelObject);
+            return DecryptValue<T>(encryptedValue, tenant.ModelObject);
         }
 
         /// <inheritdoc />
-        public T DecryptValue<T>(string encryptedValue, CustomerModel customer)
+        public T DecryptValue<T>(string encryptedValue, TenantModel tenant)
         {
-            return String.IsNullOrWhiteSpace(encryptedValue) ? default : (T)Convert.ChangeType(encryptedValue.Replace(" ", "+").DecryptWithAesWithSalt(customer.EncryptionKey, true), typeof(T));
+            return String.IsNullOrWhiteSpace(encryptedValue) ? default : (T)Convert.ChangeType(encryptedValue.Replace(" ", "+").DecryptWithAesWithSalt(tenant.EncryptionKey, true), typeof(T));
         }
 
         /// <inheritdoc />
         public async Task<string> EncryptValue(object valueToEncrypt, ClaimsIdentity identity)
         {
-            var customer = await GetSingleAsync(identity);
+            var tenant = await GetSingleAsync(identity);
 
-            return EncryptValue(valueToEncrypt, customer.ModelObject);
+            return EncryptValue(valueToEncrypt, tenant.ModelObject);
         }
 
         /// <inheritdoc />
-        public string EncryptValue(object valueToEncrypt, CustomerModel customer)
+        public string EncryptValue(object valueToEncrypt, TenantModel tenant)
         {
-            return valueToEncrypt?.ToString().EncryptWithAesWithSalt(customer.EncryptionKey, withDateTime: true);
+            return valueToEncrypt?.ToString().EncryptWithAesWithSalt(tenant.EncryptionKey, withDateTime: true);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerExistsResults>> CustomerExistsAsync(string name, string subDomain)
+        public async Task<ServiceResult<TenantExistsResults>> TenantExistsAsync(string name, string subDomain)
         {
             if (String.IsNullOrWhiteSpace(name))
             {
@@ -206,74 +206,74 @@ namespace Api.Modules.Customers.Services
 
             if (IsMainDatabase(subDomain))
             {
-                return new ServiceResult<CustomerExistsResults>(CustomerExistsResults.NameNotAvailable & CustomerExistsResults.SubDomainNotAvailable);
+                return new ServiceResult<TenantExistsResults>(TenantExistsResults.NameNotAvailable & TenantExistsResults.SubDomainNotAvailable);
             }
 
-            // Get the customer data.
+            // Get the tenant data.
             wiserDatabaseConnection.ClearParameters();
             wiserDatabaseConnection.AddParameter("name", name);
             wiserDatabaseConnection.AddParameter("subDomain", subDomain);
 
             var query = $@"SELECT name, subdomain
-                        FROM {ApiTableNames.WiserCustomers} 
+                        FROM {ApiTableNames.WiserTenants} 
                         WHERE subdomain = ?subDomain 
                         OR name = ?name";
 
             var dataTable = await wiserDatabaseConnection.GetAsync(query);
-            var result = CustomerExistsResults.Available;
+            var result = TenantExistsResults.Available;
             if (dataTable.Rows.Count == 0)
             {
-                return new ServiceResult<CustomerExistsResults>(result);
+                return new ServiceResult<TenantExistsResults>(result);
             }
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var currentName = dataRow.Field<string>("name");
                 var currentSubDomain = dataRow.Field<string>("subdomain");
-                if ((result & CustomerExistsResults.NameNotAvailable) != CustomerExistsResults.NameNotAvailable && name.Equals(currentName, StringComparison.OrdinalIgnoreCase))
+                if ((result & TenantExistsResults.NameNotAvailable) != TenantExistsResults.NameNotAvailable && name.Equals(currentName, StringComparison.OrdinalIgnoreCase))
                 {
-                    result |= CustomerExistsResults.NameNotAvailable;
+                    result |= TenantExistsResults.NameNotAvailable;
                 }
-                if ((result & CustomerExistsResults.SubDomainNotAvailable) != CustomerExistsResults.SubDomainNotAvailable && subDomain.Equals(currentSubDomain, StringComparison.OrdinalIgnoreCase))
+                if ((result & TenantExistsResults.SubDomainNotAvailable) != TenantExistsResults.SubDomainNotAvailable && subDomain.Equals(currentSubDomain, StringComparison.OrdinalIgnoreCase))
                 {
-                    result |= CustomerExistsResults.SubDomainNotAvailable;
+                    result |= TenantExistsResults.SubDomainNotAvailable;
                 }
             }
 
-            return new ServiceResult<CustomerExistsResults>(result);
+            return new ServiceResult<TenantExistsResults>(result);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false)
+        public async Task<ServiceResult<TenantModel>> CreateTenantAsync(TenantModel tenant, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false)
         {
             // Create a new connection to the newly created database.
-            await using (var mysqlConnection = new MySqlConnection(GenerateConnectionStringFromCustomer(customer, false)))
+            await using (var mysqlConnection = new MySqlConnection(GenerateConnectionStringFromTenant(tenant, false)))
             {
                 MySqlTransaction transaction = null;
                 try
                 {
                     await wiserDatabaseConnection.BeginTransactionAsync();
 
-                    if (!String.IsNullOrWhiteSpace(customer.Database?.Password))
+                    if (!String.IsNullOrWhiteSpace(tenant.Database?.Password))
                     {
-                        customer.Database.Password = customer.Database.Password.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
+                        tenant.Database.Password = tenant.Database.Password.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
                     }
 
-                    if (String.IsNullOrWhiteSpace(customer.EncryptionKey))
+                    if (String.IsNullOrWhiteSpace(tenant.EncryptionKey))
                     {
-                        customer.EncryptionKey = SecurityHelpers.GenerateRandomPassword(20);
+                        tenant.EncryptionKey = SecurityHelpers.GenerateRandomPassword(20);
                     }
 
-                    await CreateOrUpdateCustomerAsync(customer);
+                    await CreateOrUpdateTenantAsync(tenant);
 
                     wiserDatabaseConnection.ClearParameters();
-                    wiserDatabaseConnection.AddParameter("id", customer.Id);
-                    await wiserDatabaseConnection.ExecuteAsync($"UPDATE {ApiTableNames.WiserCustomers} SET customerid = id WHERE id = ?id");
+                    wiserDatabaseConnection.AddParameter("id", tenant.Id);
+                    await wiserDatabaseConnection.ExecuteAsync($"UPDATE {ApiTableNames.WiserTenants} SET tenantid = id WHERE id = ?id");
 
                     // Remove passwords from response
-                    if (customer.Database != null)
+                    if (tenant.Database != null)
                     {
-                        customer.Database.Password = null;
+                        tenant.Database.Password = null;
                     }
 
                     var createTablesQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTables.sql");
@@ -285,9 +285,9 @@ namespace Api.Modules.Customers.Services
                     var insertInitialDataConfiguratorQuery = !isConfigurator ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataConfigurator.sql");
                     var insertInitialDataMultiLanguageQuery = !isMultiLanguage ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataMultiLanguage.sql");
 
-                    if (customer.WiserSettings != null)
+                    if (tenant.WiserSettings != null)
                     {
-                        foreach (var (key, value) in customer.WiserSettings)
+                        foreach (var (key, value) in tenant.WiserSettings)
                         {
                             createTablesQuery = createTablesQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
                             createTriggersQuery = createTriggersQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
@@ -316,7 +316,7 @@ namespace Api.Modules.Customers.Services
                     transaction = await mysqlConnection.BeginTransactionAsync();
                     await using (var command = mysqlConnection.CreateCommand())
                     {
-                        command.Parameters.AddWithValue("newCustomerId", customer.Id);
+                        command.Parameters.AddWithValue("newTenantId", tenant.Id);
                         command.CommandText = createTablesQuery;
                         await command.ExecuteNonQueryAsync();
                         command.CommandText = createTriggersQuery;
@@ -350,7 +350,7 @@ namespace Api.Modules.Customers.Services
                     await transaction.CommitAsync();
                     await wiserDatabaseConnection.CommitTransactionAsync();
 
-                    return new ServiceResult<CustomerModel>(customer);
+                    return new ServiceResult<TenantModel>(tenant);
                 }
                 catch
                 {
@@ -393,13 +393,13 @@ namespace Api.Modules.Customers.Services
                 wiserDatabaseConnection.ClearParameters();
                 wiserDatabaseConnection.AddParameter("subDomain", subDomain);
 
-                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT name, wiser_title FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subdomain");
+                var dataTable = await wiserDatabaseConnection.GetAsync($"SELECT name, wiser_title FROM {ApiTableNames.WiserTenants} WHERE subdomain = ?subdomain");
                 if (dataTable.Rows.Count == 0)
                 {
                     return new ServiceResult<string>
                     {
                         StatusCode = HttpStatusCode.NotFound,
-                        ErrorMessage = "No customer found with this sub domain"
+                        ErrorMessage = "No tenant found with this sub domain"
                     };
                 }
 
@@ -436,30 +436,30 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public async Task CreateOrUpdateCustomerAsync(CustomerModel customer)
+        public async Task CreateOrUpdateTenantAsync(TenantModel tenant)
         {
             // Note: Passwords should be encrypted by Wiser before sending them to the API.
             wiserDatabaseConnection.ClearParameters();
-            wiserDatabaseConnection.AddParameter("customerid", customer.CustomerId);
-            wiserDatabaseConnection.AddParameter("name", customer.Name);
-            wiserDatabaseConnection.AddParameter("db_host", customer.Database.Host);
-            wiserDatabaseConnection.AddParameter("db_login", customer.Database.Username);
-            wiserDatabaseConnection.AddParameter("db_passencrypted", customer.Database.Password ?? String.Empty);
-            wiserDatabaseConnection.AddParameter("db_port", customer.Database.PortNumber);
-            wiserDatabaseConnection.AddParameter("db_dbname", customer.Database.DatabaseName);
-            wiserDatabaseConnection.AddParameter("encryption_key", customer.EncryptionKey);
-            wiserDatabaseConnection.AddParameter("encryption_key_test", customer.EncryptionKey);
-            wiserDatabaseConnection.AddParameter("subdomain", customer.SubDomain);
-            wiserDatabaseConnection.AddParameter("wiser_title", customer.WiserTitle);
+            wiserDatabaseConnection.AddParameter("customerid", tenant.TenantId);
+            wiserDatabaseConnection.AddParameter("name", tenant.Name);
+            wiserDatabaseConnection.AddParameter("db_host", tenant.Database.Host);
+            wiserDatabaseConnection.AddParameter("db_login", tenant.Database.Username);
+            wiserDatabaseConnection.AddParameter("db_passencrypted", tenant.Database.Password ?? String.Empty);
+            wiserDatabaseConnection.AddParameter("db_port", tenant.Database.PortNumber);
+            wiserDatabaseConnection.AddParameter("db_dbname", tenant.Database.DatabaseName);
+            wiserDatabaseConnection.AddParameter("encryption_key", tenant.EncryptionKey);
+            wiserDatabaseConnection.AddParameter("encryption_key_test", tenant.EncryptionKey);
+            wiserDatabaseConnection.AddParameter("subdomain", tenant.SubDomain);
+            wiserDatabaseConnection.AddParameter("wiser_title", tenant.WiserTitle);
 
-            customer.Id = await wiserDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(ApiTableNames.WiserCustomers, customer.Id);
+            tenant.Id = await wiserDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(ApiTableNames.WiserTenants, tenant.Id);
         }
 
         /// <inheritdoc />
-        public string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true)
+        public string GenerateConnectionStringFromTenant(TenantModel tenant, bool passwordIsEncrypted = true)
         {
-            var decryptedPassword = passwordIsEncrypted ? customer.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey) : customer.Database.Password;
-            return $"server={customer.Database.Host};port={(customer.Database.PortNumber > 0 ? customer.Database.PortNumber : 3306)};uid={customer.Database.Username};pwd={decryptedPassword};database={customer.Database.DatabaseName};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8";
+            var decryptedPassword = passwordIsEncrypted ? tenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey) : tenant.Database.Password;
+            return $"server={tenant.Database.Host};port={(tenant.Database.PortNumber > 0 ? tenant.Database.PortNumber : 3306)};uid={tenant.Database.Username};pwd={decryptedPassword};database={tenant.Database.DatabaseName};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8";
         }
 
         #region Private functions

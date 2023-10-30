@@ -13,7 +13,7 @@ namespace Api.Modules.EntityTypes.Controllers
 {
     /// <summary>
     /// Controller for doing things with Wiser entity types.
-    /// An item in Wiser can have different entity types. This entity type decides what kind of item it is (order, basket, product, customer etc) and which fields will be available when opening the item in Wiser.
+    /// An item in Wiser can have different entity types. This entity type decides what kind of item it is (order, basket, product, tenant etc) and which fields will be available when opening the item in Wiser.
     /// </summary>
     [Route("api/v3/entity-types")]
     [ApiController]

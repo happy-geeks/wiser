@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using Api.Modules.Items.Models;
 using Api.Modules.Templates.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -29,14 +29,14 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StringHelpers = Api.Core.Helpers.StringHelpers;
 
-namespace Api.Modules.Customers.Services
+namespace Api.Modules.Tenants.Services
 {
     /// <summary>
     /// Service for operations related to Wiser users (users that can log in to Wiser).
     /// </summary>
     public class UsersService : IUsersService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly ILogger<UsersService> logger;
         private readonly ApiSettings apiSettings;
 
@@ -73,9 +73,9 @@ namespace Api.Modules.Customers.Services
         /// <summary>
         /// Initializes a new instance of <see cref="UsersService"/>.
         /// </summary>
-        public UsersService(IWiserCustomersService wiserCustomersService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings, IRolesService rolesService, IDatabaseHelpersService databaseHelpersService)
+        public UsersService(IWiserTenantsService wiserTenantsService, IOptions<ApiSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, ILogger<UsersService> logger, ITemplatesService templatesService, ICommunicationsService communicationsService, IOptions<GclSettings> gclSettings, IRolesService rolesService, IDatabaseHelpersService databaseHelpersService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.logger = logger;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.apiSettings = apiSettings.Value;
@@ -231,7 +231,7 @@ ORDER BY username.`value` ASC";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
+        public async Task<ServiceResult<UserModel>> LoginTenantAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
         {
             if (await UsernameIsBlockedAsync(username, clientDatabaseConnection, apiSettings.MaximumLoginAttemptsForUsers))
             {
@@ -616,17 +616,17 @@ ORDER BY username.`value` ASC";
         /// <inheritdoc />
         public async Task<ServiceResult<UserModel>> GetUserDataAsync(IUsersService usersService, ClaimsIdentity identity)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            if (customer.StatusCode != HttpStatusCode.OK)
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            if (tenant.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<UserModel>
                 {
-                    ErrorMessage = customer.ErrorMessage,
-                    StatusCode = customer.StatusCode
+                    ErrorMessage = tenant.ErrorMessage,
+                    StatusCode = tenant.StatusCode
                 };
             }
 
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
             var userId = IdentityHelpers.GetWiserUserId(identity);
 
             clientDatabaseConnection.AddParameter("userId", userId);
@@ -637,13 +637,13 @@ ORDER BY username.`value` ASC";
             var result = new UserModel
             {
                 EncryptedId = IdentityHelpers.GetWiserUserId(identity).ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
-                EncryptedCustomerId = customer.ModelObject.CustomerId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
+                EncryptedTenantId = tenant.ModelObject.TenantId.ToString().EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true),
                 ZeroEncrypted = "0".EncryptWithAesWithSalt(encryptionKey, true),
                 Id = userId,
                 EmailAddress = await usersService.GetUserEmailAddressAsync(userId),
-                CurrentBranchName = customer.ModelObject.Name,
-                CurrentBranchId = customer.ModelObject.Id,
-                CurrentBranchIsMainBranch = customer.ModelObject.Id == customer.ModelObject.CustomerId,
+                CurrentBranchName = tenant.ModelObject.Name,
+                CurrentBranchId = tenant.ModelObject.Id,
+                CurrentBranchIsMainBranch = tenant.ModelObject.Id == tenant.ModelObject.TenantId,
                 TotpAuthentication = new TotpAuthenticationModel
                 {
                     Enabled = totpEnabled
@@ -656,17 +656,17 @@ ORDER BY username.`value` ASC";
             }
             else
             {
-                var productionCustomer = await wiserCustomersService.GetSingleAsync(customer.ModelObject.CustomerId);
-                if (productionCustomer.StatusCode != HttpStatusCode.OK)
+                var productionTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId);
+                if (productionTenant.StatusCode != HttpStatusCode.OK)
                 {
                     return new ServiceResult<UserModel>
                     {
-                        ErrorMessage = productionCustomer.ErrorMessage,
-                        StatusCode = productionCustomer.StatusCode
+                        ErrorMessage = productionTenant.ErrorMessage,
+                        StatusCode = productionTenant.StatusCode
                     };
                 }
 
-                result.MainBranchName = productionCustomer.ModelObject.Name;
+                result.MainBranchName = productionTenant.ModelObject.Name;
             }
 
             var wiserSettings = await usersService.GetWiserSettingsForUserAsync(encryptionKey);
@@ -1164,7 +1164,7 @@ ORDER BY username.`value` ASC";
         }
 
         /// <summary>
-        /// Check in the database whether a certain username is blocked from logging in as a customer or admin account.
+        /// Check in the database whether a certain username is blocked from logging in as a tenant or admin account.
         /// </summary>
         /// <param name="username">The username to check.</param>
         /// <param name="connection"></param>

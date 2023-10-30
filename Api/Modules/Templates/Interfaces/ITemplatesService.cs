@@ -41,7 +41,7 @@ namespace Api.Modules.Templates.Interfaces
         Task<ServiceResult<QueryTemplate>> GetQueryAsync(int templateId = 0, string templateName = null);
 
         /// <summary>
-        /// Gets a query from the wiser database and executes it in the customer database.
+        /// Gets a query from the wiser database and executes it in the tenant database.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="templateName">The encrypted name of the wiser template.</param>
@@ -49,7 +49,7 @@ namespace Api.Modules.Templates.Interfaces
         Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null);
 
         /// <summary>
-        /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the customer's website.
+        /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the tenant's website.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A string that contains the CSS that should be loaded in the HTML editor.</returns>

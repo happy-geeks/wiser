@@ -8,8 +8,8 @@ using Api.Core.Filters;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Services;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Services;
 using Api.Modules.DigitalOcean.Models;
 using Api.Modules.Files.Models;
 using Api.Modules.Google.Models;
@@ -268,7 +268,7 @@ namespace Api
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
             services.Decorate<ILanguagesService, CachedLanguagesService>();
-            services.Decorate<IWiserCustomersService, CachedWiserCustomersService>();
+            services.Decorate<IWiserTenantsService, CachedWiserTenantsService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();

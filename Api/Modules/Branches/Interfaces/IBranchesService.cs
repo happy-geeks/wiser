@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Branches.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Modules.Branches.Models;
 
 namespace Api.Modules.Branches.Interfaces
@@ -14,19 +14,19 @@ namespace Api.Modules.Branches.Interfaces
     public interface IBranchesService
     {
         /// <summary>
-        /// Creates a new environment for the authenticated customer.
+        /// Creates a new environment for the authenticated tenant.
         /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <param name="settings">The settings for the new environment.</param>
-        Task<ServiceResult<CustomerModel>> CreateAsync(ClaimsIdentity identity, CreateBranchSettingsModel settings);
+        Task<ServiceResult<TenantModel>> CreateAsync(ClaimsIdentity identity, CreateBranchSettingsModel settings);
 
         /// <summary>
         /// Gets the environments for the authenticated user.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <returns>A list of <see cref="CustomerModel"/>.</returns>
-        Task<ServiceResult<List<CustomerModel>>> GetAsync(ClaimsIdentity identity);
+        /// <returns>A list of <see cref="TenantModel"/>.</returns>
+        Task<ServiceResult<List<TenantModel>>> GetAsync(ClaimsIdentity identity);
 
         /// <summary>
         /// Gets whether the current branch is the main branch.
@@ -38,9 +38,9 @@ namespace Api.Modules.Branches.Interfaces
         /// <summary>
         /// Gets whether the current branch is the main branch.
         /// </summary>
-        /// <param name="branch">The <see cref="CustomerModel">CustomerModel</see> of the branch to check.</param>
+        /// <param name="branch">The <see cref="TenantModel">TenantModel</see> of the branch to check.</param>
         /// <returns>A boolean indicating whether the current branch is the main branch.</returns>
-        ServiceResult<bool> IsMainBranch(CustomerModel branch);
+        ServiceResult<bool> IsMainBranch(TenantModel branch);
 
         /// <summary>
         /// Get the changes of a branch.
@@ -72,9 +72,9 @@ namespace Api.Modules.Branches.Interfaces
         /// This will check if the given branch has the same parent ID as the branch that the user is currently authenticated for.
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
-        /// <param name="branch">The <see cref="CustomerModel">CustomerModel</see> of the branch to check.</param>
+        /// <param name="branch">The <see cref="TenantModel">TenantModel</see> of the branch to check.</param>
         /// <returns>A boolean indicating whether the user is allowed access to the given branch.</returns>
-        Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, CustomerModel branch);
+        Task<ServiceResult<bool>> CanAccessBranchAsync(ClaimsIdentity identity, TenantModel branch);
 
         /// <summary>
         /// Marks a branch to be deleted by the WTS.

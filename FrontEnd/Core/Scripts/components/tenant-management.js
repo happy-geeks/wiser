@@ -1,8 +1,8 @@
-﻿import "../../Scss/customer-management.scss";
+﻿import "../../Scss/tenant-management.scss";
 
 export default {
-    name: "customerManagement",
-    template: "#customer-management-template",
+    name: "tenantManagement",
+    template: "#tenant-management-template",
     props: ["subDomain"],
     data() {
         return {
@@ -11,7 +11,7 @@ export default {
             message: "",
             errors: [],
             loading: false,
-            newCustomerData: {
+            newTenantData: {
                 name: "",
                 subDomain: "",
                 isWebShop: false,
@@ -32,7 +32,7 @@ export default {
                 hostDev: "",
                 siteName: ""
             },
-            createCustomerResult: {
+            createTenantResult: {
                 data: {}
             },
             availableDbClusters: []
@@ -83,7 +83,7 @@ export default {
         reset() {
             this.message = "";
             this.errors = [];
-            this.newCustomerData = {
+            this.newTenantData = {
                 name: "",
                 subDomain: "",
                 isWebShop: false,
@@ -112,7 +112,7 @@ export default {
             this.message = "";
             this.errors = [];
             this.loading = true;
-            const result = await main.customersService.getDbClusters(this.newCustomerData.digitalOceanApiAccessToken);
+            const result = await main.tenantsService.getDbClusters(this.newTenantData.digitalOceanApiAccessToken);
             this.loading = false;
             if (!result.success) {
                 this.message = result.message;
@@ -123,7 +123,7 @@ export default {
 
         async createDatabaseAndUser() {
             this.loading = true;
-            const result = await main.customersService.createDatabaseAndUser(this.newCustomerData.dbClusterChoice, this.newCustomerData.databaseSchema, this.newCustomerData.databaseUsername, this.newCustomerData.digitalOceanApiAccessToken);
+            const result = await main.tenantsService.createDatabaseAndUser(this.newTenantData.dbClusterChoice, this.newTenantData.databaseSchema, this.newTenantData.databaseUsername, this.newTenantData.digitalOceanApiAccessToken);
             this.loading = false;
             if (!result.success) {
                 this.message = result.message;
@@ -132,14 +132,14 @@ export default {
 
             for (let user of result.data.users) {
                 if (user.name.endsWith("_wiser")) {
-                    this.newCustomerData.databasePassword = user.password;
-                    this.newCustomerData.databaseUsername = user.name;
+                    this.newTenantData.databasePassword = user.password;
+                    this.newTenantData.databaseUsername = user.name;
                     break;
                 }
             }
 
-            this.newCustomerData.databaseHost = result.data.cluster.database.connection.host;
-            this.newCustomerData.databasePort = result.data.cluster.database.connection.port;
+            this.newTenantData.databaseHost = result.data.cluster.database.connection.host;
+            this.newTenantData.databasePort = result.data.cluster.database.connection.port;
             return result;
         },
 
@@ -147,7 +147,7 @@ export default {
             this.message = "";
             this.errors = [];
             this.loading = true;
-            const result = await main.customersService.exists(this.newCustomerData.name, this.newCustomerData.subDomain);
+            const result = await main.tenantsService.exists(this.newTenantData.name, this.newTenantData.subDomain);
             this.loading = false;
 
             if (!result.success) {
@@ -165,8 +165,8 @@ export default {
 
         async handleStep2() {
             let databaseResult;
-            if (this.newCustomerData.createNewDatabase) {
-                if (!this.newCustomerData.dbClusterChoice) {
+            if (this.newTenantData.createNewDatabase) {
+                if (!this.newTenantData.dbClusterChoice) {
                     this.message = "Kies eerst een databasecluster";
                     return false;
                 }
@@ -180,29 +180,29 @@ export default {
                     data: {
                         users: [
                             {
-                                name: this.newCustomerData.databaseUsername,
-                                password: this.newCustomerData.databasePassword
+                                name: this.newTenantData.databaseUsername,
+                                password: this.newTenantData.databasePassword
                             }
                         ]
                     }
                 };
             }
 
-            const newCustomer = {
-                name: this.newCustomerData.name,
+            const newTenant = {
+                name: this.newTenantData.name,
                 database: {
-                    host: this.newCustomerData.databaseHost,
-                    username: this.newCustomerData.databaseUsername,
-                    password: this.newCustomerData.databasePassword,
-                    databaseName: this.newCustomerData.databaseSchema,
-                    portNumber: this.newCustomerData.databasePort
+                    host: this.newTenantData.databaseHost,
+                    username: this.newTenantData.databaseUsername,
+                    password: this.newTenantData.databasePassword,
+                    databaseName: this.newTenantData.databaseSchema,
+                    portNumber: this.newTenantData.databasePort
                 },
-                subDomain: this.newCustomerData.subDomain,
+                subDomain: this.newTenantData.subDomain,
                 wiserSettings: {
-                    hostLive: this.newCustomerData.hostLive,
-                    hostTest: this.newCustomerData.hostTest,
-                    hostDev: this.newCustomerData.hostDev,
-                    siteName: this.newCustomerData.siteName
+                    hostLive: this.newTenantData.hostLive,
+                    hostTest: this.newTenantData.hostTest,
+                    hostDev: this.newTenantData.hostDev,
+                    siteName: this.newTenantData.siteName
                 },
                 properties: {
                     imagespath: "images;images",
@@ -230,10 +230,10 @@ export default {
             };
 
             this.loading = true;
-            this.createCustomerResult = await main.customersService.create(newCustomer, this.newCustomerData.isWebShop, this.newCustomerData.isConfigurator, this.newCustomerData.isMultiLanguage);
-            this.createCustomerResult.databaseUsers = databaseResult.data.users;
+            this.createTenantResult = await main.tenantsService.create(newTenant, this.newTenantData.isWebShop, this.newTenantData.isConfigurator, this.newTenantData.isMultiLanguage);
+            this.createTenantResult.databaseUsers = databaseResult.data.users;
 			// For testing CSS/HTML, comment the line above and uncomment the code below.
-            /*this.createCustomerResult = {
+            /*this.createTenantResult = {
                 success: true,
                 data: {
                     id: 123,
@@ -243,8 +243,8 @@ export default {
             };*/
             this.loading = false;
 
-            if (!this.createCustomerResult || !this.createCustomerResult.success) {
-                this.message = this.createCustomerResult.message;
+            if (!this.createTenantResult || !this.createTenantResult.success) {
+                this.message = this.createTenantResult.message;
                 return false;
             }
 

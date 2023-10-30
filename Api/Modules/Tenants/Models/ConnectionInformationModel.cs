@@ -1,4 +1,4 @@
-﻿namespace Api.Modules.Customers.Models
+﻿namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// A model with connection information. Can be used to store credentials to a database connection or an FTP connection or something similar.

@@ -16,7 +16,7 @@ using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
@@ -68,7 +68,7 @@ namespace Api.Modules.Templates.Services
         private static readonly Dictionary<string, string> TemplateQueryStrings = new();
 
         private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService;
         private readonly IDatabaseConnection clientDatabaseConnection;
@@ -94,7 +94,7 @@ namespace Api.Modules.Templates.Services
         /// Creates a new instance of TemplatesService.
         /// </summary>
         public TemplatesService(IHttpContextAccessor httpContextAccessor,
-            IWiserCustomersService wiserCustomersService,
+            IWiserTenantsService wiserTenantsService,
             IStringReplacementsService stringReplacementsService,
             GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService,
             IDatabaseConnection clientDatabaseConnection,
@@ -116,7 +116,7 @@ namespace Api.Modules.Templates.Services
             IDynamicContentDataService dynamicContentDataService)
         {
             this.httpContextAccessor = httpContextAccessor;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.stringReplacementsService = stringReplacementsService;
             this.gclTemplatesService = gclTemplatesService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -178,10 +178,10 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
 
             // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             var queryTemplate = GetQueryTemplate(0, templateName);
             queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
@@ -192,7 +192,7 @@ namespace Api.Modules.Templates.Services
                 queryTemplate.Content = stringReplacementsService.DoReplacements(queryTemplate.Content, requestPostData, true);
             }
 
-            var result = await gclTemplatesService.GetJsonResponseFromQueryAsync(queryTemplate, customer.EncryptionKey);
+            var result = await gclTemplatesService.GetJsonResponseFromQueryAsync(queryTemplate, tenant.EncryptionKey);
             return new ServiceResult<JToken>(result);
         }
 
@@ -1489,7 +1489,7 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
             templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
 
             return new ServiceResult<TemplateSettingsModel>(templateData);
@@ -1654,7 +1654,7 @@ LIMIT 1";
                         break;
                     }
 
-                    var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+                    var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
                     template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
 
                     break;
@@ -1772,7 +1772,7 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
             return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
@@ -2542,7 +2542,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             }
 
             // Check if the branch exists.
-            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            var branchToDeploy = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
             if (branchToDeploy == null)
             {
                 return new ServiceResult<bool>
@@ -2866,7 +2866,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
         /// </summary>
         private async Task SetupGclForPreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             if (requestModel.PreviewVariables != null && httpContextAccessor.HttpContext != null)
             {
                 foreach (var previewVariable in requestModel.PreviewVariables)
@@ -2876,7 +2876,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                         case "POST":
                             if (previewVariable.Encrypt)
                             {
-                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
+                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(tenant.EncryptionKey);
                             }
 
                             httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
@@ -2884,7 +2884,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                         case "SESSION":
                             if (previewVariable.Encrypt)
                             {
-                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
+                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(tenant.EncryptionKey);
                             }
 
                             httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);

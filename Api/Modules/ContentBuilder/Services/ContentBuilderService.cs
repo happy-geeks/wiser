@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.ContentBuilder.Interfaces;
 using Api.Modules.ContentBuilder.Models;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -25,17 +25,17 @@ namespace Api.Modules.ContentBuilder.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IObjectsService objectsService;
         private readonly IWiserItemsService wiserItemsService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ContentBuilderService"/>.
         /// </summary>
-        public ContentBuilderService(IDatabaseConnection clientDatabaseConnection, IObjectsService objectsService, IWiserItemsService wiserItemsService, IWiserCustomersService wiserCustomersService)
+        public ContentBuilderService(IDatabaseConnection clientDatabaseConnection, IObjectsService objectsService, IWiserItemsService wiserItemsService, IWiserTenantsService wiserTenantsService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.objectsService = objectsService;
             this.wiserItemsService = wiserItemsService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
         }
 
         /// <inheritdoc />
@@ -224,7 +224,7 @@ ORDER BY ordering ASC, parentOrdering ASC";
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetTemplateJavascriptFileAsync(ClaimsIdentity identity)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             var templatesResult = await GetTemplatesAsync(identity);
             if (templatesResult.StatusCode != HttpStatusCode.OK)
             {
@@ -269,7 +269,7 @@ ORDER BY ordering ASC, parentOrdering ASC";
                 DesignId = x.Id
             });
             var javascript = $@"var data_templates = {{
-    name: '{customer.Name}',
+    name: '{tenant.Name}',
     categories: [{String.Join(", ", categoriesArray)}],
     designs: {JsonConvert.SerializeObject(templatesForJavascript, serializerSettings)}
 }};

@@ -1163,7 +1163,7 @@ AND removed = 0";
         public async Task<StringBuilder> GetScssIncludesForScssTemplateAsync(int templateId)
         {
             // First we need to find the root ID.
-            // Some customers have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
+            // Some tenants have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
             // We need to find the root directory for the given template, so that we don't include SCSS from a different website.
             string name;
             var scssRootId = templateId;
@@ -1216,7 +1216,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
         public async Task<List<TemplateSettingsModel>> GetScssTemplatesThatAreNotIncludesAsync(int templateId)
         {
             // First we need to find the root ID.
-            // Some customers have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
+            // Some tenants have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
             // We need to find the root directory for the given template, so that we don't include SCSS from a different website.
             string name;
             var scssRootId = templateId;

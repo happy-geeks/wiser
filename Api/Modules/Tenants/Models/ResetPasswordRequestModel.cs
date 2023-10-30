@@ -1,4 +1,4 @@
-﻿namespace Api.Modules.Customers.Models
+﻿namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// A model to request a password reset.
