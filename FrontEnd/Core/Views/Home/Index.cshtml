@@ -234,7 +234,8 @@
                                         </td>
                                     </tr>
                                     <tr v-for="entity in entitiesForBranches" :key="entity.id">
-                                        <td>{{ entity.displayName }}</td>
+                                        <td v-if="!entity.moduleName">Module #{{ entity.moduleId }} --> {{ entity.displayName }}</td>
+                                        <td v-else>{{ entity.moduleName }} --> {{ entity.displayName }}</td>
                                         <td>{{ entity.totalItems }}</td>
                                         <td>
                                             <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities[entity.id]">

@@ -17,8 +17,8 @@ import taskAlerts from "./components/task-alerts";
 import {DropDownList} from "@progress/kendo-vue-dropdowns";
 import WiserDialog from "./components/wiser-dialog";
 
-import "../scss/main.scss";
-import "../scss/task-alerts.scss";
+import "../Scss/main.scss";
+import "../Scss/task-alerts.scss";
 
 import {
     ACTIVATE_MODULE,
