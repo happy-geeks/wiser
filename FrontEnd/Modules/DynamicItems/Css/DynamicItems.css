@@ -23,6 +23,10 @@ dd {
     margin-bottom: 10px;
 }
 
+.dependency-hidden {
+    display: none;
+}
+
 .k-dialog #changeImageDataDialog,
 .k-dialog #dataSelectorTemplateDialog,
 .k-dialog #youTubeDialog,
