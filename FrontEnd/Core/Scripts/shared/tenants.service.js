@@ -1,22 +1,22 @@
 ﻿import BaseService from "./base.service";
 
-export default class CustomersService extends BaseService {
+export default class TenantsService extends BaseService {
 	/**
 	 * Gets all modules that the user has access to.
-	 * @param {string} name The name of the customer.
-	 * @param {string} subDomain The sub domain of the customer.
+	 * @param {string} name The name of the tenant.
+	 * @param {string} subDomain The sub domain of the tenant.
 	 * @returns {any} An array with all available modules.
 	 */
     async exists(name, subDomain) {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/api/v3/wiser-customers/${encodeURIComponent(name)}/exists?subDomain=${encodeURIComponent(subDomain)}`);
+            const response = await this.base.api.get(`/api/v3/wiser-tenants/${encodeURIComponent(name)}/exists?subDomain=${encodeURIComponent(subDomain)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error customer exists check", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error tenant exists check", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het controleren of deze klant al bestaat. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -38,21 +38,21 @@ export default class CustomersService extends BaseService {
     }
 
     /**
-     * Gets the title of the customer, to show in the browser tab.
-     * @param {string} subDomain The sub domain of the customer.
+     * Gets the title of the tenant, to show in the browser tab.
+     * @param {string} subDomain The sub domain of the tenant.
      * @returns {any} An array with all available modules.
      */
     async getTitle(subDomain) {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/api/v3/wiser-customers/${encodeURIComponent(subDomain)}/title`);
+            const response = await this.base.api.get(`/api/v3/wiser-tenants/${encodeURIComponent(subDomain)}/title`);
             result.success = true;
             result.statusCode = 200;
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error customer get title", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error tenant get title", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de naam van deze klant.";
 
             if (error.response) {
@@ -75,22 +75,22 @@ export default class CustomersService extends BaseService {
     }
 
     /**
-     * Creates a new customer / tenant in Wiser.
-     * @param {any} data The data for the new customer.
-     * @param {boolean} isWebShop: Whether or not this customer is getting a web shop.
-     * @param {boolean} isConfigurator: Whether or not this customer is getting a configurator.
-     * @param {boolean} isMultiLanguage: Whether or not this customer's application should support multiple languages.
-     * @returns {any} The newly created customer.
+     * Creates a new tenant / tenant in Wiser.
+     * @param {any} data The data for the new tenant.
+     * @param {boolean} isWebShop: Whether or not this tenant is getting a web shop.
+     * @param {boolean} isConfigurator: Whether or not this tenant is getting a configurator.
+     * @param {boolean} isMultiLanguage: Whether or not this tenant's application should support multiple languages.
+     * @returns {any} The newly created tenant.
      */
     async create(data, isWebShop, isConfigurator, isMultiLanguage) {
         const result = {};
         try {
-            const response = await this.base.api.post(`/api/v3/wiser-customers?isWebShop=${isWebShop}&isConfigurator=${isConfigurator}&isMultiLanguage=${isMultiLanguage}`, data);
+            const response = await this.base.api.post(`/api/v3/wiser-tenants?isWebShop=${isWebShop}&isConfigurator=${isConfigurator}&isMultiLanguage=${isMultiLanguage}`, data);
             result.success = true;
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error create tenant", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het aanmaken van deze klant. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -141,7 +141,7 @@ export default class CustomersService extends BaseService {
         } catch (error) {
             result.success = false;
             result.data = [];
-            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error create tenant", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de clusters. Heb je de juiste access token ingevuld? Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -188,7 +188,7 @@ export default class CustomersService extends BaseService {
             result.message = response.data.error;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error create tenant", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het aanmaken van de database voor deze klant. Probeer het a.u.b. nogmaals of neem contact op met ons.";
 
             if (error.response) {
@@ -210,20 +210,20 @@ export default class CustomersService extends BaseService {
     }
 
     /**
-     * Creates a new environment for the customers. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
-     * It will then also create a new tenant in Wiser so the customer can login to the new environment.
+     * Creates a new environment for the tenants. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
+     * It will then also create a new tenant in Wiser so the tenant can login to the new environment.
      * @param {any} name The name for the new environment.
      * @returns {any} The information about the new environment.
      */
     async createBranch(name) {
         const result = {};
         try {
-            const response = await this.base.api.post(`/api/v3/wiser-customers/create-branch/${encodeURIComponent(name)}`);
+            const response = await this.base.api.post(`/api/v3/wiser-tenants/create-branch/${encodeURIComponent(name)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error create customer", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error create tenant", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             
             let errorMessage = error.message;
             if (error.response && error.response.data && error.response.data.error) {
@@ -253,20 +253,20 @@ export default class CustomersService extends BaseService {
     }
 
     /**
-     * Gets the different environments for this customer.
+     * Gets the different environments for this tenant.
      * @returns {any} An array with all environments.
      */
     async getBranches() {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/api/v3/wiser-customers/branches`);
+            const response = await this.base.api.get(`/api/v3/wiser-tenants/branches`);
             result.success = true;
             result.statusCode = 200;
             result.data = response.data;
         } catch (error) {
             result.success = false;
-            console.error("Error customer get environments", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            console.error("Error tenant get environments", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de beschikbare omgevingen.";
 
             if (error.response) {
@@ -289,15 +289,15 @@ export default class CustomersService extends BaseService {
     }
 
     /**
-     * Creates a new environment for the customers. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
-     * It will then also create a new tenant in Wiser so the customer can login to the new environment.
+     * Creates a new environment for the tenants. This will create a new database (on the same server/cluster as the current) and copied most data to that new database.
+     * It will then also create a new tenant in Wiser so the tenant can login to the new environment.
      * @param {int} id The id of the environment to synchronise.
      * @returns {any} The result of the synchronisation.
      */
     async mergeBranch(id) {
         const result = {};
         try {
-            const response = await this.base.api.post(`/api/v3/wiser-customers/merge-branch/${encodeURIComponent(id)}`);
+            const response = await this.base.api.post(`/api/v3/wiser-tenants/merge-branch/${encodeURIComponent(id)}`);
             result.success = true;
             result.data = response.data;
         } catch (error) {

@@ -30,8 +30,8 @@ export const TOGGLE_PIN_MODULE = "togglePinModule";
 // Items module.
 export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";
 
-// Customers module.
-export const GET_CUSTOMER_TITLE = "getCustomerTitle";
+// Tenants module.
+export const GET_TENANT_TITLE = "getTenantTitle";
 export const VALID_SUB_DOMAIN = "validSubDomain";
 
 // Users module.

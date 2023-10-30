@@ -4,8 +4,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -15,7 +15,7 @@ using LazyCache;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
-namespace Api.Modules.Customers.Services
+namespace Api.Modules.Tenants.Services
 {
     /// <inheritdoc />
     public class CachedUsersService : IUsersService
@@ -57,9 +57,9 @@ namespace Api.Modules.Customers.Services
         }
 
         /// <inheritdoc />
-        public Task<ServiceResult<UserModel>> LoginCustomerAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
+        public Task<ServiceResult<UserModel>> LoginTenantAsync(string username, string password, string encryptedAdminAccountId = null, string subDomain = null, bool generateAuthenticationTokenForCookie = false, string ipAddress = null, ClaimsIdentity identity = null, string totpPin = null, string totpBackupCode = null)
         {
-            return usersService.LoginCustomerAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity, totpPin, totpBackupCode);
+            return usersService.LoginTenantAsync(username, password, encryptedAdminAccountId, subDomain, generateAuthenticationTokenForCookie, ipAddress, identity, totpPin, totpBackupCode);
         }
 
         /// <inheritdoc />

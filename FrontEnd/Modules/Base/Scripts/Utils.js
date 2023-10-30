@@ -853,7 +853,7 @@ export class Wiser {
 
                 // Open a window where the user can login.
                 const loginUrl = `${apiOptions.baseUrl}${apiOptions.authentication.authUrl}?clientId=${encodeURIComponent(apiOptions.authentication.clientId)}&redirectUri=${encodeURIComponent(apiOptions.authentication.callBackUrl)}&responseType=code&forceLogin=0`;
-                console.log(`[doApiCall] - We have no information for authentication, which means the customer needs to login first. Opening window with url '${loginUrl}'...`);
+                console.log(`[doApiCall] - We have no information for authentication, which means the tenant needs to login first. Opening window with url '${loginUrl}'...`);
                 const loginWindow = window.open(loginUrl, "_blank", "height=550, width=550, status=yes, toolbar=no, menubar=no, location=no,addressbar=no");
 
                 // Wait for the user to finish logging in

@@ -27,7 +27,7 @@ const moduleSettings = {
 
             // Default settings
             this.settings = {
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend"
             };
             Object.assign(this.settings, settings);

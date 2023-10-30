@@ -67,7 +67,7 @@ export default class BranchesService extends BaseService {
     }
 
     /**
-     * Gets the different branches for this customer.
+     * Gets the different branches for this tenant.
      * @returns {any} An array with all environments.
      */
     async get() {
@@ -330,7 +330,7 @@ export default class BranchesService extends BaseService {
         return result;
     }
     /**
-     * Deletes a branch for the customer. This will delete the corresponding database (on the same server/cluster as the current).
+     * Deletes a branch for the tenant. This will delete the corresponding database (on the same server/cluster as the current).
      * It will then also delete the tenant in Wiser so the branch will be completely and permanently removed.
      * @param {int} id The id of the branch to delete.
      */

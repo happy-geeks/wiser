@@ -73,7 +73,7 @@
         </ul>
         </header>
 
-        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
+        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': tenantManagementIsOpened }">
             <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
             <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
             <section class="iframe-container">
@@ -82,7 +82,7 @@
             </section>
 
             <keep-alive>
-                <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+                <tenant-management v-if="user.adminLogin && activeModule === 'tenantManagement'" v-bind:sub-domain="appSettings.subDomain" ref="tenantManagement"></tenant-management>
             </keep-alive>
         </main>
 
@@ -796,18 +796,18 @@
     </section>
 </script>
 
-<script type="text/html" id="customer-management-template">
-    <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
+<script type="text/html" id="tenant-management-template">
+    <div :class="{ loading: loading, 'form-inline': true, 'new-tenant-form': true }">
         <h1>Nieuwe Wiser account toevoegen...</h1>
         <p class="success" v-if="currentStep === 'end'">
-            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />
-            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>.<br />
-            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>.
+            De klant is successvol aangemaakt en heeft als ID '<em>{{ createTenantResult.data.id }}</em>' gekregen.<br />
+            De URL voor Wiser Live is geworden: <a :href="'https://' + newTenantData.subDomain + '.wiser3.nl/'" target="_blank">{{newTenantData.subDomain}}.wiser3.nl</a>.<br />
+            De URL voor Wiser dev is geworden: <a :href="'http://' + newTenantData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newTenantData.subDomain}}.wiser3.juicedev.nl</a>.
         </p>
-        <p v-if="newCustomerData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
+        <p v-if="newTenantData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
         <p v-else>Je hebt de volgende databasegebruiker ingevuld:</p>
         <ul class="success" v-if="currentStep === 'end'">
-            <li v-for="user in createCustomerResult.databaseUsers" :key="user.name">
+            <li v-for="user in createTenantResult.databaseUsers" :key="user.name">
                 <strong>{{ user.name }}:</strong> {{ user.password }}
             </li>
         </ul>
@@ -815,8 +815,8 @@
         <form method="post" v-if="currentStep !== 'end'">
             <section class="step" v-if="currentStep === 1">
                 <div class="form-row">
-                    <label for="newCustomerName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
-                    <input type="text" id="newCustomerName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
+                    <label for="newTenantName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
+                    <input type="text" id="newTenantName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
                     <p class="hint">De volledige bedrijfsnaam van de klant. Bijvoorbeeld 'Happy Geeks B.V.'. Alleen wij zien deze naam terug, de klant ziet deze naam nergens.</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('NameNotAvailable') > -1">
@@ -826,7 +826,7 @@
 
                 <div class="form-row">
                     <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser?</label>
-                    <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
+                    <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
                     <p class="hint">Het subdomein van Wiser wat gebruikt moet gaan worden om in te loggen voor deze klant. Voer hier alleen het subdomein in, met kleine letters, bijvoorbeeld "happygeeks". Deze klant kan dan beheerd worden via happygeeks.wiser3.nl.</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
@@ -835,21 +835,21 @@
                 </div>
                 <div class="form-row">
                     <label>
-                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isMultiLanguage" />
+                        <input type="checkbox" name="isConfigurator" v-model="newTenantData.isMultiLanguage" />
                         Is meertalig
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de website van de klant meertalig wordt. Dan wordt de vertalingenmodule en bijbehorende entiteit toegevoegd.</p>
                 </div>
                 <div class="form-row">
                     <label>
-                        <input type="checkbox" name="isWebShop" v-model="newCustomerData.isWebShop" />
+                        <input type="checkbox" name="isWebShop" v-model="newTenantData.isWebShop" />
                         Is webshop
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc.</p>
                 </div>
                 <div class="form-row">
                     <label>
-                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isConfigurator" />
+                        <input type="checkbox" name="isConfigurator" v-model="newTenantData.isConfigurator" />
                         Is configurator
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines.</p>
@@ -862,13 +862,13 @@
 
                     <div class="form-row">
                         <label for="siteName">Naam van website</label>
-                        <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.siteName" placeholder="Happy Geeks">
+                        <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.siteName" placeholder="Happy Geeks">
                         <p class="hint">De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks</p>
                     </div>
 
                     <div class="form-row">
                         <label for="hostDev">Domein dev</label>
-                        <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
+                        <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
                         <p class="hint">
                             Het domein wat straks voor de dev gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
@@ -877,7 +877,7 @@
 
                     <div class="form-row">
                         <label for="hostTest">Domein test</label>
-                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostTest" placeholder="klant.happygeeks.dev">
+                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.hostTest" placeholder="klant.happygeeks.dev">
                         <p class="hint">
                             Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
@@ -886,7 +886,7 @@
 
                     <div class="form-row">
                         <label for="hostLive">Domein live</label>
-                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostLive" placeholder="happygeeks.nl">
+                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCTenantData.hostLive" placeholder="happygeeks.nl">
                         <p class="hint">
                             Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
@@ -899,14 +899,14 @@
 
                     <div class="form-row">
                         <label>
-                            <input type="checkbox" name="newDatabase" v-model="newCustomerData.createNewDatabase" />
+                            <input type="checkbox" name="newDatabase" v-model="newTenantData.createNewDatabase" />
                             Nieuw databaseschema maken
                         </label>
                     </div>
 
-                    <div class="form-row" v-if="newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="newTenantData.createNewDatabase">
                         <label for="digitalOceanApiAccessToken">Digital Ocean access token</label>
-                        <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.digitalOceanApiAccessToken" required>
+                        <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.digitalOceanApiAccessToken" required>
                         <p class="hint">
                             <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">Open eerst deze pagina</a> en geef toestemming op die pagina.
                             Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van "access_token" en plak die in dit veld.<br />
@@ -914,44 +914,44 @@
                         </p>
                     </div>
 
-                    <ul v-if="newCustomerData.createNewDatabase && availableDbClusters.length > 0">
+                    <ul v-if="newTenantData.createNewDatabase && availableDbClusters.length > 0">
                         <li v-for="item in availableDbClusters" :key="item.id">
                             <label :for="'db-'+ item.id">
-                                <input type="radio" :id="'db-'+ item.id" name="dbClusterChoice" v-model="newCustomerData.dbClusterChoice" :value="item.id" />
+                                <input type="radio" :id="'db-'+ item.id" name="dbClusterChoice" v-model="newTenantData.dbClusterChoice" :value="item.id" />
                                 {{item.name}}
                             </label>
                         </li>
                     </ul>
-                    <div class="btn-row" v-else-if="newCustomerData.createNewDatabase">
+                    <div class="btn-row" v-else-if="newTenantData.createNewDatabase">
                         <button type="button" class="btn btn-primary" @@click="getDbClusters">Haal clusters op</button>
                     </div>
 
-                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="!newTenantData.createNewDatabase">
                         <label for="databaseHost">Host <strong>*</strong></label>
-                        <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseHost" required>
+                        <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databaseHost" required>
                     </div>
 
                     <div class="form-row">
                         <label for="databaseUsername">Loginnaam <strong>*</strong></label>
-                        <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseUsername" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
+                        <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databaseUsername" required>
+                        <p class="hint" v-if="newTenantData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
                         <p class="hint" v-else>Vul een naam in van een bestaande databasegebruiker.</p>
                     </div>
 
-                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="!newTenantData.createNewDatabase">
                         <label for="databasePassword">Wachtwoord <strong>*</strong></label>
-                        <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePassword" required>
+                        <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databasePassword" required>
                     </div>
 
                     <div class="form-row">
                         <label for="databaseSchema">Schemanaam <strong>*</strong></label>
-                        <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseSchema" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
+                        <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databaseSchema" required>
+                        <p class="hint" v-if="newTenantData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
                         <p class="hint" v-else>Vul een naam in van een bestaand databaseschema.</p>
                     </div>
-                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="!newTenantData.createNewDatabase">
                         <label for="databasePort">Poortnummer <strong>*</strong></label>
-                        <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePort" required min="1" step="1">
+                        <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databasePort" required min="1" step="1">
                     </div>
                 </fieldset>
             </section>

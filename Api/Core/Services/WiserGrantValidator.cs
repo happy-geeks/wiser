@@ -5,8 +5,8 @@ using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using IdentityModel;
 using IdentityServer4.Models;
@@ -18,7 +18,7 @@ using Newtonsoft.Json;
 namespace Api.Core.Services
 {
     /// <summary>
-    /// Service for validating OAUTH2 grants via the database of the customer.
+    /// Service for validating OAUTH2 grants via the database of the tenant.
     /// </summary>
     public class WiserGrantValidator : IResourceOwnerPasswordValidator
     {
@@ -66,7 +66,7 @@ namespace Api.Core.Services
             }
 
             // First try to login as a regular user.
-            var loginResult = await usersService.LoginCustomerAsync(context.UserName, context.Password, subDomain: subDomain, generateAuthenticationTokenForCookie: true, totpPin: totpPin, totpBackupCode: totpBackupCode);
+            var loginResult = await usersService.LoginTenantAsync(context.UserName, context.Password, subDomain: subDomain, generateAuthenticationTokenForCookie: true, totpPin: totpPin, totpBackupCode: totpBackupCode);
 
             // If the regular user login failed, try to login as an admin account.
             var totpSuccessAdmin = false;
@@ -131,7 +131,7 @@ namespace Api.Core.Services
                     }
                 }
 
-                loginResult = await usersService.LoginCustomerAsync(selectedUser, null, adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
+                loginResult = await usersService.LoginTenantAsync(selectedUser, null, adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
             }
 
             // If we still haven't been able to login, return a login error.

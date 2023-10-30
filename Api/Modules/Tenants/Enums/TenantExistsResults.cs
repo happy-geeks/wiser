@@ -1,12 +1,12 @@
 ﻿using System;
 
-namespace Api.Modules.Customers.Enums
+namespace Api.Modules.Tenants.Enums
 {
     /// <summary>
-    /// All possible results for the customer exists check.
+    /// All possible results for the tenant exists check.
     /// </summary>
     [Flags]
-    public enum CustomerExistsResults
+    public enum TenantExistsResults
     {
         /// <summary>
         /// The name and sub domain are both still available.
@@ -14,12 +14,12 @@ namespace Api.Modules.Customers.Enums
         Available = 0,
 
         /// <summary>
-        /// The name is already in use by another customer.
+        /// The name is already in use by another tenant.
         /// </summary>
         NameNotAvailable = 1,
 
         /// <summary>
-        /// The sub domain is already in use by another customer.
+        /// The sub domain is already in use by another tenant.
         /// </summary>
         SubDomainNotAvailable = 2
     }

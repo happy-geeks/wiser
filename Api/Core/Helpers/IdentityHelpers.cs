@@ -58,13 +58,13 @@ namespace Api.Core.Helpers
         }
 
         /// <summary>
-        /// Check whether a user has the customer role.
+        /// Check whether a user has the tenant role.
         /// </summary>
         /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the user to check.</param>
-        /// <returns>A boolean indicating whether the supplied <see cref="ClaimsIdentity">ClaimsIdentity</see> contains the customer role.</returns>
-        public static bool IsCustomer(ClaimsIdentity claimsIdentity)
+        /// <returns>A boolean indicating whether the supplied <see cref="ClaimsIdentity">ClaimsIdentity</see> contains the tenant role.</returns>
+        public static bool IsTenant(ClaimsIdentity claimsIdentity)
         {
-            return HasRole(claimsIdentity, IdentityConstants.CustomerRole);
+            return HasRole(claimsIdentity, IdentityConstants.TenantRole);
         }
 
         /// <summary>

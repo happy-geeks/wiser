@@ -1,15 +1,15 @@
-﻿namespace Api.Modules.Customers.Models
+﻿namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// Information about the authenticated user.
     /// This is used for some controller methods where it's not possible to authenticate via OAUTH2, such as an URL to a file.
     /// </summary>
-    public class CustomerInformationModel
+    public class TenantInformationModel
     {
         /// <summary>
-        /// Gets or sets the encrypted ID of the customer the user belongs to.
+        /// Gets or sets the encrypted ID of the tenant the user belongs to.
         /// </summary>
-        public string encryptedCustomerId { get; set; }
+        public string encryptedTenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the encrypted ID the authenticated user.

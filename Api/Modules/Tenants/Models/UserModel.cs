@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Api.Modules.Customers.Models
+namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// A Wiser user.
@@ -25,9 +25,9 @@ namespace Api.Modules.Customers.Models
         public string Name { get; set; }
 
         /// <summary>
-        ///  Gets or sets the encrypted customer if for Wiser.
+        ///  Gets or sets the encrypted tenant if for Wiser.
         /// </summary>
-        public string EncryptedCustomerId { get; set; }
+        public string EncryptedTenantId { get; set; }
 
         /// <summary>
         /// Gets or sets the password.
@@ -61,17 +61,17 @@ namespace Api.Modules.Customers.Models
         public TotpAuthenticationModel TotpAuthentication { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the current branch / customer.
+        /// Gets or sets the name of the current branch / tenant.
         /// </summary>
         public string CurrentBranchName { get; set; }
 
         /// <summary>
-        /// Gets or sets the ID of the current branch / customer.
+        /// Gets or sets the ID of the current branch / tenant.
         /// </summary>
         public int CurrentBranchId { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the main branch / customer.
+        /// Gets or sets the name of the main branch / tenant.
         /// </summary>
         public string MainBranchName { get; set; }
 

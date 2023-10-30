@@ -3,62 +3,62 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Enums;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Enums;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using LazyCache;
 using Microsoft.Extensions.Options;
 
-namespace Api.Modules.Customers.Services
+namespace Api.Modules.Tenants.Services
 {
     /// <summary>
-    /// Service for operations related to Wiser customers.
+    /// Service for operations related to Wiser tenants.
     /// </summary>
-    public class CachedWiserCustomersService : IWiserCustomersService, IScopedService
+    public class CachedWiserTenantsService : IWiserTenantsService, IScopedService
     {
         #region Private fields
 
         private readonly IAppCache cache;
         private readonly ApiSettings apiSettings;
         private readonly ICacheService cacheService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
 
         #endregion
 
         /// <summary>
-        /// Creates a new instance of WiserCustomersService.
+        /// Creates a new instance of WiserTenantsService.
         /// </summary>
-        public CachedWiserCustomersService(IAppCache cache, IOptions<ApiSettings> apiSettings, ICacheService cacheService, IWiserCustomersService wiserCustomersService)
+        public CachedWiserTenantsService(IAppCache cache, IOptions<ApiSettings> apiSettings, ICacheService cacheService, IWiserTenantsService wiserTenantsService)
         {
             this.cache = cache;
             this.apiSettings = apiSettings.Value;
             this.cacheService = cacheService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
+        public async Task<ServiceResult<TenantModel>> GetSingleAsync(ClaimsIdentity identity, bool includeDatabaseInformation = false)
         {
             var subDomain = IdentityHelpers.GetSubDomain(identity);
             return await cache.GetOrAddAsync($"customer_{subDomain}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetSingleAsync(identity, includeDatabaseInformation);
+                    return await wiserTenantsService.GetSingleAsync(identity, includeDatabaseInformation);
                 });
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
+        public async Task<ServiceResult<TenantModel>> GetSingleAsync(int id, bool includeDatabaseInformation = false)
         {
             return await cache.GetOrAddAsync($"customer_{id}_{includeDatabaseInformation}",
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetSingleAsync(id, includeDatabaseInformation);
+                    return await wiserTenantsService.GetSingleAsync(id, includeDatabaseInformation);
                 });
         }
 
@@ -71,7 +71,7 @@ namespace Api.Modules.Customers.Services
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetEncryptionKey(identity, forceLiveKey);
+                    return await wiserTenantsService.GetEncryptionKey(identity, forceLiveKey);
                 });
         }
 
@@ -80,37 +80,37 @@ namespace Api.Modules.Customers.Services
         /// <inheritdoc />
         public async Task<T> DecryptValue<T>(string encryptedValue, ClaimsIdentity identity)
         {
-            return await wiserCustomersService.DecryptValue<T>(encryptedValue, identity);
+            return await wiserTenantsService.DecryptValue<T>(encryptedValue, identity);
         }
 
         /// <inheritdoc />
-        public T DecryptValue<T>(string encryptedValue, CustomerModel customer)
+        public T DecryptValue<T>(string encryptedValue, TenantModel tenant)
         {
-            return wiserCustomersService.DecryptValue<T>(encryptedValue, customer);
+            return wiserTenantsService.DecryptValue<T>(encryptedValue, tenant);
         }
 
         /// <inheritdoc />
         public async Task<string> EncryptValue(object valueToEncrypt, ClaimsIdentity identity)
         {
-            return await wiserCustomersService.EncryptValue(valueToEncrypt, identity);
+            return await wiserTenantsService.EncryptValue(valueToEncrypt, identity);
         }
 
         /// <inheritdoc />
-        public string EncryptValue(object valueToEncrypt, CustomerModel customer)
+        public string EncryptValue(object valueToEncrypt, TenantModel tenant)
         {
-            return wiserCustomersService.EncryptValue(valueToEncrypt, customer);
+            return wiserTenantsService.EncryptValue(valueToEncrypt, tenant);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerExistsResults>> CustomerExistsAsync(string name, string subDomain)
+        public async Task<ServiceResult<TenantExistsResults>> TenantExistsAsync(string name, string subDomain)
         {
-            return await wiserCustomersService.CustomerExistsAsync(name, subDomain);
+            return await wiserTenantsService.TenantExistsAsync(name, subDomain);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CustomerModel>> CreateCustomerAsync(CustomerModel customer, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false)
+        public async Task<ServiceResult<TenantModel>> CreateTenantAsync(TenantModel tenant, bool isWebShop = false, bool isConfigurator = false, bool isMultiLanguage = false)
         {
-            return await wiserCustomersService.CreateCustomerAsync(customer, isWebShop, isConfigurator, isMultiLanguage);
+            return await wiserTenantsService.CreateTenantAsync(tenant, isWebShop, isConfigurator, isMultiLanguage);
         }
 
         /// <inheritdoc />
@@ -120,7 +120,7 @@ namespace Api.Modules.Customers.Services
                 async cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return await wiserCustomersService.GetTitleAsync(subDomain);
+                    return await wiserTenantsService.GetTitleAsync(subDomain);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
@@ -137,20 +137,20 @@ namespace Api.Modules.Customers.Services
                 cacheEntry =>
                 {
                     cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                    return wiserCustomersService.IsMainDatabase(subDomain);
+                    return wiserTenantsService.IsMainDatabase(subDomain);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
         }
 
         /// <inheritdoc />
-        public async Task CreateOrUpdateCustomerAsync(CustomerModel customer)
+        public async Task CreateOrUpdateTenantAsync(TenantModel tenant)
         {
-            await wiserCustomersService.CreateOrUpdateCustomerAsync(customer);
+            await wiserTenantsService.CreateOrUpdateTenantAsync(tenant);
         }
 
         /// <inheritdoc />
-        public string GenerateConnectionStringFromCustomer(CustomerModel customer, bool passwordIsEncrypted = true)
+        public string GenerateConnectionStringFromTenant(TenantModel tenant, bool passwordIsEncrypted = true)
         {
-            return wiserCustomersService.GenerateConnectionStringFromCustomer(customer, passwordIsEncrypted);
+            return wiserTenantsService.GenerateConnectionStringFromTenant(tenant, passwordIsEncrypted);
         }
 
         #endregion

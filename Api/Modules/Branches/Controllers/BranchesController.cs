@@ -4,7 +4,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Branches.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -35,9 +35,9 @@ namespace Api.Modules.Branches.Controllers
         /// <summary>
         /// Gets the environments for the authenticated user.
         /// </summary>
-        /// <returns>A list of <see cref="CustomerModel"/>.</returns>
+        /// <returns>A list of <see cref="TenantModel"/>.</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(List<CustomerModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<TenantModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetBranchesAsync()
         {
             return (await branchesService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
@@ -56,12 +56,12 @@ namespace Api.Modules.Branches.Controllers
         }
 
         /// <summary>
-        /// Creates a new branch for the authenticated customer.
+        /// Creates a new branch for the authenticated tenant.
         /// This will create a new database schema on the same server/cluster and then fill it with part of the data from the original database.
         /// </summary>
         /// <param name="settings">The settings for the new environment</param>
         [HttpPost]
-        [ProducesResponseType(typeof(CustomerModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(TenantModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> CreateBranchAsync(CreateBranchSettingsModel settings)
         {
             return (await branchesService.CreateAsync((ClaimsIdentity)User.Identity, settings)).GetHttpResponseMessage();

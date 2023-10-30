@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -27,8 +27,8 @@ using Newtonsoft.Json;
 namespace Api.Core.Services
 {
     /// <summary>
-    /// This is meant to be used as a decorator pattern. This will use the original <see cref="IDatabaseConnection"/> to access the main Wiser database and find the customer's info in easy_customers.
-    /// It will then create a new connection string for that customer and open a connection to that database. This means that using this class, you will always have access to the customer database.
+    /// This is meant to be used as a decorator pattern. This will use the original <see cref="IDatabaseConnection"/> to access the main Wiser database and find the tenant's info in easy_customers.
+    /// It will then create a new connection string for that tenant and open a connection to that database. This means that using this class, you will always have access to the tenant database.
     /// </summary>
     public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
     {
@@ -99,10 +99,10 @@ namespace Api.Core.Services
         }
 
         /// <summary>
-        /// Gets the connection string for the customer/client database. At least one of the parameters must contain a value.
+        /// Gets the connection string for the tenant/client database. At least one of the parameters must contain a value.
         /// </summary>
-        /// <param name="subDomain">The Wiser sub domain for the client/customer. You can leave this empty or set the value to "main", to get the connection string for the Wiser database.</param>
-        /// <returns>The connection string for the customer/client database.</returns>
+        /// <param name="subDomain">The Wiser sub domain for the client/tenant. You can leave this empty or set the value to "main", to get the connection string for the Wiser database.</param>
+        /// <returns>The connection string for the tenant/client database.</returns>
         public async Task<string> GetClientConnectionStringAsync(string subDomain)
         {
             this.subDomain = subDomain;
@@ -113,13 +113,13 @@ namespace Api.Core.Services
 
             WiserDatabaseConnection.ClearParameters();
             WiserDatabaseConnection.AddParameter("subDomain", subDomain);
-            var query = $"SELECT db_host, db_login, db_passencrypted, db_port, db_dbname, encryption_key FROM {ApiTableNames.WiserCustomers} WHERE subdomain = ?subDomain";
+            var query = $"SELECT db_host, db_login, db_passencrypted, db_port, db_dbname, encryption_key FROM {ApiTableNames.WiserTenants} WHERE subdomain = ?subDomain";
 
             var dataTable = await WiserDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
             {
-                throw new Exception($"No customer record found for {(httpContextAccessor.HttpContext?.User.Identity is not ClaimsIdentity identity ? "Unknown" : IdentityHelpers.GetName(identity))}!");
+                throw new Exception($"No tenant record found for {(httpContextAccessor.HttpContext?.User.Identity is not ClaimsIdentity identity ? "Unknown" : IdentityHelpers.GetName(identity))}!");
             }
 
             var server = dataTable.Rows[0].Field<string>("db_host");
@@ -129,7 +129,7 @@ namespace Api.Core.Services
             var decryptedPassword = encryptedPassword.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
             var database = dataTable.Rows[0].Field<string>("db_dbname");
 
-            // Use the default port number for MySQL (which is 3306) if it isn't set in the customer settings table.
+            // Use the default port number for MySQL (which is 3306) if it isn't set in the tenant settings table.
             if (String.IsNullOrWhiteSpace(port))
             {
                 port = "3306";
