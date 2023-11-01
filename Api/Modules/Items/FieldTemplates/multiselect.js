@@ -1,4 +1,7 @@
 ﻿(function() {
+var container = $("#container_{propertyIdWithSuffix}");
+var field = $("#field_{propertyIdWithSuffix}");
+var fieldOptions = {options};
 var options = $.extend({
 	autoClose: false,
 	dataTextField: "name",
@@ -7,20 +10,26 @@ var options = $.extend({
 	dataSource: {
 		transport: {
             read: (kendoReadOptions) => {
+                var inputData = window.dynamicItems.fields.getInputData(field.closest(".popup-container, .pane-content")) || [];
+                inputData = inputData.reduce((obj, item) => { obj[item.key] = item.value; return obj; });
+
                 Wiser.api({
-                    url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FROM_ENTITY_QUERY?propertyid={propertyId}&myItemId={itemId}",
+                    method: "POST",
+                    contentType: "application/json",
                     dataType: "json",
-                    method: "GET",
-                    data: kendoReadOptions.data
-                }).then((result) => {
-                    kendoReadOptions.success(result);
-                }).catch((result) => {
-                    kendoReadOptions.error(result);
+                    url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(fieldOptions.queryId || dynamicItems.settings.zeroEncrypted) + "&itemLinkId={itemLinkId}&userType=" + encodeURIComponent(dynamicItems.settings.userType),
+                    data: JSON.stringify(inputData)
+                }).then(function (dataResult) {
+                    console.log("read success - {title}", dataResult.otherData);
+                    kendoReadOptions.success(dataResult.otherData);
+                }).catch(function(jqXHR, textStatus, errorThrown) {
+                    console.log("read error - {title}", jqXHR, textStatus, errorThrown);
+                    kendoReadOptions.error(jqXHR, textStatus, errorThrown);
                 });
             }
 		}
 	}
-}, {options});
+}, fieldOptions);
 
 var defaultValue = {default_value};
 if (defaultValue) {
@@ -91,8 +100,6 @@ if (typeof options.dataSource === "string") {
     }
 }
 
-const field = $("#field_{propertyIdWithSuffix}");
-const container = field.closest(".item");
 const readonly = {readonly};
 
 if (options.newItems && options.newItems.allow && (options.newItems.entityType || options.entityType)) {
@@ -107,7 +114,7 @@ if (options.mode === "checkBoxGroup") {
     let mainImageUrl = options.mainImageUrl;
     if (options.mainImageId) {
         mainImageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${options.imageId}/${encodeURIComponent("{propertyName}.png")}?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`;
-    } 
+    }
     if (mainImageUrl) {
         container.find("#image_{propertyIdWithSuffix}").attr("src", mainImageUrl);
     }
@@ -137,7 +144,7 @@ if (options.mode === "checkBoxGroup") {
             } else {
                 html.find(".checkbox-img img").hide();
             }
-            
+
             html.find("input[type='checkbox']").prop("readonly", readonly).prop("checked", options.value.indexOf(item.id.toString()) > -1);
 
             panel.append(html);
