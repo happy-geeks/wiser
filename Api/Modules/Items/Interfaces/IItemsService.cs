@@ -264,5 +264,14 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
         /// <param name="settings">The settings for translating.</param>
         Task<ServiceResult<bool>> TranslateAllFieldsAsync(ClaimsIdentity identity, string encryptedId, TranslateItemRequestModel settings);
+
+        /// <summary>
+        /// Search for items.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="parentId">The ID of the parent to start searching. Can be 0.</param>
+        /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data);
     }
 }

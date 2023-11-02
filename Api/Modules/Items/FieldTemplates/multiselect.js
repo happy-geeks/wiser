@@ -61,19 +61,19 @@ if (typeof options.dataSource === "string") {
             break;
     }
 } else if (options.entityType) {
-    var searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true") ? 1 : 0;
+    var searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true");
     var searchFields = options.searchFields || [];
-    var searchInTitle = typeof options.searchInTitle === "undefined" || options.searchInTitle === null || options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0 ? 1 : 0;
-	var searchModuleId = options.moduleId || 0;
-	if (!searchEverywhere && !searchModuleId) {
-		searchModuleId = window.dynamicItems.settings.moduleId;
-	}
+    var searchInTitle = typeof options.searchInTitle === "undefined" || options.searchInTitle === null || options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0;
+
     options.dataSource.transport.read = (kendoReadOptions) => {
+        let searchValue = "";
+
+        if (kendoReadOptions.data && kendoReadOptions.data.filter && kendoReadOptions.data.filter.filters && kendoReadOptions.data.filter.filters.length){
+            searchValue = encodeURIComponent(kendoReadOptions.data.filter.filters[0].value);
+        }
+
         Wiser.api({
-            url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
-                "&entityType=" + encodeURIComponent(options.entityType) + "&search=&searchInTitle=" + searchInTitle.toString() +
-                "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
-                "&skip=0&take=999999",
+            url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/search?entityType=${encodeURIComponent(options.entityType)}&searchValue=${searchValue}&searchInTitle=${searchInTitle}&searchEveryWhere=${searchEverywhere}&searchFields=${encodeURIComponent(searchFields.join())}`,
             dataType: "json",
             method: "GET",
             data: kendoReadOptions.data
@@ -83,8 +83,10 @@ if (typeof options.dataSource === "string") {
             kendoReadOptions.error(result);
         });
     };
+    options.dataSource.pageSize = 80;
+    options.dataSource.serverPaging = true;
+    options.dataSource.serverFiltering = true;
 	options.filter = "contains";
-	options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
 } else if (options.dataSelectorId > 0) {
     options.dataSource.transport.read = (kendoReadOptions) => {
         Wiser.api({

@@ -2785,6 +2785,86 @@ ORDER BY {orderByClause}";
             }
         }
 
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            var searchFields = String.IsNullOrWhiteSpace(data.SearchFields) ? new List<string>() : data.SearchFields.Split(',').ToList();
+            var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(data.EntityType);
+            clientDatabaseConnection.AddParameter("parentId", parentId);
+            clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+            clientDatabaseConnection.AddParameter("searchValue", data.SearchValue);
+            clientDatabaseConnection.AddParameter("searchInTitle", data.SearchInTitle);
+            clientDatabaseConnection.AddParameter("searchEverywhere", data.SearchEverywhere);
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            clientDatabaseConnection.AddParameter("hasSearchFields", searchFields.Any());
+
+            var searchQueryPart = new StringBuilder();
+            if (!String.IsNullOrWhiteSpace(data.SearchValue))
+            {
+                if (searchFields.Any())
+                {
+                    searchQueryPart.AppendLine($"(detail.key IN (${String.Join(",", searchFields.Select(f => f.ToMySqlSafeValue(true)))}) AND detail.value LIKE CONCAT('%', ?searchValue, '%'))");
+                }
+
+                if (data.SearchInTitle)
+                {
+                    if (searchFields.Any())
+                    {
+                        searchQueryPart.Append("OR ");
+                    }
+
+                    searchQueryPart.AppendLine("item.title LIKE CONCAT('%', ?searchValue, '%')");
+                }
+            }
+
+            if (searchQueryPart.Length > 0)
+            {
+                searchQueryPart.Insert(0, "AND (");
+                searchQueryPart.AppendLine(")");
+            }
+
+            var query = $@"SELECT 
+	item.id,
+	item.title
+FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
+LEFT JOIN {WiserTableNames.WiserItemLink} AS link ON link.destination_item_id = ?parentId AND link.item_id = item.id
+LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS detail ON detail.item_id = item.id
+
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS userRole ON userRole.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = userRole.role_id AND permission.item_id = item.id
+
+WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND item.entity_type = ?entityType
+AND (?searchEverywhere = TRUE OR link.id IS NOT NULL)
+{searchQueryPart}
+
+GROUP BY item.id
+ORDER BY link.ordering ASC, item.title ASC";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+            var result = new List<SearchResponseModel>();
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var searchResult = new SearchResponseModel
+                {
+                    Id = dataRow.Field<ulong>("id"),
+                    Name = dataRow.Field<string>("title")
+                };
+
+                searchResult.EncryptedId = await wiserTenantsService.EncryptValue(searchResult.Id, identity);
+
+                result.Add(searchResult);
+            }
+
+            return new ServiceResult<List<SearchResponseModel>>(result);
+        }
+
         /// <summary>
         /// Saves a translated field in a <see cref="WiserItemModel"/>. It will only do this if it doesn't have a value for that language yet.
         /// </summary>

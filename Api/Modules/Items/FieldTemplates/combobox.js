@@ -68,29 +68,19 @@ if (typeof options.dataSource === "string") {
             break;
     }
 } else if (options.entityType) {
-    var searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true") ? 1 : 0;
+    var searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true");
     var searchFields = options.searchFields || [];
-    var searchInTitle = typeof options.searchInTitle === "undefined" || options.searchInTitle === null || options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0 ? 1 : 0;
-	var searchModuleId = options.moduleId || 0;
-	if (!searchEverywhere && !searchModuleId) {
-		searchModuleId = window.dynamicItems.settings.moduleId || 0;
-	}
+    var searchInTitle = typeof options.searchInTitle === "undefined" || options.searchInTitle === null || options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0;
 
     options.dataSource.transport.read = (kendoReadOptions) => {
-        var searchAddition = "";
+        let searchValue = "";
 
         if (kendoReadOptions.data && kendoReadOptions.data.filter && kendoReadOptions.data.filter.filters && kendoReadOptions.data.filter.filters.length){
-            searchAddition = "&search=" + encodeURIComponent(kendoReadOptions.data.filter.filters[0].value);
-        }
-        else if (options.minLength <= 0) {
-            searchAddition = "&search=";
+            searchValue = encodeURIComponent(kendoReadOptions.data.filter.filters[0].value);
         }
 
         Wiser.api({
-            url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
-                "&entityType=" + encodeURIComponent(options.entityType) + "&searchInTitle=" + encodeURIComponent(searchInTitle.toString()) +
-                "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
-                "&skip=0&take=999999" + searchAddition,
+            url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/search?entityType=${encodeURIComponent(options.entityType)}&searchValue=${searchValue}&searchInTitle=${searchInTitle}&searchEveryWhere=${searchEverywhere}&searchFields=${encodeURIComponent(searchFields.join())}`,
             dataType: "json",
             method: "GET",
             data: kendoReadOptions.data
@@ -104,34 +94,7 @@ if (typeof options.dataSource === "string") {
     options.dataSource.pageSize = 80;
     options.dataSource.serverPaging = true;
     options.dataSource.serverFiltering = true;
-
-	options.filter = "contains";
-
-    // TODO: Finish virtual scrolling.
-    /*options.virtual = {
-        valueMapper: function(options) {
-            console.log("dropdown {title} valueMapper", options);
-            $.ajax({
-                url: window.dynamicItems.settings.serviceRoot,
-                type: "GET",
-                dataType: "jsonp",
-                data: {
-                    templatename: "SEARCH_ITEMS_VALUE_MAPPER",
-                    trace: false,
-                    id: "{itemIdEncrypted}",
-                    moduleid: searchModuleId,
-                    entityType: options.entityType,
-                    search: "",
-                    searchInTitle: searchInTitle,
-                    searchFields: searchFields.join(),
-                    searchEverywhere: searchEverywhere
-                }
-            }).done(function(results) {
-                options.success(results);
-            });
-        }
-    }*/
-	//options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
+    options.filter = "contains";
 } else if (options.dataSelectorId) {
     options.dataSource.transport.read = (kendoReadOptions) => {
         Wiser.api({
