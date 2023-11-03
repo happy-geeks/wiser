@@ -465,7 +465,7 @@ const moduleSettings = {
             const servicesGridElement = document.getElementById("services-grid");
             if (!servicesGridElement) return;
 
-            this.servicesGrid = $(servicesGridElement).kendoGrid({
+            this.servicesGrid = servicesGridElement.kendoGrid({
                 columns: [
                     {
                         field: "id",
@@ -554,10 +554,10 @@ const moduleSettings = {
                 ],
                 dataBound: this.setServiceState.bind(this)
             }).data("kendoGrid");
-            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-start", content: "Start" });
-            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-pause", content: "Pauzeer" });
-            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-logs", content: "Bekijk Logs" });
-            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+            servicesGridElement.kendoTooltip({ filter: ".k-grid-start", content: "Start" });
+            servicesGridElement.kendoTooltip({ filter: ".k-grid-pause", content: "Pauzeer" });
+            servicesGridElement.kendoTooltip({ filter: ".k-grid-logs", content: "Bekijk Logs" });
+            servicesGridElement.kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
         }
 

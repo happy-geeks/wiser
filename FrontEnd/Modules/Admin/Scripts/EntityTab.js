@@ -1054,7 +1054,8 @@ export class EntityTab {
         }).data("kendoTimePicker");
 
         //GRID
-        this.grid = $("#valuegrid").kendoGrid({
+        const gridElement = $("#valuegrid");
+        this.grid = gridElement.kendoGrid({
             resizable: true,
             toolbar: ["create"],
             remove: (e) => {
@@ -1079,9 +1080,9 @@ export class EntityTab {
                 ]
             }]
         }).data("kendoGrid");
-        $("#valuegrid").kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
-        $("#valuegrid").kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
-        $("#valuegrid").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
+        gridElement.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        gridElement.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        gridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         ////COMBOBOX - GENERAL
         $("#checkedCheckbox").kendoDropDownList().data("kendoDropDownList");
@@ -1485,7 +1486,8 @@ export class EntityTab {
             }
         };
 
-        this.actionButtonActionsGrid = $("#actionButtonActionsGrid").kendoGrid({
+        const actionButtonActionsGridElement = $("#actionButtonActionsGrid");
+        this.actionButtonActionsGrid = actionButtonActionsGridElement.kendoGrid({
             dataSource: this.actionButtonActionsGridDataSourceSettings,
             resizable: true,
             toolbar: ["create"],
@@ -1531,12 +1533,13 @@ export class EntityTab {
                 });
             }
         }).data("kendoGrid");
-        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
-        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
-        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
-        $("#actionButtonActionsGrid").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
-        this.actionButtonGrid = $("#actionButtonGrid").kendoGrid({
+        const actionButtonGridElement = $("#actionButtonGrid");
+        this.actionButtonGrid = actionButtonGridElement.kendoGrid({
             dataSource: {},
             resizable: true,
             toolbar: ["create"],
@@ -1577,10 +1580,10 @@ export class EntityTab {
                     width: "250px"
                 }]
         }).data("kendoGrid");
-        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
-        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
-        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
-        $("#actionButtonGrid").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         this.subEntityGridEntity = $("#subEntityGridEntity").kendoDropDownList({
             autoClose: false,
