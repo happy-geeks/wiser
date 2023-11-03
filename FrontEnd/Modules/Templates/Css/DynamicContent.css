@@ -113,6 +113,7 @@
 
 .historyContainer .col-12 {
     flex-basis: 100%;
+	width: 0;
 }
 
 .historyHeader .col {

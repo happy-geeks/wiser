@@ -1,4 +1,5 @@
 @using FrontEnd.Modules.Templates.Models
+@using GeeksCoreLibrary.Modules.Templates.Enums
 @model HistoryTabViewModel
 @{
     var publishLogCounter = 0;
@@ -12,8 +13,8 @@
         {
             <div class="row historyLine">
                 <div class="col col-12 historyTagline">
-                    <span><span class="k-icon k-i-edit"></span> Published Environment |</span>
-                    <span><span class="k-icon k-i-calendar"></span> @Model.PublishHistory[i].GetDisplayChangedOn() |</span>
+                    <span><span class="k-icon k-i-edit"></span> <b>Published Environment</b> | </span>
+                    <span><span class="k-icon k-i-calendar"></span> @Model.PublishHistory[i].GetDisplayChangedOn() | </span>
                     <span><span class="k-icon k-i-user"></span> door @Model.PublishHistory[i].ChangedBy </span>
                 </div>
                 @if (Model.PublishHistory[i].PublishLog.OldLive != Model.PublishHistory[i].PublishLog.NewLive)
@@ -104,13 +105,13 @@
             {
                 <ins class="version test" title="test"></ins>
             }
-            <span><span class="k-icon k-i-edit"></span> Versie @historyModel.Version |</span>
-            <span><span class="k-icon k-i-calendar"></span> @historyModel.GetDisplayChangedOn() |</span>
+            <span><span class="k-icon k-i-edit"></span> <b>Versie @historyModel.Version</b> | </span>
+            <span><span class="k-icon k-i-calendar"></span> @historyModel.GetDisplayChangedOn() | </span>
             <span><span class="k-icon k-i-user"></span> door @historyModel.ChangedBy </span>
         </div>
         @foreach (var change in historyModel.TemplateChanges)
         {
-            if (change.Value.Key is bool booleanNewValue && change.Value.Value is bool booleanOldValue)
+            if (change.Value.Item1 is bool booleanNewValue && change.Value.Item2 is bool booleanOldValue)
             {
                 <div class="col col-6 checkLine">
                     <div class="item" data-label-style="normal" data-label-width="0">
@@ -149,6 +150,13 @@
                     </div>
                 </div>
             }
+            else if (change.Value.Item3 is TemplateTypes.Html or TemplateTypes.Query or TemplateTypes.Js or TemplateTypes.Css or TemplateTypes.Scss or TemplateTypes.Xml)
+            {
+                <div class="col col-12 diffField" data-type="@change.Value.Item3" field-name="@change.Key">
+                    <span class="oldValue" value="@change.Value.Item2">Old value placeholder</span>
+                    <span class="newValue" value="@change.Value.Item1">New value placeholder</span>
+                </div>
+            }
             else
             {
                 <div class="col col-6">
@@ -156,14 +164,7 @@
                         <span class="handler">&nbsp;</span>
                         <h4><label for="@change.Key">@change.Key</label></h4>
                         <span class="k-widget k-input k-state-default">
-                            @if (String.Equals(change.Key, "editorValue"))
-                            {
-                                <textarea id="text_101" autocomplete="off" disabled>@change.Value.Value</textarea>
-                            }
-                            else
-                            {
-                                <input type="text" id="text_101" class="textField k-input" autocomplete="off" value="@change.Value.Value" disabled/>
-                            }
+                            <input type="text" id="text_101" class="textField k-input" autocomplete="off" value="@change.Value.Item2" disabled/>
                         </span>
                     </div>
                 </div>
@@ -173,14 +174,7 @@
                         <span class="handler">&nbsp;</span>
                         <h4><label for="text_102">@change.Key</label></h4>
                         <span class="k-widget k-input k-state-default">
-                            @if (String.Equals(change.Key, "editorValue"))
-                            {
-                                <textarea id="text_102" autocomplete="off" disabled>@change.Value.Key</textarea>
-                            }
-                            else
-                            {
-                                <input type="text" id="text_102" class="textField k-input" autocomplete="off" value="@change.Value.Key" disabled />
-                            }
+                            <input type="text" id="text_102" class="textField k-input" autocomplete="off" value="@change.Value.Item1" disabled />
                         </span>
                     </div>
                 </div>
@@ -201,7 +195,7 @@
                         <span class="handler">&nbsp;</span>
                         <span class="inline">
                             <label class="checkbox">
-                                @if ((Boolean)change.Value.Value)
+                                @if ((Boolean)change.Value.Item2)
                                 {
                                     <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                 }
@@ -219,7 +213,7 @@
                         <span class="handler">&nbsp;</span>
                         <span class="inline">
                             <label class="checkbox">
-                                @if ((Boolean)change.Value.Key)
+                                @if ((Boolean)change.Value.Item1)
                                 {
                                     <input id="@change.Key" name="@change.Key" type="checkbox" checked="checked" disabled>
                                 }
@@ -236,28 +230,26 @@
         }
         @if (historyModel.DynamicContentChanges.Count > 0)
         {
-            <div class="row historyLine">
+            <div class="row historyLine historyDynamic">
                 <div class="col col-12 historyTagline">
-                    <span>Dynamic Content:</span>
+                    <span><b>Versie @historyModel.Version</b> dynamische content:</span>
                 </div>
-            </div>
-
-            @foreach (var dynamicHistory in historyModel.DynamicContentChanges)
-            {
-                <div class="col col-12 historyTagline">
-                    <span><span class="k-icon k-i-edit"></span> Versie @dynamicHistory.Version |</span>
-                    <span><span class="k-icon k-i-calendar"></span> @dynamicHistory.GetDisplayChangedOn() |</span>
-                    <span><span class="k-icon k-i-user"></span> door @dynamicHistory.ChangedBy </span>
-                </div>
-                @if (dynamicHistory.ChangedFields != null)
+                @foreach (var dynamicHistory in historyModel.DynamicContentChanges)
                 {
-                    @foreach (var (oldVersion, newVersion) in dynamicHistory.ChangedFields)
+                    <div class="col col-12 historyTagline">
+                        <span><span class="k-icon k-i-edit"></span> @dynamicHistory.Name (@dynamicHistory.Component) | Versie @dynamicHistory.Version | </span>
+                        <span><span class="k-icon k-i-calendar"></span> @dynamicHistory.GetDisplayChangedOn() | </span>
+                        <span><span class="k-icon k-i-user"></span> door @dynamicHistory.ChangedBy </span>
+                    </div>
+                    @if (dynamicHistory.ChangedFields != null)
                     {
-                        <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="oldVersion" />
-                        <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="newVersion" />
+                        @foreach (var pair in dynamicHistory.ChangedFields)
+                        {
+                            <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="pair" />
+                        }
                     }
                 }
-            }
+            </div>
         }
     </div>
 }

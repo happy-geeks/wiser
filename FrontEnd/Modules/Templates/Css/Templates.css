@@ -435,6 +435,7 @@ footer {
 
 .historyContainer .col-12 {
     flex-basis: 100%;
+	width: 0;
 }
 
 .historyHeader .col {
@@ -519,9 +520,7 @@ footer {
 }
 
 .historyDynamic {
-    border-top: 1px solid var(--body-color);
-    padding-top: 15px;
-    margin-top: 15px;
+    margin-left: 20px;
 }
 
 /** DYNAMIC CONTENT GRID **/

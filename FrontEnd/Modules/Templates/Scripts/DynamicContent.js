@@ -3,6 +3,7 @@ import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {Preview} from "./Preview.js";
 import "../Css/DynamicContent.css";
+import "diff2html/bundles/css/diff2html.min.css"
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -287,6 +288,9 @@ const moduleSettings = {
 
                 codeMirrorInstance.refresh();
             });
+            
+            if (event.item.classList.contains("history-tab"))
+                window.parent.Templates.createHistoryDiffFields(document.getElementById("right-pane").querySelector("div.historyContainer"));
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
@@ -628,6 +632,7 @@ const moduleSettings = {
                 });
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
+                window.parent.Templates.createHistoryDiffFields(document.getElementById("right-pane").querySelector("div.historyContainer"));
                 this.lastLoadedHistoryPart++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
