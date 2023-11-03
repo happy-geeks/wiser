@@ -1,1 +1,0 @@
-﻿.\node_modules\.bin\webpack.cmd --mode=development -w
