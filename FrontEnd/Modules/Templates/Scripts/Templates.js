@@ -27,7 +27,7 @@ require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
 
-}; 
+};
 
 ((settings) => {
     /**
@@ -1148,11 +1148,21 @@ const moduleSettings = {
                 const insertDynamicContentTool = {
                     name: "wiserDynamicContent",
                     tooltip: "Dynamische inhoud toevoegen",
+                    ui: {
+                        type: "button",
+                        text: "Dynamische inhoud toevoegen",
+                        icon: "css"
+                    },
                     exec: this.onHtmlEditorDynamicContentExec.bind(this)
                 };
                 const htmlSourceTool = {
                     name: "wiserHtmlSource",
                     tooltip: "HTML bekijken/aanpassen",
+                    ui: {
+                        type: "button",
+                        text: "HTML bekijken/aanpassen",
+                        icon: "code"
+                    },
                     exec: this.onHtmlEditorHtmlSourceExec.bind(this)
                 };
 
@@ -1163,6 +1173,11 @@ const moduleSettings = {
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
+                    ui: {
+                        type: "button",
+                        text: "Vertaling invoegen",
+                        icon: "globe"
+                    },
                     exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
                 };
 

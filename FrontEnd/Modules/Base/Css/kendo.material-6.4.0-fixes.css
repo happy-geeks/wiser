@@ -502,6 +502,10 @@ div.k-grid-norecords {
     min-height: 16px;
     min-width: 16px;
 }
+.k-editor .k-editor-toolbar {
+    box-shadow: none;
+    border-bottom: 1px solid var(--sec-color);
+}
 .k-editor-toolbar .k-button {
     padding: 8px !important;
     margin-right: 0;

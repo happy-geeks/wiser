@@ -3179,6 +3179,11 @@ export class Fields {
                 const minimizeTool = {
                     name: "wiserMinimizeEditor",
                     tooltip: "Verkleinen",
+                    ui: {
+                        type: "button",
+                        text: "Verkleinen",
+                        icon: "window-restore"
+                    },
                     exec: (e) => {
                         editor.value(windowKendoEditor.value());
                         kendoWindow.close();

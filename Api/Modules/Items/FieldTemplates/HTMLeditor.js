@@ -5,28 +5,51 @@
     const imageTool = {
         name: "wiserImage",
         tooltip: "Afbeelding toevoegen",
+        ui: {
+            type: "button",
+            text: "Afbeelding toevoegen",
+            icon: "image"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorImageExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const fileTool = {
         name: "wiserFile",
         tooltip: "Link naar bestand toevoegen",
+        ui: {
+            type: "button",
+            text: "Link naar bestand toevoegen",
+            icon: "file"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorFileExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const templateTool = {
         name: "wiserTemplate",
         tooltip: "Template toevoegen",
+        ui: {
+            type: "button",
+            text: "Template toevoegen",
+            icon: "template-manager"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorTemplateExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const htmlSourceTool = {
         name: "wiserHtmlSource",
         tooltip: "HTML bekijken/aanpassen",
-        exec: (e) => {
-            window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}")
-        }
+        ui: {
+            type: "button",
+            text: "HTML bekijken/aanpassen",
+            icon: "code"
+        },
+        exec: (e) => { window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}") }
     };
     const maximizeTool = {
         name: "wiserMaximizeEditor",
         tooltip: "Vergroten",
+        ui: {
+            type: "button",
+            text: "Vergroten",
+            icon: "window"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorFullScreenExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}")
     };
     const contentBuilderToolNotable = {
@@ -38,21 +61,41 @@
     const contentBuilderToolBasic = {
         name: "wiserContentBuilder",
         tooltip: "Content builder",
+        ui: {
+            type: "button",
+            text: "Content builder",
+            icon: "change-manually"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}")
     };
     const entityBlockTool = {
         name: "wiserEntityBlock",
         tooltip: "Entiteit-blok",
+        ui: {
+            type: "button",
+            text: "Entiteit-blok",
+            icon: "code-snippet"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorEntityBlockExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const dataSelectorTool = {
         name: "wiserDataSelector",
         tooltip: "Data selector met template",
+        ui: {
+            type: "button",
+            text: "Data selector met template",
+            icon: "gears"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorDataSelectorExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const youTubeTool = {
         name: "wiserYouTube",
         tooltip: "YouTube video invoegen",
+        ui: {
+            type: "button",
+            text: "YouTube video invoegen",
+            icon: "youtube"
+        },
         exec: (event) => window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
 
@@ -60,11 +103,19 @@
     const translationsTool = {
         name: "wiserTranslation",
         tooltip: "Vertaling invoegen",
+        ui: {
+            type: "button",
+            text: "Vertaling invoegen",
+            icon: "globe"
+        },
         exec: (event) => Wiser.onHtmlEditorTranslationExec.call(Wiser, event, kendoComponent, wiserApiRoot)
     };
 
     const options = $.extend(true, {
-        resizable: true,
+        resizable: {
+        content: true,
+        toolbar: false
+    },
         pasteCleanup: {
             all: false,
             css: false,

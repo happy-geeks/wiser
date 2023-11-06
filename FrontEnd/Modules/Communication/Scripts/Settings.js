@@ -1,12 +1,12 @@
-import { TrackJS } from "trackjs";
-import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
-import { DateTime } from "luxon";
+import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
+import {DateTime} from "luxon";
 import "../../Base/Scripts/Processing.js";
+import "../Css/Settings.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../Css/Settings.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const communicationModuleSettings = {
@@ -275,6 +275,11 @@ const communicationModuleSettings = {
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
+                    ui: {
+                        type: "button",
+                        text: "Vertaling invoegen",
+                        icon: "globe"
+                    },
                     exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
                 };
 
