@@ -67,6 +67,8 @@ export class Windows {
      */
     initialize() {
         // Window for file managers.
+        // this.fileManagerWindow = Wiser.initializeFileManager();
+        
         this.fileManagerIframe = document.querySelector("#fileManagerFrame");
         this.fileManagerWindow = $("#fileManagerWindow").kendoWindow({
             width: "90%",

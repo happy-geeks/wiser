@@ -2895,9 +2895,8 @@ export class Fields {
          if (!this.base.settings.imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
-            this.base.windows.fileManagerWindow.center().open();
+             const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.images);
+             fileManagerWindow.center().open();
         }
     }
 
@@ -2913,9 +2912,8 @@ export class Fields {
         if (!this.base.settings.filesRootId) {
             kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.files;
-            this.base.windows.fileManagerWindow.center().open();
+            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.files);
+            fileManagerWindow.center().open();
         }
     }
 
@@ -2931,9 +2929,8 @@ export class Fields {
         if (!this.base.settings.templatesRootId) {
             kendo.alert("Er is nog geen 'templatesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.templates;
-            this.base.windows.fileManagerWindow.center().open();
+            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.templates);
+            fileManagerWindow.center().open();
         }
     }
 

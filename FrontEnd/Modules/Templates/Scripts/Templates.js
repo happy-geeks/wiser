@@ -1156,11 +1156,23 @@ const moduleSettings = {
                 };
 
                 const wiserApiRoot = this.settings.wiserApiRoot;
-
+                
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
                     exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
+                };
+
+                const imageTool = {
+                    name: "wiserImage",
+                    tooltip: "Afbeelding toevoegen",
+                    exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor")); }
+                };
+                
+                const fileTool = {
+                    name: "wiserFile",
+                    tooltip: "Link naar bestand toevoegen",
+                    exec: function(e) { Wiser.onHtmlEditorFileExec.call(Wiser, e, $(this).data("kendoEditor")); }
                 };
 
                 this.mainHtmlEditor = $(".editor").kendoEditor({
@@ -1181,8 +1193,8 @@ const moduleSettings = {
                         "outdent",
                         "createLink",
                         "unlink",
-                        "insertImage",
-                        "insertFile",
+                        imageTool,
+                        fileTool,
                         "subscript",
                         translationsTool,
                         "superscript",
