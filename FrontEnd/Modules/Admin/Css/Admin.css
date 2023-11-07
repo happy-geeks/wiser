@@ -408,6 +408,7 @@ table.k-editor {
     padding: 20px 10px;
     background-color: var(--white-color);
     border: 1px solid var(--border-color);
+    height: calc(100vh - 550px);
 }
 
 /* Tab strips */
