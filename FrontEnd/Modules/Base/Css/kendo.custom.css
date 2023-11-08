@@ -2841,7 +2841,7 @@ td.k-group-cell,
     border-radius: 0;
 }
 
-.k-pager-numbers .k-state-selected {
+.k-pager-wrap .k-pager-numbers .k-state-selected {
     border-color: var(--color-1) transparent transparent;
     border-radius: 0;
     box-shadow: none;
