@@ -125,7 +125,7 @@ namespace Api.Modules.Tenants.Services
 
             var query = $@"SELECT
                             id,
-                            tenantid,
+                            customerid,
                             name,
                             encryption_key,
                             subdomain,
