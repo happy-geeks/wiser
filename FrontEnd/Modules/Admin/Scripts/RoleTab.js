@@ -60,16 +60,24 @@ export class RoleTab {
     }
 
     /**
-     * Add or remove module rights from the database based on the given parameters
+     * Add or remove rights from the database based on the given parameters
+     * @param {any} subject The subject of which the rights get updates
      * @param {any} role The id of the role
      * @param {any} module The id of the module
      * @param {any} permissionCode The code of the permission to add or delete
      */
-    async addRemoveModuleRightAssignment(role, module, permissionCode) {
+    async addRemoveSubjectRightAssignment(subject, role, module, permissionCode) {
         try {
             await Wiser.api({
-                url: `${this.base.settings.serviceRoot}/UPDATE_MODULE_PERMISSION?moduleId=${encodeURIComponent(module)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`,
-                method: "GET"
+                url: `${this.base.settings.wiserApiRoot}permissions/set-permission/`,
+                contentType: "application/json",
+                data: JSON.stringify({
+                    subject: subject,
+                    subjectId: module,
+                    roleId: role,
+                    permissionCode: permissionCode
+                }),
+                method: "POST"
             });
 
             // Reload the modules list in the side bar of Wiser.
@@ -78,7 +86,7 @@ export class RoleTab {
             this.base.showNotification("notification", `De wijzigingen zijn opgeslagen.`, "success");
         }
         catch(exception) {
-            console.error("Error while updating entity property permissions", exception);
+            console.error("Error while updating module permissions", exception);
             this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
         }
     }
@@ -380,7 +388,7 @@ export class RoleTab {
                         let permissionValue = this.base.setCheckboxForItems(targetElement, tagetType, moduleId, "module");
 
                         if (permissionValue !== -1) {
-                            this.addRemoveModuleRightAssignment(roleId, moduleId, permissionValue);
+                            this.addRemoveSubjectRightAssignment("Modules", roleId, moduleId, permissionValue);
                         }
                     });
                 }
@@ -388,13 +396,149 @@ export class RoleTab {
         }
 
         const queryStringForModulesGrid = {
-            roleId: item
+            roleId: item,
+            subject: "Modules"
         };
 
         this.modulesGrid.setDataSource({
             transport: {
                 read: {
-                    url: `${this.base.settings.serviceRoot}/GET_MODULE_PERMISSIONS${Utils.toQueryString(queryStringForModulesGrid, true)}`
+                    url: `${this.base.settings.wiserApiRoot}permissions/get-permissions/${Utils.toQueryString(queryStringForModulesGrid, true)}`
+                }
+            }
+        });
+    }
+
+    /**
+     * Init Kendo grid component
+     * @param {any} item The item id of the selected role
+     */
+    initializeOrRefreshRolesQueriesGrid(item) {
+        if (!this.queriesGrid) {
+            this.queriesGrid = $("#QueriesGrid").kendoGrid({
+                resizable: true,
+                filterable: {
+                    mode: "row"
+                },
+                columns: [
+                    {
+                        title: "Query naam",
+                        field: "queryName"
+                    },
+                    {
+                        title: "Alle rechten",
+                        width: "100px",
+                        attributes: {
+                            style: "text-align: center;"
+                        },
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Alle rechten</span><input type="checkbox" id="role-check-all" class="k-checkbox query"><label class="k-checkbox-label" for="role-check-all"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-query-all-${dataItem.queryId}" data-type="all" data-role-id="${dataItem.roleId}" data-query="${dataItem.queryId}" data-permission="0" ${dataItem.permission === 15 ? "checked" : ""} class="k-checkbox query"><label class="k-checkbox-label" for="role-query-all-${dataItem.queryId}"></label>`;
+                        }
+                    },
+                    {
+                        title: "Geen rechten",
+                        width: "100px",
+                        attributes: {
+                            style: "text-align: center;"
+                        },
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Geen rechten</span><input type="checkbox" id="role-check-disable" class="k-checkbox query"><label class="k-checkbox-label" for="role-check-disable"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-query-disable-${dataItem.queryId}" data-type="nothing" data-role-id="${dataItem.roleId}" data-query="${dataItem.queryId}" data-permission="0" ${dataItem.permission === 0 ? "checked" : ""} class="k-checkbox query"><label class="k-checkbox-label" for="role-query-disable-${dataItem.queryId}"></label>`;
+                        }
+                    },
+                    {
+                        title: "Lezen",
+                        width: "100px",
+                        attributes: {
+                            style: "text-align: center;"
+                        },
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Lezen</span><input type="checkbox" id="role-check-read" class="k-checkbox query"><label class="k-checkbox-label" for="role-check-read"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-query-read-${dataItem.queryId}" data-type="read" data-role-id="${dataItem.roleId}" data-query="${dataItem.queryId}" data-permission="1" ${(1 << 0 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-query-read-${dataItem.queryId}"></label>`;
+                        }
+                    },
+                    {
+                        title: "Aanmaken",
+                        width: "100px",
+                        attributes: {
+                            style: "text-align: center;"
+                        },
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Aanmaken</span><input type="checkbox" id="role-check-edit" class="k-checkbox query"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-query-create-${dataItem.queryId}" data-type="create" data-role-id="${dataItem.roleId}" data-query="${dataItem.queryId}" data-permission="2" ${(1 << 1 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-query-create-${dataItem.queryId}"></label>`;
+                        }
+                    },
+                    {
+                        title: "Wijzigen",
+                        width: "100px",
+                        attributes: {
+                            style: "text-align: center;"
+                        },
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Wijzigen</span><input type="checkbox" id="role-check-edit" class="k-checkbox query"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-query-edit-${dataItem.queryId}" data-type="edit" data-role-id="${dataItem.roleId}" data-query="${dataItem.queryId}" data-permission="4" ${(1 << 2 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-query-edit-${dataItem.queryId}"></label>`;
+                        }
+                    },
+                    {
+                        title: "Verwijderen",
+                        width: "100px",
+                        attributes: {
+                            style: "text-align: center;"
+                        },
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Verwijderen</span><input type="checkbox" id="role-check-edit" class="k-checkbox query"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-query-delete-${dataItem.queryId}" data-type="remove"  data-role-id="${dataItem.roleId}" data-query="${dataItem.queryId}" data-permission="8" ${(1 << 3 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-query-delete-${dataItem.queryId}"></label>`;
+                        }
+                    }
+                ],
+                dataBound: (e) => {
+                    // When a item in the header is selected
+                    e.sender.thead.find(".checkAll > input").off("change").change((element) => {
+                        this.base.openDialog("Meerdere rechten wijzigen", "U staat op het punt voor meer dan een regel de rechten te zetten, weet u zeker dat u wilt doorgaan?", this.base.kendoPromptType.CONFIRM).then(() => {
+                            const clickedElement = element.currentTarget;
+                            this.base.setCheckboxForHeaderItems(clickedElement);
+                        })
+                    });
+
+                    // When a item in the grid is checked
+                    e.sender.tbody.find(".k-checkbox").off("change").change((element) => {
+                        const targetElement = element.currentTarget;
+                        const tagetType = targetElement.dataset.type;
+                        const roleId = parseInt(targetElement.dataset.roleId);
+                        const queryId = parseInt(targetElement.dataset.query);
+
+                        let permissionValue = this.base.setCheckboxForItems(targetElement, tagetType, queryId, "query");
+
+                        if (permissionValue !== -1) {
+                            this.addRemoveSubjectRightAssignment('Queries', roleId, queryId, permissionValue);
+                        }
+                    });
+                }
+            }).data("kendoGrid");
+        }
+
+        const queryStringForqueriesGrid = {
+            roleId: item,
+            subject: "Queries"
+        };
+
+        this.queriesGrid.setDataSource({
+            transport: {
+                read: {
+                    url: `${this.base.settings.wiserApiRoot}permissions/get-permissions/${Utils.toQueryString(queryStringForqueriesGrid, true)}`
                 }
             }
         });
@@ -425,13 +569,19 @@ export class RoleTab {
                 const selectedTab = event.item.querySelector(".k-link").innerHTML.toLowerCase();
                 const dataItem = this.roleList.dataItem(this.roleList.select());
                 console.log("rolesTabStrip activate", selectedTab, dataItem);
-                if (typeof dataItem !== "undefined") {
-                    if (selectedTab === "velden") {
+                if (typeof dataItem === "undefined") {
+                    return;
+                }
+                switch (selectedTab) {
+                    case "velden":
                         this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
-                    }
-                    if (selectedTab === "modules") {
+                        break;
+                    case "modules":
                         this.initializeOrRefreshRolesModulesGrid(dataItem.id);
-                    }
+                        break;
+                    case "query's":
+                        this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
+                        break;
                 }
             }
         }).data("kendoTabStrip");
@@ -453,11 +603,16 @@ export class RoleTab {
                 const dataItem = this.roleList.dataItem(this.roleList.select());
 
                 const selectedTab = this.getSelectedTabName().toLowerCase();
-                if (selectedTab === "velden") {
-                    this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
-                }
-                if (selectedTab === "modules") {
-                    this.initializeOrRefreshRolesModulesGrid(dataItem.id);
+                switch (selectedTab) {
+                    case "velden":
+                        this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
+                        break;
+                    case "modules":
+                        this.initializeOrRefreshRolesModulesGrid(dataItem.id);
+                        break;
+                    case "query's":
+                        this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
+                        break;
                 }
             }
         }).data("kendoListView");

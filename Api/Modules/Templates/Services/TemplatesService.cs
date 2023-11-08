@@ -786,34 +786,6 @@ WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
 ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
-                TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
-	role.id AS `roleId`,
-	role.role_name AS `roleName`,
-	module.id AS `moduleId`,
-	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
-	IFNULL(permission.permissions, 0) AS `permission`
-FROM wiser_module AS module
-JOIN wiser_roles AS role ON role.id = {roleId}
-LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id
-ORDER BY moduleName ASC
-");
-                TemplateQueryStrings.Add("UPDATE_MODULE_PERMISSION", @" INSERT INTO `wiser_permission` (
-     `role_id`,
-     `entity_name`,
-     `item_id`,
-     `entity_property_id`,
-     `permissions`,
-     `module_id`
- ) 
- VALUES (
-     {roleId}, 
-     '',
-     0,
-     0,
-     {permissionCode},
-     {moduleId}
- )
-ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
