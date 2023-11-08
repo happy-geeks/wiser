@@ -497,6 +497,11 @@ div.k-grid-norecords {
     line-height: 1.5em;
 }
 
+/* Loader */
+.k-i-loading {
+    background-image: none !important;
+}
+
 /* Editor */
 .k-editor .k-button-md.k-icon-button .k-button-icon {
     min-height: 16px;
@@ -505,6 +510,9 @@ div.k-grid-norecords {
 .k-editor .k-editor-toolbar {
     box-shadow: none;
     border-bottom: 1px solid var(--sec-color);
+}
+.k-editor .k-editor-toolbar .k-colorpicker .k-input-inner {
+    padding: 8px !important;
 }
 .k-editor-toolbar .k-button {
     padding: 8px !important;
@@ -523,6 +531,24 @@ div.k-grid-norecords {
 }
 .k-editor .k-toolbar .k-button-group {
     width: auto !important;
+}
+.html-source-window .actions .k-button {
+    height: 42px;
+}
+.html-source-window .k-button-md.k-icon-button .k-button-icon.k-svg-icon > svg,
+.html-source-window .k-button-md.k-icon-button .k-button-icon.k-icon-md > svg {
+    width: 20px;
+    height: 20px;
+}
+.maximize-editor-window > .pane-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+.maximize-editor-window > .pane-content .k-editor {
+    width: 100%;
 }
 
 /* Datetimepicker */
