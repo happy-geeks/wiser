@@ -60,16 +60,24 @@ export class RoleTab {
     }
 
     /**
-     * Add or remove module rights from the database based on the given parameters
+     * Add or remove rights from the database based on the given parameters
+     * @param {any} subject The subject of which the rights get updates
      * @param {any} role The id of the role
      * @param {any} module The id of the module
      * @param {any} permissionCode The code of the permission to add or delete
      */
-    async addRemoveModuleRightAssignment(role, module, permissionCode) {
+    async addRemoveSubjectRightAssignment(subject, role, module, permissionCode) {
         try {
             await Wiser.api({
-                url: `${this.base.settings.serviceRoot}/UPDATE_MODULE_PERMISSION?moduleId=${encodeURIComponent(module)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`,
-                method: "GET"
+                url: `${this.base.settings.wiserApiRoot}permissions/set-permission/`,
+                contentType: "application/json",
+                data: JSON.stringify({
+                    subject: subject,
+                    subjectId: module,
+                    roleId: role,
+                    permissionCode: permissionCode
+                }),
+                method: "POST"
             });
 
             // Reload the modules list in the side bar of Wiser.
@@ -79,27 +87,6 @@ export class RoleTab {
         }
         catch(exception) {
             console.error("Error while updating module permissions", exception);
-            this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
-        }
-    }
-
-    /**
-     * Add or remove query rights from the database based on the given parameters
-     * @param {any} role The id of the role
-     * @param {any} query The id of the query
-     * @param {any} permissionCode The code of the permission to add or delete
-     */
-    async addRemoveQueryRightAssignment(role, query, permissionCode) {
-        try {
-            await Wiser.api({
-                url: `${this.base.settings.serviceRoot}/UPDATE_QUERY_PERMISSION?queryId=${encodeURIComponent(query)}&roleId=${encodeURIComponent(role)}&permissionCode=${encodeURIComponent(permissionCode)}`,
-                method: "GET"
-            });
-
-            this.base.showNotification("notification", `De wijzigingen zijn opgeslagen.`, "success");
-        }
-        catch(exception) {
-            console.error("Error while updating query permissions", exception);
             this.base.showNotification("notification", `Er is iets fout gegaan, probeer het opnieuw`, "error");
         }
     }
@@ -401,7 +388,7 @@ export class RoleTab {
                         let permissionValue = this.base.setCheckboxForItems(targetElement, tagetType, moduleId, "module");
 
                         if (permissionValue !== -1) {
-                            this.addRemoveModuleRightAssignment(roleId, moduleId, permissionValue);
+                            this.addRemoveSubjectRightAssignment("Modules", roleId, moduleId, permissionValue);
                         }
                     });
                 }
@@ -409,13 +396,14 @@ export class RoleTab {
         }
 
         const queryStringForModulesGrid = {
-            roleId: item
+            roleId: item,
+            subject: "Modules"
         };
 
         this.modulesGrid.setDataSource({
             transport: {
                 read: {
-                    url: `${this.base.settings.serviceRoot}/GET_MODULE_PERMISSIONS${Utils.toQueryString(queryStringForModulesGrid, true)}`
+                    url: `${this.base.settings.wiserApiRoot}permissions/get-permissions/${Utils.toQueryString(queryStringForModulesGrid, true)}`
                 }
             }
         });
@@ -535,7 +523,7 @@ export class RoleTab {
                         let permissionValue = this.base.setCheckboxForItems(targetElement, tagetType, queryId, "query");
 
                         if (permissionValue !== -1) {
-                            this.addRemoveQueryRightAssignment(roleId, queryId, permissionValue);
+                            this.addRemoveSubjectRightAssignment('Queries', roleId, queryId, permissionValue);
                         }
                     });
                 }
@@ -543,13 +531,14 @@ export class RoleTab {
         }
 
         const queryStringForqueriesGrid = {
-            roleId: item
+            roleId: item,
+            subject: "Queries"
         };
 
         this.queriesGrid.setDataSource({
             transport: {
                 read: {
-                    url: `${this.base.settings.serviceRoot}/GET_QUERY_PERMISSIONS${Utils.toQueryString(queryStringForqueriesGrid, true)}`
+                    url: `${this.base.settings.wiserApiRoot}permissions/get-permissions/${Utils.toQueryString(queryStringForqueriesGrid, true)}`
                 }
             }
         });
@@ -580,14 +569,19 @@ export class RoleTab {
                 const selectedTab = event.item.querySelector(".k-link").innerHTML.toLowerCase();
                 const dataItem = this.roleList.dataItem(this.roleList.select());
                 console.log("rolesTabStrip activate", selectedTab, dataItem);
-                if (typeof dataItem !== "undefined") {
-                    if (selectedTab === "velden") {
+                if (typeof dataItem === "undefined") {
+                    return;
+                }
+                switch (selectedTab) {
+                    case "velden":
                         this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
-                    } else if (selectedTab === "modules") {
+                        break;
+                    case "modules":
                         this.initializeOrRefreshRolesModulesGrid(dataItem.id);
-                    } else if (selectedTab === "queries") {
+                        break;
+                    case "query's":
                         this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
-                    }
+                        break;
                 }
             }
         }).data("kendoTabStrip");
@@ -609,12 +603,16 @@ export class RoleTab {
                 const dataItem = this.roleList.dataItem(this.roleList.select());
 
                 const selectedTab = this.getSelectedTabName().toLowerCase();
-                if (selectedTab === "velden") {
-                    this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
-                } else if (selectedTab === "modules") {
-                    this.initializeOrRefreshRolesModulesGrid(dataItem.id);
-                } else if (selectedTab === "queries") {
-                    this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
+                switch (selectedTab) {
+                    case "velden":
+                        this.initializeOrRefreshRolesEntityPropertiesGrid(dataItem.id);
+                        break;
+                    case "modules":
+                        this.initializeOrRefreshRolesModulesGrid(dataItem.id);
+                        break;
+                    case "query's":
+                        this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
+                        break;
                 }
             }
         }).data("kendoListView");
