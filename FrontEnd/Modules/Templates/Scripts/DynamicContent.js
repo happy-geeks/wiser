@@ -289,8 +289,14 @@ const moduleSettings = {
                 codeMirrorInstance.refresh();
             });
             
-            if (window.parent && event.item.classList.contains("history-tab"))
-                window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+            if (event.item.classList.contains("history-tab")) {
+                if (window.parent) {
+                    window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                } else {
+                    kendo.alert("De history kan alleen goed weergegeven worden in een iframe.");
+                    console.warn("Unable to create diff fields for history listing");
+                }
+            }
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
