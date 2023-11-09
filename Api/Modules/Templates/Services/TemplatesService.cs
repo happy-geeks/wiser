@@ -319,7 +319,6 @@ ORDER BY template.ordering ASC");
             {
                 if (new List<string>()
                     {
-                        "SEARCH_ITEMS_OLD",
                         "GET_ITEM_DETAILS",
                         "GET_DATA_FOR_TABLE",
                         "GET_DATA_FOR_FIELD_TABLE"
@@ -869,39 +868,6 @@ GROUP BY i.id
 ORDER BY 
     CASE WHEN @_ordering = 'title' THEN i.title END ASC,
 	CASE WHEN @_ordering <> 'title' THEN ilp.ordering END ASC");
-                TemplateQueryStrings.Add("SEARCH_ITEMS", @"SET @mid = {moduleid};
-SET @parent = '{id:decrypt(true)}';
-SET @_entityType = IF('{entityType}' LIKE '{%}', '', '{entityType}');
-SET @_searchValue = '{search}';
-SET @_searchInTitle = IF('{searchInTitle}' LIKE '{%}' OR '{searchInTitle}' = '1', TRUE, FALSE);
-SET @_searchFields = IF('{searchFields}' LIKE '{%}', '', '{searchFields}');
-SET @_searchEverywhere = IF('{searchEverywhere}' LIKE '{%}', FALSE, {searchEverywhere});
-
-SELECT 
-	i.id,
-	i.id AS encryptedId_encrypt_withdate,
-	i.title AS name
-FROM wiser_item i
-LEFT JOIN wiser_itemlink ilp ON ilp.destination_item_id = @parent AND ilp.item_id = i.id
-LEFT JOIN wiser_itemdetail id ON id.item_id = i.id
-LEFT JOIN wiser_itemlink ilc ON ilc.destination_item_id = i.id
-LEFT JOIN wiser_entity we ON we.name = i.entity_type
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
-AND i.entity_type = @_entityType
-AND (@_searchEverywhere = TRUE OR ilp.id IS NOT NULL)
-AND (
-    (NOT @_searchInTitle AND @_searchFields = '')
-    OR (@_searchInTitle AND i.title LIKE CONCAT('%', @_searchValue, '%'))
-    OR (@_searchFields <> '' AND FIND_IN_SET(id.key, @_searchFields) AND id.value LIKE CONCAT('%', @_searchValue, '%'))
-)
-
-GROUP BY i.id
-ORDER BY ilp.ordering, i.title");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 

@@ -481,5 +481,18 @@ namespace Api.Modules.Items.Controllers
         {
             return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, encryptedId, settings)).GetHttpResponseMessage();
         }
+
+        /// <summary>
+        /// Search for items.
+        /// </summary>
+        /// <param name="parentId">The ID of the parent to start searching. Can be 0.</param>
+        /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
+        [HttpGet]
+        [Route("{parentId:long}/search")]
+        [ProducesResponseType(typeof(List<SearchResponseModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchAsync(ulong parentId, [FromQuery]SearchRequestModel data)
+        {
+            return (await itemsService.SearchAsync((ClaimsIdentity)User.Identity, parentId, data)).GetHttpResponseMessage();
+        }
     }
 }

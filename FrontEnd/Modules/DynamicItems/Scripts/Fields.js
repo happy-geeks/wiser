@@ -711,40 +711,6 @@ export class Fields {
     }
 
     /**
-     * Event that gets triggered when the user searches in a combobox field.
-     * @param {any} event The search event from Kendo.
-     * @param {any} itemId The ID of the currently opened item.
-     * @param {any} options The field options.
-     */
-    async onComboBoxFiltering(event, itemId, options) {
-        event.preventDefault();
-        const comboBoxContainer = event.sender.element.closest(".item");
-        if (!options) {
-            console.error("Cannot find options for combo box.");
-            return;
-        }
-
-        const searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true") ? 1 : 0;
-        const icon = comboBoxContainer.find(".k-i-arrow-s").addClass("k-loading");
-        const searchFields = options.searchFields || [];
-        const searchInTitle = options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0 ? 1 : 0;
-        let searchModuleId = options.moduleId || 0;
-        if (!searchEverywhere && !searchModuleId) {
-            searchModuleId = moduleId;
-        }
-
-        const result = await Wiser.api({
-            url: `${this.base.settings.serviceRoot}/SEARCH_ITEMS?id=${encodeURIComponent(itemId)}&moduleid=${encodeURIComponent(searchModuleId)}&entityType=${encodeURIComponent(options.entityType)}&search=${encodeURIComponent(event.filter.value)}&searchInTitle=${encodeURIComponent(searchInTitle)}&searchFields=${encodeURIComponent(searchFields.join())}&searchEverywhere=${encodeURIComponent(searchEverywhere)}`,
-            method: "GET",
-            contentType: "application/json",
-            dataType: "JSON"
-        });
-
-        event.sender.setDataSource(result);
-        icon.removeClass("k-loading");
-    }
-
-    /**
      * Event that gets called when the user clicks the edit icon/button/link for editing a name of a file in a kendoUpload field.
      * @param {any} event The click event.
      */
