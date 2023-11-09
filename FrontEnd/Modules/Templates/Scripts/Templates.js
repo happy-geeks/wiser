@@ -2459,8 +2459,8 @@ const moduleSettings = {
          * @param {Element} container The container that will be searched for div.diffField elements.
          */
         createHistoryDiffFields(container) {
-            const Diff = require('diff');
-            const pretty = require('pretty');
+            const Diff = require("diff");
+            const pretty = require("pretty");
             
             let fields = container.querySelectorAll("div.diffField");
             for (let i = 0; i < fields.length; i++) {

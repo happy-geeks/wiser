@@ -289,8 +289,8 @@ const moduleSettings = {
                 codeMirrorInstance.refresh();
             });
             
-            if (event.item.classList.contains("history-tab"))
-                window.parent.Templates.createHistoryDiffFields(document.getElementById("right-pane").querySelector("div.historyContainer"));
+            if (window.parent && event.item.classList.contains("history-tab"))
+                window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
@@ -632,7 +632,8 @@ const moduleSettings = {
                 });
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
-                window.parent.Templates.createHistoryDiffFields(document.getElementById("right-pane").querySelector("div.historyContainer"));
+                if (window.parent)
+                    window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
                 this.lastLoadedHistoryPart++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");

@@ -1,7 +1,6 @@
 ﻿@using GeeksCoreLibrary.Core.Cms.Attributes
 @using Api.Core.Helpers
 @using FrontEnd.Modules.Templates.Models
-@* @model FrontEnd.Modules.Templates.Models.FieldViewModel *@
 @model (FrontEnd.Modules.Templates.Models.FieldViewModel oldVersion, FrontEnd.Modules.Templates.Models.FieldViewModel newVersion)
 
 @{ RenderHtml(Model.oldVersion, Model.newVersion); }
