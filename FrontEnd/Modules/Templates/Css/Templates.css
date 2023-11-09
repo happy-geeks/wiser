@@ -278,6 +278,10 @@
     flex-grow: 1;
 }
 
+.checkboxlist .checkbox span {
+    padding: 8px 5px 5px 28px;
+}
+
 footer {
     background: var(--white-color);
     border-top: 1px solid #dddddd;
