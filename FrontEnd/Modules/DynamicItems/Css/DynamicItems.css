@@ -319,6 +319,7 @@ body.iframe .editMenu {
     line-height: 38px;
     color: var(--dark-txt);
     margin-left: auto;
+    margin-right: 10px;
     order: 2;
 }
 

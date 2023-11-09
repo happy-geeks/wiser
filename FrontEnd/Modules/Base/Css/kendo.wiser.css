@@ -1260,7 +1260,7 @@ span.k-input .k-input:hover {
 }
 .k-grid-header th.k-header .k-grid-filter.k-state-active:before {
 	content: "";
-	background-color: var(--filter-color);
+	background-color: var(--color-1);
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -1269,7 +1269,8 @@ span.k-input .k-input:hover {
 	z-index: 0;
 }
 .k-grid-header th.k-header .k-grid-filter.k-state-active .k-icon {
-	color: var(--black-color);
+	color: var(--white-color);
+	opacity: 1;
 }
 .k-grid-header .k-link .k-icon.k-i-sort-asc-sm,
 .k-grid-header .k-link .k-icon.k-i-sort-desc-sm {
@@ -1694,7 +1695,7 @@ textarea[readonly],
 	height: 10px;
 	position: absolute;
 	left: 5px;
-	top: 13px;
+	top: 9px;
 	width: 10px;
 }
 .rToggle:checked ~ header .rToggle > span:after {
@@ -1704,7 +1705,7 @@ textarea[readonly],
 	height: 10px;
 	position: absolute;
 	left: 5px;
-	top: 13px;
+	top: 9px;
 	width: 10px;
 }
 
