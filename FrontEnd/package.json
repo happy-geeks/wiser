@@ -41,7 +41,7 @@
     "sass-loader": "^13.2.1",
     "style-loader": "^3.3.3",
     "vue-cli-plugin-vue-next": "~0.1.4",
-    "webpack": "^5.76.2",
+    "webpack": "^5.89.0",
     "webpack-cli": "^5.0.1"
   },
   "license": "ISC"
