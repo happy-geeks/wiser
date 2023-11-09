@@ -12,8 +12,6 @@ var options = $.extend({
 	dataSource: {
 		transport: {
 			read: function(kendoOptions) {
-                console.log("read start - {title}");
-                
                 var inputData = window.dynamicItems.fields.getInputData(field.closest(".popup-container, .pane-content")) || [];
                 inputData = inputData.reduce((obj, item) => { obj[item.key] = item.value; return obj; });
 
@@ -51,7 +49,7 @@ if (typeof options.dataSource === "string") {
                     userTypesString += options.userTypes.join();
                 }
             }
-            
+
             options.dataSource = {
                 transport: {
                     read: {
@@ -77,7 +75,7 @@ if (typeof options.dataSource === "string") {
 	if (!searchEverywhere && !searchModuleId) {
 		searchModuleId = window.dynamicItems.settings.moduleId || 0;
 	}
-    
+
     options.dataSource.transport.read = (kendoReadOptions) => {
         var searchAddition = "";
 
@@ -102,13 +100,13 @@ if (typeof options.dataSource === "string") {
             kendoReadOptions.error(result);
         });
     };
-	
+
     options.dataSource.pageSize = 80;
     options.dataSource.serverPaging = true;
     options.dataSource.serverFiltering = true;
-                    
+
 	options.filter = "contains";
-    
+
     // TODO: Finish virtual scrolling.
     /*options.virtual = {
         valueMapper: function(options) {

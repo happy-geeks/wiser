@@ -14,7 +14,6 @@ using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
 using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityTypes.Models;
@@ -22,6 +21,7 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Exceptions;
@@ -972,6 +972,9 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 break;
                             case decimal decimalValue:
                                 value = decimalValue.ToString(new CultureInfo("en-US"));
+                                break;
+                            case JArray jArrayValue:
+                                value = String.Join(",", jArrayValue.Values<string>());
                                 break;
                             default:
                                 value = parameter.Value.ToString().ToMySqlSafeValue(false);
