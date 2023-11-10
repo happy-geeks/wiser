@@ -3,6 +3,7 @@ import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {Preview} from "./Preview.js";
 import "../Css/DynamicContent.css";
+import "diff2html/bundles/css/diff2html.min.css"
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -287,6 +288,15 @@ const moduleSettings = {
 
                 codeMirrorInstance.refresh();
             });
+            
+            if (event.item.classList.contains("history-tab")) {
+                if (window.parent) {
+                    window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                } else {
+                    kendo.alert("De history kan alleen goed weergegeven worden in een iframe.");
+                    console.warn("Unable to create diff fields for history listing");
+                }
+            }
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
@@ -628,6 +638,8 @@ const moduleSettings = {
                 });
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
+                if (window.parent)
+                    window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
                 this.lastLoadedHistoryPart++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");

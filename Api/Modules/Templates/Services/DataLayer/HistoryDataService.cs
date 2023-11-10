@@ -40,7 +40,8 @@ namespace Api.Modules.Templates.Services.DataLayer
     changed_by,
     component,
     component_mode,
-    settings 
+    settings,
+    title
 FROM {WiserTableNames.WiserDynamicContent} 
 WHERE content_id = ?contentId 
 ORDER BY version DESC
@@ -51,6 +52,7 @@ LIMIT ?limit, ?offset");
             {
                 resultDict.Add(new HistoryVersionModel
                 {
+                    Name = row.Field<string>("title"),
                     Version = row.Field<int>("version"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
