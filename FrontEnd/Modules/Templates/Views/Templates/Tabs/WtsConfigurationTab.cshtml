@@ -1,7 +1,8 @@
-﻿@using DocumentFormat.OpenXml.EMMA
-@using FrontEnd.Modules.Templates.Models.WtsModels
-@using GeeksCoreLibrary.Modules.Templates.Enums
-@model FrontEnd.Modules.Templates.Models.WtsConfigurationTabViewModel
+﻿@using System.Collections
+@using System.Reflection
+@using Api.Modules.Templates.Attributes
+@using Api.Modules.Templates.Models.Template.WtsModels;
+@model TemplateWtsConfigurationModel;
 <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
     <ul class="k-tabstrip-items k-reset" role="none">
         <li class="service-tab k-state-active" data-name="wts-service">Service</li>
@@ -12,212 +13,18 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            <div class="item">
-                <h4><label>Naam</label></h4>
-                <span>
-                    <input id="wts-name" type="text" value="@Model.ServiceName" />
-                    <div class="form-hint"><span>Dit is de naam van de service</span></div>
-                </span>
-            </div>
-            <div class="item">
-                <h4><label>Connectiestring</label></h4>
-                <span>
-                    <input id="wts-connection-string" type="text" value="@Model.ConnectionString" />
-                    <div class="form-hint"><span>MySQL Connectiestring voor de verbinding aan een database</span></div>
-                </span>
-            </div>
-            <div class="item">
-                <h4><label>Minimaal log level</label></h4>
-                <select id="wts-log-level">
-                    @foreach (var logLevel in Model.LogMinimumLevels)
-                    {
-                        if (logLevel == Model.LogSettings?.LogMinimumLevel)
-                        {
-                            <option value="@logLevel" selected>@logLevel</option>
-                        }
-                        else
-                        {
-                            <option value="@logLevel">@logLevel</option>
-                        }
-                    }
-                </select>
-                <div>
-                    <label class="checkbox">
-                        @if (Model.LogSettings?.LogRunStartAndStop == true)
-                        {
-                            <input type="checkbox" id="wts-log-start-stop" checked/>
-                        }
-                        else
-                        {
-                            <input type="checkbox" id="wts-log-start-stop"/>
-                        }
-                        <span>Log bij opstarten en afsluiten</span>
-                    </label>
-                </div>
-                <div class="item">
-                    <label class="checkbox">
-                        @if (Model.LogSettings?.LogRunStartAndStop == true)
-                        {
-                            <input type="checkbox" id="wts-log-run-startandstop" checked/>
-                        }
-                        else
-                        {
-                            <input type="checkbox" id="wts-log-run-startandstop"/>
-                        }
-                        <span>Log bij het begin en einde van de run-cyclus</span>
-                    </label>
-                </div>
-                <div>
-                    <label class="checkbox">
-                        @if (Model.LogSettings?.LogRunBody == true)
-                        {
-                            <input type="checkbox" id="wts-log-body" checked/>
-                        }
-                        else
-                        {
-                            <input type="checkbox" id="wts-log-body"/>
-                        }
-                        <span>Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)</span>
-                    </label>
-                </div>
-            </div>
+            @{RenderProperties(Model, Model.GetType(), KendoTab.Service, true);}
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            <div class="item full">
-                <h4><label>Timers</label></h4>
-                <div id="wtsTimers" class="grid"></div>
-                <button id="wtsTimingCreateButton" type="button" class="kendoButton scope-button add-scope-button k-button k-blue"><span>Nieuwe timer aanmaken</span></button>
-            </div>
-
-            <div id="wts-timing-form">
-                <div class="item">
-                    <h4><label>ID</label></h4>
-                    <span>
-                        <input id="wts-timing-id"/>
-                        <div class="form-hint"><span>Unieke nummer van de timer</span></div>
-                    </span>
-                </div>
-
-                <div class="item">
-                    <h4><label>Type</label></h4>
-                    <select id="wts-timing-type">
-                        @foreach (var type in Model.RunSchemeTypes)
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
-
-                    <div>
-                        <label>
-                            <span>Tussen</span>
-                            <input id="wts-timing-start"/>
-                        </label>
-                        <label>
-                            <span>en</span>
-                            <input id="wts-timing-stop"/>
-                        </label>
-                        <label>
-                            <span>met tussenpozen van</span>
-                            <input id="wts-timing-delay"/>
-                        </label>
-                    </div>
-                    <div>
-                        <!-- This could be rewritten to have an hour input for week and month to have a more seamless ux since now they're spaced far apart -->
-                        <select id="wts-timing-dayofweek"></select>
-                        <label>
-                            <span>Op de</span>
-                            <input id="wts-timing-dayofmonth"/>
-                            <span>van de maand</span>
-                        </label>
-                        <label>
-                            <span>Om</span>
-                            <input id="wts-timing-hour"/>
-                            <span>uur</span>
-                        </label>
-                    </div>
-
-                    <div>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-timing-runimmediately"/>
-                            <span>Direct uitvoeren van runschema wanneer de WTS opstart</span>
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-timing-skipweekend"/>
-                            <span>Dit schema loopt niet in het weekend (vanaf vrijdag 16.00 uur t/m zondag 23.59 uur)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="item">
-                    <h4><label>Niet draaien op</label></h4>
-                    <span>
-                        <select id="wts-timing-skipdays"></select>
-                    </span>
-                </div>
-
-                <div class="item">
-                    <h4><label>Minimaal log level</label></h4>
-                    <select id="wts-timing-logminimumlevel">
-                        @foreach (var logLevel in Model.LogMinimumLevels)
-                        {
-                            <option value="@logLevel">@logLevel</option>
-                        }
-                    </select>
-                    <div>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-timing-logstartstop"/>
-                            <span>Log bij opstarten en afsluiten</span>
-                        </label>
-                    </div>
-                    <div>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-timing-logrunstartandstop"/>
-                            <span>Log bij het begin en einde van de run-cyclus</span>
-                        </label>
-                    </div>
-                    <div>
-                        <label class="checkbox">
-                            <input type="checkbox" id="wts-timing-logrunbody"/>
-                            <span>Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)</span>
-                        </label>
-                    </div>
-                    <div class="form-hint"><span>Het invullen van deze velden overschrijft de globale log instellingen als deze eerder ingesteld zijn</span></div>
-                </div>
-
-                <div class="item">
-                    <button id="wtsTimingSaveChanges" type="button" class="k-primary saveButton">Wijzigingen opslaan</button>
-                </div>
-
-                <div class="item">
-                    <h4><label>Gekoppelde acties</label></h4>
-                    <div class="form-hint"><span>Deze acties staan gekoppeld aan de geselecteerde timer</span></div>
-                    <div id="wtsLinkedActions" class="grid"></div>
-                </div>
-            </div>
+            @{RenderProperties(Model, Model.GetType(), KendoTab.Timers, true);}
         </div>
     </div>
     
     <div id="actionsTab">
         <div class="formview compact">
-            <div class="item">
-                <h4><label>Acties</label></h4>
-                <div id="wtsServiceActions" class="grid"></div>
-                <button id="wtsActionCreateButton" type="button" class="kendoButton scope-button add-scope-button k-button k-blue" data-icon="plus"><span>Nieuwe actie aanmaken</span></button>
-            </div>
-            <div id="wts-action-form">
-                <div class="item">
-                    <h4><label>Timer</label></h4>
-                    <input id="wts-action-timerid" type="text" class="k-input" value="Timer ID" disabled/>
-                    <input id="wts-action-order" type="text" class="k-input" value="Volgorde" disabled/>
-                    <div class="form-hint"><span>Dit bepaalt op welke volgorde acties moeten draaien die dezelfde timer gebruiken.</span></div>
-                </div>
-                
-                <div class="item">
-                    <h4><label>Actie</label></h4>
-                </div>
-            </div>
+            @{RenderProperties(Model, Model.GetType(), KendoTab.Actions, true);}
         </div>
     </div>
     
@@ -234,9 +41,248 @@
     </div>
 </div>
 
-<footer>
-    <div class="version-actions">
-        <button id="saveAndDeployToTestButtonWtsConfiguration" class="k-primary saveButton" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button>
-        <button id="saveButtonWtsConfiguration" class="k-primary saveButton">Configuratie opslaan</button>
-    </div>
-</footer>
+@* <footer> *@
+@*     <div class="version-actions"> *@
+@*         <button id="saveAndDeployToTestButtonWtsConfiguration" class="k-primary saveButton" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button> *@
+@*         <button id="saveButtonWtsConfiguration" class="k-primary saveButton">Configuratie opslaan</button> *@
+@*     </div> *@
+@* </footer> *@
+
+
+@functions {
+    async Task RenderProperty(object data, PropertyInfo property, WtsAttributes.WtsPropertyAttribute attributes, string selectedValue)
+    {
+        <div class="item">
+            @switch (attributes?.KendoComponent)
+            {
+                case KendoComponent.TextBox:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <input
+                            type="text"
+                            name="@property.Name"
+                            value="@(data ?? "")"
+                            data-kendo-component="@KendoComponent.TextBox"
+                            @if (attributes.BelongsToForm != null)
+                            {
+                                <text>belongs-to="@attributes?.BelongsToForm"</text>
+                            }
+                        />
+                        <div class="form-hint"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponent.NumericTextBox:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <input
+                            type="number"
+                            name="@property.Name"
+                            value="test"
+                            data-depends-on-field="timing-daily"
+                            data-depends-on-value="daily"
+                            data-kendo-component="@KendoComponent.NumericTextBox"
+                            @if (attributes.BelongsToForm != null)
+                            {
+                                <text>belongs-to="@attributes?.BelongsToForm"</text>
+                            }
+                        />
+                        <div class="form-hint"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponent.TimePicker:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <input
+                            type="time"
+                            name="@property.Name"
+                            value="@(data ?? "")"
+                            data-kendo-component="@KendoComponent.TimePicker"
+                            @if (attributes.BelongsToForm != null)
+                            {
+                                <text>belongs-to="@attributes?.BelongsToForm"</text>
+                            }
+                        />
+                        <div class="form-hint"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponent.CheckBox:
+                    <h4></h4>
+                    <span>
+                        <label class="checkbox">
+                            @if (data != null && (bool)data)
+                            {
+                                <input 
+                                    type="checkbox" 
+                                    name="@property.Name" 
+                                    checked
+                                    data-kendo-component="@KendoComponent.CheckBox"
+                                    @if (attributes.BelongsToForm != null)
+                                    {
+                                        <text>belongs-to="@attributes?.BelongsToForm"</text>
+                                    }
+                                />
+                            }
+                            else
+                            {
+                                <input
+                                    type="checkbox"
+                                    name="@property.Name"
+                                    data-kendo-component="@KendoComponent.CheckBox"
+                                    @if (attributes.BelongsToForm != null)
+                                    {
+                                        <text>belongs-to="@attributes?.BelongsToForm"</text>
+                                    }
+                                />
+                            }
+                            <span>@attributes?.Description</span>
+                        </label>
+                    </span>
+                    break;
+                case KendoComponent.DropDownList:
+                    // Convert the data to a enum since at this point we know for sure it is a enum
+                    var enumData = (Enum)data;
+                    if (enumData == null) break;
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <select 
+                            name="@property.Name" 
+                            data-kendo-component="@KendoComponent.DropDownList"
+                            @if (attributes.BelongsToForm != null)
+                            {
+                                <text>belongs-to="@attributes?.BelongsToForm"</text>
+                            }
+                        >
+                            @foreach (var opt in Enum.GetValues(enumData.GetType()))
+                            {
+                                if (opt.ToString() == selectedValue)
+                                {
+                                    <option value="@opt" selected>@opt</option>
+                                }
+                                else
+                                {
+                                    <option value="@opt">@opt</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-hint"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponent.Grid:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <table name="@property.Name" data-kendo-component="@KendoComponent.Grid" data-kendo-options="@attributes?.KendoOptions">
+                            <thead>
+                                <tr>
+                                    @foreach (var prop in @data.GetType().GetGenericArguments()[0].GetProperties())
+                                    {
+                                        <th>@prop.Name</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in (IList)data) 
+                                {
+                                    <tr>
+                                        @foreach (var prop in @data.GetType().GetGenericArguments()[0].GetProperties())
+                                        {
+                                            <td>@prop.GetValue(item, null)</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </span>
+                    break;
+                default:
+                    <p style="color: #721c24; background-color: #f8d7da; padding: 10px; border: 3px solid #f5c6cb; border-radius: 7px;">Unknown property type: "@property.PropertyType.Name" for property: "@property.Name"</p>
+                    break;
+            }
+        </div>
+    }
+
+    void RenderProperties(object data, Type type, string tab, bool isFilled)
+    {
+        foreach (var property in type.GetProperties())
+        {
+            var attributes = property.GetCustomAttributes(typeof(WtsAttributes.WtsPropertyAttribute), false).Cast<WtsAttributes.WtsPropertyAttribute>().FirstOrDefault();
+        
+            // Only render properties that have attributes and where isVisible is true
+            // Or when the KendoTab is null, since that means it should be rendered on all tabs
+            if (attributes != null && attributes.isVisible && attributes.KendoTab == tab || attributes != null && attributes.isVisible && attributes.KendoTab == null)
+            {
+                if (data is IList list)
+                {
+                    // Only send the data if the attribute is a dropdownlist since we need to populate the dropdownlist with all its options
+                    if (attributes?.KendoComponent == KendoComponent.DropDownList)
+                    {
+                        // Get property value of the first item in the list
+                        var value = list[0]?.GetType().GetProperty(property.Name)?.GetValue(list[0], null);
+                        RenderProperty(value, property, attributes, null);
+                    }
+                    else
+                    {
+                        RenderProperty(null, property, attributes, null);
+                    }
+                }
+                else
+                {
+                    // Check if we're sending a enum, if so also send the selected value
+                    if (property.PropertyType.IsEnum)
+                    {
+                        if (isFilled)
+                        {
+                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString());
+                        }
+                        else
+                        {
+                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null);
+                        }
+                        continue;
+                    }
+                    // Check if we should send the data
+                    if (isFilled)
+                    {
+                        RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null);
+                    }
+                    else
+                    {
+                        RenderProperty(null, property, attributes, null);
+                    }
+                }
+            }
+
+            // Check if property has child properties
+            if (!property.PropertyType.IsClass || property.PropertyType == typeof(string)) continue;
+            
+            // Only render child properties if the tab is the same as what is defined in the parameter
+            if (attributes != null && attributes.KendoTab != tab) continue;
+                
+            // Check if the property is a list
+            if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                // Get the type of the list
+                var genericTypes = property.PropertyType.GetGenericArguments();
+                if (!genericTypes.Any()) continue; // If there are no generic types, continue to the next property
+                var listType = genericTypes[0];
+                // Get the list from the data 
+                var dataList = data?.GetType().GetProperty(property.Name)?.GetValue(data, null) as IList;
+                RenderProperties(dataList, listType, tab, false);
+            }
+            else
+            {
+                if (data is IList list)
+                {
+                    // Get property value of the first item in the list
+                    var value = list?[0]?.GetType().GetProperty(property.Name)?.GetValue(list[0], null);
+                    // Since data is a list, we should let the function know that we shouldn't fill any data
+                    RenderProperties(value, property.PropertyType, tab, false);
+                }
+                else
+                {
+                    // Render the properties of the class
+                    RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true);
+                }
+            }
+        }
+    }
+}
