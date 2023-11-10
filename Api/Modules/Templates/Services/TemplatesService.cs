@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text;
@@ -19,6 +20,7 @@ using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -1441,7 +1443,7 @@ LIMIT 1";
 
             // Parse the xml
             var templateXml = wtsConfigurationService.ParseXmlToObject(decryptedXml);
-                
+            
             // Add the available input values to the xml
             (templateXml.LogMinimumLevels, templateXml.RunSchemeTypes) = wtsConfigurationService.GetInputValues();
             
