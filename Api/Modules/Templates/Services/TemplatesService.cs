@@ -1436,7 +1436,7 @@ LIMIT 1";
             // templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
             
             // Grab the encryption key from the database.
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
             
             // Decrypt the xml
             var decryptedXml = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData.EditorValue);
