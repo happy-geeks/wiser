@@ -1166,13 +1166,13 @@ const moduleSettings = {
                 const imageTool = {
                     name: "wiserImage",
                     tooltip: "Afbeelding toevoegen",
-                    exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor")); }
+                    exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor"), "templates"); }
                 };
                 
                 const fileTool = {
                     name: "wiserFile",
                     tooltip: "Link naar bestand toevoegen",
-                    exec: function(e) { Wiser.onHtmlEditorFileExec.call(Wiser, e, $(this).data("kendoEditor")); }
+                    exec: function(e) { Wiser.onHtmlEditorFileExec.call(Wiser, e, $(this).data("kendoEditor"), "templates"); }
                 };
 
                 this.mainHtmlEditor = $(".editor").kendoEditor({

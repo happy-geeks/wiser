@@ -895,13 +895,13 @@ export class Wiser {
         templates: "templates"
     })
     
-    static async onHtmlEditorFileExec(event, kendoEditor, codeMirror, contentbuilder) {
-        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.fileManagerModes.files, null, null, "Templates");
+    static async onHtmlEditorFileExec(event, kendoEditor, moduleName) {
+        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.files, null, null,  moduleName);
         fileManagerWindow.center().open();
     }
     
-    static async onHtmlEditorImageExec(event, kendoEditor, codeMirror, contentbuilder) {
-        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.fileManagerModes.images, null, null, "Templates");
+    static async onHtmlEditorImageExec(event, kendoEditor, moduleName) {
+        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.images, null, null, moduleName);
         fileManagerWindow.center().open();
     }
     
