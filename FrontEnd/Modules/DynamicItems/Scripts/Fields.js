@@ -2895,7 +2895,7 @@ export class Fields {
          if (!this.base.settings.imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-             const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.images);
+             const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.images, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
              fileManagerWindow.center().open();
         }
     }
@@ -2912,7 +2912,7 @@ export class Fields {
         if (!this.base.settings.filesRootId) {
             kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.files);
+            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.files, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
             fileManagerWindow.center().open();
         }
     }
@@ -2929,7 +2929,7 @@ export class Fields {
         if (!this.base.settings.templatesRootId) {
             kendo.alert("Er is nog geen 'templatesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.templates);
+            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.base.windows.fileManagerModes.templates, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
             fileManagerWindow.center().open();
         }
     }

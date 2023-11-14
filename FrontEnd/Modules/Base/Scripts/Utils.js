@@ -888,16 +888,20 @@ export class Wiser {
 
         extraHeaders.Authorization = `${Strings.capitalizeFirst(authenticationData.tokenType)} ${authenticationData.accessToken}`;
     }
-
-    /*todo: todo view aanzetten, onHtmlEditorImageExec, this.fileManagerIframe*/
     
-    static async onHtmlEditorFileExec(event, kendoEditor, codeMirror, contentbuilder, imagesRootId) {
-            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.fileManagerModes.files);
-            fileManagerWindow.center().open();
+    static fileManagerModes = Object.freeze({
+        images: "images",
+        files: "files",
+        templates: "templates"
+    })
+    
+    static async onHtmlEditorFileExec(event, kendoEditor, codeMirror, contentbuilder) {
+        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.fileManagerModes.files, null, null, "Templates");
+        fileManagerWindow.center().open();
     }
     
-    static async onHtmlEditorImageExec(event, kendoEditor) {
-        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.fileManagerModes.images);
+    static async onHtmlEditorImageExec(event, kendoEditor, codeMirror, contentbuilder) {
+        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, codeMirror, contentbuilder, this.fileManagerModes.images, null, null, "Templates");
         fileManagerWindow.center().open();
     }
     
@@ -1199,17 +1203,10 @@ export class Wiser {
         return result || 0;
     }
 
-    static fileManagerModes = Object.freeze({
-        images: "images",
-        files: "files",
-        templates: "templates"
-    })
-    
-    static initializeFileManager(kendoEditor, codeMirror, contentbuilder, windowMode) {
+    static initializeFileManager(kendoEditor, codeMirror, contentbuilder, windowMode, iframeMode, gridviewMode, moduleName) {
         // File manager
         const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
         const fileManagerWindowMode = windowMode;
-        
         const fileManagerIframe = document.querySelector("#fileManagerFrame");
         const fileManagerWindow = $("#fileManagerWindow").kendoWindow({
             width: "90%",
@@ -1227,19 +1224,19 @@ export class Wiser {
                 fileManagerIframe.src = `/Modules/FileManager?mode=${fileManagerWindowMode}&iframe=true&selectedText=${encodeURIComponent(selectedText)}`;
 
                 switch (fileManagerWindowMode) {
-                    case fileManagerModes.images:
+                    case this.fileManagerModes.images:
                         event.sender.title("Afbeelding invoegen");
                         break;
-                    case fileManagerModes.files:
+                    case this.fileManagerModes.files:
                         event.sender.title("Link naar bestand invoegen");
                         break;
-                    case fileManagerModes.templates:
+                    case this.fileManagerModes.templates:
                         event.sender.title("Template invoegen");
                         break;
                 }
             }
         }).data("kendoWindow");
-        
+
         const fileManagerWindowAddButton = $("#fileManagerWindow button[name=addFileToEditor]").kendoButton({
             icon: "save",
             click: async (event) => {
@@ -1258,7 +1255,7 @@ export class Wiser {
                 const fileManagerClassFromIframe = fileManagerIframe.contentWindow.fileManager;
 
                 switch (fileManagerWindowMode) {
-                    case fileManagerModes.images: {
+                    case this.fileManagerModes.images: {
                         const selectedItem = fileManagerClassFromIframe.imagesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.imagesUploaderWindowTreeView.select());
                         const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
 
@@ -1272,19 +1269,19 @@ export class Wiser {
                                 </figure>`;
                         break;
                     }
-                    case fileManagerModes.files: {
+                    case this.fileManagerModes.files: {
                         const fileUrl = fileManagerClassFromIframe.generateFilePreviewUrl();
                         html = `<a href="${fileUrl}">${(fileManagerClassFromIframe.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
 
                         break;
                     }
-                    case fileManagerModes.templates: {
+                    case this.fileManagerModes.templates: {
                         const selectedItem = fileManagerClassFromIframe.templatesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.templatesUploaderWindowTreeView.select());
                         html = selectedItem.html;
                         break;
                     }
                     default: {
-                        kendo.alert(`Onbekende mode ('${fileManagerModes}') voor bestandsbeheer. Sluit a.u.b. dit scherm en probeer het opnieuw, of neem contact op met ons.`)
+                        kendo.alert(`Onbekende mode ('${this.fileManagerModes}') voor bestandsbeheer. Sluit a.u.b. dit scherm en probeer het opnieuw, of neem contact op met ons.`)
                         return;
                     }
                 }
@@ -1333,20 +1330,19 @@ export class Wiser {
         }).data("kendoWindow");
 
         // Some things should not be done if we're in iframe mode.
-        if (this.settings.iframeMode || this.settings.gridViewMode) {
+        if (iframeMode || gridviewMode) {
             return;
         }
-
+        
         /***** NOTE: Only add code below this line that should NOT be executed if the module is loaded inside an iframe *****/
         const mainWindow = $("#window").kendoWindow({
-            title: this.base.settings.moduleName || "Modulenaam",
+            title: moduleName || "Modulenaam",
             visible: true,
             actions: ["refresh"]
         }).data("kendoWindow").maximize().open();
         mainWindow.wrapper.addClass("main-window");
 
        // mainWindow.wrapper.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
-        
         return fileManagerWindow;
     }
 }
