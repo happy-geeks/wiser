@@ -895,14 +895,22 @@ export class Wiser {
         templates: "templates"
     })
     
-    static async onHtmlEditorFileExec(event, kendoEditor, moduleName) {
-        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.files, null, null,  moduleName);
-        fileManagerWindow.center().open();
+    static async onHtmlEditorFileExec(event, kendoEditor, moduleName, filesRootId) {
+        if (!filesRootId) {
+            kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
+        } else {
+            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.files, null, null, moduleName);
+            fileManagerWindow.center().open();
+        }
     }
     
-    static async onHtmlEditorImageExec(event, kendoEditor, moduleName) {
-        const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.images, null, null, moduleName);
-        fileManagerWindow.center().open();
+    static async onHtmlEditorImageExec(event, kendoEditor, moduleName, imagesRootId) {
+        if (!imagesRootId) {
+            kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
+        } else {
+            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.images, null, null, moduleName);
+            fileManagerWindow.center().open();
+        }
     }
     
     /**
@@ -1202,7 +1210,6 @@ export class Wiser {
         const result = await Wiser.api({ url: `${moduleSettings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
         return result || 0;
     }
-
     static initializeFileManager(kendoEditor, codeMirror, contentbuilder, windowMode, iframeMode, gridviewMode, moduleName) {
         // File manager
         const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };

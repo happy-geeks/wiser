@@ -1142,6 +1142,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
+            
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {
@@ -1156,6 +1157,8 @@ const moduleSettings = {
                 };
 
                 const wiserApiRoot = this.settings.wiserApiRoot;
+                const imagesRootId = this.settings.imagesRootId;
+                const filesRootId = this.settings.filesRootId;
                 
                 const translationsTool = {
                     name: "wiserTranslation",
@@ -1166,13 +1169,13 @@ const moduleSettings = {
                 const imageTool = {
                     name: "wiserImage",
                     tooltip: "Afbeelding toevoegen",
-                    exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor"), "templates"); }
+                    exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor"), "templates", imagesRootId); }
                 };
                 
                 const fileTool = {
                     name: "wiserFile",
                     tooltip: "Link naar bestand toevoegen",
-                    exec: function(e) { Wiser.onHtmlEditorFileExec.call(Wiser, e, $(this).data("kendoEditor"), "templates"); }
+                    exec: function(e) { Wiser.onHtmlEditorFileExec.call(Wiser, e, $(this).data("kendoEditor"), "templates", filesRootId); }
                 };
 
                 this.mainHtmlEditor = $(".editor").kendoEditor({
