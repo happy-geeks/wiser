@@ -1349,7 +1349,6 @@ export class Wiser {
         }).data("kendoWindow").maximize().open();
         mainWindow.wrapper.addClass("main-window");
 
-       // mainWindow.wrapper.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
         return fileManagerWindow;
     }
 }
