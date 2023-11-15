@@ -1407,7 +1407,7 @@ LIMIT 1";
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
             var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
-            templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
+            templateData.EditorValue = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
 
             return new ServiceResult<TemplateSettingsModel>(templateData);
         }
