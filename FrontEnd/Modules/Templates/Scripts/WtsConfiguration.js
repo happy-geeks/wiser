@@ -27,6 +27,7 @@ export class WtsConfiguration {
         this.base = base;
         
         this.template = null;
+        this.serviceInputFields = [];
     }
 
     async reloadWtsConfigurationTab(id) {
@@ -81,29 +82,80 @@ export class WtsConfiguration {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
         this.initializeKendoComponents();
+        this.bindEvents();
     }
     
     initializeKendoComponents() {
         // Find all the kendo components and initialize them
         let kendoComponents = document.querySelectorAll("[data-kendo-component]");
+        // Empty the array
+        this.serviceInputFields = [];
         
         // Loop through all the components
         for (let i = 0; i < kendoComponents.length; i++) {
             let component = $(kendoComponents[i]);
             let componentName = "kendo" + component.attr("data-kendo-component");
+            let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
+            
+            // Save the component if the tab is Service
+            if (componentTab === "Service") {
+                this.serviceInputFields.push(component[0]);
+            }
+            
             // Make sure componentOptions is not null or undefined
             if (componentOptions === undefined || componentOptions === null) {
                 componentOptions = {};
             } else {
                 componentOptions = JSON.parse(componentOptions);
             }
+            
             // Make sure the method exists on componentSelector
             if (component[componentName] && typeof component[componentName] === "function") {
                 component[componentName](componentOptions).data(componentName);
             } else {
                 console.error(`Method ${componentName} does not exist on componentSelector.`);
             }
+        }
+    }
+    
+    bindEvents() {
+        // Bind the save button
+        $("#saveButtonWtsConfiguration").on("click", this.getCurrentSettings.bind(this));
+    }
+    
+    getCurrentSettings() {
+        console.log("Saving configuration...");
+        
+        let data = {};
+        
+        // Get all the values from the service input fields
+        this.serviceInputFields.forEach((inputField) => {
+            let inputFieldName = inputField.getAttribute("name");
+            data[inputFieldName] = this.getValueOfElement(inputField);
+        });
+
+        console.log("Data: ", data);
+        
+        return data;
+        // const schemaValidator = new Ajv();
+        // const isValid = schemaValidator.validate(schema, this.serviceInputFields);
+    }
+    
+    getValueOfElement(element) {
+        // Check what type of element it is
+        switch (element.tagName) {
+            case "INPUT":
+                switch (element.type) {
+                    case "checkbox":
+                        return element.checked;
+                    default:
+                        return element.value;
+                }
+            case "SELECT":
+                return element.value;
+            default:
+                return null;
         }
     }
 
