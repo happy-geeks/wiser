@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Mime;
-using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
@@ -166,49 +164,6 @@ namespace Api.Modules.Templates.Controllers
             {
                 return serviceResult.GetHttpResponseMessage();
             }
-            
-            // // Add all the properties and attributes using reflection to the model.
-            // var templateXml = serviceResult.ModelObject;
-            // var propertiesWithAttributes = new Dictionary<string, object>();
-            //
-            // // Use reflection to get the model's properties and their attributes
-            // var properties = templateXml.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            // foreach (var property in properties)
-            // {
-            //     var propertyName = property.Name;
-            //     var propertyValue = property.GetValue(templateXml);
-            //     var allAttributes = property.GetCustomAttributes();
-            //     Attribute attributes = null;
-            //     
-            //     // Remove the XmlElementAttribute from the attributes list
-            //     foreach (var attribute in allAttributes)
-            //     {
-            //         if (attribute.GetType() == typeof(System.Xml.Serialization.XmlElementAttribute))
-            //         {
-            //             allAttributes = allAttributes.Where(a => a != attribute);
-            //             break;
-            //         }
-            //     }
-            //     
-            //     // Make a single attribute variable if there's only one attribute
-            //     if (allAttributes.Count() == 1)
-            //     {
-            //         attributes = allAttributes.First();
-            //     }
-            //     
-            //     var propertyType = property.PropertyType.Name;
-            //
-            //     // Create a dictionary for the property including its value and attributes
-            //     var propertyInfo = new Dictionary<string, object>
-            //     {
-            //         { "Value", propertyValue },
-            //         // Send attributes if not empty otherwise send allAttributes
-            //         { "Attributes", attributes },
-            //         { "Type", propertyType }
-            //     };
-            //
-            //     propertiesWithAttributes.Add(propertyName, propertyInfo);
-            // }
             
             // Return the properties and their attributes as JSON
             return Ok(serviceResult.ModelObject);
