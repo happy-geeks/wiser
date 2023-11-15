@@ -14,6 +14,7 @@ require("@progress/kendo-ui/js/kendo.multiselect.js");
 require("@progress/kendo-ui/js/kendo.editor.js");
 require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
+require("@progress/kendo-ui/js/kendo.tooltip.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
