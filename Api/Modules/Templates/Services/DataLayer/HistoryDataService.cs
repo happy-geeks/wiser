@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {
@@ -146,70 +146,7 @@ GROUP BY template.version
 ORDER BY version DESC
 LIMIT ?limit, ?offset");
 
-            var resultList = new List<TemplateSettingsModel>();
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                var templateData = new TemplateSettingsModel
-                {
-                    TemplateId = row.Field<int>("template_id"),
-                    ParentId = row.Field<int?>("parent_id"),
-                    Type = row.Field<TemplateTypes>("template_type"),
-                    Name = row.Field<string>("template_name"),
-                    EditorValue = row.Field<string>("template_data"),
-                    Version = row.Field<int>("version"),
-                    ChangedOn = row.Field<DateTime>("changed_on"),
-                    ChangedBy = row.Field<string>("changed_by"),
-                    CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
-                    CachePerQueryString = dataTable.Rows[0].Field<bool>("cache_per_querystring"),
-                    CacheUsingRegex = dataTable.Rows[0].Field<bool>("cache_using_regex"),
-                    CachePerHostName = dataTable.Rows[0].Field<bool>("cache_per_hostname"),
-                    CacheMinutes = row.Field<int>("cache_minutes"),
-                    CacheLocation= (TemplateCachingLocations)row.Field<int>("cache_location"),
-                    LoginRequired = Convert.ToBoolean(row["login_required"]),
-                    Ordering = row.Field<int>("ordering"),
-                    LinkedTemplates = new LinkedTemplatesModel
-                    {
-                        RawLinkList = row.Field<string>("linkedTemplates")
-                    },
-                    InsertMode = row.Field<ResourceInsertModes>("insert_mode"),
-                    LoadAlways = Convert.ToBoolean(row["load_always"]),
-                    DisableMinifier = Convert.ToBoolean(row["disable_minifier"]),
-                    UrlRegex = row.Field<string>("url_regex"),
-                    ExternalFiles = row.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
-                    GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(row["grouping_create_object_instead_of_array"]),
-                    GroupingPrefix = row.Field<string>("grouping_prefix"),
-                    GroupingKey = row.Field<string>("grouping_key"),
-                    GroupingKeyColumnName = row.Field<string>("grouping_key_column_name"),
-                    GroupingValueColumnName = row.Field<string>("grouping_value_column_name"),
-                    IsScssIncludeTemplate = Convert.ToBoolean(row["is_scss_include_template"]),
-                    UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"]),
-                    PreLoadQuery = row.Field<string>("pre_load_query"),
-                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"]),
-                    RoutineType = (RoutineTypes)row.Field<int>("routine_type"),
-                    RoutineParameters = row.Field<string>("routine_parameters"),
-                    RoutineReturnType = row.Field<string>("routine_return_type"),
-                    TriggerTiming = (TriggerTimings)row.Field<int>("trigger_timing"),
-                    TriggerEvent = (TriggerEvents)row.Field<int>("trigger_event"),
-                    TriggerTableName = row.Field<string>("trigger_table_name"),
-                    IsDefaultHeader = Convert.ToBoolean(row["is_default_header"]),
-                    IsDefaultFooter = Convert.ToBoolean(row["is_default_footer"]),
-                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex"),
-                    IsPartial = Convert.ToBoolean(row["is_partial"]),
-                    WidgetContent = row.Field<string>("widget_content"),
-                    WidgetLocation = (PageWidgetLocations) Convert.ToInt32(row["widget_location"])
-                };
-
-                var loginRolesString = row.Field<string>("login_role");
-                if (!String.IsNullOrWhiteSpace(loginRolesString))
-                {
-                    templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
-                }
-
-                resultList.Add(templateData);
-            }
-
-            return resultList;
+            return dataTable.Rows.Cast<DataRow>().Select(TemplateHelpers.DataRowToTemplateSettingsModel).ToList();
         }
 
         /// <inheritdoc />

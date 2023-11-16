@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
@@ -15,6 +16,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
+using Constants = Api.Modules.Templates.Models.Other.Constants;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {
@@ -120,6 +122,7 @@ LIMIT 1");
     template.disable_minifier,
     template.url_regex,
     template.external_files,
+    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('url', externalFiles.external_file, 'hash', externalFiles.hash))) AS external_files_json,
     template.grouping_create_object_instead_of_array,
     template.grouping_prefix,
     template.grouping_key,
@@ -141,7 +144,8 @@ LIMIT 1");
     template.is_partial,
     template.widget_content,
     template.widget_location
-FROM {WiserTableNames.WiserTemplate} AS template 
+FROM {WiserTableNames.WiserTemplate} AS template
+LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
 WHERE template.template_id = ?templateId
 {publishedVersionWhere}
 AND template.removed = 0
@@ -156,67 +160,7 @@ LIMIT 1");
                 };
             }
 
-            var templateData = new TemplateSettingsModel
-            {
-                TemplateId = dataTable.Rows[0].Field<int>("template_id"),
-                ParentId = dataTable.Rows[0].Field<int?>("parent_id"),
-                Type = dataTable.Rows[0].Field<TemplateTypes>("template_type"),
-                Name = dataTable.Rows[0].Field<string>("template_name"),
-                EditorValue = dataTable.Rows[0].Field<string>("template_data"),
-                Version = dataTable.Rows[0].Field<int>("version"),
-                AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
-                AddedBy = dataTable.Rows[0].Field<string>("added_by"),
-                ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
-                ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
-                CachePerUrl =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_url"]),
-                CachePerQueryString =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_querystring"]),
-                CacheUsingRegex =  Convert.ToBoolean(dataTable.Rows[0]["cache_using_regex"]),
-                CachePerHostName =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_hostname"]),
-                CacheMinutes = dataTable.Rows[0].Field<int>("cache_minutes"),
-                CacheLocation = (TemplateCachingLocations)dataTable.Rows[0].Field<int>("cache_location"),
-                CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
-                LoginRequired = Convert.ToBoolean(dataTable.Rows[0]["login_required"]),
-                LoginRedirectUrl = dataTable.Rows[0].Field<string>("login_redirect_url"),
-                Ordering = dataTable.Rows[0].Field<int>("ordering"),
-                InsertMode = dataTable.Rows[0].Field<ResourceInsertModes>("insert_mode"),
-                LoadAlways = Convert.ToBoolean(dataTable.Rows[0]["load_always"]),
-                DisableMinifier = Convert.ToBoolean(dataTable.Rows[0]["disable_minifier"]),
-                UrlRegex = dataTable.Rows[0].Field<string>("url_regex"),
-                ExternalFiles = dataTable.Rows[0].Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
-                GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataTable.Rows[0]["grouping_create_object_instead_of_array"]),
-                GroupingPrefix = dataTable.Rows[0].Field<string>("grouping_prefix"),
-                GroupingKey = dataTable.Rows[0].Field<string>("grouping_key"),
-                GroupingKeyColumnName = dataTable.Rows[0].Field<string>("grouping_key_column_name"),
-                GroupingValueColumnName = dataTable.Rows[0].Field<string>("grouping_value_column_name"),
-                IsScssIncludeTemplate = Convert.ToBoolean(dataTable.Rows[0]["is_scss_include_template"]),
-                UseInWiserHtmlEditors = Convert.ToBoolean(dataTable.Rows[0]["use_in_wiser_html_editors"]),
-                LinkedTemplates = new LinkedTemplatesModel
-                {
-                    RawLinkList = dataTable.Rows[0].Field<string>("linked_templates")
-                },
-                PreLoadQuery = dataTable.Rows[0].Field<string>("pre_load_query"),
-                ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataTable.Rows[0]["return_not_found_when_pre_load_query_has_no_data"]),
-                RoutineType = (RoutineTypes)dataTable.Rows[0].Field<int>("routine_type"),
-                RoutineParameters = dataTable.Rows[0].Field<string>("routine_parameters"),
-                RoutineReturnType = dataTable.Rows[0].Field<string>("routine_return_type"),
-                TriggerTiming = (TriggerTimings)dataTable.Rows[0].Field<int>("trigger_timing"),
-                TriggerEvent = (TriggerEvents)dataTable.Rows[0].Field<int>("trigger_event"),
-                TriggerTableName = dataTable.Rows[0].Field<string>("trigger_table_name"),
-                IsDefaultHeader = Convert.ToBoolean(dataTable.Rows[0]["is_default_header"]),
-                IsDefaultFooter = Convert.ToBoolean(dataTable.Rows[0]["is_default_footer"]),
-                DefaultHeaderFooterRegex = dataTable.Rows[0].Field<string>("default_header_footer_regex"),
-                IsPartial = Convert.ToBoolean(dataTable.Rows[0]["is_partial"]),
-                WidgetContent = dataTable.Rows[0].Field<string>("widget_content"),
-                WidgetLocation = (PageWidgetLocations) Convert.ToInt32(dataTable.Rows[0]["widget_location"])
-            };
-
-            var loginRolesString = dataTable.Rows[0].Field<string>("login_role");
-            if (!String.IsNullOrWhiteSpace(loginRolesString))
-            {
-                templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
-            }
-
-            return templateData;
+            return TemplateHelpers.DataRowToTemplateSettingsModel(dataTable.Rows[0]);
         }
 
         /// <inheritdoc />
@@ -519,7 +463,6 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("loadAlways", templateSettings.LoadAlways);
             clientDatabaseConnection.AddParameter("disableMinifier", templateSettings.DisableMinifier);
             clientDatabaseConnection.AddParameter("urlRegex", templateSettings.UrlRegex);
-            clientDatabaseConnection.AddParameter("externalFiles", String.Join(";", templateSettings.ExternalFiles));
             clientDatabaseConnection.AddParameter("groupingCreateObjectInsteadOfArray", templateSettings.GroupingCreateObjectInsteadOfArray);
             clientDatabaseConnection.AddParameter("groupingPrefix", templateSettings.GroupingPrefix);
             clientDatabaseConnection.AddParameter("groupingKey", templateSettings.GroupingKey);
@@ -543,6 +486,7 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("widgetContent", templateSettings.WidgetContent);
             clientDatabaseConnection.AddParameter("widgetLocation", (int)templateSettings.WidgetLocation);
 
+            // Save the template itself.
             var query = $@"UPDATE {WiserTableNames.WiserTemplate}
 SET template_name = ?name,
     template_data = ?editorValue,
@@ -564,7 +508,6 @@ SET template_name = ?name,
     load_always = ?loadAlways,
     disable_minifier = ?disableMinifier,
     url_regex = ?urlRegex,
-    external_files = ?externalFiles,
     grouping_create_object_instead_of_array = ?groupingCreateObjectInsteadOfArray,
     grouping_prefix = ?groupingPrefix,
     grouping_key = ?groupingKey,
@@ -589,6 +532,37 @@ SET template_name = ?name,
     is_dirty = TRUE
 WHERE id = ?id";
             await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Find out which external files are already saved in the database, so we don't need to re-download them every time someone saves the template.
+            query = $"SELECT id, external_file FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE template_id = ?id";
+            var externalFilesDataTable = await clientDatabaseConnection.GetAsync(query);
+            var externalFilesToDelete = new List<int>();
+            var externalFilesInDatabase = new List<string>();
+            foreach (DataRow dataRow in externalFilesDataTable.Rows)
+            {
+                var url = dataRow.Field<string>("external_file");
+                if (!templateSettings.ExternalFiles.Any(y => String.Equals(y.Uri.ToString(), url, StringComparison.OrdinalIgnoreCase)))
+                {
+                    externalFilesToDelete.Add(dataRow.Field<int>("id"));
+                }
+
+                externalFilesInDatabase.Add(url);
+            }
+
+            // Delete any external files that are not in the new list.
+            query = $"DELETE FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE id IN ({String.Join(",", externalFilesToDelete)})";
+            await clientDatabaseConnection.ExecuteAsync(query);
+
+            // Save the new list of external templates and generate hashes for them if we can.
+            foreach (var externalFile in templateSettings.ExternalFiles)
+            {
+                if (externalFilesInDatabase.Any(x => String.Equals(x, externalFile.Uri.ToString())))
+                {
+                    continue;
+                }
+
+                // TODO: Generate hash and save it to the database.
+            }
         }
 
         /// <inheritdoc />
@@ -1234,8 +1208,6 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                 scssRootId = parent.TemplateId;
             } while (scssRootId > 0 && !String.IsNullOrWhiteSpace(name) && !name.Equals("SCSS", StringComparison.OrdinalIgnoreCase));
 
-            var result = new List<TemplateSettingsModel>();
-
             clientDatabaseConnection.AddParameter("rootId", scssRootId);
 
             var query = $@"SELECT
@@ -1266,6 +1238,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.disable_minifier,
     template.url_regex,
     template.external_files,
+    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('url', externalFiles.external_file, 'hash', externalFiles.hash))) AS external_files_json,
     template.grouping_create_object_instead_of_array,
     template.grouping_prefix,
     template.grouping_key,
@@ -1285,6 +1258,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent5 ON parent5.template_id = pa
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent6 ON parent6.template_id = parent5.parent_id AND parent6.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent5.parent_id)
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent7 ON parent7.template_id = parent6.parent_id AND parent7.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent6.parent_id)
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = parent7.parent_id AND parent8.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = parent7.parent_id)
+LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
 WHERE template.template_type = {(int) TemplateTypes.Scss}
 AND template.is_scss_include_template = 0
 AND template.removed = 0
@@ -1294,59 +1268,7 @@ AND (?rootId = 0 OR ?rootId IN (parent8.template_id, parent7.template_id, parent
 ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering, parent4.ordering, parent3.ordering, parent2.ordering, parent1.ordering, template.ordering";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
-            foreach (DataRow dataRow in dataTable.Rows)
-            {
-                var templateData = new TemplateSettingsModel
-                {
-                    TemplateId = dataRow.Field<int>("template_id"),
-                    ParentId = dataRow.Field<int?>("parent_id"),
-                    Type = dataRow.Field<TemplateTypes>("template_type"),
-                    Name = dataRow.Field<string>("template_name"),
-                    EditorValue = dataRow.Field<string>("template_data"),
-                    Version = dataRow.Field<int>("version"),
-                    AddedOn = dataRow.Field<DateTime>("added_on"),
-                    AddedBy = dataRow.Field<string>("added_by"),
-                    ChangedOn = dataRow.Field<DateTime>("changed_on"),
-                    ChangedBy = dataRow.Field<string>("changed_by"),
-                    CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
-                    CachePerQueryString = dataTable.Rows[0].Field<bool>("cache_per_querystring"),
-                    CacheUsingRegex = dataTable.Rows[0].Field<bool>("cache_using_regex"),
-                    CachePerHostName = dataTable.Rows[0].Field<bool>("cache_per_hostname"), CacheMinutes = dataRow.Field<int>("cache_minutes"),
-                    CacheLocation = (TemplateCachingLocations) dataRow.Field<int>("cache_location"),
-                    CacheRegex = dataTable.Rows[0].Field<string>("cache_regex"),
-                    LoginRequired = Convert.ToBoolean(dataRow["login_required"]),
-                    LoginRedirectUrl = dataRow.Field<string>("login_redirect_url"),
-                    Ordering = dataRow.Field<int>("ordering"),
-                    InsertMode = dataRow.Field<ResourceInsertModes>("insert_mode"),
-                    LoadAlways = Convert.ToBoolean(dataRow["load_always"]),
-                    DisableMinifier = Convert.ToBoolean(dataRow["disable_minifier"]),
-                    UrlRegex = dataRow.Field<string>("url_regex"),
-                    ExternalFiles = dataRow.Field<string>("external_files")?.Split(new[] {';', ','}, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
-                    GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(dataRow["grouping_create_object_instead_of_array"]),
-                    GroupingPrefix = dataRow.Field<string>("grouping_prefix"),
-                    GroupingKey = dataRow.Field<string>("grouping_key"),
-                    GroupingKeyColumnName = dataRow.Field<string>("grouping_key_column_name"),
-                    GroupingValueColumnName = dataRow.Field<string>("grouping_value_column_name"),
-                    IsScssIncludeTemplate = Convert.ToBoolean(dataRow["is_scss_include_template"]),
-                    UseInWiserHtmlEditors = Convert.ToBoolean(dataRow["use_in_wiser_html_editors"]),
-                    LinkedTemplates = new LinkedTemplatesModel
-                    {
-                        RawLinkList = dataRow.Field<string>("linked_templates")
-                    },
-                    PreLoadQuery = dataRow.Field<string>("pre_load_query"),
-                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataRow["return_not_found_when_pre_load_query_has_no_data"])
-                };
-
-                var loginRolesString = dataRow.Field<string>("login_role");
-                if (!String.IsNullOrWhiteSpace(loginRolesString))
-                {
-                    templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
-                }
-
-                result.Add(templateData);
-            }
-
-            return result;
+            return dataTable.Rows.Cast<DataRow>().Select(TemplateHelpers.DataRowToTemplateSettingsModel).ToList();
         }
 
         /// <inheritdoc />

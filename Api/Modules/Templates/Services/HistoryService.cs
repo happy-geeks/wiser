@@ -174,7 +174,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", TemplateTypes.Normal, newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", TemplateTypes.Normal, newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", TemplateTypes.Normal, newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", TemplateTypes.Normal, String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", TemplateTypes.Normal, String.Join(";", newVersion.ExternalFiles?.Select(x => x.Uri.ToString()) ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles?.Select(x => x.Uri.ToString()) ?? new List<string>()), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", TemplateTypes.Normal, newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", TemplateTypes.Normal, newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", TemplateTypes.Normal, newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);

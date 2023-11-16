@@ -1880,8 +1880,8 @@ LIMIT 1";
 
             var javascriptTemplates = new List<int>();
             var cssTemplates = new List<int>();
-            var externalJavascript = new List<PageResource>();
-            var externalCss = new List<PageResource>();
+            var externalJavascript = new List<PageResourceModel>();
+            var externalCss = new List<PageResourceModel>();
 
             javascriptTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedJavascript.Select(t => t.TemplateId));
             cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedCssTemplates.Select(t => t.TemplateId));

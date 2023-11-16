@@ -206,7 +206,7 @@ namespace Api.Modules.Templates.Models.Template
         /// <summary>
         /// Gets or sets any external javascript or CSS files that should be loaded.
         /// </summary>
-        public List<PageResource> ExternalFiles { get; set; } = new();
+        public List<PageResourceModel> ExternalFiles { get; set; } = new();
 
         /// <summary>
         /// Gets or sets whether this SCSS template is one that should be included before all other SCSS templates before compiling them.
