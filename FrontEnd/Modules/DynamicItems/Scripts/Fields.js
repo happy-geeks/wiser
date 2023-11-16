@@ -2747,7 +2747,7 @@ export class Fields {
                                 attachmentsUploader = dialogElement.find("input[name=files]").kendoUpload({
                                     files: files,
                                     async: {
-                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/upload?propertyName=TEMPORARY_FILE_FROM_WISER`,
+                                        saveUrl: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(this.base.settings.zeroEncrypted)}/upload?propertyName=TEMPORARY_FILE_FROM_WISER`,
                                         removeUrl: "remove", // TODO
                                         withCredentials: false
                                     },

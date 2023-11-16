@@ -11,10 +11,10 @@ using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.CloudFlare.Interfaces;
-using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Interfaces.Repository;
 using Api.Modules.Files.Models;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -93,7 +93,7 @@ namespace Api.Modules.Files.Services
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            if (itemId <= 0)
+            if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("Id must be greater than zero.");
             }
@@ -110,6 +110,7 @@ namespace Api.Modules.Files.Services
             try
             {
                 await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
                 var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
                 if (!success)
                 {
@@ -125,7 +126,10 @@ namespace Api.Modules.Files.Services
                 var (ftpDirectory, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
 
                 // Fix ordering of files.
-                await FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
+                if (itemId > 0)
+                {
+                    await FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
+                }
 
                 var result = new List<FileModel>();
 
