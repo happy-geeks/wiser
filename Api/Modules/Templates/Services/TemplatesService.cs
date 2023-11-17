@@ -242,7 +242,7 @@ namespace Api.Modules.Templates.Services
 	template.template_data_minified
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-WHERE (template.use_in_wiser_html_editors = 1 OR template.load_always = 1)
+WHERE template.use_in_wiser_html_editors = 1
 AND template.template_type IN ({(int)TemplateTypes.Css}, {(int)TemplateTypes.Scss})
 AND otherVersion.id IS NULL
 ORDER BY template.ordering ASC");
