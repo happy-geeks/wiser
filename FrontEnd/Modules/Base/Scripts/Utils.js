@@ -894,7 +894,15 @@ export class Wiser {
         files: "files",
         templates: "templates"
     })
-    
+
+    /**
+     * Event that gets called when the user executes the custom action for adding a link to a file from Wiser to the HTML editor.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
+     * @param {any} event The event from the execute action.
+     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
+     * @param {any} moduleName The name of the module where the action is executed in.
+     * @param {any} filesRootId The (encrypted) ID of the file parent directory.
+     */
     static async onHtmlEditorFileExec(event, kendoEditor, moduleName, filesRootId) {
         if (!filesRootId) {
             kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
@@ -904,6 +912,14 @@ export class Wiser {
         }
     }
     
+    /**
+     * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
+     * @param {any} event The event from the execute action.
+     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
+     * @param {any} moduleName The name of the module where the action is executed in.
+     * @param {any} imagesRootId The (encrypted) ID of the image parent directory.
+     */
     static async onHtmlEditorImageExec(event, kendoEditor, moduleName, imagesRootId) {
         if (!imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
@@ -1210,6 +1226,17 @@ export class Wiser {
         const result = await Wiser.api({ url: `${moduleSettings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
         return result || 0;
     }
+
+    /**
+     * Builds a custom window for fileManagers inside of the HTML editor
+     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
+     * @param {any} codeMirror The CodeMirror editor where the action is executed in.
+     * @param {any} contentbuilder The Contentbuilder editor where the action is executed in.
+     * @param {any} windowMode The fileManagerWindowMode execution type (ex. images, files or translations).
+     * @param {any} iframeMode Check if its run in an IFrame.
+     * @param {any} gridviewMode Check if its run in an GridView.
+     * @param {any} moduleName The name of the module where the action is executed in.
+     */
     static initializeFileManager(kendoEditor, codeMirror, contentbuilder, windowMode, iframeMode, gridviewMode, moduleName) {
         // File manager
         const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
