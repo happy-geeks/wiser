@@ -907,7 +907,10 @@ export class Wiser {
         if (!filesRootId) {
             kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.files, null, null, moduleName);
+            const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: null, contentbuilder: null };
+            const fileManagerWindowMode = this.fileManagerModes.files;
+            const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, null, null, moduleName);
+            
             fileManagerWindow.center().open();
         }
     }
@@ -924,7 +927,10 @@ export class Wiser {
         if (!imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            const fileManagerWindow = Wiser.initializeFileManager(kendoEditor, null, null, this.fileManagerModes.images, null, null, moduleName);
+            const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: null, contentbuilder: null };
+            const fileManagerWindowMode = this.fileManagerModes.images;
+            
+            const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, null, null, moduleName);
             fileManagerWindow.center().open();
         }
     }
@@ -1229,18 +1235,14 @@ export class Wiser {
 
     /**
      * Builds a custom window for fileManagers inside of the HTML editor
-     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
-     * @param {any} codeMirror The CodeMirror editor where the action is executed in.
-     * @param {any} contentbuilder The Contentbuilder editor where the action is executed in.
-     * @param {any} windowMode The fileManagerWindowMode execution type (ex. images, files or translations).
+     * @param {any} fileManagerWindowSender The fileManager window used to set all the settings.
+     * @param {any} fileManagerWindowMode The fileManagerWindowMode execution type (ex. images, files or translations).
      * @param {any} iframeMode Check if its run in an IFrame.
      * @param {any} gridviewMode Check if its run in an GridView.
      * @param {any} moduleName The name of the module where the action is executed in.
      */
-    static initializeFileManager(kendoEditor, codeMirror, contentbuilder, windowMode, iframeMode, gridviewMode, moduleName) {
+    static initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, iframeMode, gridviewMode, moduleName) {
         // File manager
-        const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-        const fileManagerWindowMode = windowMode;
         const fileManagerIframe = document.querySelector("#fileManagerFrame");
         const fileManagerWindow = $("#fileManagerWindow").kendoWindow({
             width: "90%",
