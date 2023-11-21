@@ -326,6 +326,14 @@ export class Windows {
                     required: (input) => {
                         const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");
                         return `${fieldDisplayName} is verplicht`;
+                    },
+                    pattern: (input) => {
+                        const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");
+                        return `${fieldDisplayName} is niet correct`;
+                    },
+                    step: (input) => {
+                        const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");
+                        return `${fieldDisplayName} is niet correct`;
                     }
                 }
             }).data("kendoValidator");
