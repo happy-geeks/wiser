@@ -2861,9 +2861,13 @@ export class Fields {
          if (!this.base.settings.imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
-            this.base.windows.fileManagerWindow.center().open();
+             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
+             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, 
+                 this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, 
+                 this.base.settings.gridViewMode, this.base.settings.moduleName);
+             
+             fileManagerWindow.center().open();
         }
     }
 
@@ -2881,7 +2885,11 @@ export class Fields {
         } else {
             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.files;
-            this.base.windows.fileManagerWindow.center().open();
+            const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, 
+                this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, 
+                this.base.settings.gridViewMode, this.base.settings.moduleName);
+            
+            fileManagerWindow.center().open();
         }
     }
 
@@ -2899,7 +2907,9 @@ export class Fields {
         } else {
             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.templates;
-            this.base.windows.fileManagerWindow.center().open();
+            const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
+            
+            fileManagerWindow.center().open();
         }
     }
 
