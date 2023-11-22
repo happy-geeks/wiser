@@ -1444,7 +1444,8 @@ AND otherVersion.id IS NULL";
         {
             var temporaryTableName = $"temp_templates_{Guid.NewGuid():N}";
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
-            var query = $@"CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{temporaryTableName}`
+            var query = $@"CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{temporaryTableName}` LIKE {WiserTableNames.WiserTemplate};
+INSERT INTO `{branchDatabaseName}`.`{temporaryTableName}`
 SELECT template.*
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
