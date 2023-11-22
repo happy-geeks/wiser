@@ -888,7 +888,53 @@ export class Wiser {
 
         extraHeaders.Authorization = `${Strings.capitalizeFirst(authenticationData.tokenType)} ${authenticationData.accessToken}`;
     }
+    
+    static fileManagerModes = Object.freeze({
+        images: "images",
+        files: "files",
+        templates: "templates"
+    })
 
+    /**
+     * Event that gets called when the user executes the custom action for adding a link to a file from Wiser to the HTML editor.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
+     * @param {any} event The event from the execute action.
+     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
+     * @param {any} moduleName The name of the module where the action is executed in.
+     * @param {any} filesRootId The (encrypted) ID of the file parent directory.
+     */
+    static async onHtmlEditorFileExec(event, kendoEditor, moduleName, filesRootId) {
+        if (!filesRootId) {
+            kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
+        } else {
+            const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: null, contentbuilder: null };
+            const fileManagerWindowMode = this.fileManagerModes.files;
+            const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, null, null, moduleName);
+            
+            fileManagerWindow.center().open();
+        }
+    }
+    
+    /**
+     * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
+     * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
+     * @param {any} event The event from the execute action.
+     * @param {any} kendoEditor The Kendo HTML editor where the action is executed in.
+     * @param {any} moduleName The name of the module where the action is executed in.
+     * @param {any} imagesRootId The (encrypted) ID of the image parent directory.
+     */
+    static async onHtmlEditorImageExec(event, kendoEditor, moduleName, imagesRootId) {
+        if (!imagesRootId) {
+            kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
+        } else {
+            const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: null, contentbuilder: null };
+            const fileManagerWindowMode = this.fileManagerModes.images;
+            
+            const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, null, null, moduleName);
+            fileManagerWindow.center().open();
+        }
+    }
+    
     /**
      * Event that gets called when the user executes the custom action for entering a translation variable.
      * @param {any} event The event from the execute action.
@@ -1185,6 +1231,154 @@ export class Wiser {
     static async getApiAction(moduleSettings, actionType, entityType) {
         const result = await Wiser.api({ url: `${moduleSettings.wiserApiRoot}entity-types/${encodeURIComponent(entityType)}/api-connection/${encodeURIComponent(actionType)}` });
         return result || 0;
+    }
+
+    /**
+     * Builds a custom window for fileManagers inside of the HTML editor
+     * @param {any} fileManagerWindowSender The fileManager window used to set all the settings.
+     * @param {any} fileManagerWindowMode The fileManagerWindowMode execution type (ex. images, files or translations).
+     * @param {any} iframeMode Check if its run in an IFrame.
+     * @param {any} gridviewMode Check if its run in an GridView.
+     * @param {any} moduleName The name of the module where the action is executed in.
+     */
+    static initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, iframeMode, gridviewMode, moduleName) {
+        // File manager
+        const fileManagerIframe = document.querySelector("#fileManagerFrame");
+        const fileManagerWindow = $("#fileManagerWindow").kendoWindow({
+            width: "90%",
+            height: "90%",
+            title: "",
+            visible: false,
+            modal: true,
+            actions: ["Close"],
+            open: (event) => {
+                let selectedText = "";
+                if (fileManagerWindowSender && fileManagerWindowSender.kendoEditor) {
+                    selectedText = fileManagerWindowSender.kendoEditor.getSelection().toString();
+                }
+                
+                fileManagerIframe.src = `/Modules/FileManager?mode=${fileManagerWindowMode}&iframe=true&selectedText=${encodeURIComponent(selectedText)}`;
+
+                switch (fileManagerWindowMode) {
+                    case this.fileManagerModes.images:
+                        event.sender.title("Afbeelding invoegen");
+                        break;
+                    case this.fileManagerModes.files:
+                        event.sender.title("Link naar bestand invoegen");
+                        break;
+                    case this.fileManagerModes.templates:
+                        event.sender.title("Template invoegen");
+                        break;
+                }
+            }
+        }).data("kendoWindow");
+
+        const fileManagerWindowAddButton = $("#fileManagerWindow button[name=addFileToEditor]").kendoButton({
+            icon: "save",
+            click: async (event) => {
+                if (!fileManagerWindowSender) {
+                    kendo.alert("Er is geen HTML editor gevonden waar dit bestand toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
+                    return;
+                }
+
+                let html = "";
+
+                if (!fileManagerIframe || !fileManagerIframe.contentWindow || !fileManagerIframe.contentWindow.document) {
+                    kendo.alert("Het iframe voor bestandsbeheer kon niet gevonden worden of is leeg. Ververs a.u.b. de tab waar Wiser in draait en probeer het opnieuw, of neem contact op met ons.");
+                    return;
+                }
+
+                const fileManagerClassFromIframe = fileManagerIframe.contentWindow.fileManager;
+
+                switch (fileManagerWindowMode) {
+                    case this.fileManagerModes.images: {
+                        const selectedItem = fileManagerClassFromIframe.imagesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.imagesUploaderWindowTreeView.select());
+                        const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
+
+                        const imagePreviewUrl = fileManagerClassFromIframe.generateImagePreviewUrl(extension);
+                        html = `<figure>
+                                    <picture>
+                                        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
+                                        <source media="(min-width: 0px)" srcset="${fileManagerClassFromIframe.generateImagePreviewUrl('webp').url}" type="image/webp" />
+                                        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
+                                    </picture>
+                                </figure>`;
+                        break;
+                    }
+                    case this.fileManagerModes.files: {
+                        const fileUrl = fileManagerClassFromIframe.generateFilePreviewUrl();
+                        html = `<a href="${fileUrl}">${(fileManagerClassFromIframe.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
+
+                        break;
+                    }
+                    case this.fileManagerModes.templates: {
+                        const selectedItem = fileManagerClassFromIframe.templatesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.templatesUploaderWindowTreeView.select());
+                        html = selectedItem.html;
+                        break;
+                    }
+                    default: {
+                        kendo.alert(`Onbekende mode ('${this.fileManagerModes}') voor bestandsbeheer. Sluit a.u.b. dit scherm en probeer het opnieuw, of neem contact op met ons.`)
+                        return;
+                    }
+                }
+
+                if (fileManagerWindowSender.kendoEditor) {
+                    const originalOptions = fileManagerWindowSender.kendoEditor.options.pasteCleanup;
+                    fileManagerWindowSender.kendoEditor.options.pasteCleanup.none = true;
+                    fileManagerWindowSender.kendoEditor.options.pasteCleanup.span = false;
+                    fileManagerWindowSender.kendoEditor.exec("inserthtml", { value: html });
+                    fileManagerWindowSender.kendoEditor.options.pasteCleanup.none = originalOptions.none;
+                    fileManagerWindowSender.kendoEditor.options.pasteCleanup.span = originalOptions.span;
+                }
+
+                if (fileManagerWindowSender.codeMirror) {
+                    const doc = fileManagerWindowSender.codeMirror.getDoc();
+                    const cursor = doc.getCursor();
+                    doc.replaceRange(html, cursor);
+                }
+
+                if (fileManagerWindowSender.contentbuilder) {
+                    $(fileManagerWindowSender.contentbuilder.activeElement).replaceWith(html);
+                }
+
+                fileManagerWindow.close();
+            }
+        });
+
+        // Window for searching for items to link to another item.
+        const historyGridWindow = $("#historyWindowGrid").kendoWindow({
+            width: "90%",
+            height: "90%",
+            title: "History",
+            visible: false,
+            modal: true,
+            actions: ["Close"]
+        }).data("kendoWindow");
+
+        // Window for searching for items to link to another item.
+        const searchItemsWindow = $("#searchItemsWindow").kendoWindow({
+            width: "90%",
+            height: "90%",
+            title: "Item zoeken",
+            visible: false,
+            modal: true,
+            actions: ["Close"]
+        }).data("kendoWindow");
+
+        // Some things should not be done if we're in iframe mode.
+        if (iframeMode || gridviewMode) {
+            return;
+        }
+        
+        /***** NOTE: Only add code below this line that should NOT be executed if the module is loaded inside an iframe *****/
+        const mainWindow = $("#window").kendoWindow({
+            title: moduleName || "Modulenaam",
+            visible: true,
+            actions: ["refresh"]
+        }).data("kendoWindow").maximize().open();
+        mainWindow.wrapper.addClass("main-window");
+
+        return fileManagerWindow;
     }
 }
 
