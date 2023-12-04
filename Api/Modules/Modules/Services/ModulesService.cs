@@ -308,10 +308,10 @@ UNION
                             var moduleQuery = dataRow.Field<string>("custom_query");
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
+                                moduleQuery = moduleQuery.Replace("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.Replace("{username}", IdentityHelpers.GetUserName(identity) ?? "");
+                                moduleQuery = moduleQuery.Replace("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
+                                moduleQuery = moduleQuery.Replace("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
 
                                 var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
                                 if (moduleDataTable.Rows.Count > 0)

@@ -303,25 +303,25 @@ namespace Api.Modules.Tenants.Services
                     {
                         foreach (var (key, value) in tenant.WiserSettings)
                         {
-                            createTablesQuery = createTablesQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                            createTriggersQuery = createTriggersQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                            createdStoredProceduresQuery = createdStoredProceduresQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                            insertInitialDataQuery = insertInitialDataQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                            createTablesQuery = createTablesQuery.Replace($"{{{key}}}", value);
+                            createTriggersQuery = createTriggersQuery.Replace($"{{{key}}}", value);
+                            createdStoredProceduresQuery = createdStoredProceduresQuery.Replace($"{{{key}}}", value);
+                            insertInitialDataQuery = insertInitialDataQuery.Replace($"{{{key}}}", value);
 
                             if (isMultiLanguage)
                             {
-                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.Replace($"{{{key}}}", value);
                             }
 
                             if (isWebShop)
                             {
-                                insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.Replace($"{{{key}}}", value);
                             }
 
                             if (isConfigurator)
                             {
-                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.Replace($"{{{key}}}", value);
+                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.Replace($"{{{key}}}", value);
                             }
                         }
                     }
