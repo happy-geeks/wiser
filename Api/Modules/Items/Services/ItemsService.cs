@@ -669,9 +669,16 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             try
             {
                 await clientDatabaseConnection.BeginTransactionAsync();
-                var newItem = await wiserItemsService.CreateAsync(item, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false);
+                //Get the information for the link (must the item be connected via ParentItemId?)
+                var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType:linkType, sourceEntityType: item.EntityType);
 
-                result.NewLinkId = await wiserItemsService.AddItemLinkAsync(newItem.Id, parentId, linkType, userId: userId, username: username, skipPermissionsCheck: true);
+                //Create the new item
+                var newItem = await wiserItemsService.CreateAsync(item, parentId:(linkTypeSettings.UseItemParentId ? parentId : null) ,userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false);
+
+                //Add the link to the parent if not connected via ParentItemId
+                if (!linkTypeSettings.UseItemParentId)
+                    result.NewLinkId = await wiserItemsService.AddItemLinkAsync(newItem.Id, parentId, linkType, userId: userId, username: username, skipPermissionsCheck: true);
+                
                 result.NewItemId = newItem.EncryptedId;
                 result.NewItemIdPlain = newItem.Id;
 
