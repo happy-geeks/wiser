@@ -13,18 +13,18 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), KendoTab.Service, true);}
+            @{RenderProperties(Model, Model.GetType(), KendoTab.Service, true, "");}
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), KendoTab.Timers, true);}
+            @{RenderProperties(Model, Model.GetType(), KendoTab.Timers, true, "");}
         </div>
     </div>
     
     <div id="actionsTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), KendoTab.Actions, true);}
+            @{RenderProperties(Model, Model.GetType(), KendoTab.Actions, true, "");}
         </div>
     </div>
     
@@ -50,7 +50,7 @@
 
 
 @functions {
-    async Task RenderProperty(object data, PropertyInfo property, WtsAttributes.WtsPropertyAttribute attributes, string selectedValue, string tab)
+    async Task RenderProperty(object data, PropertyInfo property, WtsAttributes.WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
         <div class="item">
             @switch (attributes?.KendoComponent)
@@ -62,6 +62,7 @@
                             type="text"
                             name="@property.Name"
                             value="@(data ?? "")"
+                            trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponent.TextBox"
                             @if (attributes.BelongsToForm != null)
@@ -79,6 +80,7 @@
                             type="number"
                             name="@property.Name"
                             value="@(data ?? "")"
+                            trace="@trace"
                             data-kendo-tab="@tab"
                             data-depends-on-field="timing-daily"
                             data-depends-on-value="daily"
@@ -98,6 +100,7 @@
                             type="time"
                             name="@property.Name"
                             value="@(data ?? "")"
+                            trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponent.TimePicker"
                             @if (attributes.BelongsToForm != null)
@@ -117,6 +120,7 @@
                                 <input 
                                     type="checkbox" 
                                     name="@property.Name" 
+                                    trace="@trace"
                                     data-kendo-tab="@tab" 
                                     checked 
                                     data-kendo-component="@KendoComponent.CheckBox"
@@ -131,6 +135,7 @@
                                 <input
                                     type="checkbox" 
                                     name="@property.Name" 
+                                    trace="@trace"
                                     data-kendo-tab="@tab" 
                                     data-kendo-component="@KendoComponent.CheckBox" 
                                     @if (attributes.BelongsToForm != null)
@@ -151,6 +156,7 @@
                     <span>
                         <select 
                             name="@property.Name" 
+                            trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponent.DropDownList"
                             @if (attributes.BelongsToForm != null)
@@ -178,6 +184,7 @@
                     <span>
                         <table 
                             name="@property.Name" 
+                            trace="@trace"
                             data-kendo-component="@KendoComponent.Grid" 
                             data-kendo-tab="@tab"
                             data-kendo-options="@attributes?.KendoOptions"
@@ -211,7 +218,7 @@
         </div>
     }
 
-    void RenderProperties(object data, Type type, string tab, bool isFilled)
+    void RenderProperties(object data, Type type, string tab, bool isFilled, string trace)
     {
         foreach (var property in type.GetProperties())
         {
@@ -228,11 +235,11 @@
                     {
                         // Get property value of the first item in the list
                         var value = list[0]?.GetType().GetProperty(property.Name)?.GetValue(list[0], null);
-                        RenderProperty(value, property, attributes, null, tab);
+                        RenderProperty(value, property, attributes, null, tab, trace);
                     }
                     else
                     {
-                        RenderProperty(null, property, attributes, null, tab);
+                        RenderProperty(null, property, attributes, null, tab, trace);
                     }
                 }
                 else
@@ -242,22 +249,22 @@
                     {
                         if (isFilled)
                         {
-                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab);
+                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab, trace);
                         }
                         else
                         {
-                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab);
+                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                         }
                         continue;
                     }
                     // Check if we should send the data
                     if (isFilled)
                     {
-                        RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab);
+                        RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                     }
                     else
                     {
-                        RenderProperty(null, property, attributes, null, tab);
+                        RenderProperty(null, property, attributes, null, tab, trace);
                     }
                 }
             }
@@ -277,7 +284,7 @@
                 var listType = genericTypes[0];
                 // Get the list from the data 
                 var dataList = data?.GetType().GetProperty(property.Name)?.GetValue(data, null) as IList;
-                RenderProperties(dataList, listType, tab, false);
+                RenderProperties(dataList, listType, tab, false, trace + $"/{property?.Name}");
             }
             else
             {
@@ -287,12 +294,12 @@
                     // TODO: See if sending this value is useless or not
                     var value = list?[0]?.GetType().GetProperty(property.Name);
                     // Since data is a list, we should let the function know that we shouldn't fill any data
-                    RenderProperties(value, property.PropertyType, tab, false);
+                    RenderProperties(value, property.PropertyType, tab, false, trace + $"/{property?.Name}");
                 }
                 else
                 {
                     // Render the properties of the class
-                    RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true);
+                    RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property?.Name}");
                 }
             }
         }

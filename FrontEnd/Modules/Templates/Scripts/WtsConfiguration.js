@@ -124,6 +124,21 @@ export class WtsConfiguration {
         $("#saveButtonWtsConfiguration").on("click", this.getCurrentSettings.bind(this));
     }
     
+    addFieldToData(data, name, value, trace) {x
+        const traceParts = trace.split('/').filter(part => part !== ''); // Split the trace on / and remove empty parts
+        let currentObj = data;
+        
+        traceParts.forEach(part => {
+            if (!currentObj[part]) {
+                currentObj[part] = {}; // Create the object if it doesn't exist
+            }
+            currentObj = currentObj[part]; // Go to the next object
+        });
+        
+        currentObj[name] = value; // Add the value to the object
+        return data;
+    }
+    
     getCurrentSettings() {
         console.log("Saving configuration...");
         
@@ -131,15 +146,22 @@ export class WtsConfiguration {
         
         // Get all the values from the service input fields
         this.serviceInputFields.forEach((inputField) => {
-            let inputFieldName = inputField.getAttribute("name");
-            data[inputFieldName] = this.getValueOfElement(inputField);
+            let name = inputField.getAttribute("name");
+            let trace = inputField.getAttribute("trace");
+            let value = this.getValueOfElement(inputField);
+            
+            if (trace) {
+                // If there is a trace, add the field to the data based on the trace
+                data = this.addFieldToData(data, name, value, trace);
+            } else {
+                // If there is no trace, add the field to the data
+                data[name] = value;
+            }
         });
 
         console.log("Data: ", data);
         
         return data;
-        // const schemaValidator = new Ajv();
-        // const isValid = schemaValidator.validate(schema, this.serviceInputFields);
     }
     
     getValueOfElement(element) {
