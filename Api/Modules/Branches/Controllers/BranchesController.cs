@@ -71,13 +71,14 @@ namespace Api.Modules.Branches.Controllers
         /// Get the changes of a branch.
         /// </summary>
         /// <param name="id">The ID of the branch to get the changes of.</param>
+        /// <param name="entityTypes">A list of entity types to count the changes for.</param>
         /// <returns>A list of changes per entity type / Wiser setting type.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(ChangesAvailableForMergingModel), StatusCodes.Status200OK)]
         [Route("changes/{id:int}")]
-        public async Task<IActionResult> GetChangesAsync(int id)
+        public async Task<IActionResult> GetChangesAsync(int id, [FromQuery]List<string> entityTypes = null)
         {
-            return (await branchesService.GetChangesAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+            return (await branchesService.GetChangesAsync((ClaimsIdentity)User.Identity, id, entityTypes)).GetHttpResponseMessage();
         }
 
         /// <summary>
