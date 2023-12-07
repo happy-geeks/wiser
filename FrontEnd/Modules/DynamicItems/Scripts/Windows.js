@@ -1,4 +1,4 @@
-﻿import { Utils, Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Utils, Wiser} from "../../Base/Scripts/Utils.js";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.window.js");
@@ -67,10 +67,43 @@ export class Windows {
      */
     initialize() {
         this.fileManagerWindow = Wiser.initializeFileManager(this.fileManagerWindowSender,
-            this.fileManagerWindowMode,this.base.settings.iframeMode, this.base.settings.gridViewMode, 
+            this.fileManagerWindowMode,this.base.settings.iframeMode, this.base.settings.gridViewMode,
             this.base.settings.moduleName);
 
-        this.mainWindow?.wrapper.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
+        // Window for searching for items to link to another item.
+        this.historyGridWindow = $("#historyWindowGrid").kendoWindow({
+            width: "90%",
+            height: "90%",
+            title: "History",
+            visible: false,
+            modal: true,
+            actions: ["Close"]
+        }).data("kendoWindow");
+
+        // Window for searching for items to link to another item.
+        this.searchItemsWindow = $("#searchItemsWindow").kendoWindow({
+            width: "90%",
+            height: "90%",
+            title: "Item zoeken",
+            visible: false,
+            modal: true,
+            actions: ["Close"]
+        }).data("kendoWindow");
+
+        // Some things should not be done if we're in iframe mode.
+        if (this.base.settings.iframeMode || this.base.settings.gridViewMode) {
+            return;
+        }
+
+        /***** NOTE: Only add code below this line that should NOT be executed if the module is loaded inside an iframe *****/
+        this.mainWindow = $("#window").kendoWindow({
+            title: this.base.settings.moduleName || "Modulenaam",
+            visible: true,
+            actions: ["refresh"]
+        }).data("kendoWindow").maximize().open();
+        this.mainWindow.wrapper.addClass("main-window");
+
+        this.mainWindow.wrapper.find(".k-i-refresh").parent().click(this.base.onMainRefreshButtonClick.bind(this.base));
     }
 
     /**
