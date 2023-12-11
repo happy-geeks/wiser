@@ -28,6 +28,7 @@ export class WtsConfiguration {
         
         this.template = null;
         this.serviceInputFields = [];
+        this.timersInputFields = [];
     }
 
     async reloadWtsConfigurationTab(id) {
@@ -103,11 +104,24 @@ export class WtsConfiguration {
                 this.serviceInputFields.push(component[0]);
             }
             
-            // Make sure componentOptions is not null or undefined
+            // Save the component if the tab is Timers
+            if (componentTab === "Timers") {
+                this.timersInputFields.push(component[0]);
+            }
+            
+            // Check if the options are set
             if (componentOptions === undefined || componentOptions === null) {
                 componentOptions = {};
             } else {
                 componentOptions = JSON.parse(componentOptions);
+                // Check if dataSource is set, if so make it a object instead of a string to assign it to the component
+                if (componentOptions.dataSource) {
+                    componentOptions.dataSource = eval(componentOptions.dataSource);
+                }
+                // Check if a change event is set, if so make it a function
+                if (componentOptions.change) {
+                    componentOptions.change = eval(componentOptions.change);
+                }
             }
             
             // Make sure the method exists on componentSelector
@@ -123,8 +137,39 @@ export class WtsConfiguration {
         // Bind the save button
         $("#saveButtonWtsConfiguration").on("click", this.getCurrentSettings.bind(this));
     }
+
+    onListChange(e) {
+        // Retrieve the selected item
+        let selectedItem = e.sender.dataItem(e.sender.select());
+        console.log("Selected item", selectedItem.timeId);
+        
+        // Figure out what the current tab is
+        let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
+        let currentTab = tabStrip.select();
+        let currentTabName = $(currentTab).attr("aria-controls");
+        console.log("Current tab", currentTabName);
+        
+        // Find the input fields for the current tab
+        let inputFields = this[currentTabName.toLowerCase() + "InputFields"];
+        console.log("Input fields", this.timersInputFields); // It can't find the timersInputFields since "e" is "this" now and not the class
+        
+        // Loop through all the input fields
+        // inputFields.forEach((inputField) => {
+        //     // Get the trace of the input field
+        //     let trace = inputField.getAttribute("trace");
+        //    
+        //     // Check if the trace is set
+        //     if (trace) {
+        //         // Get the value from the selected item
+        //         let value = selectedItem[trace];
+        //        
+        //         // Set the value of the input field
+        //         this.setValueOfElement(inputField, value);
+        //     }
+        // });
+    }
     
-    addFieldToData(data, name, value, trace) {x
+    addFieldToData(data, name, value, trace) {
         const traceParts = trace.split('/').filter(part => part !== ''); // Split the trace on / and remove empty parts
         let currentObj = data;
         
@@ -158,6 +203,9 @@ export class WtsConfiguration {
                 data[name] = value;
             }
         });
+        
+        // Manually add runschemes to the data
+        data["RunSchemes"] = this.template.runSchemes;
 
         console.log("Data: ", data);
         

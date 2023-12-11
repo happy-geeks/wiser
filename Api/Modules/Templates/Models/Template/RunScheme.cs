@@ -110,6 +110,12 @@ namespace Api.Modules.Templates.Models.Template
         )]
         public int? DayOfWeek { get; set; }
         
+        [XmlIgnore]
+        public bool DayOfWeekSpecified
+        {
+            get { return DayOfWeek.HasValue; }
+        }
+        
         /// <summary>
         /// The day of the month on which the run scheme should run.
         /// </summary>
@@ -122,6 +128,12 @@ namespace Api.Modules.Templates.Models.Template
             BelongsToForm = "runSchemeForm"
         )]
         public int? DayOfMonth { get; set; }
+        
+        [XmlIgnore]
+        public bool DayOfMonthSpecified
+        {
+            get { return DayOfMonth.HasValue; }
+        }
         
         /// <summary>
         /// The time at which the run scheme is to be executed.
@@ -151,6 +163,12 @@ namespace Api.Modules.Templates.Models.Template
         )]
         public bool? SkipWeekend { get; set; }
         
+        [XmlIgnore]
+        public bool SkipWeekendSpecified
+        {
+            get { return SkipWeekend.HasValue; }
+        }
+        
         /// <summary>
         /// If the run scheme should be run immediately on start up of the wts.
         /// </summary>
@@ -162,6 +180,12 @@ namespace Api.Modules.Templates.Models.Template
             BelongsToForm = "runSchemeForm"
         )]
         public bool? RunImmediately { get; set; }
+        
+        [XmlIgnore]
+        public bool RunImmediatelySpecified
+        {
+            get { return RunImmediately.HasValue; }
+        }
         
         /// <summary>
         /// The settings to be used for logging.

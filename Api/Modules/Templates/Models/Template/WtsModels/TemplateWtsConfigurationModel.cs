@@ -54,32 +54,23 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             KendoComponent = KendoComponent.Grid,
             KendoOptions = @"
                {
+                  ""resizable"": true,
+                  ""height"": 280,
                   ""selectable"": true,
-                  ""editable"": {
-                      ""mode"": ""popup""
-                  },
-                  ""deletable"": true,
-                  ""toolbar"": [
-                    ""create"",
-                    ""edit"",
-                    ""delete""
+                  ""dataSource"": ""this.template.runSchemes"",
+                  ""change"": ""this.onListChange"",
+                  ""columns"": [
+                    {
+                        ""field"": ""timeId"",
+                        ""title"": ""ID""
+                    },
+                    {
+                        ""field"": ""type"",
+                        ""title"": ""Type""
+                    }
                   ]
                }
             "
-            // KendoOptions = @"
-            //    {
-            //       ""selectable"": true,
-            //       ""editable"": {
-            //           ""mode"": ""popup""
-            //       },
-            //       ""deletable"": true,
-            //       ""columns"": [
-            //         { ""command"": [""edit""], ""title"": ""Edit"", ""width"": ""100px"" },
-            //         { ""command"": [""destroy""], ""title"": ""Delete"", ""width"": ""100px"" }
-            //       ]
-            //    }
-            // "
-            // KendoOptions = "selectable: true, toolbar: ['create', 'save', 'cancel']"
         )]
         public List<RunScheme> RunSchemes { get; set; }
         
