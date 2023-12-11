@@ -49,13 +49,14 @@ namespace Api.Modules.Templates.Services
                 var namespaces = new XmlSerializerNamespaces();
                 namespaces.Add("", ""); // Remove the xmlns attribute
 
-                var writer = XmlWriter.Create(stringWriter, settings);
+                using (var writer = XmlWriter.Create(stringWriter, settings))
+                {
+                    serializer.Serialize(writer, data, namespaces);
 
-                serializer.Serialize(writer, data, namespaces);
+                    var xml = stringWriter.ToString();
 
-                var xml = stringWriter.ToString();
-
-                return xml;
+                    return xml;
+                }
             }
         }
         

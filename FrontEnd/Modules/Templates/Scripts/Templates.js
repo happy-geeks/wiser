@@ -1962,7 +1962,7 @@ const moduleSettings = {
                     event.preventDefault();
 
                     if (!this.dynamicContentWindowIsOpen()) {
-                        this.saveTemplate()
+                        this.saveTemplate();
                     } else {
                         const dynamicContentIframe = document.querySelector("#dynamicContentWindow iframe");
                         if (!dynamicContentIframe || !dynamicContentIframe.contentWindow || !dynamicContentIframe.contentWindow.DynamicContent) {
@@ -2311,7 +2311,7 @@ const moduleSettings = {
                 }
 
                 // Q: Replaced the data.name since data from wtsconfiguration doesn't grab that same name
-                // and what data.name used is what is used here now. Is that okay?
+                // and what data.name used, is what is used here now. Is that okay?
                 window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
                 this.lastLoadedHistoryPartNumber = 0;
 

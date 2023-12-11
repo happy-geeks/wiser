@@ -1,6 +1,6 @@
 namespace Api.Modules.Templates.Attributes
 {
-    public enum KendoComponent
+    public enum KendoComponents
     {
         TextBox,
         NumericTextBox,

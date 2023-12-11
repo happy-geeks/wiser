@@ -14,11 +14,11 @@ namespace Api.Modules.Templates.Models.Template
         /// Type of the run scheme
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Type",
             Description = "Het type van de timer",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.DropDownList,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.DropDownList,
             BelongsToForm = "runSchemeForm"
         )]
         public RunSchemeTypes Type { get; set; }
@@ -27,11 +27,11 @@ namespace Api.Modules.Templates.Models.Template
         /// Unique id of the run scheme.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "TimeId",
             Description = "Het unieke id van de timer",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.NumericTextBox,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.NumericTextBox,
             BelongsToForm = "runSchemeForm"
         )]
         public int TimeId { get; set; }
@@ -44,11 +44,11 @@ namespace Api.Modules.Templates.Models.Template
         [XmlElement("Delay", DataType = "string")]
         [CanBeNull]
         [WtsAttributes.WtsProperty(
-             isVisible = true,
-             Title = "Delay",
+             IsVisible = true,
+             Title = "Wachttijd",
              Description = "De tijd tussen elke run. Formaat: uren:minuten:seconden",
-             KendoTab = KendoTab.Timers,
-             KendoComponent = KendoComponent.TimePicker,
+             ConfigurationTab = ConfigurationTab.Timers,
+             KendoComponent = KendoComponents.TimePicker,
              BelongsToForm = "runSchemeForm"
          )]
         public string Delay { get; set; }
@@ -59,11 +59,11 @@ namespace Api.Modules.Templates.Models.Template
         [XmlElement("StartTime", DataType = "string")]
         [CanBeNull]
         [WtsAttributes.WtsProperty(
-            isVisible = true,
-            Title = "Start tijd",
+            IsVisible = true,
+            Title = "Starttijd",
             Description = "De tijd vanaf wanneer de acties van deze timer worden uitgevoerd",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.TimePicker,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.TimePicker,
             BelongsToForm = "runSchemeForm"
         )]
         public string StartTime { get; set; }
@@ -74,11 +74,11 @@ namespace Api.Modules.Templates.Models.Template
         [XmlElement("StopTime", DataType = "string")]
         [CanBeNull]
         [WtsAttributes.WtsProperty(
-            isVisible = true,
-            Title = "Stop tijd",
+            IsVisible = true,
+            Title = "Stoptijd",
             Description = "De tijd tot wanneer de acties van deze timer worden uitgevoerd",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.TimePicker,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.TimePicker,
             BelongsToForm = "runSchemeForm"
         )]
         public string StopTime { get; set; }
@@ -88,11 +88,11 @@ namespace Api.Modules.Templates.Models.Template
         /// </summary>
         [CanBeNull]
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Skip dagen",
             Description = "Of de timer niet moet worden uitgevoerd op bepaalde dagen (Bijvoorbeeld: 1,2,3,4,5,6,7)",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.TextBox,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.TextBox,
             BelongsToForm = "runSchemeForm"
         )]
         public string SkipDays { get; set; }
@@ -101,11 +101,11 @@ namespace Api.Modules.Templates.Models.Template
         /// The day of the week on which the run scheme should run.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Dag van de week",
             Description = "De dag van de week waarop de timer moet worden uitgevoerd (Bijvoorbeeld: 1 = maandag, 2 = dinsdag, etc.)",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.NumericTextBox,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.NumericTextBox,
             BelongsToForm = "runSchemeForm"
         )]
         public int? DayOfWeek { get; set; }
@@ -120,11 +120,11 @@ namespace Api.Modules.Templates.Models.Template
         /// The day of the month on which the run scheme should run.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Dag van de maand",
             Description = "De dag van de maand waarop de timer moet worden uitgevoerd (Bijvoorbeeld: 1 = 1e dag van de maand, 2 = 2e dag van de maand, etc.)",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.NumericTextBox,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.NumericTextBox,
             BelongsToForm = "runSchemeForm"
         )]
         public int? DayOfMonth { get; set; }
@@ -142,11 +142,11 @@ namespace Api.Modules.Templates.Models.Template
         [XmlElement("Hour", DataType = "string")]
         [CanBeNull]
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Tijd",
             Description = "De tijd waarop de timer moet worden uitgevoerd (Formaat: uren:minuten:seconden)",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.TimePicker,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.TimePicker,
             BelongsToForm = "runSchemeForm"
         )]
         public string Hour { get; set; }
@@ -155,10 +155,10 @@ namespace Api.Modules.Templates.Models.Template
         /// Whether to run the run scheme on the weekend.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Description = "Timer niet uitvoeren in het weekend",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.CheckBox,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.CheckBox,
             BelongsToForm = "runSchemeForm"
         )]
         public bool? SkipWeekend { get; set; }
@@ -173,10 +173,10 @@ namespace Api.Modules.Templates.Models.Template
         /// If the run scheme should be run immediately on start up of the wts.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Description = "Timer uitvoeren bij opstarten van de WTS",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.CheckBox,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.CheckBox,
             BelongsToForm = "runSchemeForm"
         )]
         public bool? RunImmediately { get; set; }
@@ -192,8 +192,8 @@ namespace Api.Modules.Templates.Models.Template
         /// </summary>
         [CanBeNull]
         [WtsAttributes.WtsProperty(
-            isVisible = false,
-            KendoTab = KendoTab.Timers,
+            IsVisible = false,
+            ConfigurationTab = ConfigurationTab.Timers,
             isFilled = false
         )]
         public LogSettings LogSettings { get; set; }

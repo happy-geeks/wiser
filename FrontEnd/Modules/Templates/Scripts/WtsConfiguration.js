@@ -82,6 +82,7 @@ export class WtsConfiguration {
             this.base.toggleMainLoader(false); // Hide the loader
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
         }
+        
         this.initializeKendoComponents();
         this.bindEvents();
     }
@@ -135,6 +136,8 @@ export class WtsConfiguration {
     
     bindEvents() {
         // Bind the save button
+        // (Currently used as a debugging button, will be replaced with the proper functionality)
+        // (To test saving the configuration, press ctrl + s)
         $("#saveButtonWtsConfiguration").on("click", this.getCurrentSettings.bind(this));
     }
 

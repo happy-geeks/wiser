@@ -8,12 +8,11 @@ namespace Api.Modules.Templates.Attributes
         [AttributeUsage(AttributeTargets.Property)]
         public class WtsPropertyAttribute : Attribute
         {
-            public bool isVisible { get; set; }
+            public bool IsVisible { get; set; }
             public string Description { get; set; }
             public string Title { get; set; }
-            public string KendoTab { get; set; }
-            // public KendoTab KendoTab { get; set; }
-            public KendoComponent KendoComponent { get; set; }
+            public string ConfigurationTab { get; set; }
+            public KendoComponents KendoComponent { get; set; }
             public string KendoOptions { get; set; }
             public string BelongsToForm { get; set; }
             public bool isFilled { get; set; }
