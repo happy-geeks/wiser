@@ -12,11 +12,11 @@ namespace Api.Modules.Templates.Models.Template
         /// The minimum log level logged
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Minimaal log level",
             Description = "",
-            KendoTab = KendoTab.Null,
-            KendoComponent = KendoComponent.DropDownList
+            ConfigurationTab = null,
+            KendoComponent = KendoComponents.DropDownList
         )]
         public LogMinimumLevels LogMinimumLevel {get; set;}
         
@@ -24,10 +24,10 @@ namespace Api.Modules.Templates.Models.Template
         /// Log messages sent at startup and shutdown. For example, the configuration being started or stopped.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
-            Description = "Log bij opstarten en afsluiten",
-            KendoTab = KendoTab.Null,
-            KendoComponent = KendoComponent.CheckBox
+            IsVisible = true,
+            Description = "Loggen wanneer de service gestart en gestopt wordt",
+            ConfigurationTab = null,
+            KendoComponent = KendoComponents.CheckBox
         )]
         public bool LogStartAndStop {get; set;}
         
@@ -35,10 +35,10 @@ namespace Api.Modules.Templates.Models.Template
         /// Log messages sent at the beginning and end of the run. For example, the start and stop time of the run scheme or what action is performed.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
-            Description = "Log bij het begin en einde van de run-cyclus",
-            KendoTab = KendoTab.Null,
-            KendoComponent = KendoComponent.CheckBox
+            IsVisible = true,
+            Description = "Loggen wanneer een run-cyclus begint en eindigt",
+            ConfigurationTab = null,
+            KendoComponent = KendoComponents.CheckBox
         )]
         public bool LogRunStartAndStop {get; set;}
         
@@ -46,10 +46,10 @@ namespace Api.Modules.Templates.Models.Template
         /// Log messages sent during the run. For example, the query being executed or the URL of an HTTP API request.
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Description = "Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)",
-            KendoTab = KendoTab.Null,
-            KendoComponent = KendoComponent.CheckBox
+            ConfigurationTab = null,
+            KendoComponent = KendoComponents.CheckBox
         )]
         public bool LogRunBody {get; set;}
     }

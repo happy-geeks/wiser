@@ -158,15 +158,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetWtsConfigurationAsync(int templateId)
         {
-            var serviceResult = await templatesService.GetTemplateWtsConfigurationAsync((ClaimsIdentity)User.Identity, templateId);
-            // Check if the result is a success.
-            if (serviceResult.StatusCode != HttpStatusCode.OK)
-            {
-                return serviceResult.GetHttpResponseMessage();
-            }
-            
-            // Return the properties and their attributes as JSON
-            return Ok(serviceResult.ModelObject);
+            return (await templatesService.GetTemplateWtsConfigurationAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
         }
         
         /// <summary>
@@ -177,7 +169,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpPost]
         [Route("{templateId:int}/wtsconfiguration")]
         [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveConfiguration(int templateId, TemplateWtsConfigurationModel data)
+        public async Task<IActionResult> SaveConfigurationAsync(int templateId, TemplateWtsConfigurationModel data)
         {
             return (await templatesService.SaveAsync((ClaimsIdentity)User.Identity, templateId, data)).GetHttpResponseMessage();
         }

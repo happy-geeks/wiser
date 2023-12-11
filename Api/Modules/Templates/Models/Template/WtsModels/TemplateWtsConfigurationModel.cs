@@ -14,11 +14,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// Gets or sets the service name of the editor value of the template.
         /// </summary>
         [XmlElement("ServiceName"), WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Naam",
             Description = "De naam van de service",
-            KendoTab = KendoTab.Service,
-            KendoComponent = KendoComponent.TextBox
+            ConfigurationTab = ConfigurationTab.Service,
+            KendoComponent = KendoComponents.TextBox
         )]
         public string ServiceName { get; set; }
         
@@ -26,11 +26,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// Gets or sets the connection string of the editor value of the template.
         /// </summary>
         [XmlElement("ConnectionString"), WtsAttributes.WtsProperty(
-             isVisible = true,
+             IsVisible = true,
              Title = "Connectiestring",
              Description = "De connection string van de database",
-             KendoTab = KendoTab.Service,
-             KendoComponent = KendoComponent.TextBox
+             ConfigurationTab = ConfigurationTab.Service,
+             KendoComponent = KendoComponents.TextBox
          )]
         public string ConnectionString { get; set; }
         
@@ -38,8 +38,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// Gets or sets the log settings for the configuration (Global if not overwritten)
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = false,
-            KendoTab = KendoTab.Service
+            IsVisible = false,
+            ConfigurationTab = ConfigurationTab.Service
         )]
         public LogSettings LogSettings { get; set; }
         
@@ -47,11 +47,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// Gets or sets the run schemes settings for the configuration
         /// </summary>
         [WtsAttributes.WtsProperty(
-            isVisible = true,
+            IsVisible = true,
             Title = "Timers",
             Description = "",
-            KendoTab = KendoTab.Timers,
-            KendoComponent = KendoComponent.Grid,
+            ConfigurationTab = ConfigurationTab.Timers,
+            KendoComponent = KendoComponents.Grid,
             KendoOptions = @"
                {
                   ""resizable"": true,
@@ -79,8 +79,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlElement("Query")]
         [WtsAttributes.WtsProperty(
-            isVisible = false,
-            KendoTab = KendoTab.Actions
+            IsVisible = false,
+            ConfigurationTab = ConfigurationTab.Actions
         )]
         public List<QueryModel> Queries { get; set; }
         
@@ -89,8 +89,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlElement("HttpApi")]
         [WtsAttributes.WtsProperty(
-            isVisible = false,
-            KendoTab = KendoTab.Actions
+            IsVisible = false,
+            ConfigurationTab = ConfigurationTab.Actions
         )]
         public List<HttpApiModel> HttpApis { get; set; }
         
@@ -99,7 +99,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlIgnore]
         [WtsAttributes.WtsProperty(
-            isVisible = false
+            IsVisible = false
         )]
         public string[] LogMinimumLevels { get; set; }
         
@@ -108,7 +108,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlIgnore]
         [WtsAttributes.WtsProperty(
-            isVisible = false
+            IsVisible = false
         )]
         public string[] RunSchemeTypes { get; set; }
     }

@@ -181,7 +181,7 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null)
+        public async Task<TemplateSettingsModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null)
         {
             // Clear any parameters that might be set.
             clientDatabaseConnection.ClearParameters();
@@ -220,14 +220,14 @@ LIMIT 1");
             // If no rows are returned, return an empty model.
             if (dataTable.Rows.Count == 0)
             {
-                return new TemplateXmlModel()
+                return new TemplateSettingsModel()
                 {
                     TemplateId = templateId
                 };
             }
 
             // If a row is returned, return the model with the data.
-            var templateData = new TemplateXmlModel
+            var templateData = new TemplateSettingsModel()
             {
                 TemplateId = dataTable.Rows[0].Field<int>("template_id"),
                 EditorValue = dataTable.Rows[0].Field<string>("template_data")

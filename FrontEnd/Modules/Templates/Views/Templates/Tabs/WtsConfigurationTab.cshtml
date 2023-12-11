@@ -13,18 +13,18 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), KendoTab.Service, true, "");}
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), KendoTab.Timers, true, "");}
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
         </div>
     </div>
     
     <div id="actionsTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), KendoTab.Actions, true, "");}
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}
         </div>
     </div>
     
@@ -76,7 +76,7 @@
         <div class="item">
             @switch (attributes?.KendoComponent)
             {
-                case KendoComponent.TextBox:
+                case KendoComponents.TextBox:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
@@ -85,7 +85,7 @@
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponent.TextBox"
+                            data-kendo-component="@KendoComponents.TextBox"
                             @if (attributes.BelongsToForm != null)
                             {
                                 <text>belongs-to="@attributes?.BelongsToForm"</text>
@@ -94,7 +94,7 @@
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponent.NumericTextBox:
+                case KendoComponents.NumericTextBox:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
@@ -105,7 +105,7 @@
                             data-kendo-tab="@tab"
                             data-depends-on-field="timing-daily"
                             data-depends-on-value="daily"
-                            data-kendo-component="@KendoComponent.NumericTextBox"
+                            data-kendo-component="@KendoComponents.NumericTextBox"
                             @if (attributes.BelongsToForm != null)
                             {
                                 <text>belongs-to="@attributes?.BelongsToForm"</text>
@@ -114,7 +114,7 @@
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponent.TimePicker:
+                case KendoComponents.TimePicker:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
@@ -123,7 +123,7 @@
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponent.TimePicker"
+                            data-kendo-component="@KendoComponents.TimePicker"
                             @if (attributes.BelongsToForm != null)
                             {
                                 <text>belongs-to="@attributes?.BelongsToForm"</text>
@@ -132,7 +132,7 @@
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponent.CheckBox:
+                case KendoComponents.CheckBox:
                     <h4></h4>
                     <span>
                         <label class="checkbox">
@@ -144,7 +144,7 @@
                                     trace="@trace"
                                     data-kendo-tab="@tab" 
                                     checked 
-                                    data-kendo-component="@KendoComponent.CheckBox"
+                                    data-kendo-component="@KendoComponents.CheckBox"
                                     @if (attributes.BelongsToForm != null)
                                     {
                                         <text>belongs-to="@attributes?.BelongsToForm"</text>
@@ -158,7 +158,7 @@
                                     name="@property.Name" 
                                     trace="@trace"
                                     data-kendo-tab="@tab" 
-                                    data-kendo-component="@KendoComponent.CheckBox" 
+                                    data-kendo-component="@KendoComponents.CheckBox" 
                                     @if (attributes.BelongsToForm != null)
                                     {
                                         <text>belongs-to="@attributes?.BelongsToForm"</text>
@@ -169,7 +169,7 @@
                         </label>
                     </span>
                     break;
-                case KendoComponent.DropDownList:
+                case KendoComponents.DropDownList:
                     // Get the enum values from the property
                     var enumData = Enum.GetValues(property.PropertyType);
                     if (enumData.Length == 0) break;
@@ -179,7 +179,7 @@
                             name="@property.Name" 
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponent.DropDownList"
+                            data-kendo-component="@KendoComponents.DropDownList"
                             @if (attributes.BelongsToForm != null)
                             {
                                 <text>belongs-to="@attributes?.BelongsToForm"</text>
@@ -200,13 +200,13 @@
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponent.Grid:
+                case KendoComponents.Grid:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <table 
                             name="@property.Name" 
                             trace="@trace"
-                            data-kendo-component="@KendoComponent.Grid" 
+                            data-kendo-component="@KendoComponents.Grid" 
                             data-kendo-tab="@tab"
                             data-kendo-options="@attributes?.KendoOptions"
                             >
@@ -247,12 +247,12 @@
         
             // Only render properties that have attributes and where isVisible is true
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
-            if (attributes != null && attributes.isVisible && attributes.KendoTab == tab || attributes != null && attributes.isVisible && attributes.KendoTab == null)
+            if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
             {
                 if (data is IList list)
                 {
                     // Only send the data if the attribute is a dropdownlist since we need to populate the dropdownlist with all its options
-                    if (attributes?.KendoComponent == KendoComponent.DropDownList)
+                    if (attributes?.KendoComponent == KendoComponents.DropDownList)
                     {
                         // Get property value of the first item in the list
                         var value = list[0]?.GetType().GetProperty(property.Name)?.GetValue(list[0], null);
@@ -294,7 +294,7 @@
             if (!property.PropertyType.IsClass || property.PropertyType == typeof(string)) continue;
             
             // Only render child properties if the tab is the same as what is defined in the parameter
-            if (attributes != null && attributes.KendoTab != tab) continue;
+            if (attributes != null && attributes.ConfigurationTab != tab) continue;
                 
             // Check if the property is a list
             if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))

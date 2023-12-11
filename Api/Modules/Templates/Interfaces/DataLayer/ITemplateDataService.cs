@@ -39,7 +39,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="environment">Optional: The environment the template needs to be active on. Get the latest version if no environment has been given.</param>
         /// <param name="version">Optional: If you want to get a specific version, enter that version number here.</param>
         /// <returns>A <see cref="TemplateWtsConfigurationModel"/> containing the current editor value object of the template with the given id.</returns>
-        Task<TemplateXmlModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null);
+        Task<TemplateSettingsModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null);
 
 
         /// <summary>
