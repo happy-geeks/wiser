@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Modules.Permission.Controllers;
+namespace Api.Modules.Permissions.Controllers;
 
 /// <summary>
-/// Controller for management of permissions
+/// Controller for management of permissions.
 /// </summary>
 [Route("api/v3/[controller]")]
 [ApiController]
@@ -20,7 +20,7 @@ namespace Api.Modules.Permission.Controllers;
 [Produces(MediaTypeNames.Application.Json)]
 public class PermissionsController : ControllerBase
 {
-    private IPermissionsService permissionsService;
+    private readonly IPermissionsService permissionsService;
     
     /// <summary>
     /// Creates a new instance of PermissionController.
@@ -31,11 +31,10 @@ public class PermissionsController : ControllerBase
     }
     
     /// <summary>
-    /// Set role permissions
+    /// Set the role permissions for the given role and subject.
     /// </summary>
     /// <param name="permissionUpdateModel">Model containing the data used to set the permissions</param>
     [HttpPost]
-    [Route("set-permission")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> SetPermissionAsync([FromBody] PermissionUpdateModel permissionUpdateModel)
     {
@@ -43,14 +42,13 @@ public class PermissionsController : ControllerBase
     }
     
     /// <summary>
-    /// Get role permissions
+    /// Get the role permissions of the given role and subject.
     /// </summary>
     /// <param name="roleId">The role id of the role for which the data should be retrieved</param>
     /// <param name="subject">The subject for which the data should be retrieved. For possible values see <see cref="PermissionSubject"/>.</param>
     [HttpGet]
-    [Route("get-permissions")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(List<BasePermissionData>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<PermissionData>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPermissionsAsync(int roleId, PermissionSubject subject)
     {
         return (await permissionsService.GetPermissionsAsync(roleId, subject)).GetHttpResponseMessage();

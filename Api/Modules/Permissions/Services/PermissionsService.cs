@@ -6,6 +6,7 @@ using Api.Modules.Permissions.Enums;
 using Api.Modules.Permissions.Interfaces;
 using Api.Modules.Permissions.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.Permissions.Services;
@@ -63,7 +64,7 @@ ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<IList<BasePermissionData>>> GetPermissionsAsync(int roleId, PermissionSubject subject)
+    public async Task<ServiceResult<IList<PermissionData>>> GetPermissionsAsync(int roleId, PermissionSubject subject)
     {
         var result = subject switch
         {
@@ -71,70 +72,60 @@ ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
             PermissionSubject.Queries => await GetQueryPermissionsAsync(roleId),
             _ => throw new NotImplementedException($"Used {nameof(PermissionSubject)} value has not yet been implemented")
         };
-        return new ServiceResult<IList<BasePermissionData>>(result);
+        return new ServiceResult<IList<PermissionData>>(result);
     }
 
-    private async Task<IList<BasePermissionData>> GetQueryPermissionsAsync(int roleId)
+    private async Task<IList<PermissionData>> GetQueryPermissionsAsync(int roleId)
     {
-        string query = @"SELECT
+        var query = $@"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,
 	`query`.id AS `queryId`,
 	IFNULL(`query`.description, CONCAT('QueryID: ',`query`.id)) AS `queryName`,
 	IFNULL(permission.permissions, 0) AS `permission`
-FROM wiser_query AS `query`
-JOIN wiser_roles AS role ON role.id = ?roleId
+FROM {WiserTableNames.WiserQuery} AS `query`
+JOIN {WiserTableNames.WiserRoles} AS role ON role.id = ?roleId
 LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.query_id = `query`.id
 ORDER BY queryName ASC";
-        
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
 
-        var data = await databaseConnection.GetReaderAsync(query);
-
-        var list = new List<BasePermissionData>();
-        while (await data.ReadAsync())
-        {
-            list.Add(new QueryPermissionData()
-            {
-                RoleId = data.GetInt32(0),
-                RoleName = data.GetString(1),
-                QueryId = data.GetInt32(2),
-                QueryName = data.GetString(3),
-                Permission = data.GetInt32(4)
-            });
-        }
-        return list;
+        return await GetPermissionsDataAsync(query);
     }
     
-    private async Task<IList<BasePermissionData>> GetModulePermissionsAsync(int roleId)
+    private async Task<IList<PermissionData>> GetModulePermissionsAsync(int roleId)
     {
-        string query = @"SELECT
+        var query = $@"SELECT
 	role.id AS `roleId`,
 	role.role_name AS `roleName`,
 	module.id AS `moduleId`,
 	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
 	IFNULL(permission.permissions, 0) AS `permission`
-FROM wiser_module AS module
-JOIN wiser_roles AS role ON role.id = ?roleId
+FROM {WiserTableNames.WiserModule} AS module
+JOIN {WiserTableNames.WiserRoles} AS role ON role.id = ?roleId
 LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id
 ORDER BY moduleName ASC
 ";
-        
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
+        
+        return await GetPermissionsDataAsync(query);
+    }
 
+
+    private async Task<IList<PermissionData>> GetPermissionsDataAsync(string query)
+    {
         var data = await databaseConnection.GetReaderAsync(query);
 
-        var list = new List<BasePermissionData>();
+        var list = new List<PermissionData>();
         while (await data.ReadAsync())
         {
-            list.Add(new ModulePermissionData()
+            list.Add(new PermissionData()
             {
                 RoleId = data.GetInt32(0),
                 RoleName = data.GetString(1),
-                ModuleId = data.GetInt32(2),
-                ModuleName = data.GetString(3),
+                ObjectId = data.GetInt32(2),
+                ObjectName = data.GetString(3),
                 Permission = data.GetInt32(4)
             });
         }
