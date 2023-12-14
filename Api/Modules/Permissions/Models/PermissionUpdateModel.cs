@@ -14,7 +14,7 @@ public class PermissionUpdateModel
     /// Gets or sets the subject the permission is set for.
     /// </summary>
     [JsonConverter(typeof(StringEnumConverter))]
-    public PermissionSubject Subject { get; set; }
+    public PermissionSubjects Subject { get; set; }
 
     /// <summary>
     /// Gets or sets the id of the item the permission is set for

@@ -15,7 +15,7 @@ namespace Api.Modules.Permissions.Services;
 public class PermissionsService : IPermissionsService, IScopedService
 {
     private readonly IDatabaseConnection databaseConnection;
-    
+
     /// <summary>
     /// Creates a new instance of PermissionsService.
     /// </summary>
@@ -30,11 +30,11 @@ public class PermissionsService : IPermissionsService, IScopedService
     {
         var subjectIdColumn = permissionUpdateModel.Subject switch
         {
-            PermissionSubject.Modules => "module_id",
-            PermissionSubject.Queries => "query_id",
-            _ => throw new NotImplementedException($"Used {nameof(PermissionSubject)} value has not yet been implemented")
+            PermissionSubjects.Modules => "module_id",
+            PermissionSubjects.Queries => "query_id",
+            _ => throw new ArgumentOutOfRangeException($"Used {nameof(PermissionSubjects)} value has not yet been implemented")
         };
-        
+
         var query = $@"INSERT INTO `wiser_permission` (
      `role_id`,
      `entity_name`,
@@ -52,7 +52,7 @@ public class PermissionsService : IPermissionsService, IScopedService
      ?subjectId
  )
 ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
-        
+
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", permissionUpdateModel.RoleId);
         databaseConnection.AddParameter("permissionCode", (int)permissionUpdateModel.PermissionCode);
@@ -64,13 +64,13 @@ ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<IList<PermissionData>>> GetPermissionsAsync(int roleId, PermissionSubject subject)
+    public async Task<ServiceResult<IList<PermissionData>>> GetPermissionsAsync(int roleId, PermissionSubjects subject)
     {
         var result = subject switch
         {
-            PermissionSubject.Modules => await GetModulePermissionsAsync(roleId),
-            PermissionSubject.Queries => await GetQueryPermissionsAsync(roleId),
-            _ => throw new NotImplementedException($"Used {nameof(PermissionSubject)} value has not yet been implemented")
+            PermissionSubjects.Modules => await GetModulePermissionsAsync(roleId),
+            PermissionSubjects.Queries => await GetQueryPermissionsAsync(roleId),
+            _ => throw new ArgumentOutOfRangeException($"Used {nameof(PermissionSubjects)} value has not yet been implemented")
         };
         return new ServiceResult<IList<PermissionData>>(result);
     }
@@ -92,7 +92,7 @@ ORDER BY queryName ASC";
 
         return await GetPermissionsDataAsync(query);
     }
-    
+
     private async Task<IList<PermissionData>> GetModulePermissionsAsync(int roleId)
     {
         var query = $@"SELECT
@@ -108,7 +108,7 @@ ORDER BY moduleName ASC
 ";
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
-        
+
         return await GetPermissionsDataAsync(query);
     }
 

@@ -3,7 +3,7 @@ namespace Api.Modules.Permissions.Enums;
 /// <summary>
 /// Enumeration of subjects to set permissions for.
 /// </summary>
-public enum PermissionSubject
+public enum PermissionSubjects
 {
     /// <summary>
     /// Represents the permission options for wiser modules.

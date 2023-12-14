@@ -45,11 +45,11 @@ public class PermissionsController : ControllerBase
     /// Get the role permissions of the given role and subject.
     /// </summary>
     /// <param name="roleId">The role id of the role for which the data should be retrieved</param>
-    /// <param name="subject">The subject for which the data should be retrieved. For possible values see <see cref="PermissionSubject"/>.</param>
+    /// <param name="subject">The subject for which the data should be retrieved. For possible values see <see cref="PermissionSubjects"/>.</param>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(List<PermissionData>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPermissionsAsync(int roleId, PermissionSubject subject)
+    public async Task<IActionResult> GetPermissionsAsync(int roleId, PermissionSubjects subject)
     {
         return (await permissionsService.GetPermissionsAsync(roleId, subject)).GetHttpResponseMessage();
     }

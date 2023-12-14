@@ -22,7 +22,7 @@ public interface IPermissionsService
     /// Get role permissions for the given subject.
     /// </summary>
     /// <param name="roleId">The role id of the role for which the data should be retrieved</param>
-    /// <param name="subject">The subject for which the data should be retrieved. For possible values see <see cref="PermissionSubject"/>.</param>
+    /// <param name="subject">The subject for which the data should be retrieved. For possible values see <see cref="PermissionSubjects"/>.</param>
     /// <returns>List of permission data</returns>
-    Task<ServiceResult<IList<PermissionData>>> GetPermissionsAsync(int roleId, PermissionSubject subject);
+    Task<ServiceResult<IList<PermissionData>>> GetPermissionsAsync(int roleId, PermissionSubjects subject);
 }
