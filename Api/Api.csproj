@@ -182,4 +182,10 @@
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Modules\Permissions\Models\BasePermissionData.cs" />
+    <Compile Remove="Modules\Permissions\Models\ModulePermissionData.cs" />
+    <Compile Remove="Modules\Permissions\Models\QueryPermissionData.cs" />
+  </ItemGroup>
+
 </Project>
