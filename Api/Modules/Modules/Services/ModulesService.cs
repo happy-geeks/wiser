@@ -132,11 +132,12 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserQuery,
                 WiserTableNames.WiserPermission,
                 WiserTableNames.WiserCommunication,
+                WiserTableNames.WiserStyledOutput,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
 
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 10, 5))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 12, 14))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
