@@ -91,17 +91,6 @@
                 {{ generalMessagePromptText }}
             </div>
         </wiser-dialog>
-        <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
-            <div class="form-row">
-                <input type="number" id="wiserId" class="full-width" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
-            </div>
-        </wiser-dialog>
-        <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
-            <div class="form-row">
-                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
-            </div>
-        </wiser-dialog>
         <wiser-dialog class="change-password-prompt" :modal="true" :width="'400px'" :title="'Wachtwoord wijzigen'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Opslaan', primary: true, action: changePassword }]">
             <div class="form-row">
                 <input type="password" id="oldPassword" name="oldPassword" class="loginField passwordField" placeholder="Uw huidig wachtwoord" v-model="changePasswordPromptOldPasswordValue" />
@@ -596,7 +585,7 @@
         <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
             <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
             <div class="form-row">
-                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+                <dropdownlist :data-items="listOfEntityTypes" :text-field="'displayName'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
             </div>
         </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Cache legen'" ref="clearCachePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'OK', primary: true, action: clearWebsiteCache }]">
