@@ -35,7 +35,7 @@ public class PermissionsService : IPermissionsService, IScopedService
             _ => throw new ArgumentOutOfRangeException($"Used {nameof(PermissionSubjects)} value has not yet been implemented")
         };
 
-        var query = $@"INSERT INTO `wiser_permission` (
+        var query = $@"INSERT INTO `{WiserTableNames.WiserPermission}` (
      `role_id`,
      `entity_name`,
      `item_id`,
@@ -75,7 +75,7 @@ ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
         return new ServiceResult<IList<PermissionData>>(result);
     }
 
-    private async Task<IList<PermissionData>> GetQueryPermissionsAsync(int roleId)
+    private Task<IList<PermissionData>> GetQueryPermissionsAsync(int roleId)
     {
         var query = $@"SELECT
 	role.id AS `roleId`,
@@ -90,10 +90,10 @@ ORDER BY queryName ASC";
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
 
-        return await GetPermissionsDataAsync(query);
+        return GetPermissionsDataAsync(query);
     }
 
-    private async Task<IList<PermissionData>> GetModulePermissionsAsync(int roleId)
+    private Task<IList<PermissionData>> GetModulePermissionsAsync(int roleId)
     {
         var query = $@"SELECT
 	role.id AS `roleId`,
@@ -109,7 +109,7 @@ ORDER BY moduleName ASC
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
 
-        return await GetPermissionsDataAsync(query);
+        return GetPermissionsDataAsync(query);
     }
 
 
@@ -120,7 +120,7 @@ ORDER BY moduleName ASC
         var list = new List<PermissionData>();
         while (await data.ReadAsync())
         {
-            list.Add(new PermissionData()
+            list.Add(new PermissionData
             {
                 RoleId = data.GetInt32(0),
                 RoleName = data.GetString(1),
