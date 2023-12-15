@@ -1,5 +1,9 @@
 ﻿import {DateTime} from "luxon";
 import "./Processing.js";
+import pretty from "pretty";
+import Diff from "diff";
+import * as Diff2Html from "diff2html/lib/diff2html"
+import "diff2html/bundles/css/diff2html.min.css"
 
 window.$ = require("jquery");
 
@@ -1399,6 +1403,42 @@ export class Wiser {
 
         return fileManagerWindow;
     }
+
+    /**
+     * Replaces all div.diffField elements with diff2html diff interfaces.
+     * @param {Element} container The container that will be searched for div.diffField elements.
+     */
+    static createHistoryDiffFields(container) {
+        const Diff = require("diff");
+        const pretty = require("pretty");
+
+        let fields = container.querySelectorAll("div.diffField");
+        for (let i = 0; i < fields.length; i++) {
+            let field = fields[i];
+            let oldValue = field.querySelector("span.oldValue")?.getAttribute("value");
+            let newValue = field.querySelector("span.newValue")?.getAttribute("value");
+            const fieldName = field.getAttribute("field-name");
+            const dataType = field.getAttribute("data-type");
+            switch (dataType) { // TemplateTypes enum
+                case "Html": // Html is saved without whitespace in the database, so we need to make it readable first
+                    oldValue = !oldValue ? "" : pretty(oldValue, { ocd: false });
+                    newValue = !newValue ? "" : pretty(newValue, { ocd: false });
+                    break;
+                default:
+                    oldValue = !oldValue ? "" : oldValue;
+                    newValue = !newValue ? "" : newValue;
+            }
+
+            const diff = Diff.createTwoFilesPatch(fieldName, fieldName, oldValue, newValue);
+            field.innerHTML = Diff2Html.html(diff, {
+                drawFileList: false,
+                matching: "words",
+                outputFormat: "side-by-side"
+            });
+
+            field.classList.remove("diffField");
+        }
+    }    
 }
 
 /**
