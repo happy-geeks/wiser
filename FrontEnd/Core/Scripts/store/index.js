@@ -32,9 +32,9 @@ import {
     GENERATE_TOTP_BACKUP_CODES_SUCCESS,
     GET_BRANCH_CHANGES,
     GET_BRANCHES,
-    GET_TENANT_TITLE,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
@@ -786,6 +786,7 @@ const branchesModule = {
         entities: [],
         isMainBranch: false,
         branchChanges: {},
+        branchChangesLoaded: false,
         mergeBranchError: null,
         mergeBranchResult: null,
         deleteBranchResult: null,
@@ -827,6 +828,7 @@ const branchesModule = {
 
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
+            state.branchChangesLoaded = true;
         },
 
         [HANDLE_CONFLICT](state, { acceptChange, id }) {

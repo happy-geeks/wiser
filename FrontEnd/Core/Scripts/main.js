@@ -36,9 +36,9 @@ import {
     GENERATE_TOTP_BACKUP_CODES,
     GET_BRANCH_CHANGES,
     GET_BRANCHES,
-    GET_TENANT_TITLE,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
@@ -270,6 +270,7 @@ class Main {
                                 delete: false
                             }
                         },
+                        checkForConflicts: true,
                         conflicts: []
                     },
                     branchActions: [
@@ -389,6 +390,9 @@ class Main {
                 },
                 branchChanges() {
                     return this.$store.state.branches.branchChanges;
+                },
+                branchChangesLoaded() {
+                    return this.$store.state.branches.branchChangesLoaded;
                 },
                 totalAmountOfItemsCreated() {
                     return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
@@ -1008,6 +1012,16 @@ class Main {
                 },
 
                 async onWiserMergeBranchPromptOpen(sender) {
+                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                    for (let entity of this.entitiesForBranches) {
+                        this.branchMergeSettings.entities[entity.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
                         this.onSelectedBranchChange(this.branches[0].id);
@@ -1050,14 +1064,10 @@ class Main {
                     else if (selectedBranchId.target) {
                         selectedBranchId = event.target.value.id;
                     }
+                },
 
-                    await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
-
-                    // Clear all checkboxes.
-                    this.branchMergeSettings.entities.all.everything = false;
-                    this.branchMergeSettings.settings.all.everything = false;
-                    this.updateBranchChangeList(false, "entities", "all", "everything");
-                    this.updateBranchChangeList(false, "settings", "all", "everything");
+                async countBranchChanges() {
+                    await this.$store.dispatch(GET_BRANCH_CHANGES, this.branchMergeSettings.selectedBranch.id);
                 },
 
                 onCreateBranchAllSettingsChange(event) {

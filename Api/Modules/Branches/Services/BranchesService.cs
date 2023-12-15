@@ -1114,51 +1114,55 @@ LIMIT 1";
 
             DateTime? lastMergeDate = null;
 
-            // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
             await using var mainConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(productionTenant));
             await mainConnection.OpenAsync();
-            await using (var productionCommand = mainConnection.CreateCommand())
-            {
-                productionCommand.Parameters.AddWithValue("branchId", selectedBranchTenant.Id);
-                productionCommand.CommandText = $"SELECT MAX(finished_on) AS lastMergeDate FROM {WiserTableNames.WiserBranchesQueue} WHERE branch_id = ?branchId AND success = 1 AND finished_on IS NOT NULL";
 
-                var dataTable = new DataTable();
-                using var sourceAdapter = new MySqlDataAdapter(productionCommand);
-                await sourceAdapter.FillAsync(dataTable);
-                if (dataTable.Rows.Count > 0)
+            if (settings.CheckForConflicts)
+            {
+                // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
+                await using (var productionCommand = mainConnection.CreateCommand())
                 {
-                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
+                    productionCommand.Parameters.AddWithValue("branchId", selectedBranchTenant.Id);
+                    productionCommand.CommandText = $"SELECT MAX(finished_on) AS lastMergeDate FROM {WiserTableNames.WiserBranchesQueue} WHERE branch_id = ?branchId AND success = 1 AND finished_on IS NOT NULL";
+
+                    var dataTable = new DataTable();
+                    using var sourceAdapter = new MySqlDataAdapter(productionCommand);
+                    await sourceAdapter.FillAsync(dataTable);
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
+                    }
                 }
-            }
 
-            await using var branchConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(selectedBranchTenant));
-            await branchConnection.OpenAsync();
+                await using var branchConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(selectedBranchTenant));
+                await branchConnection.OpenAsync();
 
-            // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch.
-            if (!lastMergeDate.HasValue)
-            {
-                await using var branchCommand = branchConnection.CreateCommand();
-                branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
-                var dataTable = new DataTable();
-                using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                await branchAdapter.FillAsync(dataTable);
-                if (dataTable.Rows.Count > 0)
+                // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch.
+                if (!lastMergeDate.HasValue)
                 {
-                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
+                    await using var branchCommand = branchConnection.CreateCommand();
+                    branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
+                    var dataTable = new DataTable();
+                    using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                    await branchAdapter.FillAsync(dataTable);
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
+                    }
                 }
-            }
 
-            // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
-            if (lastMergeDate.HasValue && (settings.ConflictSettings == null || !settings.ConflictSettings.Any()))
-            {
-                var conflicts = new List<MergeConflictModel>();
-                await GetAllChangesFromBranchAsync(branchConnection, conflicts, settings);
-                await FindConflictsInMainBranchAsync(mainConnection, branchConnection, conflicts, lastMergeDate.Value, settings);
-                result.Conflicts = conflicts.Where(conflict => conflict.ChangeDateInMain.HasValue).ToList();
-                if (result.Conflicts.Any())
+                // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
+                if (lastMergeDate.HasValue && (settings.ConflictSettings == null || !settings.ConflictSettings.Any()))
                 {
-                    result.Success = false;
-                    return new ServiceResult<MergeBranchResultModel>(result);
+                    var conflicts = new List<MergeConflictModel>();
+                    await GetAllChangesFromBranchAsync(branchConnection, conflicts, settings);
+                    await FindConflictsInMainBranchAsync(mainConnection, branchConnection, conflicts, lastMergeDate.Value, settings);
+                    result.Conflicts = conflicts.Where(conflict => conflict.ChangeDateInMain.HasValue).ToList();
+                    if (result.Conflicts.Any())
+                    {
+                        result.Success = false;
+                        return new ServiceResult<MergeBranchResultModel>(result);
+                    }
                 }
             }
 
