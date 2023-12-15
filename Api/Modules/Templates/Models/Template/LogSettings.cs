@@ -18,7 +18,7 @@ namespace Api.Modules.Templates.Models.Template
             ConfigurationTab = null,
             KendoComponent = KendoComponents.DropDownList
         )]
-        public LogMinimumLevels LogMinimumLevel {get; set;}
+        public LogMinimumLevels LogMinimumLevel { get; set; } = LogMinimumLevels.Information;
         
         /// <summary>
         /// Log messages sent at startup and shutdown. For example, the configuration being started or stopped.

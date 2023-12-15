@@ -15,6 +15,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlElement("ServiceName"), WtsAttributes.WtsProperty(
             IsVisible = true,
+            IsRequired = true,
             Title = "Naam",
             Description = "De naam van de service",
             ConfigurationTab = ConfigurationTab.Service,
@@ -27,11 +28,12 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlElement("ConnectionString"), WtsAttributes.WtsProperty(
              IsVisible = true,
+             IsRequired = true,
              Title = "Connectiestring",
              Description = "De connection string van de database",
              ConfigurationTab = ConfigurationTab.Service,
              KendoComponent = KendoComponents.TextBox
-         )]
+        )]
         public string ConnectionString { get; set; }
         
         /// <summary>
@@ -52,13 +54,15 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             Description = "",
             ConfigurationTab = ConfigurationTab.Timers,
             KendoComponent = KendoComponents.Grid,
+            AllowEdit = true,
+            IdProperty = "TimeId",
             KendoOptions = @"
                {
                   ""resizable"": true,
                   ""height"": 280,
                   ""selectable"": true,
                   ""dataSource"": ""this.template.runSchemes"",
-                  ""change"": ""this.onListChange"",
+                  ""change"": ""this.onListChange.bind(this)"",
                   ""columns"": [
                     {
                         ""field"": ""timeId"",
