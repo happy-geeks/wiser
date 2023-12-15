@@ -28,12 +28,20 @@ export class WtsConfiguration {
         
         this.template = null;
         this.serviceInputFields = [];
+        this.serviceKendoFields = [];
         this.timersInputFields = [];
+        this.timersKendoFields = [];
     }
 
     async reloadWtsConfigurationTab(id) {
         // Empty the tab
         document.getElementById("wtsConfigurationTab").innerHTML = "";
+        
+        // Empty all the arrays
+        this.serviceInputFields = [];
+        this.serviceKendoFields = [];
+        this.timersInputFields = [];
+        this.timersKendoFields = [];
         
         // Check to see if id is set
         if (id === undefined || id === null || id === 0) {
@@ -100,18 +108,8 @@ export class WtsConfiguration {
             let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
             
-            // Save the component if the tab is Service
-            if (componentTab === "Service") {
-                this.serviceInputFields.push(component[0]);
-            }
-            
-            // Save the component if the tab is Timers
-            if (componentTab === "Timers") {
-                this.timersInputFields.push(component[0]);
-            }
-            
             // Check if the options are set
-            if (componentOptions === undefined || componentOptions === null) {
+            if (componentOptions === undefined || componentOptions === null || componentOptions === "") {
                 componentOptions = {};
             } else {
                 componentOptions = JSON.parse(componentOptions);
@@ -125,13 +123,73 @@ export class WtsConfiguration {
                 }
             }
             
-            // Make sure the method exists on componentSelector
+            // Check if any other field depends on this field, if so add a change event
+            let isDependedOn = document.querySelectorAll('[data-depend-on-field="' + component.attr("name") + '"]');
+            if (isDependedOn.length > 0) {
+                // Add a event listener to the options
+                componentOptions.change = eval("this.onDependFieldChange.bind(this)");
+                // Add an attribute to the component to indicate that it is depended on
+                component.attr("data-is-depended-on", true);
+            }
+            
+            // Make sure the method exists on componentSelector and if so create the component
             if (component[componentName] && typeof component[componentName] === "function") {
-                component[componentName](componentOptions).data(componentName);
+                let newComponent = component[componentName](componentOptions).data(componentName);
+                // Save the component and field so we can access it later
+                switch (componentTab) {
+                    case "Service":
+                        this.serviceInputFields.push(component[0]);
+                        this.serviceKendoFields.push(newComponent);
+                        break;
+                    case "Timers":
+                        this.timersInputFields.push(component[0]);
+                        this.timersKendoFields.push(newComponent);
+                        break;
+                }
+            } else {
+                console.error(`Method ${componentName} does not exist on componentSelector.`);
+                return;
+            }
+            
+            // Check if the component allows editing
+            if (component.attr("allow-edit") === "true") {
+                // Find the corresponding buttons and attach click events
+                let createButton = $(`#${component.attr('name')}CreateButton`);
+                let saveButton = $(`#${component.attr('name')}SaveButton`);
+                let deleteButton = $(`#${component.attr('name')}DeleteButton`);
+                
+                // Check if the buttons exist
+                if (createButton.length > 0) {
+                    createButton.on("click", this.onCreateButtonClick.bind(this));
+                }
+                if (saveButton.length > 0) {
+                    saveButton.on("click", this.onSaveButtonClick.bind(this));
+                }
+                if (deleteButton.length > 0) {
+                    deleteButton.on("click", this.onDeleteButtonClick.bind(this));
+                }
+            }
+        }
+        
+        // Loading is done, fire all change events
+        this.fireAllChangeEvents();
+    }
+    
+    fireAllChangeEvents() {
+        // Fire any change events that are set
+        let elementsWithChangeEvent = document.querySelectorAll('[data-is-depended-on]');
+
+        elementsWithChangeEvent.forEach((changeEvent) => {
+            let component = $(changeEvent);
+            let componentName = "kendo" + component.attr("data-kendo-component");
+            
+            // Check if the component exists
+            if (component[componentName] && typeof component[componentName] === "function") {
+                component[componentName]("trigger", "change");
             } else {
                 console.error(`Method ${componentName} does not exist on componentSelector.`);
             }
-        }
+        });
     }
     
     bindEvents() {
@@ -140,36 +198,373 @@ export class WtsConfiguration {
         // (To test saving the configuration, press ctrl + s)
         $("#saveButtonWtsConfiguration").on("click", this.getCurrentSettings.bind(this));
     }
-
-    onListChange(e) {
-        // Retrieve the selected item
-        let selectedItem = e.sender.dataItem(e.sender.select());
-        console.log("Selected item", selectedItem.timeId);
-        
-        // Figure out what the current tab is
+    
+    onCreateButtonClick(e) {
+        // Clear the input fields
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
-        let currentTabName = $(currentTab).attr("aria-controls");
-        console.log("Current tab", currentTabName);
+        let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
+        currentTabName = currentTabName.replace("tab", "");
         
-        // Find the input fields for the current tab
-        let inputFields = this[currentTabName.toLowerCase() + "InputFields"];
-        console.log("Input fields", this.timersInputFields); // It can't find the timersInputFields since "e" is "this" now and not the class
+        this.clearInputFieldsForTab(currentTabName);
+        
+        // Find the corresponding grid in the corresponding KendoFields array
+        let grid = this[currentTabName + "KendoFields"].find((grid) => {
+            return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
+        });
+        
+        // Clear the selected item
+        grid.clearSelection();
+
+        // Find the id field related to the grid and set an according value
+        let idField = grid.element[0].getAttribute("id-property");
+        if (idField !== undefined && idField !== null) {
+            // Get the id field
+            let idFieldElement = $(`[name="${idField}"]`);
+
+            // Check how many items there are in the datasource
+            let dataSource = grid.dataSource.data().length + 1;
+
+            // Set the value of the id field
+            this.setValueOfElement(idFieldElement[0], dataSource);
+        }
+        
+        // Fire any change events that are set
+        this.fireAllChangeEvents();
+    }
+    
+    onSaveButtonClick(e) {
+        // Get the current tab name
+        let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
+        let currentTab = tabStrip.select();
+        let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
+        currentTabName = currentTabName.replace("tab", "");
+        
+        // Find the corresponding grid in the corresponding KendoFields array
+        let grid = this[currentTabName + "KendoFields"].find((grid) => {
+            return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
+        });
+        
+        // Get the selected item
+        let selectedItem = grid.dataItem(grid.select());
+
+        // Find the name of the grid
+        let gridName = grid.element[0].getAttribute("name");
+        gridName = gridName.charAt(0).toLowerCase() + gridName.slice(1); // Convert the name to lowerCamelCase
+
+        // Get the datasource of the grid
+        let dataSource = this.template[gridName];
+
+        // The index of the selected item in the datasource
+        let indexOfSelectedItem = null;
+        
+        // If there is a selected item, save the index of the selected item
+        if (selectedItem !== undefined && selectedItem !== null) {
+            indexOfSelectedItem = grid.dataSource.indexOf(selectedItem);
+        }
+
+        selectedItem = {};
+        
+        // Get all the input fields for the given tab
+        let inputFields = this[currentTabName + "InputFields"];
         
         // Loop through all the input fields
-        // inputFields.forEach((inputField) => {
-        //     // Get the trace of the input field
-        //     let trace = inputField.getAttribute("trace");
-        //    
-        //     // Check if the trace is set
-        //     if (trace) {
-        //         // Get the value from the selected item
-        //         let value = selectedItem[trace];
-        //        
-        //         // Set the value of the input field
-        //         this.setValueOfElement(inputField, value);
-        //     }
-        // });
+        inputFields.forEach((inputField) => {
+            // Get the name of the input field
+            let name = inputField.getAttribute("name");
+            
+            // Ignore field if it is a grid
+            if (inputField.getAttribute("data-kendo-component") === "Grid") {
+                return;
+            }
+            
+            // Convert the name to lowerCamelCase
+            name = name.charAt(0).toLowerCase() + name.slice(1);
+            
+            // Get the value of the input field
+            let value = this.getValueOfElement(inputField);
+            
+            // Convert value to the correct type if possible
+            if (inputField.getAttribute("data-kendo-component") === "NumericTextBox") {
+                value = parseInt(value);
+            }
+            
+            // Find the trace of the input field
+            let trace = inputField.getAttribute("trace");
+            
+            // Remove the first part of the trace (the name of the grid)
+            trace = trace.replace("/" + this.capitaliseFirstLetter(gridName), "");
+            
+            // If there is a trace, add the field to the data based on the trace
+            if (trace) {
+                selectedItem = this.addFieldToData(selectedItem, name, value, trace);
+                return;
+            }
+            
+            // Set the value of the selected item
+            selectedItem[name] = value;
+        });
+
+        // Error checking for using an id that is already in use
+        if (indexOfSelectedItem === null) {
+            // For new items, check if the ID is already in use
+            let idField = grid.element[0].getAttribute("id-property");
+            let idFieldElement = $(`[name="${idField}"]`);
+            let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
+            
+            if (dataSource.find((item) => {
+                return item[this.decapitalizeFirstLetter(idField)] === idFieldValue;
+            })) {
+                kendo.alert("Het ingevulde ID is al in gebruik. Kies een ander, uniek ID om de wijzigingen op te slaan.");
+                return;
+            }
+        }
+        else {
+            // For existing items, check if the ID is already in use by another item
+            let idField = grid.element[0].getAttribute("id-property");
+            let idFieldElement = $(`[name="${idField}"]`);
+            let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
+            
+            if (dataSource.find((item) => {
+                return item[this.decapitalizeFirstLetter(idField)] === idFieldValue && item !== dataSource[indexOfSelectedItem];
+            })) {
+                kendo.alert("Het ingevulde ID is al in gebruik. Kies een ander, uniek ID om de wijzigingen op te slaan.");
+                return;
+            }
+        }
+        
+        if (indexOfSelectedItem) {
+            dataSource[indexOfSelectedItem] = selectedItem; // Update the item
+        }
+        else {
+            dataSource.push(selectedItem); // Add the item
+        }
+        
+        // Refresh the grid
+        grid.dataSource.read();
+
+        // Clear the input fields
+        this.clearInputFieldsForTab(currentTabName);
+        
+        // Fire any change events that are set
+        this.fireAllChangeEvents();
+        
+        console.log("Template: ", this.template);
+    }
+    
+    onDeleteButtonClick(e) {
+        // Get the current tab name
+        let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
+        let currentTab = tabStrip.select();
+        let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
+        currentTabName = currentTabName.replace("tab", "");
+        
+        // Find the corresponding grid in the corresponding KendoFields array
+        let grid = this[currentTabName + "KendoFields"].find((grid) => {
+            return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
+        });
+        
+        // Get the selected item
+        let selectedItem = grid.dataItem(grid.select());
+        
+        if (selectedItem === undefined || selectedItem === null) {
+            return;
+        }
+        
+        // Find the name of the grid
+        let gridName = grid.element[0].getAttribute("name");
+        gridName = gridName.charAt(0).toLowerCase() + gridName.slice(1); // Convert the name to lowerCamelCase
+        
+        // Get the datasource of the grid
+        let dataSource = this.template[gridName];
+        
+        // Get the index of the selected item
+        let indexOfSelectedItem = grid.dataSource.indexOf(selectedItem);
+        
+        // Remove the item from the datasource
+        if (indexOfSelectedItem !== -1) {
+            dataSource.splice(indexOfSelectedItem, 1);
+        }
+        else {
+            console.error("Could not find the selected item in the datasource.");
+        }
+        
+        // Refresh the grid
+        grid.dataSource.read();
+        
+        // Clear the input fields
+        this.clearInputFieldsForTab(currentTabName);
+        
+        // Fire any change events that are set
+        this.fireAllChangeEvents();
+    }
+    
+    clearInputFieldsForTab(tab) {
+        // Find all the input fields for the given tab
+        let inputFields = this[tab + "InputFields"];
+        
+        // Loop through all the input fields
+        inputFields.forEach((inputField) => {
+            // If the input field is a dropdownlist and is required, set the value to the first item
+            // Only run this if statement if .getAttribute is a function
+            if (typeof inputField.getAttribute !== "function") {
+                return;
+            }
+            if (inputField.getAttribute("data-kendo-component") === "DropDownList" && inputField.getAttribute("is-required") === "true") {
+                let dropDownList = $(inputField).data("kendoDropDownList");
+                let options = dropDownList.dataSource.data();
+                this.setValueOfElement(inputField, options[0].value);
+                return;
+            }
+            // Clear the value of the input field
+            this.setValueOfElement(inputField, "");
+        });
+    }
+
+    onListChange(e) {
+        // Check if the selected item is null
+        if (e.sender.select() === null) {
+            return;
+        }
+        
+        // Retrieve the selected item
+        let selectedItem = e.sender.dataItem(e.sender.select());
+        
+        // Get the current tab name
+        let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
+        let currentTab = tabStrip.select();
+        let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
+        
+        currentTabName = currentTabName.replace("tab", "");
+        
+        this.clearInputFieldsForTab(currentTabName);
+        
+        let inputFields = this[currentTabName + "InputFields"];
+
+        // Set the values of the input fields
+        this.findAndSetValuesOfInputFields(selectedItem, inputFields);
+        
+        // Fire any change events that are set
+        this.fireAllChangeEvents();
+    }
+    
+    findAndSetValuesOfInputFields(obj, inputFields) {
+        for (let prop in obj) {
+            if (typeof obj[prop] === "object") {
+                this.findAndSetValuesOfInputFields(obj[prop], inputFields);
+            } else {
+                inputFields.forEach((inputField) => {
+                    let name = inputField.getAttribute("name");
+                    // Convert the name to lowerCamelCase
+                    name = name.charAt(0).toLowerCase() + name.slice(1);
+                    
+                    if (prop === name) {
+                        this.setValueOfElement(inputField, obj[prop]);
+                    }
+                });
+            }
+        }
+    }
+    
+    onDependFieldChange(e) {
+        // Get the selected item
+        let selectedItem = (e.sender.dataItem(e.sender.select())).value;
+        
+        // Find all fields that depend on this field
+        let dependantFields = document.querySelectorAll('[data-depend-on-field="' + e.sender.element[0].getAttribute("name") + '"]');
+        
+        // Loop through all the fields
+        dependantFields.forEach((dependantField) => {
+            // Get all the dependant values for this field
+            let dependantValues = dependantField.getAttribute("data-depend-on-value");
+            
+            // Split the values on a comma
+            dependantValues = dependantValues.split(",");
+            
+            // Check if the selected item is in the dependant values
+            if (dependantValues.includes(selectedItem)) {
+                // Show the field
+                this.showField(dependantField.getAttribute("data-kendo-component"), $(dependantField));
+            } else {
+                // Hide the field
+                this.hideField(dependantField.getAttribute("data-kendo-component"), $(dependantField));
+                // Clear the value of the field
+                this.setValueOfElement(dependantField, "");
+            }
+        });
+    }
+    
+    setValueOfElement(e, v) {
+        if (e === undefined || e === null) {
+            return;
+        }
+        
+        let type = e.getAttribute("data-kendo-component");
+        
+        switch (type) {
+            case "CheckBox":
+                ($(e).data("kendoCheckBox")).value(v);
+                break;
+            case "TimePicker":
+                e.value = v; // Using the value function from kendo doesn't set the correct value (Cuts off the last 2 digits)
+                break;
+            case "NumericTextBox":
+                ($(e).data("kendoNumericTextBox")).value(v);
+                break;
+            case "TextBox":
+                ($(e).data("kendoTextBox")).value(v);
+                break;
+            case "DropDownList":
+                ($(e).data("kendoDropDownList")).value(v);
+                break;
+            default:
+                e.value = v;
+                break;
+        }
+    }
+    
+    hideField(type, element) {
+        // Find name of the element
+        let name = element.attr("name");
+        switch (type) {
+            case "CheckBox":
+                element.parent().parent().parent().hide();
+                break;
+            case "TimePicker":
+                element.parent().parent().parent().hide();
+                break;
+            case "NumericTextBox":
+                element.parent().parent().parent().hide();
+                break;
+            case "TextBox":
+                element.parent().parent().parent().hide();
+                break;
+            case "DropDownList":
+                element.parent().parent().parent().hide();
+                break;
+        }
+    }
+    
+    showField(type, element) {
+        // Find name of the element
+        let name = element.attr("name");
+        switch (type) {
+            case "CheckBox":
+                element.parent().parent().parent().show();
+                break;
+            case "TimePicker":
+                element.parent().parent().parent().show();
+                break;
+            case "NumericTextBox":
+                element.parent().parent().parent().show();
+                break;
+            case "TextBox":
+                element.parent().parent().parent().show();
+                break;
+            case "DropDownList":
+                element.parent().parent().parent().show();
+                break;
+        }
     }
     
     addFieldToData(data, name, value, trace) {
@@ -207,12 +602,38 @@ export class WtsConfiguration {
             }
         });
         
+        this.correctValues(this.template.runSchemes, this.timersInputFields);
+        
         // Manually add runschemes to the data
         data["RunSchemes"] = this.template.runSchemes;
 
         console.log("Data: ", data);
         
         return data;
+    }
+    
+    // Recursively search through all the values of given object and corresponding inputfields and correct the values
+    // This is needed because the values are not always the correct type
+    // For example: the value of a dropdown is a empty string instead of being undefined
+    correctValues(obj, inputFields) {
+        for (let prop in obj) {
+            if (typeof obj[prop] === "object") {
+                this.correctValues(obj[prop], inputFields);
+            } else {
+                inputFields.forEach((inputField) => {
+                    let name = inputField.getAttribute("name");
+                    // Convert the name to lowerCamelCase
+                    name = name.charAt(0).toLowerCase() + name.slice(1);
+                    
+                    if (prop === name) {
+                        // Check if value is undefined
+                        if (obj[prop] === undefined || obj[prop] === null || obj[prop] === "") {
+                            delete obj[prop];
+                        }
+                    }
+                });
+            }
+        }
     }
     
     getValueOfElement(element) {
@@ -230,6 +651,14 @@ export class WtsConfiguration {
             default:
                 return null;
         }
+    }
+    
+    capitaliseFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
+    decapitalizeFirstLetter(string) {
+        return string.charAt(0).toLowerCase() + string.slice(1);
     }
 
     /**

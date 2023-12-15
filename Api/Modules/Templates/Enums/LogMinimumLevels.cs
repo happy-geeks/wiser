@@ -5,6 +5,7 @@ namespace Api.Modules.Templates.Enums
     /// </summary>
     public enum LogMinimumLevels
     {
+        Inherit,
         Debug,
         Information,
         Warning,

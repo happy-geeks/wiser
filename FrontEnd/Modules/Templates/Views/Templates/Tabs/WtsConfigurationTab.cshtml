@@ -73,6 +73,12 @@
 @functions {
     async Task RenderProperty(object data, PropertyInfo property, WtsAttributes.WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
+        // If there is any dependsonvalue, we should create a comma seperated string of the values
+        var dependsOnValue = "";
+        if (attributes?.DependsOnValue != null)
+        {
+            dependsOnValue = string.Join(",", attributes.DependsOnValue);
+        }
         <div class="item">
             @switch (attributes?.KendoComponent)
             {
@@ -86,10 +92,10 @@
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.TextBox"
-                            @if (attributes.BelongsToForm != null)
-                            {
-                                <text>belongs-to="@attributes?.BelongsToForm"</text>
-                            }
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
                         />
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
@@ -103,13 +109,11 @@
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-depends-on-field="timing-daily"
-                            data-depends-on-value="daily"
                             data-kendo-component="@KendoComponents.NumericTextBox"
-                            @if (attributes.BelongsToForm != null)
-                            {
-                                <text>belongs-to="@attributes?.BelongsToForm"</text>
-                            }
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
                         />
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
@@ -124,10 +128,10 @@
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.TimePicker"
-                            @if (attributes.BelongsToForm != null)
-                            {
-                                <text>belongs-to="@attributes?.BelongsToForm"</text>
-                            }
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
                         />
                         <div class="form-hint"><span>@attributes.Description</span></div>
                     </span>
@@ -145,10 +149,10 @@
                                     data-kendo-tab="@tab" 
                                     checked 
                                     data-kendo-component="@KendoComponents.CheckBox"
-                                    @if (attributes.BelongsToForm != null)
-                                    {
-                                        <text>belongs-to="@attributes?.BelongsToForm"</text>
-                                    }
+                                    data-kendo-options="@attributes?.KendoOptions"
+                                    data-depend-on-field="@attributes?.DependsOnField"
+                                    data-depend-on-value="@dependsOnValue"
+                                    is-required="@attributes?.IsRequired.ToString().ToLower()"
                                 />
                             }
                             else
@@ -159,10 +163,10 @@
                                     trace="@trace"
                                     data-kendo-tab="@tab" 
                                     data-kendo-component="@KendoComponents.CheckBox" 
-                                    @if (attributes.BelongsToForm != null)
-                                    {
-                                        <text>belongs-to="@attributes?.BelongsToForm"</text>
-                                    }
+                                    data-kendo-options="@attributes?.KendoOptions"
+                                    data-depend-on-field="@attributes?.DependsOnField"
+                                    data-depend-on-value="@dependsOnValue"
+                                    is-required="@attributes?.IsRequired.ToString().ToLower()"
                                 />
                             }
                             <span>@attributes?.Description</span>
@@ -180,10 +184,10 @@
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.DropDownList"
-                            @if (attributes.BelongsToForm != null)
-                            {
-                                <text>belongs-to="@attributes?.BelongsToForm"</text>
-                            }
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
                         >
                             @foreach (var opt in enumData)
                             {
@@ -209,28 +213,22 @@
                             data-kendo-component="@KendoComponents.Grid" 
                             data-kendo-tab="@tab"
                             data-kendo-options="@attributes?.KendoOptions"
-                            >
-                            @* <thead> *@
-                            @*     <tr> *@
-                            @*         @foreach (var prop in @data.GetType().GetGenericArguments()[0].GetProperties()) *@
-                            @*         { *@
-                            @*             <th>@prop.Name</th> *@
-                            @*         } *@
-                            @*     </tr> *@
-                            @* </thead> *@
-                            @* <tbody> *@
-                            @*     @foreach (var item in (IList)data)  *@
-                            @*     { *@
-                            @*         <tr> *@
-                            @*             @foreach (var prop in @data.GetType().GetGenericArguments()[0].GetProperties()) *@
-                            @*             { *@
-                            @*                 <td>@prop.GetValue(item, null)</td> *@
-                            @*             } *@
-                            @*         </tr> *@
-                            @*     } *@
-                            @* </tbody> *@
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            allow-edit="@attributes?.AllowEdit.ToString().ToLower()"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
+                            id-property="@attributes?.IdProperty"
+                        >
                         </table>
                     </span>
+                    if (attributes?.AllowEdit == true)
+                    {
+                        <span>
+                            <button id="@($"{property.Name}CreateButton")" for-list="@property.Name" class="k-button k-primary">Nieuwe rij maken</button>
+                            <button id="@($"{property.Name}SaveButton")" for-list="@property.Name" class="k-button k-primary">Wijzigingen opslaan</button>
+                            <button id="@($"{property.Name}DeleteButton")" for-list="@property.Name" class="k-button k-primary" style="background-color: #dc3545 !important;">Geselecteerde rij verwijderen</button>
+                        </span>
+                    }
                     break;
                 default:
                     <p style="color: #721c24; background-color: #f8d7da; padding: 10px; border: 3px solid #f5c6cb; border-radius: 7px;">Unknown property type: "@property.PropertyType.Name" for property: "@property.Name"</p>
@@ -239,7 +237,7 @@
         </div>
     }
 
-    void RenderProperties(object data, Type type, string tab, bool isFilled, string trace)
+    void RenderProperties(object data, Type type, string tab, bool IsFilled, string trace)
     {
         foreach (var property in type.GetProperties())
         {
@@ -268,7 +266,7 @@
                     // Check if we're sending a enum, if so also send the selected value
                     if (property.PropertyType.IsEnum)
                     {
-                        if (isFilled)
+                        if (IsFilled)
                         {
                             RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab, trace);
                         }
@@ -279,7 +277,7 @@
                         continue;
                     }
                     // Check if we should send the data
-                    if (isFilled)
+                    if (IsFilled)
                     {
                         RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                     }
