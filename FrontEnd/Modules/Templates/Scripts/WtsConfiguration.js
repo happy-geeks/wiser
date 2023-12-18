@@ -222,11 +222,18 @@ export class WtsConfiguration {
             // Get the id field
             let idFieldElement = $(`[name="${idField}"]`);
 
-            // Check how many items there are in the datasource
-            let dataSource = grid.dataSource.data().length + 1;
+            // Check for the highest id in the datasource and add 1 to it
+            let dataSource = this.template[this.decapitalizeFirstLetter(grid.element[0].getAttribute("name"))];
+            let highestId = 0;
+            dataSource.forEach((item) => {
+                if (item[this.decapitalizeFirstLetter(idField)] > highestId) {
+                    highestId = item[this.decapitalizeFirstLetter(idField)];
+                }
+            });
+            highestId++;
 
             // Set the value of the id field
-            this.setValueOfElement(idFieldElement[0], dataSource);
+            this.setValueOfElement(idFieldElement[0], highestId);
         }
         
         // Fire any change events that are set
