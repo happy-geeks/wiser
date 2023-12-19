@@ -24,7 +24,7 @@ using GeeksCoreLibrary.Modules.Databases.Models;
 using Google.Authenticator;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StringHelpers = Api.Core.Helpers.StringHelpers;

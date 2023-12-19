@@ -19,7 +19,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
-using MySqlConnector;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
