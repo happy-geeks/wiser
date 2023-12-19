@@ -30,4 +30,14 @@ public class PermissionUpdateModel
     /// Gets or sets the id of the role the permission is set for
     /// </summary>
     public int RoleId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the URL of the endpoint, if this is a permission for an endpoint on an API of website.
+    /// </summary>
+    public string EndpointUrl { get; set; }
+
+    /// <summary>
+    /// Gets or sets the HTTP method of the endpoint, if this is a permission for an endpoint on an API of website.
+    /// </summary>
+    public string EndpointHttpMethod { get; set; }
 }

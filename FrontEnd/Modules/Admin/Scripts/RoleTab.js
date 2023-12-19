@@ -274,16 +274,16 @@ export class RoleTab {
         });
     }
 
-    initializeOrRefreshRolesModulesGrid(item) {
+    initializeOrRefreshRolesModulesGrid(roleId) {
         const subject = 'Modules';
         if (!this.modulesGrid) {
-            this.modulesGrid = this.initializeOrRefreshRolesOnGrid(item, '#ModulesGrid', subject);
+            this.modulesGrid = this.initializeOrRefreshRolesOnGrid(roleId, '#ModulesGrid', subject);
         }
         const queryStringForModulesGrid = {
-            roleId: item,
+            roleId: roleId,
             subject: subject
         };
-        
+
         this.modulesGrid.setDataSource({
             transport: {
                 read: {
@@ -291,17 +291,16 @@ export class RoleTab {
                 }
             }
         });
-
     }
 
-    initializeOrRefreshRolesQueriesGrid(item) {
+    initializeOrRefreshRolesQueriesGrid(roleId) {
         const subject = 'Queries';
         if (!this.queriesGrid) {
-            this.queriesGrid = this.initializeOrRefreshRolesOnGrid(item, '#QueriesGrid', subject);
+            this.queriesGrid = this.initializeOrRefreshRolesOnGrid(roleId, '#QueriesGrid', subject);
         }
 
         const queryStringForQueriesGrid = {
-            roleId: item,
+            roleId: roleId,
             subject: subject
         };
 
@@ -312,9 +311,80 @@ export class RoleTab {
                 }
             }
         });
-
     }
-    
+
+    initializeOrRefreshEndpointsGrid(roleId) {
+        if (!this.endpointsGrid) {
+            const queryStringForEndpointsGrid = {
+                roleId: roleId,
+                subject: "Endpoints"
+            };
+
+            this.endpointsGrid = $("#EndpointsGrid").kendoGrid({
+                batch: true,
+                filterable: {
+                    mode: "row"
+                },
+                toolbar: ["create"],
+                columns: [
+                    {
+                        title: "URL",
+                        field: "endpointUrl"
+                    },
+                    {
+                        title: "HTTP Method",
+                        field: "endpointHttpMethod"
+                    },
+                    {
+                        title: "Toegestaan",
+                        headerTemplate: () => {
+                            return `<div class="checkAll"><span>Toegestaan</span><input type="checkbox" id="role-check-all" class="k-checkbox endpoints"><label class="k-checkbox-label" for="role-check-all"></label></div>`;
+                        },
+                        template: (dataItem) => {
+                            return `<input type="checkbox" id="role-endpoints-all-${dataItem.objectId}" data-type="all" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="0" ${dataItem.permission === 15 ? "checked" : ""} class="k-checkbox endpoint"><label class="k-checkbox-label" for="role-endpoint-all-${dataItem.objectId}"></label>`;
+                        }
+                    },
+                    {
+                        command: ["edit", "destroy"],
+                        title: "&nbsp;",
+                        width: "250px"
+                    }
+                ],
+                schema: {
+                    model: {
+                        id: "id",
+                        fields: {
+                            id: { type: "number", editable: false, nullable: false },
+                            endpointUrl: { type: "string", validation: { required: true } },
+                            endpointHttpMethod: { type: "string", validation: { required: true } },
+                            permission: { type: "number" }
+                        }
+                    }
+                },
+                dataSource: {
+                    transport: {
+                        read: {
+                            url: `${this.base.settings.wiserApiRoot}permissions/${Utils.toQueryString(queryStringForEndpointsGrid, true)}`
+                        },
+                        create: {
+                            url: `${this.base.settings.wiserApiRoot}permissions`,
+                            contentType: "application/json",
+                            method: "POST"
+                        },
+                        parameterMap: (data, operation) => {
+                            if (operation !== "read") {
+                                return kendo.stringify($.extend({ "subject": "endpoints" }, data));
+                            }
+                        }
+                    }
+                }
+            }).data("kendoGrid");
+        }
+        else {
+            this.endpointsGrid.dataSource.read();
+        }
+    }
+
     /**
      * Init Kendo grid component
      * @param {any} item The item id of the selected role
@@ -473,6 +543,9 @@ export class RoleTab {
                     case "query's":
                         this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
                         break;
+                    case "endpoints":
+                        this.initializeOrRefreshEndpointsGrid(dataItem.id);
+                        break;
                 }
             }
         }).data("kendoTabStrip");
@@ -503,6 +576,9 @@ export class RoleTab {
                         break;
                     case "query's":
                         this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
+                        break;
+                    case "endpoints":
+                        this.initializeOrRefreshEndpointsGrid(dataItem.id);
                         break;
                 }
             }
