@@ -340,7 +340,7 @@ export class WtsConfiguration {
             }
         }
         
-        if (indexOfSelectedItem) {
+        if (indexOfSelectedItem != null && indexOfSelectedItem >= 0) {
             dataSource[indexOfSelectedItem] = selectedItem; // Update the item
         }
         else {
@@ -355,8 +355,6 @@ export class WtsConfiguration {
         
         // Fire any change events that are set
         this.fireAllChangeEvents();
-        
-        console.log("Template: ", this.template);
     }
     
     onDeleteButtonClick(e) {

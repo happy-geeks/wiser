@@ -14,11 +14,6 @@ namespace Api.Modules.Templates.Attributes
             public bool IsVisible { get; set; }
             
             /// <summary>
-            /// If field for the property should be filled.
-            /// </summary>
-            public bool IsFilled { get; set; }
-            
-            /// <summary>
             /// If field for the property is required.
             /// </summary>
             public bool IsRequired { get; set; }
@@ -66,12 +61,14 @@ namespace Api.Modules.Templates.Attributes
             /// <summary>
             /// Declares if the property depends on a dropdown field to be shown or hidden.
             /// For example: "Type", which means that the property depends on the dropdown field with the name "Type".
+            /// This requires the property DependsOnValue to be set.
             /// </summary>
             public string DependsOnField { get; set; }
             
             /// <summary>
             /// Declares the value of the dropdown field on which the property depends to be shown.
             /// For example: "Continuous", which means that the property will be shown if the dropdown field has the value "Continuous".
+            /// This requires the property DependsOnField to be set.
             /// </summary>
             public string[] DependsOnValue { get; set; }
         }

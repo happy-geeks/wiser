@@ -14,9 +14,10 @@ namespace Api.Modules.Templates.Models.Template
         [WtsAttributes.WtsProperty(
             IsVisible = true,
             Title = "Minimaal log level",
-            Description = "",
+            Description = "Het minimale log level dat gelogd wordt.",
             ConfigurationTab = null,
-            KendoComponent = KendoComponents.DropDownList
+            KendoComponent = KendoComponents.DropDownList,
+            IsRequired = true
         )]
         public LogMinimumLevels LogMinimumLevel { get; set; } = LogMinimumLevels.Information;
         
@@ -27,9 +28,10 @@ namespace Api.Modules.Templates.Models.Template
             IsVisible = true,
             Description = "Loggen wanneer de service gestart en gestopt wordt",
             ConfigurationTab = null,
-            KendoComponent = KendoComponents.CheckBox
+            KendoComponent = KendoComponents.DropDownList,
+            IsRequired = true
         )]
-        public bool LogStartAndStop {get; set;}
+        public LogBoolean LogStartAndStop {get; set;}
         
         /// <summary>
         /// Log messages sent at the beginning and end of the run. For example, the start and stop time of the run scheme or what action is performed.
@@ -38,9 +40,10 @@ namespace Api.Modules.Templates.Models.Template
             IsVisible = true,
             Description = "Loggen wanneer een run-cyclus begint en eindigt",
             ConfigurationTab = null,
-            KendoComponent = KendoComponents.CheckBox
+            KendoComponent = KendoComponents.DropDownList,
+            IsRequired = true
         )]
-        public bool LogRunStartAndStop {get; set;}
+        public LogBoolean LogRunStartAndStop {get; set;}
         
         /// <summary>
         /// Log messages sent during the run. For example, the query being executed or the URL of an HTTP API request.
@@ -49,8 +52,9 @@ namespace Api.Modules.Templates.Models.Template
             IsVisible = true,
             Description = "Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)",
             ConfigurationTab = null,
-            KendoComponent = KendoComponents.CheckBox
+            KendoComponent = KendoComponents.DropDownList,
+            IsRequired = true
         )]
-        public bool LogRunBody {get; set;}
+        public LogBoolean LogRunBody {get; set;}
     }
 }
