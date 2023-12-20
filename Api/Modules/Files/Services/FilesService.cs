@@ -430,10 +430,9 @@ SELECT LAST_INSERT_ID() AS newId;";
             else
             {
                 query = query.Replace("[wherePart]", "item_id = ?itemId AND property_name = ?propertyName");
-                databaseConnection.AddParameter("itemId", itemId);
+                databaseConnection.AddParameter("itemId", itemId);    
                 databaseConnection.AddParameter("propertyName", propertyName);
             }
-
             var dataTable = await databaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
