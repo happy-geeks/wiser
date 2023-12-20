@@ -70,3 +70,7 @@
 #wtsConfigurationTab .formview.compact .item.full > .k-button {
     margin-left: 0;
 }
+#wtsConfigurationTab .formview.compact .form-hint-align-left {
+    padding-left: 0 !important;
+    padding-right: 215px;
+}
