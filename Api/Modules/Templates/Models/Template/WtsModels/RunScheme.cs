@@ -146,7 +146,7 @@ namespace Api.Modules.Templates.Models.Template
             Title = "Skip dagen",
             Description = "Of de timer niet moet worden uitgevoerd op bepaalde dagen (Bijvoorbeeld: 1,2,3,4,5,6,7)",
             ConfigurationTab = ConfigurationTab.Timers,
-            KendoComponent = KendoComponents.NumericTextBox,
+            KendoComponent = KendoComponents.TextBox,
             KendoOptions = @"
                {
                   ""format"": ""#"",
