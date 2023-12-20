@@ -436,14 +436,16 @@ CREATE TABLE IF NOT EXISTS `wiser_permission`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `role_id` int NOT NULL DEFAULT 0,
   `entity_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `item_id` int NOT NULL DEFAULT 0,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `entity_property_id` int NOT NULL DEFAULT 0,
   `permissions` int NOT NULL DEFAULT 0 COMMENT '0 = Nothing\r\n1 = Read\r\n2 = Create\r\n4 = Update\r\n8 = Delete',
   `module_id` int NOT NULL DEFAULT 0,
   `query_id` int NOT NULL DEFAULT 0,
   `data_selector_id` int NOT NULL DEFAULT 0,
+  `endpoint_url` varchar(500) NOT NULL DEFAULT '',
+  `endpoint_http_method` enum('GET','HEAD','POST','PUT','DELETE','CONNECT','OPTIONS','TRACE','PATCH') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'GET',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`) USING BTREE
+  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`, `endpoint_url`, `endpoint_http_method`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------

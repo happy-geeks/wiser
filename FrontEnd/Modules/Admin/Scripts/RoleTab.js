@@ -321,10 +321,8 @@ export class RoleTab {
             };
 
             this.endpointsGrid = $("#EndpointsGrid").kendoGrid({
-                batch: true,
-                filterable: {
-                    mode: "row"
-                },
+                editable: "inline",
+                filterable: true,
                 toolbar: ["create"],
                 columns: [
                     {
@@ -337,12 +335,13 @@ export class RoleTab {
                     },
                     {
                         title: "Toegestaan",
+                        field: "permission"/*,
                         headerTemplate: () => {
                             return `<div class="checkAll"><span>Toegestaan</span><input type="checkbox" id="role-check-all" class="k-checkbox endpoints"><label class="k-checkbox-label" for="role-check-all"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" id="role-endpoints-all-${dataItem.objectId}" data-type="all" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="0" ${dataItem.permission === 15 ? "checked" : ""} class="k-checkbox endpoint"><label class="k-checkbox-label" for="role-endpoint-all-${dataItem.objectId}"></label>`;
-                        }
+                        }*/
                     },
                     {
                         command: ["edit", "destroy"],
@@ -354,9 +353,13 @@ export class RoleTab {
                     model: {
                         id: "id",
                         fields: {
-                            id: { type: "number", editable: false, nullable: false },
-                            endpointUrl: { type: "string", validation: { required: true } },
-                            endpointHttpMethod: { type: "string", validation: { required: true } },
+                            id: { type: "number" },
+                            objectId: { type: "number" },
+                            objectName: { type: "string" },
+                            roleId: { type: "number" },
+                            roleName: { type: "string" },
+                            endpointUrl: { type: "string" },
+                            endpointHttpMethod: { type: "string" },
                             permission: { type: "number" }
                         }
                     }
@@ -366,12 +369,35 @@ export class RoleTab {
                         read: {
                             url: `${this.base.settings.wiserApiRoot}permissions/${Utils.toQueryString(queryStringForEndpointsGrid, true)}`
                         },
-                        create: {
+                        create: (options) => {
+                            console.log("create", options);
+                            options.success(options.data);
+                        },
+                        update: (options) => {
+                            console.log("update", options);
+                            options.success(options.data);
+                        },
+                        delete: (options) => {
+                            console.log("delete", options);
+                            options.success(options.data);
+                        },
+                        /*create: {
                             url: `${this.base.settings.wiserApiRoot}permissions`,
                             contentType: "application/json",
                             method: "POST"
                         },
+                        update: {
+                            url: `${this.base.settings.wiserApiRoot}permissions`,
+                            contentType: "application/json",
+                            method: "POST"
+                        },
+                        destroy: {
+                            url: `${this.base.settings.wiserApiRoot}permissions`,
+                            contentType: "application/json",
+                            method: "DELETE"
+                        },*/
                         parameterMap: (data, operation) => {
+                            console.log("parameterMap", data, operation);
                             if (operation !== "read") {
                                 return kendo.stringify($.extend({ "subject": "endpoints" }, data));
                             }
