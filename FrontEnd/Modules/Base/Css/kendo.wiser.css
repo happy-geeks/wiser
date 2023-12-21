@@ -53,7 +53,7 @@
 .pane-content + footer {
 	background: var(--white-color);
 	border-top: 1px solid #dddddd;
-	border-radius: 0 0 6px 6px;
+	border-radius: 0 0 var(--large-radius) var(--large-radius);
 	box-sizing: content-box;
 	padding: 10px;
 	z-index: 250;
@@ -352,6 +352,8 @@
 .k-button-drop {
 	position: relative;
 	z-index: 10;
+	padding-right: 0px;
+	margin: 0px;
 }
 .k-button-drop > div {
 	box-shadow: var(--drop-shadow);
@@ -379,7 +381,7 @@
 .k-button-drop > div .k-button {
 	background-color: transparent;
 	justify-content: flex-start;
-	padding: 0.3em 0.5em;
+	padding: 0.8em 0em 0.8em 1em;
 	text-align: left;
 	width: 100%;
 }
@@ -1292,8 +1294,9 @@ span.k-input .k-input:hover {
 	color: var(--light-txt);
 }
 .k-grid td {
-	padding: 2px .6em;
+	padding: var(--padding-large);
 	white-space: nowrap;
+	border-bottom-width: 0px!important;
 }
 .k-grid-content tr:last-child>td,
 .k-grid-content-locked tr:last-child>td {

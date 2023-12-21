@@ -19,7 +19,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
@@ -680,7 +680,7 @@ ORDER BY time_active DESC";
                 Scheme = row.Field<string>("scheme"),
                 LastRun = row.Field<DateTime?>("last_run"),
                 NextRun = row.Field<DateTime?>("next_run"),
-                RunTime = row.Field<double>("run_time"),
+                RunTime = row.IsNull("run_time") ? 0 : row.Field<double>("run_time"),
                 State = row.Field<string>("state"),
                 Paused = row.Field<bool>("paused"),
                 ExtraRun = row.Field<bool>("extra_run"),

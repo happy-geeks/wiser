@@ -2327,7 +2327,9 @@ export class Fields {
 
             let itemDetails = mainItemDetails;
             if (selectedItems.length > 0 && selectedItems[0].dataItem) {
-                itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+                if (selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId) {
+                    itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+                }
             }
 
             const process = `initializeGenerateFileWindow_${Date.now()}`;
@@ -2508,7 +2510,11 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true);
+                            }
+
+                            if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
+                                pdfToHtmlData.fileName = "Document.pdf";
                             }
 
                             pdfToHtmlData.documentOptions = "";
@@ -2626,7 +2632,11 @@ export class Fields {
                                                     };
 
                                                     if (currentAction.pdfFilename) {
-                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
+                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true);
+                                                    }
+
+                                                    if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
+                                                        pdfToHtmlData.fileName = "Document.pdf";
                                                     }
 
                                                     let ajaxOptions = {
@@ -2863,10 +2873,10 @@ export class Fields {
         } else {
              this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
              this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
-             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, 
-                 this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, 
+             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender,
+                 this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode,
                  this.base.settings.gridViewMode, this.base.settings.moduleName);
-             
+
              fileManagerWindow.center().open();
         }
     }
@@ -2885,10 +2895,10 @@ export class Fields {
         } else {
             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.files;
-            const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, 
-                this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, 
+            const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender,
+                this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode,
                 this.base.settings.gridViewMode, this.base.settings.moduleName);
-            
+
             fileManagerWindow.center().open();
         }
     }
@@ -2908,7 +2918,7 @@ export class Fields {
             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.templates;
             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
-            
+
             fileManagerWindow.center().open();
         }
     }
