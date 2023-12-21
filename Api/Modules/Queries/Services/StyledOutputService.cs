@@ -271,7 +271,7 @@ namespace Api.Modules.Queries.Services
                     itemValue = replacementsMediator.EvaluateTemplate(itemValue);
 
                     // replace recursive inline styles
-                    var inlineResult =  await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs,
+                    var inlineResult =  await HandleInlineStyleElementsAsync(identity, itemValue, parameters, stripNewlinesAndTabs,
                         resultsPerPage, page, usedIds);
                     
                     if (inlineResult.StatusCode == HttpStatusCode.OK)
@@ -316,7 +316,7 @@ namespace Api.Modules.Queries.Services
         /// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
         /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null</param>
         /// <returns>Returns the updated string with replacements applied</returns>
-        private async Task<ServiceResult<string>> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
+        private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
         {
             var index = 0;
             
