@@ -2564,11 +2564,32 @@ export class Fields {
                         icon: "print"
                     });
 
+                    const emailRegularExpression = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
                     previewWindow.element.find("#mailPreview").kendoButton({
                         click: async (event) => {
                             try {
                                 const dialogElement = $("#sendMailDialog");
-                                const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
+                                const validator = dialogElement.find(".formview").kendoValidator({
+                                    rules: {
+                                        email: (input) => {
+                                            // Custom e-mail validation for allowing multiple e-mail addresses.
+                                            if (input.is("[type=email]") && input.val() !== "")
+                                            {
+                                                const emailsArray = input.val().split(";");
+                                                for (let email of emailsArray)
+                                                {
+                                                    email = email.trim();
+                                                    if (email !== "" && !emailRegularExpression.test(email))
+                                                    {
+                                                        return false;
+                                                    }
+                                                }
+                                            }
+
+                                            return true;
+                                        }
+                                    }
+                                }).data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
                                 const uploadedFiles = [];
 
@@ -2699,6 +2720,24 @@ export class Fields {
 
                                                     const cc = mailDialog.element.find("input[name=cc]").val();
                                                     const bcc = mailDialog.element.find("input[name=bcc]").val();
+                                                    const receivers = [];
+                                                    const receiverEmails = mailDialog.element.find("input[name=receiverEmail]").val().split(";");
+                                                    const receiverNames = mailDialog.element.find("input[name=receiverName]").val().split(";");
+                                                    for (let i = 0; i < receiverEmails.length; i++) {
+                                                        const email = receiverEmails[i];
+                                                        let name = email;
+                                                        if (receiverNames.length > i) {
+                                                            name = receiverNames[i];
+                                                        }
+                                                        else if (receiverNames.length > 0) {
+                                                            name = receiverNames[0];
+                                                        }
+
+                                                        receivers.push({
+                                                            displayName: name,
+                                                            address: email,
+                                                        })
+                                                    }
 
                                                     Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}communications/email`,
@@ -2707,12 +2746,9 @@ export class Fields {
                                                         data: JSON.stringify({
                                                             senderName: mailDialog.element.find("input[name=senderName]").val(),
                                                             sender: mailDialog.element.find("input[name=senderEmail]").val(),
-                                                            receivers: [{
-                                                                displayName: mailDialog.element.find("input[name=receiverName]").val(),
-                                                                address: mailDialog.element.find("input[name=receiverEmail]").val(),
-                                                            }],
-                                                            cc: cc ? [cc] : null,
-                                                            bcc: bcc ? [bcc] : null,
+                                                            receivers: receivers,
+                                                            cc: cc ? cc.split(";") : null,
+                                                            bcc: bcc ? bcc.split(";") : null,
                                                             subject: mailDialog.element.find("input[name=subject]").val(),
                                                             wiserItemFiles: wiserFileAttachments,
                                                             content: emailBodyEditor.value()
