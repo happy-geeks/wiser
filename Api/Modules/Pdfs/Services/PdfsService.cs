@@ -1,5 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -7,6 +9,7 @@ using Api.Core.Services;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Pdfs.Interfaces;
+using EvoPdf;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Interfaces;
@@ -80,6 +83,50 @@ namespace Api.Modules.Pdfs.Services
             }
 
             return new ServiceResult<string>(fileLocation);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string encrypedItemIdsList, string propertyName, string entityType)
+        {
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+
+            Document mergeResultPdfDocument=null;
+            //Load the documents and add them to the merged file
+            foreach (var encryptedId in encrypedItemIdsList.Split(","))
+            {
+                var fileIdTemp = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity); //TODO:change! this is now false.
+                var pdfFile = await filesService.GetAsync(encryptedId, (int)fileIdTemp, identity, 0, entityType); //TODO: 101 is a static id, please change to dynamic id
+
+                //must PDF be downloaded first?
+                MemoryStream pdfStream = new MemoryStream();
+                if (!String.IsNullOrWhiteSpace(pdfFile.ModelObject.Url))
+                {
+                    using (HttpClient client = new HttpClient())
+                    {
+                        using (HttpResponseMessage response = await client.GetAsync(pdfFile.ModelObject.Url, HttpCompletionOption.ResponseHeadersRead))
+                        {
+                            response.EnsureSuccessStatusCode();
+                            using (Stream downloadStream = await response.Content.ReadAsStreamAsync())
+                            {
+                                await downloadStream.CopyToAsync(pdfStream);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
+                }
+               
+                if (mergeResultPdfDocument==null)
+                    mergeResultPdfDocument = new Document(pdfStream);
+                else
+                    mergeResultPdfDocument.AppendDocument(new Document(pdfStream));
+            }
+            
+            using var saveStream = new MemoryStream();
+            mergeResultPdfDocument.Save(saveStream);
+            return new ServiceResult<byte[]>(saveStream.ToArray());
         }
     }
 }
