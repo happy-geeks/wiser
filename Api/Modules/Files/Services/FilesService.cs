@@ -393,19 +393,9 @@ SELECT LAST_INSERT_ID() AS newId;";
                 throw new ArgumentNullException(nameof(encryptedItemId));
             }
 
-            ulong itemId;
-
-            try
+            if (!UInt64.TryParse(encryptedItemId, out var itemId))
             {
                 itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
-            }
-            catch (FormatException)
-            {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>()
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"Failed to decrypt item ID '{encryptedItemId}'."
-                };
             }
 
             if (fileId <= 0 && String.IsNullOrEmpty(propertyName))
@@ -433,6 +423,7 @@ SELECT LAST_INSERT_ID() AS newId;";
                 databaseConnection.AddParameter("itemId", itemId);    
                 databaseConnection.AddParameter("propertyName", propertyName);
             }
+
             var dataTable = await databaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
