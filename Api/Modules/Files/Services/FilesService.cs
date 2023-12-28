@@ -93,7 +93,7 @@ namespace Api.Modules.Files.Services
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            if (itemId <= 0)
+            if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("Id must be greater than zero.");
             }
