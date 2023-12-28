@@ -2326,10 +2326,8 @@ export class Fields {
             }
 
             let itemDetails = mainItemDetails;
-            if (selectedItems.length > 0 && selectedItems[0].dataItem) {
-                if (selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId) {
-                    itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
-                }
+            if (selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId) {
+                itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
             }
 
             const process = `initializeGenerateFileWindow_${Date.now()}`;
