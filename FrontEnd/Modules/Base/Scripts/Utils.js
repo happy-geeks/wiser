@@ -666,7 +666,7 @@ export class Wiser {
                     // Set default values to all properties.
                     action.method = action.method || "POST";
                     action.contentType = action.contentType || "application/json";
-                    action.extraHeaders = action.extraHeaders || extraHeaders || {};
+                    action.extraHeaders = action.extraHeaders || {};
 
                     // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
                     if (action.preRequestQueryId && itemDetails) {
@@ -746,30 +746,24 @@ export class Wiser {
                         data: action.contentType.toLowerCase() === "application/json" ? JSON.stringify(action.data) : action.data
                     });
 
-                    let resultsPropertyNames = [];
-
                     // A lot of APIs don't directly return their data, they will have a surrounding property (or more than one).
                     // For Example, Exact returns results like this: { d: { results: [] } }. So we added settings for handling this.
-                    if (action.contentType!=="text/csv") {
-                        if (action.resultsPropertyName) {
-                            resultsPropertyNames = action.resultsPropertyName.split(".");
-                        }
-                        else if (apiOptions.resultsPropertyName) {
-                            resultsPropertyNames = apiOptions.resultsPropertyName.split(".");
-                        }
-    
-                        for (let resultsPropertyName of resultsPropertyNames) {
-                            if (!apiResults) {
-                                break;
-                            }
-    
-                            apiResults = apiResults[resultsPropertyName];
-                        }
+                    let resultsPropertyNames = [];
+                    if (action.resultsPropertyName) {
+                        resultsPropertyNames = action.resultsPropertyName.split(".");
                     }
-                    else {
-                        apiResults = {"Content"  : apiResults}
+                    else if (apiOptions.resultsPropertyName) {
+                        resultsPropertyNames = apiOptions.resultsPropertyName.split(".");
                     }
-                    
+
+                    for (let resultsPropertyName of resultsPropertyNames) {
+                        if (!apiResults) {
+                            break;
+                        }
+
+                        apiResults = apiResults[resultsPropertyName];
+                    }
+
                     // If a postRequestQueryId is set, execute that query after the API call, so that the results of the API call can be used in the query.
                     if (action.postRequestQueryId && itemDetails) {
                         const postRequestQueryResult = await Wiser.api({
