@@ -94,8 +94,7 @@ namespace Api.Modules.Pdfs.Services
             //Load the documents and add them to the merged file
             foreach (var encryptedId in encrypedItemIdsList.Split(","))
             {
-                var fileIdTemp = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity); //TODO:change! this is now false.
-                var pdfFile = await filesService.GetAsync(encryptedId, (int)fileIdTemp, identity, 0, entityType); //TODO: 101 is a static id, please change to dynamic id
+                var pdfFile = await filesService.GetAsync(encryptedId, 0, identity, 0, entityType, propertyName:propertyName);
 
                 //must PDF be downloaded first?
                 MemoryStream pdfStream = new MemoryStream();
