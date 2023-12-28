@@ -107,6 +107,7 @@ namespace Api.Modules.Files.Controllers
         /// </summary>
         /// <param name="itemId">The encrypted ID of the item to get the file of.</param>
         /// <param name="fileId">The ID of the file to get.</param>
+        /// <param name="propertyName">The property name of the file to get. The first file will be returned.</param>
         /// <param name="fileName">The full file name to return (including extension).</param>
         /// <param name="tenantInformation">Information about the authenticated user, such as the encrypted user ID.</param>
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
@@ -115,12 +116,13 @@ namespace Api.Modules.Files.Controllers
         /// <returns>The file contents.</returns>
         [HttpGet]
         [Route("~/api/v3/items/{itemId}/files/{fileId:int}/{filename}")]
+        [Route("~/api/v3/items/{itemId}/files/{propertyName}/{filename}")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status302Found)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [Produces(MediaTypeNames.Application.Octet)]
-        public async Task<IActionResult> GetFileAsync(string itemId, int fileId, string fileName, [FromQuery] TenantInformationModel tenantInformation, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+        public async Task<IActionResult> GetFileAsync(string itemId, int fileId, string propertyName, string fileName, [FromQuery] TenantInformationModel tenantInformation, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
             var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
@@ -133,7 +135,7 @@ namespace Api.Modules.Files.Controllers
             //Set the sub domain for the database connection.
             HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
-            var imageResult = await filesService.GetAsync(itemId, fileId, dummyClaimsIdentity, itemLinkId, entityType, linkType);
+            var imageResult = await filesService.GetAsync(itemId, fileId, dummyClaimsIdentity, itemLinkId, entityType, linkType, propertyName);
             var result = imageResult.GetHttpResponseMessage();
             if (imageResult.StatusCode != HttpStatusCode.OK)
             {

@@ -110,7 +110,6 @@ namespace Api.Modules.Files.Services
             try
             {
                 await databaseConnection.EnsureOpenConnectionForReadingAsync();
-
                 var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
                 if (!success)
                 {
@@ -384,7 +383,7 @@ SELECT LAST_INSERT_ID() AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null)
         {
             if (String.IsNullOrWhiteSpace(encryptedItemId))
             {
@@ -396,20 +395,32 @@ SELECT LAST_INSERT_ID() AS newId;";
                 itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             }
 
-            if (fileId <= 0)
+            if (fileId <= 0 && String.IsNullOrEmpty(propertyName))
             {
-                throw new ArgumentException("Image ID must be greater than zero.");
+                throw new ArgumentException("Image ID must be greater than zero or property name must be given.");
             }
 
             var tablePrefix = itemLinkId > 0
                 ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
                 : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE id = ?imageId";
-
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
-            databaseConnection.AddParameter("imageId", fileId);
+
+            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE [wherePart]";
+
+            if (fileId > 0)
+            {
+                query = query.Replace("[wherePart]", "id = ?imageId");
+                databaseConnection.AddParameter("imageId", fileId);
+            }
+            else
+            {
+                query = query.Replace("[wherePart]", "item_id = ?itemId AND property_name = ?propertyName");
+                databaseConnection.AddParameter("itemId", itemId);    
+                databaseConnection.AddParameter("propertyName", propertyName);
+            }
+
             var dataTable = await databaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
@@ -423,7 +434,7 @@ SELECT LAST_INSERT_ID() AS newId;";
 
             var contentUrl = dataTable.Rows[0].Field<string>("content_url");
             var contentType = dataTable.Rows[0].Field<string>("content_type");
-            var propertyName = dataTable.Rows[0].Field<string>("property_name");
+            propertyName = dataTable.Rows[0].Field<string>("property_name");
             byte[] data = null;
             if (!dataTable.Rows[0].IsNull("content"))
             {
