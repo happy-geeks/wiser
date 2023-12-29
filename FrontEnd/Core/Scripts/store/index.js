@@ -45,6 +45,7 @@ import {
     MODULES_LOADED,
     MODULES_REQUEST,
     OPEN_MODULE,
+    RESET_BRANCH_CHANGES,
     RESET_PASSWORD_ERROR,
     RESET_PASSWORD_SUCCESS,
     SET_ACTIVE_TIMER_INTERVAL,
@@ -785,7 +786,10 @@ const branchesModule = {
         branches: [],
         entities: [],
         isMainBranch: false,
-        branchChanges: {},
+        branchChanges: {
+            entities: [],
+            settings: []
+        },
         branchChangesLoaded: false,
         mergeBranchError: null,
         mergeBranchResult: null,
@@ -829,6 +833,14 @@ const branchesModule = {
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
             state.branchChangesLoaded = true;
+        },
+
+        [RESET_BRANCH_CHANGES](state, branchChanges) {
+            state.branchChanges = {
+                entities: [],
+                settings: []
+            };
+            state.branchChangesLoaded = false;
         },
 
         [HANDLE_CONFLICT](state, { acceptChange, id }) {
@@ -1036,6 +1048,10 @@ const branchesModule = {
             commit(GET_BRANCH_CHANGES, changesResponse.data);
             commit(MERGE_BRANCH_SUCCESS, null);
             commit(END_REQUEST);
+        },
+
+        async [RESET_BRANCH_CHANGES]({ commit }) {
+            commit(RESET_BRANCH_CHANGES);
         },
 
         [HANDLE_CONFLICT]({ commit }, payload) {
