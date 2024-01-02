@@ -36,9 +36,9 @@ import {
     GENERATE_TOTP_BACKUP_CODES,
     GET_BRANCH_CHANGES,
     GET_BRANCHES,
-    GET_TENANT_TITLE,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
@@ -46,6 +46,7 @@ import {
     MERGE_BRANCH,
     MODULES_REQUEST,
     OPEN_MODULE,
+    RESET_BRANCH_CHANGES,
     TOGGLE_PIN_MODULE,
     UPDATE_ACTIVE_TIME,
     USER_BACKUP_CODES_GENERATED
@@ -270,6 +271,7 @@ class Main {
                                 delete: false
                             }
                         },
+                        checkForConflicts: true,
                         conflicts: []
                     },
                     branchActions: [
@@ -389,6 +391,9 @@ class Main {
                 },
                 branchChanges() {
                     return this.$store.state.branches.branchChanges;
+                },
+                branchChangesLoaded() {
+                    return this.$store.state.branches.branchChangesLoaded;
                 },
                 totalAmountOfItemsCreated() {
                     return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
@@ -908,6 +913,22 @@ class Main {
                     }
                 },
 
+                addMissingBranchChanges() {
+                    for (let entityOrSettingType of this.branchChanges.entities) {
+                        const key = entityOrSettingType.entityType;
+                        if (this.branchMergeSettings.entities[key]) {
+                            continue;
+                        }
+
+                        this.branchMergeSettings.entities[key] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+                },
+
                 async clearWebsiteCache() {
                     if (!this.clearCacheSettings.url || this.clearCacheSettings.url.length < 5) {
                         await this.$store.dispatch(CLEAR_CACHE_ERROR, "Vul a.u.b. een geldige URL in.");
@@ -1008,6 +1029,8 @@ class Main {
                 },
 
                 async onWiserMergeBranchPromptOpen(sender) {
+                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
                         this.onSelectedBranchChange(this.branches[0].id);
@@ -1051,12 +1074,28 @@ class Main {
                         selectedBranchId = event.target.value.id;
                     }
 
-                    await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
+                    for (let entity of this.entitiesForBranches) {
+                        this.branchMergeSettings.entities[entity.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+
+                    this.$store.dispatch(RESET_BRANCH_CHANGES);
 
                     // Clear all checkboxes.
                     this.branchMergeSettings.entities.all.everything = false;
-                    this.branchMergeSettings.settings.all.everything = false;
                     this.updateBranchChangeList(false, "entities", "all", "everything");
+                },
+
+                async countBranchChanges() {
+                    await this.$store.dispatch(GET_BRANCH_CHANGES, this.branchMergeSettings.selectedBranch.id);
+
+                    // Clear all checkboxes.
+                    this.addMissingBranchChanges();
+                    this.branchMergeSettings.settings.all.everything = false;
                     this.updateBranchChangeList(false, "settings", "all", "everything");
                 },
 

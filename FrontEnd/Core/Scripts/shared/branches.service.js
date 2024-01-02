@@ -116,6 +116,7 @@ export default class BranchesService extends BaseService {
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
                 settings: [],
+                checkForConflicts: data.checkForConflicts,
                 conflictSettings: data.conflicts.map(conflict => {
                     return {
                         id: conflict.id,
