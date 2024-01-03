@@ -24,7 +24,8 @@
     
     <div id="actionsTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}
+            @* This is currently commented out since the actions tab is not working yet *@
+            @* @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");} *@
         </div>
     </div>
     
@@ -249,17 +250,7 @@
             {
                 if (data is IList list)
                 {
-                    // Only send the data if the attribute is a dropdownlist since we need to populate the dropdownlist with all its options
-                    if (attributes?.KendoComponent == KendoComponents.DropDownList)
-                    {
-                        // Get property value of the first item in the list
-                        var value = list[0]?.GetType().GetProperty(property.Name)?.GetValue(list[0], null);
-                        RenderProperty(value, property, attributes, null, tab, trace);
-                    }
-                    else
-                    {
-                        RenderProperty(null, property, attributes, null, tab, trace);
-                    }
+                    RenderProperty(null, property, attributes, null, tab, trace);
                 }
                 else
                 {
@@ -309,11 +300,8 @@
             {
                 if (data is IList list)
                 {
-                    // Get property value of the first item in the list
-                    // TODO: See if sending this value is useless or not
-                    var value = list?[0]?.GetType().GetProperty(property.Name);
                     // Since data is a list, we should let the function know that we shouldn't fill any data
-                    RenderProperties(value, property.PropertyType, tab, false, trace + $"/{property?.Name}");
+                    RenderProperties(null, property.PropertyType, tab, false, trace + $"/{property?.Name}");
                 }
                 else
                 {
