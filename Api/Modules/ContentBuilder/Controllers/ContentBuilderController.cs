@@ -7,7 +7,7 @@ using Api.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Api.Modules.ContentBuilder.Interfaces;
 using Api.Modules.ContentBuilder.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -109,18 +109,18 @@ namespace Api.Modules.ContentBuilder.Controllers
         [Route("template.js")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/javascript")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetTemplateJavascriptFileAsync([FromQuery] CustomerInformationModel customerInformation)
+        public async Task<IActionResult> GetTemplateJavascriptFileAsync([FromQuery] TenantInformationModel tenantInformation)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
-            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+            var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
+                new Claim(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
             };
             var dummyClaimsIdentity = new ClaimsIdentity(claims);
             //Set the sub domain for the database connection.
-            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
+            HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
             
             return (await contentBuilderService.GetTemplateJavascriptFileAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/javascript");
         }

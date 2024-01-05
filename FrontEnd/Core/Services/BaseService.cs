@@ -38,7 +38,7 @@ namespace FrontEnd.Core.Services
             var result = "";
             if (requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
             {
-                // E.g.: customername.localhost
+                // E.g.: tenantname.localhost
                 var lastDotIndex = requestUrl.Host.LastIndexOf('.');
                 result = requestUrl.Host[..lastDotIndex];
             }

@@ -5,7 +5,7 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
@@ -52,31 +52,31 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the customer's website.
+        /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the tenant's website.
         /// </summary>
         /// <returns>A string that contains the CSS that should be loaded in the HTML editor.</returns>
         [HttpGet]
         [Route("css-for-html-editors")]
         [ProducesResponseType(typeof(Dictionary<string, string>), StatusCodes.Status200OK)]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCssForHtmlEditorsAsync([FromQuery] CustomerInformationModel customerInformation)
+        public async Task<IActionResult> GetCssForHtmlEditorsAsync([FromQuery] TenantInformationModel tenantInformation)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
-            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+            var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
+                new Claim(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
             };
             var dummyClaimsIdentity = new ClaimsIdentity(claims);
             //Set the sub domain for the database connection.
-            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
+            HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
             return (await templatesService.GetCssForHtmlEditorsAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/css");
         }
 
         /// <summary>
-        /// Gets a query from the wiser database and executes it in the customer database.
+        /// Gets a query from the wiser database and executes it in the tenant database.
         /// </summary>
         /// <param name="templateName">The encrypted name of the wiser template.</param>f
         [HttpGet]
@@ -112,13 +112,15 @@ namespace Api.Modules.Templates.Controllers
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
+        /// <param name="pageNumber">page that needs to be loaded in</param>
+        /// <param name="itemsPerPage">amount of items per page</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
         [HttpGet]
         [Route("{templateId:int}/history")]
         [ProducesResponseType(typeof(TemplateHistoryOverviewModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetHistoryAsync(int templateId)
+        public async Task<IActionResult> GetHistoryAsync(int templateId, int pageNumber = 1, int itemsPerPage = 50)
         {
-            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }
 
         /// <summary>

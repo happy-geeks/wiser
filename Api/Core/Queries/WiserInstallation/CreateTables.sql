@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `dedicated_table_prefix` varchar(25) NOT NULL DEFAULT '',
   `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
-  `store_type` enum('table','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'normal',
+  `store_type` enum('table','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'table',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
@@ -241,7 +241,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail_archive`  (
 -- Table structure for wiser_itemfile
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
   `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `content` longblob NULL,
@@ -426,6 +426,7 @@ CREATE TABLE IF NOT EXISTS `wiser_query`  (
   `description` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `query` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `show_in_export_module` tinyint(1) NOT NULL DEFAULT 0,
+  `show_in_communication_module` tinyint(1) NOT NULL DEFAULT 0,
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
@@ -435,9 +436,11 @@ CREATE TABLE IF NOT EXISTS `wiser_query`  (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_styled_output`  (
     `id` int NOT NULL,
+    `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
     `format_begin` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `format_item` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `format_end` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `format_empty` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `query_id` int NULL DEFAULT NULL,
     `return_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
     PRIMARY KEY (`id`) USING BTREE
@@ -676,6 +679,8 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `template_type` int NOT NULL,
    `version` mediumint NOT NULL,
    `template_id` int NOT NULL,
+   `added_on` datetime NULL DEFAULT NULL,
+   `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
    `changed_on` datetime NULL DEFAULT NULL,
    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
    `published_environment` tinyint NOT NULL DEFAULT 0,
@@ -718,6 +723,7 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `is_partial` tinyint(1) NOT NULL DEFAULT 0,
    `widget_content` mediumtext,
    `widget_location` tinyint(4) NOT NULL DEFAULT 1,
+   `is_dirty` tinyint(1) NOT NULL DEFAULT 0,
    PRIMARY KEY (`id`) USING BTREE,
    UNIQUE INDEX `idx_unique`(`template_id` ASC, `version` ASC) USING BTREE,
    INDEX `idx_removed`(`removed` ASC) USING BTREE,
@@ -780,10 +786,13 @@ CREATE TABLE IF NOT EXISTS `wiser_dynamic_content`  (
     `component_mode` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     `version` mediumint NOT NULL DEFAULT 0,
     `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `added_on` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
     `changed_on` datetime NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
     `published_environment` tinyint NOT NULL DEFAULT 0,
     `removed` tinyint NOT NULL DEFAULT 0,
+    `is_dirty` tinyint(1) NOT NULL DEFAULT 0,
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `idx_unique`(`content_id` ASC, `version` ASC) USING BTREE,
     INDEX `content_id`(`content_id` ASC) USING BTREE,

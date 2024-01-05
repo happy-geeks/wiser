@@ -44,8 +44,8 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// </summary>
         /// <param name="templateId">The template ID.</param>
         /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
-        /// <returns>The ID, version number and published environment of the template.</returns>
-        Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null);
+        /// <returns>The ID, version number, published environment of the template and if it is removed.</returns>
+        Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null);
 
         /// <summary>
         /// Publish the template to an environment. This method will execute the publish model instructions it receives, logic for publishing linked environments should be handled in the servicelayer.

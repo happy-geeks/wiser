@@ -4,11 +4,12 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
@@ -33,7 +34,7 @@ namespace Api.Modules.Modules.Services
     /// </summary>
     public class ModulesService : IModulesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IJsonService jsonService;
@@ -44,20 +45,22 @@ namespace Api.Modules.Modules.Services
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
         private readonly IDatabaseHelpersService databaseHelpersService;
-
+        private readonly ICsvService csvService;
+        
         private const string DefaultModulesGroupName = "Overig";
         private const string PinnedModulesGroupName = "Vastgepind";
 
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
         /// </summary>
-        public ModulesService(IWiserCustomersService wiserCustomersService, IGridsService gridsService,
+        public ModulesService(IWiserTenantsService wiserTenantsService, IGridsService gridsService,
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
-            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService)
+            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
+            ICsvService csvService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.gridsService = gridsService;
             this.wiserItemsService = wiserItemsService;
             this.jsonService = jsonService;
@@ -67,6 +70,7 @@ namespace Api.Modules.Modules.Services
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
             this.databaseHelpersService = databaseHelpersService;
+            this.csvService = csvService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
 
@@ -128,11 +132,12 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserQuery,
                 WiserTableNames.WiserPermission,
                 WiserTableNames.WiserCommunication,
+                WiserTableNames.WiserStyledOutput,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
 
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 1, 3))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 12, 14))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -328,7 +333,7 @@ UNION
                 results[groupName].Add(rightsModel);
             }
 
-            // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this customer.
+            // Make sure that we add certain modules for admins, even if those modules don't exist in wiser_module for this tenant.
             if (isAdminAccount)
             {
                 foreach (var moduleId in modulesForAdmins.Where(moduleId => !results.Any(g => g.Value.Any(m => m.ModuleId == moduleId))))
@@ -631,8 +636,8 @@ UNION
         /// <inheritdoc />
         public async Task<ServiceResult<ModuleSettingsModel>> GetSettingsAsync(int id, ClaimsIdentity identity, bool encryptValues = true)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             var result = new ModuleSettingsModel {Id = id};
 
@@ -706,7 +711,7 @@ SELECT @newID;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> ExportAsync(int id, ClaimsIdentity identity)
+        public async Task<ServiceResult<byte[]>> ExportToExcelAsync(int id, ClaimsIdentity identity)
         {
             var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
             if (gridResult.StatusCode != HttpStatusCode.OK)
@@ -738,6 +743,43 @@ SELECT @newID;";
             }
 
             var result = excelService.JsonArrayToExcel(newData);
+            return new ServiceResult<byte[]>(result);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator)
+        {
+            var gridResult = await gridsService.GetOverviewGridDataAsync(id, new GridReadOptionsModel(), identity, true);
+            if (gridResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<byte[]>
+                {
+                    ErrorMessage = gridResult.ErrorMessage,
+                    StatusCode = gridResult.StatusCode
+                };
+            }
+            
+            var newData = new JArray();
+            var data = gridResult.ModelObject.Data;
+            var columns = gridResult.ModelObject.Columns;
+            foreach (var item in data)
+            {
+                var newObject = new JObject();
+                foreach (var column in columns)
+                {
+                    if (String.IsNullOrWhiteSpace(column.Field))
+                    {
+                        continue;
+                    }
+
+                    newObject.Add(new JProperty(column.Title, item[column.Field.ToLowerInvariant()]));
+                }
+
+                newData.Add(newObject);
+            }
+
+            var csvString = csvService.JsonArrayToCsv(newData);
+            var result = Encoding.UTF8.GetBytes(csvString);
             return new ServiceResult<byte[]>(result);
         }
 
@@ -781,7 +823,6 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);
-            clientDatabaseConnection.AddParameter("new_id", moduleSettingsModel.Id);
             clientDatabaseConnection.AddParameter("custom_query", moduleSettingsModel.CustomQuery);
             clientDatabaseConnection.AddParameter("count_query", moduleSettingsModel.CountQuery);
             clientDatabaseConnection.AddParameter("options", moduleSettingsModel.Options.ToString());
@@ -791,8 +832,7 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE module_id = ?id;";
             clientDatabaseConnection.AddParameter("group", moduleSettingsModel.Group);
 
             var query = $@"UPDATE {WiserTableNames.WiserModule}
-SET `id` = ?new_id,
-    `custom_query` = ?custom_query,
+SET `custom_query` = ?custom_query,
     `count_query` = ?count_query,
     `options` = IF(?options != '' AND ?options IS NOT NULL AND JSON_VALID(?options), ?options, ''),
     `name` = ?name,

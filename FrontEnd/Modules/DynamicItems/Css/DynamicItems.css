@@ -23,6 +23,10 @@ dd {
     margin-bottom: 10px;
 }
 
+.dependency-hidden {
+    display: none;
+}
+
 .k-dialog #changeImageDataDialog,
 .k-dialog #dataSelectorTemplateDialog,
 .k-dialog #youTubeDialog,
@@ -315,6 +319,7 @@ body.iframe .editMenu {
     line-height: 38px;
     color: var(--dark-txt);
     margin-left: auto;
+    margin-right: 10px;
     order: 2;
 }
 

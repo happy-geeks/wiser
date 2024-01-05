@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 
 namespace Api.Core.Models
 {
@@ -35,7 +35,7 @@ namespace Api.Core.Models
         public List<string> JsonPropertiesToAlwaysEncrypt { get; set; }
 
         /// <summary>
-        /// The amount of time to cache results from functions of <see cref="IUsersService"/> and <see cref="IWiserCustomersService"/>.
+        /// The amount of time to cache results from functions of <see cref="IUsersService"/> and <see cref="IWiserTenantService"/>.
         /// </summary>
         public TimeSpan DefaultUsersCacheDuration { get; set; } = new(1, 0, 0);
 
@@ -79,5 +79,10 @@ namespace Api.Core.Models
         /// Gets or sets the settings for Google authentication.
         /// </summary>
         public GoogleAuthenticationSettings GoogleAuthentication { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the directory where the plugins are located.
+        /// </summary>
+        public string PluginsDirectory { get; set; }
     }
 }

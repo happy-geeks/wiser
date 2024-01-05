@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -28,17 +28,17 @@ namespace Api.Modules.Templates.Services
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryService historyService;
         private readonly IBranchesService branchesService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="DynamicContentService"/>.
         /// </summary>
-        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService, IBranchesService branchesService, IWiserCustomersService wiserCustomersService)
+        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService, IBranchesService branchesService, IWiserTenantsService wiserTenantsService)
         {
             this.dataService = dataService;
             this.historyService = historyService;
             this.branchesService = branchesService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
         }
 
         /// <inheritdoc />
@@ -178,7 +178,7 @@ namespace Api.Modules.Templates.Services
             if (versionBeingDeployed > 0)
             {
                 var latestVersion = await dataService.GetLatestVersionAsync(contentId);
-                if (versionBeingDeployed != latestVersion.Version)
+                if (versionBeingDeployed != latestVersion.Version || latestVersion.Removed)
                 {
                     return new ServiceResult<int>(0);
                 }
@@ -277,13 +277,13 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteAsync(int contentId)
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int contentId)
         {
             if (contentId <= 0)
             {
                 throw new ArgumentException("The Id is invalid");
             }
-            await dataService.DeleteAsync(contentId);
+            await dataService.DeleteAsync(IdentityHelpers.GetUserName(identity, true), contentId);
             return new ServiceResult<bool>(true);
         }
 
@@ -314,7 +314,7 @@ namespace Api.Modules.Templates.Services
             }
 
             // Check if the branch exists.
-            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            var branchToDeploy = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
             if (branchToDeploy == null)
             {
                 return new ServiceResult<bool>

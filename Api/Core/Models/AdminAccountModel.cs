@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
-using Api.Modules.Customers.Models;
+using Api.Modules.Tenants.Models;
 using Newtonsoft.Json;
 
 namespace Api.Core.Models

@@ -309,6 +309,13 @@ export class Grids {
                     text: "",
                     template: `<div class="counterContainer"><span class="counter">0</span> <span class="plural">resultaten</span><span class="singular" style="display: none;">resultaat</span></div>`
                 });
+            } else {
+                toolbar.push({
+                    name: "whitespace",
+                    iconClass: "",
+                    text: "",
+                    template: `<div class="counterContainer"></div>`
+                });
             }
 
             if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideExportButton) {
@@ -1504,6 +1511,8 @@ export class Grids {
         }
 
         grid.dataSource.filter({});
+        // manually trigger the filter event to save the state because the above call doesn't do so
+        grid.trigger("filter", { filter: null, field: null });
     }
 
     /**

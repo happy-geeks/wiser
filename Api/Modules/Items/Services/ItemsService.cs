@@ -14,7 +14,6 @@ using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
 using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityTypes.Models;
@@ -22,6 +21,7 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Exceptions;
@@ -49,7 +49,7 @@ namespace Api.Modules.Items.Services
     public class ItemsService : IItemsService, IScopedService
     {
         private readonly Templates.Interfaces.ITemplatesService templatesService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IWiserItemsService wiserItemsService;
@@ -68,7 +68,7 @@ namespace Api.Modules.Items.Services
         /// Creates a new instance of <see cref="ItemsService"/>.
         /// </summary>
         public ItemsService(Templates.Interfaces.ITemplatesService templatesService,
-                            IWiserCustomersService wiserCustomersService,
+                            IWiserTenantsService wiserTenantsService,
                             IDatabaseConnection clientDatabaseConnection,
                             IHttpContextAccessor httpContextAccessor,
                             IWiserItemsService wiserItemsService,
@@ -84,7 +84,7 @@ namespace Api.Modules.Items.Services
                             IObjectsService objectsService)
         {
             this.templatesService = templatesService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.httpContextAccessor = httpContextAccessor;
             this.wiserItemsService = wiserItemsService;
@@ -314,11 +314,11 @@ namespace Api.Modules.Items.Services
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
-            var parentId = await wiserCustomersService.DecryptValue<ulong>(encryptedParentId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+            var parentId = await wiserTenantsService.DecryptValue<ulong>(encryptedParentId, identity);
             var username = IdentityHelpers.GetUserName(identity, true);
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             WiserItemDuplicationResultModel result;
             try
@@ -350,7 +350,7 @@ namespace Api.Modules.Items.Services
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
                 await clientDatabaseConnection.BeginTransactionAsync();
 
-                var originalItemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var originalItemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
                 var item = await wiserItemsService.GetItemDetailsAsync(originalItemId);
 
                 if (item == null || item.Id == 0)
@@ -384,8 +384,8 @@ namespace Api.Modules.Items.Services
 
                 var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(item.EntityType);
                 var username = IdentityHelpers.GetUserName(identity, true);
-                var customer = await wiserCustomersService.GetSingleAsync(identity);
-                var encryptionKey = customer.ModelObject.EncryptionKey;
+                var tenant = await wiserTenantsService.GetSingleAsync(identity);
+                var encryptionKey = tenant.ModelObject.EncryptionKey;
                 var allLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
 
                 var query = $@"SELECT other.id, current.original_item_id, other.published_environment
@@ -621,7 +621,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
-                var originalItemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var originalItemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
                 var userId = IdentityHelpers.GetWiserUserId(identity);
                 var username = IdentityHelpers.GetUserName(identity, true);
                 var item = await wiserItemsService.GetItemDetailsAsync(originalItemId, entityType: entityType, userId: userId);
@@ -654,22 +654,43 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity, true);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             ulong parentId = 0;
             if (!String.IsNullOrWhiteSpace(encryptedParentId))
             {
-                parentId = await wiserCustomersService.DecryptValue<ulong>(encryptedParentId, identity);
+                parentId = await wiserTenantsService.DecryptValue<ulong>(encryptedParentId, identity);
             }
 
             var result = new CreateItemResultModel();
-            WiserItemModel newItem;
             try
             {
-                newItem = await wiserItemsService.CreateAsync(item, parentId, linkType, userId, username, encryptionKey);
+                await clientDatabaseConnection.BeginTransactionAsync();
+
+                //Create the new item (with the link)
+                var newItem = await wiserItemsService.CreateAsync(item, parentId ,userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber:linkType);
+                
+                result.NewItemId = newItem.EncryptedId;
+                result.NewItemIdPlain = newItem.Id;
+
+                clientDatabaseConnection.AddParameter("entityType", newItem.EntityType);
+                var dataTable = await clientDatabaseConnection.GetAsync($"SELECT icon FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
+                if (dataTable.Rows.Count > 0)
+                {
+                    result.Icon = dataTable.Rows[0].Field<string>("icon");
+                }
+
+                if (newItem.Details != null && newItem.Details.Any())
+                {
+                    // Note: skipPermissionsCheck is set to true here, because otherwise the update permissions will be checked,
+                    // but this is for creating an item and those permissions are already checked in the CreateAsync method that we call above.
+                    await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
+                }
+
+                await clientDatabaseConnection.CommitTransactionAsync(false);
             }
             catch (InvalidAccessPermissionsException exception)
             {
@@ -679,17 +700,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
-
-            var dataTable = await clientDatabaseConnection.GetAsync("SELECT LAST_INSERT_ID();");
-            result.NewLinkId = Convert.ToUInt64(dataTable.Rows[0][0]);
-            result.NewItemId = newItem.EncryptedId;
-            result.NewItemIdPlain = newItem.Id;
-
-            clientDatabaseConnection.AddParameter("entityType", newItem.EntityType);
-            dataTable = await clientDatabaseConnection.GetAsync($"SELECT icon FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
-            if (dataTable.Rows.Count > 0)
+            catch
             {
-                result.Icon = dataTable.Rows[0].Field<string>("icon");
+                await clientDatabaseConnection.RollbackTransactionAsync(false);
+                throw;
             }
 
             return new ServiceResult<CreateItemResultModel>(result);
@@ -706,7 +720,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity, true);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
                 return new ServiceResult<WiserItemModel>
@@ -716,8 +730,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 };
             }
 
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             try
             {
@@ -754,7 +768,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity, true);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
                 throw new ArgumentException("Id must be greater than zero.");
@@ -798,7 +812,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity, true);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             if (itemId <= 0)
             {
                 throw new ArgumentException("Id must be greater than zero.");
@@ -898,8 +912,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             var username = IdentityHelpers.GetUserName(identity, true);
             var userEmailAddress = IdentityHelpers.GetEmailAddress(identity);
             var userType = IdentityHelpers.GetRoles(identity);
-            var queryId = await wiserCustomersService.DecryptValue<int>(encryptedQueryId, identity);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var queryId = await wiserTenantsService.DecryptValue<int>(encryptedQueryId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
 
             var customQueryResult = await GetCustomQueryAsync(propertyId, queryId, identity);
             if (customQueryResult.StatusCode != HttpStatusCode.OK)
@@ -959,6 +973,9 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 break;
                             case decimal decimalValue:
                                 value = decimalValue.ToString(new CultureInfo("en-US"));
+                                break;
+                            case JArray jArrayValue:
+                                value = String.Join(",", jArrayValue.Values<string>());
                                 break;
                             default:
                                 value = parameter.Value.ToString().ToMySqlSafeValue(false);
@@ -1020,7 +1037,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     itemIdResult = dataTable.Rows[0]["itemId"].ToString();
                     if (Int32.TryParse(itemIdResult, out var parsedItemId))
                     {
-                        itemIdResult = await wiserCustomersService.EncryptValue(parsedItemId, identity);
+                        itemIdResult = await wiserTenantsService.EncryptValue(parsedItemId, identity);
                     }
                 }
                 if (dataTable.Columns.Contains("linkId") && !dataTable.Rows[0].IsNull("linkId"))
@@ -1038,8 +1055,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                 if (dataTable.Rows.Count > 0)
                 {
-                    var customer = await wiserCustomersService.GetSingleAsync(identity);
-                    var encryptionKey = customer.ModelObject.EncryptionKey;
+                    var tenant = await wiserTenantsService.GetSingleAsync(identity);
+                    var encryptionKey = tenant.ModelObject.EncryptionKey;
                     otherData = dataTable.ToJsonArray(encryptionKey, allowValueDecryption: true);
                 }
             }
@@ -1059,7 +1076,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         {
             var results = new ItemHtmlAndScriptModel();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
 
             if (itemId == 0)
             {
@@ -1195,8 +1212,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 results.CanDelete = false;
             }
 
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             var dataRows = dataTable.Rows;
             var fieldTemplates = new Dictionary<string, string>();
@@ -1441,7 +1458,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                     case "qr":
                         {
-                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue("0", identity), identity, userId);
+                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserTenantsService.EncryptValue("0", identity), identity, userId);
                             var property = (JProperty)customQueryResult?.ModelObject?.OtherData?.FirstOrDefault()?.FirstOrDefault();
                             if (!String.IsNullOrWhiteSpace(property?.Name))
                             {
@@ -1480,7 +1497,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                 queryId = queryIdValue.Value<string>();
                             }
 
-                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserCustomersService.EncryptValue(queryId, identity), identity, userId);
+                            var customQueryResult = await ExecuteCustomQueryAsync(encryptedId, propertyId, new Dictionary<string, object>(), await wiserTenantsService.EncryptValue(queryId, identity), identity, userId);
                             if (customQueryResult.ModelObject is not { Success: true })
                             {
                                 break;
@@ -1691,7 +1708,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
 
             // If the user is not allowed to read this item, return an empty result.
@@ -1703,7 +1720,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             var result = await wiserItemsService.GetItemDetailsAsync(itemId, entityType: entityType, skipPermissionsCheck: true);
             if (result != null)
             {
-                result.EncryptedId = await wiserCustomersService.EncryptValue(result.Id, identity);
+                result.EncryptedId = await wiserTenantsService.EncryptValue(result.Id, identity);
             }
 
             return new ServiceResult<WiserItemModel>(result);
@@ -1714,7 +1731,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
 
             // First check if the user is allowed to access the main item.
             var (success, _, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
@@ -1731,7 +1748,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             foreach (var item in result)
             {
-                item.EncryptedId = await wiserCustomersService.EncryptValue(item.Id, identity);
+                item.EncryptedId = await wiserTenantsService.EncryptValue(item.Id, identity);
             }
 
             return new ServiceResult<List<WiserItemModel>>(result);
@@ -1743,7 +1760,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             var (success, _, userItemPermissions) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Read, userId, onlyCheckAccessRights: true, entityType: entityType);
 
             // If the user is not allowed to read this item, return an empty result.
@@ -1813,7 +1830,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
             result.Id = itemId;
             result.EncryptedId = encryptedId;
-            result.OriginalItemId = await wiserCustomersService.EncryptValue(Convert.ToString(dataTable.Rows[0]["original_item_id"]), identity);
+            result.OriginalItemId = await wiserTenantsService.EncryptValue(Convert.ToString(dataTable.Rows[0]["original_item_id"]), identity);
             result.EntityType = dataTable.Rows[0].Field<string>("entity_type");
             result.UniqueUuid = dataTable.Rows[0].Field<string>("unique_uuid");
             result.PublishedEnvironment = dataTable.Rows[0].Field<int>("published_environment");
@@ -1875,8 +1892,8 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetEncryptedIdAsync(ulong itemId, ClaimsIdentity identity)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
             return new ServiceResult<string>(itemId.ToString().EncryptWithAesWithSalt(encryptionKey, true));
         }
 
@@ -1949,8 +1966,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> FixTreeViewOrderingAsync(int moduleId, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserTenantsService.DecryptValue<ulong>(encryptedParentId, tenant);
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
@@ -2032,7 +2049,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null)
+        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null, int linkType = 0)
         {
             if (moduleId <= 0)
             {
@@ -2045,11 +2062,11 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
 
             await FixTreeViewOrderingAsync(moduleId, identity, encryptedParentId);
 
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedParentId, customer);
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            var parentId = String.IsNullOrWhiteSpace(encryptedParentId) ? 0 : wiserTenantsService.DecryptValue<ulong>(encryptedParentId, tenant);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var results = new List<TreeViewItemModel>();
-            var checkId = String.IsNullOrWhiteSpace(encryptedCheckId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedCheckId, customer);
+            var checkId = String.IsNullOrWhiteSpace(encryptedCheckId) ? 0 : wiserTenantsService.DecryptValue<ulong>(encryptedCheckId, tenant);
 
             var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
             var linkTypesToHideFromTreeView = allLinkTypeSettings.Where(x => !x.ShowInTreeView).Select(x => x.Type).ToList();
@@ -2078,14 +2095,14 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                     Title = dataRow.Field<string>("name"),
                     AcceptedChildTypes = dataRow.Field<string>("accepted_childtypes"),
                     CollapsedSpriteCssClass = dataRow.Field<string>("icon"),
-                    EncryptedItemId = wiserCustomersService.EncryptValue(itemId, customer),
-                    EncryptedOriginalItemId = wiserCustomersService.EncryptValue(originalItemId, customer),
+                    EncryptedItemId = wiserTenantsService.EncryptValue(itemId, tenant),
+                    EncryptedOriginalItemId = wiserTenantsService.EncryptValue(originalItemId, tenant),
                     ExpandedSpriteCssClass = dataRow.Field<string>("icon_expanded"),
                     NodeCssClass = dataRow.Field<string>("nodeCssClass"),
                     PlainItemId = itemId,
                     PlainOriginalItemId = originalItemId,
                     OriginalParentId = parentId,
-                    DestinationItemId = wiserCustomersService.EncryptValue(parentId, customer),
+                    DestinationItemId = wiserTenantsService.EncryptValue(parentId, tenant),
                     Checked = Convert.ToInt32(dataRow["checked"]) > 0
                 });
             }
@@ -2112,7 +2129,12 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             if (checkId > 0)
             {
                 checkIdJoin = $@"# Check if item needs to be checked in item-linker field.
-                                    LEFT JOIN {WiserTableNames.WiserItemLink} AS checked ON checked.item_id = item.id AND checked.destination_item_id = ?checkId";
+LEFT JOIN {WiserTableNames.WiserItemLink} AS checked ON checked.item_id = item.id AND checked.destination_item_id = ?checkId";
+                if (linkType > 0)
+                {
+                    clientDatabaseConnection.AddParameter("linkType", linkType);
+                    checkIdJoin += " AND checked.type = ?linkType";
+                }
             }
 
             // Get items via wiser_itemlink.
@@ -2341,11 +2363,11 @@ ORDER BY {orderByClause}";
                 };
             }
 
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            var sourceId = wiserCustomersService.DecryptValue<ulong>(encryptedSourceId, customer);
-            var destinationId = wiserCustomersService.DecryptValue<ulong>(encryptedDestinationId, customer);
-            var sourceParentId = wiserCustomersService.DecryptValue<ulong>(encryptedSourceParentId, customer);
-            var destinationParentId = wiserCustomersService.DecryptValue<ulong>(encryptedDestinationParentId, customer);
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            var sourceId = wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, tenant);
+            var destinationId = wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, tenant);
+            var sourceParentId = wiserTenantsService.DecryptValue<ulong>(encryptedSourceParentId, tenant);
+            var destinationParentId = wiserTenantsService.DecryptValue<ulong>(encryptedDestinationParentId, tenant);
             var userId = IdentityHelpers.GetWiserUserId(identity);
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -2522,9 +2544,9 @@ ORDER BY {orderByClause}";
         public async Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
+            var tenant  = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            var destinationIds = encryptedDestinationIds.Select(x => wiserTenantsService.DecryptValue<ulong>(x, tenant)).ToList();
+            var sourceIds = encryptedSourceIds.Select(x => wiserTenantsService.DecryptValue<ulong>(x, tenant)).ToList();
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
 
@@ -2575,9 +2597,9 @@ ORDER BY {orderByClause}";
         public async Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            var destinationIds = encryptedDestinationIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
-            var sourceIds = encryptedSourceIds.Select(x => wiserCustomersService.DecryptValue<ulong>(x, customer)).ToList();
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            var destinationIds = encryptedDestinationIds.Select(x => wiserTenantsService.DecryptValue<ulong>(x, tenant)).ToList();
+            var sourceIds = encryptedSourceIds.Select(x => wiserTenantsService.DecryptValue<ulong>(x, tenant)).ToList();
             var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
             var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
 
@@ -2631,11 +2653,11 @@ ORDER BY {orderByClause}";
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             var username = IdentityHelpers.GetUserName(identity, true);
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
 
             try
             {
@@ -2762,6 +2784,86 @@ ORDER BY {orderByClause}";
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            var searchFields = String.IsNullOrWhiteSpace(data.SearchFields) ? new List<string>() : data.SearchFields.Split(',').ToList();
+            var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(data.EntityType);
+            clientDatabaseConnection.AddParameter("parentId", parentId);
+            clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+            clientDatabaseConnection.AddParameter("searchValue", data.SearchValue);
+            clientDatabaseConnection.AddParameter("searchInTitle", data.SearchInTitle);
+            clientDatabaseConnection.AddParameter("searchEverywhere", data.SearchEverywhere);
+            clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
+            clientDatabaseConnection.AddParameter("hasSearchFields", searchFields.Any());
+
+            var searchQueryPart = new StringBuilder();
+            if (!String.IsNullOrWhiteSpace(data.SearchValue))
+            {
+                if (searchFields.Any())
+                {
+                    searchQueryPart.AppendLine($"(detail.key IN (${String.Join(",", searchFields.Select(f => f.ToMySqlSafeValue(true)))}) AND detail.value LIKE CONCAT('%', ?searchValue, '%'))");
+                }
+
+                if (data.SearchInTitle)
+                {
+                    if (searchFields.Any())
+                    {
+                        searchQueryPart.Append("OR ");
+                    }
+
+                    searchQueryPart.AppendLine("item.title LIKE CONCAT('%', ?searchValue, '%')");
+                }
+            }
+
+            if (searchQueryPart.Length > 0)
+            {
+                searchQueryPart.Insert(0, "AND (");
+                searchQueryPart.AppendLine(")");
+            }
+
+            var query = $@"SELECT 
+	item.id,
+	item.title
+FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
+LEFT JOIN {WiserTableNames.WiserItemLink} AS link ON link.destination_item_id = ?parentId AND link.item_id = item.id
+LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS detail ON detail.item_id = item.id
+
+# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+LEFT JOIN {WiserTableNames.WiserUserRoles} AS userRole ON userRole.user_id = ?userId
+LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = userRole.role_id AND permission.item_id = item.id
+
+WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
+AND item.entity_type = ?entityType
+AND (?searchEverywhere = TRUE OR link.id IS NOT NULL)
+{searchQueryPart}
+
+GROUP BY item.id
+ORDER BY link.ordering ASC, item.title ASC";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+            var result = new List<SearchResponseModel>();
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                var searchResult = new SearchResponseModel
+                {
+                    Id = dataRow.Field<ulong>("id"),
+                    Name = dataRow.Field<string>("title")
+                };
+
+                searchResult.EncryptedId = await wiserTenantsService.EncryptValue(searchResult.Id, identity);
+
+                result.Add(searchResult);
+            }
+
+            return new ServiceResult<List<SearchResponseModel>>(result);
         }
 
         /// <summary>

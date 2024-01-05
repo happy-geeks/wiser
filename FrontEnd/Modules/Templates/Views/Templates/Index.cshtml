@@ -64,11 +64,8 @@
             }
 
             <div class="window-content">
-
                 <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
-
                     <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
-
                         @if (Model.TemplateId == 0)
                         {
                             <div id="left-pane" style="background-color: #cccccc;">
@@ -80,7 +77,6 @@
                                 <ul id="treeViewContextMenu"></ul>
                             </div>
                         }
-
 
                         <div id="right-pane" style="background-color: #eeeeee;">
                             <div class="tabstrip k-tabstrip-wrapper">
@@ -102,7 +98,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -113,6 +108,38 @@
     <!-- Window for previewing and editing the HTML source of a kendo HTML editor. -->
     <div id="htmlSourceWindow" class="html-source-window">
         <div class="k-content-frame pane-content">
+            <!-- Item search popup / window -->
+            <div id="historyWindow">
+                <div class="pane-content">
+                    <div class="grid-parent">
+                        <div id="historyWindowGrid"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Item search popup / window -->
+            <div id="searchItemsWindow">
+                <div class="pane-content">
+                    <p><strong>Let op!</strong> Het (de)selecteren van een item in deze lijst wordt direct verwerkt in het systeem.</p>
+                    <div class="grid-parent">
+                        <div id="searchItemsWindowGrid"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- File manager window -->
+            <div id="fileManagerWindow" class="popup-container">
+                <div class="horizontal">
+                    <iframe frameborder="0" id="fileManagerFrame"></iframe>
+
+                    <!-- FIXED FOOTER -->
+                    <footer class="fixed">
+                        <div class="actions">
+                            <button class="k-primary saveButton" name="addFileToEditor">Invoegen</button>
+                        </div>
+                    </footer>
+                </div>
+            </div>
             <textarea class="editor-html"></textarea>
         </div>
         <footer class="fixed clear">

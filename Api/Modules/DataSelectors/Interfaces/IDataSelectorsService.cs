@@ -81,6 +81,14 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         Task<ServiceResult<FileContentResult>> ToPdfAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Get the result of the data selector based on the request as a Csv file.
+        /// </summary>
+        /// <param name="data">The request containing the information for the data selector.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="separator">The character used to</param>
+        Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator = ',');
 
         /// <summary>
         /// Create a file result for the user to download.

@@ -98,7 +98,7 @@ const moduleSettings = {
             
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
             
@@ -191,7 +191,7 @@ const moduleSettings = {
             // Wiser update channel for pusher messages
             const channel = pusher.subscribe("agendering");
 
-            // Generate pusher event for the current logged-in customer
+            // Generate pusher event for the current logged-in tenant
             const eventId = await Wiser.api({ url: `${this.settings.wiserApiRoot}pusher/event-id` });
 
             // User update channel for pusher messages

@@ -10,7 +10,7 @@ import {AUTH_LOGOUT, AUTH_REQUEST} from "../../../Core/Scripts/store/mutation-ty
 import store from "../../../Core/Scripts/store";
 import UsersService from "../../../Core/Scripts/shared/users.service";
 import ModulesService from "../../../Core/Scripts/shared/modules.service";
-import CustomersService from "../../../Core/Scripts/shared/customers.service";
+import TenantsService from "../../../Core/Scripts/shared/tenants.service";
 import ItemsService from "../../../Core/Scripts/shared/items.service";
 import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.service";
 
@@ -22,7 +22,7 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
 
             this.usersService = new UsersService(this);
             this.modulesService = new ModulesService(this);
-            this.customersService = new CustomersService(this);
+            this.tenantsService = new TenantsService(this);
             this.itemsService = new ItemsService(this);
             this.contentBuildersService = new ContentBuildersService(this);
             this.dataSelectorsService = new DataSelectorsService(this);
@@ -105,12 +105,12 @@ import DataSelectorsService from "../../../Core/Scripts/shared/dataSelectors.ser
                     // Get data we need from database.
                     const promises = [];
                     promises.push(main.contentBuildersService.getHtml(this.appSettings.wiserItemId, this.appSettings.languageCode, this.appSettings.propertyName));
-                    promises.push(main.contentBuildersService.getCustomerSnippets());
+                    promises.push(main.contentBuildersService.getTenantSnippets());
                     promises.push(main.contentBuildersService.getTemplateCategories());
                     promises.push(main.contentBuildersService.getFramework());
                     const data = await Promise.all(promises);
                     this.html = data[0].data || "";
-                    const snippetJson = data[1].data.customerSnippets;
+                    const snippetJson = data[1].data.tenantSnippets;
                     const snippetCategories = data[1].data.snippetCategories;
                     const templateCategories = data[2].data;
                     settings.framework = (data[3].data || "").toLowerCase();

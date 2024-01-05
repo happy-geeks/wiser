@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.EntityTypes.Interfaces;
 using Api.Modules.EntityTypes.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -23,7 +23,7 @@ namespace Api.Modules.EntityTypes.Services
     /// <inheritdoc cref="IEntityTypesService" />
     public class EntityTypesService : IEntityTypesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
@@ -31,9 +31,9 @@ namespace Api.Modules.EntityTypes.Services
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesService"/>.
         /// </summary>
-        public EntityTypesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService)
+        public EntityTypesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.databaseHelpersService = databaseHelpersService;
@@ -219,7 +219,7 @@ GROUP BY entity_type";
             }
             else if (!UInt64.TryParse(parentId, out actualParentId))
             {
-                actualParentId = await wiserCustomersService.DecryptValue<ulong>(parentId, identity);
+                actualParentId = await wiserTenantsService.DecryptValue<ulong>(parentId, identity);
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();

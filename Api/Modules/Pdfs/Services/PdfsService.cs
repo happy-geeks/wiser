@@ -4,7 +4,7 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Pdfs.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -21,18 +21,18 @@ namespace Api.Modules.Pdfs.Services
     {
         private readonly IHtmlToPdfConverterService htmlToPdfConverterService;
         private readonly IDatabaseConnection clientDatabaseConnection;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IFilesService filesService;
         private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of <see cref="PdfsService"/>.
         /// </summary>
-        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserCustomersService wiserCustomersService, IFilesService filesService, IWebHostEnvironment webHostEnvironment)
+        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment)
         {
             this.htmlToPdfConverterService = htmlToPdfConverterService;
             this.clientDatabaseConnection = clientDatabaseConnection;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.filesService = filesService;
             this.webHostEnvironment = webHostEnvironment;
         }
@@ -47,7 +47,7 @@ namespace Api.Modules.Pdfs.Services
         /// <inheritdoc />
         public async Task<ServiceResult<string>> SaveHtmlAsPdfAsync(ClaimsIdentity identity, HtmlToPdfRequestModel data)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
             var pdfResult = await ConvertHtmlToPdfAsync(identity, data);
 
             if (data.SaveInDatabase)
@@ -66,7 +66,7 @@ namespace Api.Modules.Pdfs.Services
             }
 
             // Create temporary directory if it doesn't exist yet.
-            var pdfDirectory = Path.Combine(webHostEnvironment.WebRootPath, "/App_Data/temp/", customer.ModelObject.Id.ToString());
+            var pdfDirectory = Path.Combine(webHostEnvironment.WebRootPath, "/App_Data/temp/", tenant.ModelObject.Id.ToString());
             if (!Directory.Exists(pdfDirectory))
             {
                 Directory.CreateDirectory(pdfDirectory);

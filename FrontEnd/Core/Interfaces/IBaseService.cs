@@ -5,7 +5,7 @@ namespace FrontEnd.Core.Interfaces
     public interface IBaseService
     {
         /// <summary>
-        /// Gets the current sub domain. Every customer has their own sub domain for Wiser.
+        /// Gets the current sub domain. Every tenant has their own sub domain for Wiser.
         /// </summary>
         /// <returns>The name of the sub domain.</returns>
         string GetSubDomain();

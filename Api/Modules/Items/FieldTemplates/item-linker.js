@@ -20,10 +20,10 @@ var stopLoader = function(reloadGridWhenDone) {
     if (loadingCount < 0) {
         loadingCount = 0;
     }
-    
+
     if (loadingCount === 0) {
         loader.removeClass("loading");
-    
+
         if (reloadGridWhenDone) {
             checkGridElement.data("kendoGrid").dataSource.read();
         }
@@ -42,7 +42,7 @@ field.find(".filterText").keyup(function (event) {
                 $(this).show();
             });
         });
-        
+
         checkTreeElement.find(".k-group .k-in:contains(" + filterText + ")").each(function () {
             $(this).parents("ul, li").each(function () {
                 $(this).show();
@@ -71,9 +71,9 @@ checkTreeElement.kendoTreeView({
         if (readonly === true) {
             return;
         }
-        
+
         startLoader();
-        
+
         let sourceItem = event.sender.dataItem(event.node);
         let methodName = sourceItem.checked ? "add-links" : "remove-links";
 
@@ -97,9 +97,9 @@ checkTreeElement.kendoTreeView({
         transport: {
             read: (kendoReadOptions) => {
                 Wiser.api({
-                    url: !showStructure 
-                        ? window.dynamicItems.settings.serviceRoot + "/GET_ALL_ITEMS_OF_TYPE?moduleid=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + "&entityType=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())) + "&orderBy=" + encodeURIComponent((options.orderBy || ""))
-                        : window.dynamicItems.settings.wiserApiRoot + "items/tree-view?moduleId=" + options.moduleId + "&checkId=" + encodeURIComponent(currentItemId) + (!options.entityTypes ? "" : ("&entityType=" + encodeURIComponent(options.entityTypes.join()))) + (options.orderBy ? ("&orderBy=" + encodeURIComponent(options.orderBy)) : ""),
+                    url: !showStructure
+                        ? `${window.dynamicItems.settings.serviceRoot}/GET_ALL_ITEMS_OF_TYPE?moduleid=${options.moduleId}&checkId=${encodeURIComponent(currentItemId)}&entityType=${encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join()))}&orderBy=${encodeURIComponent((options.orderBy || ""))}&linkType=${options.linkTypeNumber || 0}`
+                        : `${window.dynamicItems.settings.wiserApiRoot}items/tree-view?moduleId=${options.moduleId}&checkId=${encodeURIComponent(currentItemId)}${!options.entityTypes ? "" : ("&entityType=" + encodeURIComponent(options.entityTypes.join()))}${options.orderBy ? ("&orderBy=" + encodeURIComponent(options.orderBy)) : ""}&linkType=${options.linkTypeNumber || 0}`,
                     dataType: "json",
                     method: "GET",
                     data: kendoReadOptions.data
@@ -163,11 +163,11 @@ Wiser.api({
             columns.push(column);
         }
     }
-    
+
     if (!options.hideCommandColumn) {
         let commandColumnWidth = 60;
         var commands = [];
-        
+
         if (!options.disableOpeningOfItems) {
             commands.push({
                 name: "openDetails",
@@ -187,10 +187,10 @@ Wiser.api({
                 });
             }
         }
-        
+
         if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
             commandColumnWidth += 60;
-            
+
             commands.push({
                 name: "remove",
                 text: "",
@@ -198,33 +198,33 @@ Wiser.api({
                 click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
             });
         }
-        
+
         columns.push({
             title: "&nbsp;",
             width: commandColumnWidth,
             command: commands
         });
     }
-    
+
     var toolbar = [];
-     
+
     if (!options.toolbar || !options.toolbar.hideExportButton) {
         toolbar.push({name: "excel"});
     }
-    
+
     if (!readonly && (!options.toolbar || !options.toolbar.hideCheckAllButton)) {
-        toolbar.push({ 
-            name: "checkAll", 
-            text: "Alles selecteren", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onItemLinkerSelectAll(\"\\#checkTree_{propertyIdWithSuffix}\", true)'><span class='k-icon k-i-checkbox-checked'></span>Alles selecteren</a>" 
+        toolbar.push({
+            name: "checkAll",
+            text: "Alles selecteren",
+            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onItemLinkerSelectAll(\"\\#checkTree_{propertyIdWithSuffix}\", true)'><span class='k-icon k-i-checkbox-checked'></span>Alles selecteren</a>"
         });
     }
-    
+
     if (!readonly && (!options.toolbar || !options.toolbar.hideUncheckAllButton)) {
-        toolbar.push({ 
-            name: "uncheckAll", 
-            text: "Alles deselecteren", 
-            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onItemLinkerSelectAll(\"\\#checkTree_{propertyIdWithSuffix}\", false)'><span class='k-icon k-i-checkbox'></span>Alles deselecteren</a>" 
+        toolbar.push({
+            name: "uncheckAll",
+            text: "Alles deselecteren",
+            template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onItemLinkerSelectAll(\"\\#checkTree_{propertyIdWithSuffix}\", false)'><span class='k-icon k-i-checkbox'></span>Alles deselecteren</a>"
         });
     }
 
@@ -264,14 +264,14 @@ Wiser.api({
                     if (readonly === true) {
                         return;
                     }
-                    
+
                     startLoader();
-                    
+
                     let itemModel = {
                         title: options.data.title,
                         details: []
                     };
-                    
+
                     for (let key in options.data.property_) {
                         itemModel.details.push({
                             key: key,
@@ -299,7 +299,7 @@ Wiser.api({
                     if (readonly === true) {
                         return;
                     }
-                    
+
                     startLoader();
 
                     Wiser.api({

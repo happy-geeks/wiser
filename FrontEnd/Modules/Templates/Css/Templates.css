@@ -278,6 +278,10 @@
     flex-grow: 1;
 }
 
+.checkboxlist .checkbox span {
+    padding: 8px 5px 5px 28px;
+}
+
 footer {
     background: var(--white-color);
     border-top: 1px solid #dddddd;
@@ -435,6 +439,7 @@ footer {
 
 .historyContainer .col-12 {
     flex-basis: 100%;
+	width: 0;
 }
 
 .historyHeader .col {
@@ -519,9 +524,7 @@ footer {
 }
 
 .historyDynamic {
-    border-top: 1px solid var(--body-color);
-    padding-top: 15px;
-    margin-top: 15px;
+    margin-left: 20px;
 }
 
 /** DYNAMIC CONTENT GRID **/
@@ -654,4 +657,16 @@ footer {
 }
 .row.measurement-filters .col .flex-container.item > .k-input {
     margin: 5px 0;
+}
+
+#fileManagerWindow .horizontal {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#fileManagerWindow iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
 }

@@ -6,7 +6,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
@@ -21,7 +21,7 @@ namespace Api.Modules.VersionControl.Services
     {
         private readonly IVersionControlDataService versionControlDataService;
         private readonly IBranchesService branchesService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly ITemplatesService templatesService;
         private readonly IDynamicContentService dynamicContentService;
         private readonly IDatabaseConnection databaseConnection;
@@ -29,11 +29,11 @@ namespace Api.Modules.VersionControl.Services
         /// <summary>
         /// Creates a new instance of <see cref="VersionControlService"/>.
         /// </summary>
-        public VersionControlService(IVersionControlDataService versionControlDataService, IBranchesService branchesService, IWiserCustomersService wiserCustomersService, ITemplatesService templatesService, IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection)
+        public VersionControlService(IVersionControlDataService versionControlDataService, IBranchesService branchesService, IWiserTenantsService wiserTenantsService, ITemplatesService templatesService, IDynamicContentService dynamicContentService, IDatabaseConnection databaseConnection)
         {
             this.versionControlDataService = versionControlDataService;
             this.branchesService = branchesService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.templatesService = templatesService;
             this.dynamicContentService = dynamicContentService;
             this.databaseConnection = databaseConnection;
@@ -84,7 +84,7 @@ namespace Api.Modules.VersionControl.Services
             }
             
             // Check if the branch exists.
-            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            var branchToDeploy = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
             if (branchToDeploy == null)
             {
                 return new ServiceResult<bool>

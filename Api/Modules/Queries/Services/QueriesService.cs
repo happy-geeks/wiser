@@ -7,7 +7,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -28,16 +28,16 @@ namespace Api.Modules.Queries.Services
     /// </summary>
     public class QueriesService : IQueriesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="QueriesService"/>.
         /// </summary>
-        public QueriesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
+        public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
         }
@@ -86,7 +86,7 @@ GROUP BY query.id");
                 results.Add(new QueryModel
                 {
                     Id = dataRow.Field<int>("id"),
-                    EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                    EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                     Description = dataRow.Field<string>("description"),
                     Query = dataRow.Field<string>("query"),
                     ShowInExportModule = Convert.ToBoolean(dataRow["show_in_export_module"]),
@@ -128,7 +128,7 @@ WHERE query.id = ?id";
             var result = new QueryModel()
             {
                 Id = dataRow.Field<int>("id"),
-                EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                 Description = dataRow.Field<string>("description"),
                 Query = dataRow.Field<string>("query"),
                 ShowInExportModule = Convert.ToBoolean(dataRow["show_in_export_module"]),
@@ -377,7 +377,7 @@ ORDER BY description ASC");
                 yield return new QueryModel
                 {
                     Id = dataRow.Field<int>("id"),
-                    EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                    EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                     Description = dataRow.Field<string>("description")
                 };
             }

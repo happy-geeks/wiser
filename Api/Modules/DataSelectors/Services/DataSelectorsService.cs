@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -22,7 +22,8 @@ using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
-
+using GclDataSelectors = GeeksCoreLibrary.Modules.DataSelector.Interfaces;
+ 
 namespace Api.Modules.DataSelectors.Services
 {
     /// <summary>
@@ -30,28 +31,30 @@ namespace Api.Modules.DataSelectors.Services
     /// </summary>
     public class DataSelectorsService : IDataSelectorsService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService;
+        private readonly GclDataSelectors.IDataSelectorsService gclDataSelectorsService;
         private readonly IExcelService excelService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly ICsvService csvService;
 
         private const string DataSelectorTemplateEntityType = "dataselector-template";
 
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsService"/>
         /// </summary>
-        public DataSelectorsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GeeksCoreLibrary.Modules.DataSelector.Interfaces.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService)
+        public DataSelectorsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService, ICsvService csvService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.httpContextAccessor = httpContextAccessor;
             this.gclDataSelectorsService = gclDataSelectorsService;
             this.excelService = excelService;
             this.databaseHelpersService = databaseHelpersService;
             this.wiserItemsService = wiserItemsService;
+            this.csvService = csvService;
         }
 
         /// <inheritdoc />
@@ -270,7 +273,7 @@ ORDER BY name ASC");
                 results.Add(new DataSelectorModel
                 {
                     Id = dataRow.Field<int>("id"),
-                    EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                    EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                     Name = dataRow.Field<string>("name")
                 });
             }
@@ -336,8 +339,8 @@ VALUES(?roleId, ?id, 15)";
         /// <inheritdoc />
         public async Task<ServiceResult<DataSelectorSignatureResultModel>> GenerateSignatureAsync(SortedList<string, string> values, ClaimsIdentity identity)
         {
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
             var dateString = DateTime.Now.ToString("yyyyMMddHHmmss");
 
             var stringToHash = new StringBuilder();
@@ -384,19 +387,19 @@ VALUES(?roleId, ?id, 15)";
             }
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             var queryId = 0;
             var dataSelectorId = 0;
             if (data != null && !Int32.TryParse(data.QueryId, out queryId))
             {
-                queryId = await wiserCustomersService.DecryptValue<int>(data.QueryId, identity);
+                queryId = await wiserTenantsService.DecryptValue<int>(data.QueryId, identity);
             }
 
             if (data != null && !Int32.TryParse(data.EncryptedDataSelectorId, out dataSelectorId))
             {
-                dataSelectorId = await wiserCustomersService.DecryptValue<int>(data.EncryptedDataSelectorId, identity);
+                dataSelectorId = await wiserTenantsService.DecryptValue<int>(data.EncryptedDataSelectorId, identity);
                 data.DataSelectorId = dataSelectorId;
             }
 
@@ -440,8 +443,8 @@ VALUES(?roleId, ?id, 15)";
             }
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             var (jsonResult, statusCode, error) = await GetJsonResponseAsync(data, identity);
             if (statusCode != HttpStatusCode.OK)
@@ -477,14 +480,14 @@ VALUES(?roleId, ?id, 15)";
             }
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             // This is for backwards compatibility, a lot of queries in wiser_query contain {itemId_decrypt_withdate}, but the GCL expects something like {itemId:decrypt(true)}.
-            // To not have to change all queries for all our customers, we made this workaround so that old queries still work. The GCL will replace everything from httpContext.Items automatically.
+            // To not have to change all queries for all our tenants, we made this workaround so that old queries still work. The GCL will replace everything from httpContext.Items automatically.
             if (!String.IsNullOrWhiteSpace(httpContext.Request.Query["itemId"]))
             {
-                httpContext.Items["itemId_decrypt_withdate"] = await wiserCustomersService.DecryptValue<ulong>(httpContext.Request.Query["itemId"], identity);
+                httpContext.Items["itemId_decrypt_withdate"] = await wiserTenantsService.DecryptValue<ulong>(httpContext.Request.Query["itemId"], identity);
             }
 
             var (result, statusCode, error) = await gclDataSelectorsService.ToHtmlAsync(data);
@@ -510,9 +513,9 @@ VALUES(?roleId, ?id, 15)";
                 throw new Exception("HttpContext.Current is null, can't proceed.");
             }
 
-            // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             var (result, statusCode, error) = await gclDataSelectorsService.ToPdfAsync(data);
             if (statusCode != HttpStatusCode.OK)
@@ -525,6 +528,36 @@ VALUES(?roleId, ?id, 15)";
             }
 
             return new ServiceResult<FileContentResult>(result);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator)
+        {
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            var httpContext = httpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                throw new Exception("HttpContext.Current is null, can't proceed.");
+            }
+
+            // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+
+            var (jsonResult, statusCode, error) = await GetJsonResponseAsync(data, identity);
+            if (statusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<byte[]>
+                {
+                    StatusCode = statusCode,
+                    ErrorMessage = error
+                };
+            }
+            
+            var csvBody = csvService.JsonArrayToCsv(jsonResult);
+            var buffer = Encoding.UTF8.GetBytes(csvBody);
+            
+            return new ServiceResult<byte[]>(buffer);
         }
 
         /// <inheritdoc />
@@ -589,19 +622,19 @@ VALUES(?roleId, ?id, 15)";
             }
 
             // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             var queryId = 0;
             var dataSelectorId = 0;
             if (!String.IsNullOrWhiteSpace(data?.QueryId) && !Int32.TryParse(data.QueryId, out queryId))
             {
-                queryId = await wiserCustomersService.DecryptValue<int>(data.QueryId, identity);
+                queryId = await wiserTenantsService.DecryptValue<int>(data.QueryId, identity);
             }
 
             if (!String.IsNullOrWhiteSpace(data?.EncryptedDataSelectorId) && !Int32.TryParse(data.EncryptedDataSelectorId, out dataSelectorId))
             {
-                dataSelectorId = await wiserCustomersService.DecryptValue<int>(data.EncryptedDataSelectorId, identity);
+                dataSelectorId = await wiserTenantsService.DecryptValue<int>(data.EncryptedDataSelectorId, identity);
                 data.DataSelectorId = dataSelectorId;
             }
 
@@ -649,7 +682,7 @@ VALUES(?roleId, ?id, 15)";
 
             var dataSelectorSettings = new WiserDataSelectorRequestModel
             {
-                EncryptedDataSelectorId = await wiserCustomersService.EncryptValue(id, identity),
+                EncryptedDataSelectorId = await wiserTenantsService.EncryptValue(id, identity),
                 ExtraData = parameters
             };
 

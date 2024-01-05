@@ -118,7 +118,7 @@ const moduleSettings = {
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
 
@@ -554,6 +554,10 @@ const moduleSettings = {
                 ],
                 dataBound: this.setServiceState.bind(this)
             }).data("kendoGrid");
+            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-start", content: "Start" });
+            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-pause", content: "Pauzeer" });
+            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-logs", content: "Bekijk Logs" });
+            $(servicesGridElement).kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
             this.servicesGrid.scrollables[1].classList.add("fixed-table");
         }
 

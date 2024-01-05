@@ -30,8 +30,8 @@ export const TOGGLE_PIN_MODULE = "togglePinModule";
 // Items module.
 export const LOAD_ENTITY_TYPES_OF_ITEM_ID = "loadEntityTypesOfItemId";
 
-// Customers module.
-export const GET_CUSTOMER_TITLE = "getCustomerTitle";
+// Tenants module.
+export const GET_TENANT_TITLE = "getTenantTitle";
 export const VALID_SUB_DOMAIN = "validSubDomain";
 
 // Users module.
@@ -60,6 +60,7 @@ export const MERGE_BRANCH_ERROR = "mergeBranchError";
 export const GET_ENTITIES_FOR_BRANCHES = "getEntitiesForBranches";
 export const IS_MAIN_BRANCH = "isMainBranch";
 export const GET_BRANCH_CHANGES = "getBranchChanges"
+export const RESET_BRANCH_CHANGES = "resetBranchChanges";
 export const HANDLE_CONFLICT = "handleConflict";
 export const HANDLE_MULTIPLE_CONFLICTS = "handleMultipleConflicts";
 export const DELETE_BRANCH = "deleteBranch";

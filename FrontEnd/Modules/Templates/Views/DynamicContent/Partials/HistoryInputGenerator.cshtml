@@ -1,166 +1,154 @@
 ﻿@using GeeksCoreLibrary.Core.Cms.Attributes
 @using Api.Core.Helpers
-@model FrontEnd.Modules.Templates.Models.FieldViewModel
+@using FrontEnd.Modules.Templates.Models
+@model (FrontEnd.Modules.Templates.Models.FieldViewModel oldVersion, FrontEnd.Modules.Templates.Models.FieldViewModel newVersion)
 
-@{ var className = $"col col-{(Model.IsSubField ? 12 : 6)}"; }
-@try
-{
-    @switch (Model.CmsPropertyAttribute.TextEditorType)
+@{ RenderHtml(Model.oldVersion, Model.newVersion); }
+
+@{
+    void RenderHtml(FieldViewModel Model, FieldViewModel other = null)
     {
-        case CmsAttributes.CmsTextEditorType.Auto when Model.PropertyInfo.PropertyType.IsEnum:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        @{
-                            var value = Model.Value;
-                            if (Int32.TryParse(Model.Value.ToString(), out var intValue))
-                            {
-                                value = Enum.GetName(Model.PropertyInfo.PropertyType, intValue);
-                            }
-                        }
-                        <input type="text" class="textField k-input" autocomplete="off" value="@value" data-history-property="@Model.Name" disabled>
-                    </span>
-                </div>
-            </div>
-            break;
+        if (Model == null) return;
 
-        case CmsAttributes.CmsTextEditorType.Auto when TypeHelpers.IsNumericType(Model.PropertyInfo.PropertyType) || Model.PropertyInfo.PropertyType == typeof(string):
-        case CmsAttributes.CmsTextEditorType.TextField:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <input type="text" class="textField k-input" autocomplete="off" value="@Model.Value" data-history-property="@Model.Name" disabled>
-                    </span>
-                </div>
-            </div>
-            break;
+        try
+        {
+            @switch (Model.CmsPropertyAttribute.TextEditorType)
+            {
+                case CmsAttributes.CmsTextEditorType.Auto when Model.PropertyInfo.PropertyType.IsEnum:
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <h4><label>@Model.PrettyName</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                @{
+                                    var value = Model.Value;
+                                    if (Int32.TryParse(Model.Value.ToString(), out var intValue))
+                                    {
+                                        value = Enum.GetName(Model.PropertyInfo.PropertyType, intValue);
+                                    }
+                                }
+                                <input type="text" class="textField k-input" autocomplete="off" value="@value" data-history-property="@Model.Name" disabled>
+                            </span>
+                        </div>
+                    </div>
+                    RenderHtml(other);
+                    break;
 
-        case CmsAttributes.CmsTextEditorType.Auto when Model.PropertyInfo.PropertyType == typeof(bool):
-            <div class="@className checkLine">
-                <div class="item" data-label-style="normal" data-label-width="0">
-                    <span class="inline">
-                        <label class="checkbox">
-                            <input type="checkbox" value="@Model.Name" @(Model.Value != null && (string)Model.Value != "" && (bool)Model.Value ? "checked" : "") data-history-property="@Model.Name" disabled>
-                            <span>@Model.PrettyName</span>
-                        </label>
-                    </span>
-                </div>
-            </div>
-            break;
+                case CmsAttributes.CmsTextEditorType.Auto when TypeHelpers.IsNumericType(Model.PropertyInfo.PropertyType) || Model.PropertyInfo.PropertyType == typeof(string):
+                case CmsAttributes.CmsTextEditorType.TextField:
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <h4><label>@Model.PrettyName</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <input type="text" class="textField k-input" autocomplete="off" value="@Model.Value" data-history-property="@Model.Name" disabled>
+                            </span>
+                        </div>
+                    </div>
+                    RenderHtml(other);
+                    break;
 
-        case CmsAttributes.CmsTextEditorType.Auto when Model.PropertyInfo.PropertyType.IsGenericType && (Model.PropertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(SortedList<,>) || Model.PropertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>)) && Model.PropertyInfo.PropertyType.GetGenericArguments().First() == typeof(string):
-            <div class="@className checkLine">
-                @foreach (var subGroup in Model.SubFields)
-                {
-                    foreach (var subField in subGroup.Value)
+                case CmsAttributes.CmsTextEditorType.Auto when Model.PropertyInfo.PropertyType == typeof(bool):
+                    <div class="col col-6 checkLine">
+                        <div class="item" data-label-style="normal" data-label-width="0">
+                            <span class="inline">
+                                <label class="checkbox">
+                                    <input type="checkbox" value="@Model.Name" @(Model.Value != null && Model.Value.ToString() != "" && (bool)Model.Value ? "checked" : "") data-history-property="@Model.Name" disabled>
+                                    <span>@Model.PrettyName</span>
+                                </label>
+                            </span>
+                        </div>
+                    </div>
+                    RenderHtml(other);
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.Auto when Model.PropertyInfo.PropertyType.IsGenericType && (Model.PropertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(SortedList<,>) || Model.PropertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>)) && Model.PropertyInfo.PropertyType.GetGenericArguments().First() == typeof(string):
+                    @foreach (var subGroup in Model.SubFields)
                     {
-                        <partial name="/Modules/Templates/Views/DynamicContent/Partials/HistoryInputGenerator.cshtml" model="subField" />
+                        for (var i = 0; i < subGroup.Value.Count; i++)
+                        {
+                            RenderHtml(subGroup.Value[i], other.SubFields[subGroup.Key][i]);
+                        }
                     }
-                }
-            </div>
-            break;
+                    break;
 
-        case CmsAttributes.CmsTextEditorType.Auto:
-            <div class="@className">
+                case CmsAttributes.CmsTextEditorType.Auto:
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span>No HTML Generated for "@Model.PrettyName". The type "@Model.PropertyInfo.PropertyType" was unknown to generator.</span>
+                        </div>
+                    </div>
+                    RenderHtml(other);
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.TextBox:
+                    <div class="col col-6">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <h4><label>@Model.PrettyName</label></h4>
+                            <span class="k-widget k-input k-state-default">
+                                <textarea class="textField k-input" autocomplete="off" data-history-property="@Model.Name" disabled>@Model.Value</textarea>
+                            </span>
+                        </div>
+                    </div>
+                    RenderHtml(other);
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.QueryEditor:
+                    <div class="col col-12 diffField" data-type="Query" field-name="@Model.PrettyName">
+                        <span class="oldValue" value="@Model.Value">Old value placeholder</span>
+                        <span class="newValue" value="@other.Value">New value placeholder</span>
+                    </div>
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.HtmlEditor:
+                    <div class="col col-12 diffField" data-type="Html" field-name="@Model.PrettyName">
+                        <span class="oldValue" value="@Model.Value">Old value placeholder</span>
+                        <span class="newValue" value="@other.Value">New value placeholder</span>
+                    </div>
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.XmlEditor:
+                    <div class="col col-12 diffField" data-type="Xml" field-name="@Model.PrettyName">
+                        <span class="oldValue" value="@Model.Value">Old value placeholder</span>
+                        <span class="newValue" value="@other.Value">New value placeholder</span>
+                    </div>
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.JsEditor:
+                    <div class="col col-12 diffField" data-type="JS" field-name="@Model.PrettyName">
+                        <span class="oldValue" value="@Model.Value">Old value placeholder</span>
+                        <span class="newValue" value="@other.Value">New value placeholder</span>
+                    </div>
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.JsonEditor:
+                    <div class="col col-12 diffField" data-type="Json" field-name="@Model.PrettyName">
+                        <span class="oldValue" value="@Model.Value">Old value placeholder</span>
+                        <span class="newValue" value="@other.Value">New value placeholder</span>
+                    </div>
+                    break;
+
+                case CmsAttributes.CmsTextEditorType.TextEditor:
+                    <div class="col col-12 diffField" data-type="Text" field-name="@Model.PrettyName">
+                        <span class="oldValue" value="@Model.Value">Old value placeholder</span>
+                        <span class="newValue" value="@other.Value">New value placeholder</span>
+                    </div>
+                    break;
+
+                default:
+                    <div class="col col-12">
+                        <div class="item" data-label-style="float" data-label-width="0">
+                            <span>No HTML Generated for "@Model.PrettyName". The text editor type "@Model.CmsPropertyAttribute.TextEditorType" was unknown to generator.</span>
+                        </div>
+                    </div>
+                    break;
+            }
+        }
+        catch (Exception exception)
+        {
+            <div class="col col-12">
                 <div class="item" data-label-style="float" data-label-width="0">
-                    <span>No HTML Generated for "@Model.PrettyName". The type "@Model.PropertyInfo.PropertyType" was unknown to generator.</span>
+                    <span>@exception</span>
                 </div>
             </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.TextBox:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea class="textField k-input" autocomplete="off" data-history-property="@Model.Name" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.QueryEditor:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea data-history-property="@Model.Name" data-field-type="text/x-mysql" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.HtmlEditor:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea data-history-property="@Model.Name" data-field-type="text/html" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.XmlEditor:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea data-history-property="@Model.Name" data-field-type="application/xml" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.JsEditor:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea data-history-property="@Model.Name" data-field-type="text/javascript" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.JsonEditor:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea data-history-property="@Model.Name" data-field-type="application/json" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        case CmsAttributes.CmsTextEditorType.TextEditor:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <h4><label>@Model.PrettyName</label></h4>
-                    <span class="k-widget k-input k-state-default">
-                        <textarea data-history-property="@Model.Name" data-field-type="text" disabled>@Model.Value</textarea>
-                    </span>
-                </div>
-            </div>
-            break;
-
-        default:
-            <div class="@className">
-                <div class="item" data-label-style="float" data-label-width="0">
-                    <span>No HTML Generated for "@Model.PrettyName". The text editor type "@Model.CmsPropertyAttribute.TextEditorType" was unknown to generator.</span>
-                </div>
-            </div>
-            break;
+        }
     }
-}
-catch (Exception exception)
-{
-    <div class="@className">
-        <div class="item" data-label-style="float" data-label-width="0">
-            <span>@exception</span>
-        </div>
-    </div>
 }

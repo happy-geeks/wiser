@@ -16,6 +16,15 @@ jobs:
     
     - name: Restore dependencies
       run: dotnet restore
+
+    - name: Add NuGet Sources
+      run: dotnet nuget add source --username GilianJuice --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/happy-geeks/index.json"
+
+    - name: Add plugins FrontEnd
+      run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator
+
+    - name: Add plugins API
+      run: dotnet add Api package GeeksCoreLibrary.Components.Configurator
       
     - name: Copy partner styles
       run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION }}\*" -Destination "${{ secrets.WORKER_LOCATION_EXT_1_LIVE }}\wiser\wiser\FrontEnd\Core\Css\partner" -Recurse
@@ -61,3 +70,7 @@ jobs:
     - name: Disable maintenance notice FrontEnd
       if: ${{ always() }}
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"
+
+    - name: Remove NuGet Sources
+      if: ${{ always() }}
+      run: dotnet nuget remove source github

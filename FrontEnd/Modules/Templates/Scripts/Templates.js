@@ -3,7 +3,7 @@ import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {Preview} from "./Preview.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
-import "../css/Templates.css";
+import "../Css/Templates.css";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -12,6 +12,7 @@ require("@progress/kendo-ui/js/kendo.multiselect.js");
 require("@progress/kendo-ui/js/kendo.editor.js");
 require("@progress/kendo-ui/js/kendo.splitter.js");
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
+require("@progress/kendo-ui/js/kendo.tooltip.js");
 require("@progress/kendo-ui/js/kendo.treeview.js");
 require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -63,12 +64,13 @@ const moduleSettings = {
             this.newContentId = 0;
             this.newContentTitle = null;
             this.saving = false;
-            this.historyLoaded = false;
             this.initialTemplateSettings = null;
             this.branches = null;
             this.renderLogsGrid = null;
             this.measurementsLoaded = false;
-
+            this.allHistoryPartsLoaded = false;
+            this.lastLoadedHistoryPartNumber = 0;
+            this.loadingNextPart = false;
             this.templateTypes = Object.freeze({
                 "UNKNOWN": 0,
                 "HTML": 1,
@@ -91,7 +93,7 @@ const moduleSettings = {
             // Default settings
             this.settings = {
                 moduleId: 0,
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend",
                 userEmailAddress: "",
                 userType: "",
@@ -153,7 +155,7 @@ const moduleSettings = {
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.filesRootId = userData.filesRootId;
             this.settings.imagesRootId = userData.imagesRootId;
@@ -196,9 +198,11 @@ const moduleSettings = {
                 this.selectedId = this.settings.templateId;
                 if (this.settings.initialTab) {
                     this.mainTabStrip.select(`li.${this.settings.initialTab}-tab`);
+                    setTimeout(()=> { // sometimes the tab switching doesn't work yet (because not everything is loaded?), doing it again after a second just in case
+                        this.mainTabStrip.select(`li.${this.settings.initialTab}-tab`);
+                        }, 1000);
                 }
             }
-
             window.processing.removeProcess(process);
         }
 
@@ -499,7 +503,7 @@ const moduleSettings = {
             }
 
             this.selectedId = dataItem.id;
-            this.historyLoaded = false;
+            this.lastLoadedHistoryPartNumber = 0;
             this.measurementsLoaded = false;
             this.onMainTabStripActivate();
 
@@ -1000,6 +1004,9 @@ const moduleSettings = {
                     change: this.onDynamicContentGridChange.bind(this),
                     dataBound: this.onDynamicContentGridChange.bind(this)
                 }).data("kendoGrid");
+                dynamicGridDiv.kendoTooltip({ filter: ".k-grid-Open", content: "Bewerken" });
+                dynamicGridDiv.kendoTooltip({ filter: ".k-grid-Duplicate", content: "Dupliceren" });
+                dynamicGridDiv.kendoTooltip({ filter: ".k-grid-Delete", content: "Verwijderen" });
 
                 // Open dynamic content by double clicking on a row.
                 dynamicGridDiv.on("dblclick", "tr.k-state-selected", this.onDynamicContentOpenClick.bind(this));
@@ -1142,6 +1149,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
+            
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {
@@ -1156,11 +1164,25 @@ const moduleSettings = {
                 };
 
                 const wiserApiRoot = this.settings.wiserApiRoot;
-
+                const imagesRootId = this.settings.imagesRootId;
+                const filesRootId = this.settings.filesRootId;
+                
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
                     exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
+                };
+
+                const imageTool = {
+                    name: "wiserImage",
+                    tooltip: "Afbeelding toevoegen",
+                    exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor"), "templates", imagesRootId); }
+                };
+                
+                const fileTool = {
+                    name: "wiserFile",
+                    tooltip: "Link naar bestand toevoegen",
+                    exec: function(e) { Wiser.onHtmlEditorFileExec.call(Wiser, e, $(this).data("kendoEditor"), "templates", filesRootId); }
                 };
 
                 this.mainHtmlEditor = $(".editor").kendoEditor({
@@ -1181,8 +1203,8 @@ const moduleSettings = {
                         "outdent",
                         "createLink",
                         "unlink",
-                        "insertImage",
-                        "insertFile",
+                        imageTool,
+                        fileTool,
                         "subscript",
                         translationsTool,
                         "superscript",
@@ -1306,7 +1328,7 @@ const moduleSettings = {
                     toolbar: ["create"],
                     columns: [
                         { field: "url" },
-                        { command: "destroy", width: 140 }
+                        { command: { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }, width: 140 }
                     ],
                     dataSource: dataSource,
                     edit: function (e) {
@@ -1316,6 +1338,7 @@ const moduleSettings = {
                         e.model.__ordering = newOrdering;
                     }
                 });
+                externalFilesGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
                 const externalFilesGrid = $(externalFilesGridElement).getKendoGrid();
                 externalFilesGrid.table.kendoSortable({
@@ -1551,7 +1574,7 @@ const moduleSettings = {
             const htmlWindow = $("#htmlSourceWindow").clone(true);
             const textArea = htmlWindow.find("textarea").val(this.mainHtmlEditor.value());
             // Prettify code from minified text.
-            const pretty = await require('pretty');
+            const pretty = await require("pretty");
             textArea[0].value = pretty(textArea[0].value, { ocd: false });
             let codeMirrorInstance;
 
@@ -1846,7 +1869,7 @@ const moduleSettings = {
                 if (environmentEnum !== 1) {
                     window.popupNotification.show(`Template is succesvol naar de ${environment} omgeving gezet`, "info");
                 }
-                this.historyLoaded = false;
+                this.lastLoadedHistoryPartNumber = 0;
                 this.measurementsLoaded = false;
                 await this.reloadMetaData(templateId);
             } catch (exception) {
@@ -1886,7 +1909,7 @@ const moduleSettings = {
             });
 
             window.popupNotification.show(`Dynamisch component is succesvol naar de ${environment} omgeving gezet`, "info");
-            this.historyLoaded = false;
+            this.lastLoadedHistoryPartNumber = 0;
             this.measurementsLoaded = false;
             $("#deployDynamicContentWindow").data("kendoWindow").close();
         }
@@ -2250,7 +2273,7 @@ const moduleSettings = {
                 });
 
                 window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
-                this.historyLoaded = false;
+                this.lastLoadedHistoryPartNumber = 0;
 
                 const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
                 await this.deployEnvironment(alsoDeployToTest === true ? "test" : "development", templateId, version);
@@ -2362,12 +2385,11 @@ const moduleSettings = {
          * @param {any} templateId The ID of the template.
          */
         async reloadHistoryTab(templateId) {
-            if (this.historyLoaded) {
+            if (this.lastLoadedHistoryPartNumber > 0) {
                 return;
             }
 
             templateId = templateId || this.selectedId;
-            this.historyLoaded = true;
 
             const process = `reloadHistoryTab_${Date.now()}`;
             window.processing.addProcess(process);
@@ -2379,14 +2401,28 @@ const moduleSettings = {
                     method: "GET"
                 });
 
-                const historyTab = await Wiser.api({
+                const historyTabHTML = await Wiser.api({
                     method: "POST",
                     contentType: "application/json",
                     url: "/Modules/Templates/HistoryTab",
                     data: JSON.stringify(templateHistory)
                 });
 
-                document.getElementById("historyTab").innerHTML = historyTab;
+                const historyTab = document.getElementById("historyTab");
+                historyTab.innerHTML = historyTabHTML;
+                this.lastLoadedHistoryPartNumber = 1;
+                this.allHistoryPartsLoaded = false;
+                historyTab.addEventListener("scroll", event => {
+                    const {scrollHeight, scrollTop, clientHeight} = event.target;
+
+                    // if user scrolled to bottom load next part of the history
+                    // < treshold is used to account for rounding of scrollHeight and clientHeight
+                    let treshold = 1;
+                    if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
+                        this.loadNextHistoryPart();
+                    }
+                });
+                window.Wiser.createHistoryDiffFields(document.getElementById("historyContainer"));
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
@@ -2395,6 +2431,49 @@ const moduleSettings = {
             window.processing.removeProcess(process);
         }
 
+        async loadNextHistoryPart() {
+            if (this.loadingNextPart || this.allHistoryPartsLoaded || this.lastLoadedHistoryPartNumber < 1) {
+                return;
+            }
+
+            this.loadingNextPart = true;
+
+            const process = `loadHistoryTabNextPart_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const templateHistory = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/${this.selectedId}/history?pageNumber=${this.lastLoadedHistoryPartNumber + 1}`,
+                    dataType: "json",
+                    method: "GET"
+                });
+
+                if (templateHistory.templateHistory.length === 0) {
+                    this.allHistoryPartsLoaded = true;
+                    this.loadingNextPart = false;
+                    window.processing.removeProcess(process);
+                    return;
+                }
+
+                const historyTabPart = await Wiser.api({
+                    method: "POST",
+                    contentType: "application/json",
+                    url: "/Modules/Templates/HistoryTabRows",
+                    data: JSON.stringify(templateHistory)
+                });
+
+                document.getElementById("historyContainer").insertAdjacentHTML("beforeend", historyTabPart);
+                window.Wiser.createHistoryDiffFields(document.getElementById("historyContainer"));
+                this.lastLoadedHistoryPartNumber++;
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
+            this.loadingNextPart = false;
+        }
+        
         /**
          * Reloads measurements of the template.
          * @param {any} templateId The ID of the template.
@@ -2612,7 +2691,7 @@ const moduleSettings = {
                 await this.updateRenderingDataOnMeasurementsTab(templateId);
                 this.renderingLogsChart.resize();
             } catch (exception) {
-                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                kendo.alert("Er is iets fout gegaan met het laden van de metingen. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
 

@@ -72,12 +72,12 @@ export default {
             return this.$store.state.login.requirePasswordChange;
         },
 
-        customerTitle() {
-            return this.$store.state.customers.title;
+        tenantTitle() {
+            return this.$store.state.tenants.title;
         },
 
         validSubDomain() {
-            return this.$store.state.customers.validSubDomain;
+            return this.$store.state.tenants.validSubDomain;
         },
 
         totpQrImageUrl() {

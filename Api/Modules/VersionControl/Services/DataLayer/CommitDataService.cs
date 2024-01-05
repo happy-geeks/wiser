@@ -316,7 +316,6 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTem
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
 LEFT JOIN {WiserTableNames.WiserCommitTemplate} AS templateCommit ON templateCommit.template_id = template.template_id AND templateCommit.version = template.version
 WHERE template.template_type != {(int)TemplateTypes.Directory}
-AND template.removed = 0
 AND template.is_dirty = TRUE
 AND templateCommit.id IS NULL
 GROUP BY template.template_id
@@ -378,8 +377,7 @@ LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.co
 LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON linkToTemplate.content_id = content.content_id
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(version) FROM wiser_template WHERE template_id = linkToTemplate.destination_template_id)
 LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS dynamicContentCommit ON dynamicContentCommit.dynamic_content_id = content.content_id AND dynamicContentCommit.version = content.version
-WHERE content.removed = 0
-AND content.is_dirty = TRUE
+WHERE content.is_dirty = TRUE
 AND dynamicContentCommit.id IS NULL
 GROUP BY content.content_id
 ORDER BY content.changed_on ASC";

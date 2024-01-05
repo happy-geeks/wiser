@@ -41,8 +41,10 @@ namespace Api.Modules.Templates.Services.DataLayer
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
     template.parent_id,
     template.template_type,
-    template.template_name, 
-    template.version, 
+    template.template_name,
+    template.version,
+    template.added_on, 
+    template.added_by, 
     template.changed_on, 
     template.changed_by, 
     template.ordering
@@ -60,6 +62,8 @@ LIMIT 1");
                 Type = dataTable.Rows[0].Field<TemplateTypes>("template_type"),
                 Name = dataTable.Rows[0].Field<string>("template_name"),
                 Version = dataTable.Rows[0].Field<int>("version"),
+                AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
+                AddedBy = dataTable.Rows[0].Field<string>("added_by"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
                 Ordering = dataTable.Rows[0].Field<int>("ordering")
@@ -94,7 +98,9 @@ LIMIT 1");
     template.template_type, 
     template.template_name, 
     template.template_data, 
-    template.version, 
+    template.version,
+    template.added_on, 
+    template.added_by,
     template.changed_on, 
     template.changed_by,
     template.cache_per_url,
@@ -158,6 +164,8 @@ LIMIT 1");
                 Name = dataTable.Rows[0].Field<string>("template_name"),
                 EditorValue = dataTable.Rows[0].Field<string>("template_data"),
                 Version = dataTable.Rows[0].Field<int>("version"),
+                AddedOn = dataTable.Rows[0].Field<DateTime>("added_on"),
+                AddedBy = dataTable.Rows[0].Field<string>("added_by"),
                 ChangedOn = dataTable.Rows[0].Field<DateTime>("changed_on"),
                 ChangedBy = dataTable.Rows[0].Field<string>("changed_by"),
                 CachePerUrl =  Convert.ToBoolean(dataTable.Rows[0]["cache_per_url"]),
@@ -230,7 +238,7 @@ LIMIT 1");
         }
 
         /// <inheritdoc />
-        public async Task<(int Id, int Version, Environments Environment)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null)
+        public async Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int templateId, string branchDatabaseName = null)
         {
             var databaseNamePrefix = String.IsNullOrWhiteSpace(branchDatabaseName) ? "" : $"`{branchDatabaseName}`.";
 
@@ -238,13 +246,14 @@ LIMIT 1");
             var query = $@"SELECT 
     template.id,
     template.version,
-    template.published_environment
+    template.published_environment,
+    template.removed
 FROM {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {databaseNamePrefix}{WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.template_id = ?templateId
 AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("templateId", templateId);
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var dataTable = await clientDatabaseConnection.GetAsync(query,  skipCache: true, useWritingConnectionIfAvailable: true);
             if (dataTable.Rows.Count == 0)
             {
                 throw new Exception($"Template with ID {templateId} not found.");
@@ -253,7 +262,8 @@ AND otherVersion.id IS NULL";
             var id = Convert.ToInt32(dataTable.Rows[0]["id"]);
             var version = Convert.ToInt32(dataTable.Rows[0]["version"]);
             var publishedEnvironment = (Environments)Convert.ToInt32(dataTable.Rows[0]["published_environment"]);
-            return (id, version, publishedEnvironment);
+            var removed = Convert.ToBoolean(dataTable.Rows[0]["removed"]);
+            return (id, version, publishedEnvironment, removed);
         }
 
         /// <inheritdoc />
@@ -437,6 +447,8 @@ ORDER BY template.template_type ASC, template.template_name ASC");
     wdc.component, 
     wdc.component_mode, 
     GROUP_CONCAT(DISTINCT otherdc.`usages`) AS `usages`,
+    wdc.added_on,
+    wdc.added_by,
     wdc.changed_on,
     wdc.changed_by,
     wdc.`title`
@@ -460,10 +472,11 @@ GROUP BY wdc.content_id");
                 resultDao.Component = row.Field<string>("component");
                 resultDao.ComponentMode = row.Field<string>("component_mode");
                 resultDao.Usages = row.Field<string>("usages");
+                resultDao.AddedOn = row.Field<DateTime>("added_on");
+                resultDao.AddedBy = row.Field<string>("added_by");
                 resultDao.ChangedOn = row.Field<DateTime>("changed_on");
                 resultDao.ChangedBy = row.Field<string>("changed_by");
                 resultDao.Title = row.Field<string>("title");
-
 
                 resultList.Add(resultDao);
             }
@@ -569,6 +582,7 @@ SET template_name = ?name,
     trigger_table_name = ?triggerTableName,
     is_default_header = ?isDefaultHeader,
     is_default_footer = ?isDefaultFooter,
+    default_header_footer_regex = ?defaultHeaderFooterRegex,
     is_partial = ?isPartial,
     widget_content = ?widgetContent,
     widget_location = ?widgetLocation,
@@ -592,6 +606,8 @@ WHERE id = ?id";
     template_type,
     version,
     template_id,
+    added_on,
+    added_by,
     changed_on,
     changed_by,
     published_environment,
@@ -644,6 +660,8 @@ SELECT
     template.template_type,
     template.version + 1 AS version,
     template.template_id,
+    ?now AS added_on,
+    'Wiser' AS added_by,
     ?now AS changed_on,
     'Wiser' AS changed_by,
     0 AS published_environment,
@@ -986,8 +1004,8 @@ AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("editorval", editorValue);
 
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
-                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, 1, ?ordering, ?editorval, -1);
+                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, added_on, added_by, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
+                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, ?now, ?username, 1, ?ordering, ?editorval, -1);
                                                             SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
@@ -1146,7 +1164,7 @@ AND removed = 0";
         public async Task<StringBuilder> GetScssIncludesForScssTemplateAsync(int templateId)
         {
             // First we need to find the root ID.
-            // Some customers have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
+            // Some tenants have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
             // We need to find the root directory for the given template, so that we don't include SCSS from a different website.
             string name;
             var scssRootId = templateId;
@@ -1199,7 +1217,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
         public async Task<List<TemplateSettingsModel>> GetScssTemplatesThatAreNotIncludesAsync(int templateId)
         {
             // First we need to find the root ID.
-            // Some customers have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
+            // Some tenants have multiple websites in the same Wiser instance and can therefor have multiple SCSS root directories.
             // We need to find the root directory for the given template, so that we don't include SCSS from a different website.
             string name;
             var scssRootId = templateId;
@@ -1226,7 +1244,9 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.template_type, 
     template.template_name, 
     template.template_data, 
-    template.version, 
+    template.version,
+    template.added_on, 
+    template.added_by,   
     template.changed_on, 
     template.changed_by,   
     template.cache_per_url,   
@@ -1284,6 +1304,8 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
                     Name = dataRow.Field<string>("template_name"),
                     EditorValue = dataRow.Field<string>("template_data"),
                     Version = dataRow.Field<int>("version"),
+                    AddedOn = dataRow.Field<DateTime>("added_on"),
+                    AddedBy = dataRow.Field<string>("added_by"),
                     ChangedOn = dataRow.Field<DateTime>("changed_on"),
                     ChangedBy = dataRow.Field<string>("changed_by"),
                     CachePerUrl = dataTable.Rows[0].Field<bool>("cache_per_url"),
@@ -1363,14 +1385,14 @@ LIMIT 1";
             clientDatabaseConnection.AddParameter("ordering", dataTable.Rows[0].Field<int>("ordering"));
             clientDatabaseConnection.AddParameter("version", dataTable.Rows[0].Field<int>("version") + 1);
 
-            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
-VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username)";
+            query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, added_on, added_by, changed_on, changed_by, is_dirty)
+VALUES (?templateId, ?parentId, ?name, ?type, ?ordering, ?version, 1, ?now, ?username, ?now, ?username, TRUE)";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             if (alsoDeleteChildren)
             {
                 // Delete all children of the template by also adding new versions with removed = 1 for them.
-                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, changed_on, changed_by)
+                query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (template_id, parent_id, template_name, template_type, ordering, version, removed, added_on, added_by, changed_on, changed_by, is_dirty)
 SELECT 
     template.template_id,
     template.parent_id,
@@ -1380,7 +1402,10 @@ SELECT
     template.version + 1,
     1,
     ?now,
-    ?username
+    ?username,
+    ?now,
+    ?username,
+    TRUE
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.parent_id = ?templateId
@@ -1418,13 +1443,220 @@ AND otherVersion.id IS NULL";
         /// <inheritdoc />
         public async Task DeployToBranchAsync(List<int> templateIds, string branchDatabaseName)
         {
+            var temporaryTableName = $"temp_templates_{Guid.NewGuid():N}";
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
-            var query = $@"INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate}
+            var query = $@"CREATE TABLE `{branchDatabaseName}`.`{temporaryTableName}` LIKE {WiserTableNames.WiserTemplate};
+INSERT INTO `{branchDatabaseName}`.`{temporaryTableName}`
 SELECT template.*
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.template_id IN ({String.Join(", ", templateIds)})
-AND otherVersion.id IS NULL";
+AND otherVersion.id IS NULL;
+
+UPDATE `{branchDatabaseName}`.{WiserTableNames.WiserTemplate} AS template
+JOIN `{branchDatabaseName}`.`{temporaryTableName}` AS temp ON temp.template_id = template.template_id AND temp.version = template.version
+SET template.parent_id = temp.parent_id,
+    template.template_name = temp.template_name,
+    template.template_data = temp.template_data,
+    template.template_data_minified = temp.template_data_minified,
+    template.template_type = temp.template_type,
+    template.version = temp.version,
+    template.template_id = temp.template_id,
+    template.added_on = temp.added_on,
+    template.added_by = temp.added_by,
+    template.changed_on = temp.changed_on,
+    template.changed_by = temp.changed_by,
+    template.published_environment = temp.published_environment,
+    template.use_cache = temp.use_cache,
+    template.cache_minutes = temp.cache_minutes,
+    template.handle_request = temp.handle_request,
+    template.handle_session = temp.handle_session,
+    template.handle_objects = temp.handle_objects,
+    template.handle_standards = temp.handle_standards,
+    template.handle_translations = temp.handle_translations,
+    template.handle_dynamic_content = temp.handle_dynamic_content,
+    template.handle_logic_blocks = temp.handle_logic_blocks,
+    template.handle_mutators = temp.handle_mutators,
+    template.login_required = temp.login_required,
+    template.login_user_type = temp.login_user_type,
+    template.login_session_prefix = temp.login_session_prefix,
+    template.login_role = temp.login_role,
+    template.login_redirect_url = temp.login_redirect_url,
+    template.linked_templates = temp.linked_templates,
+    template.ordering = temp.ordering,
+    template.insert_mode = temp.insert_mode,
+    template.load_always = temp.load_always,
+    template.disable_minifier = temp.disable_minifier,
+    template.url_regex = temp.url_regex,
+    template.external_files = temp.external_files,
+    template.grouping_create_object_instead_of_array = temp.grouping_create_object_instead_of_array,
+    template.grouping_prefix = temp.grouping_prefix,
+    template.grouping_key = temp.grouping_key,
+    template.grouping_key_column_name = temp.grouping_key_column_name,
+    template.grouping_value_column_name = temp.grouping_value_column_name,
+    template.removed = temp.removed,
+    template.is_scss_include_template = temp.is_scss_include_template,
+    template.use_in_wiser_html_editors = temp.use_in_wiser_html_editors,
+    template.pre_load_query = temp.pre_load_query,
+    template.cache_location = temp.cache_location,
+    template.return_not_found_when_pre_load_query_has_no_data = temp.return_not_found_when_pre_load_query_has_no_data,
+    template.cache_regex = temp.cache_regex,
+    template.routine_type = temp.routine_type,
+    template.routine_parameters = temp.routine_parameters,
+    template.routine_return_type = temp.routine_return_type,
+    template.is_default_header = temp.is_default_header,
+    template.is_default_footer = temp.is_default_footer,
+    template.default_header_footer_regex = temp.default_header_footer_regex,
+    template.trigger_timing = temp.trigger_timing,
+    template.trigger_event = temp.trigger_event,
+    template.trigger_table_name = temp.trigger_table_name,
+    template.is_partial = temp.is_partial,
+    template.widget_content = temp.widget_content,
+    template.widget_location = temp.widget_location,
+    template.cache_per_url = temp.cache_per_url,
+    template.cache_per_querystring = temp.cache_per_querystring,
+    template.cache_per_hostname = temp.cache_per_hostname,
+    template.cache_using_regex = temp.cache_using_regex,
+    template.is_dirty = temp.is_dirty;
+
+INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate} (
+	parent_id,
+    template_name,
+    template_data,
+    template_data_minified,
+    template_type,
+    version,
+    template_id,
+    added_on,
+    added_by,
+    changed_on,
+    changed_by,
+    published_environment,
+    use_cache,
+    cache_minutes,
+    handle_request,
+    handle_session,
+    handle_objects,
+    handle_standards,
+    handle_translations,
+    handle_dynamic_content,
+    handle_logic_blocks,
+    handle_mutators,
+    login_required,
+    login_user_type,
+    login_session_prefix,
+    login_role,
+    login_redirect_url,
+    linked_templates,
+    ordering,
+    insert_mode,
+    load_always,
+    disable_minifier,
+    url_regex,
+    external_files,
+    grouping_create_object_instead_of_array,
+    grouping_prefix,
+    grouping_key,
+    grouping_key_column_name,
+    grouping_value_column_name,
+    removed,
+    is_scss_include_template,
+    use_in_wiser_html_editors,
+    pre_load_query,
+    cache_location,
+    return_not_found_when_pre_load_query_has_no_data,
+    cache_regex,
+    routine_type,
+    routine_parameters,
+    routine_return_type,
+    is_default_header,
+    is_default_footer,
+    default_header_footer_regex,
+    trigger_timing,
+    trigger_event,
+    trigger_table_name,
+    is_partial,
+    widget_content,
+    widget_location,
+    cache_per_url,
+    cache_per_querystring,
+    cache_per_hostname,
+    cache_using_regex,
+    is_dirty
+) 
+SELECT 
+	parent_id,
+    template_name,
+    template_data,
+    template_data_minified,
+    template_type,
+    version,
+    template_id,
+    added_on,
+    added_by,
+    changed_on,
+    changed_by,
+    published_environment,
+    use_cache,
+    cache_minutes,
+    handle_request,
+    handle_session,
+    handle_objects,
+    handle_standards,
+    handle_translations,
+    handle_dynamic_content,
+    handle_logic_blocks,
+    handle_mutators,
+    login_required,
+    login_user_type,
+    login_session_prefix,
+    login_role,
+    login_redirect_url,
+    linked_templates,
+    ordering,
+    insert_mode,
+    load_always,
+    disable_minifier,
+    url_regex,
+    external_files,
+    grouping_create_object_instead_of_array,
+    grouping_prefix,
+    grouping_key,
+    grouping_key_column_name,
+    grouping_value_column_name,
+    removed,
+    is_scss_include_template,
+    use_in_wiser_html_editors,
+    pre_load_query,
+    cache_location,
+    return_not_found_when_pre_load_query_has_no_data,
+    cache_regex,
+    routine_type,
+    routine_parameters,
+    routine_return_type,
+    is_default_header,
+    is_default_footer,
+    default_header_footer_regex,
+    trigger_timing,
+    trigger_event,
+    trigger_table_name,
+    is_partial,
+    widget_content,
+    widget_location,
+    cache_per_url,
+    cache_per_querystring,
+    cache_per_hostname,
+    cache_using_regex,
+    is_dirty
+FROM `{branchDatabaseName}`.`{temporaryTableName}` AS temp
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM `{branchDatabaseName}`.{WiserTableNames.WiserTemplate} AS template
+    WHERE template.template_id = temp.template_id
+    AND template.version = temp.version
+);
+
+DROP TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`";
             await clientDatabaseConnection.ExecuteAsync(query);
         }
 

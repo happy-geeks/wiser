@@ -7,7 +7,7 @@ using Api.Core.Interfaces;
 using Api.Core.Services;
 using Api.Modules.ApiConnections.Interfaces;
 using Api.Modules.ApiConnections.Models;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -18,16 +18,16 @@ namespace Api.Modules.ApiConnections.Services;
 /// <inheritdoc cref="IApiConnectionsService" />
 public class ApiConnectionsService : IApiConnectionsService, IScopedService
 {
-    private readonly IWiserCustomersService wiserCustomersService;
+    private readonly IWiserTenantsService wiserTenantsService;
     private readonly IDatabaseConnection clientDatabaseConnection;
     private readonly IJsonService jsonService;
 
     /// <summary>
     /// Creates a new instance of <see cref="ApiConnectionsService"/>.
     /// </summary>
-    public ApiConnectionsService(IWiserCustomersService wiserCustomersService, IDatabaseConnection databaseConnection, IJsonService jsonService)
+    public ApiConnectionsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection databaseConnection, IJsonService jsonService)
     {
-        this.wiserCustomersService = wiserCustomersService;
+        this.wiserTenantsService = wiserTenantsService;
         this.clientDatabaseConnection = databaseConnection;
         this.jsonService = jsonService;
     }
@@ -60,9 +60,9 @@ public class ApiConnectionsService : IApiConnectionsService, IScopedService
             AuthenticationData = String.IsNullOrWhiteSpace(authenticationDataString) ? new JObject() : JToken.Parse(authenticationDataString)
         };
             
-        var customer = await wiserCustomersService.GetSingleAsync(identity);
-        jsonService.EncryptValuesInJson(result.Options, customer.ModelObject.EncryptionKey);
-        jsonService.EncryptValuesInJson(result.AuthenticationData, customer.ModelObject.EncryptionKey);
+        var tenant = await wiserTenantsService.GetSingleAsync(identity);
+        jsonService.EncryptValuesInJson(result.Options, tenant.ModelObject.EncryptionKey);
+        jsonService.EncryptValuesInJson(result.AuthenticationData, tenant.ModelObject.EncryptionKey);
 
         return new ServiceResult<ApiConnectionModel>(result);
     }

@@ -73,7 +73,7 @@
         </ul>
         </header>
 
-        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': customerManagementIsOpened }">
+        <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': tenantManagementIsOpened }">
             <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
             <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
             <section class="iframe-container">
@@ -82,24 +82,13 @@
             </section>
 
             <keep-alive>
-                <customer-management v-if="user.adminLogin && activeModule === 'customerManagement'" v-bind:sub-domain="appSettings.subDomain" ref="customerManagement"></customer-management>
+                <tenant-management v-if="user.adminLogin && activeModule === 'tenantManagement'" v-bind:sub-domain="appSettings.subDomain" ref="tenantManagement"></tenant-management>
             </keep-alive>
         </main>
 
         <wiser-dialog class="general-message-dialog" :modal="true" :width="'400px'" :title="generalMessagePromptTitle" ref="generalMessagePrompt" :visible="false" :actions="[{ text: 'OK', primary: true }]">
             <div class="form-row">
                 {{ generalMessagePromptText }}
-            </div>
-        </wiser-dialog>
-        <wiser-dialog :modal="true" :width="'400px'" :title="'Vul een ID in'" ref="wiserIdPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]" @@open="onWiserIdPromptOpen">
-            <div class="form-row">
-                <input type="number" id="wiserId" class="full-width" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="wiserIdPromptValue" min="1" step="1" @@keypress="onWiserIdFieldKeyPress" required>
-            </div>
-        </wiser-dialog>
-        <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
-            <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
-            <div class="form-row">
-                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
             </div>
         </wiser-dialog>
         <wiser-dialog class="change-password-prompt" :modal="true" :width="'400px'" :title="'Wachtwoord wijzigen'" ref="changePasswordPrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Opslaan', primary: true, action: changePassword }]">
@@ -234,7 +223,8 @@
                                         </td>
                                     </tr>
                                     <tr v-for="entity in entitiesForBranches" :key="entity.id">
-                                        <td>{{ entity.displayName }}</td>
+                                        <td v-if="!entity.moduleName">Module #{{ entity.moduleId }} --> {{ entity.displayName }}</td>
+                                        <td v-else>{{ entity.moduleName }} --> {{ entity.displayName }}</td>
                                         <td>{{ entity.totalItems }}</td>
                                         <td>
                                             <select v-model="createBranchSettings.entities[entity.id].mode" v-if="createBranchSettings.entities[entity.id]">
@@ -315,178 +305,205 @@
                         <span v-html="mergeBranchError"></span>
                     </section>
 
-                    <div class="col col-12 form-row no-bottom-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                        <label>Selecteer te synchroniseren Wiser data</label>
-                    </div>
-                    <div class="col col-12 table-row no-top-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                        <div class="fixed-table">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Alles</th>
-                                        <th>Nieuw</th>
-                                        <th>Verwijderd</th>
-                                        <th>Gewijzigd</th>
-                                    </tr>
-                                </thead>
-                                <tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
-                                    <tr>
-                                        <td colspan="5">Er zijn geen wijzigingen aan Wiser data om te synchroniseren.</td>
-                                    </tr>
-                                </tbody>
-                                <tbody v-else>
-                                    <tr>
-                                        <td>Alle onderstaande</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.everything" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'everything')" />
-                                                <span>({{ totalAmountOfItemsCreated + totalAmountOfItemsUpdated + totalAmountOfItemsDeleted }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="totalAmountOfItemsCreated > 0">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.create" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'create')" />
-                                                <span>({{ totalAmountOfItemsCreated }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="totalAmountOfItemsDeleted > 0">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.delete" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'delete')" />
-                                                <span>({{ totalAmountOfItemsDeleted }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="totalAmountOfItemsUpdated > 0">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities.all.update" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'update')" />
-                                                <span>({{ totalAmountOfItemsUpdated }})</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr v-for="entity in branchChanges.entities" :key="entity.entityType">
-                                        <td>{{ entity.displayName }}</td>
-                                        <td>
-                                            <label class="checkbox" v-if="branchMergeSettings.entities[entity.entityType]">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].everything" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'everything')" />
-                                                <span>({{ entity.created + entity.deleted + entity.updated }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="entity.created > 0 && branchMergeSettings.entities[entity.entityType]">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].create" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'create')" />
-                                                <span>({{ entity.created }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="entity.deleted > 0 && branchMergeSettings.entities[entity.entityType]">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].delete" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'delete')" />
-                                                <span>({{ entity.deleted }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="entity.updated > 0 && branchMergeSettings.entities[entity.entityType]">
-                                                <input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].update" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'update')" />
-                                                <span>({{ entity.updated }})</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                        <div v-if="!branchChangesLoaded">
+						    <div class="col col-12 form-row no-bottom-margin">
+							    <label>Alle mogelijke entiteiten</label>
+						    </div>
+						    <div class="col col-12 table-row no-top-margin">
+							    <div v-if="!entitiesForBranches || !entitiesForBranches.length">
+								    <p>Geen entiteiten gevonden. Neem a.u.b. contact op met ons.</p>
+							    </div>
+							    <div class="row" v-else>
+								    <div class="col col-4" v-for="entity in entitiesForBranches" :key="entity.id">
+									    <label class="checkbox">
+										    <input type="checkbox" :name="entity.id" v-model="branchMergeSettings.entities[entity.id].everything" @@change="onBranchMergeSettingChange($event, 'entities', entity.id, 'everything')"/>
+										    <span v-if="!entity.moduleName">{{ entity.displayName }} (Module #{{ entity.moduleId }})</span>
+										    <span v-else>{{ entity.displayName }} ({{ entity.moduleName }})</span>
+									    </label>
+								    </div>
+							    </div>
+						    </div>
 
-                    <div class="col col-12 form-row no-bottom-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                        <label>Selecteer te synchroniseren Wiser inrichting</label>
-                    </div>
-                    <div class="col col-12 table-row no-top-margin" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                        <div class="fixed-table">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Alles</th>
-                                        <th>Nieuw</th>
-                                        <th>Verwijderd</th>
-                                        <th>Gewijzigd</th>
-                                    </tr>
-                                </thead>
-                                <tbody v-if="!branchChanges || !branchChanges.settings || !branchChanges.settings.length">
-                                    <tr>
-                                        <td colspan="5">Er zijn geen wijzigingen aan Wiser inrichting om te synchroniseren.</td>
-                                    </tr>
-                                </tbody>
-                                <tbody v-else>
-                                    <tr>
-                                        <td>Alle onderstaande</td>
-                                        <td>
-                                            <label class="checkbox">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.everything" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'everything')" />
-                                                <span>({{ totalAmountOfSettingsCreated + totalAmountOfSettingsUpdated + totalAmountOfSettingsDeleted }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="totalAmountOfSettingsCreated > 0">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.create" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'create')" />
-                                                <span>({{ totalAmountOfSettingsCreated }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="totalAmountOfSettingsDeleted > 0">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.delete" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'delete')" />
-                                                <span>({{ totalAmountOfSettingsDeleted }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="totalAmountOfSettingsUpdated > 0">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings.all.update" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'update')" />
-                                                <span>({{ totalAmountOfSettingsUpdated }})</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                    <tr v-for="setting in branchChanges.settings" :key="setting.type">
-                                        <td>{{ setting.displayName }}</td>
-                                        <td>
-                                            <label class="checkbox" v-if="branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].everything" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'everything')" />
-                                                <span>({{ setting.created + setting.deleted + setting.updated }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="setting.created > 0 && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].create" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'create')" />
-                                                <span>({{ setting.created }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="setting.deleted > 0 && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].delete" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'delete')" />
-                                                <span>({{ setting.deleted }})</span>
-                                            </label>
-                                        </td>
-                                        <td>
-                                            <label class="checkbox" v-if="setting.updated > 0 && branchMergeSettings.settings[setting.type]">
-                                                <input type="checkbox" v-model="branchMergeSettings.settings[setting.type].update" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'update')" />
-                                                <span>({{ setting.updated }})</span>
-                                            </label>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                            <div class="col col-12 form-row no-bottom-margin">
+							    <button class="btn btn-primary" @@click="countBranchChanges">Aantallen tellen en verder specificeren</button>
+							    <p>Let op, dit kan lang (een kwartier of meer) duren bij branches met veel wijzigingen.</p>
+						    </div>
+						</div>
+						<div v-else>
+							<div class="col col-12 form-row no-bottom-margin">
+								<label>Selecteer te synchroniseren Wiser data</label>
+							</div>
+							<div class="col col-12 table-row no-top-margin">
+								<div class="fixed-table">
+									<table>
+										<thead>
+											<tr>
+												<th>Item</th>
+												<th>Alles</th>
+												<th>Nieuw</th>
+												<th>Verwijderd</th>
+												<th>Gewijzigd</th>
+											</tr>
+										</thead>
+										<tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
+											<tr>
+												<td colspan="5">Er zijn geen wijzigingen aan Wiser data om te synchroniseren.</td>
+											</tr>
+										</tbody>
+										<tbody v-else>
+											<tr>
+												<td>Alle onderstaande</td>
+												<td>
+													<label class="checkbox">
+														<input type="checkbox" v-model="branchMergeSettings.entities.all.everything" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'everything')" />
+														<span>({{ totalAmountOfItemsCreated + totalAmountOfItemsUpdated + totalAmountOfItemsDeleted }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="totalAmountOfItemsCreated > 0">
+														<input type="checkbox" v-model="branchMergeSettings.entities.all.create" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'create')" />
+														<span>({{ totalAmountOfItemsCreated }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="totalAmountOfItemsDeleted > 0">
+														<input type="checkbox" v-model="branchMergeSettings.entities.all.delete" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'delete')" />
+														<span>({{ totalAmountOfItemsDeleted }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="totalAmountOfItemsUpdated > 0">
+														<input type="checkbox" v-model="branchMergeSettings.entities.all.update" @@change="onBranchMergeSettingChange($event, 'entities', 'all', 'update')" />
+														<span>({{ totalAmountOfItemsUpdated }})</span>
+													</label>
+												</td>
+											</tr>
+											<tr v-for="entity in branchChanges.entities" :key="entity.entityType">
+												<td>{{ entity.displayName }}</td>
+												<td>
+													<label class="checkbox" v-if="branchMergeSettings.entities[entity.entityType]">
+														<input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].everything" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'everything')" />
+														<span>({{ entity.created + entity.deleted + entity.updated }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="entity.created > 0 && branchMergeSettings.entities[entity.entityType]">
+														<input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].create" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'create')" />
+														<span>({{ entity.created }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="entity.deleted > 0 && branchMergeSettings.entities[entity.entityType]">
+														<input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].delete" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'delete')" />
+														<span>({{ entity.deleted }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="entity.updated > 0 && branchMergeSettings.entities[entity.entityType]">
+														<input type="checkbox" v-model="branchMergeSettings.entities[entity.entityType].update" @@change="onBranchMergeSettingChange($event, 'entities', entity.entityType, 'update')" />
+														<span>({{ entity.updated }})</span>
+													</label>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
 
-                    <div class="col col-12 form-row" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                        <label class="checkbox">
-                            <input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
-                            <span>Verwijder deze branche na succesvol mergen</span>
-                        </label>
-                        <p><strong>Let op!</strong> Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan.</p>
-                    </div>
-                </div>
+                            <div class="col col-12 form-row no-bottom-margin">
+                                <label>Selecteer te synchroniseren Wiser inrichting</label>
+                            </div>
+							<div class="col col-12 table-row no-top-margin">
+								<div class="fixed-table">
+									<table>
+										<thead>
+											<tr>
+												<th>Item</th>
+												<th>Alles</th>
+												<th>Nieuw</th>
+												<th>Verwijderd</th>
+												<th>Gewijzigd</th>
+											</tr>
+										</thead>
+										<tbody v-if="!branchChanges || !branchChanges.settings || !branchChanges.settings.length">
+											<tr>
+												<td colspan="5">Er zijn geen wijzigingen aan Wiser inrichting om te synchroniseren.</td>
+											</tr>
+										</tbody>
+										<tbody v-else>
+											<tr>
+												<td>Alle onderstaande</td>
+												<td>
+													<label class="checkbox">
+														<input type="checkbox" v-model="branchMergeSettings.settings.all.everything" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'everything')" />
+														<span>({{ totalAmountOfSettingsCreated + totalAmountOfSettingsUpdated + totalAmountOfSettingsDeleted }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="totalAmountOfSettingsCreated > 0">
+														<input type="checkbox" v-model="branchMergeSettings.settings.all.create" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'create')" />
+														<span>({{ totalAmountOfSettingsCreated }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="totalAmountOfSettingsDeleted > 0">
+														<input type="checkbox" v-model="branchMergeSettings.settings.all.delete" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'delete')" />
+														<span>({{ totalAmountOfSettingsDeleted }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="totalAmountOfSettingsUpdated > 0">
+														<input type="checkbox" v-model="branchMergeSettings.settings.all.update" @@change="onBranchMergeSettingChange($event, 'settings', 'all', 'update')" />
+														<span>({{ totalAmountOfSettingsUpdated }})</span>
+													</label>
+												</td>
+											</tr>
+											<tr v-for="setting in branchChanges.settings" :key="setting.type">
+												<td>{{ setting.displayName }}</td>
+												<td>
+													<label class="checkbox" v-if="branchMergeSettings.settings[setting.type]">
+														<input type="checkbox" v-model="branchMergeSettings.settings[setting.type].everything" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'everything')" />
+														<span>({{ setting.created + setting.deleted + setting.updated }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="setting.created > 0 && branchMergeSettings.settings[setting.type]">
+														<input type="checkbox" v-model="branchMergeSettings.settings[setting.type].create" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'create')" />
+														<span>({{ setting.created }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="setting.deleted > 0 && branchMergeSettings.settings[setting.type]">
+														<input type="checkbox" v-model="branchMergeSettings.settings[setting.type].delete" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'delete')" />
+														<span>({{ setting.deleted }})</span>
+													</label>
+												</td>
+												<td>
+													<label class="checkbox" v-if="setting.updated > 0 && branchMergeSettings.settings[setting.type]">
+														<input type="checkbox" v-model="branchMergeSettings.settings[setting.type].update" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'update')" />
+														<span>({{ setting.updated }})</span>
+													</label>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div class="col col-12 form-row">
+							<label class="checkbox">
+								<input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
+								<span>Verwijder deze branche na succesvol mergen</span>
+							</label>
+							<p><strong>Let op!</strong> Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan.</p>
+						</div>
+					</div>
+				</div>
             </div>
             <footer class="container fixed no-bottom-padding" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
                 <div class="row">
-                    <div class="col col-8 inline">
+                    <div class="col col-6 inline">
                         <label class="radio">
                             <input type="radio" name="start-time" value="direct" v-model="branchMergeSettings.startMode" />
                             <span>Direct starten</span>
@@ -499,7 +516,11 @@
                             <input type="datetime-local" name="start-time-picker" v-model="branchMergeSettings.startOn" />
                         </label>
                     </div>
-                    <div class="col col-4 align-right">
+                    <div class="col col-6 align-right">
+                        <label class="checkbox">
+                            <input type="checkbox" name="checkForConflicts" value="all" v-model="branchMergeSettings.checkForConflicts" />
+                            <span>Controleer of er conflicten zijn</span>
+                        </label>
                         <button class="btn btn-primary" @@click="mergeBranch">Start terugzet procedure</button>
                     </div>
                 </div>
@@ -595,7 +616,7 @@
         <wiser-dialog :modal="true" :width="'400px'" :title="'Entiteit'" ref="wiserEntityTypePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'Openen', primary: true, action: openWiserItem }]">
             <p>Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:</p>
             <div class="form-row">
-                <dropdownlist :data-items="listOfEntityTypes" :text-field="'display_name'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
+                <dropdownlist :data-items="listOfEntityTypes" :text-field="'displayName'" :data-item-key="'id'" v-model="wiserEntityTypePromptValue"></dropdownlist>
             </div>
         </wiser-dialog>
         <wiser-dialog :modal="true" :width="'400px'" :title="'Cache legen'" ref="clearCachePrompt" :visible="false" :actions="[{ text: 'Annuleren' }, { text: 'OK', primary: true, action: clearWebsiteCache }]">
@@ -799,18 +820,18 @@
     </section>
 </script>
 
-<script type="text/html" id="customer-management-template">
-    <div :class="{ loading: loading, 'form-inline': true, 'new-customer-form': true }">
+<script type="text/html" id="tenant-management-template">
+    <div :class="{ loading: loading, 'form-inline': true, 'new-tenant-form': true }">
         <h1>Nieuwe Wiser account toevoegen...</h1>
         <p class="success" v-if="currentStep === 'end'">
-            De klant is successvol aangemaakt en heeft als ID '<em>{{ createCustomerResult.data.id }}</em>' gekregen.<br />
-            De URL voor Wiser Live is geworden: <a :href="'https://' + newCustomerData.subDomain + '.wiser3.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.nl</a>.<br />
-            De URL voor Wiser dev is geworden: <a :href="'http://' + newCustomerData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newCustomerData.subDomain}}.wiser3.juicedev.nl</a>.
+            De klant is successvol aangemaakt en heeft als ID '<em>{{ createTenantResult.data.id }}</em>' gekregen.<br />
+            De URL voor Wiser Live is geworden: <a :href="'https://' + newTenantData.subDomain + '.wiser3.nl/'" target="_blank">{{newTenantData.subDomain}}.wiser3.nl</a>.<br />
+            De URL voor Wiser dev is geworden: <a :href="'http://' + newTenantData.subDomain + '.wiser3.juicedev.nl/'" target="_blank">{{newTenantData.subDomain}}.wiser3.juicedev.nl</a>.
         </p>
-        <p v-if="newCustomerData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
+        <p v-if="newTenantData.createNewDatabase">Verder zijn nog de volgende databasegebruikers aangemaakt:</p>
         <p v-else>Je hebt de volgende databasegebruiker ingevuld:</p>
         <ul class="success" v-if="currentStep === 'end'">
-            <li v-for="user in createCustomerResult.databaseUsers" :key="user.name">
+            <li v-for="user in createTenantResult.databaseUsers" :key="user.name">
                 <strong>{{ user.name }}:</strong> {{ user.password }}
             </li>
         </ul>
@@ -818,8 +839,8 @@
         <form method="post" v-if="currentStep !== 'end'">
             <section class="step" v-if="currentStep === 1">
                 <div class="form-row">
-                    <label for="newCustomerName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
-                    <input type="text" id="newCustomerName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
+                    <label for="newTenantName">Wat is de gewenste bedrijfsnaam en/of accountnaam?</label>
+                    <input type="text" id="newTenantName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.name" required :class="{ error: errors.indexOf('NameNotAvailable') > -1, small: true }" placeholder="Happy Geeks B.V.">
                     <p class="hint">De volledige bedrijfsnaam van de klant. Bijvoorbeeld 'Happy Geeks B.V.'. Alleen wij zien deze naam terug, de klant ziet deze naam nergens.</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('NameNotAvailable') > -1">
@@ -829,7 +850,7 @@
 
                 <div class="form-row">
                     <label for="subDomain">Wat is het subdomein dat gebruikt moet worden voor Wiser?</label>
-                    <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
+                    <input type="text" id="subDomain" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.subDomain" required :class="{ error: errors.indexOf('SubDomainNotAvailable') > -1, small: true }" placeholder="happygeeks"><span class="hint">.wiser.nl</span>
                     <p class="hint">Het subdomein van Wiser wat gebruikt moet gaan worden om in te loggen voor deze klant. Voer hier alleen het subdomein in, met kleine letters, bijvoorbeeld "happygeeks". Deze klant kan dan beheerd worden via happygeeks.wiser3.nl.</p>
                 </div>
                 <div class="form-row error-row" v-if="errors.indexOf('SubDomainNotAvailable') > -1">
@@ -838,21 +859,21 @@
                 </div>
                 <div class="form-row">
                     <label>
-                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isMultiLanguage" />
+                        <input type="checkbox" name="isConfigurator" v-model="newTenantData.isMultiLanguage" />
                         Is meertalig
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de website van de klant meertalig wordt. Dan wordt de vertalingenmodule en bijbehorende entiteit toegevoegd.</p>
                 </div>
                 <div class="form-row">
                     <label>
-                        <input type="checkbox" name="isWebShop" v-model="newCustomerData.isWebShop" />
+                        <input type="checkbox" name="isWebShop" v-model="newTenantData.isWebShop" />
                         Is webshop
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc.</p>
                 </div>
                 <div class="form-row">
                     <label>
-                        <input type="checkbox" name="isConfigurator" v-model="newCustomerData.isConfigurator" />
+                        <input type="checkbox" name="isConfigurator" v-model="newTenantData.isConfigurator" />
                         Is configurator
                     </label>
                     <p class="hint">Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines.</p>
@@ -865,13 +886,13 @@
 
                     <div class="form-row">
                         <label for="siteName">Naam van website</label>
-                        <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.siteName" placeholder="Happy Geeks">
+                        <input type="text" id="siteName" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.siteName" placeholder="Happy Geeks">
                         <p class="hint">De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks</p>
                     </div>
 
                     <div class="form-row">
                         <label for="hostDev">Domein dev</label>
-                        <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
+                        <input type="text" id="hostDev" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.hostDev" placeholder="happygeeks.nl.juicedev.nl">
                         <p class="hint">
                             Het domein wat straks voor de dev gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
@@ -880,7 +901,7 @@
 
                     <div class="form-row">
                         <label for="hostTest">Domein test</label>
-                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostTest" placeholder="klant.happygeeks.dev">
+                        <input type="text" id="hostTest" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.hostTest" placeholder="klant.happygeeks.dev">
                         <p class="hint">
                             Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
@@ -889,7 +910,7 @@
 
                     <div class="form-row">
                         <label for="hostLive">Domein live</label>
-                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.hostLive" placeholder="happygeeks.nl">
+                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCTenantData.hostLive" placeholder="happygeeks.nl">
                         <p class="hint">
                             Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>
@@ -902,14 +923,14 @@
 
                     <div class="form-row">
                         <label>
-                            <input type="checkbox" name="newDatabase" v-model="newCustomerData.createNewDatabase" />
+                            <input type="checkbox" name="newDatabase" v-model="newTenantData.createNewDatabase" />
                             Nieuw databaseschema maken
                         </label>
                     </div>
 
-                    <div class="form-row" v-if="newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="newTenantData.createNewDatabase">
                         <label for="digitalOceanApiAccessToken">Digital Ocean access token</label>
-                        <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.digitalOceanApiAccessToken" required>
+                        <input type="text" id="digitalOceanApiAccessToken" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.digitalOceanApiAccessToken" required>
                         <p class="hint">
                             <a href="@(Model.Settings.ApiBaseUrl)api/v3/digital-ocean/authorize" target="_blank">Open eerst deze pagina</a> en geef toestemming op die pagina.
                             Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van "access_token" en plak die in dit veld.<br />
@@ -917,44 +938,44 @@
                         </p>
                     </div>
 
-                    <ul v-if="newCustomerData.createNewDatabase && availableDbClusters.length > 0">
+                    <ul v-if="newTenantData.createNewDatabase && availableDbClusters.length > 0">
                         <li v-for="item in availableDbClusters" :key="item.id">
                             <label :for="'db-'+ item.id">
-                                <input type="radio" :id="'db-'+ item.id" name="dbClusterChoice" v-model="newCustomerData.dbClusterChoice" :value="item.id" />
+                                <input type="radio" :id="'db-'+ item.id" name="dbClusterChoice" v-model="newTenantData.dbClusterChoice" :value="item.id" />
                                 {{item.name}}
                             </label>
                         </li>
                     </ul>
-                    <div class="btn-row" v-else-if="newCustomerData.createNewDatabase">
+                    <div class="btn-row" v-else-if="newTenantData.createNewDatabase">
                         <button type="button" class="btn btn-primary" @@click="getDbClusters">Haal clusters op</button>
                     </div>
 
-                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="!newTenantData.createNewDatabase">
                         <label for="databaseHost">Host <strong>*</strong></label>
-                        <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseHost" required>
+                        <input type="text" id="databaseHost" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databaseHost" required>
                     </div>
 
                     <div class="form-row">
                         <label for="databaseUsername">Loginnaam <strong>*</strong></label>
-                        <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseUsername" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
+                        <input type="text" id="databaseUsername" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databaseUsername" required>
+                        <p class="hint" v-if="newTenantData.createNewDatabase">Vul een naam in voor een databagebruiker die nog niet bestaat.</p>
                         <p class="hint" v-else>Vul een naam in van een bestaande databasegebruiker.</p>
                     </div>
 
-                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="!newTenantData.createNewDatabase">
                         <label for="databasePassword">Wachtwoord <strong>*</strong></label>
-                        <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePassword" required>
+                        <input type="text" id="databasePassword" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databasePassword" required>
                     </div>
 
                     <div class="form-row">
                         <label for="databaseSchema">Schemanaam <strong>*</strong></label>
-                        <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databaseSchema" required>
-                        <p class="hint" v-if="newCustomerData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
+                        <input type="text" id="databaseSchema" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databaseSchema" required>
+                        <p class="hint" v-if="newTenantData.createNewDatabase">Vul een naam in voor een databaseschema die nog niet bestaat.</p>
                         <p class="hint" v-else>Vul een naam in van een bestaand databaseschema.</p>
                     </div>
-                    <div class="form-row" v-if="!newCustomerData.createNewDatabase">
+                    <div class="form-row" v-if="!newTenantData.createNewDatabase">
                         <label for="databasePort">Poortnummer <strong>*</strong></label>
-                        <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCustomerData.databasePort" required min="1" step="1">
+                        <input type="number" id="databasePort" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.databasePort" required min="1" step="1">
                     </div>
                 </fieldset>
             </section>

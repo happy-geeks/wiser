@@ -960,6 +960,11 @@ CREATE TRIGGER `QueryInsert` AFTER INSERT ON `wiser_query` FOR EACH ROW BEGIN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', NULL, NEW.`show_in_export_module`);
     END IF;
+
+    IF IFNULL(NEW.`show_in_communication_module`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_communication_module', NULL, NEW.`show_in_communication_module`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `QueryUpdate`;
@@ -977,6 +982,11 @@ CREATE TRIGGER `QueryUpdate` AFTER UPDATE ON `wiser_query` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`show_in_export_module`, '') <> IFNULL(OLD.`show_in_export_module`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_export_module', OLD.`show_in_export_module`, NEW.`show_in_export_module`);
+    END IF;
+
+    IF IFNULL(NEW.`show_in_communication_module`, '') <> IFNULL(OLD.`show_in_communication_module`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'show_in_communication_module', OLD.`show_in_communication_module`, NEW.`show_in_communication_module`);
     END IF;
 END;
 
@@ -1118,6 +1128,11 @@ CREATE TRIGGER `EntityInsert` AFTER INSERT ON `wiser_entity` FOR EACH ROW BEGIN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', NULL, NEW.`dedicated_table_prefix`);
     END IF;
+
+    IF IFNULL(NEW.`store_type`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', NULL, NEW.`store_type`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `EntityUpdate`;
@@ -1245,6 +1260,11 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`dedicated_table_prefix`, '') <> IFNULL(OLD.`dedicated_table_prefix`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', OLD.`dedicated_table_prefix`, NEW.`dedicated_table_prefix`);
+    END IF;
+
+    IF IFNULL(NEW.`store_type`, '') <> IFNULL(OLD.`store_type`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', OLD.`store_type`, NEW.`store_type`);
     END IF;
 END;
 
@@ -1664,6 +1684,11 @@ CREATE TRIGGER `DataSelectorInsert` AFTER INSERT ON `wiser_data_selector` FOR EA
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_dashboard', NULL, NEW.`show_in_dashboard`);
     END IF;
+    
+    IF IFNULL(NEW.`available_for_branches`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'available_for_branches', NULL, NEW.`available_for_branches`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `DataSelectorUpdate`;
@@ -1701,6 +1726,11 @@ CREATE TRIGGER `DataSelectorUpdate` AFTER UPDATE ON `wiser_data_selector` FOR EA
     IF IFNULL(NEW.`show_in_dashboard`, '') <> IFNULL(OLD.`show_in_dashboard`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'show_in_dashboard', OLD.`show_in_dashboard`, NEW.`show_in_dashboard`);
+    END IF;
+    
+    IF IFNULL(NEW.`available_for_branches`, '') <> IFNULL(OLD.`available_for_branches`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'available_for_branches', OLD.`available_for_branches`, NEW.`available_for_branches`);
     END IF;
 END;
 
@@ -1872,3 +1902,98 @@ CREATE TRIGGER `CommunicationDelete` AFTER DELETE ON `wiser_communication` FOR E
     INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
     VALUES ('DELETE_COMMUNICATION', 'wiser_communication', OLD.id, IFNULL(@_username, USER()), 'name', OLD.name, '');
 END;
+                        
+-- ----------------------------
+-- Triggers structure for table wiser_styled_output
+-- ----------------------------
+DROP TRIGGER IF EXISTS `StyledOutputInsert`;
+CREATE TRIGGER `StyledOutputInsert` AFTER INSERT ON `wiser_styled_output` FOR EACH ROW BEGIN
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('CREATE_STYLED_OUTPUT','wiser_styled_output', NEW.id, IFNULL(@_username, USER()), '', '', '');
+        
+        IF IFNULL(NEW.`name`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'name',NULL,NEW.`name`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_begin`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_begin',NULL,NEW.`format_begin`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_item`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_item',NULL,NEW.`format_item`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_end`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_end',NULL,NEW.`format_end`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_empty`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_empty',NULL,NEW.`format_empty`);
+        END IF;
+        
+        IF IFNULL(NEW.`query_id`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'query_id',NULL,NEW.`query_id`);
+        END IF;
+        
+        IF IFNULL(NEW.`return_type`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'return_type',NULL,NEW.`return_type`);
+        END IF;
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `StyledOutputUpdate`;
+CREATE TRIGGER `StyledOutputUpdate` AFTER UPDATE ON `wiser_styled_output` FOR EACH ROW BEGIN      
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'name',OLD.`name`,NEW.`name`);
+        END IF;
+
+        IF IFNULL(NEW.`format_begin`, '') <> IFNULL(OLD.`format_begin`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_begin',OLD.`format_begin`,NEW.`format_begin`);
+        END IF;
+
+        IF IFNULL(NEW.`format_item`, '') <> IFNULL(OLD.`format_item`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_item',OLD.`format_item`,NEW.`format_item`);
+        END IF;
+
+        IF IFNULL(NEW.`format_end`, '') <> IFNULL(OLD.`format_end`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_end',OLD.`format_end`,NEW.`format_end`);
+        END IF;
+
+        IF IFNULL(NEW.`format_empty`, '') <> IFNULL(OLD.`format_empty`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_empty',OLD.`format_empty`,NEW.`format_empty`);
+        END IF;
+
+        IF IFNULL(NEW.`query_id`, '') <> IFNULL(OLD.`query_id`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'query_id',OLD.`query_id`,NEW.`query_id`);
+        END IF;
+
+        IF IFNULL(NEW.`return_type`, '') <> IFNULL(OLD.`return_type`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'return_type',OLD.`return_type`,NEW.`return_type`);
+        END IF;
+	END IF;
+END;
+
+DROP TRIGGER IF EXISTS `StyledOutputDelete`;
+CREATE TRIGGER `StyledOutputDelete` AFTER DELETE ON `wiser_styled_output` FOR EACH ROW BEGIN
+	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('DELETE_STYLED_OUTPUT','wiser_styled_output', OLD.id, IFNULL(@_username, USER()), OLD.`name`, '', '');
+    END IF;
+END;
+         

@@ -71,7 +71,8 @@
                                             <label>ID van de module</label>
                                         </h4>
                                         <span class="k-widget k-input k-state-default">
-                                            <input id="moduleId" type="text" class="textField k-input" autocomplete="off" />
+                                            <input type="hidden" id="moduleId" />
+                                            <label id="moduleIdLabel" class="textField k-input" style="text-indent: 10px;"></label>
                                         </span>
                                     </div>
                                     <div class="item" style="width: 50%;">
@@ -1294,10 +1295,17 @@
                                                                     <div class="flex-container">
                                                                         <div class="item">
                                                                             <h4>
-                                                                                <label>Query item id</label>
+                                                                                <label>Query selecteren</label>
                                                                                 <span class="info" data-type="action-button-itemid"><ins class="icon-info-full"></ins></span>
                                                                             </h4>
-                                                                            <input type="text" id="actionButtonQueryItemId" class="textField k-input" maxlength="10" autocomplete="off" />
+                                                                            <div class="item flex-container">
+                                                                                <div style="min-width: 400px">
+                                                                                    <select id="actionButtonQueryList"></select>
+                                                                                </div>
+                                                                                <div style="padding-left: 10px">
+                                                                                    <label id="actionButtonQueryIdLbl">id: -1</label>
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
                                                                         <div class="item">
                                                                             <h4>
@@ -1623,12 +1631,16 @@
                                     <ul>
                                         <li class="k-state-active">Velden</li>
                                         <li>Modules</li>
+                                        <li>Query's</li>
                                     </ul>
                                     <div>
                                         <div id="EntityPropertiesGrid" class="multi-check"></div>
                                     </div>
                                     <div>
                                         <div id="ModulesGrid" class="multi-check"></div>
+                                    </div>
+                                    <div>
+                                        <div id="QueriesGrid" class="multi-check"></div>
                                     </div>
                                 </div>
                             </div>
@@ -1654,15 +1666,28 @@
                         <div class="right-pane">
                             <div class="pane-content">
                                 <div class="formview full">
-                                    <div class="item" style="width: 50%;">
-                                        <h4>
-                                            <label>Beschrijving van de query</label>
-                                        </h4>
-                                        <span class="k-widget k-input k-state-default">
-                                            <input id="queryDescription" type="text" class="textField k-input" autocomplete="off" />
-                                        </span>
+                                    <div class="item flex-container" style="width: 100%;">
+                                        <div style="width: 80%;">
+                                            <h4>
+                                                <label>Beschrijving van de query</label>
+                                            </h4>
+                                            <span class="k-widget k-input k-state-default">
+                                                <input id="queryDescription" type="text" class="textField k-input" autocomplete="off"/>
+                                            </span>
+                                        </div>
+                                        <div style="margin: 25px 0px 10px 25px">
+                                            <h4>
+                                                <label id="queryIdLbl"></label>
+                                            </h4>
+                                        </div>
                                     </div>
                                     <div class="item" style="width: 25%;">
+                                        <h4>
+                                            <Label>Rollen die permissies hebben op de query</Label>
+                                        </h4>
+                                        <select id="rolesWithPermissions"></select>
+                                    </div>
+                                    <div class="item" style="width: 25%; display: flex">
                                         <span class="inline titleMargin">
                                             <label class="checkbox">
                                                 <input id="showInExportModule" type="checkbox" />
@@ -1670,19 +1695,13 @@
                                             </label>
                                         </span>
                                     </div>
-                                    <div class="item" style="width: 25%;">
+                                    <div class="item" style="width: 25%; display: flex">
                                         <span class="inline titleMargin">
                                             <label class="checkbox">
                                                 <input id="showInCommunicationModule" type="checkbox" />
                                                 <span>Tonen in communicatiemodule</span>
                                             </label>
                                         </span>
-                                    </div>
-                                    <div class="item" style="width: 25%;">
-                                        <h4>
-                                            <Label>Rollen die permisies hebben op de query</Label>
-                                        </h4>
-                                        <select id="rolesWithPermissions"></select>
                                     </div>
                                     <div class="item" style="width: 100%;">
                                         <h4>

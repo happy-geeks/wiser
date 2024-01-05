@@ -55,7 +55,7 @@ namespace FrontEnd.Core.Models
 
         /// <summary>
         /// Gets or sets the host names that are used for the Wiser front-end. This should not include the sub domain.
-        /// This will be used to figure out the sub domain, which is needed to find out which customer is being loaded.
+        /// This will be used to figure out the sub domain, which is needed to find out which tenant is being loaded.
         /// </summary>
         public List<string> WiserHostNames { get; set; } = new();
 
@@ -69,5 +69,10 @@ namespace FrontEnd.Core.Models
         /// Gets or sets the settings for Google authentication.
         /// </summary>
         public GoogleAuthenticationSettings GoogleAuthentication { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the directory where the plugins are located.
+        /// </summary>
+        public string PluginsDirectory { get; set; }
     }
 }

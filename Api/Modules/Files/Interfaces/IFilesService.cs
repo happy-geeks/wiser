@@ -67,7 +67,7 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         /// <returns>The content type, contents and URL of the file.</returns>
-        Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0);
+        Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null);
 
         /// <summary>
         /// Deletes a file.

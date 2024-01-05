@@ -28,7 +28,7 @@ public class SeleniumTestSettings
     public string WiserAdminAccountPassword { get; set; }
     
     /// <summary>
-    /// Gets or sets the URLs to test. Must be the same customer but can be used to test multiple servers.
+    /// Gets or sets the URLs to test. Must be the same tenant but can be used to test multiple servers.
     /// </summary>
     public List<string> TestUrls { get; set; }
 }

@@ -1,7 +1,7 @@
 ﻿import {TrackJS} from "trackjs";
 import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import "../css/DataSelector.css";
+import "../Css/DataSelector.css";
 
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
@@ -96,7 +96,7 @@ const moduleSettings = {
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
 
@@ -1208,7 +1208,7 @@ const moduleSettings = {
                     columns: [
                         { field: "k", title: "Naam" },
                         { field: "v", title: "Waarde" },
-                        { command: { name: "destroy", text: "Verwijder" }, width: 150 }
+                        { command: { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }, width: 150 }
                     ],
                     editable: {
                         mode: "incell",
@@ -1217,6 +1217,7 @@ const moduleSettings = {
                     },
                     selectable: true
                 }).getKendoGrid();
+                $("<div />").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
                 const closeButton = $('<button type="button" style="margin-top: 1em;">Sluiten</button>').kendoButton().getKendoButton();
 

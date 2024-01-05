@@ -33,9 +33,9 @@ import {
     GENERATE_TOTP_BACKUP_CODES_SUCCESS,
     GET_BRANCH_CHANGES,
     GET_BRANCHES,
-    GET_CUSTOMER_TITLE,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
@@ -46,6 +46,7 @@ import {
     MODULES_LOADED,
     MODULES_REQUEST,
     OPEN_MODULE,
+    RESET_BRANCH_CHANGES,
     RESET_PASSWORD_ERROR,
     RESET_PASSWORD_SUCCESS,
     SET_ACTIVE_TIMER_INTERVAL,
@@ -268,7 +269,7 @@ const loginModule = {
                 return;
             }
 
-            // If the user that is logging in is an admin account, show a list of users for the customer.
+            // If the user that is logging in is an admin account, show a list of users for the tenant.
             if (loginResult.data.adminLogin && !loginResult.data.adminAccountId) {
                 commit(AUTH_LIST, loginResult.data.usersList);
                 return;
@@ -719,7 +720,7 @@ const usersModule = {
     getters: {}
 };
 
-const customersModule = {
+const tenantsModule = {
     state: () => ({
         title: null,
         validSubDomain: true,
@@ -729,7 +730,7 @@ const customersModule = {
     }),
 
     mutations: {
-        [GET_CUSTOMER_TITLE](state, title) {
+        [GET_TENANT_TITLE](state, title) {
             state.title = title;
             if (!title) {
                 return;
@@ -744,10 +745,10 @@ const customersModule = {
     },
 
     actions: {
-        async [GET_CUSTOMER_TITLE]({ commit }, subDomain) {
+        async [GET_TENANT_TITLE]({ commit }, subDomain) {
             commit(START_REQUEST);
-            const titleResponse = await main.customersService.getTitle(subDomain);
-            commit(GET_CUSTOMER_TITLE, titleResponse.data);
+            const titleResponse = await main.tenantsService.getTitle(subDomain);
+            commit(GET_TENANT_TITLE, titleResponse.data);
             commit(VALID_SUB_DOMAIN, titleResponse.statusCode !== 404);
             commit(END_REQUEST);
         }
@@ -786,7 +787,11 @@ const branchesModule = {
         branches: [],
         entities: [],
         isMainBranch: false,
-        branchChanges: {},
+        branchChanges: {
+            entities: [],
+            settings: []
+        },
+        branchChangesLoaded: false,
         mergeBranchError: null,
         mergeBranchResult: null,
         deleteBranchResult: null,
@@ -828,6 +833,15 @@ const branchesModule = {
 
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
+            state.branchChangesLoaded = true;
+        },
+
+        [RESET_BRANCH_CHANGES](state, branchChanges) {
+            state.branchChanges = {
+                entities: [],
+                settings: []
+            };
+            state.branchChangesLoaded = false;
         },
 
         [HANDLE_CONFLICT](state, { acceptChange, id }) {
@@ -1037,6 +1051,10 @@ const branchesModule = {
             commit(END_REQUEST);
         },
 
+        async [RESET_BRANCH_CHANGES]({ commit }) {
+            commit(RESET_BRANCH_CHANGES);
+        },
+
         [HANDLE_CONFLICT]({ commit }, payload) {
             commit(HANDLE_CONFLICT, payload);
         },
@@ -1117,7 +1135,7 @@ export default createStore({
         base: baseModule,
         login: loginModule,
         modules: modulesModule,
-        customers: customersModule,
+        tenants: tenantsModule,
         users: usersModule,
         items: itemsModule,
         branches: branchesModule,

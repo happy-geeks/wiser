@@ -3,6 +3,7 @@ import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {Preview} from "./Preview.js";
 import "../Css/DynamicContent.css";
+import "diff2html/bundles/css/diff2html.min.css"
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -39,6 +40,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainSplitter = null;
             this.mainWindow = null;
+            this.tabStrips = [];
             this.componentTypeComboBox = null;
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
@@ -48,16 +50,20 @@ const moduleSettings = {
             // Default settings
             this.settings = {
                 moduleId: 0,
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend",
                 userEmailAddress: "",
-                userType: ""
+                userType: "",
+                initialTab: null
             };
             Object.assign(this.settings, settings);
 
             // Other.
             this.mainLoader = null;
             this.preview = new Preview(this);
+            this.lastLoadedHistoryPart = 0;
+            this.allPartsLoaded = false;
+            this.loadingNextPart = false;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -108,7 +114,7 @@ const moduleSettings = {
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.filesRootId = userData.filesRootId;
             this.settings.imagesRootId = userData.imagesRootId;
@@ -128,6 +134,15 @@ const moduleSettings = {
             this.initializeButtons();
             await this.loadComponentHistory();
             await this.loadPreviewTab();
+            
+            if (this.settings.initialTab) {
+                if (this.settings.initialTab === "history") {
+                    this.tabStrips[0].select(`li.history-tab`);
+                    this.mainSplitter.size(".k-pane:first", "0%");
+                } else {
+                    this.tabStrips[1].select(`li.${this.settings.initialTab}-tab`);
+                }
+            }
             window.processing.removeProcess(process);
         }
 
@@ -152,14 +167,14 @@ const moduleSettings = {
          * Sticky header within Dynamic Content.
          */
         stickyHeader() {
-            const elem = document.getElementById('DynamicContentPane');
+            const elem = document.getElementById("DynamicContentPane");
             let lastScrollTop = 0;
 
             elem.onscroll = (e) => {
                 if (elem.scrollTop < lastScrollTop){
-                    elem.classList.add('sticky');
+                    elem.classList.add("sticky");
                 } else {
-                    elem.classList.remove('sticky');
+                    elem.classList.remove("sticky");
                 }
                 lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
             }
@@ -198,14 +213,14 @@ const moduleSettings = {
             // Tabstrip
             const tabStripElements = container.find(".tabstrip");
             if (tabStripElements.length > 0) {
-                tabStripElements.kendoTabStrip({
+                this.tabStrips.push(tabStripElements.kendoTabStrip({
                     activate: this.onTabStripActivate.bind(this),
                     animation: {
                         open: {
                             effects: "fadeIn"
                         }
                     }
-                }).data("kendoTabStrip").select(0);
+                }).data("kendoTabStrip").select(0));
             }
 
             //NUMERIC FIELD
@@ -284,6 +299,10 @@ const moduleSettings = {
 
                 codeMirrorInstance.refresh();
             });
+            
+            if (event.item.classList.contains("history-tab")) {
+                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+            }
         }
 
         async reloadComponentModes(newComponent, newComponentMode) {
@@ -556,36 +575,104 @@ const moduleSettings = {
          * Loads the History HTML and updates the right panel.
          * */
         async loadComponentHistory() {
-            const history = await Wiser.api({
-                url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
-                dataType: "json",
-                method: "GET"
-            });
+            try {
+                const history = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history`,
+                    dataType: "json",
+                    method: "GET"
+                });
 
-            const historyHtml = await Wiser.api({
-                url: `/Modules/DynamicContent/History`,
-                method: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(history)
-            });
+                const historyHtml = await Wiser.api({
+                    url: "/Modules/DynamicContent/History",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(history)
+                });
 
-            document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
-            this.bindHistoryButtons();
+                document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
+                this.lastLoadedHistoryPart = 1;
+                this.allPartsLoaded = false;
+
+                document.getElementById("right-pane").addEventListener("scroll", event => {
+                    const {scrollHeight, scrollTop, clientHeight} = event.target;
+
+                    // if user scrolled to bottom, load next part of the history
+                    // We don't just compare with 0 to avoid rounding errors
+                    const treshold = 1;
+                    if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
+                        // if history pane is active load next batch of history rows
+                        if (document.getElementsByClassName("historyContainer")[0].parentElement.classList.contains("k-state-active")) {
+                            this.loadNextHistoryPart();
+                        }
+                    }
+                });
+
+                this.bindHistoryButtons();
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+        }
+
+        async loadNextHistoryPart() {
+            if (this.loadingNextPart || this.allPartsLoaded || this.lastLoadedHistoryPart === 0) {
+                return;
+            }
+
+            this.loadingNextPart = true;
+            const process = `loadDynamicHistoryTabNextPart_${Date.now()}`;
+            window.processing.addProcess(process);
+            try {
+                const history = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}/history?pageNumber=${this.lastLoadedHistoryPart+1}`,
+                    dataType: "json",
+                    method: "GET"
+                });
+
+                if (history.length === 0) {
+                    this.allPartsLoaded = true;
+                    this.loadingNextPart = false;
+                    window.processing.removeProcess(process);
+                    return;
+                }
+
+                const historyRowsHtml = await Wiser.api({
+                    url: "/Modules/DynamicContent/HistoryRow",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(history)
+                });
+
+                document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
+                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                this.lastLoadedHistoryPart++;
+            } catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
+
+            window.processing.removeProcess(process);
+            this.loadingNextPart = false;
         }
 
         async loadPreviewTab() {
             // Preview
             await this.preview.loadProfiles();
-            const response = await Wiser.api({
-                method: "GET",
-                url: "/Modules/Templates/PreviewTab"
-            });
+            try {
+                const response = await Wiser.api({
+                    method: "GET",
+                    url: "/Modules/Templates/PreviewTab"
+                });
 
-            document.getElementById("previewTab").innerHTML = response;
+                document.getElementById("previewTab").innerHTML = response;
 
-            this.preview.initPreviewProfileInputs(true, true);
-            this.preview.bindPreviewButtons();
-            this.preview.generatePreview(false);
+                this.preview.initPreviewProfileInputs(true, true);
+                this.preview.bindPreviewButtons();
+                this.preview.generatePreview(false);
+            }  catch (exception) {
+                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                console.error(exception);
+            }
         }
 
         async transformCodeMirrorViews(container = null) {
@@ -648,7 +735,7 @@ const moduleSettings = {
             // Select history changes and change revert button visibility
             $(".col-6>.item").on("click", function (el) {
                 const currentProperty = $(el.currentTarget).find("[data-history-property]").data("historyProperty");
-                $(el.currentTarget.closest(".historyLine")).find(".col-6>.item").has("[data-history-property='" + currentProperty + "']").toggleClass("selected");
+                $(el.currentTarget.closest(".historyLine")).find(".col-6>.item").has(`[data-history-property='${currentProperty}']`).toggleClass("selected");
 
                 if (document.querySelectorAll(".col-6>.item.selected").length) {
                     $("#revertChanges").show();

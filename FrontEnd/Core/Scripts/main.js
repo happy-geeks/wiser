@@ -6,7 +6,7 @@ import axios from "axios";
 
 import UsersService from "./shared/users.service";
 import ModulesService from "./shared/modules.service";
-import CustomersService from "./shared/customers.service";
+import TenantsService from "./shared/tenants.service";
 import ItemsService from "./shared/items.service";
 import BranchesService from "./shared/branches.service";
 
@@ -17,8 +17,8 @@ import taskAlerts from "./components/task-alerts";
 import {DropDownList} from "@progress/kendo-vue-dropdowns";
 import WiserDialog from "./components/wiser-dialog";
 
-import "../scss/main.scss";
-import "../scss/task-alerts.scss";
+import "../Scss/main.scss";
+import "../Scss/task-alerts.scss";
 
 import {
     ACTIVATE_MODULE,
@@ -36,9 +36,9 @@ import {
     GENERATE_TOTP_BACKUP_CODES,
     GET_BRANCH_CHANGES,
     GET_BRANCHES,
-    GET_CUSTOMER_TITLE,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
@@ -46,6 +46,7 @@ import {
     MERGE_BRANCH,
     MODULES_REQUEST,
     OPEN_MODULE,
+    RESET_BRANCH_CHANGES,
     TOGGLE_PIN_MODULE,
     UPDATE_ACTIVE_TIME,
     USER_BACKUP_CODES_GENERATED
@@ -59,7 +60,7 @@ class Main {
 
         this.usersService = new UsersService(this);
         this.modulesService = new ModulesService(this);
-        this.customersService = new CustomersService(this);
+        this.tenantsService = new TenantsService(this);
         this.itemsService = new ItemsService(this);
         this.branchesService = new BranchesService(this);
         this.cacheService = new CacheService(this);
@@ -216,8 +217,8 @@ class Main {
                 this.vueApp.openChangePasswordPrompt();
                 break;
             }
-            case "OpenCustomerManagement": {
-                this.vueApp.openCustomerManagement();
+            case "OpenTenantManagement": {
+                this.vueApp.openTenantManagement();
                 break;
             }
             case "OpenGenerateTotpBackupCodesPrompt": {
@@ -287,6 +288,7 @@ class Main {
                                 delete: false
                             }
                         },
+                        checkForConflicts: true,
                         conflicts: []
                     },
                     branchActions: [
@@ -311,7 +313,7 @@ class Main {
                 };
             },
             async created() {
-                this.$store.dispatch(GET_CUSTOMER_TITLE, this.appSettings.subDomain);
+                this.$store.dispatch(GET_TENANT_TITLE, this.appSettings.subDomain);
                 document.addEventListener("keydown", this.onAppKeyDown.bind(this));
             },
             computed: {
@@ -360,17 +362,17 @@ class Main {
                 markerIoEnabled() {
                     return !!this.appSettings.markerIoToken;
                 },
-                customerTitle() {
-                    return this.$store.state.customers.title;
+                tenantTitle() {
+                    return this.$store.state.tenants.title;
                 },
                 validSubDomain() {
-                    return this.$store.state.customers.validSubDomain;
+                    return this.$store.state.tenants.validSubDomain;
                 },
                 changePasswordError() {
                     return this.$store.state.users.changePasswordError;
                 },
-                customerManagementIsOpened() {
-                    return this.$store.state.modules.openedModules.filter(m => m.moduleId === "customerManagement").length > 0;
+                tenantManagementIsOpened() {
+                    return this.$store.state.modules.openedModules.filter(m => m.moduleId === "tenantManagement").length > 0;
                 },
                 createBranchError() {
                     return this.$store.state.branches.createBranchError;
@@ -406,6 +408,9 @@ class Main {
                 },
                 branchChanges() {
                     return this.$store.state.branches.branchChanges;
+                },
+                branchChangesLoaded() {
+                    return this.$store.state.branches.branchChangesLoaded;
                 },
                 totalAmountOfItemsCreated() {
                     return this.$store.state.branches.branchChanges.entities.reduce((accumulator, entity) => {
@@ -466,7 +471,7 @@ class Main {
                         return "";
                     }
 
-                    if (this.branchActionSettings.selectedAction.id === 'website' && !this.selectedAction.websiteUrl) {
+                    if (this.branchActionSettings.selectedAction.id === 'website' && !this.branchActionSettings.websiteUrl) {
                         return "";
                     }
 
@@ -509,7 +514,7 @@ class Main {
             components: {
                 "dropdownlist": DropDownList,
                 "WiserDialog": WiserDialog,
-                "customerManagement": defineAsyncComponent(() => import(/* webpackChunkName: "customer-management" */"./components/customer-management")),
+                "tenantManagement": defineAsyncComponent(() => import(/* webpackChunkName: "tenant-management" */"./components/tenant-management")),
                 "login": login,
                 "taskAlerts": taskAlerts
             },
@@ -645,11 +650,11 @@ class Main {
                     this.$store.dispatch(ACTIVATE_MODULE, moduleId);
                 },
 
-                async openCustomerManagement() {
+                async openTenantManagement() {
                     this.openModule({
-                        moduleId: "customerManagement",
+                        moduleId: "tenantManagement",
                         name: "Klant toevoegen",
-                        type: "customerManagement",
+                        type: "tenantManagement",
                         javascriptOnly: true,
                         onlyOneInstanceAllowed: true
                     });
@@ -925,6 +930,22 @@ class Main {
                     }
                 },
 
+                addMissingBranchChanges() {
+                    for (let entityOrSettingType of this.branchChanges.entities) {
+                        const key = entityOrSettingType.entityType;
+                        if (this.branchMergeSettings.entities[key]) {
+                            continue;
+                        }
+
+                        this.branchMergeSettings.entities[key] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+                },
+
                 async clearWebsiteCache() {
                     if (!this.clearCacheSettings.url || this.clearCacheSettings.url.length < 5) {
                         await this.$store.dispatch(CLEAR_CACHE_ERROR, "Vul a.u.b. een geldige URL in.");
@@ -1025,6 +1046,8 @@ class Main {
                 },
 
                 async onWiserMergeBranchPromptOpen(sender) {
+                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
                         this.onSelectedBranchChange(this.branches[0].id);
@@ -1068,12 +1091,28 @@ class Main {
                         selectedBranchId = event.target.value.id;
                     }
 
-                    await this.$store.dispatch(GET_BRANCH_CHANGES, selectedBranchId);
+                    for (let entity of this.entitiesForBranches) {
+                        this.branchMergeSettings.entities[entity.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+
+                    this.$store.dispatch(RESET_BRANCH_CHANGES);
 
                     // Clear all checkboxes.
                     this.branchMergeSettings.entities.all.everything = false;
-                    this.branchMergeSettings.settings.all.everything = false;
                     this.updateBranchChangeList(false, "entities", "all", "everything");
+                },
+
+                async countBranchChanges() {
+                    await this.$store.dispatch(GET_BRANCH_CHANGES, this.branchMergeSettings.selectedBranch.id);
+
+                    // Clear all checkboxes.
+                    this.addMissingBranchChanges();
+                    this.branchMergeSettings.settings.all.everything = false;
                     this.updateBranchChangeList(false, "settings", "all", "everything");
                 },
 

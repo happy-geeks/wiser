@@ -142,9 +142,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId, int pageNumber, int itemsPerPage)
         {
-            return await templatesService.GetTemplateHistoryAsync(identity, templateId);
+            return await templatesService.GetTemplateHistoryAsync(identity, templateId, pageNumber, itemsPerPage);
         }
 
         /// <inheritdoc />

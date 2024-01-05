@@ -1,4 +1,4 @@
-﻿import { Utils, Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Utils, Wiser} from "../../Base/Scripts/Utils.js";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.window.js");
@@ -66,107 +66,9 @@ export class Windows {
      * Do all initializations for the Windows class, such as adding bindings.
      */
     initialize() {
-        // Window for file managers.
-        this.fileManagerIframe = document.querySelector("#fileManagerFrame");
-        this.fileManagerWindow = $("#fileManagerWindow").kendoWindow({
-            width: "90%",
-            height: "90%",
-            title: "",
-            visible: false,
-            modal: true,
-            actions: ["Close"],
-            open: (event) => {
-                let selectedText = "";
-                if (this.fileManagerWindowSender && this.fileManagerWindowSender.kendoEditor) {
-                    selectedText = this.fileManagerWindowSender.kendoEditor.getSelection().toString();
-                }
-                this.fileManagerIframe.src = `/Modules/FileManager?mode=${this.fileManagerWindowMode}&iframe=true&selectedText=${encodeURIComponent(selectedText)}`;
-
-                switch (this.fileManagerWindowMode) {
-                    case this.fileManagerModes.images:
-                        event.sender.title("Afbeelding invoegen");
-                        break;
-                    case this.fileManagerModes.files:
-                        event.sender.title("Link naar bestand invoegen");
-                        break;
-                    case this.fileManagerModes.templates:
-                        event.sender.title("Template invoegen");
-                        break;
-                }
-            }
-        }).data("kendoWindow");
-
-        this.fileManagerWindowAddButton = $("#fileManagerWindow button[name=addFileToEditor]").kendoButton({
-            icon: "save",
-            click: async (event) => {
-                if (!this.fileManagerWindowSender) {
-                    kendo.alert("Er is geen HTML editor gevonden waar dit bestand toegevoegd kan worden. Sluit aub dit scherm en probeer het opnieuw, of neem contact op met ons.");
-                    return;
-                }
-
-                let html = "";
-
-                if (!this.fileManagerIframe || !this.fileManagerIframe.contentWindow || !this.fileManagerIframe.contentWindow.document) {
-                    kendo.alert("Het iframe voor bestandsbeheer kon niet gevonden worden of is leeg. Ververs a.u.b. de tab waar Wiser in draait en probeer het opnieuw, of neem contact op met ons.");
-                    return;
-                }
-
-                const fileManagerClassFromIframe = this.fileManagerIframe.contentWindow.fileManager;
-
-                switch (this.fileManagerWindowMode) {
-                    case this.fileManagerModes.images: {
-                        const selectedItem = fileManagerClassFromIframe.imagesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.imagesUploaderWindowTreeView.select());
-                        const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
-
-                        const imagePreviewUrl = fileManagerClassFromIframe.generateImagePreviewUrl(extension);
-                        html = `<figure>
-    <picture>
-        <source media="(min-width: 0px)" srcset="${imagePreviewUrl.url}" type="image/${extension}" />
-        <source media="(min-width: 0px)" srcset="${fileManagerClassFromIframe.generateImagePreviewUrl('webp').url}" type="image/webp" />
-        <img width="100%" height="auto" loading="lazy" src="${imagePreviewUrl.url}" alt="${imagePreviewUrl.altText}" />
-    </picture>
-</figure>`;
-                        break;
-                    }
-                    case this.fileManagerModes.files: {
-                        const fileUrl = fileManagerClassFromIframe.generateFilePreviewUrl();
-                        html = `<a href="${fileUrl}">${(fileManagerClassFromIframe.filesUploaderWindow.element.find("#fileLinkText").val() || fileUrl)}</a>`;
-
-                        break;
-                    }
-                    case this.fileManagerModes.templates: {
-                        const selectedItem = fileManagerClassFromIframe.templatesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.templatesUploaderWindowTreeView.select());
-                        html = selectedItem.html;
-                        break;
-                    }
-                    default: {
-                        kendo.alert(`Onbekende mode ('${this.fileManagerModes}') voor bestandsbeheer. Sluit a.u.b. dit scherm en probeer het opnieuw, of neem contact op met ons.`)
-                        return;
-                    }
-                }
-
-                if (this.fileManagerWindowSender.kendoEditor) {
-                    const originalOptions = this.fileManagerWindowSender.kendoEditor.options.pasteCleanup;
-                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.none = true;
-                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.span = false;
-                    this.fileManagerWindowSender.kendoEditor.exec("inserthtml", { value: html });
-                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.none = originalOptions.none;
-                    this.fileManagerWindowSender.kendoEditor.options.pasteCleanup.span = originalOptions.span;
-                }
-
-                if (this.fileManagerWindowSender.codeMirror) {
-                    const doc = this.fileManagerWindowSender.codeMirror.getDoc();
-                    const cursor = doc.getCursor();
-                    doc.replaceRange(html, cursor);
-                }
-
-                if (this.fileManagerWindowSender.contentbuilder) {
-                    $(this.fileManagerWindowSender.contentbuilder.activeElement).replaceWith(html);
-                }
-
-                this.fileManagerWindow.close();
-            }
-        });
+        this.fileManagerWindow = Wiser.initializeFileManager(this.fileManagerWindowSender,
+            this.fileManagerWindowMode,this.base.settings.iframeMode, this.base.settings.gridViewMode,
+            this.base.settings.moduleName);
 
         // Window for searching for items to link to another item.
         this.historyGridWindow = $("#historyWindowGrid").kendoWindow({
@@ -326,6 +228,14 @@ export class Windows {
                     required: (input) => {
                         const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");
                         return `${fieldDisplayName} is verplicht`;
+                    },
+                    pattern: (input) => {
+                        const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");
+                        return `${fieldDisplayName} is niet correct`;
+                    },
+                    step: (input) => {
+                        const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");
+                        return `${fieldDisplayName} is niet correct`;
                     }
                 }
             }).data("kendoValidator");
