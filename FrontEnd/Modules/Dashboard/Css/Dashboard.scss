@@ -681,6 +681,10 @@ progress {
     .folded-message {
         white-space: nowrap;
     }
+    
+    .unfolded-message {
+        white-space: normal;
+    }
 }
 
 /* SCROLLBAR */

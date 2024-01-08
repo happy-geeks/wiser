@@ -328,7 +328,7 @@ export class EntityTab {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol aangemaakt, probeer het opnieuw`, "error");
         }
-        
+
         this.selectTabInTreeView(tabName === "" ? "Gegevens" : tabName, true);
     }
 
@@ -364,7 +364,7 @@ export class EntityTab {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol verwijderd, probeer het opnieuw`, "error");
         }
-        
+
         this.selectTabInTreeView(selectedProperty.tabName, true);
     }
 
@@ -2076,7 +2076,7 @@ export class EntityTab {
 
         // load existing queries into combobox
         this.actionButtonQueryList.setDataSource(this.base.wiserQueryTab.queryList);
-        
+
         // set properties accordingly
         if (gridDataItem.action) {
             const actionTypes = this.base.actionButtonTypes;
@@ -3945,7 +3945,7 @@ this.dataSourceDataSelector.value(dataSelectorId);
                     document.getElementById("allowedExtensions").value = validation.allowedExtensions.join(",");
                 }
                 else if (resultSet.inputType === inputTypes.IMAGEUPLOAD) {
-                    document.getElementById("allowedExtensions").value = ".jpg,.jpeg,.png,.bmp,.gif,.svg";
+                    document.getElementById("allowedExtensions").value = ".jpg,.jpeg,.png,.bmp,.gif,.svg,.webp";
                 }
                 else {
                     document.getElementById("allowedExtensions").value = "";

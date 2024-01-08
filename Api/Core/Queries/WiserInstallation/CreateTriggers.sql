@@ -1902,3 +1902,98 @@ CREATE TRIGGER `CommunicationDelete` AFTER DELETE ON `wiser_communication` FOR E
     INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
     VALUES ('DELETE_COMMUNICATION', 'wiser_communication', OLD.id, IFNULL(@_username, USER()), 'name', OLD.name, '');
 END;
+                        
+-- ----------------------------
+-- Triggers structure for table wiser_styled_output
+-- ----------------------------
+DROP TRIGGER IF EXISTS `StyledOutputInsert`;
+CREATE TRIGGER `StyledOutputInsert` AFTER INSERT ON `wiser_styled_output` FOR EACH ROW BEGIN
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('CREATE_STYLED_OUTPUT','wiser_styled_output', NEW.id, IFNULL(@_username, USER()), '', '', '');
+        
+        IF IFNULL(NEW.`name`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'name',NULL,NEW.`name`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_begin`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_begin',NULL,NEW.`format_begin`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_item`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_item',NULL,NEW.`format_item`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_end`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_end',NULL,NEW.`format_end`);
+        END IF;
+    
+        IF IFNULL(NEW.`format_empty`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_empty',NULL,NEW.`format_empty`);
+        END IF;
+        
+        IF IFNULL(NEW.`query_id`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'query_id',NULL,NEW.`query_id`);
+        END IF;
+        
+        IF IFNULL(NEW.`return_type`, '') <> '' THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'return_type',NULL,NEW.`return_type`);
+        END IF;
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `StyledOutputUpdate`;
+CREATE TRIGGER `StyledOutputUpdate` AFTER UPDATE ON `wiser_styled_output` FOR EACH ROW BEGIN      
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'name',OLD.`name`,NEW.`name`);
+        END IF;
+
+        IF IFNULL(NEW.`format_begin`, '') <> IFNULL(OLD.`format_begin`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_begin',OLD.`format_begin`,NEW.`format_begin`);
+        END IF;
+
+        IF IFNULL(NEW.`format_item`, '') <> IFNULL(OLD.`format_item`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_item',OLD.`format_item`,NEW.`format_item`);
+        END IF;
+
+        IF IFNULL(NEW.`format_end`, '') <> IFNULL(OLD.`format_end`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_end',OLD.`format_end`,NEW.`format_end`);
+        END IF;
+
+        IF IFNULL(NEW.`format_empty`, '') <> IFNULL(OLD.`format_empty`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_empty',OLD.`format_empty`,NEW.`format_empty`);
+        END IF;
+
+        IF IFNULL(NEW.`query_id`, '') <> IFNULL(OLD.`query_id`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'query_id',OLD.`query_id`,NEW.`query_id`);
+        END IF;
+
+        IF IFNULL(NEW.`return_type`, '') <> IFNULL(OLD.`return_type`, '') THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'return_type',OLD.`return_type`,NEW.`return_type`);
+        END IF;
+	END IF;
+END;
+
+DROP TRIGGER IF EXISTS `StyledOutputDelete`;
+CREATE TRIGGER `StyledOutputDelete` AFTER DELETE ON `wiser_styled_output` FOR EACH ROW BEGIN
+	IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('DELETE_STYLED_OUTPUT','wiser_styled_output', OLD.id, IFNULL(@_username, USER()), OLD.`name`, '', '');
+    END IF;
+END;
+         

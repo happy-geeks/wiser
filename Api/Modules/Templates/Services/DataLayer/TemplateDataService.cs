@@ -582,6 +582,7 @@ SET template_name = ?name,
     trigger_table_name = ?triggerTableName,
     is_default_header = ?isDefaultHeader,
     is_default_footer = ?isDefaultFooter,
+    default_header_footer_regex = ?defaultHeaderFooterRegex,
     is_partial = ?isPartial,
     widget_content = ?widgetContent,
     widget_location = ?widgetLocation,
@@ -1444,7 +1445,8 @@ AND otherVersion.id IS NULL";
         {
             var temporaryTableName = $"temp_templates_{Guid.NewGuid():N}";
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
-            var query = $@"CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{temporaryTableName}`
+            var query = $@"CREATE TABLE `{branchDatabaseName}`.`{temporaryTableName}` LIKE {WiserTableNames.WiserTemplate};
+INSERT INTO `{branchDatabaseName}`.`{temporaryTableName}`
 SELECT template.*
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
@@ -1654,7 +1656,7 @@ WHERE NOT EXISTS (
     AND template.version = temp.version
 );
 
-DROP TEMPORARY TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`";
+DROP TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`";
             await clientDatabaseConnection.ExecuteAsync(query);
         }
 

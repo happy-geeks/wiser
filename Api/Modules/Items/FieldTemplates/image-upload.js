@@ -19,7 +19,7 @@ options = $.extend({
         removeUrl: "remove"
     },
     validation: {
-        allowedExtensions: [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg"]
+        allowedExtensions: [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg", ".webp"]
     },
     files: initialFiles,
     upload: (e) => {

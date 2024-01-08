@@ -431,7 +431,8 @@ VALUES(?contentId, ?component, ?componentMode, ?title, ?version, ?now, ?username
         {
             var temporaryTableName = $"temp_dynamic_content_{Guid.NewGuid():N}";
             // Branches always exist within the same database cluster, so we don't need to make a new connection for it.
-            var query = $@"CREATE TEMPORARY TABLE `{branchDatabaseName}`.`{temporaryTableName}`
+            var query = $@"CREATE TABLE `{branchDatabaseName}`.`{temporaryTableName}` LIKE {WiserTableNames.WiserDynamicContent};
+INSERT INTO `{branchDatabaseName}`.`{temporaryTableName}`
 SELECT content.*
 FROM {WiserTableNames.WiserDynamicContent} AS content
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS otherVersion ON otherVersion.content_id = content.content_id AND otherVersion.version > content.version
@@ -475,7 +476,7 @@ WHERE NOT EXISTS (
     AND content.version = temp.version
 );
 
-DROP TEMPORARY TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`;";
+DROP TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`;";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Also copy all links of dynamic content to template to the branch.

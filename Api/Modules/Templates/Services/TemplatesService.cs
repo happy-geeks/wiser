@@ -242,7 +242,7 @@ namespace Api.Modules.Templates.Services
 	template.template_data_minified
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-WHERE (template.use_in_wiser_html_editors = 1 OR template.load_always = 1)
+WHERE template.use_in_wiser_html_editors = 1
 AND template.template_type IN ({(int)TemplateTypes.Css}, {(int)TemplateTypes.Scss})
 AND otherVersion.id IS NULL
 ORDER BY template.ordering ASC");
@@ -786,34 +786,6 @@ WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
 ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
-                TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
-	role.id AS `roleId`,
-	role.role_name AS `roleName`,
-	module.id AS `moduleId`,
-	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
-	IFNULL(permission.permissions, 0) AS `permission`
-FROM wiser_module AS module
-JOIN wiser_roles AS role ON role.id = {roleId}
-LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id
-ORDER BY moduleName ASC
-");
-                TemplateQueryStrings.Add("UPDATE_MODULE_PERMISSION", @" INSERT INTO `wiser_permission` (
-     `role_id`,
-     `entity_name`,
-     `item_id`,
-     `entity_property_id`,
-     `permissions`,
-     `module_id`
- ) 
- VALUES (
-     {roleId}, 
-     '',
-     0,
-     0,
-     {permissionCode},
-     {moduleId}
- )
-ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
@@ -1482,7 +1454,11 @@ LIMIT 1";
                 }
 
                 // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
-                await CreateNewVersionAsync(template.TemplateId, version);
+                // Does not apply if the template was published to live within a branch.
+                if (String.IsNullOrWhiteSpace(branchDatabaseName))
+                {
+                    await CreateNewVersionAsync(template.TemplateId, version);
+                }
             }
 
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);

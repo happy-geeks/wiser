@@ -658,3 +658,15 @@ footer {
 .row.measurement-filters .col .flex-container.item > .k-input {
     margin: 5px 0;
 }
+
+#fileManagerWindow .horizontal {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#fileManagerWindow iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
