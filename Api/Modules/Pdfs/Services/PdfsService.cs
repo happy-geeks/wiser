@@ -11,11 +11,13 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Pdfs.Interfaces;
 using EvoPdf;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Api.Modules.Pdfs.Services
 {
@@ -27,17 +29,19 @@ namespace Api.Modules.Pdfs.Services
         private readonly IWiserTenantsService wiserTenantsService;
         private readonly IFilesService filesService;
         private readonly IWebHostEnvironment webHostEnvironment;
+        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of <see cref="PdfsService"/>.
         /// </summary>
-        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment)
+        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment, IOptions<GclSettings> gclSettings)
         {
             this.htmlToPdfConverterService = htmlToPdfConverterService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserTenantsService = wiserTenantsService;
             this.filesService = filesService;
             this.webHostEnvironment = webHostEnvironment;
+            this.gclSettings = gclSettings.Value;
         }
 
         /// <inheritdoc />
@@ -116,9 +120,12 @@ namespace Api.Modules.Pdfs.Services
                 {
                     pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
                 }
-               
-                if (mergeResultPdfDocument==null)
+
+                if (mergeResultPdfDocument == null)
+                {
                     mergeResultPdfDocument = new Document(pdfStream);
+                    mergeResultPdfDocument.LicenseKey = gclSettings.EvoPdfLicenseKey;
+                }
                 else
                     mergeResultPdfDocument.AppendDocument(new Document(pdfStream));
             }
