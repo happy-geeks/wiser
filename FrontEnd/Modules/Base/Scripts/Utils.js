@@ -1,7 +1,5 @@
 ﻿import {DateTime} from "luxon";
 import "./Processing.js";
-import pretty from "pretty";
-import Diff from "diff";
 import * as Diff2Html from "diff2html/lib/diff2html"
 import "diff2html/bundles/css/diff2html.min.css"
 
@@ -532,9 +530,10 @@ export class Wiser {
      * @param {any} itemDetails The details (fields/properties + values) of an item.
      * @param {boolean} uriEncodeValues Whether or not to encode all values to be safely used in an URL.
      * @param {boolean} removeUnknownVariables Whether or not to remove all variables that are not found in the data object.
+     * @param {boolean} convertToNumberIfPossible Whether or not to convert the output to a number if possible. Default is true.
      * @returns {string} The input string with all variables replaced with values from fields.
      */
-    static doWiserItemReplacements(input, itemDetails, uriEncodeValues = false, removeUnknownVariables = false) {
+    static doWiserItemReplacements(input, itemDetails, uriEncodeValues = false, removeUnknownVariables = false, convertToNumberIfPossible = true) {
         if (!input || typeof input !== "string") {
             return input;
         }
@@ -553,7 +552,7 @@ export class Wiser {
             }
         }
 
-        return Wiser.doObjectReplacements(output, itemDetails.property_, uriEncodeValues, removeUnknownVariables);
+        return Wiser.doObjectReplacements(output, itemDetails.property_, uriEncodeValues, removeUnknownVariables, convertToNumberIfPossible);
     }
 
     /**
@@ -562,9 +561,10 @@ export class Wiser {
      * @param {any} data An JSON object with keys and values to use for replacements.
      * @param {boolean} uriEncodeValues Whether or not to encode all values to be safely used in an URL.
      * @param {boolean} removeUnknownVariables Whether or not to remove all variables that are not found in the data object.
+     * @param {boolean} convertToNumberIfPossible Whether or not to convert the output to a number if possible. Default is true.
      * @returns {any} The input string with all variables replaced with values from the object.
      */
-    static doObjectReplacements(input, data, uriEncodeValues = false, removeUnknownVariables = false) {
+    static doObjectReplacements(input, data, uriEncodeValues = false, removeUnknownVariables = false, convertToNumberIfPossible = true) {
         if (!data) {
             return input;
         }
@@ -585,7 +585,7 @@ export class Wiser {
             if (regExpMatch && regExpMatch.length === 1 && regExpMatch[0] === output && output.indexOf("?") > 0 && !value) {
                 const split = output.split(/[\{\}\?]+/);
 
-                return split.length <= 3 ? null : Strings.convertToNumberIfPossible(split[2]);
+                return split.length <= 3 ? null : (!convertToNumberIfPossible ? split[2] : Strings.convertToNumberIfPossible(split[2]));
             }
 
             output = output.replace(regExp, value);
@@ -595,7 +595,7 @@ export class Wiser {
             output = Wiser.removeUnknownVariables(output);
         }
 
-        return Strings.convertToNumberIfPossible(output);
+        return !convertToNumberIfPossible ? output : Strings.convertToNumberIfPossible(output);
     }
 
     /**
@@ -1445,7 +1445,7 @@ export class Wiser {
 
             field.classList.remove("diffField");
         }
-    }    
+    }
 }
 
 /**
