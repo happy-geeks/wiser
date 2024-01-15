@@ -2510,7 +2510,7 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true, false);
                             }
 
                             if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
