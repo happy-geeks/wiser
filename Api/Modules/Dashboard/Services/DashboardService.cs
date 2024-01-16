@@ -591,7 +591,8 @@ ORDER BY time_active DESC";
     /// <param name="databaseName">The name of the database that is currently being worked in (for the branches functionality).</param>
     private async Task CheckAndUpdateTablesAsync(string databaseName = null)
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync([
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+        {
             WiserTableNames.WiserEntity,
             // Ensure data selector table has the "show_in_dashboard" column.
             WiserTableNames.WiserDataSelector,
@@ -599,7 +600,7 @@ ORDER BY time_active DESC";
             WiserTableNames.WiserDashboard,
             // For the user login data.
             WiserTableNames.WiserLoginLog
-        ], databaseName);
+        }, databaseName);
     }
 
     /// <summary>
