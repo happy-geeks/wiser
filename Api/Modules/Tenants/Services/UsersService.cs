@@ -959,7 +959,7 @@ ORDER BY username.`value` ASC";
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
-                await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserLoginLog]);
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", decryptedLogId);
@@ -1040,7 +1040,7 @@ ORDER BY username.`value` ASC";
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
-                await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserLoginLog]);
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", decryptedLoginLogId);
@@ -1295,7 +1295,7 @@ ORDER BY username.`value` ASC";
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
-                await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserLoginLog]);
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("user_id", userId);

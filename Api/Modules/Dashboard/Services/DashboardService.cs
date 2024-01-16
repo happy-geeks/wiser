@@ -643,10 +643,11 @@ ORDER BY time_active DESC";
     /// <inheritdoc />
     public async Task<ServiceResult<List<Service>>> GetWtsServicesAsync(ClaimsIdentity identity)
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync([
+        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
+        {
             WiserTableNames.WtsLogs,
             WiserTableNames.WtsServices
-        ]);
+        });
 
         var services = new List<Service>();
 
