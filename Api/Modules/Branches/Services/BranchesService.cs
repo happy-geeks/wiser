@@ -277,8 +277,9 @@ WHERE action = 'create'";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id)
+        public async Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id, List<string> entityTypes)
         {
+            entityTypes ??= new List<string>();
             var currentTenant = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
 
             var result = new ChangesAvailableForMergingModel();
@@ -342,12 +343,12 @@ WHERE action = 'create'";
 UNION ALL
 SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}";
                     using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                    await branchAdapter.FillAsync(tablePrefixDataTable);
+                    await branchAdapter.FillAsync(filesTable);
                 }
 
                 foreach (DataRow dataRow in filesTable.Rows)
                 {
-                    entityDictionary.Add(dataRow.Field<ulong>("id"), (dataRow.Field<ulong>("item_id"), dataRow.Field<ulong>("itemlink_id")));
+                    entityDictionary.Add(Convert.ToUInt64(dataRow["id"]), (Convert.ToUInt64(dataRow["item_id"]), Convert.ToUInt64(dataRow["itemlink_id"])));
                 }
             }
 
@@ -567,412 +568,439 @@ LIMIT 1";
 
             // Count all changed items and settings (if a single item has been changed multiple times, we count only one change).
             var times = new Dictionary<string, (int count, TimeSpan totalTime)>();
-            var stopwatch = new Stopwatch();
+            var mainStopwatch = new Stopwatch();
+            mainStopwatch.Start();
+            var actionStopwatch = new Stopwatch();
+
+            // First make a list of all objects that have been created and then deleted again, so that we can ignore them.
+            actionStopwatch.Start();
+            var objectsCreatedInBranch = new List<ObjectCreatedInBranchModel>();
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                stopwatch.Start();
+                var tableName = dataRow.Field<string>("tablename");
+                if (String.IsNullOrWhiteSpace(tableName))
+                {
+                    continue;
+                }
+
+                var originalItemId = Convert.ToUInt64(dataRow["item_id"]);
+                var action = dataRow.Field<string>("action").ToUpperInvariant();
+                BranchesHelpers.TrackObjectAction(objectsCreatedInBranch, action, originalItemId, tableName);
+            }
+
+            times.Add("trackObjects", (1, actionStopwatch.Elapsed));
+            actionStopwatch.Reset();
+
+            // Count the actual changes.
+            foreach (DataRow dataRow in dataTable.Rows)
+            {
+                actionStopwatch.Start();
                 var action = dataRow.Field<string>("action")?.ToUpperInvariant();
                 var tableName = dataRow.Field<string>("tablename") ?? "";
                 var itemId = dataRow.Field<ulong>("item_id");
                 var field = dataRow.Field<string>("field") ?? "";
                 var oldValue = dataRow.Field<string>("oldvalue");
                 var newValue = dataRow.Field<string>("newvalue");
+                var objectCreatedInBranch = objectsCreatedInBranch.FirstOrDefault(i => i.ObjectId == itemId && String.Equals(i.TableName, tableName, StringComparison.OrdinalIgnoreCase));
 
-                switch (action)
+                if (objectCreatedInBranch is not {AlsoDeleted: true} || objectCreatedInBranch.AlsoUndeleted)
                 {
-                    // Changes to settings.
-                    case "INSERT_ENTITYPROPERTY":
+                    switch (action)
                     {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.EntityProperty, itemId);
-                        break;
-                    }
-                    case "UPDATE_ENTITYPROPERTY":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.EntityProperty, itemId);
-                        break;
-                    }
-                    case "DELETE_ENTITYPROPERTY":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.EntityProperty, itemId);
-                        break;
-                    }
-                    case "INSERT_MODULE":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.Module, itemId);
-                        break;
-                    }
-                    case "UPDATE_MODULE":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.Module, itemId);
-                        break;
-                    }
-                    case "DELETE_MODULE":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.Module, itemId);
-                        break;
-                    }
-                    case "INSERT_QUERY":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.Query, itemId);
-                        break;
-                    }
-                    case "UPDATE_QUERY":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.Query, itemId);
-                        break;
-                    }
-                    case "DELETE_QUERY":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.Query, itemId);
-                        break;
-                    }
-                    case "INSERT_ENTITY":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.Entity, itemId);
-                        break;
-                    }
-                    case "UPDATE_ENTITY":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.Entity, itemId);
-                        break;
-                    }
-                    case "DELETE_ENTITY":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.Entity, itemId);
-                        break;
-                    }
-                    case "INSERT_FIELD_TEMPLATE":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.FieldTemplates, itemId);
-                        break;
-                    }
-                    case "UPDATE_FIELD_TEMPLATE":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.FieldTemplates, itemId);
-                        break;
-                    }
-                    case "DELETE_FIELD_TEMPLATE":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.FieldTemplates, itemId);
-                        break;
-                    }
-                    case "INSERT_LINK_SETTING":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.Link, itemId);
-                        break;
-                    }
-                    case "UPDATE_LINK_SETTING":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.Link, itemId);
-                        break;
-                    }
-                    case "DELETE_LINK_SETTING":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.Link, itemId);
-                        break;
-                    }
-                    case "INSERT_PERMISSION":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.Permission, itemId);
-                        break;
-                    }
-                    case "UPDATE_PERMISSION":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.Permission, itemId);
-                        break;
-                    }
-                    case "DELETE_PERMISSION":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.Permission, itemId);
-                        break;
-                    }
-                    case "INSERT_USER_ROLE":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.UserRole, itemId);
-                        break;
-                    }
-                    case "UPDATE_USER_ROLE":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.UserRole, itemId);
-                        break;
-                    }
-                    case "DELETE_USER_ROLE":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.UserRole, itemId);
-                        break;
-                    }
-                    case "INSERT_API_CONNECTION":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.ApiConnection, itemId);
-                        break;
-                    }
-                    case "UPDATE_API_CONNECTION":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.ApiConnection, itemId);
-                        break;
-                    }
-                    case "DELETE_API_CONNECTION":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.ApiConnection, itemId);
-                        break;
-                    }
-                    case "INSERT_DATA_SELECTOR":
-                    {
-                        AddSettingToMutationList(createdSettings, WiserSettingTypes.DataSelector, itemId);
-                        break;
-                    }
-                    case "UPDATE_DATA_SELECTOR":
-                    {
-                        AddSettingToMutationList(updatedSettings, WiserSettingTypes.DataSelector, itemId);
-                        break;
-                    }
-                    case "DELETE_DATA_SELECTOR":
-                    {
-                        AddSettingToMutationList(deletedSettings, WiserSettingTypes.DataSelector, itemId);
-                        break;
-                    }
-
-                    // Changes to items.
-                    case "CREATE_ITEM":
-                    {
-                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
-                        AddItemToMutationList(createdItems, tablePrefix.TablePrefix, itemId);
-                        break;
-                    }
-                    case "UPDATE_ITEM":
-                    {
-                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
-                        AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemId);
-                        break;
-                    }
-                    case "DELETE_ITEM":
-                    {
-                        // When deleting an item, the entity type will be saved in the column "field" of wiser_history, so we don't have to look it up.
-                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
-                        AddItemToMutationList(deletedItems, tablePrefix.TablePrefix, itemId, field);
-                        break;
-                    }
-                    case "ADD_LINK":
-                    {
-                        var destinationItemId = itemId;
-                        var sourceItemId = Convert.ToUInt64(newValue);
-                        var split = field.Split(',');
-                        var type = Int32.Parse(split[0]);
-                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, destinationItemId, type, branchConnection, allLinkTypeSettings, tablePrefixes);
-                        if (linkData == null)
+                        // Changes to settings.
+                        case "INSERT_ENTITYPROPERTY":
                         {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.EntityProperty, itemId);
+                            break;
+                        }
+                        case "UPDATE_ENTITYPROPERTY":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.EntityProperty, itemId);
+                            break;
+                        }
+                        case "DELETE_ENTITYPROPERTY":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.EntityProperty, itemId);
+                            break;
+                        }
+                        case "INSERT_MODULE":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.Module, itemId);
+                            break;
+                        }
+                        case "UPDATE_MODULE":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.Module, itemId);
+                            break;
+                        }
+                        case "DELETE_MODULE":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.Module, itemId);
+                            break;
+                        }
+                        case "INSERT_QUERY":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.Query, itemId);
+                            break;
+                        }
+                        case "UPDATE_QUERY":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.Query, itemId);
+                            break;
+                        }
+                        case "DELETE_QUERY":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.Query, itemId);
+                            break;
+                        }
+                        case "INSERT_ENTITY":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.Entity, itemId);
+                            break;
+                        }
+                        case "UPDATE_ENTITY":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.Entity, itemId);
+                            break;
+                        }
+                        case "DELETE_ENTITY":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.Entity, itemId);
+                            break;
+                        }
+                        case "INSERT_FIELD_TEMPLATE":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.FieldTemplates, itemId);
+                            break;
+                        }
+                        case "UPDATE_FIELD_TEMPLATE":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.FieldTemplates, itemId);
+                            break;
+                        }
+                        case "DELETE_FIELD_TEMPLATE":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.FieldTemplates, itemId);
+                            break;
+                        }
+                        case "INSERT_LINK_SETTING":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.Link, itemId);
+                            break;
+                        }
+                        case "UPDATE_LINK_SETTING":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.Link, itemId);
+                            break;
+                        }
+                        case "DELETE_LINK_SETTING":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.Link, itemId);
+                            break;
+                        }
+                        case "INSERT_PERMISSION":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.Permission, itemId);
+                            break;
+                        }
+                        case "UPDATE_PERMISSION":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.Permission, itemId);
+                            break;
+                        }
+                        case "DELETE_PERMISSION":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.Permission, itemId);
+                            break;
+                        }
+                        case "INSERT_USER_ROLE":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.UserRole, itemId);
+                            break;
+                        }
+                        case "UPDATE_USER_ROLE":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.UserRole, itemId);
+                            break;
+                        }
+                        case "DELETE_USER_ROLE":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.UserRole, itemId);
+                            break;
+                        }
+                        case "INSERT_API_CONNECTION":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.ApiConnection, itemId);
+                            break;
+                        }
+                        case "UPDATE_API_CONNECTION":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.ApiConnection, itemId);
+                            break;
+                        }
+                        case "DELETE_API_CONNECTION":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.ApiConnection, itemId);
+                            break;
+                        }
+                        case "INSERT_DATA_SELECTOR":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.DataSelector, itemId);
+                            break;
+                        }
+                        case "UPDATE_DATA_SELECTOR":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.DataSelector, itemId);
+                            break;
+                        }
+                        case "DELETE_DATA_SELECTOR":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.DataSelector, itemId);
                             break;
                         }
 
-                        if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
+                        // Changes to items.
+                        case "CREATE_ITEM":
                         {
-                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
-                            tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
-                        }
-
-                        if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
-                        {
-                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
-                            tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
-                        }
-
-                        AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, destinationTablePrefix, destinationItemId, linkData.Value.DestinationType);
-
-                        break;
-                    }
-                    case "UPDATE_ITEMLINKDETAIL":
-                    case "CHANGE_LINK":
-                    {
-                        // First get the source item ID and destination item ID of the link.
-                        var linkData = await GetDataFromLinkAsync(itemId, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
-                        if (!linkData.HasValue)
-                        {
+                            var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
+                            AddItemToMutationList(createdItems, tablePrefix.TablePrefix, itemId);
                             break;
                         }
-
-                        // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
-                        if (!entityData.HasValue)
+                        case "UPDATE_ITEM":
                         {
+                            var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
+                            AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemId);
                             break;
                         }
-
-                        if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                        case "DELETE_ITEM":
                         {
-                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
-                            tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
-                        }
-
-                        if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
-                        {
-                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
-                            tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
-                        }
-
-                        // And finally mark these items as updated.
-                        AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
-
-                        break;
-                    }
-                    case "REMOVE_LINK":
-                    {
-                        var sourceItemId = UInt64.Parse(oldValue!);
-                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, Int32.Parse(field), branchConnection, allLinkTypeSettings, tablePrefixes);
-                        if (linkData == null)
-                        {
+                            // When deleting an item, the entity type will be saved in the column "field" of wiser_history, so we don't have to look it up.
+                            var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemId);
+                            AddItemToMutationList(deletedItems, tablePrefix.TablePrefix, itemId, field);
                             break;
                         }
-
-                        if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
+                        case "ADD_LINK":
                         {
-                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
-                            tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
-                        }
-
-                        if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
-                        {
-                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
-                            tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
-                        }
-
-                        AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, destinationTablePrefix, itemId, linkData.Value.DestinationType);
-
-                        break;
-                    }
-                    case "ADD_FILE" when oldValue == "item_id":
-                    case "DELETE_FILE" when oldValue == "item_id":
-                    {
-                        var itemIdFromFile = UInt64.Parse(newValue!);
-                        var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemIdFromFile);
-                        AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemIdFromFile);
-
-                        break;
-                    }
-                    case "ADD_FILE" when oldValue == "itemlink_id":
-                    case "DELETE_FILE" when oldValue == "itemlink_id":
-                    {
-                        // First get the source item ID and destination item ID of the link.
-                        var linkIdFromFile = UInt64.Parse(newValue!);
-                        var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
-                        if (!linkData.HasValue)
-                        {
-                            break;
-                        }
-
-                        // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
-                        if (!entityData.HasValue)
-                        {
-                            break;
-                        }
-
-                        if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
-                        {
-                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
-                            tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
-                        }
-
-                        if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
-                        {
-                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
-                            tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
-                        }
-
-                        // And finally mark these items as updated.
-                        AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
-
-                        break;
-                    }
-                    case "UPDATE_FILE":
-                    {
-                        ulong itemIdFromFile = 0;
-                        ulong linkIdFromFile = 0;
-                        if (!filesData.TryGetValue(tableName, out var fileDictionary) || !fileDictionary.TryGetValue(itemId, out var fileData))
-                        {
-                            var fileDataTable = new DataTable();
-                            await using var linkCommand = branchConnection.CreateCommand();
-                            linkCommand.Parameters.AddWithValue("id", itemId);
-                            linkCommand.CommandText = $@"SELECT item_id, itemlink_id FROM `{tableName}` WHERE id = ?id
-UNION ALL
-SELECT item_id, itemlink_id FROM `{tableName}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
-LIMIT 1";
-                            using var linkAdapter = new MySqlDataAdapter(linkCommand);
-                            await linkAdapter.FillAsync(fileDataTable);
-
-                            if (fileDataTable.Rows.Count == 0)
+                            var destinationItemId = itemId;
+                            var sourceItemId = Convert.ToUInt64(newValue);
+                            var split = field.Split(',');
+                            var type = Int32.Parse(split[0]);
+                            var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, destinationItemId, type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                            if (linkData == null)
                             {
                                 break;
                             }
 
-                            itemIdFromFile = Convert.ToUInt64(fileDataTable.Rows[0]["item_id"]);
-                            linkIdFromFile = Convert.ToUInt64(fileDataTable.Rows[0]["itemlink_id"]);
-                        }
-                        else
-                        {
-                            itemIdFromFile = fileData.itemId;
-                            linkIdFromFile = fileData.itemLinkId;
-                        }
+                            if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
+                            {
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
+                                tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
+                            }
 
-                        if (itemIdFromFile > 0)
+                            if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
+                            {
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
+                                tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
+                            }
+
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, destinationItemId, linkData.Value.DestinationType);
+
+                            break;
+                        }
+                        case "UPDATE_ITEMLINKDETAIL":
+                        case "CHANGE_LINK":
                         {
+                            // First get the source item ID and destination item ID of the link.
+                            var linkData = await GetDataFromLinkAsync(itemId, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
+                            if (!linkData.HasValue)
+                            {
+                                break;
+                            }
+
+                            // Then get the entity types of those IDs.
+                            var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                            if (!entityData.HasValue)
+                            {
+                                break;
+                            }
+
+                            if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                            {
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
+                                tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                            }
+
+                            if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                            {
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
+                                tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                            }
+
+                            // And finally mark these items as updated.
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+
+                            break;
+                        }
+                        case "REMOVE_LINK":
+                        {
+                            var sourceItemId = UInt64.Parse(oldValue!);
+                            var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, Int32.Parse(field), branchConnection, allLinkTypeSettings, tablePrefixes);
+                            if (linkData == null)
+                            {
+                                break;
+                            }
+
+                            if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
+                            {
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
+                                tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
+                            }
+
+                            if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
+                            {
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
+                                tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
+                            }
+
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, itemId, linkData.Value.DestinationType);
+
+                            break;
+                        }
+                        case "ADD_FILE" when oldValue == "item_id":
+                        case "DELETE_FILE" when oldValue == "item_id":
+                        {
+                            var itemIdFromFile = UInt64.Parse(newValue!);
                             var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemIdFromFile);
                             AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemIdFromFile);
+
                             break;
                         }
-
-                        // First get the source item ID and destination item ID of the link.
-                        var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
-                        if (!linkData.HasValue)
+                        case "ADD_FILE" when oldValue == "itemlink_id":
+                        case "DELETE_FILE" when oldValue == "itemlink_id":
                         {
+                            // First get the source item ID and destination item ID of the link.
+                            var linkIdFromFile = UInt64.Parse(newValue!);
+                            var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
+                            if (!linkData.HasValue)
+                            {
+                                break;
+                            }
+
+                            // Then get the entity types of those IDs.
+                            var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                            if (!entityData.HasValue)
+                            {
+                                break;
+                            }
+
+                            if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                            {
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
+                                tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                            }
+
+                            if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                            {
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
+                                tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                            }
+
+                            // And finally mark these items as updated.
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+
                             break;
                         }
-
-                        // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
-                        if (!entityData.HasValue)
+                        case "UPDATE_FILE":
                         {
+                            ulong itemIdFromFile = 0;
+                            ulong linkIdFromFile = 0;
+                            if (!filesData.TryGetValue(tableName, out var fileDictionary) || !fileDictionary.TryGetValue(itemId, out var fileData))
+                            {
+                                var fileDataTable = new DataTable();
+                                await using var linkCommand = branchConnection.CreateCommand();
+                                linkCommand.Parameters.AddWithValue("id", itemId);
+                                linkCommand.CommandText = $@"SELECT item_id, itemlink_id FROM `{tableName}` WHERE id = ?id
+UNION ALL
+SELECT item_id, itemlink_id FROM `{tableName}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
+LIMIT 1";
+                                using var linkAdapter = new MySqlDataAdapter(linkCommand);
+                                await linkAdapter.FillAsync(fileDataTable);
+
+                                if (fileDataTable.Rows.Count == 0)
+                                {
+                                    break;
+                                }
+
+                                itemIdFromFile = Convert.ToUInt64(fileDataTable.Rows[0]["item_id"]);
+                                linkIdFromFile = Convert.ToUInt64(fileDataTable.Rows[0]["itemlink_id"]);
+                            }
+                            else
+                            {
+                                itemIdFromFile = fileData.itemId;
+                                linkIdFromFile = fileData.itemLinkId;
+                            }
+
+                            if (itemIdFromFile > 0)
+                            {
+                                var tablePrefix = BranchesHelpers.GetTablePrefix(tableName, itemIdFromFile);
+                                AddItemToMutationList(updatedItems, tablePrefix.TablePrefix, itemIdFromFile);
+                                break;
+                            }
+
+                            // First get the source item ID and destination item ID of the link.
+                            var linkData = await GetDataFromLinkAsync(linkIdFromFile, BranchesHelpers.GetTablePrefix(tableName, 0).TablePrefix, branchConnection);
+                            if (!linkData.HasValue)
+                            {
+                                break;
+                            }
+
+                            // Then get the entity types of those IDs.
+                            var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                            if (!entityData.HasValue)
+                            {
+                                break;
+                            }
+
+                            if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                            {
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
+                                tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                            }
+
+                            if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                            {
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
+                                tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                            }
+
+                            // And finally mark these items as updated.
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+
                             break;
                         }
-
-                        if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
-                        {
-                            sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
-                            tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
-                        }
-
-                        if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
-                        {
-                            destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
-                            tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
-                        }
-
-                        // And finally mark these items as updated.
-                        AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
-                        AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
-
-                        break;
                     }
                 }
 
                 if (times.ContainsKey(action))
                 {
                     var (count, totalTime) = times[action];
-                    times[action] = (count + 1, totalTime + stopwatch.Elapsed);
+                    times[action] = (count + 1, totalTime + actionStopwatch.Elapsed);
                 }
                 else
                 {
-                    times.Add(action, (1, stopwatch.Elapsed));
+                    times.Add(action, (1, actionStopwatch.Elapsed));
                 }
 
-                stopwatch.Reset();
+                actionStopwatch.Reset();
             }
 
             // Add the counters to the results.
-            stopwatch.Start();
+            actionStopwatch.Start();
             foreach (var item in createdItems)
             {
                 var entityType = item.EntityType;
@@ -984,9 +1012,9 @@ LIMIT 1";
                 (await GetOrAddEntityTypeCounterAsync(entityType)).Created++;
             }
 
-            times.Add("createdItemsCounters", (1, stopwatch.Elapsed));
+            times.Add("createdItemsCounters", (1, actionStopwatch.Elapsed));
 
-            stopwatch.Restart();
+            actionStopwatch.Restart();
             foreach (var item in updatedItems)
             {
                 var entityType = item.EntityType;
@@ -998,9 +1026,9 @@ LIMIT 1";
                 (await GetOrAddEntityTypeCounterAsync(entityType)).Updated++;
             }
 
-            times.Add("updatedItemsCounters", (1, stopwatch.Elapsed));
+            times.Add("updatedItemsCounters", (1, actionStopwatch.Elapsed));
 
-            stopwatch.Restart();
+            actionStopwatch.Restart();
             foreach (var item in deletedItems)
             {
                 var entityType = item.EntityType;
@@ -1012,34 +1040,35 @@ LIMIT 1";
                 (await GetOrAddEntityTypeCounterAsync(entityType)).Deleted++;
             }
 
-            times.Add("deletedItemsCounters", (1, stopwatch.Elapsed));
+            times.Add("deletedItemsCounters", (1, actionStopwatch.Elapsed));
 
-            stopwatch.Restart();
+            actionStopwatch.Restart();
             foreach (var setting in createdSettings)
             {
                 GetOrAddWiserSettingCounter(setting.Key).Created = setting.Value.Count;
             }
 
-            times.Add("createdSettingsCounters", (1, stopwatch.Elapsed));
+            times.Add("createdSettingsCounters", (1, actionStopwatch.Elapsed));
 
-            stopwatch.Restart();
+            actionStopwatch.Restart();
             foreach (var setting in updatedSettings)
             {
                 GetOrAddWiserSettingCounter(setting.Key).Updated = setting.Value.Count;
             }
 
-            times.Add("updatedSettingsCounters", (1, stopwatch.Elapsed));
+            times.Add("updatedSettingsCounters", (1, actionStopwatch.Elapsed));
 
-            stopwatch.Restart();
+            actionStopwatch.Restart();
             foreach (var setting in deletedSettings)
             {
                 GetOrAddWiserSettingCounter(setting.Key).Deleted = setting.Value.Count;
             }
 
-            times.Add("deletedSettingsCounters", (1, stopwatch.Elapsed));
-            stopwatch.Stop();
+            times.Add("deletedSettingsCounters", (1, actionStopwatch.Elapsed));
+            actionStopwatch.Stop();
+            mainStopwatch.Stop();
 
-            logger.LogDebug($"Finished GetChangesAsync in {stopwatch.ElapsedMilliseconds}ms. Times: {JsonConvert.SerializeObject(times)}");
+            logger.LogDebug($"Finished GetChangesAsync in {mainStopwatch.ElapsedMilliseconds}ms. Times: {JsonConvert.SerializeObject(times)}");
 
             return new ServiceResult<ChangesAvailableForMergingModel>(result);
         }
@@ -1085,51 +1114,55 @@ LIMIT 1";
 
             DateTime? lastMergeDate = null;
 
-            // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
             await using var mainConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(productionTenant));
             await mainConnection.OpenAsync();
-            await using (var productionCommand = mainConnection.CreateCommand())
-            {
-                productionCommand.Parameters.AddWithValue("branchId", selectedBranchTenant.Id);
-                productionCommand.CommandText = $"SELECT MAX(finished_on) AS lastMergeDate FROM {WiserTableNames.WiserBranchesQueue} WHERE branch_id = ?branchId AND success = 1 AND finished_on IS NOT NULL";
 
-                var dataTable = new DataTable();
-                using var sourceAdapter = new MySqlDataAdapter(productionCommand);
-                await sourceAdapter.FillAsync(dataTable);
-                if (dataTable.Rows.Count > 0)
+            if (settings.CheckForConflicts)
+            {
+                // Get the date and time of the last merge of this branch, so we can find all changes made in production after this date, to check for merge conflicts.
+                await using (var productionCommand = mainConnection.CreateCommand())
                 {
-                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
+                    productionCommand.Parameters.AddWithValue("branchId", selectedBranchTenant.Id);
+                    productionCommand.CommandText = $"SELECT MAX(finished_on) AS lastMergeDate FROM {WiserTableNames.WiserBranchesQueue} WHERE branch_id = ?branchId AND success = 1 AND finished_on IS NOT NULL";
+
+                    var dataTable = new DataTable();
+                    using var sourceAdapter = new MySqlDataAdapter(productionCommand);
+                    await sourceAdapter.FillAsync(dataTable);
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
+                    }
                 }
-            }
 
-            await using var branchConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(selectedBranchTenant));
-            await branchConnection.OpenAsync();
+                await using var branchConnection = new MySqlConnection(wiserTenantsService.GenerateConnectionStringFromTenant(selectedBranchTenant));
+                await branchConnection.OpenAsync();
 
-            // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch.
-            if (!lastMergeDate.HasValue)
-            {
-                await using var branchCommand = branchConnection.CreateCommand();
-                branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
-                var dataTable = new DataTable();
-                using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                await branchAdapter.FillAsync(dataTable);
-                if (dataTable.Rows.Count > 0)
+                // If we have no last merge date, it probably means someone removed a record from wiser_branch_queue, in that case get the date of the first change in wiser_history in the branch.
+                if (!lastMergeDate.HasValue)
                 {
-                    lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
+                    await using var branchCommand = branchConnection.CreateCommand();
+                    branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
+                    var dataTable = new DataTable();
+                    using var branchAdapter = new MySqlDataAdapter(branchCommand);
+                    await branchAdapter.FillAsync(dataTable);
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
+                    }
                 }
-            }
 
-            // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
-            if (lastMergeDate.HasValue && (settings.ConflictSettings == null || !settings.ConflictSettings.Any()))
-            {
-                var conflicts = new List<MergeConflictModel>();
-                await GetAllChangesFromBranchAsync(branchConnection, conflicts, settings);
-                await FindConflictsInMainBranchAsync(mainConnection, branchConnection, conflicts, lastMergeDate.Value, settings);
-                result.Conflicts = conflicts.Where(conflict => conflict.ChangeDateInMain.HasValue).ToList();
-                if (result.Conflicts.Any())
+                // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
+                if (lastMergeDate.HasValue && (settings.ConflictSettings == null || !settings.ConflictSettings.Any()))
                 {
-                    result.Success = false;
-                    return new ServiceResult<MergeBranchResultModel>(result);
+                    var conflicts = new List<MergeConflictModel>();
+                    await GetAllChangesFromBranchAsync(branchConnection, conflicts, settings);
+                    await FindConflictsInMainBranchAsync(mainConnection, branchConnection, conflicts, lastMergeDate.Value, settings);
+                    result.Conflicts = conflicts.Where(conflict => conflict.ChangeDateInMain.HasValue).ToList();
+                    if (result.Conflicts.Any())
+                    {
+                        result.Success = false;
+                        return new ServiceResult<MergeBranchResultModel>(result);
+                    }
                 }
             }
 

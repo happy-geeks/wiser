@@ -40,6 +40,7 @@ const moduleSettings = {
             // Kendo components.
             this.mainSplitter = null;
             this.mainWindow = null;
+            this.tabStrips = [];
             this.componentTypeComboBox = null;
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
@@ -52,7 +53,8 @@ const moduleSettings = {
                 tenantId: 0,
                 username: "Onbekend",
                 userEmailAddress: "",
-                userType: ""
+                userType: "",
+                initialTab: null
             };
             Object.assign(this.settings, settings);
 
@@ -132,6 +134,15 @@ const moduleSettings = {
             this.initializeButtons();
             await this.loadComponentHistory();
             await this.loadPreviewTab();
+            
+            if (this.settings.initialTab) {
+                if (this.settings.initialTab === "history") {
+                    this.tabStrips[0].select(`li.history-tab`);
+                    this.mainSplitter.size(".k-pane:first", "0%");
+                } else {
+                    this.tabStrips[1].select(`li.${this.settings.initialTab}-tab`);
+                }
+            }
             window.processing.removeProcess(process);
         }
 
@@ -202,14 +213,14 @@ const moduleSettings = {
             // Tabstrip
             const tabStripElements = container.find(".tabstrip");
             if (tabStripElements.length > 0) {
-                tabStripElements.kendoTabStrip({
+                this.tabStrips.push(tabStripElements.kendoTabStrip({
                     activate: this.onTabStripActivate.bind(this),
                     animation: {
                         open: {
                             effects: "fadeIn"
                         }
                     }
-                }).data("kendoTabStrip").select(0);
+                }).data("kendoTabStrip").select(0));
             }
 
             //NUMERIC FIELD
@@ -217,7 +228,7 @@ const moduleSettings = {
                 const isDecimal = $(element).data("decimal") === true;
                 $(element).kendoNumericTextBox({
                     decimals: isDecimal ? 2 : 0,
-                    format: isDecimal ? "n2" : "n0",
+                    format: isDecimal ? "n2" : "#",
                     change: () => this.onInputChange(true),
                     spin: () => this.onInputChange(false)
                 });
@@ -290,12 +301,7 @@ const moduleSettings = {
             });
             
             if (event.item.classList.contains("history-tab")) {
-                if (window.parent) {
-                    window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
-                } else {
-                    kendo.alert("De history kan alleen goed weergegeven worden in een iframe.");
-                    console.warn("Unable to create diff fields for history listing");
-                }
+                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
             }
         }
 
@@ -638,8 +644,7 @@ const moduleSettings = {
                 });
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
-                if (window.parent)
-                    window.parent.Templates.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
                 this.lastLoadedHistoryPart++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");

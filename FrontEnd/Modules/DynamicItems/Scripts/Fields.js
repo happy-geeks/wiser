@@ -2327,7 +2327,9 @@ export class Fields {
 
             let itemDetails = mainItemDetails;
             if (selectedItems.length > 0 && selectedItems[0].dataItem) {
-                itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+                if (selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId) {
+                    itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+                }
             }
 
             const process = `initializeGenerateFileWindow_${Date.now()}`;
@@ -2508,7 +2510,11 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true, false);
+                            }
+
+                            if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
+                                pdfToHtmlData.fileName = "Document.pdf";
                             }
 
                             pdfToHtmlData.documentOptions = "";
@@ -2558,11 +2564,32 @@ export class Fields {
                         icon: "print"
                     });
 
+                    const emailRegularExpression = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
                     previewWindow.element.find("#mailPreview").kendoButton({
                         click: async (event) => {
                             try {
                                 const dialogElement = $("#sendMailDialog");
-                                const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
+                                const validator = dialogElement.find(".formview").kendoValidator({
+                                    rules: {
+                                        email: (input) => {
+                                            // Custom e-mail validation for allowing multiple e-mail addresses.
+                                            if (input.is("[type=email]") && input.val() !== "")
+                                            {
+                                                const emailsArray = input.val().split(";");
+                                                for (let email of emailsArray)
+                                                {
+                                                    email = email.trim();
+                                                    if (email !== "" && !emailRegularExpression.test(email))
+                                                    {
+                                                        return false;
+                                                    }
+                                                }
+                                            }
+
+                                            return true;
+                                        }
+                                    }
+                                }).data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
                                 const uploadedFiles = [];
 
@@ -2626,7 +2653,11 @@ export class Fields {
                                                     };
 
                                                     if (currentAction.pdfFilename) {
-                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
+                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true);
+                                                    }
+
+                                                    if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
+                                                        pdfToHtmlData.fileName = "Document.pdf";
                                                     }
 
                                                     let ajaxOptions = {
@@ -2689,6 +2720,24 @@ export class Fields {
 
                                                     const cc = mailDialog.element.find("input[name=cc]").val();
                                                     const bcc = mailDialog.element.find("input[name=bcc]").val();
+                                                    const receivers = [];
+                                                    const receiverEmails = mailDialog.element.find("input[name=receiverEmail]").val().split(";");
+                                                    const receiverNames = mailDialog.element.find("input[name=receiverName]").val().split(";");
+                                                    for (let i = 0; i < receiverEmails.length; i++) {
+                                                        const email = receiverEmails[i];
+                                                        let name = email;
+                                                        if (receiverNames.length > i) {
+                                                            name = receiverNames[i];
+                                                        }
+                                                        else if (receiverNames.length > 0) {
+                                                            name = receiverNames[0];
+                                                        }
+
+                                                        receivers.push({
+                                                            displayName: name,
+                                                            address: email,
+                                                        })
+                                                    }
 
                                                     Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}communications/email`,
@@ -2697,12 +2746,9 @@ export class Fields {
                                                         data: JSON.stringify({
                                                             senderName: mailDialog.element.find("input[name=senderName]").val(),
                                                             sender: mailDialog.element.find("input[name=senderEmail]").val(),
-                                                            receivers: [{
-                                                                displayName: mailDialog.element.find("input[name=receiverName]").val(),
-                                                                address: mailDialog.element.find("input[name=receiverEmail]").val(),
-                                                            }],
-                                                            cc: cc ? [cc] : null,
-                                                            bcc: bcc ? [bcc] : null,
+                                                            receivers: receivers,
+                                                            cc: cc ? cc.split(";") : null,
+                                                            bcc: bcc ? bcc.split(";") : null,
                                                             subject: mailDialog.element.find("input[name=subject]").val(),
                                                             wiserItemFiles: wiserFileAttachments,
                                                             content: emailBodyEditor.value()
@@ -2863,10 +2909,10 @@ export class Fields {
         } else {
              this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
              this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
-             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, 
-                 this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, 
+             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender,
+                 this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode,
                  this.base.settings.gridViewMode, this.base.settings.moduleName);
-             
+
              fileManagerWindow.center().open();
         }
     }
@@ -2885,10 +2931,10 @@ export class Fields {
         } else {
             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.files;
-            const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, 
-                this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, 
+            const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender,
+                this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode,
                 this.base.settings.gridViewMode, this.base.settings.moduleName);
-            
+
             fileManagerWindow.center().open();
         }
     }
@@ -2908,7 +2954,7 @@ export class Fields {
             this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
             this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.templates;
             const fileManagerWindow = Wiser.initializeFileManager(this.base.windows.fileManagerWindowSender, this.base.windows.fileManagerWindowMode, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
-            
+
             fileManagerWindow.center().open();
         }
     }

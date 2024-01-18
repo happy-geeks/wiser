@@ -47,8 +47,9 @@ namespace Api.Modules.Branches.Interfaces
         /// </summary>
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <param name="id">The ID of the branch to get the changes of.</param>
+        /// <param name="entityTypes">A list of entity types to count the changes for.</param>
         /// <returns>A list of changes per entity type / Wiser setting type.</returns>
-        Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id);
+        Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id, List<string> entityTypes);
 
         /// <summary>
         /// Synchronise all changes done to wiser items, from a specific environment, to the production environment.

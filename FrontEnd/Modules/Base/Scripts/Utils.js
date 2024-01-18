@@ -1,5 +1,7 @@
 ﻿import {DateTime} from "luxon";
 import "./Processing.js";
+import * as Diff2Html from "diff2html/lib/diff2html"
+import "diff2html/bundles/css/diff2html.min.css"
 
 window.$ = require("jquery");
 
@@ -527,9 +529,11 @@ export class Wiser {
      * @param {string} input The input string to do the replacements on.
      * @param {any} itemDetails The details (fields/properties + values) of an item.
      * @param {boolean} uriEncodeValues Whether or not to encode all values to be safely used in an URL.
+     * @param {boolean} removeUnknownVariables Whether or not to remove all variables that are not found in the data object.
+     * @param {boolean} convertToNumberIfPossible Whether or not to convert the output to a number if possible. Default is true.
      * @returns {string} The input string with all variables replaced with values from fields.
      */
-    static doWiserItemReplacements(input, itemDetails, uriEncodeValues = false) {
+    static doWiserItemReplacements(input, itemDetails, uriEncodeValues = false, removeUnknownVariables = false, convertToNumberIfPossible = true) {
         if (!input || typeof input !== "string") {
             return input;
         }
@@ -548,7 +552,7 @@ export class Wiser {
             }
         }
 
-        return Wiser.doObjectReplacements(output, itemDetails.property_, uriEncodeValues);
+        return Wiser.doObjectReplacements(output, itemDetails.property_, uriEncodeValues, removeUnknownVariables, convertToNumberIfPossible);
     }
 
     /**
@@ -556,9 +560,11 @@ export class Wiser {
      * @param {string} input The input string to do the replacements on.
      * @param {any} data An JSON object with keys and values to use for replacements.
      * @param {boolean} uriEncodeValues Whether or not to encode all values to be safely used in an URL.
+     * @param {boolean} removeUnknownVariables Whether or not to remove all variables that are not found in the data object.
+     * @param {boolean} convertToNumberIfPossible Whether or not to convert the output to a number if possible. Default is true.
      * @returns {any} The input string with all variables replaced with values from the object.
      */
-    static doObjectReplacements(input, data, uriEncodeValues = false) {
+    static doObjectReplacements(input, data, uriEncodeValues = false, removeUnknownVariables = false, convertToNumberIfPossible = true) {
         if (!data) {
             return input;
         }
@@ -579,13 +585,30 @@ export class Wiser {
             if (regExpMatch && regExpMatch.length === 1 && regExpMatch[0] === output && output.indexOf("?") > 0 && !value) {
                 const split = output.split(/[\{\}\?]+/);
 
-                return split.length <= 3 ? null : Strings.convertToNumberIfPossible(split[2]);
+                return split.length <= 3 ? null : (!convertToNumberIfPossible ? split[2] : Strings.convertToNumberIfPossible(split[2]));
             }
 
             output = output.replace(regExp, value);
         }
 
-        return Strings.convertToNumberIfPossible(output);
+        if (removeUnknownVariables) {
+            output = Wiser.removeUnknownVariables(output);
+        }
+
+        return !convertToNumberIfPossible ? output : Strings.convertToNumberIfPossible(output);
+    }
+
+    /**
+     * A method to remove all variables from a string.
+     * @param input The string to remove the variables from.
+     * @returns {*} The input string without any variables.
+     */
+    static removeUnknownVariables(input) {
+        if (!input) {
+            return input;
+        }
+
+        return input.replace(/{[a-zA-Z0-9]+[\?a-zA-Z0-9]*}/gi, "");
     }
 
     /**
@@ -666,7 +689,7 @@ export class Wiser {
                     // Set default values to all properties.
                     action.method = action.method || "POST";
                     action.contentType = action.contentType || "application/json";
-                    action.extraHeaders = action.extraHeaders || {};
+                    action.extraHeaders = action.extraHeaders || extraHeaders || {};
 
                     // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
                     if (action.preRequestQueryId && itemDetails) {
@@ -746,22 +769,29 @@ export class Wiser {
                         data: action.contentType.toLowerCase() === "application/json" ? JSON.stringify(action.data) : action.data
                     });
 
+                    let resultsPropertyNames = [];
+
                     // A lot of APIs don't directly return their data, they will have a surrounding property (or more than one).
                     // For Example, Exact returns results like this: { d: { results: [] } }. So we added settings for handling this.
-                    let resultsPropertyNames = [];
-                    if (action.resultsPropertyName) {
-                        resultsPropertyNames = action.resultsPropertyName.split(".");
-                    }
-                    else if (apiOptions.resultsPropertyName) {
-                        resultsPropertyNames = apiOptions.resultsPropertyName.split(".");
-                    }
-
-                    for (let resultsPropertyName of resultsPropertyNames) {
-                        if (!apiResults) {
+                    switch (action.contentType) {
+                        case "text/csv":
+                            apiResults = { "Content": apiResults };
                             break;
-                        }
 
-                        apiResults = apiResults[resultsPropertyName];
+                        default:
+                            if (action.resultsPropertyName) {
+                                resultsPropertyNames = action.resultsPropertyName.split(".");
+                            }
+                            else if (apiOptions.resultsPropertyName) {
+                                resultsPropertyNames = apiOptions.resultsPropertyName.split(".");
+                            }
+                            for (let resultsPropertyName of resultsPropertyNames) {
+                                if (!apiResults) {
+                                    break;
+                                }
+                                apiResults = apiResults[resultsPropertyName];
+                            }
+                            break;
                     }
 
                     // If a postRequestQueryId is set, execute that query after the API call, so that the results of the API call can be used in the query.
@@ -888,7 +918,7 @@ export class Wiser {
 
         extraHeaders.Authorization = `${Strings.capitalizeFirst(authenticationData.tokenType)} ${authenticationData.accessToken}`;
     }
-    
+
     static fileManagerModes = Object.freeze({
         images: "images",
         files: "files",
@@ -910,11 +940,11 @@ export class Wiser {
             const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: null, contentbuilder: null };
             const fileManagerWindowMode = this.fileManagerModes.files;
             const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, null, null, moduleName);
-            
+
             fileManagerWindow.center().open();
         }
     }
-    
+
     /**
      * Event that gets called when the user executes the custom action for adding an image from Wiser to the HTML editor.
      * This will open the fileHandler from Wiser 1.0 via the parent frame. Therefor this function only works while Wiser is being loaded in an iframe.
@@ -929,12 +959,12 @@ export class Wiser {
         } else {
             const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: null, contentbuilder: null };
             const fileManagerWindowMode = this.fileManagerModes.images;
-            
+
             const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, fileManagerWindowMode, null, null, moduleName);
             fileManagerWindow.center().open();
         }
     }
-    
+
     /**
      * Event that gets called when the user executes the custom action for entering a translation variable.
      * @param {any} event The event from the execute action.
@@ -1256,7 +1286,7 @@ export class Wiser {
                 if (fileManagerWindowSender && fileManagerWindowSender.kendoEditor) {
                     selectedText = fileManagerWindowSender.kendoEditor.getSelection().toString();
                 }
-                
+
                 fileManagerIframe.src = `/Modules/FileManager?mode=${fileManagerWindowMode}&iframe=true&selectedText=${encodeURIComponent(selectedText)}`;
 
                 switch (fileManagerWindowMode) {
@@ -1369,7 +1399,7 @@ export class Wiser {
         if (iframeMode || gridviewMode) {
             return;
         }
-        
+
         /***** NOTE: Only add code below this line that should NOT be executed if the module is loaded inside an iframe *****/
         const mainWindow = $("#window").kendoWindow({
             title: moduleName || "Modulenaam",
@@ -1379,6 +1409,42 @@ export class Wiser {
         mainWindow.wrapper.addClass("main-window");
 
         return fileManagerWindow;
+    }
+
+    /**
+     * Replaces all div.diffField elements with diff2html diff interfaces.
+     * @param {Element} container The container that will be searched for div.diffField elements.
+     */
+    static createHistoryDiffFields(container) {
+        const Diff = require("diff");
+        const pretty = require("pretty");
+
+        let fields = container.querySelectorAll("div.diffField");
+        for (let i = 0; i < fields.length; i++) {
+            let field = fields[i];
+            let oldValue = field.querySelector("span.oldValue")?.getAttribute("value");
+            let newValue = field.querySelector("span.newValue")?.getAttribute("value");
+            const fieldName = field.getAttribute("field-name");
+            const dataType = field.getAttribute("data-type");
+            switch (dataType) { // TemplateTypes enum
+                case "Html": // Html is saved without whitespace in the database, so we need to make it readable first
+                    oldValue = !oldValue ? "" : pretty(oldValue, { ocd: false });
+                    newValue = !newValue ? "" : pretty(newValue, { ocd: false });
+                    break;
+                default:
+                    oldValue = !oldValue ? "" : oldValue;
+                    newValue = !newValue ? "" : newValue;
+            }
+
+            const diff = Diff.createTwoFilesPatch(fieldName, fieldName, oldValue, newValue);
+            field.innerHTML = Diff2Html.html(diff, {
+                drawFileList: false,
+                matching: "words",
+                outputFormat: "side-by-side"
+            });
+
+            field.classList.remove("diffField");
+        }
     }
 }
 

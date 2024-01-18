@@ -241,7 +241,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail_archive`  (
 -- Table structure for wiser_itemfile
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
   `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `content` longblob NULL,
