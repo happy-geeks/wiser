@@ -2066,7 +2066,7 @@ LIMIT 1";
             await viewResult.View.RenderAsync(viewContext);
 
             var finalResult = writer.GetStringBuilder().ToString();
-            finalResult = finalResult.Replace("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
+            finalResult = finalResult.Replace("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>", StringComparison.OrdinalIgnoreCase);
             return new ServiceResult<string>(finalResult);
         }
 

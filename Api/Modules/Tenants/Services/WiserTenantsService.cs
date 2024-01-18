@@ -303,25 +303,25 @@ namespace Api.Modules.Tenants.Services
                     {
                         foreach (var (key, value) in tenant.WiserSettings)
                         {
-                            createTablesQuery = createTablesQuery.Replace($"{{{key}}}", value);
-                            createTriggersQuery = createTriggersQuery.Replace($"{{{key}}}", value);
-                            createdStoredProceduresQuery = createdStoredProceduresQuery.Replace($"{{{key}}}", value);
-                            insertInitialDataQuery = insertInitialDataQuery.Replace($"{{{key}}}", value);
+                            createTablesQuery = createTablesQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                            createTriggersQuery = createTriggersQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                            createdStoredProceduresQuery = createdStoredProceduresQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                            insertInitialDataQuery = insertInitialDataQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
 
                             if (isMultiLanguage)
                             {
-                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.Replace($"{{{key}}}", value);
+                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
                             }
 
                             if (isWebShop)
                             {
-                                insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.Replace($"{{{key}}}", value);
+                                insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
                             }
 
                             if (isConfigurator)
                             {
-                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.Replace($"{{{key}}}", value);
-                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.Replace($"{{{key}}}", value);
+                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
                             }
                         }
                     }
