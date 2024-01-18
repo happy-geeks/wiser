@@ -1753,7 +1753,7 @@ namespace Api.Modules.Grids.Services
         {
             tablePrefix ??= "";
             
-            // Note that this function contains ' ?? ""' after every ReplaceCaseInsensitive. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
+            // Note that this function contains ' ?? ""' after every Replace. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
             fieldMappings ??= new List<FieldMapModel>();
             
             selectQuery = apiReplacementsService.DoIdentityReplacements(selectQuery ?? "", identity, true);
