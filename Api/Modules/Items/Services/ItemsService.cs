@@ -938,16 +938,16 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 };
             }
 
-            actionQuery = actionQuery.ReplaceCaseInsensitive("{userId}", userId.ToString());
-            actionQuery = actionQuery.ReplaceCaseInsensitive("{username}", (username ?? "").ToMySqlSafeValue(false));
-            actionQuery = actionQuery.ReplaceCaseInsensitive("{userEmailAddress}", (userEmailAddress ?? "").ToMySqlSafeValue(false));
-            actionQuery = actionQuery.ReplaceCaseInsensitive("{itemLinkId}", itemLinkId.ToString());
-            actionQuery = actionQuery.ReplaceCaseInsensitive("{userType}", (userType ?? "").ToMySqlSafeValue(false));
-            actionQuery = actionQuery.ReplaceCaseInsensitive("{encryptedId}", encryptedId.ToMySqlSafeValue(false));
-            actionQuery = actionQuery.ReplaceCaseInsensitive("'{itemId}'", "?itemId").ReplaceCaseInsensitive("{itemId}", "?itemId");
+            actionQuery = actionQuery.Replace("{userId}", userId.ToString(), StringComparison.OrdinalIgnoreCase);
+            actionQuery = actionQuery.Replace("{username}", (username ?? "").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+            actionQuery = actionQuery.Replace("{userEmailAddress}", (userEmailAddress ?? "").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+            actionQuery = actionQuery.Replace("{itemLinkId}", itemLinkId.ToString(), StringComparison.OrdinalIgnoreCase);
+            actionQuery = actionQuery.Replace("{userType}", (userType ?? "").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+            actionQuery = actionQuery.Replace("{encryptedId}", encryptedId.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+            actionQuery = actionQuery.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase).Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
             actionQuery = apiReplacementsService.DoIdentityReplacements(actionQuery, identity, true);
 
-            detailsQuery = detailsQuery.ReplaceCaseInsensitive("{itemId:decrypt(true)}", "?itemId");
+            detailsQuery = detailsQuery.Replace("{itemId:decrypt(true)}", "?itemId", StringComparison.OrdinalIgnoreCase);
             detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
 
             // Execute the query to get the details of the current item.
@@ -983,7 +983,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         }
                     }
 
-                    actionQuery = actionQuery.ReplaceCaseInsensitive($"{{{parameter.Key.ToMySqlSafeValue(false)}}}", value.ToMySqlSafeValue(false));
+                    actionQuery = actionQuery.Replace($"{{{parameter.Key.ToMySqlSafeValue(false)}}}", value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
                 }
             }
 
@@ -991,13 +991,13 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             if (dataTable.Rows.Count > 0)
             {
                 var firstRow = dataTable.Rows[0];
-                actionQuery = actionQuery.ReplaceCaseInsensitive("{itemTitle}", firstRow.Field<string>("title").ToMySqlSafeValue(false));
-                actionQuery = actionQuery.ReplaceCaseInsensitive("{environment}", firstRow["published_environment"].ToString().ToMySqlSafeValue(false));
-                actionQuery = actionQuery.ReplaceCaseInsensitive("{entityType}", firstRow.Field<string>("entity_type").ToMySqlSafeValue(false));
+                actionQuery = actionQuery.Replace("{itemTitle}", firstRow.Field<string>("title").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+                actionQuery = actionQuery.Replace("{environment}", firstRow["published_environment"].ToString().ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+                actionQuery = actionQuery.Replace("{entityType}", firstRow.Field<string>("entity_type").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
 
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
-                    actionQuery = actionQuery.ReplaceCaseInsensitive($"{{{dataRow.Field<string>("property_name").ToMySqlSafeValue(false)}}}", dataRow.Field<string>("property_value").ToMySqlSafeValue(false));
+                    actionQuery = actionQuery.Replace($"{{{dataRow.Field<string>("property_name").ToMySqlSafeValue(false)}}}", dataRow.Field<string>("property_value").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
                 }
             }
 
@@ -1243,7 +1243,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 var isReadOnly = Convert.ToBoolean(dataRow["readonly"]) || (userItemPermissions & AccessRights.Update) != AccessRights.Update;
 
                 // Get mode, some fields have different modes and need different HTML for different modes.
-                var options = dataRow.Field<string>("options")?.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
+                var options = dataRow.Field<string>("options")?.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase);
                 var optionsObject = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
 
                 //Manipulate customActions based on Role if necessary
@@ -1874,7 +1874,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             {
                 if (itemId.HasValue)
                 {
-                    result = result.ReplaceCaseInsensitive("{itemId}", itemId.Value.ToString());
+                    result = result.Replace("{itemId}", itemId.Value.ToString(), StringComparison.OrdinalIgnoreCase);
                 }
 
                 return (result, null, options);
