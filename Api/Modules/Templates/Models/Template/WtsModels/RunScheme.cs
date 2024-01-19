@@ -159,17 +159,34 @@ namespace Api.Modules.Templates.Models.Template
         /// <summary>
         /// The day of the week on which the run scheme should run.
         /// </summary>
+        /// <comment>
+        /// Normally an enum is used for this, but since the values
+        /// require a alternative display name, this is not possible.
+        /// The form builder uses either an enum
+        /// or a datasource given in the kendoOptions
+        /// </comment>
         [WtsAttributes.WtsProperty(
             IsVisible = true,
             Title = "Dag van de week",
             Description = "De dag van de week waarop de timer moet worden uitgevoerd (Bijvoorbeeld: 1 = maandag, 2 = dinsdag, etc.)",
             ConfigurationTab = ConfigurationTab.Timers,
-            KendoComponent = KendoComponents.NumericTextBox,
+            KendoComponent = KendoComponents.DropDownList,
             KendoOptions = @"
                {
                   ""format"": ""#"",
-                  ""decimals"": 0
-                }
+                  ""decimals"": 0,
+                  ""dataSource"": [
+                    { ""text"": ""Maandag"", ""value"": 1 },
+                    { ""text"": ""Dinsdag"", ""value"": 2 },
+                    { ""text"": ""Woensdag"", ""value"": 3 },
+                    { ""text"": ""Donderdag"", ""value"": 4 },
+                    { ""text"": ""Vrijdag"", ""value"": 5 },
+                    { ""text"": ""Zaterdag"", ""value"": 6 },
+                    { ""text"": ""Zondag"", ""value"": 7 }
+                  ],
+                  ""dataTextField"": ""text"",
+                  ""dataValueField"": ""value""
+               }
             ",
             DependsOnField = "Type",
             DependsOnValue = new [] {"Weekly"}
@@ -188,7 +205,7 @@ namespace Api.Modules.Templates.Models.Template
         [WtsAttributes.WtsProperty(
             IsVisible = true,
             Title = "Dag van de maand",
-            Description = "De dag van de maand waarop de timer moet worden uitgevoerd (Bijvoorbeeld: 1 = 1e dag van de maand, 2 = 2e dag van de maand, etc.)",
+            Description = "De dag van de maand waarop de timer wordt uitgevoerd (bijv. 1 = 1e dag). Als de dag niet bestaat, wordt de laatste dag van de maand gebruikt.",
             ConfigurationTab = ConfigurationTab.Timers,
             KendoComponent = KendoComponents.NumericTextBox,
             KendoOptions = @"
