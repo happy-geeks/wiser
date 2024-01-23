@@ -454,6 +454,7 @@ const moduleSettings = {
         }
 
         onMainTabStripActivate(event) {
+            console.log("onMainTabStripActivate");
             switch (this.mainTabStrip.select().data("name")) {
                 case "history":
                     this.reloadHistoryTab();
@@ -462,7 +463,12 @@ const moduleSettings = {
                     this.reloadMeasurementsTab();
                     break;
                 case "configuration":
-                    this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
+                    // Check if the template is an XML template.
+                    const templateType = this.templateSettings.type ? this.templateSettings.type.toUpperCase() : "UNKNOWN";
+                    // Prevent loading the configuration tab if the template is not an XML template.
+                    if (templateType === "XML") {
+                        this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
+                    }
                     break;
             }
         }
@@ -550,6 +556,23 @@ const moduleSettings = {
             }
 
             await this.loadTemplate(dataItem.id, virtualItem);
+            
+            // Check the type of the template
+            const templateType = this.templateSettings.type.toUpperCase();
+            const configurationTab = this.mainTabStrip.element.find(".config-tab");
+            const developmentTab = this.mainTabStrip.element.find(".development-tab");
+            console.log("templateType", templateType);
+            if (templateType !== "XML") {
+                this.mainTabStrip.disable(configurationTab);
+                // If the template is not an XML template, and the currently
+                // selected tab is the configuration tab, switch to the development tab.
+                if (this.mainTabStrip.select().hasClass("config-tab")) {
+                    this.mainTabStrip.select(developmentTab);
+                }
+            }
+            else {
+                this.mainTabStrip.enable(configurationTab);
+            }
         }
 
         /**
