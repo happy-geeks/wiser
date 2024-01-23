@@ -263,11 +263,6 @@
     {
         foreach (var property in type.GetProperties())
         {
-            // For debugging purposes, check if the property is called "DayOfWeek"
-            if (property.Name == "DayOfWeek")
-            {
-                var test = "test";
-            }
             var attributes = property.GetCustomAttributes(typeof(WtsAttributes.WtsPropertyAttribute), false).Cast<WtsAttributes.WtsPropertyAttribute>().FirstOrDefault();
         
             // Only render properties that have attributes and where isVisible is true
