@@ -511,7 +511,7 @@ namespace Api.Modules.Templates.Controllers
         [HttpPost, Route("import-legacy"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> ConvertLegacyTemplatesToNewTemplatesAsync()
         {
-            return (await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync()).GetHttpResponseMessage();
+            return (await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
     }
 }

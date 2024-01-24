@@ -116,12 +116,13 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Creates an empty template with the given name, type and parent template.
         /// </summary>
         /// <param name="name">The name to give the template that will be created.</param>
-        /// <param name="parent">The id of the parent template of the template that will be created.</param>
+        /// <param name="parent">The id of the parent template of the template that will be created. Enter null to add something to the root.</param>
         /// <param name="type">The type of the new template that will be created.</param>
         /// <param name="username">The name of the authenticated user.</param>
         /// <param name="editorValue">The value to be inserted into the editor. This will be empty for blank templates.</param>
+        /// <param name="ordering">Optional: The order number of the template. Leave empty to add it to the bottom. This will not update the ordering of any other templates, so make sure the order number doesn't exist yet if you enter one.</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
-        Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username, string editorValue);
+        Task<int> CreateAsync(string name, int? parent, TemplateTypes type, string username, string editorValue = null, int? ordering  = null);
 
         /// <summary>
         /// Makes sure that the ordering of a tree view is correct, to prevent issues with drag and drop in the tree view.
@@ -148,7 +149,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// </summary>
         /// <param name="templateId">The ID of the template.</param>
         /// <returns>The current highest order number.</returns>
-        Task<int> GetHighestOrderNumberOfChildrenAsync(int templateId);
+        Task<int> GetHighestOrderNumberOfChildrenAsync(int? templateId);
 
         /// <summary>
         /// Moves a template to a new position.

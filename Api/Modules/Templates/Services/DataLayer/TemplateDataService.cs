@@ -991,9 +991,9 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc/>
-        public async Task<int> CreateAsync(string name, int parent, TemplateTypes type, string username, string editorValue)
+        public async Task<int> CreateAsync(string name, int? parent, TemplateTypes type, string username, string editorValue = null, int? ordering  = null)
         {
-            var ordering = await GetHighestOrderNumberOfChildrenAsync(parent) + 1;
+            ordering ??= await GetHighestOrderNumberOfChildrenAsync(parent) + 1;
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("name", name);
             clientDatabaseConnection.AddParameter("parent", parent);
@@ -1001,12 +1001,12 @@ AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
             clientDatabaseConnection.AddParameter("username", username);
             clientDatabaseConnection.AddParameter("ordering", ordering);
-            clientDatabaseConnection.AddParameter("editorval", editorValue);
+            clientDatabaseConnection.AddParameter("editorValue", editorValue);
 
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-                                                            INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, added_on, added_by, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
-                                                            VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, ?now, ?username, 1, ?ordering, ?editorval, -1);
-                                                            SELECT @id;");
+INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, added_on, added_by, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
+VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, ?now, ?username, 1, ?ordering, ?editorValue, -1);
+SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
         }
@@ -1089,7 +1089,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<int> GetHighestOrderNumberOfChildrenAsync(int templateId)
+        public async Task<int> GetHighestOrderNumberOfChildrenAsync(int? templateId)
         {
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", templateId);

@@ -51,6 +51,7 @@
             @if (Model.TemplateId == 0)
             {
                 <div class="window-header">
+                    <button id="importLegacyButton" class="k-secondary saveButton">Importeren van Wiser 1</button>
                     <form id="searchForm" class="search-container">
                         <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
                         <button class="icon-line-search"></button>
@@ -116,7 +117,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Item search popup / window -->
             <div id="searchItemsWindow">
                 <div class="pane-content">
@@ -126,7 +127,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- File manager window -->
             <div id="fileManagerWindow" class="popup-container">
                 <div class="horizontal">

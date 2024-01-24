@@ -239,9 +239,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync()
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
         {
-            return await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync();
+            return await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync(identity);
         }
     }
 }

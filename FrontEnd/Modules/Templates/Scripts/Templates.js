@@ -266,6 +266,33 @@ const moduleSettings = {
                 return;
             }
 
+            await this.loadTabsAndTreeViews();
+
+            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
+                loadOnDemand: false,
+                dragAndDrop: false,
+                dataTextField: "templateName",
+                dataSpriteCssClassField: "spriteCssClass",
+                select: this.onTreeViewSelect.bind(this),
+            }).data("kendoTreeView");
+
+            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
+                dataSource: [
+                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
+                    { text: "Hernoemen", attr: { action: "rename" } },
+                    { text: "Verwijderen", attr: { action: "delete" } }
+                ],
+                target: ".tabstrip-treeview",
+                filter: ".k-item",
+                open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuSelect.bind(this)
+            }).data("kendoContextMenu");
+        }
+
+        /**
+         * Initializes and loads the Kendo components for the main tab strip and the tree views of every tab.
+         */
+        async loadTabsAndTreeViews() {
             // Load the tabs via the API.
             this.treeViewTabs = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}templates/0/tree-view`,
@@ -327,26 +354,6 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
-
-            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
-                loadOnDemand: false,
-                dragAndDrop: false,
-                dataTextField: "templateName",
-                dataSpriteCssClassField: "spriteCssClass",
-                select: this.onTreeViewSelect.bind(this),
-            }).data("kendoTreeView");
-
-            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
-                dataSource: [
-                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
-                    { text: "Hernoemen", attr: { action: "rename" } },
-                    { text: "Verwijderen", attr: { action: "delete" } }
-                ],
-                target: ".tabstrip-treeview",
-                filter: ".k-item",
-                open: this.onContextMenuOpen.bind(this),
-                select: this.onContextMenuSelect.bind(this)
-            }).data("kendoContextMenu");
         }
 
         /**
@@ -2991,7 +2998,7 @@ const moduleSettings = {
             window.processing.addProcess(process);
 
             try {
-                const response = await Wiser2.api({
+                const response = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}templates/import-legacy`,
                     dataType: "json",
                     type: "POST",

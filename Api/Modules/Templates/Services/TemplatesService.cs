@@ -2198,11 +2198,9 @@ LIMIT 1";
                 : new ServiceResult<string>(result.Rows[0].Field<string>("template_name"));
         }
 
-        /// <summary>
-        /// Converts Wiser 1 templates to the Wiser 3 format.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync()
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
         {
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
@@ -2316,6 +2314,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             try
             {
                 dataTable = await clientDatabaseConnection.GetAsync(query);
+
+                var allRootDirectories = new List<string> { "HTML", "JS", "SCSS", "CSS", "SQL", "SERVICES", "VIEWS", "ROUTINES", "TRIGGERS" };
+                var rootDirectoriesCreated = new List<string>();
                 foreach (DataRow dataRow in dataTable.Rows)
                 {
                     // Get template type.
@@ -2384,13 +2385,55 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                         minifiedContent = ConvertLegacyReplacementMethodsToNewReplacementMethods(minifiedContent);
                     }
 
+                    var templateName = dataRow.Field<string>("template_name");
+                    var ordering = dataRow.IsNull("ordering") ? 0 : dataRow["ordering"];
+                    if (templateType == TemplateTypes.Directory && (dataRow.IsNull("parent_id") || Convert.ToInt32(dataRow["parent_id"]) == 0))
+                    {
+                        // Set the name and ordering of root directories to new Wiser 3 standards.
+                        switch (templateName.ToUpperInvariant())
+                        {
+                            case "HTML":
+                                ordering = 1;
+                                break;
+                            case "SCRIPTS":
+                                ordering = 2;
+                                templateName = "JS";
+                                break;
+                            case "SCSS":
+                                ordering = 3;
+                                break;
+                            case "CSS":
+                                ordering = 4;
+                                break;
+                            case "QUERY":
+                                ordering = 5;
+                                templateName = "SQL";
+                                break;
+                            case "AIS":
+                                ordering = 6;
+                                templateName = "SERVICES";
+                                break;
+                            case "VIEWS":
+                                ordering = 7;
+                                break;
+                            case "ROUTINES":
+                                ordering = 8;
+                                break;
+                            case "TRIGGERS":
+                                ordering = 9;
+                                break;
+                        }
+
+                        rootDirectoriesCreated.Add(templateName);
+                    }
+
                     var templateId = dataRow["template_id"];
                     var publishedEnvironment = dataRow["published_environment"];
                     var changedOn = dataRow["changed_on"];
                     var changedBy = dataRow["changed_by"];
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("parent_id", dataRow["parent_id"]);
-                    clientDatabaseConnection.AddParameter("template_name", dataRow["template_name"]);
+                    clientDatabaseConnection.AddParameter("template_name", templateName);
                     clientDatabaseConnection.AddParameter("template_data", content);
                     clientDatabaseConnection.AddParameter("template_data_minified", minifiedContent);
                     clientDatabaseConnection.AddParameter("template_type", templateType);
@@ -2412,7 +2455,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     clientDatabaseConnection.AddParameter("login_required", dataRow.IsNull("login_required") ? 0 : dataRow["login_required"]);
                     clientDatabaseConnection.AddParameter("login_session_prefix", dataRow["login_session_prefix"]);
                     clientDatabaseConnection.AddParameter("linked_templates", dataRow["linked_templates"]);
-                    clientDatabaseConnection.AddParameter("ordering", dataRow.IsNull("ordering") ? 0 : dataRow["ordering"]);
+                    clientDatabaseConnection.AddParameter("ordering", ordering);
                     clientDatabaseConnection.AddParameter("insert_mode", dataRow.IsNull("insert_mode") ? 0 : dataRow["insert_mode"]);
                     clientDatabaseConnection.AddParameter("load_always", dataRow.IsNull("load_always") ? 0 : dataRow["load_always"]);
                     clientDatabaseConnection.AddParameter("url_regex", dataRow["url_regex"]);
@@ -2433,9 +2476,9 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     }
 
                     query = @"SELECT *
-                        FROM easy_dynamiccontent
-                        WHERE itemid = ?template_id
-                        AND version = ?version";
+FROM easy_dynamiccontent
+WHERE itemid = ?template_id
+AND version = ?version";
                     var dynamicContentDataTable = await clientDatabaseConnection.GetAsync(query);
                     if (dynamicContentDataTable.Rows.Count == 0)
                     {
@@ -2467,11 +2510,32 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                         clientDatabaseConnection.AddParameter("added_on", changedOn);
                         clientDatabaseConnection.AddParameter("added_by", changedBy);
                         await clientDatabaseConnection.ExecuteAsync(@$"INSERT IGNORE INTO {WiserTableNames.WiserTemplateDynamicContent} (content_id, destination_template_id, added_on, added_by)
-                                                                        VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
+VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
                     }
                 }
 
                 await clientDatabaseConnection.CommitTransactionAsync();
+
+                // Add any missing root directories. For some reason we get timeouts/deadlocks when we do this in the same transaction as the rest of the conversion, so we have to to it after the commit.
+                var missingRootDirectories = allRootDirectories.Except(rootDirectoriesCreated);
+                foreach (var directory in missingRootDirectories)
+                {
+                    var ordering = directory.ToUpperInvariant() switch
+                    {
+                        "HTML" => 1,
+                        "SCRIPTS" => 2,
+                        "SCSS" => 3,
+                        "CSS" => 4,
+                        "QUERY" => 5,
+                        "AIS" => 6,
+                        "VIEWS" => 7,
+                        "ROUTINES" => 8,
+                        "TRIGGERS" => 9,
+                        _ => 0
+                    };
+
+                    await templateDataService.CreateAsync(directory, null, TemplateTypes.Directory, IdentityHelpers.GetUserName(identity, true), ordering: ordering);
+                }
             }
             catch
             {
@@ -2938,6 +3002,15 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     title = legacySettings?.VisibleDescription;
                     break;
                 }
+                case "JuiceControlLibrary.DBField":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<DbFieldLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
                 case "JuiceControlLibrary.AccountWiser2":
                 {
                     viewComponentName = "Account";
@@ -2994,10 +3067,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     title = legacySettings?.VisibleDescription;
                     break;
                 }
-                case "JuiceControlLibrary.Configurator":
-                {
-                    return ("Configurator", legacySettingsJson, "TODO - Configurator - This needs to be converted manually!", "Default");
-                }
                 case "JuiceControlLibrary.DataSelectorParser":
                 {
                     viewComponentName = "DataSelectorParser";
@@ -3009,7 +3078,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(legacyComponentName), legacyComponentName);
+                    return ("Unknown", legacySettingsJson, $"TODO - {legacyComponentName} - This needs to be converted manually!", "Default");
             }
 
             newSettingsJson = ConvertDynamicComponentsFromLegacyToNewInHtml(newSettingsJson, true);
