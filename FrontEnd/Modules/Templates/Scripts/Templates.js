@@ -454,7 +454,6 @@ const moduleSettings = {
         }
 
         onMainTabStripActivate(event) {
-            console.log("onMainTabStripActivate");
             switch (this.mainTabStrip.select().data("name")) {
                 case "history":
                     this.reloadHistoryTab();
