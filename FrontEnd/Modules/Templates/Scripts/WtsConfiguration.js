@@ -122,6 +122,14 @@ export class WtsConfiguration {
                     componentOptions.change = eval(componentOptions.change);
                 }
             }
+
+            // Check if the component has UseDataSource set to true
+            if (component.attr("use-datasource") === "true") {
+                // Find the name of the property
+                let propertyName = this.decapitalizeFirstLetter(component.attr("name"));
+                // Set the dataSource to the correct property
+                componentOptions.dataSource = eval("this.template." + propertyName);
+            }
             
             // Check if any other field depends on this field, if so add a change event
             let isDependedOn = document.querySelectorAll('[data-depend-on-field="' + component.attr("name") + '"]');
@@ -529,8 +537,6 @@ export class WtsConfiguration {
     }
     
     hideField(type, element) {
-        // Find name of the element
-        let name = element.attr("name");
         switch (type) {
             case "CheckBox":
                 element.parent().parent().parent().hide();
@@ -551,8 +557,6 @@ export class WtsConfiguration {
     }
     
     showField(type, element) {
-        // Find name of the element
-        let name = element.attr("name");
         switch (type) {
             case "CheckBox":
                 element.parent().parent().parent().show();

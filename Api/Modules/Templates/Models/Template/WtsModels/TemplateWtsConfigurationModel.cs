@@ -56,12 +56,12 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             KendoComponent = KendoComponents.Grid,
             AllowEdit = true,
             IdProperty = "TimeId",
+            UseDataSource = true,
             KendoOptions = @"
                {
                   ""resizable"": true,
                   ""height"": 280,
                   ""selectable"": true,
-                  ""dataSource"": ""this.template.runSchemes"",
                   ""change"": ""this.onListChange.bind(this)"",
                   ""columns"": [
                     {

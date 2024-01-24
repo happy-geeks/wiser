@@ -53,6 +53,12 @@ namespace Api.Modules.Templates.Attributes
             public string KendoOptions { get; set; }
             
             /// <summary>
+            /// Use datasource with the name of the property.
+            /// For example: For the property "RunSchemes" the datasource "runSchemes" will be used.
+            /// </summary>
+            public bool UseDataSource { get; set; }
+            
+            /// <summary>
             /// Allows editing of the property.
             /// This can only be applied to properties of type list.
             /// </summary>
