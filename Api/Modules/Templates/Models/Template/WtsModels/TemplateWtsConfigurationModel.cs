@@ -62,7 +62,6 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
                   ""resizable"": true,
                   ""height"": 280,
                   ""selectable"": true,
-                  ""change"": ""this.onListChange.bind(this)"",
                   ""columns"": [
                     {
                         ""field"": ""timeId"",
@@ -97,23 +96,5 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             ConfigurationTab = ConfigurationTab.Actions
         )]
         public List<HttpApiModel> HttpApis { get; set; }
-        
-        /// <summary>
-        /// All levels of minimum logging
-        /// </summary>
-        [XmlIgnore]
-        [WtsAttributes.WtsProperty(
-            IsVisible = false
-        )]
-        public string[] LogMinimumLevels { get; set; }
-        
-        /// <summary>
-        /// All run scheme types
-        /// </summary>
-        [XmlIgnore]
-        [WtsAttributes.WtsProperty(
-            IsVisible = false
-        )]
-        public string[] RunSchemeTypes { get; set; }
     }
 }

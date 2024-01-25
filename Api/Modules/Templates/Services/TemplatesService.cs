@@ -1444,9 +1444,6 @@ LIMIT 1";
             // Parse the xml
             var templateXml = wtsConfigurationService.ParseXmlToObject(decryptedXml);
             
-            // Add the available input values to the xml
-            (templateXml.LogMinimumLevels, templateXml.RunSchemeTypes) = wtsConfigurationService.GetInputValues();
-            
             return new ServiceResult<TemplateWtsConfigurationModel>(templateXml);
         }
 

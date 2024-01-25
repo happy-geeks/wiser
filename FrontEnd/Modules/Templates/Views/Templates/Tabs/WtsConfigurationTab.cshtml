@@ -255,12 +255,12 @@
                         <span>
                             <button id="@($"{property.Name}CreateButton")" for-list="@property.Name" class="k-button k-primary">Nieuwe rij maken</button>
                             <button id="@($"{property.Name}SaveButton")" for-list="@property.Name" class="k-button k-primary">Wijzigingen opslaan</button>
-                            <button id="@($"{property.Name}DeleteButton")" for-list="@property.Name" class="k-button k-primary" style="background-color: #dc3545 !important;">Geselecteerde rij verwijderen</button>
+                            <button id="@($"{property.Name}DeleteButton")" for-list="@property.Name" class="k-button k-primary" style="background-color: var(--color-2) !important;">Geselecteerde rij verwijderen</button>
                         </span>
                     }
                     break;
                 default:
-                    <p style="color: #721c24; background-color: #f8d7da; padding: 10px; border: 3px solid #f5c6cb; border-radius: 7px;">Unknown property type: "@property.PropertyType.Name" for property: "@property.Name"</p>
+                    <p style="color: #721c24; background-color: #f8d7da; padding: 10px; border: 3px solid #f5c6cb; border-radius: 7px;">Fout: Onbekende eigenschap "@property.Name". Meld dit aan het team voor verdere assistentie.</p>
                     break;
             }
         </div>
