@@ -61,6 +61,7 @@ namespace Api.Modules.Templates.Attributes
             /// <summary>
             /// Allows editing of the property.
             /// This can only be applied to properties of type list.
+            /// This will automatically bind a change event in the kendoOptions.
             /// </summary>
             public bool AllowEdit { get; set; }
             

@@ -10,12 +10,6 @@ namespace Api.Modules.Templates.Interfaces
     public interface IWtsConfigurationService
     {
         /// <summary>
-        /// Get all available input values.
-        /// </summary>
-        /// <returns>Two arrays containing the names from: <see cref="LogMinimumLevels"> and <see cref="RunSchemeTypes"> </returns>
-        (string[], string[]) GetInputValues();
-        
-        /// <summary>
         /// Parse xml to an object.
         /// </summary>
         /// <param name="xml">The incoming xml string.</param>

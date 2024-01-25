@@ -122,6 +122,11 @@ export class WtsConfiguration {
                     componentOptions.change = eval(componentOptions.change);
                 }
             }
+            
+            // Add a list change event to the grid if it allows editing
+            if (component.attr("data-kendo-component") === "Grid" && component.attr("allow-edit") === "true") {
+                componentOptions.change = eval("this.onListChange.bind(this)");
+            }
 
             // Check if the component has UseDataSource set to true
             if (component.attr("use-datasource") === "true") {

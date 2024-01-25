@@ -1,8 +1,6 @@
-using System;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -58,16 +56,6 @@ namespace Api.Modules.Templates.Services
                     return xml;
                 }
             }
-        }
-        
-        /// <inheritdoc />
-        public (string[], string[]) GetInputValues()
-        {
-            // Grab the input values from local enums
-            var logMinimumLevels = Enum.GetNames(typeof(LogMinimumLevels));
-            var runSchemeTypes = Enum.GetNames(typeof(RunSchemeTypes));
-            
-            return (logMinimumLevels, runSchemeTypes);
         }
     }
 }

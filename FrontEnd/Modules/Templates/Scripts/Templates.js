@@ -560,7 +560,6 @@ const moduleSettings = {
             const templateType = this.templateSettings.type.toUpperCase();
             const configurationTab = this.mainTabStrip.element.find(".config-tab");
             const developmentTab = this.mainTabStrip.element.find(".development-tab");
-            console.log("templateType", templateType);
             if (templateType !== "XML") {
                 this.mainTabStrip.disable(configurationTab);
                 // If the template is not an XML template, and the currently
