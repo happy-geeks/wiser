@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Modules.Kendo.Enums;
@@ -13,9 +14,11 @@ using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
+using GeeksCoreLibrary.Modules.Templates.Models;
 using Constants = Api.Modules.Templates.Models.Other.Constants;
 
 namespace Api.Modules.Templates.Services.DataLayer
@@ -78,6 +81,7 @@ LIMIT 1");
             clientDatabaseConnection.ClearParameters();
 
             string publishedVersionWhere;
+            var publishedVersionJoin = "";
             if (version.HasValue)
             {
                 clientDatabaseConnection.AddParameter("version", version.Value);
@@ -87,10 +91,15 @@ LIMIT 1");
             {
                 publishedVersionWhere = environment switch
                 {
-                    null => "",
+                    null => "AND otherVersion.id IS NULL",
                     Environments.Hidden => "AND template.published_environment = 0",
                     _ => $"AND (template.published_environment & {(int) environment}) = {(int) environment}"
                 };
+
+                if (environment == null)
+                {
+                    publishedVersionJoin = $"LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version";
+                }
             }
 
             clientDatabaseConnection.AddParameter("templateId", templateId);
@@ -122,7 +131,7 @@ LIMIT 1");
     template.disable_minifier,
     template.url_regex,
     template.external_files,
-    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('url', externalFiles.external_file, 'hash', externalFiles.hash))) AS external_files_json,
+    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('uri', externalFiles.external_file, 'hash', externalFiles.hash, 'ordering', externalFiles.ordering))) AS external_files_json,
     template.grouping_create_object_instead_of_array,
     template.grouping_prefix,
     template.grouping_key,
@@ -145,6 +154,7 @@ LIMIT 1");
     template.widget_content,
     template.widget_location
 FROM {WiserTableNames.WiserTemplate} AS template
+{publishedVersionJoin}
 LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
 WHERE template.template_id = ?templateId
 {publishedVersionWhere}
@@ -529,39 +539,68 @@ SET template_name = ?name,
     is_partial = ?isPartial,
     widget_content = ?widgetContent,
     widget_location = ?widgetLocation,
-    is_dirty = TRUE
+    is_dirty = TRUE,
+    # Set the external_files column empty, because we have a new table for this now. This value will be moved to that table in code below.
+    external_files = ''
 WHERE id = ?id";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Find out which external files are already saved in the database, so we don't need to re-download them every time someone saves the template.
-            query = $"SELECT id, external_file FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE template_id = ?id";
+            query = $"SELECT id, external_file, hash, ordering FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE template_id = ?id";
             var externalFilesDataTable = await clientDatabaseConnection.GetAsync(query);
             var externalFilesToDelete = new List<int>();
-            var externalFilesInDatabase = new List<string>();
+            var externalFilesInDatabase = new List<PageResourceModel>();
             foreach (DataRow dataRow in externalFilesDataTable.Rows)
             {
-                var url = dataRow.Field<string>("external_file");
-                if (!templateSettings.ExternalFiles.Any(y => String.Equals(y.Uri.ToString(), url, StringComparison.OrdinalIgnoreCase)))
+                var data = new PageResourceModel
                 {
-                    externalFilesToDelete.Add(dataRow.Field<int>("id"));
+                    Id = dataRow.Field<int>("id"),
+                    Uri = new Uri(dataRow.Field<string>("external_file"), UriKind.RelativeOrAbsolute),
+                    Hash = dataRow.Field<string>("hash"),
+                    Ordering = dataRow.Field<int>("ordering")
+                };
+
+                if (!templateSettings.ExternalFiles.Any(y => String.Equals(y.Uri.ToString(), data.Uri.ToString(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    externalFilesToDelete.Add(data.Id);
                 }
 
-                externalFilesInDatabase.Add(url);
+                externalFilesInDatabase.Add(data);
             }
 
             // Delete any external files that are not in the new list.
-            query = $"DELETE FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE id IN ({String.Join(",", externalFilesToDelete)})";
-            await clientDatabaseConnection.ExecuteAsync(query);
+            if (externalFilesToDelete.Any())
+            {
+                query = $"DELETE FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE id IN ({String.Join(",", externalFilesToDelete)})";
+                await clientDatabaseConnection.ExecuteAsync(query);
+            }
 
             // Save the new list of external templates and generate hashes for them if we can.
-            foreach (var externalFile in templateSettings.ExternalFiles)
+            using var client = new HttpClient();
+
+            var orderedExternalFiles = templateSettings.ExternalFiles.OrderBy(x => x.Ordering).ToList();
+            for (var i = 0; i < orderedExternalFiles.Count; i++)
             {
-                if (externalFilesInDatabase.Any(x => String.Equals(x, externalFile.Uri.ToString())))
+                var externalFile = orderedExternalFiles[i];
+                var dataForDatabase = externalFilesInDatabase.FirstOrDefault(x => String.Equals(x.Uri.ToString(), externalFile.Uri.ToString(), StringComparison.OrdinalIgnoreCase)) ?? externalFile;
+
+                if (dataForDatabase.Uri.IsAbsoluteUri && String.IsNullOrWhiteSpace(dataForDatabase.Hash))
                 {
-                    continue;
+                    var contents = await client.GetStringAsync(externalFile.Uri);
+                    dataForDatabase.Hash = $"sha512-{StringHelpers.HashValue(contents, new HashSettingsModel {Algorithm = HashAlgorithms.SHA512, Representation = HashRepresentations.Base64})}";
                 }
 
-                // TODO: Generate hash and save it to the database.
+                dataForDatabase.Ordering = externalFile.Ordering;
+                clientDatabaseConnection.AddParameter("externalFileId", dataForDatabase.Id);
+                clientDatabaseConnection.AddParameter("externalFile", dataForDatabase.Uri.ToString());
+                clientDatabaseConnection.AddParameter("hash", dataForDatabase.Hash ?? "");
+                clientDatabaseConnection.AddParameter("ordering", i);
+
+                query = dataForDatabase.Id > 0
+                    ? $"UPDATE {WiserTableNames.WiserTemplateExternalFiles} SET hash = ?hash, ordering = ?ordering WHERE id = ?externalFileId"
+                    : $"INSERT INTO {WiserTableNames.WiserTemplateExternalFiles} (template_id, external_file, hash, ordering) VALUES (?id, ?externalFile, ?hash, ?ordering)";
+
+                await clientDatabaseConnection.ExecuteAsync(query);
             }
         }
 
@@ -572,6 +611,7 @@ WHERE id = ?id";
             clientDatabaseConnection.AddParameter("templateId", templateId);
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
 
+            // Copy the template itself to a new version.
             var query = $@"INSERT INTO {WiserTableNames.WiserTemplate} (
     parent_id,
     template_name,
@@ -684,6 +724,21 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.templa
 WHERE template.template_id = ?templateId
 AND otherVersion.id IS NULL;";
             var newId = await clientDatabaseConnection.InsertRecordAsync(query);
+
+            // Copy the external files to the new version.
+            clientDatabaseConnection.AddParameter("newId", newId);
+            query = @$"INSERT INTO {WiserTableNames.WiserTemplateExternalFiles} (template_id, external_file, hash, ordering)
+SELECT 
+    template.id, 
+    file.external_file,
+    file.hash,
+    file.ordering 
+FROM {WiserTableNames.WiserTemplate} AS template
+JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version = template.version - 1
+JOIN {WiserTableNames.WiserTemplateExternalFiles} AS file ON file.template_id = otherVersion.id
+WHERE template.id = ?newId;";
+            await clientDatabaseConnection.InsertRecordAsync(query);
+
             return Convert.ToInt32(newId);
         }
 
@@ -1238,7 +1293,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.disable_minifier,
     template.url_regex,
     template.external_files,
-    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('url', externalFiles.external_file, 'hash', externalFiles.hash))) AS external_files_json,
+    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('uri', externalFiles.external_file, 'hash', externalFiles.hash, 'ordering', externalFiles.ordering))) AS external_files_json,
     template.grouping_create_object_instead_of_array,
     template.grouping_prefix,
     template.grouping_key,
@@ -1577,6 +1632,16 @@ WHERE NOT EXISTS (
     WHERE template.template_id = temp.template_id
     AND template.version = temp.version
 );
+
+DELETE FROM `{branchDatabaseName}`.{WiserTableNames.WiserTemplateExternalFiles} WHERE template_id IN (SELECT id FROM `{branchDatabaseName}`.`{temporaryTableName}`);
+INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplateExternalFiles} (template_id, external_file, hash, ordering)
+SELECT 
+    file.template_id, 
+    file.external_file,
+    file.hash,
+    file.ordering 
+FROM `{branchDatabaseName}`.`{temporaryTableName}` AS template
+JOIN {WiserTableNames.WiserTemplateExternalFiles} AS file ON file.template_id = template.id;
 
 DROP TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`";
             await clientDatabaseConnection.ExecuteAsync(query);

@@ -99,6 +99,8 @@ WHERE content_id = ?id");
     template.template_type, 
     template.template_data, 
     template.version, 
+    template.added_on,
+    template.added_by,
     template.changed_on, 
     template.changed_by, 
     template.cache_per_url,
@@ -109,7 +111,8 @@ WHERE content_id = ?id");
     template.cache_location, 
     template.cache_regex, 
     template.login_required, 
-    template.login_role, 
+    template.login_role,
+    template.login_redirect_url, 
     template.ordering, 
     GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
     template.insert_mode,
@@ -117,6 +120,7 @@ WHERE content_id = ?id");
     template.disable_minifier,
     template.url_regex,
     template.external_files,
+    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('uri', externalFiles.external_file, 'hash', externalFiles.hash, 'ordering', externalFiles.ordering))) AS external_files_json,
     template.grouping_create_object_instead_of_array,
     template.grouping_prefix,
     template.grouping_key,
@@ -137,8 +141,10 @@ WHERE content_id = ?id");
     template.default_header_footer_regex,
     template.is_partial,
     template.widget_content,
-    template.widget_location
+    template.widget_location,
+    template.linked_templates
 FROM {WiserTableNames.WiserTemplate} AS template 
+LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
 LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
 WHERE template.template_id = ?templateId
 AND template.removed = 0
