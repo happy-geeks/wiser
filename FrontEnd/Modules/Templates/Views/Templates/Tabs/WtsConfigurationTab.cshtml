@@ -43,31 +43,11 @@
     </div>
 </div>
 
-@* Styling here is a temporary edit since it would otherwise block the bottom input fields *@
-@* If the styling needs to be reverted: remove the style attributes, remove p element and uncomment the button *@
-<footer style="
-        right: 20px;
-        bottom: 20px;
-        left: initial;
-        border-radius: 5px !important;
-        background-color: #d6d8d9;
-        outline: #1b1e21 3px dashed;
-        color: #1b1e21;
-    ">
+<footer>
     <div class="version-actions">
-        <p style="
-            text-align: center;
-            margin-bottom: 7px;
-            font-size: 18px;
-        ">- Debugger -</p>
+        @* Commented out since it currently doesn't function *@
         @* <button id="saveAndDeployToTestButtonWtsConfiguration" class="k-primary saveButton" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button> *@
-        <button id="saveButtonWtsConfiguration" class="k-primary saveButton" style="
-            background-color: #343a40;
-            border: 1px solid #343a40;
-            padding: 0 5px;
-            border-radius: 4px;
-            cursor: pointer;
-        ">Configuratie opslaan</button>
+        <button id="saveButtonWtsConfiguration" class="k-primary saveButton">Configuratie opslaan</button>
     </div>
 </footer>
 
