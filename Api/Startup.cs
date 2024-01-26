@@ -18,6 +18,7 @@ using Api.Modules.Templates.Services;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Services;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Middlewares;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
 using IdentityServer4.Services;
@@ -292,6 +293,8 @@ namespace Api
             {
                 app.ConfigureExceptionHandler(logger);
             }
+
+            app.UseMiddleware<RequestLoggingMiddleware>();
 
             // Setup React and babel for the /api/v3/babel endpoint (for converting ES6 javascript to ES5).
             app.UseReact(config =>
