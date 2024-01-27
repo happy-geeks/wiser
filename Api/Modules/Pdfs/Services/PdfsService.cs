@@ -18,6 +18,8 @@ using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Serialization;
 
 namespace Api.Modules.Pdfs.Services
 {
@@ -90,44 +92,53 @@ namespace Api.Modules.Pdfs.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string encrypedItemIdsList, string propertyName, string entityType)
+        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string encrypedItemIdsList, string propertyNames, string entityType)
         {
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
 
-            Document mergeResultPdfDocument=null;
+            Document mergeResultPdfDocument = null;
             //Load the documents and add them to the merged file
             foreach (var encryptedId in encrypedItemIdsList.Split(","))
             {
-                var pdfFile = await filesService.GetAsync(encryptedId, 0, identity, 0, entityType, propertyName:propertyName);
-
-                //must PDF be downloaded first?
-                MemoryStream pdfStream = new MemoryStream();
-                if (!String.IsNullOrWhiteSpace(pdfFile.ModelObject.Url))
+                foreach (var propertyName in propertyNames.Split(','))
                 {
-                    using (HttpClient client = new HttpClient())
+                    var pdfFile = await filesService.GetAsync(encryptedId, 0, identity, 0, entityType, propertyName:propertyName);
+                    MemoryStream pdfStream = new MemoryStream();
+                    // Check if the PDF must be downloaded first
+                    if (!String.IsNullOrWhiteSpace(pdfFile.ModelObject.Url))
                     {
-                        using (HttpResponseMessage response = await client.GetAsync(pdfFile.ModelObject.Url, HttpCompletionOption.ResponseHeadersRead))
+                        using (HttpClient client = new HttpClient())
                         {
-                            response.EnsureSuccessStatusCode();
-                            using (Stream downloadStream = await response.Content.ReadAsStreamAsync())
+                            using (HttpResponseMessage response = await client.GetAsync(pdfFile.ModelObject.Url, HttpCompletionOption.ResponseHeadersRead))
                             {
-                                await downloadStream.CopyToAsync(pdfStream);
+                                response.EnsureSuccessStatusCode();
+                                using (Stream downloadStream = await response.Content.ReadAsStreamAsync())
+                                {
+                                    await downloadStream.CopyToAsync(pdfStream);
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
-                }
+                    else if (!pdfFile.ModelObject.Data.IsNullOrEmpty())
+                    {
+                        pdfStream = new MemoryStream(pdfFile.ModelObject.Data);                        
+                    }
 
-                if (mergeResultPdfDocument == null)
-                {
-                    mergeResultPdfDocument = new Document(pdfStream);
-                    mergeResultPdfDocument.LicenseKey = gclSettings.EvoPdfLicenseKey;
+                    // If the pdf file is empty (no file at the URL and no file in the blob field) then skip to next file
+                    if (pdfStream.Length == 0)
+                    {
+                        continue;
+                    } 
+                    if (mergeResultPdfDocument == null)
+                    {
+                        mergeResultPdfDocument = new Document(pdfStream);
+                        mergeResultPdfDocument.LicenseKey = gclSettings.EvoPdfLicenseKey;
+                    }
+                    else
+                    {
+                        mergeResultPdfDocument.AppendDocument(new Document(pdfStream));                    
+                    }
                 }
-                else
-                    mergeResultPdfDocument.AppendDocument(new Document(pdfStream));
             }
             
             using var saveStream = new MemoryStream();

@@ -34,6 +34,6 @@ namespace Api.Modules.Pdfs.Interfaces
         /// <param name="propertyName">the property name of te files that must be merged </param>
         /// <param name="entityType">the entitytype of the entity of the ID's</param>
         /// <returns>The location of the HTML file on the server.</returns>
-        Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string encrypedItemIdsList, string propertyName, string entityType);
+        Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string encrypedItemIdsList, string propertyNames, string entityType);
     }
 }

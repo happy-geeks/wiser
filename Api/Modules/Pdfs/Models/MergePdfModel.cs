@@ -16,7 +16,7 @@ public class MergePdfModel
     public string EncrypedItemIdsList { get; set; }
 
     /// <summary>
-    /// Gets or sets the property name of the files to retreive
+    /// Gets or sets the property name of the files to retreive, this can be a comma-separated list
     /// </summary>
-    public string PropertyName { get; set; }
+    public string PropertyNames { get; set; }
 }
