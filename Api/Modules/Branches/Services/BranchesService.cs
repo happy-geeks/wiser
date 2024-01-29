@@ -1616,7 +1616,7 @@ WHERE changed_on >= ?lastChange";
                     }
                     case "UPDATE_QUERY":
                     {
-                        conflict.Title = await GetDisplayNameAsync(queryNames);
+                        conflict.Title = await GetDisplayNameAsync(queryNames, "description");
                         break;
                     }
                     case "UPDATE_ENTITY":
@@ -1648,7 +1648,7 @@ WHERE changed_on >= ?lastChange";
                     }
                     case "UPDATE_FIELD_TEMPLATE":
                     {
-                        conflict.Title = await GetDisplayNameAsync(fieldTypes);
+                        conflict.Title = await GetDisplayNameAsync(fieldTypes, "field_type");
                         break;
                     }
                     case "UPDATE_LINK_SETTING":
