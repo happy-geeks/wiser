@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Queries.Interfaces;
@@ -20,6 +21,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using IdentityServer4.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
@@ -37,9 +39,10 @@ namespace Api.Modules.Queries.Services
         private readonly IQueriesService queriesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<StyledOutputService> logger;
+        private readonly StyledOutputSettings apiSettings;
         
         // even if the user selects a higher value the results will always be capped to this
-        private const int maxResultsPerPage = 500;
+        private int maxResultsPerPage = 500;
 
         private const string itemSeperatorString = ", ";
         
@@ -49,10 +52,11 @@ namespace Api.Modules.Queries.Services
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
-        public StyledOutputService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger)
+        public StyledOutputService(IWiserTenantsService wiserTenantsService,IOptions<StyledOutputSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.apiSettings = apiSettings.Value;
             this.wiserItemsService = wiserItemsService;
             this.stringReplacementsService = stringReplacementsService;
             this.queriesService = queriesService;
@@ -138,6 +142,12 @@ namespace Api.Modules.Queries.Services
             }
             
             usedIds.Add(id);
+            
+            // fetch max results per page ( can be overwritten by the user )
+            if (apiSettings.MaxResultsPerPage > 0)
+            {
+                maxResultsPerPage = apiSettings.MaxResultsPerPage;
+            }
             
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
             
