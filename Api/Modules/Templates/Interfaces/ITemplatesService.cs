@@ -44,7 +44,7 @@ namespace Api.Modules.Templates.Interfaces
         /// Gets a query from the wiser database and executes it in the tenant database.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="templateName">The encrypted name of the wiser template.</param>Nite
+        /// <param name="templateName">The encrypted name of the wiser template.</param>
         /// <param name="requestPostData">Optional: The post data from the request, if the content type was application/x-www-form-urlencoded. This is for backwards compatibility.</param>
         Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null);
 
