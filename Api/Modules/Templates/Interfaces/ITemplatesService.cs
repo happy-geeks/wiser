@@ -44,7 +44,7 @@ namespace Api.Modules.Templates.Interfaces
         /// Gets a query from the wiser database and executes it in the tenant database.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="templateName">The encrypted name of the wiser template.</param>
+        /// <param name="templateName">The encrypted name of the wiser template.</param>Nite
         /// <param name="requestPostData">Optional: The post data from the request, if the content type was application/x-www-form-urlencoded. This is for backwards compatibility.</param>
         Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null);
 
@@ -293,5 +293,11 @@ namespace Api.Modules.Templates.Interfaces
             string urlRegex = null, Environments? environment = null, ulong userId = 0,
             string languageCode = null, int pageSize = 500, int pageNumber = 1,
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null);
+
+        /// <summary>
+        /// Converts a JCL template to a GCL template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity);
     }
 }

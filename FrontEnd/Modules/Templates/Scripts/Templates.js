@@ -218,6 +218,11 @@ const moduleSettings = {
                 click: () => this.openCreateNewItemDialog(false)
             });
 
+            $("#importLegacyButton").kendoButton({
+                icon: "import",
+                click: this.importLegacyTemplates.bind(this)
+            });
+
             // Main window
             this.mainWindow = $("#window").kendoWindow({
                 width: "1500",
@@ -261,6 +266,33 @@ const moduleSettings = {
                 return;
             }
 
+            await this.loadTabsAndTreeViews();
+
+            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
+                loadOnDemand: false,
+                dragAndDrop: false,
+                dataTextField: "templateName",
+                dataSpriteCssClassField: "spriteCssClass",
+                select: this.onTreeViewSelect.bind(this),
+            }).data("kendoTreeView");
+
+            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
+                dataSource: [
+                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
+                    { text: "Hernoemen", attr: { action: "rename" } },
+                    { text: "Verwijderen", attr: { action: "delete" } }
+                ],
+                target: ".tabstrip-treeview",
+                filter: ".k-item",
+                open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuSelect.bind(this)
+            }).data("kendoContextMenu");
+        }
+
+        /**
+         * Initializes and loads the Kendo components for the main tab strip and the tree views of every tab.
+         */
+        async loadTabsAndTreeViews() {
             // Load the tabs via the API.
             this.treeViewTabs = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}templates/0/tree-view`,
@@ -322,26 +354,6 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
-
-            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
-                loadOnDemand: false,
-                dragAndDrop: false,
-                dataTextField: "templateName",
-                dataSpriteCssClassField: "spriteCssClass",
-                select: this.onTreeViewSelect.bind(this),
-            }).data("kendoTreeView");
-
-            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
-                dataSource: [
-                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
-                    { text: "Hernoemen", attr: { action: "rename" } },
-                    { text: "Verwijderen", attr: { action: "delete" } }
-                ],
-                target: ".tabstrip-treeview",
-                filter: ".k-item",
-                open: this.onContextMenuOpen.bind(this),
-                select: this.onContextMenuSelect.bind(this)
-            }).data("kendoContextMenu");
         }
 
         /**
@@ -1149,7 +1161,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
-            
+
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {
@@ -1166,7 +1178,7 @@ const moduleSettings = {
                 const wiserApiRoot = this.settings.wiserApiRoot;
                 const imagesRootId = this.settings.imagesRootId;
                 const filesRootId = this.settings.filesRootId;
-                
+
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
@@ -1178,7 +1190,7 @@ const moduleSettings = {
                     tooltip: "Afbeelding toevoegen",
                     exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor"), "templates", imagesRootId); }
                 };
-                
+
                 const fileTool = {
                     name: "wiserFile",
                     tooltip: "Link naar bestand toevoegen",
@@ -2473,7 +2485,7 @@ const moduleSettings = {
             window.processing.removeProcess(process);
             this.loadingNextPart = false;
         }
-        
+
         /**
          * Reloads measurements of the template.
          * @param {any} templateId The ID of the template.
@@ -2974,6 +2986,34 @@ const moduleSettings = {
             const urlRegexHasValue = urlRegexInput.value !== "";
             alwaysLoadCheckbox.disabled = urlRegexHasValue;
             alwaysLoadCheckbox.readOnly = urlRegexHasValue;
+        }
+
+        /**
+         * Imports the templates from the Wiser 1 templates modules into the Wiser 3 templates module.
+         */
+        async importLegacyTemplates() {
+            await kendo.confirm("Weet u zeker dat u de templatemodule van Wiser 1 wilt importeren? De tabellen 'wiser_template' en 'wiser_dynamic_content' moeten leeg zijn voordat u dit doet.");
+
+            const process = `importLegacyTemplates_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const response = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/import-legacy`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
+
+                await this.loadTabsAndTreeViews();
+
+                window.popupNotification.show(`Templates van Wiser 1 zijn succesvol geïmporteerd.`, "info");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
+            }
+
+            window.processing.removeProcess(process);
         }
     }
 

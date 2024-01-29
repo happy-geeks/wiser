@@ -237,5 +237,11 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
+        {
+            return await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync(identity);
+        }
     }
 }
