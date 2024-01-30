@@ -1993,7 +1993,7 @@ export class Fields {
 
                     // Merge PDF files from a query to 1 downloadable PDF
                     case "mergeFiles": {
-                        let encryptedIds = "";
+                        let encryptedIds = [];
                         if (action.queryId) {
                             // If a query is provided, it always takes precedence over any lines that may be selected in a grid 
                             queryActionResult = await executeQuery();
@@ -2007,11 +2007,11 @@ export class Fields {
                             action.propertyNames = queryActionResult.otherData[0].propertynames;
                             if (queryActionResult.otherData[0].fileName) action.fileName = queryActionResult.otherData[0].filename;
                             if (queryActionResult.otherData[0].entity_type) action.entityType = queryActionResult.otherData[0].entity_type;
-                            encryptedIds = queryActionResult.otherData.map(item => item.id).join(",");
+                            encryptedIds = queryActionResult.otherData.map(item => item.id);
                         }
                         else {
                             // We have an array with selected items, which means this is an action button in a grid and we want to execute this action once for every selected item.
-                            encryptedIds = selectedItems.map(item => item.dataItem.encrypted_id).join(",");
+                            encryptedIds = selectedItems.map(item => item.dataItem.encrypted_id);
                             if (selectedItems[0].dataItem.entity_type) action.entityType = selectedItems[0].dataItem.entity_type;
                         }
                         
@@ -2026,7 +2026,7 @@ export class Fields {
                                     "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                                 },
                                 body: JSON.stringify({
-                                    encrypedItemIdsList:encryptedIds,
+                                    encryptedItemIdsList:encryptedIds,
                                     entityType:action.entityType || "",
                                     propertyNames:action.propertyNames})
                             });
