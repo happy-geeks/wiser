@@ -417,6 +417,12 @@ SELECT LAST_INSERT_ID() AS newId;";
                 query = query.Replace("[wherePart]", "id = ?imageId");
                 databaseConnection.AddParameter("imageId", fileId);
             }
+            else if (itemLinkId > 0)
+            {
+                query = query.Replace("[wherePart]", "itemlink_id = ?itemLinkId AND property_name = ?propertyName");
+                databaseConnection.AddParameter("itemLinkId", itemLinkId);    
+                databaseConnection.AddParameter("propertyName", propertyName);
+            }
             else
             {
                 query = query.Replace("[wherePart]", "item_id = ?itemId AND property_name = ?propertyName");

@@ -72,7 +72,7 @@ namespace Api.Modules.Pdfs.Controllers
         [Produces(MediaTypeNames.Application.Pdf)]
         public async Task<IActionResult> MergePdfFilesAsync(MergePdfModel data)
         {
-            var mergedPdfResult = await pdfsService.MergePdfFilesAsync((ClaimsIdentity)User.Identity, data.EncrypedItemIdsList, data.PropertyNames, data.EntityType);
+            var mergedPdfResult = await pdfsService.MergePdfFilesAsync((ClaimsIdentity)User.Identity, data.EncryptedItemIdsList, data.PropertyNames, data.EntityType);
             return File(mergedPdfResult.ModelObject, "application/pdf");
         }
     }

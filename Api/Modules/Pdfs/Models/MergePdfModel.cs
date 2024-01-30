@@ -13,7 +13,7 @@ public class MergePdfModel
     /// <summary>
     /// Gets or sets the encrypted item ids 
     /// </summary>
-    public string EncrypedItemIdsList { get; set; }
+    public string[] EncryptedItemIdsList { get; set; }
 
     /// <summary>
     /// Gets or sets the property name of the files to retreive, this can be a comma-separated list

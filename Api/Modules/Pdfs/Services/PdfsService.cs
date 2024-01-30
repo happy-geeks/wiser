@@ -92,13 +92,13 @@ namespace Api.Modules.Pdfs.Services
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string encrypedItemIdsList, string propertyNames, string entityType)
+        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string propertyNames, string entityType)
         {
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
 
             Document mergeResultPdfDocument = null;
             //Load the documents and add them to the merged file
-            foreach (var encryptedId in encrypedItemIdsList.Split(","))
+            foreach (var encryptedId in encryptedItemIdsList)
             {
                 foreach (var propertyName in propertyNames.Split(','))
                 {
