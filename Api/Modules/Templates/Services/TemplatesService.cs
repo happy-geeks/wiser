@@ -3089,7 +3089,7 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
 
         private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
         {
-            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
+            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentId>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             var matches = regex.Matches(html);
             foreach (Match match in matches)
             {
