@@ -3104,7 +3104,8 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
                     dataAttribute = $"data=\"{dataAttribute}\"";
                 }
 
-                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{match.Groups["contentId"].Value}\">";
+                var componentId = match.Groups["contentId"].Value;
+                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{componentId}\"><h2>Component {componentId}</h2></div>";
                 html = html.Replace(match.Value, newElement);
             }
 
