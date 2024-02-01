@@ -58,7 +58,7 @@ public class TemplateHelpers
             UseInWiserHtmlEditors = Convert.ToBoolean(dataRow["use_in_wiser_html_editors"]),
             LinkedTemplates = new LinkedTemplatesModel
             {
-                RawLinkList = dataRow.Field<string>("linked_templates") ?? ""
+                RawLinkList = (dataTable.Columns.Contains("linkedTemplates") ? dataRow.Field<string>("linkedTemplates") : dataRow.Field<string>("linked_templates")) ?? ""
             },
             PreLoadQuery = dataRow.Field<string>("pre_load_query"),
             ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(dataRow["return_not_found_when_pre_load_query_has_no_data"])
