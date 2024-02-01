@@ -374,19 +374,6 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Generates a preview for a HTML template.
-        /// </summary>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the template as it would look on the website.</returns>
-        [HttpPost]
-        [Route("preview")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GeneratePreviewAsync(GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
         /// Checks if there's already a template marked as a default header with the given regex.
         /// </summary>
         /// <param name="templateId">ID of the current template.</param>
