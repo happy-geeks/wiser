@@ -139,7 +139,7 @@ for (var toolName in allTools) {
     }
 
     var toolModes = allTools[toolName];
-    if (toolModes.indexOf(options.mode) === -1) {
+    if (options.tools.indexOf(toolName) === -1 && toolModes.indexOf(options.mode) === -1) {
         continue;
     }
 
