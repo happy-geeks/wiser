@@ -1,7 +1,6 @@
 import {TrackJS} from "trackjs";
 import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import {Preview} from "./Preview.js";
 import "../Css/DynamicContent.css";
 import "diff2html/bundles/css/diff2html.min.css"
 
@@ -45,7 +44,6 @@ const moduleSettings = {
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
             this.saving = false;
-            this.changesTimeout = null;
 
             // Default settings
             this.settings = {
@@ -60,7 +58,6 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
-            this.preview = new Preview(this);
             this.lastLoadedHistoryPart = 0;
             this.allPartsLoaded = false;
             this.loadingNextPart = false;
@@ -133,7 +130,6 @@ const moduleSettings = {
 
             this.initializeButtons();
             await this.loadComponentHistory();
-            await this.loadPreviewTab();
             
             if (this.settings.initialTab) {
                 if (this.settings.initialTab === "history") {
@@ -228,26 +224,17 @@ const moduleSettings = {
                 const isDecimal = $(element).data("decimal") === true;
                 $(element).kendoNumericTextBox({
                     decimals: isDecimal ? 2 : 0,
-                    format: isDecimal ? "n2" : "n0",
-                    change: () => this.onInputChange(true),
-                    spin: () => this.onInputChange(false)
+                    format: isDecimal ? "n2" : "n0"
                 });
             });
 
             //MULTISELECT
             container.find(".multi-select").kendoMultiSelect({
-                autoClose: false,
-                change: () => this.onInputChange(true)
-            });
-
-            container.find(".select").kendoDropDownList({
-                change: () => this.onInputChange(true)
+                autoClose: false
             });
 
             container.find(".add-subgroup-button").off("click").click(this.onAddSubGroupButtonClick.bind(this));
             container.find(".remove-subgroup-button").off("click").click(this.onRemoveSubGroupButtonClick.bind(this));
-
-            container.find("input.textField, label.checkbox > input[type='checkbox']").change(() => this.onInputChange(true));
         }
 
         /**
@@ -408,11 +395,6 @@ const moduleSettings = {
                     window.parent.Templates.newContentTitle = this.settings.selectedTitle;
                     window.parent.$("#dynamicContentWindow").data("kendoWindow").close();
                 }
-            });
-
-            $("#previewHtml").click((event) => {
-                event.preventDefault();
-                this.preview.generateHtmlPreviewForComponent(this.settings.selectedId, this.getDynamicContentPreviewSettings());
             });
         }
 
@@ -609,7 +591,7 @@ const moduleSettings = {
 
                 this.bindHistoryButtons();
             } catch (exception) {
-                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                kendo.alert("Er is iets fout gegaan met het laden van de history. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
         }
@@ -655,26 +637,6 @@ const moduleSettings = {
             this.loadingNextPart = false;
         }
 
-        async loadPreviewTab() {
-            // Preview
-            await this.preview.loadProfiles();
-            try {
-                const response = await Wiser.api({
-                    method: "GET",
-                    url: "/Modules/Templates/PreviewTab"
-                });
-
-                document.getElementById("previewTab").innerHTML = response;
-
-                this.preview.initPreviewProfileInputs(true, true);
-                this.preview.bindPreviewButtons();
-                this.preview.generatePreview(false);
-            }  catch (exception) {
-                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                console.error(exception);
-            }
-        }
-
         async transformCodeMirrorViews(container = null) {
             await Misc.ensureCodeMirror();
             container = container || $("body");
@@ -707,24 +669,8 @@ const moduleSettings = {
                     mode: element.dataset.fieldType
                 });
 
-                codeMirrorInstance.on("change", () => this.onInputChange(false));
-
                 $(element).data("CodeMirrorInstance", codeMirrorInstance);
             });
-        }
-
-        /**
-         * Event for when the user changes a value in an input.
-         * This will generate a new preview, 500ms after the user's last change.
-         */
-        onInputChange(instant = false) {
-            if (this.changesTimeout) {
-                clearTimeout(this.changesTimeout);
-            }
-
-            this.changesTimeout = setTimeout(() => {
-                this.preview.generatePreview(false);
-            }, instant ? 0 : 500);
         }
 
         /**
@@ -788,7 +734,7 @@ const moduleSettings = {
         }
 
         /**
-         * Gets the template settings. This method will be called from the Preview class.
+         * Gets the template settings. Is this still used after removing the preview feature?
          * This will call the getCurrentTemplateSettings() method from the parent frame, which should be the templates module.
          */
         getCurrentTemplateSettings() {

@@ -1,7 +1,6 @@
 ﻿import {TrackJS} from "trackjs";
 import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import {Preview} from "./Preview.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
 
@@ -104,7 +103,6 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
-            this.preview = new Preview(this);
             this.connectedUsers = new TemplateConnectedUsers(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
@@ -419,9 +417,6 @@ const moduleSettings = {
 
         onMainTabStripActivate(event) {
             switch (this.mainTabStrip.select().data("name")) {
-                case "preview":
-                    this.preview.generatePreview(false);
-                    break;
                 case "history":
                     this.reloadHistoryTab();
                     break;
@@ -713,7 +708,6 @@ const moduleSettings = {
          */
         async loadTemplate(id, virtualItem = null) {
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
-            const previewTab = this.mainTabStrip.element.find(".preview-tab");
             const historyTab = this.mainTabStrip.element.find(".history-tab");
 
             if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
@@ -722,9 +716,7 @@ const moduleSettings = {
                 this.templateHistory = null;
 
                 document.getElementById("developmentTab").innerHTML = "";
-                document.getElementById("previewTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
-                this.mainTabStrip.disable(previewTab);
                 this.mainTabStrip.disable(historyTab);
                 return;
             }
@@ -839,7 +831,7 @@ const moduleSettings = {
                 // Add user to the connected users (uses Pusher).
                 this.connectedUsers.switchTemplate(id);
 
-                // Only load dynamic content and previews for HTML templates.
+                // Only load dynamic content for HTML templates.
                 const isHtmlTemplate = this.templateSettings.type.toUpperCase() === "HTML";
 
                 // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
@@ -861,10 +853,9 @@ const moduleSettings = {
 
                 if (!isHtmlTemplate) {
                     this.mainTabStrip.disable(dynamicContentTab);
-                    this.mainTabStrip.disable(previewTab);
 
                     const selectedTab = this.mainTabStrip.select();
-                    if (selectedTab.hasClass("dynamic-tab") || selectedTab.hasClass("preview-tab")) {
+                    if (selectedTab.hasClass("dynamic-tab")) {
                         this.mainTabStrip.select(0);
                     }
 
@@ -872,7 +863,6 @@ const moduleSettings = {
                 }
 
                 this.mainTabStrip.enable(dynamicContentTab);
-                this.mainTabStrip.enable(previewTab);
 
                 // Dynamic content
                 const dynamicGridDiv = $("#dynamic-grid");
@@ -1011,17 +1001,6 @@ const moduleSettings = {
                 // Open dynamic content by double clicking on a row.
                 dynamicGridDiv.on("dblclick", "tr.k-state-selected", this.onDynamicContentOpenClick.bind(this));
 
-                // Preview
-                await this.preview.loadProfiles();
-                const response = await Wiser.api({
-                    method: "GET",
-                    url: "/Modules/Templates/PreviewTab"
-                });
-
-                document.getElementById("previewTab").innerHTML = response;
-
-                this.preview.initPreviewProfileInputs(true, true);
-                this.preview.bindPreviewButtons();
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
