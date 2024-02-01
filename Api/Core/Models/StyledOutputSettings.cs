@@ -12,6 +12,6 @@ namespace Api.Core.Models
         /// <summary>
         /// Gets or sets the default results per page number
         /// </summary>
-        public int MaxResultsPerPage { get; set; }
+        public int MaxResultsPerPage { get; set; } = 500;
     }
 }

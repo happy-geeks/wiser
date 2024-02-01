@@ -68,6 +68,9 @@ namespace Api.Modules.Queries.Services
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
         {
+            // fetch max results per page ( can be overwritten by the user )
+            maxResultsPerPage = apiSettings.MaxResultsPerPage;
+
             var response = await GetStyledOutputResultAsync(identity, allowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
 
             if (response.StatusCode != HttpStatusCode.OK)
@@ -142,12 +145,6 @@ namespace Api.Modules.Queries.Services
             }
             
             usedIds.Add(id);
-            
-            // fetch max results per page ( can be overwritten by the user )
-            if (apiSettings.MaxResultsPerPage > 0)
-            {
-                maxResultsPerPage = apiSettings.MaxResultsPerPage;
-            }
             
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
             
