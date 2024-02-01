@@ -6,6 +6,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
@@ -311,8 +312,8 @@ UNION
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId_encrypt}", IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId_encrypt_withdate}", IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt(true));
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId_encrypt}", HttpUtility.UrlEncode(IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt()));
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId_encrypt_withdate}", (string)HttpUtility.UrlEncode(IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt(true)));
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
