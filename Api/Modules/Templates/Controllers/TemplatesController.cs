@@ -5,7 +5,6 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Tenants.Models;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
@@ -13,6 +12,7 @@ using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
@@ -503,6 +503,15 @@ namespace Api.Modules.Templates.Controllers
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
             return (await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Converts a JCL template to a GCL template.
+        /// </summary>
+        [HttpPost, Route("import-legacy"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ConvertLegacyTemplatesToNewTemplatesAsync()
+        {
+            return (await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
     }
 }

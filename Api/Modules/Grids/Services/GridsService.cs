@@ -167,7 +167,7 @@ namespace Api.Modules.Grids.Services
                     if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
                     {
                         countQuery = $@"SELECT COUNT(*) FROM (
-                                        {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                        {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                     ) AS x";
                     }
                 }
@@ -185,7 +185,7 @@ namespace Api.Modules.Grids.Services
             {
                 try
                 {
-                    var mainGridOptions = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(gridOptionsValue.ReplaceCaseInsensitive("{itemId}", itemId.ToString()));
+                    var mainGridOptions = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(gridOptionsValue.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase));
                     if (mainGridOptions?.SearchGridSettings?.GridViewSettings != null)
                     {
                         results = mainGridOptions.SearchGridSettings.GridViewSettings;
@@ -222,10 +222,10 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("itemId", itemId);
                     clientDatabaseConnection.AddParameter("userId", userId);
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
+                    selectQuery = selectQuery.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    selectQuery = selectQuery.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
                     (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
@@ -401,14 +401,14 @@ namespace Api.Modules.Grids.Services
                     if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
                     {
                         countQuery = $@"SELECT COUNT(*) FROM (
-                                            {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                            {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                         ) AS x";
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
+                    selectQuery = selectQuery.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    selectQuery = selectQuery.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
                     (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
@@ -1711,7 +1711,7 @@ namespace Api.Modules.Grids.Services
             if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
             {
                 countQuery = $@"SELECT COUNT(*) FROM (
-                                    {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                    {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                 ) AS x";
             }
 
@@ -1753,7 +1753,7 @@ namespace Api.Modules.Grids.Services
         {
             tablePrefix ??= "";
             
-            // Note that this function contains ' ?? ""' after every ReplaceCaseInsensitive. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
+            // Note that this function contains ' ?? ""' after every Replace. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
             fieldMappings ??= new List<FieldMapModel>();
             
             selectQuery = apiReplacementsService.DoIdentityReplacements(selectQuery ?? "", identity, true);
@@ -1761,7 +1761,7 @@ namespace Api.Modules.Grids.Services
 
             if (options == null)
             {
-                selectQuery = selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", defaultSort).ReplaceCaseInsensitive("{filters}", "") ?? "";
+                selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", defaultSort, StringComparison.OrdinalIgnoreCase).Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
             }
             else
             {
@@ -1784,11 +1784,11 @@ namespace Api.Modules.Grids.Services
                     counter++;
 
                     // Old way of filtering:
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
+                    selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
+                    selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
 
                     // New way of filtering.
                     string @operator;
@@ -1965,28 +1965,28 @@ namespace Api.Modules.Grids.Services
                         }
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}") ?? "";
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{fieldName}_has_filter}}", "1") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{fieldName}_has_filter}}", "1") ?? "";
+                    selectQuery = selectQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase) ?? "";
+                    selectQuery = selectQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase) ?? "";
                     return counter;
                 }
 
 
                 if (options.Take <= 0)
                 {
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{limit}", "") ?? "";
+                    selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
                     clientDatabaseConnection.AddParameter("skip", options.Skip);
                     clientDatabaseConnection.AddParameter("take", options.Take);
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{limit}", "LIMIT ?skip, ?take") ?? "";
+                    selectQuery = selectQuery.Replace("{limit}", "LIMIT ?skip, ?take", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
 
                 if (options.Sort == null || !options.Sort.Any())
                 {
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{sort}", defaultSort ?? "") ?? "";
+                    selectQuery = selectQuery.Replace("{sort}", defaultSort ?? "", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
@@ -2018,22 +2018,22 @@ namespace Api.Modules.Grids.Services
                             joinsForSorting.AppendLine($"LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
                         }
 
-                        selectQuery = selectQuery.ReplaceCaseInsensitive("{joinsForSorting}", joinsForSorting.ToString());
+                        selectQuery = selectQuery.Replace("{joinsForSorting}", joinsForSorting.ToString(), StringComparison.OrdinalIgnoreCase);
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{sort}", $"ORDER BY {String.Join(", ", options.Sort.Select(s => $"{(!shouldCreateJoinsForSorting || ItemColumns.Any(x => x.Equals(s.Field, StringComparison.OrdinalIgnoreCase)) ? $"`{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`" : $"CONCAT_WS('', `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`value`, `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`long_value`)")} {s.Dir.ToMySqlSafeValue(false).ToUpperInvariant()}"))}") ?? "";
+                    selectQuery = selectQuery.Replace("{sort}", $"ORDER BY {String.Join(", ", options.Sort.Select(s => $"{(!shouldCreateJoinsForSorting || ItemColumns.Any(x => x.Equals(s.Field, StringComparison.OrdinalIgnoreCase)) ? $"`{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`" : $"CONCAT_WS('', `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`value`, `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`long_value`)")} {s.Dir.ToMySqlSafeValue(false).ToUpperInvariant()}"))}", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
 
                 if (options.Filter?.Filters == null || !options.Filter.Filters.Any())
                 {
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{filters}", "") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{filters}", "") ?? "";
+                    selectQuery = selectQuery.Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{hasWhere}", "0") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{hasWhere}", "0") ?? "";
+                    selectQuery = selectQuery.Replace("{hasWhere}", "0", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{hasWhere}", "0", StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
+                    selectQuery = selectQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
@@ -2041,8 +2041,8 @@ namespace Api.Modules.Grids.Services
                     var counter = 0;
                     var logic = options.Filter.Logic.ToMySqlSafeValue(false);
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{logic}", logic) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{logic}", logic) ?? "";
+                    selectQuery = selectQuery.Replace("{logic}", logic, StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{logic}", logic, StringComparison.OrdinalIgnoreCase) ?? "";
 
                     var mainWhereClause = (logic, new List<string>());
                     whereClause.Add(mainWhereClause);
@@ -2051,22 +2051,22 @@ namespace Api.Modules.Grids.Services
                         counter = AddFiltersToQuery(counter, filter, filtersQuery, mainWhereClause);
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{filters}", filtersQuery.ToString()) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{filters}", filtersQuery.ToString()) ?? "";
+                    selectQuery = selectQuery.Replace("{filters}", filtersQuery.ToString(), StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{filters}", filtersQuery.ToString(), StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{hasWhere}", whereClause.Any() ? "1" : "0") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{hasWhere}", whereClause.Any() ? "1" : "0") ?? "";
+                    selectQuery = selectQuery.Replace("{hasWhere}", whereClause.Any() ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{hasWhere}", whereClause.Any() ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
 
                     if (!whereClause.Any(x => x.Item2.Any()))
                     {
-                        selectQuery = selectQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
-                        countQuery = countQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
+                        selectQuery = selectQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
+                        countQuery = countQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
                     }
                     else
                     {
                         var value = String.Join($" {logic} ", whereClause.Select(x => !x.Item2.Any() ? "" : $"({String.Join($" {x.Item1} ", x.Item2)})").Where(x => !String.IsNullOrWhiteSpace(x)));
-                        selectQuery = selectQuery.ReplaceCaseInsensitive("{where}", value) ?? "";
-                        countQuery = countQuery.ReplaceCaseInsensitive("{where}", value) ?? "";
+                        selectQuery = selectQuery.Replace("{where}", value, StringComparison.OrdinalIgnoreCase) ?? "";
+                        countQuery = countQuery.Replace("{where}", value, StringComparison.OrdinalIgnoreCase) ?? "";
                     }
                 }
 
@@ -2074,8 +2074,8 @@ namespace Api.Modules.Grids.Services
                 {
                     foreach (var pair in options.ExtraValuesForQuery)
                     {
-                        selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false)) ?? "";
-                        countQuery = countQuery.ReplaceCaseInsensitive($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false)) ?? "";
+                        selectQuery = selectQuery.Replace($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                        countQuery = countQuery.Replace($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
                     }
                 }
             }
@@ -2149,7 +2149,7 @@ namespace Api.Modules.Grids.Services
             if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
             {
                 countQuery = $@"SELECT COUNT(*) FROM (
-                                    {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                    {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                 ) AS x";
             }
 
@@ -2201,7 +2201,7 @@ namespace Api.Modules.Grids.Services
             GridSettingsAndDataModel results = null;
             try
             {
-                results = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(rawOptions.ReplaceCaseInsensitive("{itemId}", itemId.ToString()));
+                results = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(rawOptions.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase));
 
                 foreach (var column in results.Columns.Where(c => !String.IsNullOrWhiteSpace(c.Editor)))
                 {
@@ -2446,18 +2446,18 @@ namespace Api.Modules.Grids.Services
             foreach (var key in data.Keys)
             {
                 clientDatabaseConnection.AddParameter(key.UnmakeJsonPropertyName(), data[key]);
-                query = query.ReplaceCaseInsensitive($"{{propertyKey{counter}}}", key.UnmakeJsonPropertyName());
-                query = query.ReplaceCaseInsensitive($"{{propertyValue{counter}}}", data[key] == null ? "" : data[key].ToString().ToMySqlSafeValue(false));
+                query = query.Replace($"{{propertyKey{counter}}}", key.UnmakeJsonPropertyName(), StringComparison.OrdinalIgnoreCase);
+                query = query.Replace($"{{propertyValue{counter}}}", data[key] == null ? "" : data[key].ToString().ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
                 counter++;
             }
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            query = query.ReplaceCaseInsensitive("{userId}", userId.ToString());
-            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity, true) ?? "");
-            query = query.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
-            query = query.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
-            query = query.ReplaceCaseInsensitive("{encryptedId}", encryptedId);
-            query = query.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
+            query = query.Replace("{userId}", userId.ToString(), StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{username}", IdentityHelpers.GetUserName(identity, true) ?? "", StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{userType}", IdentityHelpers.GetRoles(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{encryptedId}", encryptedId, StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase);
             return query;
         }
     }

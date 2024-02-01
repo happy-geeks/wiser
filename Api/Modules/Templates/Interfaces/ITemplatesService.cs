@@ -293,5 +293,11 @@ namespace Api.Modules.Templates.Interfaces
             string urlRegex = null, Environments? environment = null, ulong userId = 0,
             string languageCode = null, int pageSize = 500, int pageNumber = 1,
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null);
+
+        /// <summary>
+        /// Converts a JCL template to a GCL template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity);
     }
 }

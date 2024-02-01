@@ -325,6 +325,23 @@
 							    </div>
 						    </div>
 
+						    <div class="col col-12 form-row no-bottom-margin">
+							    <label>Alle mogelijke Wiser inrichting</label>
+						    </div>
+						    <div class="col col-12 table-row no-top-margin">
+							    <div v-if="!settingsForBranches || !settingsForBranches.length">
+								    <p>Geen wiser inrichting gevonden. Neem a.u.b. contact op met ons.</p>
+							    </div>
+							    <div class="row" v-else>
+								    <div class="col col-4" v-for="setting in settingsForBranches" :key="setting.type">
+									    <label class="checkbox">
+										    <input type="checkbox" :name="setting.type" v-model="branchMergeSettings.settings[setting.type].everything" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'everything')"/>
+										    <span>{{ setting.displayName }}</span>
+									    </label>
+								    </div>
+							    </div>
+							</div>
+
                             <div class="col col-12 form-row no-bottom-margin">
 							    <button class="btn btn-primary" @@click="countBranchChanges">Aantallen tellen en verder specificeren</button>
 							    <p>Let op, dit kan lang (een kwartier of meer) duren bij branches met veel wijzigingen.</p>
@@ -414,6 +431,7 @@
                             <div class="col col-12 form-row no-bottom-margin">
                                 <label>Selecteer te synchroniseren Wiser inrichting</label>
                             </div>
+                            <pre>{{ branchMergeSettings.settings }}</pre>
 							<div class="col col-12 table-row no-top-margin">
 								<div class="fixed-table">
 									<table>

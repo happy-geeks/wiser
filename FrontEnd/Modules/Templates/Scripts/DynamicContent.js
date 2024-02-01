@@ -224,7 +224,7 @@ const moduleSettings = {
                 const isDecimal = $(element).data("decimal") === true;
                 $(element).kendoNumericTextBox({
                     decimals: isDecimal ? 2 : 0,
-                    format: isDecimal ? "n2" : "n0"
+                    format: isDecimal ? "n2" : "#"
                 });
             });
 

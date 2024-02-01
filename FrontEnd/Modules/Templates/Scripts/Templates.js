@@ -216,6 +216,11 @@ const moduleSettings = {
                 click: () => this.openCreateNewItemDialog(false)
             });
 
+            $("#importLegacyButton").kendoButton({
+                icon: "import",
+                click: this.importLegacyTemplates.bind(this)
+            });
+
             // Main window
             this.mainWindow = $("#window").kendoWindow({
                 width: "1500",
@@ -259,6 +264,33 @@ const moduleSettings = {
                 return;
             }
 
+            await this.loadTabsAndTreeViews();
+
+            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
+                loadOnDemand: false,
+                dragAndDrop: false,
+                dataTextField: "templateName",
+                dataSpriteCssClassField: "spriteCssClass",
+                select: this.onTreeViewSelect.bind(this),
+            }).data("kendoTreeView");
+
+            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
+                dataSource: [
+                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
+                    { text: "Hernoemen", attr: { action: "rename" } },
+                    { text: "Verwijderen", attr: { action: "delete" } }
+                ],
+                target: ".tabstrip-treeview",
+                filter: ".k-item",
+                open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuSelect.bind(this)
+            }).data("kendoContextMenu");
+        }
+
+        /**
+         * Initializes and loads the Kendo components for the main tab strip and the tree views of every tab.
+         */
+        async loadTabsAndTreeViews() {
             // Load the tabs via the API.
             this.treeViewTabs = await Wiser.api({
                 url: `${this.settings.wiserApiRoot}templates/0/tree-view`,
@@ -320,26 +352,6 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
-
-            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
-                loadOnDemand: false,
-                dragAndDrop: false,
-                dataTextField: "templateName",
-                dataSpriteCssClassField: "spriteCssClass",
-                select: this.onTreeViewSelect.bind(this),
-            }).data("kendoTreeView");
-
-            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
-                dataSource: [
-                    { text: "Item toevoegen", attr: { action: "addNewItem" } },
-                    { text: "Hernoemen", attr: { action: "rename" } },
-                    { text: "Verwijderen", attr: { action: "delete" } }
-                ],
-                target: ".tabstrip-treeview",
-                filter: ".k-item",
-                open: this.onContextMenuOpen.bind(this),
-                select: this.onContextMenuSelect.bind(this)
-            }).data("kendoContextMenu");
         }
 
         /**
@@ -1128,7 +1140,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
-            
+
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {
@@ -1145,7 +1157,7 @@ const moduleSettings = {
                 const wiserApiRoot = this.settings.wiserApiRoot;
                 const imagesRootId = this.settings.imagesRootId;
                 const filesRootId = this.settings.filesRootId;
-                
+
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
@@ -1157,7 +1169,7 @@ const moduleSettings = {
                     tooltip: "Afbeelding toevoegen",
                     exec: function(e){ Wiser.onHtmlEditorImageExec.call(Wiser, e, $(this).data("kendoEditor"), "templates", imagesRootId); }
                 };
-                
+
                 const fileTool = {
                     name: "wiserFile",
                     tooltip: "Link naar bestand toevoegen",
@@ -1294,8 +1306,12 @@ const moduleSettings = {
                 $(routineParametersInput).data("CodeMirrorInstance", codeMirrorInstance);
             }
 
-            let externalFileOrder = 1;
-            const dataSource = (this.templateSettings.externalFiles || []).map(url => { return { __ordering: externalFileOrder++, url: url } })
+            const dataSource = (this.templateSettings.externalFiles || []).sort((a, b) => {
+                if (a.ordering < b.ordering) return -1;
+                if (a.ordering > b.ordering) return 1;
+                return 0;
+            });
+
             const externalFilesGridElement = $("#externalFiles");
             if (externalFilesGridElement.length > 0) {
                 externalFilesGridElement.kendoGrid({
@@ -1306,15 +1322,14 @@ const moduleSettings = {
                     batch: true,
                     toolbar: ["create"],
                     columns: [
-                        { field: "url" },
+                        { field: "uri" },
                         { command: { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }, width: 140 }
                     ],
                     dataSource: dataSource,
-                    edit: function (e) {
-                        if (e.model.__ordering >= 0) return;
-                        const orderings = e.sender.dataSource.data().filter(i => i.hasOwnProperty("__ordering")).map(i => i.__ordering);
-                        const newOrdering = orderings.length > 0 ? orderings[orderings.length - 1] + 1 : 1;
-                        e.model.__ordering = newOrdering;
+                    edit: (event) => {
+                        if (event.model.ordering >= 0) return;
+                        const orderings = event.sender.dataSource.data().filter(i => i.hasOwnProperty("ordering")).map(i => i.ordering);
+                        event.model.ordering = orderings.length > 0 ? orderings[orderings.length - 1] + 1 : 1;
                     }
                 });
                 externalFilesGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
@@ -1341,26 +1356,25 @@ const moduleSettings = {
                     },
                     container: "#externalFiles",
                     filter: ">tbody >tr",
-                    change: function (e) {
-                        // Kendo starts ordering with 0, but Wiser starts with 1.
-                        const oldIndex = e.oldIndex + 1; // The old position.
-                        const newIndex = e.newIndex + 1; // The new position.
+                    change: (event) => {
+                        const oldIndex = event.oldIndex; // The old position.
+                        const newIndex = event.newIndex; // The new position.
                         const view = externalFilesGrid.dataSource.view();
-                        const dataItem = externalFilesGrid.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
+                        const dataItem = externalFilesGrid.dataSource.getByUid(event.item.data("uid")); // Retrieve the moved dataItem.
 
-                        dataItem.__ordering = newIndex; // Update the order
+                        dataItem.ordering = newIndex; // Update the order
                         dataItem.dirty = true;
 
                         // Shift the order of the records.
                         if (oldIndex < newIndex) {
                             for (let i = oldIndex + 1; i <= newIndex; i++) {
-                                view[i - 1].__ordering--;
-                                view[i - 1].dirty = true;
+                                view[i].ordering--;
+                                view[i].dirty = true;
                             }
                         } else {
                             for (let i = oldIndex - 1; i >= newIndex; i--) {
-                                view[i - 1].__ordering++;
-                                view[i - 1].dirty = true;
+                                view[i].ordering++;
+                                view[i].dirty = true;
                             }
                         }
                     }
@@ -2085,10 +2099,10 @@ const moduleSettings = {
             const externalFilesGrid = $("#externalFiles").data("kendoGrid");
             if (externalFilesGrid) {
                 settings.externalFiles = externalFilesGrid.dataSource.data().sort((a, b) => {
-                    if (a.__ordering < b.__ordering) return -1;
-                    if (a.__ordering > b.__ordering) return 1;
+                    if (a.ordering < b.ordering) return -1;
+                    if (a.ordering > b.ordering) return 1;
                     return 0;
-                }).map(d => d.url);
+                });
             }
 
             return settings;
@@ -2452,7 +2466,7 @@ const moduleSettings = {
             window.processing.removeProcess(process);
             this.loadingNextPart = false;
         }
-        
+
         /**
          * Reloads measurements of the template.
          * @param {any} templateId The ID of the template.
@@ -2953,6 +2967,34 @@ const moduleSettings = {
             const urlRegexHasValue = urlRegexInput.value !== "";
             alwaysLoadCheckbox.disabled = urlRegexHasValue;
             alwaysLoadCheckbox.readOnly = urlRegexHasValue;
+        }
+
+        /**
+         * Imports the templates from the Wiser 1 templates modules into the Wiser 3 templates module.
+         */
+        async importLegacyTemplates() {
+            await kendo.confirm("Weet u zeker dat u de templatemodule van Wiser 1 wilt importeren? De tabellen 'wiser_template' en 'wiser_dynamic_content' moeten leeg zijn voordat u dit doet.");
+
+            const process = `importLegacyTemplates_${Date.now()}`;
+            window.processing.addProcess(process);
+
+            try {
+                const response = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}templates/import-legacy`,
+                    dataType: "json",
+                    type: "POST",
+                    contentType: "application/json"
+                });
+
+                await this.loadTabsAndTreeViews();
+
+                window.popupNotification.show(`Templates van Wiser 1 zijn succesvol geïmporteerd.`, "info");
+            } catch (exception) {
+                console.error(exception);
+                kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
+            }
+
+            window.processing.removeProcess(process);
         }
     }
 
