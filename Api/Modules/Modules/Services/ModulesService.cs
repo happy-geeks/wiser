@@ -21,6 +21,7 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
+using GeeksCoreLibrary.Modules.GclReplacements.Extensions;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -310,6 +311,8 @@ UNION
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId_encrypt}", IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt());
+                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId_encrypt_withdate}", IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt(true));
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
                                 moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
