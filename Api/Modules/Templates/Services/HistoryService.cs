@@ -206,7 +206,10 @@ namespace Api.Modules.Templates.Services
                 {
                     if (!newLinkedTemplates.Contains(item))
                     {
-                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new (true, false, TemplateTypes.Normal));
+                        var templateData = item.Split(";");
+                        var id = templateData[0];
+                        var name = templateData[1];
+                        historyModel.LinkedTemplateChanges.Add($"{name} ({id})", new (true, false, TemplateTypes.Normal));
                     }
                 }
             }
@@ -216,7 +219,10 @@ namespace Api.Modules.Templates.Services
                 {
                     if (!oldLinkedTemplates.Contains(item))
                     {
-                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new (false, true, TemplateTypes.Normal));
+                        var templateData = item.Split(";");
+                        var id = templateData[0];
+                        var name = templateData[1];
+                        historyModel.LinkedTemplateChanges.Add( $"{name} ({id})", new (false, true, TemplateTypes.Normal));
                     }
                 }
             }
