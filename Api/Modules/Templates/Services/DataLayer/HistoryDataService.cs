@@ -114,7 +114,7 @@ WHERE content_id = ?id");
     template.login_role,
     template.login_redirect_url, 
     template.ordering, 
-    GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
+    GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linked_templates,
     template.insert_mode,
     template.load_always,
     template.disable_minifier,
@@ -141,8 +141,7 @@ WHERE content_id = ?id");
     template.default_header_footer_regex,
     template.is_partial,
     template.widget_content,
-    template.widget_location,
-    template.linked_templates
+    template.widget_location
 FROM {WiserTableNames.WiserTemplate} AS template 
 LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
 LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
