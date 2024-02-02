@@ -525,6 +525,16 @@ BEGIN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'ordering',NULL,NEW.`ordering`);
         END IF;
+        
+        IF NEW.`json` IS NOT NULL THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'json',NULL,NEW.`json`);
+        END IF;
+        
+        IF NEW.`json_last_processed_date` IS NOT NULL THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'json_last_processed_date',NULL,NEW.`json_last_processed_date`);
+        END IF;
     END IF;
 END;
 
@@ -575,6 +585,16 @@ BEGIN
         IF IFNULL(NEW.`ordering`, '') <> IFNULL(OLD.`ordering`, '') THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'ordering',OLD.`ordering`,NEW.`ordering`);
+        END IF;
+        
+        IF NEW.`json` <> OLD.`json` THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'json',OLD.`json`,NEW.`json`);
+        END IF;
+        
+        IF NEW.`json_last_processed_date` <> OLD.`json_last_processed_date` THEN
+            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
+            VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'json_last_processed_date',OLD.`json_last_processed_date`,NEW.`json_last_processed_date`);
         END IF;
 	END IF;
 END;
