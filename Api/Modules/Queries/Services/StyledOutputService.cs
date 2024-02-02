@@ -41,8 +41,8 @@ namespace Api.Modules.Queries.Services
         private readonly ILogger<StyledOutputService> logger;
         private readonly StyledOutputSettings apiSettings;
         
-        // even if the user selects a higher value the results will always be capped to this
-        private int maxResultsPerPage = 500;
+        // even if the user selects a higher value the results will always be capped to this ( filled in by settings file )
+        private int maxResultsPerPage;
 
         private const string itemSeperatorString = ", ";
         
