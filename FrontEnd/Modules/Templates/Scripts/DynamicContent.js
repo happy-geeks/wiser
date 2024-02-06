@@ -288,7 +288,7 @@ const moduleSettings = {
             });
             
             if (event.item.classList.contains("history-tab")) {
-                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                window.Wiser.createHistoryDiffFields(document.querySelector("#left-pane div.historyContainer"));
             }
         }
 
@@ -470,16 +470,6 @@ const moduleSettings = {
             });
         }
 
-        getDynamicContentPreviewSettings() {
-            return [
-                {
-                    id: this.settings.selectedId,
-                    name: document.getElementById("componentTypeDropDown").value,
-                    settingsJson: JSON.stringify(this.getNewSettings())
-                }
-            ];
-        }
-
         /**
          * Retrieve the new values entered by the user.
          * */
@@ -554,7 +544,7 @@ const moduleSettings = {
         }
 
         /**
-         * Loads the History HTML and updates the right panel.
+         * Loads the History HTML.
          * */
         async loadComponentHistory() {
             try {
@@ -571,11 +561,16 @@ const moduleSettings = {
                     data: JSON.stringify(history)
                 });
 
-                document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
+                let container = document.getElementsByClassName("historyContainer")[0];
+                if (container === undefined) {
+                    console.warn("Unable to find historyContainer element! Cancelled loading of history data.");
+                    return;
+                }
+                container.innerHTML = historyHtml;
                 this.lastLoadedHistoryPart = 1;
                 this.allPartsLoaded = false;
 
-                document.getElementById("right-pane").addEventListener("scroll", event => {
+                document.getElementById("left-pane").addEventListener("scroll", event => {
                     const {scrollHeight, scrollTop, clientHeight} = event.target;
 
                     // if user scrolled to bottom, load next part of the history
@@ -583,7 +578,7 @@ const moduleSettings = {
                     const treshold = 1;
                     if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
                         // if history pane is active load next batch of history rows
-                        if (document.getElementsByClassName("historyContainer")[0].parentElement.classList.contains("k-state-active")) {
+                        if (container.parentElement.classList.contains("k-state-active")) {
                             this.loadNextHistoryPart();
                         }
                     }
@@ -626,7 +621,7 @@ const moduleSettings = {
                 });
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
-                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                window.Wiser.createHistoryDiffFields(document.querySelector("#left-pane div.historyContainer"));
                 this.lastLoadedHistoryPart++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
