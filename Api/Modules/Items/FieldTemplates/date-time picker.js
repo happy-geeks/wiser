@@ -1,9 +1,11 @@
 ﻿(function() {
-var options = $.extend({ change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields) }, {options});
-var field = $("#field_{propertyIdWithSuffix}");
-var savedValue = field.val();
-var readonly = {readonly};
-var kendoComponent;
+const options = $.extend({ change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields) }, {options});
+const field = $("#field_{propertyIdWithSuffix}");
+const savedValue = field.val();
+const readonly = {readonly};
+
+let kendoComponent;
+
 switch(options.type) {
 	case "time":
         if (savedValue) {

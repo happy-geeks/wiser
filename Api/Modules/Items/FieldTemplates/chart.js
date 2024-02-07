@@ -1,16 +1,18 @@
 ﻿(function() {
-    var field = $("#chart{propertyIdWithSuffix}");
-    var loader = field.closest(".item").find(".field-loader");
-    var optionsFromProperty = {options};
-    var height = parseInt("{height}") || undefined;
-    var chartArea;
+    const field = $("#chart{propertyIdWithSuffix}");
+    const loader = field.closest(".item").find(".field-loader");
+    const optionsFromProperty = {options};
+    const height = parseInt("{height}") || undefined;
+    
+    let chartArea;
+    
     if (height) {
         chartArea = {
             height: height
         }
     }
 
-    var options = $.extend(true, {
+    let options = $.extend(true, {
         title: { text: "{title}" },
         chartArea: chartArea,
         dataSource: {
@@ -39,7 +41,7 @@
         }
     }, optionsFromProperty);
 
-    var kendoComponent = field.kendoChart(options).data("kendoChart");
+    const kendoComponent = field.kendoChart(options).data("kendoChart");
 	
     {customScript}
 })();

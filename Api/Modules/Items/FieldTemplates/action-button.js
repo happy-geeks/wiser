@@ -1,7 +1,8 @@
 ﻿(function() {
-    var field = $("#field_{propertyIdWithSuffix}");
-    var userItemPermissions = {userItemPermissions};
-    var options = $.extend({
+    const field = $("#field_{propertyIdWithSuffix}");
+    const userItemPermissions = {userItemPermissions};
+    
+    let options = $.extend({
         click: function(event) {
             window.dynamicItems.fields.onActionButtonClick(event, "{itemIdEncrypted}", {propertyId}, {options}, field); 
         },
@@ -21,6 +22,6 @@
     if (field.text) {
         field.find(".originalText").html(options.text);
     }
-    var kendoComponent = field.kendoButton(options).data("kendoButton");
+    const kendoComponent = field.kendoButton(options).data("kendoButton");
     {customScript}
 })();

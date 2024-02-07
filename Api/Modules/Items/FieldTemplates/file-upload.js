@@ -1,8 +1,8 @@
 ﻿(function() {
-var container = $("#container_{propertyIdWithSuffix}");
-var fileTemplate = kendo.template($("#fileTemplate_{propertyIdWithSuffix}").html());
+const container = $("#container_{propertyIdWithSuffix}");
+const fileTemplate = kendo.template($("#fileTemplate_{propertyIdWithSuffix}").html());
 
-var options = $.extend({
+let options = $.extend({
 	multiple: true,
 	template: fileTemplate,
 	async: {
@@ -25,7 +25,7 @@ var options = $.extend({
     error: window.dynamicItems.fields.onFileUploadError.bind(window.dynamicItems.fields)
 }, {options});
 
-var addFileUrl = function(event) {
+let addFileUrl = function(event) {
     var fileUrl = event.sender.element.find("#fileUrl").val();
     if (!fileUrl) {
         kendo.alert("Vul a.u.b. een URL in.");
@@ -69,21 +69,24 @@ var addFileUrl = function(event) {
     });
 };
 
-var files = {initialFiles};
+let files = {initialFiles};
 var initialize = function() {
     options.files = files;
 
-    var field = $("#field_{propertyIdWithSuffix}");
-    var kendoComponent = $("#field_{propertyIdWithSuffix}").kendoUpload(options).data("kendoUpload");
+    const field = $("#field_{propertyIdWithSuffix}");
+    const kendoComponent = $("#field_{propertyIdWithSuffix}").kendoUpload(options).data("kendoUpload");
 
     kendoComponent.wrapper.find(".editTitle").click(window.dynamicItems.fields.onUploaderEditTitleClick.bind(window.dynamicItems.fields));
     kendoComponent.wrapper.find(".editName").click(window.dynamicItems.fields.onUploaderEditNameClick.bind(window.dynamicItems.fields));
-    var readonly = {readonly};
+    
+    const readonly = {readonly};
+    
     if (readonly === true || options.queryId) {
         kendoComponent.disable();
     }
 
-    var addFileUrlButton = container.find(".addFileUrl");
+    const addFileUrlButton = container.find(".addFileUrl");
+    
     if (!options.showAddFileUrlButton) {
         addFileUrlButton.hide();
     } else {
