@@ -39,7 +39,6 @@ const moduleSettings = {
             // Kendo components.
             this.mainSplitter = null;
             this.mainWindow = null;
-            this.tabStrips = [];
             this.componentTypeComboBox = null;
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
@@ -131,14 +130,6 @@ const moduleSettings = {
             this.initializeButtons();
             await this.loadComponentHistory();
             
-            if (this.settings.initialTab) {
-                if (this.settings.initialTab === "history") {
-                    this.tabStrips[0].select(`li.history-tab`);
-                    this.mainSplitter.size(".k-pane:first", "0%");
-                } else {
-                    this.tabStrips[1].select(`li.${this.settings.initialTab}-tab`);
-                }
-            }
             window.processing.removeProcess(process);
         }
 
@@ -209,14 +200,16 @@ const moduleSettings = {
             // Tabstrip
             const tabStripElements = container.find(".tabstrip");
             if (tabStripElements.length > 0) {
-                this.tabStrips.push(tabStripElements.kendoTabStrip({
+                const tabStrip = tabStripElements.kendoTabStrip({
                     activate: this.onTabStripActivate.bind(this),
                     animation: {
                         open: {
                             effects: "fadeIn"
                         }
                     }
-                }).data("kendoTabStrip").select(0));
+                }).data("kendoTabStrip");
+                // Not calling the select on the "constructor" line above because we need to trigger the activate event
+                tabStrip.select(this.settings.initialTab ? `li.${this.settings.initialTab}-tab` : 0);
             }
 
             //NUMERIC FIELD
