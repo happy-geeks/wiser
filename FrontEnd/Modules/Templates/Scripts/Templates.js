@@ -3,6 +3,7 @@ import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
+import "../Css/Measurements.css";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");

@@ -1,6 +1,6 @@
 ﻿/** preview tab **/
-.previewContainer,
-.formview.previewContainer {
+.measurementsContainer,
+.formview.measurementsContainer {
     box-sizing: border-box;
     padding: 2px;
     height: 100%;
@@ -8,11 +8,11 @@
     flex-wrap: nowrap;
 }
 
-.previewContainer * {
+.measurementsContainer * {
     box-sizing: border-box;
 }
 
-.previewContainer .row {
+.measurementsContainer .row {
     display: flex;
     flex-direction: column;
     justify-content: start;
@@ -21,66 +21,84 @@
     max-width: 100%;
 }
 
-.previewContainer .preview-settings {
+.measurementsContainer .preview-settings {
     flex-basis: auto;
 }
 
-.previewContainer .preview-window {
+.measurementsContainer .preview-window {
     flex-grow: 1;
 }
 
-.previewContainer .item {
+.measurementsContainer .item {
     max-width: 100%;
 }
 
-.previewContainer .col-6 {
+.measurementsContainer .col-6 {
     flex-basis: auto;
     max-width: 100%;
 }
 
-#right-pane .previewContainer .col-6 {
+#right-pane .measurementsContainer .col-6 {
     flex-basis: auto;
 }
 
-.previewContainer .col-12 {
+.measurementsContainer .col-12 {
     flex-basis: 100%;
     max-width: 100%;
 }
 
-.previewContainer .flex-container {
+.measurementsContainer .flex-container {
     display: flex;
     justify-content: space-between;
     flex-basis: 100%;
     flex-wrap: wrap;
 }
 
-.previewContainer .dropdown-container {
+.measurementsContainer .dropdown-container {
     flex: 1 1 auto;
     margin-right: 20px;
 }
 
-.previewContainer .preview-profile,
-.previewContainer #preview-results,
-.previewContainer #preview-variables {
+.measurementsContainer .preview-profile,
+.measurementsContainer #preview-results,
+.measurementsContainer #preview-variables {
     max-width: 100%;
 }
 
-.previewContainer .dropdown-button {
+.measurementsContainer .dropdown-button {
     align-self: center;
 }
 
-.previewContainer .button-container {
+.measurementsContainer .button-container {
     display: flex;
     justify-content: end;
 }
 
-.previewContainer .button-container button:nth-last-of-type(1) {
+.measurementsContainer .button-container button:nth-last-of-type(1) {
     margin-right: 0;
 }
 
-.previewContainer .k-grid-content {
+.measurementsContainer .k-grid-content {
     min-height: 50px;
 }
+
+
+.row.measurement-settings .flex-container.item > label {
+    margin-bottom: 5px;
+}
+.row.measurement-settings .flex-container.item .inline {
+    margin: 0;
+}
+.row.measurement-filters {
+    flex-direction: row;
+}
+.row.measurement-filters .col {
+    flex: 1 1 25%;
+}
+.row.measurement-filters .col .flex-container.item > .k-input {
+    margin: 5px 0;
+}
+
 
 .preview-window-container,
 .preview-window-container .item {
