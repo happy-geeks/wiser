@@ -21,14 +21,6 @@
     max-width: 100%;
 }
 
-.measurementsContainer .preview-settings {
-    flex-basis: auto;
-}
-
-.measurementsContainer .preview-window {
-    flex-grow: 1;
-}
-
 .measurementsContainer .item {
     max-width: 100%;
 }
@@ -36,10 +28,6 @@
 .measurementsContainer .col-6 {
     flex-basis: auto;
     max-width: 100%;
-}
-
-#right-pane .measurementsContainer .col-6 {
-    flex-basis: auto;
 }
 
 .measurementsContainer .col-12 {
@@ -59,12 +47,6 @@
     margin-right: 20px;
 }
 
-.measurementsContainer .preview-profile,
-.measurementsContainer #preview-results,
-.measurementsContainer #preview-variables {
-    max-width: 100%;
-}
-
 .measurementsContainer .dropdown-button {
     align-self: center;
 }
@@ -82,7 +64,6 @@
     min-height: 50px;
 }
 
-
 .row.measurement-settings .flex-container.item > label {
     margin-bottom: 5px;
 }
@@ -97,24 +78,6 @@
 }
 .row.measurement-filters .col .flex-container.item > .k-input {
     margin: 5px 0;
-}
-
-
-.preview-window-container,
-.preview-window-container .item {
-    height: 100%;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-#previewIframe {
-    border: 1px solid var(--dark-bd-color);
-    border-radius: 3px;
-    width: 100%;
-    height: 100%;
-    min-height: 350px;
-    flex-grow: 1;
 }
 
 .html-preview-window .CodeMirror {
