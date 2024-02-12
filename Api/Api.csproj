@@ -155,7 +155,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.1.7" />
+    <PackageReference Include="GeeksCoreLibrary" Version="4.1.9" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.2.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
@@ -165,6 +165,7 @@
     <PackageReference Include="LibSassHost" Version="1.4.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.15" />
+    <PackageReference Include="MySql.Data" Version="8.3.0" />
     <PackageReference Include="NUglify" Version="1.21.2" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.4.3" />
