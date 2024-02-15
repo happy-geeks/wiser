@@ -165,7 +165,6 @@
     <PackageReference Include="LibSassHost" Version="1.4.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.15" />
-    <PackageReference Include="MySql.Data" Version="8.3.0" />
     <PackageReference Include="NUglify" Version="1.21.2" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.4.3" />

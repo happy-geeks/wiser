@@ -25,7 +25,7 @@ using GeeksCoreLibrary.Modules.Branches.Helpers;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json;
 
 namespace Api.Modules.Branches.Services
@@ -310,7 +310,7 @@ WHERE action = 'create'";
             {
                 branchCommand.CommandText = $"SELECT name, dedicated_table_prefix FROM {WiserTableNames.WiserEntity}";
                 using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                await branchAdapter.FillAsync(tablePrefixDataTable);
+                branchAdapter.Fill(tablePrefixDataTable);
             }
 
             foreach (DataRow dataRow in tablePrefixDataTable.Rows)
@@ -343,7 +343,7 @@ WHERE action = 'create'";
 UNION ALL
 SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}";
                     using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                    await branchAdapter.FillAsync(filesTable);
+                    branchAdapter.Fill(filesTable);
                 }
 
                 foreach (DataRow dataRow in filesTable.Rows)
@@ -358,7 +358,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
             {
                 branchCommand.CommandText = $"SELECT action, tablename, item_id, field, oldvalue, newvalue FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
                 using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                await branchAdapter.FillAsync(dataTable);
+                branchAdapter.Fill(dataTable);
             }
 
             // Create lists for keeping track of changed items/settings, so that multiple changes to a single item/setting only get counted as one changed item/setting, because we're counting the amount of changed items/settings, not the amount of changes.
@@ -484,7 +484,7 @@ UNION ALL
 SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
 LIMIT 1";
                     using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
-                    await environmentAdapter.FillAsync(getEntityTypeDataTable);
+                    environmentAdapter.Fill(getEntityTypeDataTable);
                 }
 
                 var entityType = getEntityTypeDataTable.Rows.Count == 0 ? null : getEntityTypeDataTable.Rows[0].Field<string>("entity_type");
@@ -556,7 +556,7 @@ UNION ALL
 SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
 LIMIT 1";
                 using var linkAdapter = new MySqlDataAdapter(linkCommand);
-                await linkAdapter.FillAsync(linkDataTable);
+                linkAdapter.Fill(linkDataTable);
 
                 if (linkDataTable.Rows.Count == 0)
                 {
@@ -928,7 +928,7 @@ UNION ALL
 SELECT item_id, itemlink_id FROM `{tableName}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
 LIMIT 1";
                                 using var linkAdapter = new MySqlDataAdapter(linkCommand);
-                                await linkAdapter.FillAsync(fileDataTable);
+                                linkAdapter.Fill(fileDataTable);
 
                                 if (fileDataTable.Rows.Count == 0)
                                 {
@@ -1127,7 +1127,7 @@ LIMIT 1";
 
                     var dataTable = new DataTable();
                     using var sourceAdapter = new MySqlDataAdapter(productionCommand);
-                    await sourceAdapter.FillAsync(dataTable);
+                    sourceAdapter.Fill(dataTable);
                     if (dataTable.Rows.Count > 0)
                     {
                         lastMergeDate = dataTable.Rows[0].Field<DateTime?>("lastMergeDate");
@@ -1144,7 +1144,7 @@ LIMIT 1";
                     branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
                     var dataTable = new DataTable();
                     using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                    await branchAdapter.FillAsync(dataTable);
+                    branchAdapter.Fill(dataTable);
                     if (dataTable.Rows.Count > 0)
                     {
                         lastMergeDate = dataTable.Rows[0].Field<DateTime?>("firstChangeDate");
@@ -1296,7 +1296,7 @@ VALUES (?id, ?name, 'delete', ?now, ?username, ?userId, ?now, ?data)";
     groupname
 FROM {WiserTableNames.WiserHistory}";
                 using var branchAdapter = new MySqlDataAdapter(branchCommand);
-                await branchAdapter.FillAsync(dataTable);
+                branchAdapter.Fill(dataTable);
             }
 
             foreach (DataRow dataRow in dataTable.Rows)
@@ -1537,7 +1537,7 @@ FROM {WiserTableNames.WiserHistory}
 WHERE changed_on >= ?lastChange";
             using (var branchAdapter = new MySqlDataAdapter(productionCommand))
             {
-                await branchAdapter.FillAsync(dataTable);
+                branchAdapter.Fill(dataTable);
             }
 
             foreach (DataRow dataRow in dataTable.Rows)
@@ -1571,7 +1571,7 @@ WHERE changed_on >= ?lastChange";
                     branchCommand.CommandText = $"SELECT {nameColumn} FROM {conflict.TableName} WHERE id = ?id";
                     var moduleDataTable = new DataTable();
                     using var adapter = new MySqlDataAdapter(branchCommand);
-                    await adapter.FillAsync(moduleDataTable);
+                    adapter.Fill(moduleDataTable);
                     cache.Add(conflict.ObjectId, moduleDataTable.Rows.Count == 0 ? $"Onbekend, #{conflict.ObjectId}" : moduleDataTable.Rows[0].Field<string>(nameColumn));
                     return cache[conflict.ObjectId];
                 }
@@ -1588,7 +1588,7 @@ WHERE changed_on >= ?lastChange";
                             branchCommand.CommandText = $"SELECT entity_name, display_name, language_code FROM {WiserTableNames.WiserEntityProperty} WHERE id = ?id";
                             var entityPropertyDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
-                            await adapter.FillAsync(entityPropertyDataTable);
+                            adapter.Fill(entityPropertyDataTable);
 
                             var name = new StringBuilder($"Onbekend, #{conflict.ObjectId}");
                             if (entityPropertyDataTable.Rows.Count > 0)
@@ -1628,7 +1628,7 @@ WHERE changed_on >= ?lastChange";
                             branchCommand.CommandText = $"SELECT name, friendly_name FROM {WiserTableNames.WiserEntity} WHERE id = ?id";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
-                            await adapter.FillAsync(entityDataTable);
+                            adapter.Fill(entityDataTable);
 
                             var name = $"Onbekend, #{conflict.ObjectId}";
                             if (entityDataTable.Rows.Count > 0)
@@ -1686,7 +1686,7 @@ WHERE changed_on >= ?lastChange";
                             branchCommand.CommandText = $"SELECT title, entity_type, moduleid FROM {conflict.TableName.Replace(WiserTableNames.WiserItemDetail, WiserTableNames.WiserItem)} WHERE id = ?id";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
-                            await adapter.FillAsync(entityDataTable);
+                            adapter.Fill(entityDataTable);
 
                             var entityType = "unknown";
                             var title = $"Onbekend, #{conflict.ObjectId}";
@@ -1731,7 +1731,7 @@ WHERE changed_on >= ?lastChange";
                             branchCommand.CommandText = $"SELECT display_name FROM {WiserTableNames.WiserEntityProperty} WHERE entity_name = ?entityType AND property_name = ?fieldName AND language_code = ?languageCode";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
-                            await adapter.FillAsync(entityDataTable);
+                            adapter.Fill(entityDataTable);
 
                             var displayName = "";
                             if (entityDataTable.Rows.Count > 0)
@@ -1762,7 +1762,7 @@ WHERE changed_on >= ?lastChange";
                             branchCommand.CommandText = $"SELECT type, item_id, destination_item_id FROM {conflict.TableName.Replace(WiserTableNames.WiserItemLinkDetail, WiserTableNames.WiserItemLink)} WHERE id = ?id";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
-                            await adapter.FillAsync(entityDataTable);
+                            adapter.Fill(entityDataTable);
 
                             var type = 0;
                             if (entityDataTable.Rows.Count > 0)
@@ -1807,7 +1807,7 @@ WHERE changed_on >= ?lastChange";
                             branchCommand.CommandText = $"SELECT display_name FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?linkType AND property_name = ?fieldName AND language_code = ?languageCode";
                             var entityDataTable = new DataTable();
                             using var adapter = new MySqlDataAdapter(branchCommand);
-                            await adapter.FillAsync(entityDataTable);
+                            adapter.Fill(entityDataTable);
 
                             var displayName = "";
                             if (entityDataTable.Rows.Count > 0)

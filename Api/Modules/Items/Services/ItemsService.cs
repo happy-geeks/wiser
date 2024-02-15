@@ -37,7 +37,7 @@ using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -672,7 +672,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                 //Create the new item (with the link)
                 var newItem = await wiserItemsService.CreateAsync(item, parentId ,userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber:linkType);
-                
+
                 result.NewItemId = newItem.EncryptedId;
                 result.NewItemIdPlain = newItem.Id;
 

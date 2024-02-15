@@ -12,14 +12,14 @@ using Api.Core.Extensions;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
-using Api.Modules.Tenants.Models;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -28,7 +28,7 @@ using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -139,7 +139,7 @@ namespace Api.Modules.Grids.Services
                 useItemParentId = linkTypeSettings.UseItemParentId;
                 linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
             }
-            
+
             // Find out if there are custom queries for the grid.
             var columnsToSelect = "options";
             clientDatabaseConnection.ClearParameters();
@@ -911,7 +911,7 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
                     var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
                     var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
-                    
+
                     if (columnsDataTable.Rows.Count > 0)
                     {
                         foreach (DataRow dataRow in columnsDataTable.Rows)
@@ -1657,13 +1657,13 @@ namespace Api.Modules.Grids.Services
             {
                 throw new ArgumentNullException(nameof(moduleId));
             }
-            
+
             if (isForExport)
             {
                 // Timeout of 4 hours for exports.
                 clientDatabaseConnection.SetCommandTimeout(14400);
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
 
@@ -1752,10 +1752,10 @@ namespace Api.Modules.Grids.Services
             string tablePrefix = null)
         {
             tablePrefix ??= "";
-            
+
             // Note that this function contains ' ?? ""' after every Replace. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
             fieldMappings ??= new List<FieldMapModel>();
-            
+
             selectQuery = apiReplacementsService.DoIdentityReplacements(selectQuery ?? "", identity, true);
             countQuery = apiReplacementsService.DoIdentityReplacements(countQuery ?? "", identity, true);
 
@@ -2088,7 +2088,7 @@ namespace Api.Modules.Grids.Services
             // Handle [if] statements in the query.
             selectQuery = stringReplacementsService.EvaluateTemplate(regex.Replace(selectQuery, ""));
             countQuery = stringReplacementsService.EvaluateTemplate(regex.Replace(countQuery, ""));
-            
+
             return (selectQuery, countQuery);
         }
 

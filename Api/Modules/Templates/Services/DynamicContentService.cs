@@ -9,16 +9,16 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
-using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace Api.Modules.Templates.Services
 {

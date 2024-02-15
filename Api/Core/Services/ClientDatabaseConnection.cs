@@ -21,7 +21,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json;
 
 namespace Api.Core.Services
@@ -174,7 +174,7 @@ namespace Api.Core.Services
                 var result = new DataTable();
                 commandToUse.CommandText = query;
                 using var dataAdapter = new MySqlDataAdapter(commandToUse);
-                await dataAdapter.FillAsync(result);
+                dataAdapter.Fill(result);
                 return result;
             }
             catch (MySqlException mySqlException)
@@ -897,7 +897,7 @@ SELECT LAST_INSERT_ID();";
             var dataTable = new DataTable();
             command.CommandText = $"SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_NAME = '{Constants.DatabaseConnectionLogTableName}' AND TABLE_SCHEMA = '{(ConnectionForWriting ?? ConnectionForReading).Database.ToMySqlSafeValue(false)}'";
             using var dataAdapter = new MySqlDataAdapter(command);
-            await dataAdapter.FillAsync(dataTable);
+            dataAdapter.Fill(dataTable);
 
             if (dataTable.Rows.Count == 0)
             {
