@@ -164,6 +164,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", TemplateTypes.Normal, newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", TemplateTypes.Normal, newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUrl", TemplateTypes.Normal, newVersion.CachePerUrl, oldVersion.CachePerUrl, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUser", TemplateTypes.Normal, newVersion.CachePerUser, oldVersion.CachePerUser, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheUsingRegex", TemplateTypes.Normal, newVersion.CacheUsingRegex, oldVersion.CacheUsingRegex, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerHostName", TemplateTypes.Normal, newVersion.CachePerHostName, oldVersion.CachePerHostName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerQueryString", TemplateTypes.Normal, newVersion.CachePerQueryString, oldVersion.CachePerQueryString, historyModel);
