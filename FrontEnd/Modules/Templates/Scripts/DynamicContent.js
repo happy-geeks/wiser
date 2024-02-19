@@ -721,19 +721,6 @@ const moduleSettings = {
             });
         }
 
-        /**
-         * Gets the template settings. Is this still used after removing the preview feature?
-         * This will call the getCurrentTemplateSettings() method from the parent frame, which should be the templates module.
-         */
-        getCurrentTemplateSettings() {
-            if (!window.parent || !window.parent.Templates) {
-                console.warn("No parent window found, or parent window has no Templates class.");
-                return {};
-            } else {
-                return window.parent.Templates.getCurrentTemplateSettings();
-            }
-        }
-
         async onAddSubGroupButtonClick(event) {
             event.preventDefault();
 
