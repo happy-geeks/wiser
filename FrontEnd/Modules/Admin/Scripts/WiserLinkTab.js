@@ -249,11 +249,11 @@ export class WiserLinkTab {
             return dataItem.duplication === linkDataItem.duplication;
         });
 
-        document.getElementById("wiserLinkUseParentId").checked = linkDataItem.use_item_parent_id === 1;
-        document.getElementById("wiserLinkUseDedicatedTable").checked = linkDataItem.use_dedicated_table === 1;
-        document.getElementById("wiserLinkCascadeDelete").checked = linkDataItem.cascade_delete === 1;
-        document.getElementById("wiserLinkShowInDataSelector").checked = linkDataItem.show_in_data_selector === 1;
-        document.getElementById("wiserLinkShowInTreeView").checked = linkDataItem.show_in_tree_view === 1;
+        document.getElementById("wiserLinkUseParentId").checked = linkDataItem.use_item_parent_id;
+        document.getElementById("wiserLinkUseDedicatedTable").checked = linkDataItem.use_dedicated_table;
+        document.getElementById("wiserLinkCascadeDelete").checked = linkDataItem.cascade_delete;
+        document.getElementById("wiserLinkShowInDataSelector").checked = linkDataItem.show_in_data_selector;
+        document.getElementById("wiserLinkShowInTreeView").checked = linkDataItem.show_in_tree_view;
     }
 
     async reloadWiserLinkList() {
