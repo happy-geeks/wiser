@@ -1978,7 +1978,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
 
             // Fix the ordering of items, because when people import items, they often don't set the order number correctly.
             // So we do that first here, to make sure they're all set correctly, otherwise moving items to a different position in the tree view won't work properly.
-            var query = $@"SET @orderingNumber = 0;
+            var query = $@"SET @performParentUpdate = FALSE;
+                        SET @orderingNumber = 0;
                         UPDATE {WiserTableNames.WiserItemLink} AS link
                         JOIN (
                             SELECT
@@ -2002,7 +2003,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             await clientDatabaseConnection.ExecuteAsync(query);
 
             // Items that are copies of another item, should get the same ordering as the original.
-            query = $@"UPDATE {WiserTableNames.WiserItemLink} AS link
+            query = $@"SET @performParentUpdate = FALSE;
+                    UPDATE {WiserTableNames.WiserItemLink} AS link
                     JOIN {WiserTableNames.WiserItem} AS item ON item.id = link.item_id AND item.original_item_id > 0 AND item.original_item_id <> item.id
                     JOIN {WiserTableNames.WiserItemLink} AS link2 ON link2.destination_item_id = ?parentId AND link2.item_id = item.original_item_id
                     SET link.ordering = link2.ordering
@@ -2016,7 +2018,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             }
 
             // Fix ordering for wiser_item.
-            query = $@"SET @orderingNumber = 0;
+            query = $@"SET @performParentUpdate = FALSE;
+                    SET @orderingNumber = 0;
                     UPDATE {WiserTableNames.WiserItem} AS item
                     JOIN (
                         SELECT
@@ -2037,7 +2040,8 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
                     {moduleIdClause}";
             await clientDatabaseConnection.ExecuteAsync(query);
 
-            query = $@"UPDATE {WiserTableNames.WiserItem} AS item 
+            query = $@"SET @performParentUpdate = FALSE;
+                    UPDATE {WiserTableNames.WiserItem} AS item 
                     JOIN {WiserTableNames.WiserItem} AS item2 ON item2.parent_item_id = ?parentId AND item2.id = item.original_item_id
                     SET item.ordering = item2.ordering
                     WHERE item.parent_item_id = ?parentId
