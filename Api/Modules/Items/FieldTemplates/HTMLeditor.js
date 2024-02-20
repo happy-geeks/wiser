@@ -139,7 +139,7 @@ for (var toolName in allTools) {
     }
 
     var toolModes = allTools[toolName];
-    if (options.tools.indexOf(toolName) === -1 && toolModes.indexOf(options.mode) === -1) {
+    if (options.tools && options.tools.indexOf(toolName) === -1 && toolModes.indexOf(options.mode) === -1) {
         continue;
     }
 
@@ -224,16 +224,16 @@ if (options.buttonMode !== true) {
     openDialogButton.hide();
 } else {
     defaultField.hide();
-    
+
     function resizeEditor(containerHeight) {
         var newHeight = containerHeight - kendoComponent.toolbar.element.outerHeight(true) - windowElement.find("footer").outerHeight(true) - 3;
         if (newHeight < 50) {
             newHeight = 50;
         }
-        
+
         kendoComponent.wrapper.css("height", newHeight);
     }
-    
+
     var editorWindow;
     openDialogButton.kendoButton({
         icon: "html",
@@ -261,29 +261,29 @@ if (options.buttonMode !== true) {
                     wrapper.remove();
                 }
             }).data("kendoWindow");
-            
+
             saveDialogButton.kendoButton({
                 click: function(closeDialogEvent) {
                     if (!editorWindow) {
                         return;
                     }
-                    
+
                     defaultField.val(kendoComponent.value());
                     editorWindow.close();
                 }
             });
-            
+
             closeDialogButton.kendoButton({
                 click: function(closeDialogEvent) {
                     if (!editorWindow) {
                         return;
                     }
-                    
+
                     kendoComponent.value(defaultField.val());
                     editorWindow.close();
                 }
             });
-            
+
             editorWindow.center().open();
         }
     });
