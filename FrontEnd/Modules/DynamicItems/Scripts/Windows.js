@@ -53,23 +53,12 @@ export class Windows {
             files: "files",
             templates: "templates"
         });
-
-        // File manager
-        this.fileManagerWindow = null;
-        this.fileManagerIframe = null;
-        this.fileManagerWindowSender = null;
-        this.fileManagerWindowMode = null;
-        this.fileManagerWindowAddButton = null;
     }
 
     /**
      * Do all initializations for the Windows class, such as adding bindings.
      */
     initialize() {
-        this.fileManagerWindow = Wiser.initializeFileManager(this.fileManagerWindowSender,
-            this.fileManagerWindowMode,this.base.settings.iframeMode, this.base.settings.gridViewMode,
-            this.base.settings.moduleName);
-
         // Window for searching for items to link to another item.
         this.historyGridWindow = $("#historyWindowGrid").kendoWindow({
             width: "90%",

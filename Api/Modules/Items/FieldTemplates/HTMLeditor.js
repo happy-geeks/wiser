@@ -1,63 +1,67 @@
 ﻿(function() {
     const readonly = {readonly};
+    let kendoComponent = null;
 
     const imageTool = {
         name: "wiserImage",
         tooltip: "Afbeelding toevoegen",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorImageExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"))
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorImageExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const fileTool = {
         name: "wiserFile",
         tooltip: "Link naar bestand toevoegen",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorFileExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"))
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorFileExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const templateTool = {
         name: "wiserTemplate",
         tooltip: "Template toevoegen",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorTemplateExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"))
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorTemplateExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const htmlSourceTool = {
         name: "wiserHtmlSource",
         tooltip: "HTML bekijken/aanpassen",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}")
+        exec: (e) => {
+            console.log("bla", e);
+            window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}")
+        }
     };
     const maximizeTool = {
         name: "wiserMaximizeEditor",
         tooltip: "Vergroten",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorFullScreenExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}")
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorFullScreenExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}")
     };
     const contentBuilderToolNotable = {
         name: "wiserContentBuilder",
         tooltip: "Content builder",
         template: "<button id='contentBuilder_{propertyIdWithSuffix}' tabindex='0' role='button' class='k-button k-tool k-group-start k-group-end content-builder-button' title='Content builder' aria-label='Content builder'><span class='k-icon k-i-wiser-content-builder'></span></button><label class='content-builder-label'>Content builder</label>",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}")
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}")
     };
     const contentBuilderToolBasic = {
         name: "wiserContentBuilder",
         tooltip: "Content builder",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"), "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}")
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorContentBuilderExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}", "{propertyName}", "{languageCode}", "{contentBuilderMode}")
     };
     const entityBlockTool = {
         name: "wiserEntityBlock",
         tooltip: "Entiteit-blok",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorEntityBlockExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"))
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorEntityBlockExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const dataSelectorTool = {
         name: "wiserDataSelector",
         tooltip: "Data selector met template",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorDataSelectorExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"))
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorDataSelectorExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
     const youTubeTool = {
         name: "wiserYouTube",
         tooltip: "YouTube video invoegen",
-        exec: (e) => window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, e, $(this).data("kendoEditor"))
+        exec: (event) => window.dynamicItems.fields.onHtmlEditorYouTubeExec.call(window.dynamicItems.fields, event, kendoComponent)
     };
 
     const wiserApiRoot = window.dynamicItems.fields.base.settings.wiserApiRoot;
     const translationsTool = {
         name: "wiserTranslation",
         tooltip: "Vertaling invoegen",
-        exec: (e) => Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot)
+        exec: (event) => Wiser.onHtmlEditorTranslationExec.call(Wiser, event, kendoComponent, wiserApiRoot)
     };
 
     const options = $.extend(true, {
@@ -214,7 +218,7 @@
         options.resizable = false;
     }
 
-    const kendoComponent = field.kendoEditor(options).data("kendoEditor");
+    kendoComponent = field.kendoEditor(options).data("kendoEditor");
     $(kendoComponent.body).on("dblclick", (event) => window.dynamicItems.fields.onHtmlEditorDblClick.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}"));
 
     $(kendoComponent.body).attr("contenteditable", !readonly);
