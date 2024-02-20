@@ -15,6 +15,7 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
+using GeeksCoreLibrary.Modules.Databases.Helpers;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
 using Microsoft.AspNetCore.Hosting;
@@ -46,14 +47,13 @@ namespace Api.Core.Services
 
         private MySqlConnection ConnectionForReading { get; set; }
         private MySqlConnection ConnectionForWriting { get; set; }
-        private MySqlCommand CommandForReading { get; set; }
-        private MySqlCommand CommandForWriting { get; set; }
 
         private readonly GclSettings gclSettings;
 
         private DbDataReader dataReader;
 
-        private IDbTransaction transaction;
+        private MySqlTransaction transaction;
+        private int? commandTimeout;
 
         private readonly ConcurrentDictionary<string, object> parameters = new();
 
@@ -135,16 +135,16 @@ namespace Api.Core.Services
                 port = "3306";
             }
 
-            return $"server={server};port={port};uid={username};pwd={decryptedPassword};database={database};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8";
+            return $"server={server};port={port};uid={username};pwd={decryptedPassword};database={database};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8;IgnoreCommandTransaction=true";
         }
 
         /// <inheritdoc />
         public async Task<DbDataReader> GetReaderAsync(string query)
         {
             await EnsureOpenConnectionForReadingAsync();
-            CommandForReading.CommandText = query;
-
-            dataReader = await CommandForReading.ExecuteReaderAsync();
+            await using var command = new MySqlCommand(query, ConnectionForReading);
+            SetupMySqlCommand(command);
+            dataReader = await command.ExecuteReaderAsync();
 
             return dataReader;
         }
@@ -157,19 +157,21 @@ namespace Api.Core.Services
 
         private async Task<DataTable> GetAsync(string query, int retryCount, bool cleanUp = true, bool useWritingConnectionIfAvailable = false)
         {
+            MySqlCommand commandToUse = null;
             try
             {
-                MySqlCommand commandToUse;
-                if (useWritingConnectionIfAvailable && !String.IsNullOrWhiteSpace(connectionStringForWriting))
+                if ((useWritingConnectionIfAvailable || QueryHelpers.IsWriteQuery(query)) && !String.IsNullOrWhiteSpace(connectionStringForWriting))
                 {
                     await EnsureOpenConnectionForWritingAsync();
-                    commandToUse = CommandForWriting;
+                    commandToUse = new MySqlCommand(query, ConnectionForWriting);
                 }
                 else
                 {
                     await EnsureOpenConnectionForReadingAsync();
-                    commandToUse = CommandForReading;
+                    commandToUse = new MySqlCommand(query, ConnectionForReading);
                 }
+
+                SetupMySqlCommand(commandToUse);
 
                 var result = new DataTable();
                 commandToUse.CommandText = query;
@@ -200,6 +202,11 @@ namespace Api.Core.Services
             }
             finally
             {
+                if (commandToUse != null)
+                {
+                    await commandToUse.DisposeAsync();
+                }
+
                 // If we're not using transactions, dispose everything here. Otherwise we will dispose it when the transaction gets comitted or rollbacked.
                 if (transaction == null && cleanUp)
                 {
@@ -230,19 +237,21 @@ namespace Api.Core.Services
         /// <returns></returns>
         private async Task<int> ExecuteAsync(string query, int retryCount, bool useWritingConnectionIfAvailable = true, bool cleanUp = true)
         {
+            MySqlCommand commandToUse = null;
             try
             {
-                MySqlCommand commandToUse;
-                if (useWritingConnectionIfAvailable && !String.IsNullOrWhiteSpace(connectionStringForWriting))
+                if ((useWritingConnectionIfAvailable || QueryHelpers.IsWriteQuery(query)) && !String.IsNullOrWhiteSpace(connectionStringForWriting))
                 {
                     await EnsureOpenConnectionForWritingAsync();
-                    commandToUse = CommandForWriting;
+                    commandToUse = new MySqlCommand(query, ConnectionForWriting);
                 }
                 else
                 {
                     await EnsureOpenConnectionForReadingAsync();
-                    commandToUse = CommandForReading;
+                    commandToUse = new MySqlCommand(query, ConnectionForReading);
                 }
+
+                SetupMySqlCommand(commandToUse);
 
                 commandToUse.CommandText = query;
                 return await commandToUse.ExecuteNonQueryAsync();
@@ -270,6 +279,11 @@ namespace Api.Core.Services
             }
             finally
             {
+                if (commandToUse != null)
+                {
+                    await commandToUse.DisposeAsync();
+                }
+
                 // If we're not using transactions, dispose everything here. Otherwise we will dispose it when the transaction gets comitted or rollbacked.
                 if (transaction == null && cleanUp)
                 {
@@ -332,25 +346,30 @@ namespace Api.Core.Services
                 return 0L;
             }
 
+            MySqlCommand commandToUse = null;
             try
             {
-                MySqlCommand commandToUse;
-                if (useWritingConnectionIfAvailable && !String.IsNullOrWhiteSpace(connectionStringForWriting))
-                {
-                    await EnsureOpenConnectionForWritingAsync();
-                    commandToUse = CommandForWriting;
-                }
-                else
-                {
-                    await EnsureOpenConnectionForReadingAsync();
-                    commandToUse = CommandForReading;
-                }
-
                 var finalQuery = new StringBuilder(query.TrimEnd());
                 if (finalQuery[^1] != ';')
                 {
                     finalQuery.Append(';');
                 }
+
+                // Add the query to retrieve the last inserted ID to the query that was passed to the function.
+                finalQuery.Append("SELECT LAST_INSERT_ID();");
+
+                if ((useWritingConnectionIfAvailable || QueryHelpers.IsWriteQuery(query)) && !String.IsNullOrWhiteSpace(connectionStringForWriting))
+                {
+                    await EnsureOpenConnectionForWritingAsync();
+                    commandToUse = new MySqlCommand(finalQuery.ToString(), ConnectionForWriting);
+                }
+                else
+                {
+                    await EnsureOpenConnectionForReadingAsync();
+                    commandToUse = new MySqlCommand(finalQuery.ToString(), ConnectionForReading);
+                }
+
+                SetupMySqlCommand(commandToUse);
 
                 // Add the query to retrieve the last inserted ID to the query that was passed to the function.
                 finalQuery.Append("SELECT LAST_INSERT_ID();");
@@ -388,6 +407,11 @@ namespace Api.Core.Services
             }
             finally
             {
+                if (commandToUse != null)
+                {
+                    await commandToUse.DisposeAsync();
+                }
+
                 // If we're not using transactions, dispose everything here. Otherwise we will dispose it when the transaction gets comitted or rollbacked.
                 if (transaction == null)
                 {
@@ -560,73 +584,32 @@ namespace Api.Core.Services
                 }
 
                 ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading };
-                CommandForReading = ConnectionForReading.CreateCommand();
                 createdNewConnection = true;
-
-               /* if (String.IsNullOrWhiteSpace(connectionStringForWriting))
-                {
-                    return;
-                }
-
-                ConnectionForWriting = new MySqlConnection { ConnectionString = connectionStringForWriting };
-                CommandForWriting = ConnectionForWriting.CreateCommand();*/
             }
 
             if (ConnectionForReading == null)
             {
                 ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading };
-                CommandForReading = ConnectionForReading.CreateCommand();
                 createdNewConnection = true;
             }
-
-            CommandForReading ??= ConnectionForReading.CreateCommand();
 
             // Remember the database name that was connected to.
             ConnectedDatabase = ConnectionForReading.Database;
 
-            // Copy parameters.
-            foreach (var parameter in parameters)
+            if (ConnectionForReading.State != ConnectionState.Closed)
             {
-                if (CommandForReading.Parameters.Contains(parameter.Key))
-                {
-                    CommandForReading.Parameters.RemoveAt(parameter.Key);
-                }
-
-                CommandForReading.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                return;
             }
 
-            switch (ConnectionForReading.State)
+            await ConnectionForReading.OpenAsync();
+
+            await SetTimezone(ConnectionForReading);
+            await SetCharacterSetAndCollationAsync(ConnectionForReading);
+
+            if (createdNewConnection)
             {
-                case ConnectionState.Open:
-                    return;
-                case ConnectionState.Closed:
-                    await ConnectionForReading.OpenAsync();
-
-                    try
-                    {
-                        // Make sure we always use the same character set and collation.
-                        CommandForReading.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;";
-                        await CommandForReading.ExecuteNonQueryAsync();
-
-                        // Make sure we always use the correct timezone.
-                        if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
-                        {
-                            CommandForReading.CommandText = $"SET @@time_zone = {gclSettings.DatabaseTimeZone.ToMySqlSafeValue(true)};";
-                            await CommandForReading.ExecuteNonQueryAsync();
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}' or the collation to 'utf8mb4_general_ci'.");
-                    }
-
-                    if (createdNewConnection)
-                    {
-                        // Log the opening of the connection.
-                        await AddConnectionOpenLogAsync(false);
-                    }
-
-                    break;
+                // Log the opening of the connection.
+                await AddConnectionOpenLogAsync(true);
             }
         }
 
@@ -646,58 +629,26 @@ namespace Api.Core.Services
             if (ConnectionForWriting == null)
             {
                 ConnectionForWriting = new MySqlConnection { ConnectionString = connectionStringForWriting };
-                CommandForWriting = ConnectionForWriting.CreateCommand();
                 createdNewConnection = true;
             }
-
-            CommandForWriting ??= ConnectionForWriting.CreateCommand();
 
             // Remember the database name that was connected to.
             ConnectedDatabaseForWriting = ConnectionForWriting.Database;
 
-            // Copy parameters.
-            foreach (var parameter in parameters)
+            if (ConnectionForWriting.State != ConnectionState.Closed)
             {
-                if (CommandForWriting.Parameters.Contains(parameter.Key))
-                {
-                    CommandForWriting.Parameters.RemoveAt(parameter.Key);
-                }
-
-                CommandForWriting.Parameters.AddWithValue(parameter.Key, parameter.Value);
+                return;
             }
 
-            switch (ConnectionForWriting.State)
+            await ConnectionForWriting.OpenAsync();
+
+            await SetTimezone(ConnectionForWriting);
+            await SetCharacterSetAndCollationAsync(ConnectionForWriting);
+
+            if (createdNewConnection)
             {
-                case ConnectionState.Open:
-                    return;
-                case ConnectionState.Closed:
-                    await ConnectionForWriting.OpenAsync();
-
-                    try
-                    {
-
-                        // Make sure we always use the same character set and collation.
-                        CommandForWriting.CommandText = "SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;";
-                        await CommandForWriting.ExecuteNonQueryAsync();
-
-                        // Make sure we always use the correct timezone.
-                        if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
-                        {
-                            CommandForWriting.CommandText = $"SET @@time_zone = {gclSettings.DatabaseTimeZone.ToMySqlSafeValue(true)};";
-                            await CommandForWriting.ExecuteNonQueryAsync();
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}' or the collation to 'utf8mb4_general_ci'.");
-                    }
-
-                    if (createdNewConnection)
-                    {
-                        // Log the opening of the connection.
-                        await AddConnectionOpenLogAsync(true);
-                    }
-                    break;
+                // Log the opening of the connection.
+                await AddConnectionOpenLogAsync(true);
             }
         }
 
@@ -724,24 +675,12 @@ namespace Api.Core.Services
         /// <inheritdoc />
         public void SetCommandTimeout(int value)
         {
-            if (CommandForReading != null)
-            {
-                CommandForReading.CommandTimeout = value;
-            }
-
-            if (CommandForWriting != null)
-            {
-                CommandForWriting.CommandTimeout = value;
-            }
+            commandTimeout = value;
         }
 
         private async Task CleanUpAsync()
         {
             if (dataReader != null) await dataReader.DisposeAsync();
-            if (CommandForReading != null) await CommandForReading.DisposeAsync();
-            if (CommandForWriting != null) await CommandForWriting.DisposeAsync();
-            CommandForReading = null;
-            CommandForWriting = null;
             dataReader = null;
         }
 
@@ -758,7 +697,7 @@ namespace Api.Core.Services
                     return;
                 }
 
-                var commandToUse = isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? CommandForWriting : CommandForReading;
+                await using var commandToUse = new MySqlCommand("", !String.IsNullOrWhiteSpace(connectionStringForWriting) ? ConnectionForWriting : ConnectionForReading);
 
                 logTableExists ??= await LogTableExistsAsync(commandToUse);
 
@@ -816,8 +755,6 @@ SELECT LAST_INSERT_ID();";
         /// <param name="disposeConnection">Set to true to dispose the connection at the end.</param>
         private async Task AddConnectionCloseLogAsync(bool isWriteConnection, bool disposeConnection = false)
         {
-            var commandToUse = isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? CommandForWriting : CommandForReading;
-
             try
             {
                 if (!gclSettings.LogOpeningAndClosingOfConnections && ((isWriteConnection && writeConnectionLogId == 0) || (!isWriteConnection && readConnectionLogId == 0)))
@@ -832,19 +769,9 @@ SELECT LAST_INSERT_ID();";
                     return;
                 }
 
-                if (commandToUse == null)
-                {
-                    if (isWriteConnection && !String.IsNullOrWhiteSpace(connectionStringForWriting))
-                    {
-                        commandToUse = CommandForWriting ??= ConnectionForWriting.CreateCommand();
-                    }
-                    else
-                    {
-                        commandToUse = CommandForReading ??= ConnectionForReading.CreateCommand();
-                    }
-                }
+                await using var commandToUse = new MySqlCommand("", !String.IsNullOrWhiteSpace(connectionStringForWriting) ? ConnectionForWriting : ConnectionForReading);
 
-                if (commandToUse.Connection.State == ConnectionState.Closed)
+                if (commandToUse.Connection is { State: ConnectionState.Closed })
                 {
                     await commandToUse.Connection.OpenAsync();
                 }
@@ -864,11 +791,6 @@ SELECT LAST_INSERT_ID();";
             {
                 if (disposeConnection)
                 {
-                    if (commandToUse != null)
-                    {
-                        await commandToUse.DisposeAsync();
-                    }
-
                     var connection = (isWriteConnection ? ConnectionForWriting : ConnectionForReading);
                     if (connection != null)
                     {
@@ -920,6 +842,106 @@ SELECT LAST_INSERT_ID();";
             }
 
             return true;
+        }
+
+        private async Task SetTimezone(MySqlConnection connection)
+        {
+            try
+            {
+                // Make sure we always use the correct timezone.
+                if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
+                {
+                    await using var command = new MySqlCommand($"SET @@time_zone = {gclSettings.DatabaseTimeZone.ToMySqlSafeValue(true)};", connection);
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Checks if the exception is about the timezone or something else related to MySQL.
+                // Not setting timezones when they are not available should not be logged as en error.
+                if (mySqlException.Number == 1298)
+                {
+                    logger.LogInformation($"The time zone is not set to '{gclSettings.DatabaseTimeZone}', because that timezone is not available in the database.");
+                }
+                else
+                {
+                    logger.LogWarning(mySqlException, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}'");
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"An error occurred while trying to set the time zone to '{gclSettings.DatabaseTimeZone}'");
+            }
+        }
+
+        /// <summary>
+        /// Sets the correct character set and collation for the database connection.
+        /// </summary>
+        /// <param name="connection">The <see cref="MySqlConnection"/> object that will execute the query.</param>
+        private async Task SetCharacterSetAndCollationAsync(MySqlConnection connection)
+        {
+            try
+            {
+                var characterSet = !String.IsNullOrWhiteSpace(gclSettings.DatabaseCharacterSet) ? gclSettings.DatabaseCharacterSet : "utf8mb4";
+                var collation = !String.IsNullOrWhiteSpace(gclSettings.DatabaseCollation) ? gclSettings.DatabaseCollation : "utf8mb4_general_ci";
+
+                // Make sure we always use the correct timezone.
+                if (!String.IsNullOrWhiteSpace(gclSettings.DatabaseTimeZone))
+                {
+                    await using var command = new MySqlCommand($"SET NAMES {characterSet} COLLATE {collation};", connection);
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+            catch (MySqlException mySqlException)
+            {
+                logger.LogWarning(mySqlException, $"An error occurred while trying to set the character set to '{gclSettings.DatabaseCharacterSet}' and the collation to '{gclSettings.DatabaseCollation}'");
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"An error occurred while trying to set the character set to '{gclSettings.DatabaseCharacterSet}' and the collation to '{gclSettings.DatabaseCollation}'");
+            }
+        }
+
+        /// <summary>
+        /// Setups a <see cref="MySqlCommand"/> by doing the following things:
+        /// - Copy all current parameters to the given command.
+        /// - Set the transaction on the command.
+        /// - Set the command timeout.
+        /// - Wait until the connection is no longer in the state "Connecting".
+        /// </summary>
+        /// <param name="command">The <see cref="MySqlCommand"/> to copy the parameters to.</param>
+        private void SetupMySqlCommand(MySqlCommand command)
+        {
+            // Copy all current parameters to the given command.
+            foreach (var parameter in parameters)
+            {
+                if (command.Parameters.Contains(parameter.Key))
+                {
+                    command.Parameters.RemoveAt(parameter.Key);
+                }
+
+                command.Parameters.AddWithValue(parameter.Key, parameter.Value);
+            }
+
+            // MySqlConnector wants us to set the transaction on the command, so that it knows which transaction to use.
+            if (transaction != null)
+            {
+                command.Transaction = transaction;
+            }
+
+            // Set the command timeout.
+            if (commandTimeout.HasValue)
+            {
+                command.CommandTimeout = commandTimeout.Value;
+            }
+
+            // Sometimes, the connection is in the state "Connecting", which causes exceptions if we then try to execute a query.
+            var counter = 0;
+            while (command.Connection?.State == ConnectionState.Connecting && counter < 100)
+            {
+                Thread.Sleep(10);
+                counter++;
+            }
         }
     }
 }
