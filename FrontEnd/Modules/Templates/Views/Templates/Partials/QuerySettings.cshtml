@@ -29,6 +29,12 @@
                 </label>
             </div>
             <div class="item">
+                <input id="cachePerUser" name="cachePerUser" type="checkbox" @(Model.CachePerUser ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerUser">
+                    <span>Cache apart per gebruiker</span>
+                </label>
+            </div>
+            <div class="item">
                 <input id="cacheUsingRegex" name="cacheUsingRegex" type="checkbox" @(Model.CacheUsingRegex ? "checked" : "") class="hidden"/>
                 <label class="checkbox" for="cacheUsingRegex">
                     <span>Cache met Regex</span>

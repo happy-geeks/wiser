@@ -106,6 +106,7 @@ WHERE content_id = ?id");
     template.cache_per_url,
     template.cache_per_querystring,
     template.cache_per_hostname,
+    template.cache_per_user,
     template.cache_using_regex,
     template.cache_minutes, 
     template.cache_location, 

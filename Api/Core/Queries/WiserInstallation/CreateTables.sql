@@ -687,6 +687,7 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `cache_per_url` tinyint(1) NOT NULL DEFAULT 0,
    `cache_per_querystring` tinyint(1) NOT NULL DEFAULT 0,
    `cache_per_hostname` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_per_user` tinyint(1) NOT NULL DEFAULT 0,
    `cache_using_regex` tinyint(1) NOT NULL DEFAULT 0,
    `cache_minutes` int NOT NULL DEFAULT -1,
    `login_required` tinyint(1) NOT NULL DEFAULT 0,

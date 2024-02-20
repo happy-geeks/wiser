@@ -117,6 +117,7 @@ LIMIT 1");
     template.cache_per_url,
     template.cache_per_querystring,
     template.cache_per_hostname,
+    template.cache_per_user,
     template.cache_using_regex,
     template.cache_minutes, 
     template.cache_location, 
@@ -460,6 +461,7 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("cachePerUrl", templateSettings.CachePerUrl);
             clientDatabaseConnection.AddParameter("cachePerQueryString", templateSettings.CachePerQueryString);
             clientDatabaseConnection.AddParameter("cachePerHostName", templateSettings.CachePerHostName);
+            clientDatabaseConnection.AddParameter("cachePerUser", templateSettings.CachePerUser);
             clientDatabaseConnection.AddParameter("cacheUsingRegex", templateSettings.CacheUsingRegex);
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
@@ -506,6 +508,7 @@ SET template_name = ?name,
     cache_per_url = ?cachePerUrl,
     cache_per_querystring = ?cachePerQueryString,
     cache_per_hostname = ?cachePerHostName,
+    cache_per_user = ?cachePerUser,
     cache_using_regex = ?cacheUsingRegex,
     cache_minutes = ?cacheMinutes,
     cache_location = ?cacheLocation,
@@ -663,6 +666,7 @@ WHERE id = ?id";
     cache_per_url,
     cache_per_querystring,
     cache_per_hostname,
+    cache_per_user,
     cache_using_regex,
     is_dirty
 )
@@ -717,6 +721,7 @@ SELECT
     template.cache_per_url,
     template.cache_per_querystring,
     template.cache_per_hostname,
+    template.cache_per_user,
     template.cache_using_regex,
     FALSE AS is_dirty
 FROM {WiserTableNames.WiserTemplate} AS template
@@ -1279,6 +1284,7 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.cache_per_url,   
     template.cache_per_querystring,   
     template.cache_per_hostname,
+    template.cache_per_user,
     template.cache_using_regex,  
     template.cache_minutes, 
     template.cache_location, 
@@ -1493,6 +1499,7 @@ SET template.parent_id = temp.parent_id,
     template.cache_per_url = temp.cache_per_url,
     template.cache_per_querystring = temp.cache_per_querystring,
     template.cache_per_hostname = temp.cache_per_hostname,
+    template.cache_per_user = temp.cache_per_user,
     template.cache_using_regex = temp.cache_using_regex,
     template.is_dirty = temp.is_dirty;
 
@@ -1558,6 +1565,7 @@ INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplate} (
     cache_per_url,
     cache_per_querystring,
     cache_per_hostname,
+    cache_per_user,
     cache_using_regex,
     is_dirty
 ) 
@@ -1623,6 +1631,7 @@ SELECT
     cache_per_url,
     cache_per_querystring,
     cache_per_hostname,
+    cache_per_user,
     cache_using_regex,
     is_dirty
 FROM `{branchDatabaseName}`.`{temporaryTableName}` AS temp
