@@ -304,13 +304,14 @@ WHERE `commit`.id = ?id";
 	IFNULL(testTemplate.version, 0) AS version_test,
 	IFNULL(acceptanceTemplate.version, 0) AS version_acceptance,
 	IFNULL(liveTemplate.version, 0) AS version_live,
-	template.changed_by,
+	lastChangedBy.changed_by,
 	parent.template_name AS template_parent,
 	IFNULL(template.version, 0) = IFNULL(testTemplate.version, 0) AS test,
 	IFNULL(template.version, 0) = IFNULL(acceptanceTemplate.version, 0) AS accept,
 	IFNULL(template.version, 0) = IFNULL(liveTemplate.version, 0) AS live 
 FROM {WiserTableNames.WiserTemplate} AS template
 JOIN {WiserTableNames.WiserTemplate} AS parent ON parent.template_id = template.parent_id AND parent.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = template.parent_id)
+JOIN {WiserTableNames.WiserTemplate} AS lastChangedBy ON lastChangedBy.template_id = template.template_id AND lastChangedBy.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = template.template_id AND x.is_dirty = TRUE)
 LEFT JOIN {WiserTableNames.WiserTemplate} AS testTemplate ON testTemplate.template_id = template.template_id AND (testTemplate.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS acceptanceTemplate ON acceptanceTemplate.template_id = template.template_id AND (acceptanceTemplate.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserTemplate} AS liveTemplate ON liveTemplate.template_id = template.template_id AND (liveTemplate.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
@@ -361,7 +362,7 @@ ORDER BY template.changed_on ASC";
 	MAX(content.version) AS version,
 	content.changed_on,
 	content.published_environment,
-	content.changed_by,
+	lastChangedBy.changed_by,
 	IFNULL(testContent.version, 0) AS version_test,
 	IFNULL(acceptanceContent.version, 0) AS version_acceptance,
 	IFNULL(liveContent.version, 0) AS version_live,
@@ -371,6 +372,7 @@ ORDER BY template.changed_on ASC";
 	GROUP_CONCAT(DISTINCT template.template_id) AS template_ids,
 	GROUP_CONCAT(DISTINCT template.template_name) AS template_names
 FROM {WiserTableNames.WiserDynamicContent} AS content
+JOIN {WiserTableNames.WiserDynamicContent} AS lastChangedBy ON lastChangedBy.content_id = content.content_id AND lastChangedBy.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserDynamicContent} AS x WHERE x.content_id = content.content_id AND x.is_dirty = TRUE)
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS testContent ON testContent.content_id = content.content_id AND (testContent.published_environment & {(int)Environments.Test}) = {(int)Environments.Test}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS acceptanceContent ON acceptanceContent.content_id = content.content_id AND (acceptanceContent.published_environment & {(int)Environments.Acceptance}) = {(int)Environments.Acceptance}
 LEFT JOIN {WiserTableNames.WiserDynamicContent} AS liveContent ON liveContent.content_id = content.content_id AND (liveContent.published_environment & {(int)Environments.Live}) = {(int)Environments.Live}
