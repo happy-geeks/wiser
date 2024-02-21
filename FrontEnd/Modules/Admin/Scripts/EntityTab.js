@@ -2318,7 +2318,7 @@ export class EntityTab {
         }
 
         $("#EntityTabStrip-2 .right-pane").show();
-        const selectedEntityName = dataItem.entityName;
+        const selectedEntityName = dataItem.entityType;
         const selectedTabName = dataItem.tabName;
         if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabName && !this.isSaveSelect) {
             this.base.openDialog("Item opnieuw openen", "Wilt u dit item opnieuw openen? (u raakt gewijzigde gegevens kwijt)", this.base.kendoPromptType.CONFIRM).then(() => {
