@@ -1,9 +1,9 @@
-﻿(function() {
+﻿(() => {
     const field = $("#field_{propertyIdWithSuffix}");
     const userItemPermissions = {userItemPermissions};
     
-    let options = $.extend({
-        click: function(event) {
+    const options = $.extend({
+        click: (event) => {
             window.dynamicItems.fields.onActionButtonClick(event, "{itemIdEncrypted}", {propertyId}, {options}, field); 
         },
         icon: "gear"
