@@ -68,11 +68,7 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemdetail`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `item_key`(`item_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
-  INDEX `key_int_value`(`key`(50), `value_as_int`) USING BTREE,
-  INDEX `key_decimal_value`(`key`(50), `value_as_decimal`) USING BTREE,
   INDEX `item_id_key_value`(`item_id`, `key`(40), `value`(40)) USING BTREE,
-  INDEX `item_id_key_int_value`(`item_id`, `key`(40), `value_as_int`) USING BTREE,
-  INDEX `item_id_key_decimal_value`(`item_id`, `key`(40), `value_as_decimal`) USING BTREE,
   INDEX `item_id_group`(`item_id`, `groupname`, `key`(40)) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -92,11 +88,7 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemdetail_archive`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `item_key`(`item_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
-  INDEX `key_int_value`(`key`(50), `value_as_int`) USING BTREE,
-  INDEX `key_decimal_value`(`key`(50), `value_as_decimal`) USING BTREE,
   INDEX `item_id_key_value`(`item_id`, `key`(40), `value`(40)) USING BTREE,
-  INDEX `item_id_key_int_value`(`item_id`, `key`(40), `value_as_int`) USING BTREE,
-  INDEX `item_id_key_decimal_value`(`item_id`, `key`(40), `value_as_decimal`) USING BTREE,
   INDEX `item_id_group`(`item_id`, `groupname`, `key`(40)) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -117,8 +109,6 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail`  (
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
   INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
-  INDEX `key_int_value`(`key`(50), `value_as_int`) USING BTREE,
-  INDEX `key_decimal_value`(`key`(50), `value_as_decimal`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -138,8 +128,6 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail_archive`  (
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
   INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
-  INDEX `key_int_value`(`key`(50), `value_as_int`) USING BTREE,
-  INDEX `key_decimal_value`(`key`(50), `value_as_decimal`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
