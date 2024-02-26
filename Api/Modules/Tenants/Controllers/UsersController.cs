@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using IdentityModel;
 using IdentityServer4;
@@ -267,6 +268,65 @@ namespace Api.Modules.Tenants.Controllers
             return (await usersService.SaveDashboardSettingsAsync((ClaimsIdentity) User.Identity, layoutData)).GetHttpResponseMessage();
         }
 
+        [HttpGet]
+        [Route("external-login")]
+        [AllowAnonymous]
+        public IActionResult ExternalLogin(string provider)
+        {
+            var redirectUrl = Url.Action("ExternalLoginCallback", "Users", new { ReturnUrl = HttpContext.Request.Headers["Referer"] });
+            var properties = new AuthenticationProperties()
+            {
+                RedirectUri = redirectUrl,
+                AllowRefresh = true,
+                IsPersistent = true
+            };
+            
+            return new ChallengeResult(provider, properties);
+        }
+
+        [HttpGet]
+        [Route("external-login-callback")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ExternalLoginCallbackAsync(string returnUrl = null, string remoteError = null)
+        {
+            if (String.IsNullOrWhiteSpace(returnUrl))
+            {
+                throw new Exception("No return URL provided");
+            }
+            
+            var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+            if (result.Succeeded != true)
+            {
+                throw new Exception("External authentication error");
+            }
+            
+            var externalUser = result.Principal;
+            if (externalUser == null)
+            {
+                throw new Exception("External authentication error");
+            }
+            
+            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
+                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+                              throw new Exception("Unknown userid");
+
+            var externalUserId = userIdClaim.Value;
+            var externalProvider = userIdClaim.Issuer;
+            
+            await HttpContext.SignInAsync(new IdentityServerUser(externalUserId)
+            {
+                DisplayName = externalUser.FindFirstValue(ClaimTypes.Name),
+                IdentityProvider = externalProvider,
+                AdditionalClaims = externalUser.Claims.ToList()
+            });
+            
+            await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+
+            var token = "affa";
+            
+            return Redirect($"{returnUrl}login?token={token.EncryptWithAesWithSalt(withDateTime: true)}");
+        }
+
         /// <summary>
         /// Endpoint for external login providers such as Google.
         /// This uses IdentityServer4 to handle the authentication.
@@ -274,13 +334,13 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="provider"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("external-login")]
+        [Route("external-login-old")]
         [AllowAnonymous]
-        public IActionResult ExternalLogin(string provider)
+        public IActionResult ExternalLoginOld(string provider)
         {
             var properties = new AuthenticationProperties
             {
-                RedirectUri = Url.Action(nameof(Callback)),
+                RedirectUri = Url.Action(nameof(CallbackOld)),
                 AllowRefresh = true,
                 IsPersistent = true
             };
@@ -295,9 +355,10 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="data"></param>
         /// <returns></returns>
         [HttpPost]
-        [Route("external-login")]
+        [Route("external-login-old")]
+        [Consumes("application/x-www-form-urlencoded")]
         [AllowAnonymous]
-        public async Task<IActionResult> ExternalLoginPost()
+        public async Task<IActionResult> ExternalLoginPostOld()
         {
             // read external identity from the temporary cookie
             var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
@@ -416,9 +477,9 @@ namespace Api.Modules.Tenants.Controllers
         }
 
         [HttpGet]
-        [Route("external-login-callback")]
+        [Route("external-login-callback-old")]
         [AllowAnonymous]
-        public async Task<IActionResult> Callback()
+        public async Task<IActionResult> CallbackOld()
         {
             // read external identity from the temporary cookie
             var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
@@ -483,14 +544,14 @@ namespace Api.Modules.Tenants.Controllers
             CaptureExternalLoginContext(result, additionalLocalClaims, localSignInProps);
 
             // issue authentication cookie for user
-            var isuser = new IdentityServerUser(user.SubjectId)
+            var issuer = new IdentityServerUser(user.SubjectId)
             {
                 DisplayName = user.Username,
                 IdentityProvider = provider,
                 AdditionalClaims = additionalLocalClaims
             };
 
-            await HttpContext.SignInAsync(isuser, localSignInProps);
+            await HttpContext.SignInAsync(issuer, localSignInProps);
 
             // delete temporary cookie used during external authentication
             await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);

@@ -108,6 +108,7 @@ namespace FrontEnd
             services.AddScoped<IExcelService, ExcelService>();
             services.AddSingleton<IWebPackService, WebPackService>();
             services.AddSingleton<IExternalApisService, ExternalApisService>();
+            services.AddTransient<IHomeService, HomeService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
