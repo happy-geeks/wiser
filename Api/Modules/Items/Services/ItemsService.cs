@@ -101,7 +101,7 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, WiserItemModel filters = null)
+        public async Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, WiserItemModel filters = null)
         {
             pagedRequest ??= new PagedRequest();
 
@@ -120,6 +120,12 @@ namespace Api.Modules.Items.Services
             var extraJoins = new StringBuilder();
             if (filters != null)
             {
+                if (!String.IsNullOrWhiteSpace(filters.Title))
+                {
+                    whereClause.Add("item.title = ?title");
+                    clientDatabaseConnection.AddParameter("title", filters.Title);
+                }
+                
                 if (!String.IsNullOrWhiteSpace(filters.EntityType))
                 {
                     whereClause.Add("item.entity_type = ?entityType");
@@ -186,14 +192,15 @@ namespace Api.Modules.Items.Services
             pagedResult.PageNumber = pagedRequest.Page;
             pagedResult.PageSize = pagedRequest.PageSize;
 
+            // TODO: Improve adding of query parameters.
             var currentUrl = HttpContextHelpers.GetOriginalRequestUri(httpContextAccessor.HttpContext);
             if (pagedResult.TotalNumberOfPages > pagedRequest.Page)
             {
-                pagedResult.NextPageUrl = $"{currentUrl.Scheme}://{currentUrl.Authority}/api/v3/items?page={pagedRequest.Page + 1}&pageSize={pagedRequest.PageSize}";
+                pagedResult.NextPageUrl = $"{currentUrl.Scheme}://{currentUrl.Authority}/api/v3/items?page={pagedRequest.Page + 1}&pageSize={pagedRequest.PageSize}&useFriendlyPropertyNames={useFriendlyPropertyNames}{(String.IsNullOrWhiteSpace(filters?.Title) ? "" : $"&title={filters.Title}")}{(String.IsNullOrWhiteSpace(filters?.EntityType) ? "" : $"&entityType={filters.EntityType}")}";
             }
             if (pagedRequest.Page > 1)
             {
-                pagedResult.PreviousPageUrl = $"{currentUrl.Scheme}://{currentUrl.Authority}/api/v3/items?page={pagedRequest.Page - 1}&pageSize={pagedRequest.PageSize}";
+                pagedResult.PreviousPageUrl = $"{currentUrl.Scheme}://{currentUrl.Authority}/api/v3/items?page={pagedRequest.Page - 1}&pageSize={pagedRequest.PageSize}&useFriendlyPropertyNames={useFriendlyPropertyNames}{(String.IsNullOrWhiteSpace(filters?.Title) ? "" : $"&title={filters.Title}")}{(String.IsNullOrWhiteSpace(filters?.EntityType) ? "" : $"&entityType={filters.EntityType}")}";
             }
 
             var query = $@"
@@ -280,7 +287,7 @@ namespace Api.Modules.Items.Services
                 foreach (var field in fields)
                 {
                     var name = field.DisplayName;
-                    if (String.IsNullOrWhiteSpace(name))
+                    if (String.IsNullOrWhiteSpace(name) || !useFriendlyPropertyNames)
                     {
                         name = field.Key;
                     }

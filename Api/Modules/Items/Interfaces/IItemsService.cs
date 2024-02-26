@@ -21,9 +21,10 @@ namespace Api.Modules.Items.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="pagedRequest">Optional: Which page to get and how many items per page to get.</param>
+        /// <param name="useFriendlyPropertyNames">Optional: Whether to use friendly property names or not. Default is <see langword="true"/>.</param>
         /// <param name="filters">Optional: Add filters if you only want specific results.</param>
         /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
-        Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, WiserItemModel filters = null);
+        Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, WiserItemModel filters = null);
 
         /// <summary>
         /// Creates a duplicate copy of an existing item.
