@@ -8,7 +8,7 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json;
 using RestSharp;
 
@@ -41,7 +41,7 @@ namespace Api.Modules.DigitalOcean.Services
         {
             var callBackUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}/api/v3/digital-ocean/callback";
             var tokenUri = $"https://cloud.digitalocean.com/v1/oauth/token?client_id={Uri.EscapeDataString(digitalOceanSettings.ClientId)}&grant_type=authorization_code&code={Uri.EscapeDataString(code)}&client_secret={Uri.EscapeDataString(digitalOceanSettings.ClientSecret)}&redirect_uri={Uri.EscapeDataString(callBackUrl)}";
-            
+
             var restClient = new RestClient(tokenUri);
             var restRequest = new RestRequest("", Method.Post);
             var response = await restClient.ExecuteAsync(restRequest);
@@ -127,7 +127,7 @@ namespace Api.Modules.DigitalOcean.Services
             {
                 restRequest.AddJsonBody(body);
             }
-            
+
             var response = await restClient.ExecuteAsync(restRequest);
 
             return response.Content;

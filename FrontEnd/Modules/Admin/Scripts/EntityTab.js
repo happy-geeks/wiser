@@ -1174,8 +1174,8 @@ export class EntityTab {
         this.tabNameProperty = $("#tabNameProperty").kendoComboBox({
             placeholder: "Selecteer gewenste tab...",
             clearButton: false,
-            dataTextField: "tabName",
-            dataValueField: "tabName",
+            dataTextField: "name",
+            dataValueField: "name",
             minLength: 1,
             dataSource: []
         }).data("kendoComboBox");
@@ -2294,6 +2294,7 @@ export class EntityTab {
                 }
             }
         }));
+        this.tabNameProperty.setDataSource(tabsAndFields.filter((value) => value.isTab === true));
 
         // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
         this.queryAfterInsert.refresh();
@@ -2318,7 +2319,7 @@ export class EntityTab {
         }
 
         $("#EntityTabStrip-2 .right-pane").show();
-        const selectedEntityName = dataItem.entityName;
+        const selectedEntityName = dataItem.entityType;
         const selectedTabName = dataItem.tabName;
         if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabName && !this.isSaveSelect) {
             this.base.openDialog("Item opnieuw openen", "Wilt u dit item opnieuw openen? (u raakt gewijzigde gegevens kwijt)", this.base.kendoPromptType.CONFIRM).then(() => {
@@ -3571,7 +3572,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
         // Set dropdown value for tab name field.
         this.tabNameProperty.select((dataItem) => {
-            return (dataItem.tabName === "Gegevens" ? "" : dataItem.tabName) === (resultSet.tabName === "Gegevens" ? "" : resultSet.tabName);
+            return (dataItem.name === "Gegevens" ? "" : dataItem.name) === (resultSet.tabName === "Gegevens" ? "" : resultSet.tabName);
         });
 
         // Set groupNameComboBox field using one time dataBound because of the racing condition when filling.

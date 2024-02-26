@@ -1,7 +1,6 @@
 import {TrackJS} from "trackjs";
 import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import {Preview} from "./Preview.js";
 import "../Css/DynamicContent.css";
 import "diff2html/bundles/css/diff2html.min.css"
 
@@ -40,12 +39,10 @@ const moduleSettings = {
             // Kendo components.
             this.mainSplitter = null;
             this.mainWindow = null;
-            this.tabStrips = [];
             this.componentTypeComboBox = null;
             this.componentModeComboBox = null;
             this.selectedComponentData = null;
             this.saving = false;
-            this.changesTimeout = null;
 
             // Default settings
             this.settings = {
@@ -60,7 +57,6 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
-            this.preview = new Preview(this);
             this.lastLoadedHistoryPart = 0;
             this.allPartsLoaded = false;
             this.loadingNextPart = false;
@@ -133,16 +129,7 @@ const moduleSettings = {
 
             this.initializeButtons();
             await this.loadComponentHistory();
-            await this.loadPreviewTab();
             
-            if (this.settings.initialTab) {
-                if (this.settings.initialTab === "history") {
-                    this.tabStrips[0].select(`li.history-tab`);
-                    this.mainSplitter.size(".k-pane:first", "0%");
-                } else {
-                    this.tabStrips[1].select(`li.${this.settings.initialTab}-tab`);
-                }
-            }
             window.processing.removeProcess(process);
         }
 
@@ -213,14 +200,16 @@ const moduleSettings = {
             // Tabstrip
             const tabStripElements = container.find(".tabstrip");
             if (tabStripElements.length > 0) {
-                this.tabStrips.push(tabStripElements.kendoTabStrip({
+                const tabStrip = tabStripElements.kendoTabStrip({
                     activate: this.onTabStripActivate.bind(this),
                     animation: {
                         open: {
                             effects: "fadeIn"
                         }
                     }
-                }).data("kendoTabStrip").select(0));
+                }).data("kendoTabStrip");
+                // Not calling the select on the "constructor" line above because we need to trigger the activate event
+                tabStrip.select(this.settings.initialTab ? `li.${this.settings.initialTab}-tab` : 0);
             }
 
             //NUMERIC FIELD
@@ -228,26 +217,17 @@ const moduleSettings = {
                 const isDecimal = $(element).data("decimal") === true;
                 $(element).kendoNumericTextBox({
                     decimals: isDecimal ? 2 : 0,
-                    format: isDecimal ? "n2" : "n0",
-                    change: () => this.onInputChange(true),
-                    spin: () => this.onInputChange(false)
+                    format: isDecimal ? "n2" : "#"
                 });
             });
 
             //MULTISELECT
             container.find(".multi-select").kendoMultiSelect({
-                autoClose: false,
-                change: () => this.onInputChange(true)
-            });
-
-            container.find(".select").kendoDropDownList({
-                change: () => this.onInputChange(true)
+                autoClose: false
             });
 
             container.find(".add-subgroup-button").off("click").click(this.onAddSubGroupButtonClick.bind(this));
             container.find(".remove-subgroup-button").off("click").click(this.onRemoveSubGroupButtonClick.bind(this));
-
-            container.find("input.textField, label.checkbox > input[type='checkbox']").change(() => this.onInputChange(true));
         }
 
         /**
@@ -301,7 +281,7 @@ const moduleSettings = {
             });
             
             if (event.item.classList.contains("history-tab")) {
-                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                window.Wiser.createHistoryDiffFields(document.querySelector("#left-pane div.historyContainer"));
             }
         }
 
@@ -409,11 +389,6 @@ const moduleSettings = {
                     window.parent.$("#dynamicContentWindow").data("kendoWindow").close();
                 }
             });
-
-            $("#previewHtml").click((event) => {
-                event.preventDefault();
-                this.preview.generateHtmlPreviewForComponent(this.settings.selectedId, this.getDynamicContentPreviewSettings());
-            });
         }
 
         async save(alsoDeployToTest = false) {
@@ -486,16 +461,6 @@ const moduleSettings = {
                 method: "PUT",
                 contentType: "application/json"
             });
-        }
-
-        getDynamicContentPreviewSettings() {
-            return [
-                {
-                    id: this.settings.selectedId,
-                    name: document.getElementById("componentTypeDropDown").value,
-                    settingsJson: JSON.stringify(this.getNewSettings())
-                }
-            ];
         }
 
         /**
@@ -572,7 +537,7 @@ const moduleSettings = {
         }
 
         /**
-         * Loads the History HTML and updates the right panel.
+         * Loads the History HTML.
          * */
         async loadComponentHistory() {
             try {
@@ -589,11 +554,16 @@ const moduleSettings = {
                     data: JSON.stringify(history)
                 });
 
-                document.getElementsByClassName("historyContainer")[0].innerHTML = historyHtml;
+                let container = document.getElementsByClassName("historyContainer")[0];
+                if (container === undefined) {
+                    console.warn("Unable to find historyContainer element! Cancelled loading of history data.");
+                    return;
+                }
+                container.innerHTML = historyHtml;
                 this.lastLoadedHistoryPart = 1;
                 this.allPartsLoaded = false;
 
-                document.getElementById("right-pane").addEventListener("scroll", event => {
+                document.getElementById("left-pane").addEventListener("scroll", event => {
                     const {scrollHeight, scrollTop, clientHeight} = event.target;
 
                     // if user scrolled to bottom, load next part of the history
@@ -601,7 +571,7 @@ const moduleSettings = {
                     const treshold = 1;
                     if (Math.abs(scrollHeight - clientHeight - scrollTop) < treshold) {
                         // if history pane is active load next batch of history rows
-                        if (document.getElementsByClassName("historyContainer")[0].parentElement.classList.contains("k-state-active")) {
+                        if (container.parentElement.classList.contains("k-state-active")) {
                             this.loadNextHistoryPart();
                         }
                     }
@@ -609,7 +579,7 @@ const moduleSettings = {
 
                 this.bindHistoryButtons();
             } catch (exception) {
-                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                kendo.alert("Er is iets fout gegaan met het laden van de history. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                 console.error(exception);
             }
         }
@@ -644,7 +614,7 @@ const moduleSettings = {
                 });
 
                 document.getElementsByClassName("historyContainer")[0].insertAdjacentHTML("beforeend", historyRowsHtml);
-                window.Wiser.createHistoryDiffFields(document.querySelector("#right-pane div.historyContainer"));
+                window.Wiser.createHistoryDiffFields(document.querySelector("#left-pane div.historyContainer"));
                 this.lastLoadedHistoryPart++;
             } catch (exception) {
                 kendo.alert("Er is iets fout gegaan met het laden van de historie. Probeer het a.u.b. opnieuw of neem contact op met ons.");
@@ -653,26 +623,6 @@ const moduleSettings = {
 
             window.processing.removeProcess(process);
             this.loadingNextPart = false;
-        }
-
-        async loadPreviewTab() {
-            // Preview
-            await this.preview.loadProfiles();
-            try {
-                const response = await Wiser.api({
-                    method: "GET",
-                    url: "/Modules/Templates/PreviewTab"
-                });
-
-                document.getElementById("previewTab").innerHTML = response;
-
-                this.preview.initPreviewProfileInputs(true, true);
-                this.preview.bindPreviewButtons();
-                this.preview.generatePreview(false);
-            }  catch (exception) {
-                kendo.alert("Er is iets fout gegaan met het laden van de preview. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-                console.error(exception);
-            }
         }
 
         async transformCodeMirrorViews(container = null) {
@@ -707,24 +657,8 @@ const moduleSettings = {
                     mode: element.dataset.fieldType
                 });
 
-                codeMirrorInstance.on("change", () => this.onInputChange(false));
-
                 $(element).data("CodeMirrorInstance", codeMirrorInstance);
             });
-        }
-
-        /**
-         * Event for when the user changes a value in an input.
-         * This will generate a new preview, 500ms after the user's last change.
-         */
-        onInputChange(instant = false) {
-            if (this.changesTimeout) {
-                clearTimeout(this.changesTimeout);
-            }
-
-            this.changesTimeout = setTimeout(() => {
-                this.preview.generatePreview(false);
-            }, instant ? 0 : 500);
         }
 
         /**
@@ -785,19 +719,6 @@ const moduleSettings = {
 
                 window.processing.removeProcess(process);
             });
-        }
-
-        /**
-         * Gets the template settings. This method will be called from the Preview class.
-         * This will call the getCurrentTemplateSettings() method from the parent frame, which should be the templates module.
-         */
-        getCurrentTemplateSettings() {
-            if (!window.parent || !window.parent.Templates) {
-                console.warn("No parent window found, or parent window has no Templates class.");
-                return {};
-            } else {
-                return window.parent.Templates.getCurrentTemplateSettings();
-            }
         }
 
         async onAddSubGroupButtonClick(event) {

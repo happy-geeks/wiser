@@ -123,21 +123,6 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await dynamicContentService.AddLinkToTemplateAsync((ClaimsIdentity)User.Identity, contentId, templateId)).GetHttpResponseMessage();
         }
-        
-        /// <summary>
-        /// Generates a preview for a dynamic component.
-        /// </summary>
-        /// <param name="componentId">The ID of the component.</param>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the component as it would look on the website.</returns>
-        [HttpPost]
-        [Route("{componentId:int}/html-preview")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        [Produces(MediaTypeNames.Text.Html)]
-        public async Task<IActionResult> GenerateHtmlForComponentAsync(int componentId, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, componentId, requestModel)).GetHttpResponseMessage(MediaTypeNames.Text.Html);
-        }
 
         /// <summary>
         /// Publish a dynamic component to a new environment. If moved forward the lower environments will also be moved.

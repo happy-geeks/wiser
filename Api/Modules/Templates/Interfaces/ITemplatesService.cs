@@ -204,23 +204,6 @@ namespace Api.Modules.Templates.Interfaces
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int templateId, bool alsoDeleteChildren = true);
 
         /// <summary>
-        /// Generates a preview for a dynamic component.
-        /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="componentId">The ID of the component.</param>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the component as it would look on the website.</returns>
-        Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel);
-
-        /// <summary>
-        /// Generates a preview for an HTML template.
-        /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the template as it would look on the website.</returns>
-        Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel);
-
-        /// <summary>
         /// Checks if there's a conflict with another template that's also marked as a default header with the given regex.
         /// </summary>
         /// <param name="templateId">ID of the current template.</param>
@@ -293,5 +276,11 @@ namespace Api.Modules.Templates.Interfaces
             string urlRegex = null, Environments? environment = null, ulong userId = 0,
             string languageCode = null, int pageSize = 500, int pageNumber = 1,
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null);
+
+        /// <summary>
+        /// Converts a JCL template to a GCL template.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity);
     }
 }

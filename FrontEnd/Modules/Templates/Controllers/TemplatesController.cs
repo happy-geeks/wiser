@@ -106,13 +106,6 @@ namespace FrontEnd.Modules.Templates.Controllers
             return PartialView("Partials/HistoryTabRows", tabViewData);
         }
 
-        [HttpGet, Route("PreviewTab")]
-        public IActionResult PreviewTab()
-        {
-            // ReSharper disable once Mvc.PartialViewNotResolved
-            return PartialView("Tabs/PreviewTab");
-        }
-
         [HttpPost, Route("MeasurementsTab")]
         public IActionResult MeasurementsTab([FromBody]MeasurementSettings measurementSettings)
         {

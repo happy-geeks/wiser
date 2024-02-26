@@ -19,7 +19,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace Api.Modules.Tenants.Services
 {
@@ -303,25 +303,25 @@ namespace Api.Modules.Tenants.Services
                     {
                         foreach (var (key, value) in tenant.WiserSettings)
                         {
-                            createTablesQuery = createTablesQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                            createTriggersQuery = createTriggersQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                            createdStoredProceduresQuery = createdStoredProceduresQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                            insertInitialDataQuery = insertInitialDataQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                            createTablesQuery = createTablesQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                            createTriggersQuery = createTriggersQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                            createdStoredProceduresQuery = createdStoredProceduresQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                            insertInitialDataQuery = insertInitialDataQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
 
                             if (isMultiLanguage)
                             {
-                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                insertInitialDataMultiLanguageQuery = insertInitialDataMultiLanguageQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
                             }
 
                             if (isWebShop)
                             {
-                                insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                insertInitialDataEcommerceQuery = insertInitialDataEcommerceQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
                             }
 
                             if (isConfigurator)
                             {
-                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
-                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.ReplaceCaseInsensitive($"{{{key}}}", value);
+                                createTablesConfiguratorQuery = createTablesConfiguratorQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
+                                insertInitialDataConfiguratorQuery = insertInitialDataConfiguratorQuery.Replace($"{{{key}}}", value, StringComparison.OrdinalIgnoreCase);
                             }
                         }
                     }

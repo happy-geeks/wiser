@@ -211,6 +211,8 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `item_key`(`item_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
@@ -229,6 +231,8 @@ CREATE TABLE IF NOT EXISTS `wiser_itemdetail_archive`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `item_key`(`item_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
@@ -337,11 +341,13 @@ CREATE TABLE IF NOT EXISTS `wiser_itemlinkdetail`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
-  INDEX `language_id`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
+  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -354,11 +360,13 @@ CREATE TABLE IF NOT EXISTS `wiser_itemlinkdetail_archive`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
-  INDEX `language_id`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
+  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -687,6 +695,7 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `cache_per_url` tinyint(1) NOT NULL DEFAULT 0,
    `cache_per_querystring` tinyint(1) NOT NULL DEFAULT 0,
    `cache_per_hostname` tinyint(1) NOT NULL DEFAULT 0,
+   `cache_per_user` tinyint(1) NOT NULL DEFAULT 0,
    `cache_using_regex` tinyint(1) NOT NULL DEFAULT 0,
    `cache_minutes` int NOT NULL DEFAULT -1,
    `login_required` tinyint(1) NOT NULL DEFAULT 0,
@@ -733,6 +742,18 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    INDEX `idx_type`(`template_type` ASC, `removed` ASC) USING BTREE,
    INDEX `idx_environment`(`published_environment` ASC, `removed` ASC) USING BTREE,
    FULLTEXT INDEX `idx_fulltext`(`template_name`, `template_data`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_template_external_files
+-- ----------------------------
+CREATE TABLE `wiser_template_external_files`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `template_id` int NOT NULL,
+    `external_file` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `ordering` int NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
