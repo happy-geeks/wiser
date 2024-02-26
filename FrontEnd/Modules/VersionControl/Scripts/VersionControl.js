@@ -146,8 +146,6 @@ const moduleSettings = {
 
             // Initialize sub classes.
             await this.initializeComponents();
-
-            this.toggleMainLoader(false);
         }
 
         /**
@@ -666,18 +664,31 @@ const moduleSettings = {
                         },
                         {
                             title: "",
-                            width: "40px",
+                            width: "300px",
                             command: [
                                 {
                                     name: "view",
                                     text: "",
                                     iconClass: "view-template-button k-icon k-i-eye",
+                                    visible: function(dataItem) {
+                                        // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                        return !dataItem.deleted;
+                                    },
                                     click: (event) => {
                                         const item = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
                                         let url = `/Modules/Templates?templateId=${item.templateId}&InitialTab=history`;
                                         let title = `${item.templateType.toUpperCase()} template "${item.templateName}" (${item.templateId})`;
                                         this.openPopupWindow(url, title);
                                     }
+                                },
+                                {
+                                    title: "&nbsp;",
+                                    width: "300px",
+                                    visible: function(dataItem) {
+                                        // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                        return dataItem.deleted;
+                                    },
+                                    template: "Deze template is verwijderd met deze versie"
                                 }
                             ]
                         }
@@ -791,12 +802,16 @@ const moduleSettings = {
                         },
                         {
                             title: "",
-                            width: "40px",
+                            width: "300px",
                             command: [
                                 {
                                     name: "view",
                                     text: "",
                                     iconClass: "view-template-button k-icon k-i-eye",
+                                    visible: function(dataItem) {
+                                        // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                        return !dataItem.deleted;
+                                    },
                                     click: (event) =>
                                     {
                                         const item = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
@@ -804,6 +819,15 @@ const moduleSettings = {
                                         let title = `Dynamic content "${item.title}" (${item.dynamicContentId}) of template "${item.templateNames[0]}" (${item.templateIds[0]})`;
                                         this.openPopupWindow(url, title);
                                     }
+                                },
+                                {
+                                    title: "&nbsp;",
+                                    width: "300px",
+                                    visible: function(dataItem) {
+                                        // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                        return dataItem.deleted;
+                                    },
+                                    template: "Dit component is verwijderd met deze versie"
                                 }
                             ]
                         }
@@ -1075,7 +1099,7 @@ const moduleSettings = {
                 kendo.alert("Er is iets fout gegaan met het laden van de commit historie. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             }
         }
-        
+
         /**
          * Setup/initialize the grid with all reviews.
          */
@@ -1257,19 +1281,33 @@ const moduleSettings = {
                 columns: [
                     {field: "templateName", title: "Template"},
                     {field: "templateParentName", title: "Map"},
+                    {field: "version", title: "Versie", width: "75px"},
                     {
                         title: "&nbsp;",
-                        width: "150px",
+                        width: "300px",
                         command: [{
                             name: "open",
                             text: "Bekijk historie",
                             iconClass: "k-icon k-i-hyperlink-open",
+                            visible: function(dataItem) {
+                                // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                return !dataItem.deleted;
+                            },
                             click: (event) => {
                                 const item = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
                                 let url = `/Modules/Templates?templateId=${item.templateId}&InitialTab=history`;
                                 let title = `${item.templateType} template "${item.templateName}" (${item.templateId})`;
                                 this.openPopupWindow(url, title);
                             }
+                        },
+                        {
+                            title: "&nbsp;",
+                            width: "300px",
+                            visible: function(dataItem) {
+                                // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                return dataItem.deleted;
+                            },
+                            template: "Deze template is verwijderd met deze commit"
                         }]
                     }
                 ],
@@ -1300,21 +1338,33 @@ const moduleSettings = {
                     {field: "templateNames", title: "Gekoppelde templates", template: "#= templateNames.join(', ') #"},
                     {field: "title", title: "Naam"},
                     {field: "component", title: "Component"},
+                    {field: "version", title: "Versie", width: "75px"},
                     {
                         title: "&nbsp;",
-                        width: "150px",
+                        width: "300px",
                         command: [{
                             name: "open",
                             text: "Bekijk historie",
                             iconClass: "k-icon k-i-hyperlink-open",
+                            visible: function(dataItem) {
+                                // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                return !dataItem.deleted;
+                            },
                             click: (event) => {
                                 const item = $(event.delegateTarget).data("kendoGrid").dataItem(event.currentTarget.closest("tr"));
-                                for (let i = 0; i < item.templateIds.length; i++) {
-                                    let url = `/Modules/Templates?templateId=${item.templateIds[i]}&InitialTab=history`;
-                                    let title = `Template "${item.templateNames[i]}" (${item.templateIds[i]})`;
-                                    this.openPopupWindow(url, title, false);
-                                }
+                                let url = `/Modules/DynamicContent/${item.dynamicContentId}?templateId=${item.templateIds[0]}&InitialTab=history`;
+                                let title = `Dynamic content "${item.title}" (${item.dynamicContentId}) of template "${item.templateNames[0]}" (${item.templateIds[0]})`;
+                                this.openPopupWindow(url, title);
                             }
+                        },
+                        {
+                            title: "&nbsp;",
+                            width: "300px",
+                            visible: function(dataItem) {
+                                // Note: For some reason Kendo throw an "Uncaught Error: Invalid template" error when using an arrow function here, that's why this is a regular function.
+                                return dataItem.deleted;
+                            },
+                            template: "Dit component is verwijderd met deze commit"
                         }]
                     }
                 ],

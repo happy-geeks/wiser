@@ -160,6 +160,7 @@ LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON exter
 WHERE template.template_id = ?templateId
 {publishedVersionWhere}
 AND template.removed = 0
+GROUP BY template.id
 ORDER BY template.version DESC 
 LIMIT 1");
 
