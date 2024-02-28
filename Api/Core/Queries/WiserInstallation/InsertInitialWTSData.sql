@@ -10,7 +10,7 @@ VALUES (@ServicesFolderTemplateId, 'subItem parent update',
 -- ----------------------------
 '<Configuration>
     <ServiceName>[Wiser] WTS Sub item parent Update</ServiceName>
-	<!-- !!! Please consider making a seperate WTS user for these kind of configs -->
+	<!-- !!! Please consider making a separate WTS user for these kind of configs -->
     <ConnectionString>server=?setting_hostname;port=?setting_port;uid=?setting_username;pwd=?setting_password;database=?setting_database;pooling=true;Allow User Variables=True;CharSet=utf8</ConnectionString>
     <RunSchemes>
         <RunScheme>
