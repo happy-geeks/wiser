@@ -1,7 +1,8 @@
-﻿(function() {
-var container = $("#container_{propertyIdWithSuffix}");
-var readonly = {readonly};
-var initialFiles = {initialFiles};
+﻿(() => {
+const container = $("#container_{propertyIdWithSuffix}");
+const readonly = {readonly};
+const  initialFiles = {initialFiles};
+
 if (initialFiles && initialFiles.length > 0) {
     for (var i = 0; i < initialFiles.length; i++) {
         initialFiles[i].readonly = readonly;
@@ -10,7 +11,7 @@ if (initialFiles && initialFiles.length > 0) {
     }
 }
 
-var options = {options};
+let options = {options};
 
 options = $.extend({
     async: {
@@ -44,8 +45,8 @@ if (window.dynamicItems.fields.onFileUploadError) {
     options.error = window.dynamicItems.fields.onFileUploadError.bind(window.dynamicItems.fields);
 }
 
-var field = $("#field_{propertyIdWithSuffix}");
-var kendoComponent = field.kendoUpload(options).data("kendoUpload");
+const field = $("#field_{propertyIdWithSuffix}");
+const kendoComponent = field.kendoUpload(options).data("kendoUpload");
 
 $("#images_{propertyIdWithSuffix}").html(kendo.render(kendo.template($("#uploaderTemplate").html()), initialFiles));
 

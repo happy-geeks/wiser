@@ -1,21 +1,22 @@
-﻿(function() {
-var field = $("#fieldSet_{propertyIdWithSuffix}");
-var loader = field.closest(".item").find(".grid-loader");
-var checkGridElement = field.find("#checkGrid_{propertyIdWithSuffix}");
-var checkTreeElement = field.find("#checkTree_{propertyIdWithSuffix}");
-var options = {options};
-var currentItemId = '{itemIdEncrypted}';
-var loadingCount = 0;
-var readonly = {readonly};
+﻿(() => {
+const field = $("#fieldSet_{propertyIdWithSuffix}");
+const loader = field.closest(".item").find(".grid-loader");
+const checkGridElement = field.find("#checkGrid_{propertyIdWithSuffix}");
+const checkTreeElement = field.find("#checkTree_{propertyIdWithSuffix}");
+const options = {options};
+const currentItemId = '{itemIdEncrypted}';
+const readonly = {readonly};
+
+let loadingCount = 0;
 
 options.moduleId = options.moduleId || 0;
 
-var startLoader = function() {
+const startLoader = () => {
     loadingCount++;
     loader.addClass("loading");
 };
 
-var stopLoader = function(reloadGridWhenDone) {
+const stopLoader = (reloadGridWhenDone) => {
     loadingCount--;
     if (loadingCount < 0) {
         loadingCount = 0;
@@ -31,29 +32,29 @@ var stopLoader = function(reloadGridWhenDone) {
 };
 
 field.find(".filterText").keyup(function (event) {
-    var filterText = $(this).val();
+    const filterText = $(this).val();
 
     if (filterText !== "") {
         checkTreeElement.find(".k-group > li").hide();
-        checkTreeElement.find(".k-in:contains(" + filterText + ")").each(function () {
-            $(this).parents("ul, li").each(function () {
-                var treeView = checkTreeElement.data("kendoTreeView");
+        checkTreeElement.find(".k-in:contains(" + filterText + ")").each(() => {
+            $(this).parents("ul, li").each( () => {
+                const treeView = checkTreeElement.data("kendoTreeView");
                 treeView.expand($(this).parents("li"));
                 $(this).show();
             });
         });
 
-        checkTreeElement.find(".k-group .k-in:contains(" + filterText + ")").each(function () {
-            $(this).parents("ul, li").each(function () {
+        checkTreeElement.find(".k-group .k-in:contains(" + filterText + ")").each( () => {
+            $(this).parents("ul, li").each(() => {
                 $(this).show();
             });
         });
     }
     else {
         checkTreeElement.find(".k-group").find("li").show();
-        var nodes = checkTreeElement.find("> .k-group > li");
+        const nodes = checkTreeElement.find("> .k-group > li");
 
-        $.each(nodes, function (i, val) {
+        $.each(nodes, (i, val) => {
             if (nodes[i].getAttribute("data-expanded") == null) {
                 $(nodes[i]).find("li").hide();
             }
@@ -61,7 +62,7 @@ field.find(".filterText").keyup(function (event) {
     }
 });
 
-var showStructure = options.showStructure || !options.entityTypes || options.entityTypes.length !== 1;
+const showStructure = options.showStructure || !options.entityTypes || options.entityTypes.length !== 1;
 
 checkTreeElement.kendoTreeView({
     dataValueField: !showStructure ? "id" : "encryptedItemId",
@@ -74,8 +75,8 @@ checkTreeElement.kendoTreeView({
 
         startLoader();
 
-        let sourceItem = event.sender.dataItem(event.node);
-        let methodName = sourceItem.checked ? "add-links" : "remove-links";
+        const sourceItem = event.sender.dataItem(event.node);
+        const methodName = sourceItem.checked ? "add-links" : "remove-links";
 
         Wiser.api({
             url: `${window.dynamicItems.settings.wiserApiRoot}items/${methodName}`,
@@ -123,8 +124,8 @@ Wiser.api({
     url: window.dynamicItems.settings.serviceRoot + "/GET_COLUMNS_FOR_LINK_TABLE?linkTypeNumber=" + (options.linkTypeNumber || "") + "&id=" + encodeURIComponent(currentItemId),
     dataType: "json",
     method: "GET"
-}).then(function (customColumns) {
-    var model = {
+}).then((customColumns) => {
+    const model = {
         id: "id",
         fields: {
             id: {
@@ -145,7 +146,7 @@ Wiser.api({
         }
     };
 
-    var columns = [
+    const columns = [
         {
             field: "id",
             title: "Id",
@@ -158,22 +159,22 @@ Wiser.api({
     ];
 
     if (customColumns && customColumns.length > 0) {
-        for (var i = 0; i < customColumns.length; i++) {
-            var column = customColumns[i];
+        for (let i = 0; i < customColumns.length; i++) {
+            const column = customColumns[i];
             columns.push(column);
         }
     }
 
     if (!options.hideCommandColumn) {
         let commandColumnWidth = 60;
-        var commands = [];
+        const commands = [];
 
         if (!options.disableOpeningOfItems) {
             commands.push({
                 name: "openDetails",
                 iconClass: "k-icon k-i-hyperlink-open",
                 text: "&nbsp;",
-                click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, grid, options, false); }
+                click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, grid, options, false); }
             });
 
             if (options.allowOpeningOfItemsInNewTab) {
@@ -183,7 +184,7 @@ Wiser.api({
                     name: "openDetailsInNewTab",
                     iconClass: "k-icon k-i-window",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
                 });
             }
         }
@@ -195,7 +196,7 @@ Wiser.api({
                 name: "remove",
                 text: "",
                 iconClass: "k-icon k-i-delete",
-                click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
+                click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
             });
         }
 
@@ -206,7 +207,7 @@ Wiser.api({
         });
     }
 
-    var toolbar = [];
+    const toolbar = [];
 
     if (!options.toolbar || !options.toolbar.hideExportButton) {
         toolbar.push({name: "excel"});
@@ -233,17 +234,17 @@ Wiser.api({
         checkGridElement.empty();
     }
 
-    var grid = checkGridElement.kendoGrid({
+    const grid = checkGridElement.kendoGrid({
         dataSource: {
             transport: {
-                read: function(readOptions) {
+                read: (readOptions) => {
                     startLoader();
 
                     Wiser.api({
                         url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FOR_FIELD_TABLE?itemId=" + encodeURIComponent("{itemIdEncrypted}") + "&linkTypeNumber=" + (options.linkTypeNumber || "") + "&moduleId=" + options.moduleId + "&entity_type=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())),
                         dataType: "json",
                         method: "GET"
-                    }).then(function(results) {
+                    }).then((results) => {
                         if (!results) {
                             readOptions.success(results);
                             return;
@@ -260,7 +261,7 @@ Wiser.api({
                         stopLoader();
                     }).catch((error) => readOptions.error(error));
                 },
-                update: function(options) {
+                update: (options) => {
                     if (readonly === true) {
                         return;
                     }
@@ -285,17 +286,17 @@ Wiser.api({
                         contentType: "application/json",
                         dataType: "json",
                         data: JSON.stringify(itemModel)
-                    }).then(function(result) {
+                    }).then((result) => {
                         // notify the data source that the request succeeded
                         options.success(options.data);
                         stopLoader();
-                    }).catch(function(result) {
+                    }).catch((result) => {
                         // notify the data source that the request failed
                         options.error(result);
                         stopLoader();
                     });
                 },
-                destroy: function(destroyOptions) {
+                destroy: (destroyOptions) => {
                     if (readonly === true) {
                         return;
                     }
@@ -306,11 +307,11 @@ Wiser.api({
                         url: window.dynamicItems.settings.serviceRoot + "/REMOVE_LINK?source_plain=" + encodeURIComponent(options.data.id) + "&destination=" + encodeURIComponent(currentItemId) + "&linkTypeNumber=" + (options.linkTypeNumber || ""),
                         dataType: "json",
                         method: "GET"
-                    }).then(function(results) {
+                    }).then((results) => {
                         destroyOptions.success(results);
                         checkTreeElement.data("kendoTreeView").dataSource.read();
                         stopLoader();
-                    }).catch(function(result) {
+                    }).catch((result) => {
                         // notify the data source that the request failed
                         destroyOptions.error(result);
                         stopLoader();
@@ -350,23 +351,23 @@ Wiser.api({
                 }
             }
         },
-        edit: function (event) {
+        edit: (event) => {
             // Note: This code is a fix/workaround for editable grids inside a kendoSortable. Source: https://docs.telerik.com/kendo-ui/controls/interactivity/sortable/how-to/use-sortable-grid
-            var input = event.container.find("[data-role=numerictextbox]");
-            var widget = input.data("kendoNumericTextBox");
-            var model = event.model;
+            let input = event.container.find("[data-role=numerictextbox]");
+            const widget = input.data("kendoNumericTextBox");
+            const model = event.model;
 
             if (!widget) {
                 input = event.container.find("input");
-                input.on("keyup", function (event2) {
+                input.on("keyup", (inputEvent) => {
                     $(this).trigger("change");
                 });
             } else {
-                widget.bind("spin", function (e) {
+                widget.bind("spin", (e) => {
                     e.sender.trigger("change");
                 });
 
-                input.on("keyup", function (e) {
+                input.on("keyup", (e) => {
                     if (e.key === kendo.culture().numberFormat["."]) {
                         // for Kendo UI NumericTextBox only
                         return;
@@ -380,8 +381,8 @@ Wiser.api({
 
     grid.thead.kendoTooltip({
         filter: "th",
-        content: function (event) {
-            var target = event.target; // element for which the tooltip is shown
+        content: (event) =>{
+            const target = event.target; // element for which the tooltip is shown
             return $(target).text();
         }
     });

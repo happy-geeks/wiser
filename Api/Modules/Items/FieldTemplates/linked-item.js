@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
 const options = $.extend({
     "entityType": "item",
     "linkType": 1,
