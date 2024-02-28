@@ -19,23 +19,20 @@
             transport: {
                 read: async (options) => {
                     try {
-                        Wiser.api({
+                        let result = Wiser.api({
                             url: `${dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/action-button/{propertyId}?queryId=${encodeURIComponent(optionsFromProperty.queryId || 0)}`,
                             dataType: "json",
                             method: "POST",
                             contentType: "application/json",
                             data: options.data
                         })
+                        options.success(result);
                     }
                     catch (result) {
                         options.error(result);
                     }
-                    finally {
-                        options.success(result);
-                    }
                 }
             },
-        
             schema: {
                 data: "otherData"
             }

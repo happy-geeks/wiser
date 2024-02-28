@@ -31,7 +31,6 @@ const addFileUrl = async (event) => {
         kendo.alert("Vul a.u.b. een URL in.");
         return false;
     }
-    let dataResult = null;
 
     const fileData = {
         contentUrl: fileUrl,
@@ -40,20 +39,14 @@ const addFileUrl = async (event) => {
     };
 
     try {
-        dataResult = Wiser.api({
+        let dataResult = Wiser.api({
             method: "POST",
             contentType: "application/json",
             dataType: "json",
             url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/files/url?itemLinkId={itemLinkId}&propertyName=" + encodeURIComponent("{propertyName}") + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
             data: JSON.stringify(fileData)
-        })
-    }
-    catch(error) {
-        console.error("read error - {title}", error);
-        kendo.alert("Er is iets fout gegaan toevoegen van een bestands-URL voor het veld '{title}'. Probeer het a.u.b. nogmaals of neem contact op met ons.")
-    }
-    finally
-    {
+        });
+        
         dataResult.itemId = dataResult.itemId || "{itemIdEncrypted}";
         dataResult.addedOn = dataResult.addedOn || new Date();
         const newFile = {
@@ -72,6 +65,10 @@ const addFileUrl = async (event) => {
         const listItem = $("<li class='k-file k-file-success' />");
         listItem.html(fileTemplate(newFile));
         filesList.append(listItem);
+    }
+    catch(error) {
+        console.error("read error - {title}", error);
+        kendo.alert("Er is iets fout gegaan toevoegen van een bestands-URL voor het veld '{title}'. Probeer het a.u.b. nogmaals of neem contact op met ons.")
     };
 };
 
