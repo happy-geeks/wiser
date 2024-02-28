@@ -31,7 +31,7 @@ const stopLoader = (reloadGridWhenDone) => {
     }
 };
 
-field.find(".filterText").keyup(function (event) {
+field.find(".filterText").keyup((event) => {
     const filterText = $(this).val();
 
     if (filterText !== "") {
@@ -68,7 +68,7 @@ checkTreeElement.kendoTreeView({
     dataValueField: !showStructure ? "id" : "encryptedItemId",
     dataTextField: !showStructure ? "name" : "title",
     checkboxes: readonly !== true,
-    check: function(event) {
+    check: (event) => {
         if (readonly === true) {
             return;
         }
@@ -388,7 +388,7 @@ Wiser.api({
     });
 
     if (!options.disableOpeningOfItems) {
-        checkGridElement.on("dblclick", "tbody tr[data-uid]", function(event) { window.dynamicItems.grids.onShowDetailsClick(event, grid, options); });
+        checkGridElement.on("dblclick", "tbody tr[data-uid]", (event) => { window.dynamicItems.grids.onShowDetailsClick(event, grid, options); });
     }
 });
 })();
