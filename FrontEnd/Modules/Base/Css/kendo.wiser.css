@@ -1753,8 +1753,26 @@ textarea[readonly],
 .k-editor .k-i-wiser-translation:before {
 	content: "\e701";
 }
+.maximize-editor-window {
+	padding-bottom: 0;
+}
 .maximize-editor-window table.k-editor-widget {
 	height: calc(100vh - 10px);
+}
+.maximize-editor-window > .pane-content {
+	height: 100%;
+}
+.maximize-editor-window table.k-editor {
+	height: auto;
+	margin: 0;
+}
+.maximize-editor-window table.k-editor .k-editable-area {
+	position: relative;
+}
+.maximize-editor-window table.k-editor iframe.k-content {
+	position: absolute;
+	top: 0;
+	max-height: calc(100% - 16px);
 }
 .html-source-window .CodeMirror,
 .content-builder-window iframe {
