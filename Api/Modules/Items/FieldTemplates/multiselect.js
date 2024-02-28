@@ -1,7 +1,8 @@
-﻿(function() {
+﻿(() => {
 const container = $("#container_{propertyIdWithSuffix}");
 const field = $("#field_{propertyIdWithSuffix}");
 const fieldOptions = {options};
+
 const options = $.extend({
     autoClose: false,
     dataTextField: "name",
@@ -31,9 +32,11 @@ const options = $.extend({
         }
     }
 }, fieldOptions);
+
 let kendoComponent;
 
 const defaultValue = {default_value};
+
 if (defaultValue) {
     options.value = typeof defaultValue === "string" ? defaultValue.split(",") : defaultValue;
 }
@@ -126,6 +129,7 @@ if (options.newItems && options.newItems.allow && (options.newItems.entityType |
 if (options.mode === "checkBoxGroup") {
     // Set the main image.
     let mainImageUrl = options.mainImageUrl;
+    
     if (options.mainImageId) {
         mainImageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${options.imageId}/${encodeURIComponent("{propertyName}.png")}?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`;
     }
