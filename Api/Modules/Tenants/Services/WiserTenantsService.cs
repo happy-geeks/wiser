@@ -282,7 +282,7 @@ namespace Api.Modules.Tenants.Services
 
                     wiserDatabaseConnection.ClearParameters();
                     wiserDatabaseConnection.AddParameter("id", tenant.Id);
-                    await wiserDatabaseConnection.ExecuteAsync($"UPDATE {ApiTableNames.WiserTenants} SET tenantid = id WHERE id = ?id");
+                    await wiserDatabaseConnection.ExecuteAsync($"UPDATE {ApiTableNames.WiserTenants} SET customerid = id WHERE id = ?id");
 
                     // Remove passwords from response
                     if (tenant.Database != null)
@@ -369,7 +369,10 @@ namespace Api.Modules.Tenants.Services
                 catch
                 {
                     await wiserDatabaseConnection.RollbackTransactionAsync();
-                    await transaction.RollbackAsync();
+                    if (transaction != null)
+                    {
+                        await transaction.RollbackAsync();
+                    }
 
                     throw;
                 }
@@ -473,7 +476,7 @@ namespace Api.Modules.Tenants.Services
         public string GenerateConnectionStringFromTenant(TenantModel tenant, bool passwordIsEncrypted = true)
         {
             var decryptedPassword = passwordIsEncrypted ? tenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey) : tenant.Database.Password;
-            return $"server={tenant.Database.Host};port={(tenant.Database.PortNumber > 0 ? tenant.Database.PortNumber : 3306)};uid={tenant.Database.Username};pwd={decryptedPassword};database={tenant.Database.DatabaseName};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8";
+            return $"server={tenant.Database.Host};port={(tenant.Database.PortNumber > 0 ? tenant.Database.PortNumber : 3306)};uid={tenant.Database.Username};pwd={decryptedPassword};database={tenant.Database.DatabaseName};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8;IgnoreCommandTransaction=true";
         }
 
         #region Private functions
