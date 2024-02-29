@@ -45,7 +45,6 @@ using GeeksCoreLibrary.Core.Cms;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -57,14 +56,8 @@ using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
@@ -72,7 +65,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.JavaScript;
-using Constants = GeeksCoreLibrary.Modules.Templates.Models.Constants;
 using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Services
@@ -2041,15 +2033,6 @@ SELECT
     IFNULL(item.lastchangedby, item.createdby) AS changed_by,
     IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
     template.usecache AS use_cache,
-    template.cacheminutes AS cache_minutes,
-    template.handlerequest AS handle_request,
-    template.handlesession AS handle_session,
-    template.handleobjects AS handle_objects,
-    template.handlestandards AS handle_standards,
-    template.handletranslations AS handle_translations,
-    template.handledynamiccontent AS handle_dynamic_content,
-    template.handlelogicblocks AS handle_logic_blocks,
-    template.handlemutators AS handle_mutators,
     template.issecure AS login_required,
     template.securedsessionprefix AS login_session_prefix,
     CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
@@ -2225,16 +2208,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     clientDatabaseConnection.AddParameter("changed_on", changedOn);
                     clientDatabaseConnection.AddParameter("changed_by", changedBy);
                     clientDatabaseConnection.AddParameter("published_environment", publishedEnvironment);
-                    clientDatabaseConnection.AddParameter("use_cache", dataRow.IsNull("use_cache") ? 0 : dataRow["use_cache"]);
-                    clientDatabaseConnection.AddParameter("cache_minutes", dataRow.IsNull("cache_minutes") ? 0 : dataRow["cache_minutes"]);
-                    clientDatabaseConnection.AddParameter("handle_request", dataRow.IsNull("handle_request") ? 0 : dataRow["handle_request"]);
-                    clientDatabaseConnection.AddParameter("handle_session", dataRow.IsNull("handle_session") ? 0 : dataRow["handle_session"]);
-                    clientDatabaseConnection.AddParameter("handle_objects", dataRow.IsNull("handle_objects") ? 0 : dataRow["handle_objects"]);
-                    clientDatabaseConnection.AddParameter("handle_standards", dataRow.IsNull("handle_standards") ? 0 : dataRow["handle_standards"]);
-                    clientDatabaseConnection.AddParameter("handle_translations", dataRow.IsNull("handle_translations") ? 0 : dataRow["handle_translations"]);
-                    clientDatabaseConnection.AddParameter("handle_dynamic_content", dataRow.IsNull("handle_dynamic_content") ? 0 : dataRow["handle_dynamic_content"]);
-                    clientDatabaseConnection.AddParameter("handle_logic_blocks", dataRow.IsNull("handle_logic_blocks") ? 0 : dataRow["handle_logic_blocks"]);
-                    clientDatabaseConnection.AddParameter("handle_mutators", dataRow.IsNull("handle_mutators") ? 0 : dataRow["handle_mutators"]);
                     clientDatabaseConnection.AddParameter("login_required", dataRow.IsNull("login_required") ? 0 : dataRow["login_required"]);
                     clientDatabaseConnection.AddParameter("login_session_prefix", dataRow["login_session_prefix"]);
                     clientDatabaseConnection.AddParameter("linked_templates", dataRow["linked_templates"]);
@@ -2250,6 +2223,15 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     clientDatabaseConnection.AddParameter("grouping_value_column_name", dataRow["grouping_value_column_name"]);
                     clientDatabaseConnection.AddParameter("is_scss_include_template", dataRow.IsNull("is_scss_include_template") ? 0 : dataRow["is_scss_include_template"]);
                     clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", dataRow.IsNull("use_in_wiser_html_editors") ? 0 : dataRow["use_in_wiser_html_editors"]);
+
+                    var useCacheValue = dataRow.IsNull("use_cache") ? 0 : Convert.ToInt32(dataRow["use_cache"]);
+                    var cacheMinutesValue = dataRow.IsNull("cache_minutes") ? 0 : Convert.ToInt32(dataRow["cache_minutes"]);
+                    clientDatabaseConnection.AddParameter("cache_per_url", useCacheValue >= 3);
+                    clientDatabaseConnection.AddParameter("cache_per_querystring", useCacheValue >= 4);
+                    clientDatabaseConnection.AddParameter("cache_per_hostname", useCacheValue >= 5);
+                    clientDatabaseConnection.AddParameter("cache_using_regex", useCacheValue >= 6);
+                    clientDatabaseConnection.AddParameter("cache_minutes", useCacheValue == 0 && cacheMinutesValue <= 0 ? -1 : cacheMinutesValue);
+
                     await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
 
                     // Convert dynamic content.
