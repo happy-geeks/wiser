@@ -12,7 +12,7 @@
     "@innovastudio/contentbuilder": "^1.4.129",
     "@progress/kendo-licensing": "^1.2.1",
     "@progress/kendo-svg-icons": "^1.0.0",
-    "@progress/kendo-theme-material": "^5.5.0",
+    "@progress/kendo-theme-material": "^7.2.1",
     "@progress/kendo-ui": "^2022.2.621",
     "@progress/kendo-vue-dropdowns": "^3.9.0",
     "@progress/kendo-vue-intl": "^3.9.0",
