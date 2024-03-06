@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
-  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
+  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail_archive`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
-  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items',
+  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
