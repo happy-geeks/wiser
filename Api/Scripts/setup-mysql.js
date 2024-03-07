@@ -87,16 +87,6 @@
         await connection.query(insertInitialDataQuery.replace("?newCustomerId", "1"));
         console.log(notice("Data inserted."));
 
-        const insertInitialWTSDataQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialWTSData.sql"), "utf8");
-        await connection.query(insertInitialWTSDataQuery
-                .replace("?setting_hostname", arguments.host)
-                .replace("?setting_port", arguments.port)
-                .replace("?setting_username", arguments.user)
-                .replace("?setting_password", arguments.password)
-                .replace("?setting_database", arguments.database)
-        );
-        console.log(notice("Data inserted."));
-
         if (arguments.isMultiLanguage) {
             console.log(notice("Setting up multi language support..."));
             const insertInitialDataMultiLanguage = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/InsertInitialDataMultiLanguage.sql"), "utf8");
