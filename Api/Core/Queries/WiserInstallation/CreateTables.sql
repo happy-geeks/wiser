@@ -411,7 +411,7 @@ CREATE TABLE IF NOT EXISTS `wiser_module`  (
 -- Table structure for wiser_parent_updates
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_parent_updates`  (
-    `id` bigint NOT NULL AUTO_INCREMENT,
+    `id` int NOT NULL AUTO_INCREMENT,
     `target_id` bigint NULL DEFAULT NULL,
     `changed_on` datetime NULL DEFAULT NULL,
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
