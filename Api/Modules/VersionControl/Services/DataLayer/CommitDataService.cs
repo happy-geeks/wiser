@@ -481,7 +481,7 @@ LEFT JOIN {WiserTableNames.WiserTemplateDynamicContent} AS linkToTemplate ON lin
 LEFT JOIN {WiserTableNames.WiserTemplate} AS template ON template.template_id = linkToTemplate.destination_template_id AND template.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserTemplate} AS x WHERE x.template_id = linkToTemplate.destination_template_id)
 LEFT JOIN {WiserTableNames.WiserCommitReviews} AS review ON review.commit_id = `commit`.id
 {whereClause}
-GROUP BY content.content_id";
+GROUP BY content.content_id, commit.id";
 
 	    var dataTable = await databaseConnection.GetAsync(query);
 	    foreach (DataRow dataRow in dataTable.Rows)
