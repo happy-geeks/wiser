@@ -902,7 +902,7 @@ END;
 
 DROP TRIGGER IF EXISTS `FileUpdate`;
 CREATE TRIGGER `FileUpdate` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT
+    DECLARE previousItemId BIGINT;
 
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         IF NEW.item_id <> OLD.item_id THEN
