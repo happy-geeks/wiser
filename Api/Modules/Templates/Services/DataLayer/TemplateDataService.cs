@@ -1613,12 +1613,13 @@ WHERE NOT EXISTS (
 DELETE FROM `{branchDatabaseName}`.{WiserTableNames.WiserTemplateExternalFiles} WHERE template_id IN (SELECT id FROM `{branchDatabaseName}`.`{temporaryTableName}`);
 INSERT INTO `{branchDatabaseName}`.{WiserTableNames.WiserTemplateExternalFiles} (template_id, external_file, hash, ordering)
 SELECT 
-    file.template_id, 
+    branchTemplate.id, 
     file.external_file,
     file.hash,
     file.ordering 
 FROM `{branchDatabaseName}`.`{temporaryTableName}` AS template
-JOIN {WiserTableNames.WiserTemplateExternalFiles} AS file ON file.template_id = template.id;
+JOIN {WiserTableNames.WiserTemplateExternalFiles} AS file ON file.template_id = template.id
+JOIN `{branchDatabaseName}`.{WiserTableNames.WiserTemplate} AS branchTemplate ON branchTemplate.template_id = template.template_id AND branchTemplate.version = template.version;
 
 DROP TABLE IF EXISTS `{branchDatabaseName}`.`{temporaryTableName}`";
             await clientDatabaseConnection.ExecuteAsync(query);
