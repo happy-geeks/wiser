@@ -393,9 +393,19 @@ SELECT LAST_INSERT_ID() AS newId;";
                 throw new ArgumentNullException(nameof(encryptedItemId));
             }
 
-            if (!UInt64.TryParse(encryptedItemId, out var itemId))
+            ulong itemId;
+
+            try
             {
                 itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
+            }
+            catch (FormatException)
+            {
+                return new ServiceResult<(string ContentType, byte[] Data, string Url)>()
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = $"Failed to decrypt item ID '{encryptedItemId}'."
+                };
             }
 
             if (fileId <= 0 && String.IsNullOrEmpty(propertyName))
