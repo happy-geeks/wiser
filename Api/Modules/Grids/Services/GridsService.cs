@@ -98,6 +98,7 @@ namespace Api.Modules.Grids.Services
             ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.SetCommandTimeout(600);
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
             var encryptionKey = tenant.ModelObject.EncryptionKey;
             var itemId = wiserTenantsService.DecryptValue<ulong>(encryptedId, tenant.ModelObject);
@@ -2101,6 +2102,7 @@ namespace Api.Modules.Grids.Services
             ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.SetCommandTimeout(600);
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
             var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : wiserTenantsService.DecryptValue<int>(encryptedQueryId, tenant.ModelObject);
             var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : wiserTenantsService.DecryptValue<int>(encryptedCountQueryId, tenant.ModelObject);
