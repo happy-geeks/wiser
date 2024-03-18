@@ -96,7 +96,6 @@ export default class UsersService extends BaseService {
             result.success = true;
             result.data = loginResult.data;
             result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in  > 60 ? 60 : 0)) * 1000));
-            result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);

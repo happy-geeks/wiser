@@ -496,7 +496,7 @@ const moduleSettings = {
                         settingsListToUse[propertyName] = kendoControl.value();
                         return;
                     } else {
-                        console.warn(`Kendo control found for '${propertyName}', but it's not initialized, so skipping this property.`, kendoControlName, data);
+                        console.warn(`Kendo control found for '${propertyName}', but it's not initialized, so skipping this property.`, kendoControlName);
                         return;
                     }
                 }

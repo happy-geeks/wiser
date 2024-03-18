@@ -88,4 +88,9 @@ public class TemplateCommitModel
     /// Gets or sets the name of the user that made the commit.
     /// </summary>
     public string ChangedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the template is deleted in this commit.
+    /// </summary>
+    public bool Deleted { get; set; }
 }
