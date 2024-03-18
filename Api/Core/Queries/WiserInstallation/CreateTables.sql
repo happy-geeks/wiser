@@ -412,6 +412,18 @@ CREATE TABLE IF NOT EXISTS `wiser_module`  (
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Table structure for wiser_parent_updates
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_parent_updates`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `target_id` bigint NULL DEFAULT NULL,
+    `changed_on` datetime NULL DEFAULT NULL,
+    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `target_table` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for wiser_permission
 -- ----------------------------
 -- NOTE: When changing columns, make sure to also change the triggers for this table!
