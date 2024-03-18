@@ -80,7 +80,7 @@
         stylesheets: [
             window.dynamicItems.settings.htmlEditorCssUrl
         ],
-        keyup: (event) => window.dynamicItems.fields.onHtmlEditorKeyUp.call(window.dynamicItems.fields, event, this),
+        keyup: (event) => window.dynamicItems.fields.onHtmlEditorKeyUp.call(window.dynamicItems.fields, event, kendoComponent),
         serialization: {
             custom: window.dynamicItems.fields.onHtmlEditorSerialization
         },
