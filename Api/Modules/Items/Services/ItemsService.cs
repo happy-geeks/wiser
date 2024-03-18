@@ -125,7 +125,7 @@ namespace Api.Modules.Items.Services
                     whereClause.Add("item.title = ?title");
                     clientDatabaseConnection.AddParameter("title", filters.Title);
                 }
-                
+
                 if (!String.IsNullOrWhiteSpace(filters.EntityType))
                 {
                     whereClause.Add("item.entity_type = ?entityType");
@@ -817,6 +817,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.SetCommandTimeout(600);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity, true);
             var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
@@ -915,6 +916,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         public async Task<ServiceResult<ActionButtonResultModel>> ExecuteCustomQueryAsync(string encryptedId, int propertyId, Dictionary<string, object> extraParameters, string encryptedQueryId, ClaimsIdentity identity, ulong itemLinkId = 0)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.SetCommandTimeout(600);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var username = IdentityHelpers.GetUserName(identity, true);
             var userEmailAddress = IdentityHelpers.GetEmailAddress(identity);
