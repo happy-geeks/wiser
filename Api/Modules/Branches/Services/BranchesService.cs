@@ -427,6 +427,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
                         WiserSettingTypes.Query => "Query's",
                         WiserSettingTypes.Role => "Rollen",
                         WiserSettingTypes.UserRole => "Koppelingen tussen gebruikers en rollen",
+                        WiserSettingTypes.StyledOutput => "Styled output (Wiser API query output configuraties)",
                         _ => throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null)
                     }
                 };
