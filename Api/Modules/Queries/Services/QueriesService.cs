@@ -339,6 +339,15 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
             {
                 return new ServiceResult<JToken>(result);
             }
+            
+            if (!dataTable.Columns.Contains("key") || !dataTable.Columns.Contains("value"))
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The query result does not contain the expected columns 'key' and 'value'."
+                };
+            }
 
             var combinedResult = new JObject();
 
