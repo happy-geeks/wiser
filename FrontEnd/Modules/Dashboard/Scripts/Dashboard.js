@@ -731,7 +731,6 @@ const moduleSettings = {
                     categories: categories
                 }
             });
-            console.log("bla", filter, this.itemsData[filter]);
             dataChart.setDataSource(this.itemsData[filter]);
         }
 

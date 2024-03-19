@@ -21,7 +21,6 @@
         name: "wiserHtmlSource",
         tooltip: "HTML bekijken/aanpassen",
         exec: (e) => {
-            console.log("bla", e);
             window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}")
         }
     };
