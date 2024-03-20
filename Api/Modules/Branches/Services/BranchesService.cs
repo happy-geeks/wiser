@@ -759,6 +759,21 @@ LIMIT 1";
                             AddSettingToMutationList(deletedSettings, WiserSettingTypes.DataSelector, itemId);
                             break;
                         }
+                        case "CREATE_STYLED_OUTPUT":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.StyledOutput, itemId);
+                            break;
+                        }
+                        case "UPDATE_STYLED_OUTPUT":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.StyledOutput, itemId);
+                            break;
+                        }
+                        case "DELETE_STYLED_OUTPUT":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.StyledOutput, itemId);
+                            break;
+                        }
 
                         // Changes to items.
                         case "CREATE_ITEM":
@@ -1454,6 +1469,20 @@ FROM {WiserTableNames.WiserHistory}";
 
                         conflict.Type = "dataSelector";
                         conflict.TypeDisplayName = "Dataselector";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
+                    case "UPDATE_STYLED_OUTPUT":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.StyledOutput && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "styledOutput";
+                        conflict.TypeDisplayName = "Styled output";
                         conflict.Title = $"#{conflict.ObjectId}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
