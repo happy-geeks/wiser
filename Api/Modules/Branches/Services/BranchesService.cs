@@ -339,6 +339,7 @@ WHERE action = 'create'";
                 var filesTable = new DataTable();
                 await using (var branchCommand = branchConnection.CreateCommand())
                 {
+                    branchCommand.CommandTimeout = 300;
                     branchCommand.CommandText = @$"SELECT id, item_id, itemlink_id FROM {tableName}
 UNION ALL
 SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}";
@@ -356,6 +357,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
             var dataTable = new DataTable();
             await using (var branchCommand = branchConnection.CreateCommand())
             {
+                branchCommand.CommandTimeout = 300;
                 branchCommand.CommandText = $"SELECT action, tablename, item_id, field, oldvalue, newvalue FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
                 using var branchAdapter = new MySqlDataAdapter(branchCommand);
                 branchAdapter.Fill(dataTable);
@@ -1552,6 +1554,7 @@ FROM {WiserTableNames.WiserHistory}";
             var dataTable = new DataTable();
 
             await using var productionCommand = mainConnection.CreateCommand();
+            productionCommand.CommandTimeout = 14400;
             productionCommand.Parameters.AddWithValue("lastChange", lastMergeDate);
             productionCommand.CommandText = $@"SELECT 
     action,
