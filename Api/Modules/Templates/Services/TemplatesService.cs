@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Text;
@@ -12,12 +13,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using System.Xml;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Kendo.Enums;
+using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -42,6 +45,7 @@ using GeeksCoreLibrary.Components.WebForm.Models;
 using GeeksCoreLibrary.Components.WebPage;
 using GeeksCoreLibrary.Components.WebPage.Models;
 using GeeksCoreLibrary.Core.Cms;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -97,6 +101,7 @@ namespace Api.Modules.Templates.Services
         private readonly IBranchesService branchesService;
         private readonly IMeasurementsDataService measurementsDataService;
         private readonly IDynamicContentDataService dynamicContentDataService;
+        private readonly IWtsConfigurationService wtsConfigurationService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
@@ -121,7 +126,8 @@ namespace Api.Modules.Templates.Services
             IWebHostEnvironment webHostEnvironment,
             IBranchesService branchesService,
             IMeasurementsDataService measurementsDataService,
-            IDynamicContentDataService dynamicContentDataService)
+            IDynamicContentDataService dynamicContentDataService,
+            IWtsConfigurationService wtsConfigurationService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserTenantsService = wiserTenantsService;
@@ -144,6 +150,7 @@ namespace Api.Modules.Templates.Services
             this.branchesService = branchesService;
             this.measurementsDataService = measurementsDataService;
             this.dynamicContentDataService = dynamicContentDataService;
+            this.wtsConfigurationService = wtsConfigurationService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -1400,9 +1407,44 @@ LIMIT 1";
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
             var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
-            templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
+            templateData.EditorValue = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
 
             return new ServiceResult<TemplateSettingsModel>(templateData);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        {
+            if (templateId <= 0)
+            {
+                throw new ArgumentException("The Id cannot be zero.");
+            }
+
+            // Grab the encrypted xml from the database.
+            var templateData = await templateDataService.GetXmlAsync(templateId, environment);
+            var templateEnvironmentsResult = await GetTemplateEnvironmentsAsync(templateId);
+            if (templateEnvironmentsResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<TemplateWtsConfigurationModel>
+                {
+                    ErrorMessage = templateEnvironmentsResult.ErrorMessage,
+                    StatusCode = templateEnvironmentsResult.StatusCode
+                };
+            }
+
+            // Q: What is this for? (Later op terugkomen)
+            // templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
+            
+            // Grab the encryption key from the database.
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
+            
+            // Decrypt the xml
+            var decryptedXml = templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData.EditorValue);
+
+            // Parse the xml
+            var templateXml = wtsConfigurationService.ParseXmlToObject(decryptedXml);
+            
+            return new ServiceResult<TemplateWtsConfigurationModel>(templateXml);
         }
 
         /// <inheritdoc />
@@ -1474,6 +1516,24 @@ LIMIT 1";
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
             return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            // Convert the configuration object to raw XML
+            var updatedEditorValue = wtsConfigurationService.ParseObjectToXml(configuration);
+            
+            // Get the latest version of the template
+            var latestVersion = await GetTemplateSettingsAsync(identity, templateId);
+            
+            // Convert the latest version to a model we can work with
+            var latestVersionModel = latestVersion.ModelObject;
+            
+            // Update the model with the new configuration
+            latestVersionModel.EditorValue = updatedEditorValue;
+
+            return await SaveAsync(identity, latestVersionModel);
         }
 
         /// <inheritdoc />
@@ -1567,6 +1627,9 @@ LIMIT 1";
                     {
                         break;
                     }
+                    
+                    // Make sure all true/false values are lowercase, because the XML parser is case-sensitive.
+                    trimmedValue = Regex.Replace(trimmedValue, @"(?i)(true|false)", match => match.Value.ToLower());
 
                     var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
                     template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);

@@ -1,0 +1,79 @@
+﻿@import "../../Base/scss/base.scss";
+
+#wtsConfigurationTab {
+}
+#wtsConfigurationTab .formview.compact .item {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#wtsConfigurationTab .formview.compact .item h4  {
+    padding: 0.25em 0 0.25em 0;
+}
+#wtsConfigurationTab .formview.compact .item input,
+#wtsConfigurationTab .formview.compact .item select,
+#wtsConfigurationTab .formview.compact .item .k-dropdownlist{
+    flex: 1 1 auto;
+    width: auto;
+}
+#wtsConfigurationTab .formview.compact .item > div {
+    padding-left: 215px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 1rem;
+}
+#wtsConfigurationTab .formview.compact .item > div > label {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+#wtsConfigurationTab .formview.compact .item > div > label > span {
+    flex: 1 1 auto;
+    width: 100%;
+}
+#wtsConfigurationTab .formview.compact .item > div > label > span:first-child {
+    flex: 0 0 auto;
+    width: fit-content;
+}
+
+#wtsConfigurationTab .formview.compact .item label.checkbox span {
+    padding: 0 0 0 32px;
+    line-height: 24px;
+    min-height: 24px;
+}
+#wtsConfigurationTab .formview.compact .item label.checkbox span:before {
+    top: 1px;
+}
+#wtsConfigurationTab .formview.compact .item label.checkbox span:after {
+    top: 6px;
+}
+#wtsConfigurationTab .formview.compact .item .form-hint {
+    flex-basis: 100%;
+    line-height: 1.75rem;
+}
+#wtsConfigurationTab .formview.compact .item > .k-button {
+    width: auto;
+    margin-left: 215px;
+}
+#wtsConfigurationTab .formview.compact .item > .grid.k-grid{
+    padding-left: 0;
+    margin-left: 215px;
+    display: block;
+}
+#wtsConfigurationTab .formview.compact .item.full > div {
+    padding-left: 0;
+}
+#wtsConfigurationTab .formview.compact .item.full > .grid.k-grid,
+#wtsConfigurationTab .formview.compact .item.full > .k-button {
+    margin-left: 0;
+}
+#wtsConfigurationTab .formview.compact .form-hint-align-left {
+    padding-left: 0 !important;
+    padding-right: 215px;
+}
+#serviceTab .formview .item:last-child, #timersTab .formview .item:last-child, #actionsTab .formview .item:last-child {
+    margin-bottom: 70px !important; 
+}
