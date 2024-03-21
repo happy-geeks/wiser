@@ -403,7 +403,7 @@ ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(CONCAT(NULLIF(entity.friendly_name, ''), ' (', entity.name, ')'), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
     entity.module_id AS moduleId 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
