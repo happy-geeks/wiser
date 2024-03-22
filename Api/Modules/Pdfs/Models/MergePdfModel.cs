@@ -18,5 +18,5 @@ public class MergePdfModel
     /// <summary>
     /// Gets or sets the property name of the files to retreive, this can be a comma-separated list
     /// </summary>
-    public string PropertyNames { get; set; }
+    public string[] PropertyNames { get; set; }
 }
