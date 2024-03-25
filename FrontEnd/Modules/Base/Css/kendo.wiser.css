@@ -1756,23 +1756,8 @@ textarea[readonly],
 .maximize-editor-window {
 	padding-bottom: 0;
 }
-.maximize-editor-window table.k-editor-widget {
-	height: calc(100vh - 10px);
-}
-.maximize-editor-window > .pane-content {
-	height: 100%;
-}
 .maximize-editor-window table.k-editor {
-	height: auto;
-	margin: 0;
-}
-.maximize-editor-window table.k-editor .k-editable-area {
-	position: relative;
-}
-.maximize-editor-window table.k-editor iframe.k-content {
-	position: absolute;
-	top: 0;
-	max-height: calc(100% - 16px);
+	height: calc(100vh - 10px);
 }
 .html-source-window .CodeMirror,
 .content-builder-window iframe {
@@ -2075,7 +2060,7 @@ table.k-editor {
 	transform: translate(-7px, 1px);
 }
 
-/********************** 
+/**********************
 * Table Wizard Popup fix
 **********************/
 .k-editor-dialog.k-editor-table-wizard-dialog .k-tabstrip .k-tabstrip-items {
@@ -2092,7 +2077,7 @@ table.k-editor {
 	overflow-y: scroll;
 }
 
-/********************** 
+/**********************
 * Focus for tab-navigation
 **********************/
 a:focus,
@@ -2114,7 +2099,7 @@ textarea:focus,
 	border-color: var(--primary-color);
 }
 
-/********************** 
+/**********************
 * Focus for tab-navigation
 **********************/
 a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
@@ -2130,7 +2115,7 @@ a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus,
 	border-color: var(--primary-color);
 }
 
-/********************** 
+/**********************
 * CodeMirror
 **********************/
 .dynamicTabContent .CodeMirror-fullscreen {
