@@ -1753,7 +1753,10 @@ textarea[readonly],
 .k-editor .k-i-wiser-translation:before {
 	content: "\e701";
 }
-.maximize-editor-window table.k-editor-widget {
+.maximize-editor-window {
+	padding-bottom: 0;
+}
+.maximize-editor-window table.k-editor {
 	height: calc(100vh - 10px);
 }
 .html-source-window .CodeMirror,
@@ -2057,7 +2060,7 @@ table.k-editor {
 	transform: translate(-7px, 1px);
 }
 
-/********************** 
+/**********************
 * Table Wizard Popup fix
 **********************/
 .k-editor-dialog.k-editor-table-wizard-dialog .k-tabstrip .k-tabstrip-items {
@@ -2074,7 +2077,7 @@ table.k-editor {
 	overflow-y: scroll;
 }
 
-/********************** 
+/**********************
 * Focus for tab-navigation
 **********************/
 a:focus,
@@ -2096,7 +2099,7 @@ textarea:focus,
 	border-color: var(--primary-color);
 }
 
-/********************** 
+/**********************
 * Focus for tab-navigation
 **********************/
 a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
@@ -2112,7 +2115,7 @@ a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus,
 	border-color: var(--primary-color);
 }
 
-/********************** 
+/**********************
 * CodeMirror
 **********************/
 .dynamicTabContent .CodeMirror-fullscreen {
