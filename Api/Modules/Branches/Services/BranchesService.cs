@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Branches.Models;
@@ -25,8 +26,10 @@ using GeeksCoreLibrary.Modules.Branches.Helpers;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySqlConnector;
 using Newtonsoft.Json;
+using Constants = Api.Modules.Branches.Models.Constants;
 
 namespace Api.Modules.Branches.Services
 {
@@ -38,18 +41,20 @@ namespace Api.Modules.Branches.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<BranchesService> logger;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly ApiSettings apiSettings;
         private readonly IDatabaseConnection wiserDatabaseConnection;
 
         /// <summary>
         /// Creates a new instance of <see cref="BranchesService"/>.
         /// </summary>
-        public BranchesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService)
+        public BranchesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService, IOptions<ApiSettings> apiSettings)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = connection;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
             this.wiserItemsService = wiserItemsService;
+            this.apiSettings = apiSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection databaseConnection)
             {
@@ -339,6 +344,7 @@ WHERE action = 'create'";
                 var filesTable = new DataTable();
                 await using (var branchCommand = branchConnection.CreateCommand())
                 {
+                    branchCommand.CommandTimeout = Constants.SqlCommandTimeout;
                     branchCommand.CommandText = @$"SELECT id, item_id, itemlink_id FROM {tableName}
 UNION ALL
 SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}";
@@ -356,6 +362,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
             var dataTable = new DataTable();
             await using (var branchCommand = branchConnection.CreateCommand())
             {
+                branchCommand.CommandTimeout = Constants.SqlCommandTimeout;
                 branchCommand.CommandText = $"SELECT action, tablename, item_id, field, oldvalue, newvalue FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
                 using var branchAdapter = new MySqlDataAdapter(branchCommand);
                 branchAdapter.Fill(dataTable);
@@ -427,6 +434,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
                         WiserSettingTypes.Query => "Query's",
                         WiserSettingTypes.Role => "Rollen",
                         WiserSettingTypes.UserRole => "Koppelingen tussen gebruikers en rollen",
+                        WiserSettingTypes.StyledOutput => "Styled output (Wiser API query output configuraties)",
                         _ => throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null)
                     }
                 };
@@ -756,6 +764,21 @@ LIMIT 1";
                         case "DELETE_DATA_SELECTOR":
                         {
                             AddSettingToMutationList(deletedSettings, WiserSettingTypes.DataSelector, itemId);
+                            break;
+                        }
+                        case "CREATE_STYLED_OUTPUT":
+                        {
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.StyledOutput, itemId);
+                            break;
+                        }
+                        case "UPDATE_STYLED_OUTPUT":
+                        {
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.StyledOutput, itemId);
+                            break;
+                        }
+                        case "DELETE_STYLED_OUTPUT":
+                        {
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.StyledOutput, itemId);
                             break;
                         }
 
@@ -1457,6 +1480,20 @@ FROM {WiserTableNames.WiserHistory}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
+                    case "UPDATE_STYLED_OUTPUT":
+                    {
+                        // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
+                        if (!mergeBranchSettings.Settings.Any(x => x.Type == WiserSettingTypes.StyledOutput && x.Update))
+                        {
+                            continue;
+                        }
+
+                        conflict.Type = "styledOutput";
+                        conflict.TypeDisplayName = "Styled output";
+                        conflict.Title = $"#{conflict.ObjectId}";
+                        conflict.FieldDisplayName = conflict.FieldName;
+                        break;
+                    }
 
                     // Changes to items. We don't check the mergeBranchSettings here, because we don't know the entity types of items here yet.
                     // The mergeBranchSettings for items will be checked in FindConflictsInMainBranchAsync.
@@ -1522,6 +1559,7 @@ FROM {WiserTableNames.WiserHistory}";
             var dataTable = new DataTable();
 
             await using var productionCommand = mainConnection.CreateCommand();
+            productionCommand.CommandTimeout = apiSettings.SqlCommandTimeoutForExportsAndLongQueries;
             productionCommand.Parameters.AddWithValue("lastChange", lastMergeDate);
             productionCommand.CommandText = $@"SELECT 
     action,

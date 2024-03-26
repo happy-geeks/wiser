@@ -335,6 +335,12 @@ class Main {
                                 create: true,
                                 update: true,
                                 delete: true
+                            },
+                            styledOutput: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
                             }
                         },
                         checkForConflicts: true,
