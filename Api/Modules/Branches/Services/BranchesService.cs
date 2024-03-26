@@ -9,6 +9,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Branches.Models;
@@ -25,8 +26,10 @@ using GeeksCoreLibrary.Modules.Branches.Helpers;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySqlConnector;
 using Newtonsoft.Json;
+using Constants = Api.Modules.Branches.Models.Constants;
 
 namespace Api.Modules.Branches.Services
 {
@@ -38,18 +41,20 @@ namespace Api.Modules.Branches.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<BranchesService> logger;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly ApiSettings apiSettings;
         private readonly IDatabaseConnection wiserDatabaseConnection;
 
         /// <summary>
         /// Creates a new instance of <see cref="BranchesService"/>.
         /// </summary>
-        public BranchesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService)
+        public BranchesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection connection, IDatabaseHelpersService databaseHelpersService, ILogger<BranchesService> logger, IWiserItemsService wiserItemsService, IOptions<ApiSettings> apiSettings)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = connection;
             this.databaseHelpersService = databaseHelpersService;
             this.logger = logger;
             this.wiserItemsService = wiserItemsService;
+            this.apiSettings = apiSettings.Value;
 
             if (clientDatabaseConnection is ClientDatabaseConnection databaseConnection)
             {
@@ -339,7 +344,7 @@ WHERE action = 'create'";
                 var filesTable = new DataTable();
                 await using (var branchCommand = branchConnection.CreateCommand())
                 {
-                    branchCommand.CommandTimeout = 300;
+                    branchCommand.CommandTimeout = Constants.SqlCommandTimeout;
                     branchCommand.CommandText = @$"SELECT id, item_id, itemlink_id FROM {tableName}
 UNION ALL
 SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}";
@@ -357,7 +362,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
             var dataTable = new DataTable();
             await using (var branchCommand = branchConnection.CreateCommand())
             {
-                branchCommand.CommandTimeout = 300;
+                branchCommand.CommandTimeout = Constants.SqlCommandTimeout;
                 branchCommand.CommandText = $"SELECT action, tablename, item_id, field, oldvalue, newvalue FROM `{WiserTableNames.WiserHistory}` ORDER BY id ASC";
                 using var branchAdapter = new MySqlDataAdapter(branchCommand);
                 branchAdapter.Fill(dataTable);
@@ -1554,7 +1559,7 @@ FROM {WiserTableNames.WiserHistory}";
             var dataTable = new DataTable();
 
             await using var productionCommand = mainConnection.CreateCommand();
-            productionCommand.CommandTimeout = 14400;
+            productionCommand.CommandTimeout = apiSettings.SqlCommandTimeoutForExportsAndLongQueries;
             productionCommand.Parameters.AddWithValue("lastChange", lastMergeDate);
             productionCommand.CommandText = $@"SELECT 
     action,
