@@ -134,6 +134,7 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserPermission,
                 WiserTableNames.WiserCommunication,
                 WiserTableNames.WiserStyledOutput,
+                WiserTableNames.WiserParentUpdates,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
 
