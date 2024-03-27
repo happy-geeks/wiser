@@ -552,6 +552,7 @@ const moduleSettings = {
                         }
                     }
                 ],
+                resizable: true,
                 dataBound: this.setServiceState.bind(this)
             }).data("kendoGrid");
             $(servicesGridElement).kendoTooltip({ filter: ".k-grid-start", content: "Start" });
