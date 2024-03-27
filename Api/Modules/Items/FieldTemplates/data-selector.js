@@ -2,7 +2,7 @@
     const field = $("#field_{propertyIdWithSuffix}");
     
     const options = $.extend({
-        click: function(event) {
+        click: (event) => {
             window.dynamicItems.fields.onDataSelectorButtonClick(event, {default_value}, {itemId}, {propertyId}, {options}, field); 
         },
         icon: "gear"
