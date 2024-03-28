@@ -3062,7 +3062,7 @@ export class Fields {
             click: (event) => {
                 this.onHtmlEditorImageExec(event, null, codeMirrorInstance);
             },
-            icon: "image-insert"
+            icon: "image-add"
         });
         htmlWindow.find(".addTemplate").kendoButton({
             click: () => {
@@ -3179,6 +3179,11 @@ export class Fields {
                 const minimizeTool = {
                     name: "wiserMinimizeEditor",
                     tooltip: "Verkleinen",
+                    ui: {
+                        type: "button",
+                        text: "Verkleinen",
+                        icon: "window-restore"
+                    },
                     exec: (e) => {
                         editor.value(windowKendoEditor.value());
                         kendoWindow.close();

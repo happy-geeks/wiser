@@ -20,9 +20,7 @@
     const htmlSourceTool = {
         name: "wiserHtmlSource",
         tooltip: "HTML bekijken/aanpassen",
-        exec: (e) => {
-            window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}")
-        }
+        exec: (e) => { window.dynamicItems.fields.onHtmlEditorHtmlSourceExec.call(window.dynamicItems.fields, event, kendoComponent, "{itemId}") }
     };
     const maximizeTool = {
         name: "wiserMaximizeEditor",
@@ -64,7 +62,10 @@
     };
 
     const options = $.extend(true, {
-        resizable: true,
+        resizable: {
+        content: true,
+        toolbar: false
+    },
         pasteCleanup: {
             all: false,
             css: false,

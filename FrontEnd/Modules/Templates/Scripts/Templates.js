@@ -18,8 +18,9 @@ require("@progress/kendo-ui/js/kendo.grid.js");
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.datepicker.js");
 require("@progress/kendo-ui/js/kendo.daterangepicker.js");
-require("@progress/kendo-ui/js/dataviz/chart/chart.js");
-require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
+require("@progress/kendo-ui/js/kendo.dataviz.chart.js");
+require("@progress/kendo-ui/js/kendo.dataviz.js");
+//require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
@@ -966,7 +967,7 @@ const moduleSettings = {
                                 {
                                     name: "Open",
                                     text: "",
-                                    iconClass: "k-icon k-i-edit",
+                                    iconClass: "k-icon k-i-pencil",
                                     click: this.onDynamicContentOpenClick.bind(this)
                                 },
                                 {
@@ -1147,11 +1148,21 @@ const moduleSettings = {
                 const insertDynamicContentTool = {
                     name: "wiserDynamicContent",
                     tooltip: "Dynamische inhoud toevoegen",
+                    ui: {
+                        type: "button",
+                        text: "Dynamische inhoud toevoegen",
+                        icon: "css"
+                    },
                     exec: this.onHtmlEditorDynamicContentExec.bind(this)
                 };
                 const htmlSourceTool = {
                     name: "wiserHtmlSource",
                     tooltip: "HTML bekijken/aanpassen",
+                    ui: {
+                        type: "button",
+                        text: "HTML bekijken/aanpassen",
+                        icon: "code"
+                    },
                     exec: this.onHtmlEditorHtmlSourceExec.bind(this)
                 };
 
@@ -1162,6 +1173,11 @@ const moduleSettings = {
                 const translationsTool = {
                     name: "wiserTranslation",
                     tooltip: "Vertaling invoegen",
+                    ui: {
+                        type: "button",
+                        text: "Vertaling invoegen",
+                        icon: "globe"
+                    },
                     exec: function(e) { Wiser.onHtmlEditorTranslationExec.call(Wiser, e, $(this).data("kendoEditor"), wiserApiRoot); }
                 };
 

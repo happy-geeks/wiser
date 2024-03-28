@@ -345,6 +345,9 @@ ins, a {
         margin: 5px;
         padding: 4px;
         z-index: 10;
+        display: block;
+        height: 38px;
+        width: 38px;
         
         &:hover {
             background: var(--item-bg-color)!important;

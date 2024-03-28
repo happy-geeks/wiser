@@ -15,7 +15,7 @@ require("@progress/kendo-ui/js/kendo.window.js");
 require("@progress/kendo-ui/js/kendo.numerictextbox.js");
 require("@progress/kendo-ui/js/kendo.dropdownlist.js");
 require("@progress/kendo-ui/js/kendo.tabstrip.js");
-require("@progress/kendo-ui/js/filemanager/contextmenu.js");
+require("@progress/kendo-ui/js/kendo.filemanager.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 

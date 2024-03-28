@@ -7,8 +7,7 @@
     <meta charset="utf-8" />
     <title>Wiser 3 - Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/themes/6.4.0/material/material-main.css" rel="stylesheet" />
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
@@ -40,7 +39,7 @@
                 <!-- TABS -->
                 <div class="tabstrip k-tabstrip-wrapper" id="MainTabStrip">
                     <ul>
-                        <li class="k-state-active" data-class="moduleTab">Modules</li>
+                        <li class="k-active" data-class="moduleTab">Modules</li>
                         <li data-class="entityTab">Entiteiten</li>
                         <li data-class="roleTab">Rollen</li>
                         <li data-class="wiserQueryTab">Query's</li>
@@ -1629,7 +1628,7 @@
                             <div class="pane-content">
                                 <div class="tabstrip k-tabstrip-wrapper" id="RolesTabStrip">
                                     <ul>
-                                        <li class="k-state-active">Velden</li>
+                                        <li class="k-active">Velden</li>
                                         <li>Modules</li>
                                         <li>Query's</li>
                                     </ul>

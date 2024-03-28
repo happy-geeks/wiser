@@ -8,12 +8,11 @@
     <title>Wiser 3 - Dynamic items</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/themes/6.4.0/material/material-main.css" rel="stylesheet" />
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
-    
+
     <style>
         #mainScreenForm,
         body.iframe #left-pane,
@@ -366,7 +365,7 @@
     <div id="fileManagerWindow" class="popup-container">
         <div class="horizontal">
             <iframe frameborder="0" id="fileManagerFrame"></iframe>
-            
+
             <!-- FIXED FOOTER -->
             <footer class="fixed">
                 <div class="actions">
@@ -651,6 +650,7 @@
     <webpack-script file-name="vendors.js"></webpack-script>
     <webpack-script file-name="Processing.js"></webpack-script>
     <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <script src="/kendo-ui-license.js"></script>
     <webpack-script file-name="DynamicItems.js"></webpack-script>
     <webpack-script file-name="Fields.js"></webpack-script>
     <webpack-script file-name="Dialogs.js"></webpack-script>

@@ -1,7 +1,10 @@
-﻿@import "../../Base/Css/kendo.custom.css";
+@import "../../Base/Css/kendo.custom.css";
 @import "../../Base/Css/kendo.wiser.css";
 @import "../../Base/Css/fonts.css";
 @import "../../Base/Css/icons.css";
 @import "../../Base/Css/variables.css";
 @import "../../Base/Css/masterpage.css";
 @import "../../Base/Css/diff2html.custom.css";
+
+//Kendo Theme fixes after updates
+@import "../../Base/css/kendo.material-6.4.0-fixes.css";
