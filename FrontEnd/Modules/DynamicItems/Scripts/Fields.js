@@ -1991,6 +1991,57 @@ export class Fields {
                         break;
                     }
 
+                    // Merge PDF files from a query to 1 downloadable PDF
+                    case "mergeFiles": {
+                        let encryptedIds = [];
+                        if (action.queryId) {
+                            // If a query is provided, it always takes precedence over any lines that may be selected in a grid 
+                            queryActionResult = await executeQuery();
+                            if (!queryActionResult.success) {
+                                kendo.alert(queryActionResult.errorMessage || `Er is iets fout gegaan met het uitvoeren van de actie '${action.type}', probeer het a.u.b. nogmaals of neem contact op met ons.`);
+                                return false;
+                            } else if (!queryActionResult.otherData[0].id || !queryActionResult.otherData[0].propertynames) {
+                                kendo.alert(`Er werd geprobeerd om actie type '${action.type}' uit te voeren, echter voldoet het resultaat niet aan de eisen. De selectie dient tenminste een encrypted 'id' en een 'propertynames' te bevatten. Neem a.u.b. contact op met ons.`);
+                                return false;
+                            }
+                            action.propertyNames = queryActionResult.otherData[0].propertynames;
+                            if (queryActionResult.otherData[0].fileName) action.fileName = queryActionResult.otherData[0].filename;
+                            if (queryActionResult.otherData[0].entity_type) action.entityType = queryActionResult.otherData[0].entity_type;
+                            encryptedIds = queryActionResult.otherData.map(item => item.id);
+                        }
+                        else {
+                            // We have an array with selected items, which means this is an action button in a grid and we want to execute this action once for every selected item.
+                            encryptedIds = selectedItems.map(item => item.dataItem.encrypted_id);
+                            if (selectedItems[0].dataItem.entity_type) action.entityType = selectedItems[0].dataItem.entity_type;
+                        }
+                        
+                        //Call Wiser API to generate the merged PDF file
+                        const process = `convertHtmlToPdf_${Date.now()}`;
+                        window.processing.addProcess(process);
+                        try {
+                            const pdfResult = await fetch(`${this.base.settings.wiserApiRoot}pdf/merge-pdfs`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
+                                },
+                                body: JSON.stringify({
+                                    encryptedItemIdsList:encryptedIds,
+                                    entityType:action.entityType || "",
+                                    propertyNames:action.propertyNames})
+                            });
+                            await Misc.downloadFile(pdfResult, action.fileName || "mergedpdf.pdf");
+                        }
+                        catch (exception) {
+                            if (typeof exception === "string") {
+                                kendo.alert(exception);
+                            }
+                        }
+                        window.processing.removeProcess(process);
+                        
+                        break;
+                    }
+
                     // Generates a (HTML) file via get_items.jcl.
                     case "generateFile": {
                         if ((!action.dataSelectorId && !action.queryId) || (!action.contentItemId && !userParametersWithValues.contentItemId) || !action.contentPropertyName) {
