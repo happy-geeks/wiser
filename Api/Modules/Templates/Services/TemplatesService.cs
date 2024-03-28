@@ -1460,13 +1460,13 @@ LIMIT 1";
                         break;
                     }
                 }
+            }
 
-                // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
-                // Does not apply if the template was published to live within a branch.
-                if (String.IsNullOrWhiteSpace(branchDatabaseName))
-                {
-                    await CreateNewVersionAsync(template.TemplateId, version);
-                }
+            // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+            // Does not apply if the template was published to live within a branch.
+            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            {
+                await CreateNewVersionAsync(templateId, version);
             }
 
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
