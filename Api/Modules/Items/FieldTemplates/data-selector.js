@@ -1,7 +1,8 @@
-﻿(function() {
-    var field = $("#field_{propertyIdWithSuffix}");
-    var options = $.extend({
-        click: function(event) {
+﻿(() => {
+    const field = $("#field_{propertyIdWithSuffix}");
+    
+    const options = $.extend({
+        click: (event) => {
             window.dynamicItems.fields.onDataSelectorButtonClick(event, {default_value}, {itemId}, {propertyId}, {options}, field); 
         },
         icon: "gear"
@@ -10,6 +11,8 @@
     if (field.text) {
         field.find(".originalText").html(options.text);
     }
-    var kendoComponent = field.kendoButton(options).data("kendoButton");
+    
+    const kendoComponent = field.kendoButton(options).data("kendoButton");
+    
     {customScript}
 })();
