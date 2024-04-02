@@ -258,6 +258,13 @@ namespace Api.Modules.Templates.Services
             {
                 throw new ArgumentException("The version is invalid");
             }
+            
+            // Create a new version of the dynamic content, so that any changes made after this will be done in the new version instead of the published one.
+            // Does not apply if the dynamic content was published to live within a branch.
+            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            {
+                await CreateNewVersionAsync(contentId, version);
+            }
 
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 

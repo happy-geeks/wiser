@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Api.Core.Extensions;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
@@ -28,6 +29,7 @@ using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -46,6 +48,8 @@ namespace Api.Modules.Grids.Services
         private readonly ILogger<GridsService> logger;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly IApiReplacementsService apiReplacementsService;
+        private readonly ApiSettings apiSettings;
+
         private static readonly List<string> ItemColumns = new()
         {
             "id",
@@ -72,7 +76,7 @@ namespace Api.Modules.Grids.Services
         /// <summary>
         /// Creates a new instance of GridsService.
         /// </summary>
-        public GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService)
+        public GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IOptions<ApiSettings> apiSettings)
         {
             this.itemsService = itemsService;
             this.wiserTenantsService = wiserTenantsService;
@@ -81,6 +85,7 @@ namespace Api.Modules.Grids.Services
             this.logger = logger;
             this.stringReplacementsService = stringReplacementsService;
             this.apiReplacementsService = apiReplacementsService;
+            this.apiSettings = apiSettings.Value;
         }
 
         /// <inheritdoc />
@@ -1662,7 +1667,7 @@ namespace Api.Modules.Grids.Services
             if (isForExport)
             {
                 // Timeout of 4 hours for exports.
-                clientDatabaseConnection.SetCommandTimeout(14400);
+                clientDatabaseConnection.SetCommandTimeout(apiSettings.SqlCommandTimeoutForExportsAndLongQueries);
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();

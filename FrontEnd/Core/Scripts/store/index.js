@@ -797,6 +797,7 @@ const branchesModule = {
             { type: "query", displayName: "Query's" },
             { type: "role", displayName: "Rollen" },
             { type: "userRole", displayName: "Koppelingen tussen gebruikers en rollen" },
+            { type: "styledOutput", displayName: "Styled output (Wiser API query output configuraties)" }
         ],
         isMainBranch: false,
         branchChanges: {

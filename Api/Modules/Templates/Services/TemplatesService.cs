@@ -403,7 +403,7 @@ ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(CONCAT(NULLIF(entity.friendly_name, ''), ' (', entity.name, ')'), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
     entity.module_id AS moduleId 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
@@ -1460,13 +1460,13 @@ LIMIT 1";
                         break;
                     }
                 }
+            }
 
-                // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
-                // Does not apply if the template was published to live within a branch.
-                if (String.IsNullOrWhiteSpace(branchDatabaseName))
-                {
-                    await CreateNewVersionAsync(template.TemplateId, version);
-                }
+            // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+            // Does not apply if the template was published to live within a branch.
+            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            {
+                await CreateNewVersionAsync(templateId, version);
             }
 
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);

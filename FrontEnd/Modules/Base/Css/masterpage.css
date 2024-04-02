@@ -217,6 +217,16 @@ dd {
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid .k-grid-content {
 	flex-grow: 1;
 }
+
+/* Editor in an iframe / full window */
+.maximize-editor-window {
+	padding-bottom: 7px;
+}
+.maximize-editor-window > .pane-content,
+.maximize-editor-window > .pane-content table.k-editor {
+	height: 100%;
+}
+
 #alert {
 	display: none;
 }

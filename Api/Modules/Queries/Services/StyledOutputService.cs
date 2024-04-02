@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -40,6 +41,7 @@ namespace Api.Modules.Queries.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<StyledOutputService> logger;
         private readonly StyledOutputSettings apiSettings;
+        private readonly IBranchesService branchesService;
         
         // even if the user selects a higher value the results will always be capped to this ( filled in by settings file )
         private int maxResultsPerPage;
@@ -52,7 +54,7 @@ namespace Api.Modules.Queries.Services
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
-        public StyledOutputService(IWiserTenantsService wiserTenantsService,IOptions<StyledOutputSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger)
+        public StyledOutputService(IWiserTenantsService wiserTenantsService,IOptions<StyledOutputSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger, IBranchesService branchesService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -63,6 +65,7 @@ namespace Api.Modules.Queries.Services
             this.databaseHelpersService = databaseHelpersService;
             this.replacementsMediator = replacementsMediator;
             this.logger = logger;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
@@ -239,10 +242,13 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.ClearParameters();
 
             int pageResultCount = Math.Min(maxResultsPerPage, resultsPerPage);
+
+            var isMainBranch = await branchesService.IsMainBranchAsync(identity);
             
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * pageResultCount);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), pageResultCount);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"), isMainBranch.ModelObject);
             
             parameters ??= new List<KeyValuePair<string, object>>(parameters);
          

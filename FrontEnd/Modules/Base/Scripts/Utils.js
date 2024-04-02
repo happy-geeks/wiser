@@ -1323,7 +1323,7 @@ export class Wiser {
                 switch (fileManagerWindowMode) {
                     case this.fileManagerModes.images: {
                         const selectedItem = fileManagerClassFromIframe.imagesUploaderWindowTreeView.dataItem(fileManagerClassFromIframe.imagesUploaderWindowTreeView.select());
-                        const extension = selectedItem.name.split(selectedItem.name.lastIndexOf(".") + 1);
+                        const extension = selectedItem.name.substring(selectedItem.name.lastIndexOf(".") + 1);
 
                         const imagePreviewUrl = fileManagerClassFromIframe.generateImagePreviewUrl(extension);
                         html = `<figure>
