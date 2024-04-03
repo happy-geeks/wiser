@@ -5,6 +5,7 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
+import { WiserStyledOutputTab } from "../Scripts/wiserStyledOutputTab.js";
 import { WiserLinkTab } from "../Scripts/WiserLinkTab.js";
 import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 
@@ -45,6 +46,7 @@ const moduleSettings = {
             this.roleTab = null;
             this.wiserQueryTab = null;
             this.wiserLinkTab = null;
+            this.wiserStyledOutputTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -202,6 +204,7 @@ const moduleSettings = {
             this.roleTab = new RoleTab(this);
             this.wiserQueryTab = new WiserQueryTab(this);
             this.wiserLinkTab = new WiserLinkTab(this);
+            this.wiserStyledOutputTab = new WiserStyledOutputTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 
@@ -223,7 +226,8 @@ const moduleSettings = {
                 || this.moduleTab.hasChanges()
                 || this.roleTab.hasChanges()
                 || this.wiserQueryTab.hasChanges()
-                || this.wiserLinkTab.hasChanges();
+                || this.wiserLinkTab.hasChanges()
+                || this.wiserStyledOutputTab.hasChanges();
         }
 
         moveUp(e) {
@@ -295,6 +299,9 @@ const moduleSettings = {
                     break;
                 case "modules":
                     await this.moduleTab.beforeSave();
+                    break;
+                case "StyledOutputs":
+                    await this.wiserStyledOutputTab.beforeSave();
                     break;
                 case "links":
                     await this.wiserLinkTab.beforeSave();
