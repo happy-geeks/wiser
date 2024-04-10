@@ -650,13 +650,18 @@ export class Grids {
                     if (columns[savedColumnIndex].field === gridOptions.columns[tableColumnsIndex].field) {
                         gridOptions.columns[tableColumnsIndex].hidden = columns[savedColumnIndex].hidden;
                         gridOptions.columns[tableColumnsIndex].width = columns[savedColumnIndex].width;
-                        let moveColumn = gridOptions.columns.splice(tableColumnsIndex,1)[0];
-                        gridOptions.columns.splice(savedColumnIndex, 0, moveColumn);
+                        if (gridOptions.reorderable ?? false) {
+                            //Only re-arrange columns if there is a possibility for the user to arrange them
+                            let moveColumn = gridOptions.columns.splice(tableColumnsIndex,1)[0];
+                            gridOptions.columns.splice(savedColumnIndex, 0, moveColumn);                            
+                        }
                         break;
                     }
                 }
             }
-        } catch (error) {}
+        } catch (error) {
+            console.error("Reading and setting grid settings failed:", error);
+        }
     }
 
     /**
