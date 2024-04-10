@@ -312,11 +312,11 @@ UNION
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
                                 moduleQuery = moduleQuery.Replace("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString(), StringComparison.OrdinalIgnoreCase);
-                                moduleQuery = moduleQuery.Replace("{userId_encrypt}", HttpUtility.UrlEncode(IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt()), StringComparison.OrdinalIgnoreCase);
-                                moduleQuery = moduleQuery.Replace("{userId_encrypt_withdate}", (string)HttpUtility.UrlEncode(IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt(true)), StringComparison.OrdinalIgnoreCase);
                                 moduleQuery = moduleQuery.Replace("{username}", IdentityHelpers.GetUserName(identity) ?? "", StringComparison.OrdinalIgnoreCase);
                                 moduleQuery = moduleQuery.Replace("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "", StringComparison.OrdinalIgnoreCase);
                                 moduleQuery = moduleQuery.Replace("{userType}", IdentityHelpers.GetRoles(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+                                moduleQuery = moduleQuery.Replace("{userId_encrypt}", HttpUtility.UrlEncode(IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt()), StringComparison.OrdinalIgnoreCase);
+                                moduleQuery = moduleQuery.Replace("{userId_encrypt_withdate}", (string)HttpUtility.UrlEncode(IdentityHelpers.GetWiserUserId(identity).ToString().Encrypt(true)), StringComparison.OrdinalIgnoreCase);
 
                                 var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
                                 if (moduleDataTable.Rows.Count > 0)
