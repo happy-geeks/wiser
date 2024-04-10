@@ -265,10 +265,82 @@ class Main {
                         },
                         settings: {
                             all: {
-                                everything: false,
-                                create: false,
-                                update: false,
-                                delete: false
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            apiConnection: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            dataSelector: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            entity: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            entityProperty: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            fieldTemplates: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            link: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            module: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            permission: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            query: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            role: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            userRole: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
+                            },
+                            styledOutput: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
                             }
                         },
                         checkForConflicts: true,
@@ -377,6 +449,9 @@ class Main {
                 },
                 entitiesForBranches() {
                     return this.$store.state.branches.entities;
+                },
+                settingsForBranches() {
+                    return this.$store.state.branches.settings;
                 },
                 dataSelectorsForBranches() {
                     return this.$store.state.branches.dataSelectors;
@@ -1095,7 +1170,14 @@ class Main {
 
                     // Clear all checkboxes.
                     this.addMissingBranchChanges();
-                    this.branchMergeSettings.settings.all.everything = false;
+                    this.branchMergeSettings.settings = {
+                        all: {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        }
+                    }
                     this.updateBranchChangeList(false, "settings", "all", "everything");
                 },
 

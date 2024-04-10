@@ -25,7 +25,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json.Linq;
 using TinifyAPI;
 
@@ -92,7 +92,10 @@ namespace Api.Modules.Files.Services
             }
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+            if (!UInt64.TryParse(encryptedId, out var itemId))
+            {
+                itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+            }
             if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("Id must be greater than zero.");
@@ -413,6 +416,12 @@ SELECT LAST_INSERT_ID() AS newId;";
             {
                 query = query.Replace("[wherePart]", "id = ?imageId");
                 databaseConnection.AddParameter("imageId", fileId);
+            }
+            else if (itemLinkId > 0)
+            {
+                query = query.Replace("[wherePart]", "itemlink_id = ?itemLinkId AND property_name = ?propertyName");
+                databaseConnection.AddParameter("itemLinkId", itemLinkId);    
+                databaseConnection.AddParameter("propertyName", propertyName);
             }
             else
             {

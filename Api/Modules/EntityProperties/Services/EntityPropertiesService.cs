@@ -17,7 +17,7 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace Api.Modules.EntityProperties.Services
 {

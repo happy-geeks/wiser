@@ -375,6 +375,12 @@ public class CommitService : ICommitService, IScopedService
     {
         switch (targetEnvironment)
         {
+            case Environments.Development:
+                if (version == currentPublished.VersionList.Last())
+                {
+                    return true;
+                }
+                break;
             case Environments.Test:
                 if (version > currentPublished.TestVersion)
                 {

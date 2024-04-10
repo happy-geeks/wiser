@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
@@ -27,10 +28,23 @@ using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Tenants.Interfaces;
+using GeeksCoreLibrary.Components.Account;
+using GeeksCoreLibrary.Components.DataSelectorParser;
+using GeeksCoreLibrary.Components.Filter;
+using GeeksCoreLibrary.Components.Pagination;
+using GeeksCoreLibrary.Components.Pagination.Models;
+using GeeksCoreLibrary.Components.Repeater;
+using GeeksCoreLibrary.Components.Repeater.Models;
+using GeeksCoreLibrary.Components.ShoppingBasket;
+using GeeksCoreLibrary.Components.ShoppingBasket.Models;
+using GeeksCoreLibrary.Components.WebForm;
+using GeeksCoreLibrary.Components.WebForm.Models;
+using GeeksCoreLibrary.Components.WebPage;
+using GeeksCoreLibrary.Components.WebPage.Models;
+using GeeksCoreLibrary.Core.Cms;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -42,21 +56,15 @@ using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.JavaScript;
-using Constants = GeeksCoreLibrary.Modules.Templates.Models.Constants;
 using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Services
@@ -395,7 +403,7 @@ ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(CONCAT(NULLIF(entity.friendly_name, ''), ' (', entity.name, ')'), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
     entity.module_id AS moduleId 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
@@ -1452,13 +1460,13 @@ LIMIT 1";
                         break;
                     }
                 }
+            }
 
-                // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
-                // Does not apply if the template was published to live within a branch.
-                if (String.IsNullOrWhiteSpace(branchDatabaseName))
-                {
-                    await CreateNewVersionAsync(template.TemplateId, version);
-                }
+            // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+            // Does not apply if the template was published to live within a branch.
+            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            {
+                await CreateNewVersionAsync(templateId, version);
             }
 
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
@@ -1854,223 +1862,6 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            var component = requestModel.Components.FirstOrDefault(c => c.Id == componentId);
-            if (component == null)
-            {
-                return new ServiceResult<string>("");
-            }
-
-            requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
-            await SetupGclForPreviewAsync(identity, requestModel);
-
-            var html = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
-            return new ServiceResult<string>((string)html);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            var outputHtml = requestModel?.TemplateSettings?.EditorValue;
-            if (String.IsNullOrWhiteSpace(outputHtml) || requestModel.TemplateSettings.Type != TemplateTypes.Html)
-            {
-                return new ServiceResult<string>(outputHtml);
-            }
-
-            var javascriptTemplates = new List<int>();
-            var cssTemplates = new List<int>();
-            var externalJavascript = new List<string>();
-            var externalCss = new List<string>();
-
-            javascriptTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedJavascript.Select(t => t.TemplateId));
-            cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedCssTemplates.Select(t => t.TemplateId));
-            cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedScssTemplates.Select(t => t.TemplateId));
-
-            requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
-            var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
-            var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
-
-            await SetupGclForPreviewAsync(identity, requestModel);
-
-            var contentToWrite = new StringBuilder();
-
-            // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
-            await gclTemplatesService.ExecutePreLoadQueryAndRememberResultsAsync(new Template { PreLoadQuery = requestModel.TemplateSettings.PreLoadQuery });
-
-            // Header template.
-            if (ombouw)
-            {
-                contentToWrite.Append(await pagesService.GetGlobalHeader(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
-            }
-
-            // Content template.
-            contentToWrite.Append(outputHtml);
-
-            // Footer template.
-            if (ombouw)
-            {
-                contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
-            }
-
-            outputHtml = contentToWrite.ToString();
-            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, true, false, true, false);
-            outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
-            outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
-            outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
-            outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
-
-            if (!ombouw)
-            {
-                return new ServiceResult<string>(outputHtml);
-            }
-
-            // Generate view model.
-            var viewModel = await pagesService.CreatePageViewModelAsync(externalCss, cssTemplates, externalJavascript, javascriptTemplates, outputHtml);
-
-            // Determine main domain, using either the "maindomain" object or the "maindomain_wiser" object.
-            var mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain_wiser");
-            if (String.IsNullOrWhiteSpace(mainDomain))
-            {
-                mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("testdomainjuice");
-            }
-            if (String.IsNullOrWhiteSpace(mainDomain))
-            {
-                mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain");
-            }
-
-            if (viewModel.Css != null)
-            {
-                var cssBuilder = new StringBuilder();
-                cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
-                cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
-
-                var regex = new Regex("/css/gclcss_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
-                var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Css.PageStandardCssFileName = null;
-
-                match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Css.PageAsyncFooterCssFileName = null;
-
-                match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Css.PageSyncFooterCssFileName = null;
-
-                viewModel.Css.PageInlineHeadCss = cssBuilder.ToString();
-            }
-
-            if (viewModel.Javascript != null)
-            {
-                viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
-                viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
-
-                var regex = new Regex("/css/gcljs_(.*).css", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
-                var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.PageStandardJavascriptFileName = null;
-
-                match = regex.Match(viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.GeneralAsyncFooterJavaScriptFileName = null;
-
-                if (viewModel.Javascript.GeneralSyncFooterJavaScriptFileName != null)
-                {
-                    foreach (var generalSyncFooterJavaScriptFileName in viewModel.Javascript.GeneralSyncFooterJavaScriptFileName)
-                    {
-                        match = regex.Match(generalSyncFooterJavaScriptFileName ?? "");
-                        if (match.Success)
-                        {
-                            var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                            viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                        }
-                    }
-
-                    viewModel.Javascript.GeneralSyncFooterJavaScriptFileName = null;
-                }
-
-                match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
-
-                match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.PageSyncFooterJavascriptFileName = null;
-            }
-
-            // Generate HTML from view.
-            await using var writer = new StringWriter();
-            var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            var executingFilePath = executingAssemblyDirectoryAbsolutePath!.Replace('\\', '/');
-            const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
-            var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
-
-            var actionContext = new ActionContext(httpContextAccessor.HttpContext!, new RouteData(), new ActionDescriptor());
-
-            if (viewResult.Success == false)
-            {
-                return new ServiceResult<string>($"A view with the name {viewResult.ViewName} could not be found");
-            }
-
-            var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
-            {
-                Model = viewModel
-            };
-
-            var viewContext = new ViewContext(
-                actionContext,
-                viewResult.View,
-                viewDictionary,
-                new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
-                writer,
-                new HtmlHelperOptions()
-            );
-
-            await viewResult.View.RenderAsync(viewContext);
-
-            var finalResult = writer.GetStringBuilder().ToString();
-            finalResult = finalResult.ReplaceCaseInsensitive("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
-            return new ServiceResult<string>(finalResult);
-        }
-
-        /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
         {
             return await InternalCheckDefaultHeaderOrFooterConflict("header", templateId, regexString);
@@ -2182,11 +1973,9 @@ LIMIT 1";
                 : new ServiceResult<string>(result.Rows[0].Field<string>("template_name"));
         }
 
-        /// <summary>
-        /// Converts Wiser 1 templates to the Wiser 3 format.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplates()
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
         {
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
@@ -2287,147 +2076,236 @@ JOIN (
 ) AS lowestVersionToConvert ON lowestVersionToConvert.id = item.id AND (template.id IS NULL OR template.version >= lowestVersionToConvert.version)
 WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
-            await using var reader = await clientDatabaseConnection.GetReaderAsync(query);
-            while (await reader.ReadAsync())
+            await clientDatabaseConnection.BeginTransactionAsync();
+            try
             {
-                // Get template type.
-                var templateType = TemplateTypes.Directory;
-                if (!reader.GetBoolean("is_directory"))
+                dataTable = await clientDatabaseConnection.GetAsync(query);
+
+                var allRootDirectories = new List<string> { "HTML", "JS", "SCSS", "CSS", "SQL", "SERVICES", "VIEWS", "ROUTINES", "TRIGGERS" };
+                var rootDirectoriesCreated = new List<string>();
+                foreach (DataRow dataRow in dataTable.Rows)
                 {
-                    var path = reader.GetStringHandleNull("path");
-
-                    if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
+                    // Get template type.
+                    var templateType = TemplateTypes.Directory;
+                    if (!Convert.ToBoolean(dataRow["is_directory"]))
                     {
-                        templateType = TemplateTypes.Html;
+                        var path = dataRow.Field<string>("path") ?? "";
+
+                        if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Html;
+                        }
+                        else if (path.Contains("/css/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Css;
+                        }
+                        else if (path.Contains("/scss/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Scss;
+                        }
+                        else if (path.Contains("/scripts/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Js;
+                        }
+                        else if (path.Contains("/query/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Query;
+                        }
+                        else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Xml;
+                        }
+                        else if (path.Contains("/routines/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Routine;
+                        }
                     }
-                    else if (path.Contains("/css/", StringComparison.OrdinalIgnoreCase))
+
+                    // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
+                    var cdnDirectory = dataRow.Field<string>("type");
+                    if (String.Equals(cdnDirectory, "js"))
                     {
-                        templateType = TemplateTypes.Css;
+                        cdnDirectory = "scripts";
                     }
-                    else if (path.Contains("/scss/", StringComparison.OrdinalIgnoreCase))
+
+                    var externalFiles = dataRow.Field<string>("external_files") ?? "";
+                    var wiserCdnTemplates = dataRow.Field<string>("wiser_cdn_templates") ?? "";
+                    var allExternalFiles = externalFiles.Split(';').Where(f => !String.IsNullOrWhiteSpace(f)).ToList();
+                    allExternalFiles.AddRange(wiserCdnTemplates.Split(';').Where(f => !String.IsNullOrWhiteSpace(f)).Select(filename => $"https://app.wiser.nl/{cdnDirectory}/cdn/{filename}"));
+
+                    externalFiles = String.Join(";", allExternalFiles);
+
+                    var content = dataRow.Field<string>("template_data") ?? "";
+                    var minifiedContent = dataRow.Field<string>("template_data_minified") ?? "";
+
+                    // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
+                    if (templateType == TemplateTypes.Html)
                     {
-                        templateType = TemplateTypes.Scss;
+                        content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
+                        minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
                     }
-                    else if (path.Contains("/scripts/", StringComparison.OrdinalIgnoreCase))
+
+                    if (templateType is TemplateTypes.Html or TemplateTypes.Query)
                     {
-                        templateType = TemplateTypes.Js;
+                        content = ConvertLegacyReplacementMethodsToNewReplacementMethods(content);
+                        minifiedContent = ConvertLegacyReplacementMethodsToNewReplacementMethods(minifiedContent);
                     }
-                    else if (path.Contains("/query/", StringComparison.OrdinalIgnoreCase))
+
+                    var templateName = dataRow.Field<string>("template_name");
+                    var ordering = dataRow.IsNull("ordering") ? 0 : dataRow["ordering"];
+                    if (templateType == TemplateTypes.Directory && (dataRow.IsNull("parent_id") || Convert.ToInt32(dataRow["parent_id"]) == 0))
                     {
-                        templateType = TemplateTypes.Query;
+                        // Set the name and ordering of root directories to new Wiser 3 standards.
+                        switch (templateName.ToUpperInvariant())
+                        {
+                            case "HTML":
+                                ordering = 1;
+                                break;
+                            case "SCRIPTS":
+                                ordering = 2;
+                                templateName = "JS";
+                                break;
+                            case "SCSS":
+                                ordering = 3;
+                                break;
+                            case "CSS":
+                                ordering = 4;
+                                break;
+                            case "QUERY":
+                                ordering = 5;
+                                templateName = "SQL";
+                                break;
+                            case "AIS":
+                                ordering = 6;
+                                templateName = "SERVICES";
+                                break;
+                            case "VIEWS":
+                                ordering = 7;
+                                break;
+                            case "ROUTINES":
+                                ordering = 8;
+                                break;
+                            case "TRIGGERS":
+                                ordering = 9;
+                                break;
+                        }
+
+                        rootDirectoriesCreated.Add(templateName);
                     }
-                    // Support legacy AIS
-                    else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase) || path.Contains("/services/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        templateType = TemplateTypes.Xml;
-                    }
-                    else if (path.Contains("/routines/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        templateType = TemplateTypes.Routine;
-                    }
-                }
 
-                // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
-                var cdnDirectory = reader.GetStringHandleNull("type");
-                if (String.Equals(cdnDirectory, "js"))
-                {
-                    cdnDirectory = "scripts";
-                }
+                    var templateId = dataRow["template_id"];
+                    var publishedEnvironment = dataRow["published_environment"];
+                    var changedOn = dataRow["changed_on"];
+                    var changedBy = dataRow["changed_by"];
+                    clientDatabaseConnection.ClearParameters();
+                    clientDatabaseConnection.AddParameter("parent_id", dataRow["parent_id"]);
+                    clientDatabaseConnection.AddParameter("template_name", templateName);
+                    clientDatabaseConnection.AddParameter("template_data", content);
+                    clientDatabaseConnection.AddParameter("template_data_minified", minifiedContent);
+                    clientDatabaseConnection.AddParameter("template_type", templateType);
+                    clientDatabaseConnection.AddParameter("version", dataRow["version"]);
+                    clientDatabaseConnection.AddParameter("template_id", templateId);
+                    clientDatabaseConnection.AddParameter("changed_on", changedOn);
+                    clientDatabaseConnection.AddParameter("changed_by", changedBy);
+                    clientDatabaseConnection.AddParameter("published_environment", publishedEnvironment);
+                    clientDatabaseConnection.AddParameter("login_required", dataRow.IsNull("login_required") ? 0 : dataRow["login_required"]);
+                    clientDatabaseConnection.AddParameter("login_session_prefix", dataRow["login_session_prefix"]);
+                    clientDatabaseConnection.AddParameter("linked_templates", dataRow["linked_templates"]);
+                    clientDatabaseConnection.AddParameter("ordering", ordering);
+                    clientDatabaseConnection.AddParameter("insert_mode", dataRow.IsNull("insert_mode") ? 0 : dataRow["insert_mode"]);
+                    clientDatabaseConnection.AddParameter("load_always", dataRow.IsNull("load_always") ? 0 : dataRow["load_always"]);
+                    clientDatabaseConnection.AddParameter("url_regex", dataRow["url_regex"]);
+                    clientDatabaseConnection.AddParameter("external_files", externalFiles);
+                    clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", dataRow.IsNull("grouping_create_object_instead_of_array") ? 0 : dataRow["grouping_create_object_instead_of_array"]);
+                    clientDatabaseConnection.AddParameter("grouping_prefix", dataRow["grouping_prefix"]);
+                    clientDatabaseConnection.AddParameter("grouping_key", dataRow["grouping_key"]);
+                    clientDatabaseConnection.AddParameter("grouping_key_column_name", dataRow["grouping_key_column_name"]);
+                    clientDatabaseConnection.AddParameter("grouping_value_column_name", dataRow["grouping_value_column_name"]);
+                    clientDatabaseConnection.AddParameter("is_scss_include_template", dataRow.IsNull("is_scss_include_template") ? 0 : dataRow["is_scss_include_template"]);
+                    clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", dataRow.IsNull("use_in_wiser_html_editors") ? 0 : dataRow["use_in_wiser_html_editors"]);
 
-                var externalFiles = reader.GetStringHandleNull("external_files");
-                var wiserCdnTemplates = reader.GetStringHandleNull("wiser_cdn_templates");
-                var allExternalFiles = externalFiles.Split(';').ToList();
-                allExternalFiles.AddRange(wiserCdnTemplates.Select(filename => $"https://app.wiser.nl/{cdnDirectory}/cdn/{filename}"));
+                    var useCacheValue = dataRow.IsNull("use_cache") ? 0 : Convert.ToInt32(dataRow["use_cache"]);
+                    var cacheMinutesValue = dataRow.IsNull("cache_minutes") ? 0 : Convert.ToInt32(dataRow["cache_minutes"]);
+                    clientDatabaseConnection.AddParameter("cache_per_url", useCacheValue >= 3);
+                    clientDatabaseConnection.AddParameter("cache_per_querystring", useCacheValue >= 4);
+                    clientDatabaseConnection.AddParameter("cache_per_hostname", useCacheValue >= 5);
+                    clientDatabaseConnection.AddParameter("cache_using_regex", useCacheValue >= 6);
+                    clientDatabaseConnection.AddParameter("cache_minutes", useCacheValue == 0 && cacheMinutesValue <= 0 ? -1 : cacheMinutesValue);
 
-                externalFiles = String.Join(";", allExternalFiles);
+                    await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
 
-                var content = reader.GetStringHandleNull("template_data");
-                var minifiedContent = reader.GetStringHandleNull("template_data_minified");
-
-                // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
-                if (templateType == TemplateTypes.Html)
-                {
-                    content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
-                    minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
-                }
-
-                var urlRegex = reader.GetStringHandleNull("url_regex");
-
-                // Handle routine settings.
-                var routineType = RoutineTypes.Unknown;
-                string routineParameters = null;
-                string routineReturnType = null;
-
-                if (templateType == TemplateTypes.Routine)
-                {
-                    var legacyType = reader.GetStringHandleNull("type");
-                    routineType = legacyType switch
-                    {
-                        "FUNCTION" => RoutineTypes.Function,
-                        "PROCEDURE" => RoutineTypes.Procedure,
-                        _ => routineType
-                    };
-
-                    routineParameters = reader.GetStringHandleNull("routine_parameters");
-                    // Old templates module used the "urlregex" field to store the return type.
-                    routineReturnType = urlRegex;
-
-                    // Set url_regex to null in Wiser 3 template for routine templates.
-                    urlRegex = null;
-                }
-
-                // TODO: Make method for converting legacy replacements (such as {title_htmlencode}) to GCL replacements (such as {title:HtmlEncode}).
-
-                clientDatabaseConnection.ClearParameters();
-                clientDatabaseConnection.AddParameter("parent_id", reader.GetValue("parent_id"));
-                clientDatabaseConnection.AddParameter("template_name", reader.GetValue("template_name"));
-                clientDatabaseConnection.AddParameter("template_data", content);
-                clientDatabaseConnection.AddParameter("template_data_minified", minifiedContent);
-                clientDatabaseConnection.AddParameter("template_type", templateType);
-                clientDatabaseConnection.AddParameter("version", reader.GetValue("version"));
-                clientDatabaseConnection.AddParameter("template_id", reader.GetValue("template_id"));
-                clientDatabaseConnection.AddParameter("changed_on", reader.GetValue("changed_on"));
-                clientDatabaseConnection.AddParameter("changed_by", reader.GetValue("changed_by"));
-                clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
-                clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
-                clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
-                clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));
-                clientDatabaseConnection.AddParameter("linked_templates", reader.GetValue("linked_templates"));
-                clientDatabaseConnection.AddParameter("ordering", reader.GetValue("ordering"));
-                clientDatabaseConnection.AddParameter("insert_mode", reader.GetValue("insert_mode"));
-                clientDatabaseConnection.AddParameter("load_always", reader.GetValue("load_always"));
-                clientDatabaseConnection.AddParameter("disable_minifier", reader.GetValue("disable_minifier"));
-                clientDatabaseConnection.AddParameter("url_regex", urlRegex);
-                clientDatabaseConnection.AddParameter("external_files", externalFiles);
-                clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", reader.GetValue("grouping_create_object_instead_of_array"));
-                clientDatabaseConnection.AddParameter("grouping_prefix", reader.GetValue("grouping_prefix"));
-                clientDatabaseConnection.AddParameter("grouping_key", reader.GetValue("grouping_key"));
-                clientDatabaseConnection.AddParameter("grouping_key_column_name", reader.GetValue("grouping_key_column_name"));
-                clientDatabaseConnection.AddParameter("grouping_value_column_name", reader.GetValue("grouping_value_column_name"));
-                clientDatabaseConnection.AddParameter("is_scss_include_template", reader.GetValue("is_scss_include_template"));
-                clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", reader.GetValue("use_in_wiser_html_editors"));
-                clientDatabaseConnection.AddParameter("routine_type", (int)routineType);
-                clientDatabaseConnection.AddParameter("routine_parameters", routineParameters);
-                clientDatabaseConnection.AddParameter("routine_return_type", routineReturnType);
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
-
-                // Convert dynamic content.
-                if (templateType == TemplateTypes.Html)
-                {
-                    query = @"SELECT *
-                            FROM easy_dynamiccontent
-                            WHERE itemid = ?template_id
-                            AND version = ?version";
-                    dataTable = await clientDatabaseConnection.GetAsync(query);
-                    if (dataTable.Rows.Count == 0)
+                    // Convert dynamic content.
+                    if (templateType != TemplateTypes.Html)
                     {
                         continue;
                     }
 
-                    var legacyComponentName = dataTable.Rows[0].Field<string>("freefield1");
-                    var legacySettingsJson = dataTable.Rows[0].Field<string>("filledvariables");
-                    var newSettings = ConvertDynamicComponentSettingsFromLegacyToNew(legacyComponentName, legacySettingsJson);
+                    query = @"SELECT *
+FROM easy_dynamiccontent
+WHERE itemid = ?template_id
+AND version = ?version";
+                    var dynamicContentDataTable = await clientDatabaseConnection.GetAsync(query);
+                    if (dynamicContentDataTable.Rows.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (DataRow dynamicContentRow in dynamicContentDataTable.Rows)
+                    {
+                        var contentId = dynamicContentRow.Field<int>("id");
+                        var legacyComponentName = dynamicContentRow.Field<string>("freefield1");
+                        var legacySettingsJson = dynamicContentRow.Field<string>("filledvariables");
+                        var (gclComponentName, gclSettingsJson, title, componentMode) = ConvertDynamicComponentSettingsFromLegacyToNew(legacyComponentName, legacySettingsJson);
+
+                        clientDatabaseConnection.ClearParameters();
+                        clientDatabaseConnection.AddParameter("content_id", contentId);
+                        clientDatabaseConnection.AddParameter("settings", gclSettingsJson);
+                        clientDatabaseConnection.AddParameter("component", gclComponentName);
+                        clientDatabaseConnection.AddParameter("component_mode", componentMode);
+                        clientDatabaseConnection.AddParameter("version", dynamicContentRow.Field<int>("version"));
+                        clientDatabaseConnection.AddParameter("title", title);
+                        clientDatabaseConnection.AddParameter("published_environment", publishedEnvironment);
+                        clientDatabaseConnection.AddParameter("changed_on", changedOn);
+                        clientDatabaseConnection.AddParameter("changed_by", changedBy);
+                        await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserDynamicContent, 0);
+
+                        clientDatabaseConnection.ClearParameters();
+                        clientDatabaseConnection.AddParameter("content_id", contentId);
+                        clientDatabaseConnection.AddParameter("destination_template_id", templateId);
+                        clientDatabaseConnection.AddParameter("added_on", changedOn);
+                        clientDatabaseConnection.AddParameter("added_by", changedBy);
+                        await clientDatabaseConnection.ExecuteAsync(@$"INSERT IGNORE INTO {WiserTableNames.WiserTemplateDynamicContent} (content_id, destination_template_id, added_on, added_by)
+VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
+                    }
                 }
+
+                await clientDatabaseConnection.CommitTransactionAsync();
+
+                // Add any missing root directories. For some reason we get timeouts/deadlocks when we do this in the same transaction as the rest of the conversion, so we have to to it after the commit.
+                var missingRootDirectories = allRootDirectories.Except(rootDirectoriesCreated);
+                foreach (var directory in missingRootDirectories)
+                {
+                    var ordering = directory.ToUpperInvariant() switch
+                    {
+                        "HTML" => 1,
+                        "SCRIPTS" => 2,
+                        "SCSS" => 3,
+                        "CSS" => 4,
+                        "QUERY" => 5,
+                        "AIS" => 6,
+                        "VIEWS" => 7,
+                        "ROUTINES" => 8,
+                        "TRIGGERS" => 9,
+                        _ => 0
+                    };
+
+                    await templateDataService.CreateAsync(directory, null, TemplateTypes.Directory, IdentityHelpers.GetUserName(identity, true), ordering: ordering);
+                }
+            }
+            catch
+            {
+                await clientDatabaseConnection.RollbackTransactionAsync();
+                throw;
             }
 
             return new ServiceResult<bool>(true);
@@ -2692,9 +2570,138 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             return new ServiceResult<List<RenderLogModel>>(results);
         }
 
-        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
+        /// <summary>
+        /// Converts JCL replacement methods (such as {title_seo}) to GCL replacement methods (such as {title:seo}).
+        /// </summary>
+        /// <param name="input">The string from the JCL to convert.</param>
+        /// <returns>The converted string that can be used in the GCL.</returns>
+        private static string ConvertLegacyReplacementMethodsToNewReplacementMethods(string input)
         {
-            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
+            if (String.IsNullOrWhiteSpace(input))
+            {
+                return input;
+            }
+
+            // Decrypt.
+            input = ConvertEncryptOrDecryptReplacement(input, "decrypt_withdate", "Decrypt", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "normaldecrypt_withdate", "DecryptNormal", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "decrypt", "Decrypt", false);
+            input = ConvertEncryptOrDecryptReplacement(input, "normaldecrypt", "DecryptNormal", false);
+
+            // Encrypt.
+            input = ConvertEncryptOrDecryptReplacement(input, "encrypt_withdate", "Encrypt", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "normalencrypt_withdate", "EncryptNormal", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "encrypt", "Encrypt", false);
+            input = ConvertEncryptOrDecryptReplacement(input, "normalencrypt", "EncryptNormal", false);
+
+            // Likes in queries.
+            if (input.Contains("like", StringComparison.OrdinalIgnoreCase))
+            {
+                input = Regex.Replace(input, @"LIKE '%\[\{(?<variableName>[^}]+?)\}\]%'", "LIKE CONCAT('%', '{${variableName}}', '%')");
+                input = Regex.Replace(input, @"LIKE '%\{(?<variableName>[^}]+?)\}%'", "LIKE CONCAT('%', '{${variableName}}', '%')");
+
+                input = Regex.Replace(input, @"LIKE '%\[\{(?<variableName>[^}]+?)\}\]'", "LIKE CONCAT('%', '{${variableName}}')");
+                input = Regex.Replace(input, @"LIKE '%\{(?<variableName>[^}]+?)\}'", "LIKE CONCAT('%', '{${variableName}}')");
+
+                input = Regex.Replace(input, @"LIKE '\[\{(?<variableName>[^}]+?)\}\]%'", "LIKE CONCAT('{${variableName}}', '%')");
+                input = Regex.Replace(input, @"LIKE '\{(?<variableName>[^}]+?)\}%'", "LIKE CONCAT('{${variableName}}', '%')");
+            }
+
+            input = ConvertBasicReplacement(input, "seo", "Seo");
+            input = ConvertBasicReplacement(input, "htmlencode", "HtmlEncode");
+            input = ConvertBasicReplacement(input, "sha512", "Sha512");
+            input = ConvertBasicReplacement(input, "urldataescape", "UrlEncode");
+            input = ConvertBasicReplacement(input, "urldataunescape", "UrlDecode");
+            input = ConvertBasicReplacement(input, "striphtml", "StripHtml");
+            input = ConvertBasicReplacement(input, "valuta", "Currency");
+            input = ConvertBasicReplacement(input, "valutasup", "CurrencySup");
+            input = ConvertBasicReplacement(input, "jsonsafe", "JsonSafe");
+            input = ConvertBasicReplacement(input, "stripstyle", "StripInlineStyle");
+            input = ConvertBasicReplacement(input, "base64", "Base64");
+            input = ConvertBasicReplacement(input, "price", "Currency", "true");
+            input = ConvertBasicReplacement(input, "currency", "Currency", "true");
+
+            // Miscellaneous conversions.
+            input = input.Replace("{items}", "{items:Raw}");
+
+            return input;
+        }
+
+        /// <summary>
+        /// Converts encryption/decryption replacements from JCL (eg {title_seo}) to GCL (eg {title:Seo}).
+        /// </summary>
+        /// <param name="input">The string from the JCL to do the replacements in.</param>
+        /// <param name="jclSuffix">The JCL suffix (without underscore) for the replacement to handle, such as "seo".</param>
+        /// <param name="gclSuffix">The suffix that it should be in the GCL.</param>
+        /// <param name="withDate">Whether this is an encryption/decryption that uses a datetime to make it invalid after X time.</param>
+        private static string ConvertEncryptOrDecryptReplacement(string input, string jclSuffix, string gclSuffix, bool withDate)
+        {
+            var regex = new Regex(@$"{{(?<variableName>.+)_{jclSuffix}(?<minutesOverride>[\|0-9]*)}}");
+            foreach (Match match in regex.Matches(input))
+            {
+                var minutesOverride = match.Groups["minutesOverride"].Value.TrimStart('|');
+                if (!String.IsNullOrWhiteSpace(minutesOverride))
+                {
+                    minutesOverride = $",{minutesOverride}";
+                }
+                var newVariable = $"{{{match.Groups["variableName"].Value}:{gclSuffix}({withDate}{minutesOverride})}}";
+                input = input.Replace(match.Value, newVariable);
+            }
+
+            return input;
+        }
+
+        /// <summary>
+        /// Converts basic replacements from JCL (eg {title_seo}) to GCL (eg {title:Seo}).
+        /// </summary>
+        /// <param name="input">The string from the JCL to do the replacements in.</param>
+        /// <param name="jclSuffix">The JCL suffix (without underscore) for the replacement to handle, such as "seo".</param>
+        /// <param name="gclSuffix">The suffix that it should be in the GCL.</param>
+        /// <param name="extraParameters">Any extra parameters that the replacement function in the GCL might need.</param>
+        private static string ConvertBasicReplacement(string input, string jclSuffix, string gclSuffix, string extraParameters = "")
+        {
+            if (!String.IsNullOrEmpty(gclSuffix))
+            {
+                gclSuffix = $":{gclSuffix}";
+            }
+
+            var regex = new Regex(@$"{{(?<variableName>[^\{{\}}\n]+)_{jclSuffix}(?<parameters>[\|][^\}}\n]*)?}}");
+            foreach (Match match in regex.Matches(input))
+            {
+                var extraBracketToReplace = "";
+                var parameters = match.Groups["parameters"].Value?.Trim('|');
+
+                if (parameters != null && parameters.StartsWith("{") && !parameters.EndsWith("}"))
+                {
+                    // This is a bit of a hack, because in some cases there will be values like "{price_currency|{culture}}" and our regex will return "{culture" without the last bracket.
+                    // But if we change the regex to include that bracket, then it will often return too much, like "{price_currency|{culture}} <div></div>{otherVariable}" for example.
+                    parameters += "}";
+                    extraBracketToReplace = "}";
+                }
+
+                parameters = String.IsNullOrWhiteSpace(parameters) ? extraParameters : $"{extraParameters},{parameters}";
+                if (!String.IsNullOrEmpty(parameters))
+                {
+                    parameters = $"({parameters})";
+                }
+
+                var newVariable = $"{{{match.Groups["variableName"].Value}{gclSuffix}{parameters}}}";
+                input = input.Replace($"{match.Value}{extraBracketToReplace}", newVariable);
+            }
+
+            return input;
+        }
+
+        /// <summary>
+        /// Converts all dynamic components in an HTML string from JCL tags to GCL tags.
+        /// The JCL uses img tags for components, the GCL uses divs.
+        /// </summary>
+        /// <param name="html">The HTML from the JCL templates module.</param>
+        /// <param name="forJson">Set to true if this is for JSON settings, so that quotes and such will be escaped.</param>
+        /// <returns>The HTML for the GCL templates module.</returns>
+        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html, bool forJson = false)
+        {
+            var regex = new Regex(@"<img[^>]*?(?:data=['\""\\]+(?<data>.*?)['\""\\]+[^>]*?)?contentid=['\""\\]+(?<contentId>\d+)['\""\\]+[^>]*?\/?>");
             var matches = regex.Matches(html);
             foreach (Match match in matches)
             {
@@ -2709,18 +2716,165 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     dataAttribute = $"data=\"{dataAttribute}\"";
                 }
 
-                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{match.Groups["contentId"].Value}\">";
-                html = html.Replace(match.Value, newElement);
+                var componentId = match.Groups["contentId"].Value;
+                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{componentId}\"><h2>Component {componentId}</h2></div>";
+                html = html.Replace(match.Value, forJson ? HttpUtility.JavaScriptStringEncode(newElement) : newElement);
             }
 
             return html;
         }
 
-        private static string ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
+        /// <summary>
+        /// Converts the settings JSON from the JCL to the settings JSON for the GCL.
+        /// </summary>
+        /// <param name="legacyComponentName">The name of the component in the JCL.</param>
+        /// <param name="legacySettingsJson">The JSON with the settings from the JCL.</param>
+        /// <returns>The name, settings, title and mode for the GCL component.</returns>
+        private static (string GclComponentName, string GclSettingsJson, string Title, string ComponentMode) ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
         {
-            // TODO: The main CmsSettingsModel of every component should have a method "ToSettingsModel", which will convert the legacy settings to the new settings. Use that.
+            legacySettingsJson ??= "";
 
-            return null;
+            string viewComponentName;
+            string newSettingsJson;
+            string title;
+            string componentMode;
+            switch (legacyComponentName)
+            {
+                case "JuiceControlLibrary.MLSimpleMenu":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<MlSimpleMenuLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.SimpleMenu":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<SimpleMenuLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.ProductModule":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<ProductModuleLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.DBField":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<DbFieldLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.AccountWiser2":
+                {
+                    viewComponentName = "Account";
+                    var legacySettings = JsonConvert.DeserializeObject<CmsSettingsLegacy>(legacySettingsJson);
+                    componentMode = ((Account.ComponentModes)legacySettings.ComponentMode).ToString();
+                    // Settings for account are the same for JCL and GCL.
+                    newSettingsJson = legacySettingsJson;
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.ShoppingBasket":
+                {
+                    viewComponentName = "ShoppingBasket";
+                    var legacySettings = JsonConvert.DeserializeObject<ShoppingBasketLegacySettingsModel>(legacySettingsJson);
+                    componentMode = ShoppingBasket.ComponentModes.Legacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.WebPage":
+                {
+                    viewComponentName = "WebPage";
+                    var legacySettings = JsonConvert.DeserializeObject<WebPageLegacySettingsModel>(legacySettingsJson);
+                    componentMode = WebPage.ComponentModes.Render.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.Pagination":
+                {
+                    viewComponentName = "Pagination";
+                    var legacySettings = JsonConvert.DeserializeObject<PaginationLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Pagination.ComponentModes.Normal.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.DynamicFilter":
+                {
+                    viewComponentName = "Filter";
+                    var legacySettings = JsonConvert.DeserializeObject<CmsSettingsLegacy>(legacySettingsJson);
+                    componentMode = Filter.ComponentModes.Aggregation.ToString();
+                    // Settings for account are the same for JCL and GCL.
+                    newSettingsJson = legacySettingsJson;
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.Sendform":
+                {
+                    viewComponentName = "WebForm";
+                    var legacySettings = JsonConvert.DeserializeObject<WebFormLegacySettingsModel>(legacySettingsJson);
+                    componentMode = WebForm.ComponentModes.BasicForm.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.DataSelectorParser":
+                {
+                    viewComponentName = "DataSelectorParser";
+                    var legacySettings = JsonConvert.DeserializeObject<CmsSettingsLegacy>(legacySettingsJson);
+                    componentMode = DataSelectorParser.ComponentModes.Render.ToString();
+                    // Settings for account are the same for JCL and GCL.
+                    newSettingsJson = legacySettingsJson;
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                default:
+                    return ("Unknown", legacySettingsJson, $"TODO - {legacyComponentName} - This needs to be converted manually!", "Default");
+            }
+
+            newSettingsJson = ConvertDynamicComponentsFromLegacyToNewInHtml(newSettingsJson, true);
+            newSettingsJson = ConvertLegacyReplacementMethodsToNewReplacementMethods(newSettingsJson);
+
+            return (viewComponentName, newSettingsJson, title, componentMode);
+        }
+
+        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
+        {
+            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentId>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
+            var matches = regex.Matches(html);
+            foreach (Match match in matches)
+            {
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var dataAttribute = match.Groups["data"].Value;
+                if (!String.IsNullOrWhiteSpace(dataAttribute))
+                {
+                    dataAttribute = $"data=\"{dataAttribute}\"";
+                }
+
+                var componentId = match.Groups["contentId"].Value;
+                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{componentId}\"><h2>Component {componentId}</h2></div>";
+                html = html.Replace(match.Value, newElement);
+            }
+
+            return html;
         }
 
         /// <summary>
@@ -2765,50 +2919,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             domain = domain.TrimEnd('/');
             input = input.TrimStart('/');
             return $"{domain}/{input}";
-        }
-
-        /// <summary>
-        /// Sets URL and variables in http context, so the GCL can use them for replacements and settings and such while generating a preview for a template and/or dynamic content.
-        /// </summary>
-        private async Task SetupGclForPreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-            if (requestModel.PreviewVariables != null && httpContextAccessor.HttpContext != null)
-            {
-                foreach (var previewVariable in requestModel.PreviewVariables)
-                {
-                    switch (previewVariable.Type.ToUpperInvariant())
-                    {
-                        case "POST":
-                            if (previewVariable.Encrypt)
-                            {
-                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(tenant.EncryptionKey);
-                            }
-
-                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
-                            break;
-                        case "SESSION":
-                            if (previewVariable.Encrypt)
-                            {
-                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(tenant.EncryptionKey);
-                            }
-
-                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(previewVariable.Type), previewVariable.Type);
-                    }
-                }
-            }
-
-            // Let the GCL know that we want to use the given URL for everything, so the generated preview will be just like when a user opened the given URL on the actual website.
-            if (httpContextAccessor.HttpContext != null && requestModel.Url != null && requestModel.Url.IsAbsoluteUri)
-            {
-                httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
-            }
-
-            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
-            gclSettings.Environment = Environments.Development;
         }
 
         /// <summary>

@@ -53,23 +53,12 @@ export class Windows {
             files: "files",
             templates: "templates"
         });
-
-        // File manager
-        this.fileManagerWindow = null;
-        this.fileManagerIframe = null;
-        this.fileManagerWindowSender = null;
-        this.fileManagerWindowMode = null;
-        this.fileManagerWindowAddButton = null;
     }
 
     /**
      * Do all initializations for the Windows class, such as adding bindings.
      */
     initialize() {
-        this.fileManagerWindow = Wiser.initializeFileManager(this.fileManagerWindowSender,
-            this.fileManagerWindowMode,this.base.settings.iframeMode, this.base.settings.gridViewMode,
-            this.base.settings.moduleName);
-
         // Window for searching for items to link to another item.
         this.historyGridWindow = $("#historyWindowGrid").kendoWindow({
             width: "90%",
@@ -224,6 +213,15 @@ export class Windows {
             const validator = element.kendoValidator({
                 validate: this.base.onValidateForm.bind(this.base, currentItemTabStrip),
                 validateOnBlur: false,
+                rules: {
+                    required: (input) => {
+                        if (input.prop("required") && !input.closest(".item").hasClass("dependency-hidden")) {
+                            return $.trim(input.val()) !== "";
+                        }
+
+                        return true;
+                    }
+                },
                 messages: {
                     required: (input) => {
                         const fieldDisplayName = $(input).closest(".item").find("> h4 > label").text() || $(input).attr("name");

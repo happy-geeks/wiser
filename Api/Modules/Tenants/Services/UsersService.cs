@@ -20,11 +20,9 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Communication.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Models;
 using Google.Authenticator;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StringHelpers = Api.Core.Helpers.StringHelpers;
@@ -261,10 +259,10 @@ ORDER BY username.`value` ASC";
             clientDatabaseConnection.AddParameter("now", DateTime.Now);
 
             var query = $@"SELECT 
-	                        user.id, 
-	                        IFNULL(NULLIF(user.title, ''), username.value) AS name, 
-	                        username.`value` AS username, 
-	                        password.`value` AS password,
+                            user.id, 
+                            IFNULL(NULLIF(user.title, ''), username.value) AS name, 
+                            username.`value` AS username, 
+                            password.`value` AS password,
                             last_login_ip.value AS last_login_ip,
                             IF(last_login_date.value IS NULL, ?now, STR_TO_DATE(last_login_date.value, '%Y-%m-%d %H:%i:%s')) AS last_login_date,
                             IFNULL(require_password_change.value, '0') AS require_password_change,
@@ -961,7 +959,6 @@ ORDER BY username.`value` ASC";
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
-                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
@@ -1043,7 +1040,6 @@ ORDER BY username.`value` ASC";
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
-                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
@@ -1299,7 +1295,6 @@ ORDER BY username.`value` ASC";
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
                 // Make sure the WiserLoginLog exists and is up-to-date.
-                await KeepTablesUpToDateAsync(clientDatabaseConnection.ConnectedDatabaseForWriting ?? clientDatabaseConnection.ConnectedDatabase);
                 await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserLoginLog});
 
                 clientDatabaseConnection.ClearParameters();
@@ -1333,7 +1328,7 @@ ORDER BY username.`value` ASC";
         public string SetUpTotpAuthentication(string account, string key)
         {
             var twoFactorAuthenticator = new TwoFactorAuthenticator();
-            var setupInfo = twoFactorAuthenticator.GenerateSetupCode("Wiser", account, key, false, 3);
+            var setupInfo = twoFactorAuthenticator.GenerateSetupCode("Wiser", account, key, false);
             return setupInfo.QrCodeSetupImageUrl;
         }
 
@@ -1461,60 +1456,6 @@ ON DUPLICATE KEY UPDATE `value` = VALUES(value);";
             await connectionToUse.ExecuteAsync(query);
 
             return (true, false);
-        }
-
-        /// <summary>
-        /// Checks if the MySQL tables for the login log is up-to-date.
-        /// </summary>
-        private async Task KeepTablesUpToDateAsync(string databaseName)
-        {
-            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(databaseName);
-
-            // Check if the login log table needs to be updated.
-            if (!await databaseHelpersService.TableExistsAsync(WiserTableNames.WiserDashboard) || (lastTableUpdates.TryGetValue(WiserTableNames.WiserDashboard, out var value) && value >= new DateTime(2023, 2, 23)))
-            {
-                return;
-            }
-
-            // Add column.
-            var column = new ColumnSettingsModel("time_active_in_seconds", MySqlDbType.Int64, notNull: true, defaultValue: "0", addAfterColumnName: "user_id");
-            await databaseHelpersService.AddColumnToTableAsync(WiserTableNames.WiserLoginLog, column, false, databaseName);
-
-            // Convert and drop the "time_active" column if it still exists.
-            if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName))
-            {
-                await ConvertTimeSpanToSecondsAsync(WiserTableNames.WiserLoginLog, databaseName, "time_active", "time_active_in_seconds");
-                await databaseHelpersService.DropColumnAsync(WiserTableNames.WiserLoginLog, "time_active", databaseName);
-            }
-
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("tableName", WiserTableNames.WiserLoginLog);
-            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            var lastUpdateData = await clientDatabaseConnection.GetAsync($"SELECT NULL FROM `{WiserTableNames.WiserTableChanges}` WHERE `name` = ?tableName");
-            if (lastUpdateData.Rows.Count == 0)
-            {
-                await clientDatabaseConnection.ExecuteAsync($"INSERT INTO `{WiserTableNames.WiserTableChanges}` (`name`, last_update) VALUES (?tableName, ?lastUpdate)");
-            }
-            else
-            {
-                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserTableChanges}` SET last_update = ?lastUpdate WHERE `name` = ?tableName LIMIT 1");
-            }
-        }
-
-        private async Task ConvertTimeSpanToSecondsAsync(string tableName, string databaseName, string oldColumnName, string newColumnName)
-        {
-            var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
-
-            var convertDataTable = await clientDatabaseConnection.GetAsync($"SELECT id, `{oldColumnName}` FROM {queryDatabasePart}`{tableName}`");
-            foreach (var dataRow in convertDataTable.Rows.Cast<DataRow>())
-            {
-                var seconds = Convert.ToInt32(Math.Floor(dataRow.Field<TimeSpan>(oldColumnName).TotalSeconds));
-
-                clientDatabaseConnection.ClearParameters();
-                clientDatabaseConnection.AddParameter("tableId", Convert.ToUInt64(dataRow["id"]));
-                clientDatabaseConnection.AddParameter("seconds", seconds);
-                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{tableName}` SET `{newColumnName}` = ?seconds WHERE id = ?tableId");
-            }
         }
     }
 }

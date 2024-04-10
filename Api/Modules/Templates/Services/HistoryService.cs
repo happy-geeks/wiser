@@ -6,7 +6,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -14,6 +13,7 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
@@ -164,6 +164,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", TemplateTypes.Normal, newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", TemplateTypes.Normal, newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUrl", TemplateTypes.Normal, newVersion.CachePerUrl, oldVersion.CachePerUrl, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUser", TemplateTypes.Normal, newVersion.CachePerUser, oldVersion.CachePerUser, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheUsingRegex", TemplateTypes.Normal, newVersion.CacheUsingRegex, oldVersion.CacheUsingRegex, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerHostName", TemplateTypes.Normal, newVersion.CachePerHostName, oldVersion.CachePerHostName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerQueryString", TemplateTypes.Normal, newVersion.CachePerQueryString, oldVersion.CachePerQueryString, historyModel);
@@ -174,7 +175,7 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", TemplateTypes.Normal, newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", TemplateTypes.Normal, newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", TemplateTypes.Normal, newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", TemplateTypes.Normal, String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", TemplateTypes.Js, JsonConvert.SerializeObject(newVersion.ExternalFiles.OrderBy(x => x.Ordering), Formatting.Indented), JsonConvert.SerializeObject(oldVersion.ExternalFiles.OrderBy(x => x.Ordering), Formatting.Indented), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", TemplateTypes.Normal, newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", TemplateTypes.Normal, newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", TemplateTypes.Normal, newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);
@@ -206,7 +207,10 @@ namespace Api.Modules.Templates.Services
                 {
                     if (!newLinkedTemplates.Contains(item))
                     {
-                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new (true, false, TemplateTypes.Normal));
+                        var templateData = item.Split(";");
+                        var id = templateData[0];
+                        var name = templateData[1];
+                        historyModel.LinkedTemplateChanges.Add($"{name} ({id})", new (true, false, TemplateTypes.Normal));
                     }
                 }
             }
@@ -216,7 +220,10 @@ namespace Api.Modules.Templates.Services
                 {
                     if (!oldLinkedTemplates.Contains(item))
                     {
-                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new (false, true, TemplateTypes.Normal));
+                        var templateData = item.Split(";");
+                        var id = templateData[0];
+                        var name = templateData[1];
+                        historyModel.LinkedTemplateChanges.Add( $"{name} ({id})", new (false, true, TemplateTypes.Normal));
                     }
                 }
             }

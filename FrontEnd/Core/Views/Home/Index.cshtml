@@ -325,6 +325,23 @@
 							    </div>
 						    </div>
 
+						    <div class="col col-12 form-row no-bottom-margin">
+							    <label>Alle mogelijke Wiser inrichting</label>
+						    </div>
+						    <div class="col col-12 table-row no-top-margin">
+							    <div v-if="!settingsForBranches || !settingsForBranches.length">
+								    <p>Geen wiser inrichting gevonden. Neem a.u.b. contact op met ons.</p>
+							    </div>
+							    <div class="row" v-else>
+								    <div class="col col-4" v-for="setting in settingsForBranches" :key="setting.type">
+									    <label class="checkbox">
+										    <input type="checkbox" :name="setting.type" v-model="branchMergeSettings.settings[setting.type].everything" @@change="onBranchMergeSettingChange($event, 'settings', setting.type, 'everything')"/>
+										    <span>{{ setting.displayName }}</span>
+									    </label>
+								    </div>
+							    </div>
+							</div>
+
                             <div class="col col-12 form-row no-bottom-margin">
 							    <button class="btn btn-primary" @@click="countBranchChanges">Aantallen tellen en verder specificeren</button>
 							    <p>Let op, dit kan lang (een kwartier of meer) duren bij branches met veel wijzigingen.</p>
@@ -906,7 +923,7 @@
 
                     <div class="form-row">
                         <label for="hostLive">Domein live</label>
-                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newCTenantData.hostLive" placeholder="happygeeks.nl">
+                        <input type="text" id="hostLive" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="newTenantData.hostLive" placeholder="happygeeks.nl">
                         <p class="hint">
                             Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.<br />
                             <strong>In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant.</strong>

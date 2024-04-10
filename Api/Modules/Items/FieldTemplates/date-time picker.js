@@ -1,13 +1,15 @@
-﻿(function() {
-var options = $.extend({ change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields) }, {options});
-var field = $("#field_{propertyIdWithSuffix}");
-var savedValue = field.val();
-var readonly = {readonly};
-var kendoComponent;
+﻿(() => {
+const options = $.extend({ change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields) }, {options});
+const field = $("#field_{propertyIdWithSuffix}");
+const savedValue = field.val();
+const readonly = {readonly};
+
+let kendoComponent;
+
 switch(options.type) {
 	case "time":
         if (savedValue) {
-            var date = Dates.parseTime(savedValue);
+            let date = Dates.parseTime(savedValue);
             if ((typeof date.isValid === "function" && !date.isValid()) || !date.isValid) {
                 date = Dates.parseDateTime(savedValue);
                 if ((typeof date.isValid === "function" && !date.isValid()) || !date.isValid) {
@@ -35,7 +37,7 @@ switch(options.type) {
 		break;
 	case "date":
         if (savedValue) {
-            var date = Dates.parseDate(savedValue);
+            let date = Dates.parseDate(savedValue);
             if ((typeof date.isValid === "function" && !date.isValid()) || !date.isValid) {
                 date = Dates.parseDateTime(savedValue);
                 if ((typeof date.isValid === "function" && !date.isValid()) || !date.isValid) {
@@ -63,7 +65,7 @@ switch(options.type) {
 		break;
 	default:
         if (savedValue) {
-            var date = Dates.parseDateTime(savedValue);
+            let date = Dates.parseDateTime(savedValue);
             if ((typeof date.isValid === "function" && !date.isValid()) || !date.isValid) {
                 if (savedValue !== "NOW()") {
                     console.warn("Unable to parse time for field {title}", savedValue, date);

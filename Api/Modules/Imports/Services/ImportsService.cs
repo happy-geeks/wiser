@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 using Api.Core.Enums;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
-using Api.Modules.Tenants.Models;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Models;
 using Api.Modules.Imports.Interfaces;
 using Api.Modules.Imports.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
@@ -237,43 +237,111 @@ namespace Api.Modules.Imports.Services
             if (itemIdsFromLinks.Any())
             {
                 allItemIds.AddRange(itemIdsFromLinks.Where(x => !allItemIds.Contains(x)));
-                dataTable = await clientDatabaseConnection.GetAsync($"SELECT id, entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", itemIdsFromLinks)})");
-                if (dataTable.Rows.Count > 0)
-                {
-                    var allRows = dataTable.Rows.Cast<DataRow>().ToList();
-                    var wiserLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
-                    existingItemIds.AddRange(allRows.Select(dataRow => dataRow.Field<ulong>("id")));
 
-                    foreach (var import in importData)
+                // First get all link type settings from database.
+                var wiserLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
+
+                // Create some variables for caching data.
+                var tablePrefixes = new Dictionary<string, string>();
+                var tablesWithItems = new Dictionary<string, List<ulong>>();
+
+                foreach (var import in importData)
+                {
+                    foreach (var link in import.Links)
                     {
-                        foreach (var link in import.Links)
+                        var sourceEntityType = link.ItemId == 0 ? entityType : null;
+                        var destinationEntityType = link.DestinationItemId == 0 ? entityType : null;
+
+                        LinkSettingsModel currentLinkSettings = null;
+                        foreach (var linkSetting in wiserLinkSettings.Where(l => l.Type == link.Type))
                         {
-                            var sourceEntityType = link.ItemId == 0 ? entityType : allRows.FirstOrDefault(r => r.Field<ulong>("id") == link.ItemId)?.Field<string>("entity_type");
-                            var destinationEntityType = link.DestinationItemId == 0 ? entityType : allRows.FirstOrDefault(r => r.Field<ulong>("id") == link.DestinationItemId)?.Field<string>("entity_type");
-                            if (sourceEntityType == null || destinationEntityType == null)
+                            // If the item ID is 0, it means we're creating a new item and linking that to the destination item. In that case, we need to check if the entity type of the source item is the same as the entity type in the link settings.
+                            if (link.ItemId == 0 && !String.Equals(linkSetting.SourceEntityType, entityType, StringComparison.OrdinalIgnoreCase))
                             {
-                                // If one of the entity types is null, it means it doesn't exist. Then just continue, errors for non-existing items will be added later in the code.
                                 continue;
                             }
 
-                            var currentLinkSettings = wiserLinkSettings.FirstOrDefault(l => l.Type == link.Type && String.Equals(l.SourceEntityType, sourceEntityType, StringComparison.OrdinalIgnoreCase) && String.Equals(l.DestinationEntityType, destinationEntityType, StringComparison.OrdinalIgnoreCase));
-                            if (currentLinkSettings != null)
+                            // If the destination item ID is 0, it means we're creating a new item and making that the parent of another item. In that case, we need to check if the entity type of the destination item is the same as the entity type in the link settings.
+                            if (link.DestinationItemId == 0 && !String.Equals(linkSetting.DestinationEntityType, entityType, StringComparison.OrdinalIgnoreCase))
                             {
-                                if (!currentLinkSettings.UseItemParentId)
+                                continue;
+                            }
+
+                            if (link.ItemId > 0)
+                            {
+                                // Get the table prefix, if we don't know it yet for the current entity type.
+                                if (!tablePrefixes.TryGetValue(linkSetting.SourceEntityType, out var sourceEntityTablePrefix))
                                 {
-                                    continue;
+                                    sourceEntityTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSetting.SourceEntityType);
+                                    tablePrefixes.Add(linkSetting.SourceEntityType, sourceEntityTablePrefix);
                                 }
 
-                                import.Item.ParentItemId = link.DestinationItemId;
-                                link.UseParentItemId = true;
+                                if (!tablesWithItems.ContainsKey(sourceEntityTablePrefix))
+                                {
+                                    tablesWithItems.Add(sourceEntityTablePrefix, new List<ulong>());
+                                }
+
+                                // Add the item ID for a temporary list, so that we can get all items at once later.
+                                if (!tablesWithItems[sourceEntityTablePrefix].Contains(link.ItemId))
+                                {
+                                    tablesWithItems[sourceEntityTablePrefix].Add(link.ItemId);
+                                }
                             }
-                            else
+
+                            if (link.DestinationItemId > 0)
                             {
-                                importResult.Failed++;
-                                importResult.Errors.Add($"Trying to link item '{link.ItemId}' ({sourceEntityType}) to item '{link.DestinationItemId}' ({destinationEntityType}) with link type '{link.Type}', but this combination is not possible according to the settings in {WiserTableNames.WiserLink}.");
-                                importResult.UserFriendlyErrors.Add($"Import kan niet gedaan worden omdat de volgende gekozen koppeling niet mogelijk is: Bron item = '{link.ItemId}', bron entiteit = '{entityType}', doel item = '{link.DestinationItemId}', doel entiteit = '{destinationEntityType}', linktype = '{link.Type}'<br>Indien u denkt dat dit niet klopt, neem dan contact op met ons.");
+                                // Get the table prefix, if we don't know it yet for the current entity type.
+                                if (!tablePrefixes.TryGetValue(linkSetting.DestinationEntityType, out var destinationEntityTablePrefix))
+                                {
+                                    destinationEntityTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSetting.DestinationEntityType);
+                                    tablePrefixes.Add(linkSetting.DestinationEntityType, destinationEntityTablePrefix);
+                                }
+
+                                if (!tablesWithItems.ContainsKey(destinationEntityTablePrefix))
+                                {
+                                    tablesWithItems.Add(destinationEntityTablePrefix, new List<ulong>());
+                                }
+
+                                // Add the item ID for a temporary list, so that we can get all items at once later.
+                                if (!tablesWithItems[destinationEntityTablePrefix].Contains(link.DestinationItemId))
+                                {
+                                    tablesWithItems[destinationEntityTablePrefix].Add(link.DestinationItemId);
+                                }
                             }
                         }
+
+                        if (sourceEntityType == null || destinationEntityType == null || currentLinkSettings == null)
+                        {
+                            // If one of the entity types is null, it means it doesn't exist. Then just continue, errors for non-existing items will be added later in the code.
+                            continue;
+                        }
+
+                        if (currentLinkSettings != null)
+                        {
+                            if (!currentLinkSettings.UseItemParentId)
+                            {
+                                continue;
+                            }
+
+                            import.Item.ParentItemId = link.DestinationItemId;
+                            link.UseParentItemId = true;
+                        }
+                        else
+                        {
+                            importResult.Failed++;
+                            importResult.Errors.Add($"Trying to link item '{link.ItemId}' ({sourceEntityType}) to item '{link.DestinationItemId}' ({destinationEntityType}) with link type '{link.Type}', but this combination is not possible according to the settings in {WiserTableNames.WiserLink}.");
+                            importResult.UserFriendlyErrors.Add($"Import kan niet gedaan worden omdat de volgende gekozen koppeling niet mogelijk is: Bron item = '{link.ItemId}', bron entiteit = '{entityType}', doel item = '{link.DestinationItemId}', doel entiteit = '{destinationEntityType}', linktype = '{link.Type}'<br>Indien u denkt dat dit niet klopt, neem dan contact op met ons.");
+                        }
+                    }
+                }
+
+                // Check if all items exist in the database.
+                foreach (var (currentTablePrefix, itemIds) in tablesWithItems.Where(x => x.Value.Any()))
+                {
+                    dataTable = await clientDatabaseConnection.GetAsync($"SELECT id FROM {currentTablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", itemIds)})");
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        existingItemIds.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<ulong>("id")));
                     }
                 }
             }

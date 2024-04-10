@@ -785,6 +785,20 @@ const branchesModule = {
         createBranchResult: null,
         branches: [],
         entities: [],
+        settings: [
+            { type: "apiConnection", displayName: "Verbindingen met API's" },
+            { type: "dataSelector", displayName: "Dataselectors" },
+            { type: "entity", displayName: "Entiteiten" },
+            { type: "entityProperty", displayName: "Velden van entiteiten" },
+            { type: "fieldTemplates", displayName: "Templates van velden" },
+            { type: "link", displayName: "Koppelingen" },
+            { type: "module", displayName: "Modules" },
+            { type: "permission", displayName: "Rechten" },
+            { type: "query", displayName: "Query's" },
+            { type: "role", displayName: "Rollen" },
+            { type: "userRole", displayName: "Koppelingen tussen gebruikers en rollen" },
+            { type: "styledOutput", displayName: "Styled output (Wiser API query output configuraties)" }
+        ],
         isMainBranch: false,
         branchChanges: {
             entities: [],

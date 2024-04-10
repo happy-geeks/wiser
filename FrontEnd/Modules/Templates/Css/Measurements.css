@@ -1,0 +1,85 @@
+﻿/** preview tab **/
+.measurementsContainer,
+.formview.measurementsContainer {
+    box-sizing: border-box;
+    padding: 2px;
+    height: 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+.measurementsContainer * {
+    box-sizing: border-box;
+}
+
+.measurementsContainer .row {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+.measurementsContainer .item {
+    max-width: 100%;
+}
+
+.measurementsContainer .col-6 {
+    flex-basis: auto;
+    max-width: 100%;
+}
+
+.measurementsContainer .col-12 {
+    flex-basis: 100%;
+    max-width: 100%;
+}
+
+.measurementsContainer .flex-container {
+    display: flex;
+    justify-content: space-between;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+}
+
+.measurementsContainer .dropdown-container {
+    flex: 1 1 auto;
+    margin-right: 20px;
+}
+
+.measurementsContainer .dropdown-button {
+    align-self: center;
+}
+
+.measurementsContainer .button-container {
+    display: flex;
+    justify-content: end;
+}
+
+.measurementsContainer .button-container button:nth-last-of-type(1) {
+    margin-right: 0;
+}
+
+.measurementsContainer .k-grid-content {
+    min-height: 50px;
+}
+
+.row.measurement-settings .flex-container.item > label {
+    margin-bottom: 5px;
+}
+.row.measurement-settings .flex-container.item .inline {
+    margin: 0;
+}
+.row.measurement-filters {
+    flex-direction: row;
+}
+.row.measurement-filters .col {
+    flex: 1 1 25%;
+}
+.row.measurement-filters .col .flex-container.item > .k-input {
+    margin: 5px 0;
+}
+
+.html-preview-window .CodeMirror {
+    height: calc(100vh - 105px);
+}
