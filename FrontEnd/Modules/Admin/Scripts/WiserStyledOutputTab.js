@@ -19,10 +19,9 @@ export class WiserStyledOutputTab {
                         read: (options) => {
                             Wiser.api({
                                 /* url: `${this.base.settings.wiserApiRoot}items/tree-view?moduleId=${this.base.settings.moduleId}`,*/
-                                url: `${this.base.settings.wiserApiRoot}items/tree-view?moduleId=700`,
+                                url: `${this.base.settings.wiserApiRoot}StyledOutput/tree-view?customId=${options.data.customId}&styleSheetId=${options.data.styleSheetId}`,
                                 dataType: "json",
-                                method: "GET",
-                                data: options.data
+                                method: "GET"
                             }).then((result) => {
                                 options.success(result);
                             }).catch((result) => {
@@ -32,8 +31,9 @@ export class WiserStyledOutputTab {
                     },
                     schema: {
                         model: {
-                            id: "templateId",
-                            hasChildren: "hasChildren"
+                            id: "customId",
+                            hasChildren: "hasChildren",
+                            styleSheetId: "styleSheetId"
                         } 
                     }
                 },
@@ -51,17 +51,17 @@ export class WiserStyledOutputTab {
                 
              
             }).data("kendoTreeView");
-/*
+
             this.mainTreeViewContextMenu = $("#menu").kendoContextMenu({
                 target: "#treeview",
                 filter: ".k-in",
-                open: this.onContextMenuOpen.bind(this),
-                select: this.onContextMenuClick.bind(this)
+                /*open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuClick.bind(this)*/
             }).data("kendoContextMenu");
             
             
- */
-		/*
+ 
+		
         this.queryCombobox = $("#queryList").kendoDropDownList({
             placeholder: "Selecteer een query...",
             clearButton: false,
@@ -102,7 +102,6 @@ export class WiserStyledOutputTab {
 
         // set query dropdown list
         this.getQueries();
-		*/
     }
 
     async setupBindings() {
@@ -328,9 +327,9 @@ export class WiserStyledOutputTab {
             $(element).addClass(dataItem.nodeCssClass);
         });
 
-        this.base.toggleMainLoader(false);
+        //this.base.toggleMainLoader(false);
     }
-
+    
     /**
      * Handles the click on a node in the tree view (open the item).
      * @param {any} event The click event of the Kendo tree view.

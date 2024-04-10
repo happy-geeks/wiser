@@ -12,6 +12,7 @@ using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Queries.Interfaces;
+using Api.Modules.StyledOutput.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -389,6 +390,150 @@ namespace Api.Modules.Queries.Services
                 StatusCode = HttpStatusCode.OK,
                 ModelObject = itemValue
             };          
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="identity">The identity for the connection </param>
+        /// <returns>Returns the</returns>
+        public async Task<ServiceResult<List<StyledOutputTreeViewItemModel>>> GetStyledOutputsForTreeViewAsync(ClaimsIdentity identity,string CustomId = null, int StyleSheetId = 0 )
+        {
+            List<StyledOutputTreeViewItemModel> lst = new List<StyledOutputTreeViewItemModel>();
+
+            if (CustomId == null || CustomId == "undefined")
+            {
+                lst.Add(new StyledOutputTreeViewItemModel()
+                {
+                    Title = "EntryPoints",
+                    HasChildren = true,
+                    CustomId = "EntryPoints",
+                    StyleSheetId = -1
+                });
+
+                lst.Add(new StyledOutputTreeViewItemModel()
+                {
+                    Title = "StyleSheets",
+                    HasChildren = true,
+                    CustomId = "StyleSheets",
+                    StyleSheetId = -1
+                });
+            }
+            else if (CustomId == "EntryPoints")
+            {
+                var query = $@"SELECT * FROM `{WiserTableNames.WiserStyledOutput}` LIMIT 0,1000";
+                var dataTable = await clientDatabaseConnection.GetAsync(query);
+                if (dataTable.Rows.Count <= 0)
+                {
+                    lst.Add(new StyledOutputTreeViewItemModel()
+                    {
+                        Title = "No Entry points found!",
+                        HasChildren = false,
+                        StyleSheetId = -1
+                    });
+                }
+                else
+                {
+                    foreach (DataRow row in dataTable.Rows)
+                    {
+                        var format_item = row.Field<string>("format_item");
+                        var HasSubStyles = format_item.Contains("{StyledOutput"); // TODO: centralize this string
+
+                        lst.Add(new StyledOutputTreeViewItemModel()
+                        {
+                            Title = row.Field<string>("name"),
+                            HasChildren = HasSubStyles,
+                            CustomId = "StyleSheet",
+                            StyleSheetId = row.Field<int>("id")
+                        });
+                    }
+                }
+            }
+            else if (CustomId == "StyleSheet" && StyleSheetId > 0)
+            {
+                var query = $@"SELECT * FROM `{WiserTableNames.WiserStyledOutput}` WHERE `id` = {StyleSheetId} LIMIT 1";
+                var dataTable = await clientDatabaseConnection.GetAsync(query);
+                if (dataTable.Rows.Count <= 0)
+                {
+                    lst.Add(new StyledOutputTreeViewItemModel()
+                    {
+                        Title = "No Entry points found!",
+                        HasChildren = false,
+                        StyleSheetId = -1
+                    });
+                }
+                else
+                {
+                    var row = dataTable.Rows[0];
+                    var format_item = row.Field<string>("format_item");
+
+                    var substyles = GetSubStylesForId(StyleSheetId);
+                    var HasSubStyles = substyles.Count > 0;
+
+                    foreach (var substyle in substyles)
+                    {
+                        var subquery = $@"SELECT * FROM `{WiserTableNames.WiserStyledOutput}` LIMIT 0,1000";
+                        var result = await clientDatabaseConnection.GetAsync(subquery);
+                        if (result.Rows.Count <= 0)
+                        {
+                            lst.Add(new StyledOutputTreeViewItemModel()
+                            {
+                                Title = "Missing!",
+                                HasChildren = false,
+                                StyleSheetId = -1
+                            });
+                        }
+                        else
+                        {
+                            var subrow = result.Rows[0];
+                            var subformat_item = subrow.Field<string>("format_item");
+                            var subHasSubStyles = subformat_item.Contains("{StyledOutput"); // TODO: centralize this string
+
+                            lst.Add(new StyledOutputTreeViewItemModel()
+                            {
+                                Title = row.Field<string>("name"),
+                                HasChildren = subHasSubStyles,
+                                CustomId = "StyleSheet",
+                                StyleSheetId = substyle.id
+                            });
+                        }
+                    }
+                }
+            }
+            else if (CustomId == "StyleSheets")
+            {
+                var query = $@"SELECT * FROM `{WiserTableNames.WiserStyledOutput}` LIMIT 0,1000";
+                var dataTable = await clientDatabaseConnection.GetAsync(query);
+                if (dataTable.Rows.Count <= 0)
+                {
+                    lst.Add(new StyledOutputTreeViewItemModel()
+                    {
+                        Title = "No Entry points found!",
+                        HasChildren = false,
+                        StyleSheetId = -1
+                    });
+                }
+                else
+                {
+                    foreach (DataRow row in dataTable.Rows)
+                    {
+                        lst.Add(new StyledOutputTreeViewItemModel()
+                        {
+                            Title = row.Field<string>("name"),
+                            HasChildren = false,
+                            StyleSheetId = -1
+                        });
+                    }
+                }
+            }
+            
+
+            return new ServiceResult<List<StyledOutputTreeViewItemModel>>(lst);
+        }
+
+        
+        private List<> GetSubStylesForId(int styleSheetId)
+        {
+
         }
     }
 }

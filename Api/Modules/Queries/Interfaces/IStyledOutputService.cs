@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
+using Api.Modules.StyledOutput.Models;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Interfaces
@@ -23,5 +24,13 @@ namespace Api.Modules.Queries.Interfaces
         /// <returns>The results of the query .</returns>
         /// 
         Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id">The ID from wiser_styled_output.</param>
+        /// <returns>.</returns>
+        ///
+        Task<ServiceResult<List<StyledOutputTreeViewItemModel>>> GetStyledOutputsForTreeViewAsync(ClaimsIdentity identity, string CustomId, int styleSheetId);
     }
 }
