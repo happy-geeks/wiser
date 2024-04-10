@@ -241,7 +241,6 @@ export class Fields {
                 }
             }
 
-
             if (element.tagName.toUpperCase() !== "INPUT") {
                 this.originalItemValues[windowId][propertyName] = field.val();
             } else {
@@ -253,6 +252,11 @@ export class Fields {
                         this.originalItemValues[windowId][propertyName] = field.val();
                         break;
                 }
+            }
+
+            // Ignore elements that are part of the Kendo control.
+            if (element.classList.contains("k-input-inner")) {
+                return;
             }
 
             this.handleDependencies({ currentTarget: element }, tabName);
@@ -308,7 +312,6 @@ export class Fields {
 
                 selectedTab = tabStrip.select().text();
             }
-
 
             if (currentElement[0].tagName.toUpperCase() !== "INPUT") {
                 valueOfElement = currentElement.val();
@@ -383,6 +386,10 @@ export class Fields {
                             dependsOnValue = dependsOnValue > 0;
                         }
                         break;
+                    case "[object Array]":
+                        valueOfElement = valueOfElement.map(v => v.toString().toLowerCase());
+                        dependsOnValue = dependsOnValue.toLowerCase();
+                        break;
                     default:
                         console.warn(`Value '${valueOfElement}' of field '${dependency.id}' has an unsupported type (${Object.prototype.toString.call(valueOfElement)}) for dependancy comparison, so this might not work as expected.`);
                         break;
@@ -421,13 +428,6 @@ export class Fields {
 
                         // Reload the data source.
                         kendoControl.dataSource.read();
-
-                        // If the dependent element has a value and this element has en open function, call that function.
-                        // This way the user can immediately enter a value in the next element.
-                        /* TODO: Enable and maybe edit this code after I have discussed it with Ferry.
-                         if (valueOfElement && kendoControl.open) {
-                            kendoControl.one("dataBound", dataBoundEvent => dataBoundEvent.sender.open());
-                        }*/
                     }
 
                     break;
@@ -446,7 +446,7 @@ export class Fields {
                         case this.base.comparisonOperatorsEnum.contains:
                             showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) > -1).length > 0;
                             break;
-                        case this.base.comparisonOperatorsEnum.doesnotcontain:
+                        case this.base.comparisonOperatorsEnum.doesNotContain:
                             showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) > -1).length === 0;
                             break;
                         case this.base.comparisonOperatorsEnum.startsWith:
@@ -1991,6 +1991,57 @@ export class Fields {
                         break;
                     }
 
+                    // Merge PDF files from a query to 1 downloadable PDF
+                    case "mergeFiles": {
+                        let encryptedIds = [];
+                        if (action.queryId) {
+                            // If a query is provided, it always takes precedence over any lines that may be selected in a grid 
+                            queryActionResult = await executeQuery();
+                            if (!queryActionResult.success) {
+                                kendo.alert(queryActionResult.errorMessage || `Er is iets fout gegaan met het uitvoeren van de actie '${action.type}', probeer het a.u.b. nogmaals of neem contact op met ons.`);
+                                return false;
+                            } else if (!queryActionResult.otherData[0].id || !queryActionResult.otherData[0].propertynames) {
+                                kendo.alert(`Er werd geprobeerd om actie type '${action.type}' uit te voeren, echter voldoet het resultaat niet aan de eisen. De selectie dient tenminste een encrypted 'id' en een 'propertynames' te bevatten. Neem a.u.b. contact op met ons.`);
+                                return false;
+                            }
+                            action.propertyNames = queryActionResult.otherData[0].propertynames;
+                            if (queryActionResult.otherData[0].fileName) action.fileName = queryActionResult.otherData[0].filename;
+                            if (queryActionResult.otherData[0].entity_type) action.entityType = queryActionResult.otherData[0].entity_type;
+                            encryptedIds = queryActionResult.otherData.map(item => item.id);
+                        }
+                        else {
+                            // We have an array with selected items, which means this is an action button in a grid and we want to execute this action once for every selected item.
+                            encryptedIds = selectedItems.map(item => item.dataItem.encrypted_id);
+                            if (selectedItems[0].dataItem.entity_type) action.entityType = selectedItems[0].dataItem.entity_type;
+                        }
+                        
+                        //Call Wiser API to generate the merged PDF file
+                        const process = `convertHtmlToPdf_${Date.now()}`;
+                        window.processing.addProcess(process);
+                        try {
+                            const pdfResult = await fetch(`${this.base.settings.wiserApiRoot}pdf/merge-pdfs`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
+                                },
+                                body: JSON.stringify({
+                                    encryptedItemIdsList:encryptedIds,
+                                    entityType:action.entityType || "",
+                                    propertyNames:action.propertyNames})
+                            });
+                            await Misc.downloadFile(pdfResult, action.fileName || "mergedpdf.pdf");
+                        }
+                        catch (exception) {
+                            if (typeof exception === "string") {
+                                kendo.alert(exception);
+                            }
+                        }
+                        window.processing.removeProcess(process);
+                        
+                        break;
+                    }
+
                     // Generates a (HTML) file via get_items.jcl.
                     case "generateFile": {
                         if ((!action.dataSelectorId && !action.queryId) || (!action.contentItemId && !userParametersWithValues.contentItemId) || !action.contentPropertyName) {
@@ -2327,7 +2378,9 @@ export class Fields {
 
             let itemDetails = mainItemDetails;
             if (selectedItems.length > 0 && selectedItems[0].dataItem) {
-                itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+                if (selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId) {
+                    itemDetails = (await this.base.getItemDetails(selectedItems[0].dataItem.encrypted_id || selectedItems[0].dataItem.encryptedid || selectedItems[0].dataItem.encryptedId, selectedItems[0].dataItem.entity_type || selectedItems[0].dataItem.entitytype || selectedItems[0].dataItem.entityType)) || mainItemDetails;
+                }
             }
 
             const process = `initializeGenerateFileWindow_${Date.now()}`;
@@ -2508,7 +2561,11 @@ export class Fields {
                             };
 
                             if (currentAction.pdfFilename) {
-                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
+                                pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true, false);
+                            }
+
+                            if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
+                                pdfToHtmlData.fileName = "Document.pdf";
                             }
 
                             pdfToHtmlData.documentOptions = "";
@@ -2558,11 +2615,32 @@ export class Fields {
                         icon: "print"
                     });
 
+                    const emailRegularExpression = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
                     previewWindow.element.find("#mailPreview").kendoButton({
                         click: async (event) => {
                             try {
                                 const dialogElement = $("#sendMailDialog");
-                                const validator = dialogElement.find(".formview").kendoValidator().data("kendoValidator");
+                                const validator = dialogElement.find(".formview").kendoValidator({
+                                    rules: {
+                                        email: (input) => {
+                                            // Custom e-mail validation for allowing multiple e-mail addresses.
+                                            if (input.is("[type=email]") && input.val() !== "")
+                                            {
+                                                const emailsArray = input.val().split(";");
+                                                for (let email of emailsArray)
+                                                {
+                                                    email = email.trim();
+                                                    if (email !== "" && !emailRegularExpression.test(email))
+                                                    {
+                                                        return false;
+                                                    }
+                                                }
+                                            }
+
+                                            return true;
+                                        }
+                                    }
+                                }).data("kendoValidator");
                                 let mailDialog = dialogElement.data("kendoDialog");
                                 const uploadedFiles = [];
 
@@ -2626,7 +2704,11 @@ export class Fields {
                                                     };
 
                                                     if (currentAction.pdfFilename) {
-                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails);
+                                                        pdfToHtmlData.fileName = Wiser.doWiserItemReplacements(currentAction.pdfFilename, currentItemDetails, false, true);
+                                                    }
+
+                                                    if (!pdfToHtmlData.fileName || pdfToHtmlData.fileName.startsWith(".pdf")) {
+                                                        pdfToHtmlData.fileName = "Document.pdf";
                                                     }
 
                                                     let ajaxOptions = {
@@ -2689,6 +2771,24 @@ export class Fields {
 
                                                     const cc = mailDialog.element.find("input[name=cc]").val();
                                                     const bcc = mailDialog.element.find("input[name=bcc]").val();
+                                                    const receivers = [];
+                                                    const receiverEmails = mailDialog.element.find("input[name=receiverEmail]").val().split(";");
+                                                    const receiverNames = mailDialog.element.find("input[name=receiverName]").val().split(";");
+                                                    for (let i = 0; i < receiverEmails.length; i++) {
+                                                        const email = receiverEmails[i];
+                                                        let name = email;
+                                                        if (receiverNames.length > i) {
+                                                            name = receiverNames[i];
+                                                        }
+                                                        else if (receiverNames.length > 0) {
+                                                            name = receiverNames[0];
+                                                        }
+
+                                                        receivers.push({
+                                                            displayName: name,
+                                                            address: email,
+                                                        })
+                                                    }
 
                                                     Wiser.api({
                                                         url: `${this.base.settings.wiserApiRoot}communications/email`,
@@ -2697,12 +2797,9 @@ export class Fields {
                                                         data: JSON.stringify({
                                                             senderName: mailDialog.element.find("input[name=senderName]").val(),
                                                             sender: mailDialog.element.find("input[name=senderEmail]").val(),
-                                                            receivers: [{
-                                                                displayName: mailDialog.element.find("input[name=receiverName]").val(),
-                                                                address: mailDialog.element.find("input[name=receiverEmail]").val(),
-                                                            }],
-                                                            cc: cc ? [cc] : null,
-                                                            bcc: bcc ? [bcc] : null,
+                                                            receivers: receivers,
+                                                            cc: cc ? cc.split(";") : null,
+                                                            bcc: bcc ? bcc.split(";") : null,
                                                             subject: mailDialog.element.find("input[name=subject]").val(),
                                                             wiserItemFiles: wiserFileAttachments,
                                                             content: emailBodyEditor.value()
@@ -2861,9 +2958,10 @@ export class Fields {
          if (!this.base.settings.imagesRootId) {
             kendo.alert("Er is nog geen 'imagesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.images;
-            this.base.windows.fileManagerWindow.center().open();
+             const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+             const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, this.base.windows.fileManagerModes.images, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
+
+             fileManagerWindow.center().open();
         }
     }
 
@@ -2879,9 +2977,10 @@ export class Fields {
         if (!this.base.settings.filesRootId) {
             kendo.alert("Er is nog geen 'filesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.files;
-            this.base.windows.fileManagerWindow.center().open();
+            const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+            const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, this.base.windows.fileManagerModes.files, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
+
+            fileManagerWindow.center().open();
         }
     }
 
@@ -2897,9 +2996,10 @@ export class Fields {
         if (!this.base.settings.templatesRootId) {
             kendo.alert("Er is nog geen 'templatesRootId' ingesteld in de database. Neem a.u.b. contact op met ons om dit te laten instellen.");
         } else {
-            this.base.windows.fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
-            this.base.windows.fileManagerWindowMode = this.base.windows.fileManagerModes.templates;
-            this.base.windows.fileManagerWindow.center().open();
+            const fileManagerWindowSender = { kendoEditor: kendoEditor, codeMirror: codeMirror, contentbuilder: contentbuilder };
+            const fileManagerWindow = Wiser.initializeFileManager(fileManagerWindowSender, this.base.windows.fileManagerModes.templates, this.base.settings.iframeMode, this.base.settings.gridViewMode, this.base.settings.moduleName);
+
+            fileManagerWindow.center().open();
         }
     }
 

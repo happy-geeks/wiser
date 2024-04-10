@@ -2,6 +2,7 @@
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Modules.Pdfs.Models;
 using Api.Modules.Pdfs.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +59,21 @@ namespace Api.Modules.Pdfs.Controllers
         {
             data.Html = WebUtility.HtmlDecode(data.Html);
             return (await pdfsService.SaveHtmlAsPdfAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Download and merge all pdf files
+        /// </summary>
+        /// <param name="data">all the settings for merging PDF's</param>
+        /// <returns>The location of the HTML file on the server.</returns>
+        [HttpPost]
+        [Route("merge-pdfs")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [Produces(MediaTypeNames.Application.Pdf)]
+        public async Task<IActionResult> MergePdfFilesAsync(MergePdfModel data)
+        {
+            var mergedPdfResult = await pdfsService.MergePdfFilesAsync((ClaimsIdentity)User.Identity, data.EncryptedItemIdsList, data.PropertyNames, data.EntityType);
+            return File(mergedPdfResult.ModelObject, "application/pdf");
         }
     }
 }

@@ -1,17 +1,17 @@
-﻿using Api.Core.Services;
-using Api.Modules.LinkSettings.Interfaces;
-using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Interfaces;
-using GeeksCoreLibrary.Core.Models;
-using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Services;
+using Api.Modules.LinkSettings.Interfaces;
+using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Interfaces;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using MySqlConnector;
 
 namespace Api.Modules.LinkSettings.Services
 {

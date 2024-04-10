@@ -28,11 +28,12 @@ namespace FrontEnd.Modules.Templates.Controllers
         /// View containing the attributes of the component to be displayed as fields.
         /// </returns>
         [HttpGet, Route("{id:int}")]
-        public IActionResult Index(int id, int templateId)
+        public IActionResult Index(int id, int templateId, string initialTab = null)
         {
             var viewModel = baseService.CreateBaseViewModel<DynamicContentViewModel>();
             viewModel.ContentId = id;
             viewModel.TemplateId = templateId;
+            viewModel.InitialTab = initialTab;
             viewModel.Components = ReflectionHelper.GetComponents();
             return View(viewModel);
         }

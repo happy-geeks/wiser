@@ -32,9 +32,9 @@ import {
     GENERATE_TOTP_BACKUP_CODES_SUCCESS,
     GET_BRANCH_CHANGES,
     GET_BRANCHES,
-    GET_TENANT_TITLE,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
     IS_MAIN_BRANCH,
@@ -45,6 +45,7 @@ import {
     MODULES_LOADED,
     MODULES_REQUEST,
     OPEN_MODULE,
+    RESET_BRANCH_CHANGES,
     RESET_PASSWORD_ERROR,
     RESET_PASSWORD_SUCCESS,
     SET_ACTIVE_TIMER_INTERVAL,
@@ -784,8 +785,26 @@ const branchesModule = {
         createBranchResult: null,
         branches: [],
         entities: [],
+        settings: [
+            { type: "apiConnection", displayName: "Verbindingen met API's" },
+            { type: "dataSelector", displayName: "Dataselectors" },
+            { type: "entity", displayName: "Entiteiten" },
+            { type: "entityProperty", displayName: "Velden van entiteiten" },
+            { type: "fieldTemplates", displayName: "Templates van velden" },
+            { type: "link", displayName: "Koppelingen" },
+            { type: "module", displayName: "Modules" },
+            { type: "permission", displayName: "Rechten" },
+            { type: "query", displayName: "Query's" },
+            { type: "role", displayName: "Rollen" },
+            { type: "userRole", displayName: "Koppelingen tussen gebruikers en rollen" },
+            { type: "styledOutput", displayName: "Styled output (Wiser API query output configuraties)" }
+        ],
         isMainBranch: false,
-        branchChanges: {},
+        branchChanges: {
+            entities: [],
+            settings: []
+        },
+        branchChangesLoaded: false,
         mergeBranchError: null,
         mergeBranchResult: null,
         deleteBranchResult: null,
@@ -827,6 +846,15 @@ const branchesModule = {
 
         [GET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = branchChanges;
+            state.branchChangesLoaded = true;
+        },
+
+        [RESET_BRANCH_CHANGES](state, branchChanges) {
+            state.branchChanges = {
+                entities: [],
+                settings: []
+            };
+            state.branchChangesLoaded = false;
         },
 
         [HANDLE_CONFLICT](state, { acceptChange, id }) {
@@ -1034,6 +1062,10 @@ const branchesModule = {
             commit(GET_BRANCH_CHANGES, changesResponse.data);
             commit(MERGE_BRANCH_SUCCESS, null);
             commit(END_REQUEST);
+        },
+
+        async [RESET_BRANCH_CHANGES]({ commit }) {
+            commit(RESET_BRANCH_CHANGES);
         },
 
         [HANDLE_CONFLICT]({ commit }, payload) {

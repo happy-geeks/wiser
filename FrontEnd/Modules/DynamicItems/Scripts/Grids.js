@@ -309,6 +309,13 @@ export class Grids {
                     text: "",
                     template: `<div class="counterContainer"><span class="counter">0</span> <span class="plural">resultaten</span><span class="singular" style="display: none;">resultaat</span></div>`
                 });
+            } else {
+                toolbar.push({
+                    name: "whitespace",
+                    iconClass: "",
+                    text: "",
+                    template: `<div class="counterContainer"></div>`
+                });
             }
 
             if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideExportButton) {

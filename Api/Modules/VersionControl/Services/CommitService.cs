@@ -9,6 +9,7 @@ using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
+using Api.Modules.Templates.Models.Other;
 using Api.Modules.VersionControl.Enums;
 using Api.Modules.VersionControl.Interfaces;
 using Api.Modules.VersionControl.Interfaces.DataLayer;
@@ -144,7 +145,12 @@ public class CommitService : ICommitService, IScopedService
                     {
                         throw new Exception($"Could not get environments of template '{template.TemplateId}'. Error was: {currentPublished.ErrorMessage}");
                     }
-
+                    
+                    if (!AllowedToPublishToTargetedEnvironment(template.Version, data.Environment, currentPublished.ModelObject))
+                    {
+                        continue;
+                    }
+                    
                     await templatesService.PublishToEnvironmentAsync(identity, template.TemplateId, template.Version, data.Environment, currentPublished.ModelObject);
 
                     // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
@@ -162,6 +168,11 @@ public class CommitService : ICommitService, IScopedService
                         throw new Exception($"Could not get environments of dynamic content '{dynamicContent.DynamicContentId}'. Error was: {currentPublished.ErrorMessage}");
                     }
 
+                    if (!AllowedToPublishToTargetedEnvironment(dynamicContent.Version, data.Environment, currentPublished.ModelObject))
+                    {
+                        continue;
+                    }
+                    
                     await dynamicContentService.PublishToEnvironmentAsync(identity, dynamicContent.DynamicContentId, dynamicContent.Version, data.Environment, currentPublished.ModelObject);
 
                     // Create a new version of the component, so that any changes made after this will be done in the new version instead of the published one.
@@ -249,6 +260,11 @@ public class CommitService : ICommitService, IScopedService
                 throw new Exception($"Could not get environments of template '{template.TemplateId}'. Error was: {currentPublished.ErrorMessage}");
             }
 
+            if (!AllowedToPublishToTargetedEnvironment(template.Version, data.Environment, currentPublished.ModelObject))
+            {
+                continue;
+            }
+            
             await templatesService.PublishToEnvironmentAsync(identity, template.TemplateId, template.Version, data.Environment, currentPublished.ModelObject);
 
             // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
@@ -264,6 +280,11 @@ public class CommitService : ICommitService, IScopedService
                 throw new Exception($"Could not get environments of dynamic content '{dynamicContent.DynamicContentId}'. Error was: {currentPublished.ErrorMessage}");
             }
 
+            if (!AllowedToPublishToTargetedEnvironment(dynamicContent.Version, data.Environment, currentPublished.ModelObject))
+            {
+                continue;
+            }
+            
             await dynamicContentService.PublishToEnvironmentAsync(identity, dynamicContent.DynamicContentId, dynamicContent.Version, data.Environment, currentPublished.ModelObject);
 
             // Create a new version of the component, so that any changes made after this will be done in the new version instead of the published one.
@@ -340,5 +361,46 @@ public class CommitService : ICommitService, IScopedService
         var results = await commitDataService.GetCommitHistoryAsync(includeCompleted, includeIncompleted);
 
         return new ServiceResult<List<CommitModel>>(results);
+    }
+
+    /// <summary>
+    /// Checks if the version being published is higher than the current version of the targeted environment.
+    /// This prevents commits containing older version to override a newer version.
+    /// </summary>
+    /// <param name="version">The version that will be published to the environment.</param>
+    /// <param name="targetEnvironment">The targeted environment to publish to.</param>
+    /// <param name="currentPublished">The current published information.</param>
+    /// <returns>Returns true if the version is allowed to be published to the targeted environment, otherwise returns false.</returns>
+    private static bool AllowedToPublishToTargetedEnvironment(int version, Environments targetEnvironment, PublishedEnvironmentModel currentPublished)
+    {
+        switch (targetEnvironment)
+        {
+            case Environments.Development:
+                if (version == currentPublished.VersionList.Last())
+                {
+                    return true;
+                }
+                break;
+            case Environments.Test:
+                if (version > currentPublished.TestVersion)
+                {
+                    return true;
+                }
+                break;
+            case Environments.Acceptance:
+                if (version > currentPublished.AcceptVersion)
+                {
+                    return true;
+                }
+                break;
+            case Environments.Live:
+                if (version > currentPublished.LiveVersion)
+                {
+                    return true;
+                }
+                break;
+        }
+
+        return false;
     }
 }

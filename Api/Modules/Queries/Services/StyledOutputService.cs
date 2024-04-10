@@ -7,7 +7,9 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
+using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -20,6 +22,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using IdentityServer4.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
@@ -37,9 +40,11 @@ namespace Api.Modules.Queries.Services
         private readonly IQueriesService queriesService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ILogger<StyledOutputService> logger;
+        private readonly StyledOutputSettings apiSettings;
+        private readonly IBranchesService branchesService;
         
-        // even if the user selects a higher value the results will always be capped to this
-        private const int maxResultsPerPage = 500;
+        // even if the user selects a higher value the results will always be capped to this ( filled in by settings file )
+        private int maxResultsPerPage;
 
         private const string itemSeperatorString = ", ";
         
@@ -49,21 +54,26 @@ namespace Api.Modules.Queries.Services
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
-        public StyledOutputService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger)
+        public StyledOutputService(IWiserTenantsService wiserTenantsService,IOptions<StyledOutputSettings> apiSettings, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IStringReplacementsService stringReplacementsService, IReplacementsMediator replacementsMediator, IQueriesService queriesService, IDatabaseHelpersService databaseHelpersService , ILogger<StyledOutputService> logger, IBranchesService branchesService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.apiSettings = apiSettings.Value;
             this.wiserItemsService = wiserItemsService;
             this.stringReplacementsService = stringReplacementsService;
             this.queriesService = queriesService;
             this.databaseHelpersService = databaseHelpersService;
             this.replacementsMediator = replacementsMediator;
             this.logger = logger;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
         {
+            // Fetch max results per page ( can be overwritten by the user ).
+            maxResultsPerPage = apiSettings.MaxResultsPerPage;
+
             var response = await GetStyledOutputResultAsync(identity, allowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
 
             if (response.StatusCode != HttpStatusCode.OK)
@@ -232,10 +242,13 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.ClearParameters();
 
             int pageResultCount = Math.Min(maxResultsPerPage, resultsPerPage);
+
+            var isMainBranch = await branchesService.IsMainBranchAsync(identity);
             
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * pageResultCount);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), pageResultCount);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"), isMainBranch.ModelObject);
             
             parameters ??= new List<KeyValuePair<string, object>>(parameters);
          
@@ -271,8 +284,18 @@ namespace Api.Modules.Queries.Services
                     itemValue = replacementsMediator.EvaluateTemplate(itemValue);
 
                     // replace recursive inline styles
-                    itemValue = await HandleInlineStyleElements(identity, itemValue, parameters, stripNewlinesAndTabs,
+                    var inlineResult =  await HandleInlineStyleElementsAsync(identity, itemValue, parameters, stripNewlinesAndTabs,
                         resultsPerPage, page, usedIds);
+                    
+                    if (inlineResult.StatusCode == HttpStatusCode.OK)
+                    {
+                        itemValue = inlineResult.ModelObject;
+                    }
+                    else
+                    {
+                        // relate error if something went wrong
+                        return inlineResult;
+                    }
 
                     combinedResult.Append(itemValue);
 
@@ -306,7 +329,7 @@ namespace Api.Modules.Queries.Services
         /// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
         /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null</param>
         /// <returns>Returns the updated string with replacements applied</returns>
-        private async Task<string> HandleInlineStyleElements(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
+        private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
         {
             var index = 0;
             
@@ -353,9 +376,19 @@ namespace Api.Modules.Queries.Services
                     {
                         itemValue = itemValue.Replace(styleString, subResult.ModelObject.ToString());
                     }
+                    else
+                    {
+                        // something went wrong, resturn the error from the sub-query
+                        return subResult;
+                    }
                 }
             }
-            return itemValue;
+            
+            return new ServiceResult<string>
+            {
+                StatusCode = HttpStatusCode.OK,
+                ModelObject = itemValue
+            };          
         }
     }
 }

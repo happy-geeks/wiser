@@ -79,5 +79,11 @@ namespace Api.Core.Models
         /// Gets or sets the directory where the plugins are located.
         /// </summary>
         public string PluginsDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds for very long queries, such as exports.
+        /// Default is 4 hours.
+        /// </summary>
+        public int SqlCommandTimeoutForExportsAndLongQueries { get; set; } = 14400;
     }
 }

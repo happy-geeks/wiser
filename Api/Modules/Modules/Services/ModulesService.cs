@@ -124,6 +124,7 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserItemLinkDetail,
                 WiserTableNames.WiserDataSelector,
                 WiserTableNames.WiserTemplate,
+                WiserTableNames.WiserTemplateExternalFiles,
                 WiserTableNames.WiserDynamicContent,
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
@@ -132,11 +133,13 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserQuery,
                 WiserTableNames.WiserPermission,
                 WiserTableNames.WiserCommunication,
+                WiserTableNames.WiserStyledOutput,
+                WiserTableNames.WiserParentUpdates,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
 
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2023, 10, 5))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2024, 2, 2))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -308,10 +311,10 @@ UNION
                             var moduleQuery = dataRow.Field<string>("custom_query");
                             if (!String.IsNullOrWhiteSpace(moduleQuery))
                             {
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString());
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
-                                moduleQuery = moduleQuery.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
+                                moduleQuery = moduleQuery.Replace("{userId}", IdentityHelpers.GetWiserUserId(identity).ToString(), StringComparison.OrdinalIgnoreCase);
+                                moduleQuery = moduleQuery.Replace("{username}", IdentityHelpers.GetUserName(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+                                moduleQuery = moduleQuery.Replace("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+                                moduleQuery = moduleQuery.Replace("{userType}", IdentityHelpers.GetRoles(identity) ?? "", StringComparison.OrdinalIgnoreCase);
 
                                 var moduleDataTable = await clientDatabaseConnection.GetAsync(moduleQuery);
                                 if (moduleDataTable.Rows.Count > 0)

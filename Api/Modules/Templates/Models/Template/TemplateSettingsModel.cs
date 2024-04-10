@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Api.Modules.Templates.Models.Other;
 using GeeksCoreLibrary.Modules.Templates.Enums;
+using GeeksCoreLibrary.Modules.Templates.Models;
 using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template
@@ -88,22 +89,27 @@ namespace Api.Modules.Templates.Models.Template
         #region HTML settings
 
         /// <summary>
-        /// Gets or sets whether the caching is seperated by SEO url
+        /// Gets or sets whether the caching is seperated by SEO url.
         /// </summary>
         public bool CachePerUrl { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the caching is seperated by query string parameters
+        /// Gets or sets whether the caching is seperated by query string parameters.
         /// </summary>
         public bool CachePerQueryString { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the caching is seperated by hostname
+        /// Gets or sets whether the caching is seperated by hostname.
         /// </summary>
         public bool CachePerHostName { get; set; }
 
         /// <summary>
-        /// Gets or sets whether caching is determined by a regex
+        /// Gets or sets whether the caching is seperated by user ID.
+        /// </summary>
+        public bool CachePerUser { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether caching is determined by a regex.
         /// </summary>
         public bool CacheUsingRegex { get; set; }
 
@@ -205,7 +211,7 @@ namespace Api.Modules.Templates.Models.Template
         /// <summary>
         /// Gets or sets any external javascript or CSS files that should be loaded.
         /// </summary>
-        public List<string> ExternalFiles { get; set; } = new();
+        public List<PageResourceModel> ExternalFiles { get; set; } = new();
 
         /// <summary>
         /// Gets or sets whether this SCSS template is one that should be included before all other SCSS templates before compiling them.

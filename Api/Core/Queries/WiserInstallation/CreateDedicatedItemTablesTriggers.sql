@@ -126,9 +126,25 @@ END;
 -- ----------------------------
 DROP TRIGGER IF EXISTS `{tablePrefix}DetailInsert`;
 CREATE TRIGGER `{tablePrefix}DetailInsert` AFTER INSERT ON `{tablePrefix}wiser_itemdetail` FOR EACH ROW BEGIN
+    DECLARE previousItemId BIGINT;
+
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEM','{tablePrefix}wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
+    END IF;
+
+    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+        IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
+            INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
+            VALUES (
+                       NEW.`item_id`,
+                       '{tablePrefix}wiser_item',
+                       NOW(),
+                       IFNULL(@_username, USER())
+                   );
+        END IF;
+
+        SET @previousItemId = NEW.`item_id`;
     END IF;
 END;
 
@@ -136,30 +152,65 @@ DROP TRIGGER IF EXISTS `{tablePrefix}DetailUpdate`;
 CREATE TRIGGER `{tablePrefix}DetailUpdate` AFTER UPDATE ON `{tablePrefix}wiser_itemdetail` FOR EACH ROW BEGIN
     DECLARE oldValue MEDIUMTEXT;
     DECLARE newValue MEDIUMTEXT;
+    DECLARE previousItemId BIGINT;
 
-    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
-        SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
-        IF oldValue <> newValue THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
-            VALUES ('UPDATE_ITEM', '{tablePrefix}wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.language_code, NEW.groupname);
+    SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
+    SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
+
+    IF oldValue <> newValue THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            IF oldValue <> newValue THEN
+                INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+                VALUES ('UPDATE_ITEM', '{tablePrefix}wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.language_code, NEW.groupname);
+            END IF;
+        END IF;
+
+        IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+            IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
+                INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
+                VALUES (
+                           NEW.`item_id`,
+                           '{tablePrefix}wiser_item',
+                           NOW(),
+                           IFNULL(@_username, USER())
+                       );
+            END IF;
+
+            SET @previousItemId = NEW.`item_id`;
         END IF;
     END IF;
 END;
 
 DROP TRIGGER IF EXISTS `{tablePrefix}DetailDelete`;
 CREATE TRIGGER `{tablePrefix}DetailDelete` AFTER DELETE ON `{tablePrefix}wiser_itemdetail` FOR EACH ROW BEGIN
+    DECLARE previousItemId BIGINT;
+
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEM', '{tablePrefix}wiser_itemdetail', OLD.item_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
     END IF;
-END;
 
+    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+        IF (OLD.`item_id` IS NOT NULL AND OLD.`item_id` <> IFNULL(@previousItemId, 0)) THEN
+            INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
+            VALUES (
+                       OLD.`item_id`,
+                       '{tablePrefix}wiser_item',
+                       NOW(),
+                       IFNULL(@_username, USER())
+                   );
+        END IF;
+
+        SET @previousItemId = OLD.`item_id`;
+    END IF;
+END;
 -- ----------------------------
 -- Triggers structure for table wiser_itemfile
 -- ----------------------------
 DROP TRIGGER IF EXISTS `{tablePrefix}FileInsert`;
 CREATE TRIGGER `{tablePrefix}FileInsert` AFTER INSERT ON `{tablePrefix}wiser_itemfile` FOR EACH ROW BEGIN
+    DECLARE previousItemId BIGINT;
+    DECLARE prevLinkedItemId BIGINT;
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('ADD_FILE', '{tablePrefix}wiser_itemfile', NEW.id, IFNULL(@_username, USER()), IFNULL(NEW.property_name, ''), IF(IFNULL(NEW.item_id, 0) > 0, 'item_id', 'itemlink_id'), IF(IFNULL(NEW.item_id, 0) > 0, NEW.item_id, NEW.itemlink_id));
@@ -224,10 +275,26 @@ CREATE TRIGGER `{tablePrefix}FileInsert` AFTER INSERT ON `{tablePrefix}wiser_ite
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'extra_data', NULL, NEW.extra_data);
         END IF;
     END IF;
+
+    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+        IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
+            INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
+            VALUES (
+                       NEW.`item_id`,
+                       '{tablePrefix}wiser_item',
+                       NOW(),
+                       IFNULL(@_username, USER())
+                   );
+        END IF;
+
+        SET @previousItemId = NEW.`item_id`;
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `{tablePrefix}FileUpdate`;
 CREATE TRIGGER `{tablePrefix}FileUpdate` AFTER UPDATE ON `{tablePrefix}wiser_itemfile` FOR EACH ROW BEGIN
+    DECLARE previousItemId BIGINT;
+    
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         IF NEW.item_id <> OLD.item_id THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
@@ -295,16 +362,45 @@ CREATE TRIGGER `{tablePrefix}FileUpdate` AFTER UPDATE ON `{tablePrefix}wiser_ite
         END IF;
 
         IF NEW.extra_data <> OLD.extra_data THEN
-           INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-           VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'extra_data', OLD.extra_data, NEW.extra_data);
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+            VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'extra_data', OLD.extra_data, NEW.extra_data);
         END IF;
+    END IF;
+
+    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+        IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
+            INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
+            VALUES (
+                       NEW.`item_id`,
+                       '{tablePrefix}wiser_item',
+                       NOW(),
+                       IFNULL(@_username, USER())
+                   );
+        END IF;
+
+        SET @previousItemId = NEW.`item_id`;
     END IF;
 END;
 
 DROP TRIGGER IF EXISTS `{tablePrefix}FileDelete`;
 CREATE TRIGGER `{tablePrefix}FileDelete` AFTER DELETE ON `{tablePrefix}wiser_itemfile` FOR EACH ROW BEGIN
+    DECLARE previousItemId BIGINT;
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('DELETE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), IFNULL(OLD.property_name, ''), IF(IFNULL(OLD.item_id, 0) > 0, 'item_id', 'itemlink_id'), IF(IFNULL(OLD.item_id, 0) > 0, OLD.item_id, OLD.itemlink_id));
+    END IF;
+
+    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+        IF (OLD.`item_id` IS NOT NULL AND OLD.`item_id` <> IFNULL(@previousItemId, 0)) THEN
+            INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
+            VALUES (
+                       OLD.`item_id`,
+                       '{tablePrefix}wiser_item',
+                       NOW(),
+                       IFNULL(@_username, USER())
+                   );
+        END IF;
+
+        SET @previousItemId = OLD.`item_id`;
     END IF;
 END;

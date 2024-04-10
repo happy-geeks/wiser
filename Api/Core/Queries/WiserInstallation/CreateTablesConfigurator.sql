@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemdetail`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `item_key`(`item_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
@@ -80,6 +82,8 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemdetail_archive`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `item_key`(`item_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
@@ -98,11 +102,13 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
-  INDEX `language_id`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
+  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -115,11 +121,13 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail_archive`  (
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'optionele groepering van items, zoals een \'specs\' tabel',
   `key` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `value` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `value_as_int` bigint GENERATED ALWAYS AS (CAST(`value` AS SIGNED)) VIRTUAL NULL,
+  `value_as_decimal` decimal(65,30) GENERATED ALWAYS AS (CAST(`value` AS DECIMAL(65,30))) VIRTUAL NULL,
   `long_value` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'Voor waardes die niet in \'value\' passen, zoals van HTMLeditors',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `itemlink_key`(`itemlink_id`, `key`, `language_code`) USING BTREE COMMENT 'voor opbouwen productoverzicht',
   INDEX `itemlink_id`(`itemlink_id`) USING BTREE COMMENT 'voor zoeken waardes van 1 item',
-  INDEX `language_id`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
+  INDEX `key_value`(`key`(50), `value`(100)) USING BTREE COMMENT 'filteren van items'
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------

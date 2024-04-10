@@ -87,5 +87,10 @@ namespace Api.Modules.VersionControl.Models
         /// Gets or sets the names of the templates that this content is linked to.
         /// </summary>
         public List<string> TemplateNames { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the component is deleted in this commit.
+        /// </summary>
+        public bool Deleted { get; set; }
     }
 }
