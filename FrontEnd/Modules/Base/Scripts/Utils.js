@@ -1627,6 +1627,27 @@ export class Misc {
             }
         });
     }
+    
+    static flattenObject(originalRootObject, writeRootObject = {}, currentPath = null) {
+        const pathSegments = currentPath !== null ? currentPath.split('.') : [];
+        let currentObject = originalRootObject;
+        for(let pathSegment of pathSegments)
+            currentObject = currentObject[pathSegment];
+        
+        const keys = Object.keys(currentObject);
+        for(let key of keys) {
+            const propertyPath = (currentPath !== null ? currentPath + "." : '') + key;
+            
+            const propertyValue = currentObject[key];
+            if(propertyValue instanceof Object && !Array.isArray(propertyValue)) {
+                writeRootObject = this.flattenObject(originalRootObject, writeRootObject, propertyPath);
+            } else {
+                writeRootObject[propertyPath] = propertyValue;
+            }
+        }
+        
+        return writeRootObject;
+    }
 }
 
 // Make the classes globally available, so that they also work in scripts that are not loaded via Webpack.
