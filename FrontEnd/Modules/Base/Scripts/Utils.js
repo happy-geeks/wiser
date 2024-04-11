@@ -1638,18 +1638,38 @@ export class Misc {
             }
         });
     }
-    
+
+    /**
+     * Flattens an object with a finite amount of nested objects into a one-dimensional object. The keys of all
+     * properties will be transformed by prefixing them with the path leading to the original property separated by a
+     * period.
+     * @param originalRootObject The object to flatten.
+     * @param writeRootObject (Internal) used during recursion to refer back to the object to flatten.
+     * @param currentPath (Internal) used during recursion to keep track of the current path leading to the object that
+     * is being flattened.
+     * @returns {{Object}} A copy of the given object represented in a flattened state.
+     */
     static flattenObject(originalRootObject, writeRootObject = {}, currentPath = null) {
+        // Get the current path in the recursion as segments in an array.
         const pathSegments = currentPath !== null ? currentPath.split('.') : [];
+        // Get the current object in the recursion given by the path.
         let currentObject = originalRootObject;
         for(let pathSegment of pathSegments)
             currentObject = currentObject[pathSegment];
-        
+
+        // List all property names.
         const keys = Object.keys(currentObject);
+        // Loop through all properties in the current object of the recursion.
         for(let key of keys) {
+            // Get the absolute path of the property.
             const propertyPath = (currentPath !== null ? currentPath + "." : '') + key;
             
+            // Get the value of the property.
             const propertyValue = currentObject[key];
+            
+            // Check whether the property is an object. If so, perform a new recursion iteration over this object.
+            // Otherwise, flatten the property by saving its value and path (as key) to the object that will be
+            // returned.
             if(propertyValue instanceof Object && !Array.isArray(propertyValue)) {
                 writeRootObject = this.flattenObject(originalRootObject, writeRootObject, propertyPath);
             } else {
@@ -1657,6 +1677,8 @@ export class Misc {
             }
         }
         
+        // Give back the object in it's current state.
+        // Returning is necessary, since adding new properties to objects is not by reference, but by value.
         return writeRootObject;
     }
 }
