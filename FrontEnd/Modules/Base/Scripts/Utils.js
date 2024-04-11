@@ -793,13 +793,24 @@ export class Wiser {
                             }
                             break;
                     }
+                    
+                    let postQueryData = apiResults;
+                    
+                    const appendDataWithApiResults = action.appendDataWithApiResults ?? false;
+                    if(appendDataWithApiResults) {
+                        postQueryData = {};
+                        postQueryData['response'] = apiResults;
+                        postQueryData['data'] = extraData;
+
+                        postQueryData = Misc.flattenObject(postQueryData);
+                    }
 
                     // If a postRequestQueryId is set, execute that query after the API call, so that the results of the API call can be used in the query.
                     if (action.postRequestQueryId && itemDetails) {
                         const postRequestQueryResult = await Wiser.api({
                             method: "POST",
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.postRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
-                            data: !apiResults ? null : JSON.stringify(apiResults),
+                            data: !postQueryData ? null : JSON.stringify(postQueryData),
                             contentType: "application/json"
                         });
                     }
