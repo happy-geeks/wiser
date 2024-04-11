@@ -100,10 +100,11 @@ After installation, you can login with the username `admin` and password `admin`
 
 You can also install Wiser manually:
 We have several SQL scripts to create these tables and add the minimum amount of data required to be able to login. These scripts can be found in `API\Core\Queries\WiserInstallation`. You should execute these script in the following order:
+1. The queries in the section `Setting up multitenancy`.
 1. `CreateTables.sql`
-2. `CreateTriggers.sql`
-3. `StoredProcedures.sql`
-4. `InsertInitialData.sql`
+1. `CreateTriggers.sql`
+1. `StoredProcedures.sql`
+1. `InsertInitialData.sql`
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
 
@@ -161,6 +162,9 @@ CREATE TABLE `easy_customers`  (
   INDEX `customerid`(`customerid`) USING BTREE,
   INDEX `name`(`name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+# Add the main tenant.
+INSERT INTO easy_customers (id, customerid, name, subdomain, wiser_title) VALUES (1, 1, 'Main', 'main', 'Wiser');
 ```
 
 Next, you need to tell Wiser the main domain(s) that it will be running on. You can do this in the appsettings of the `FrontEnd` project, by adding `FrontEnd.WiserHostNames`. This should be an array with one or more domains (without `http(s)`). Example:
