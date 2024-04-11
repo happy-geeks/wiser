@@ -1,4 +1,4 @@
-﻿import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
@@ -643,20 +643,23 @@ export class Grids {
             return;
         }
 
-        //Try to retreive and set all saved grid settings
+        // Try to retrieve and set all saved grid settings.
         try {
-            for (let savedColumnIndex=0; savedColumnIndex<columns.length; savedColumnIndex++) {
-                for (let tableColumnsIndex=0; tableColumnsIndex<gridOptions.columns.length; tableColumnsIndex++) {
-                    if (columns[savedColumnIndex].field === gridOptions.columns[tableColumnsIndex].field) {
-                        gridOptions.columns[tableColumnsIndex].hidden = columns[savedColumnIndex].hidden;
-                        gridOptions.columns[tableColumnsIndex].width = columns[savedColumnIndex].width;
-                        if (gridOptions.reorderable ?? false) {
-                            //Only re-arrange columns if there is a possibility for the user to arrange them
-                            let moveColumn = gridOptions.columns.splice(tableColumnsIndex,1)[0];
-                            gridOptions.columns.splice(savedColumnIndex, 0, moveColumn);                            
-                        }
-                        break;
+            for (let savedColumnIndex = 0; savedColumnIndex < columns.length; savedColumnIndex++) {
+                for (let tableColumnsIndex= 0; tableColumnsIndex < gridOptions.columns.length; tableColumnsIndex++) {
+                    if (columns[savedColumnIndex].field !== gridOptions.columns[tableColumnsIndex].field) {
+                        continue;
                     }
+
+                    gridOptions.columns[tableColumnsIndex].hidden = columns[savedColumnIndex].hidden;
+                    gridOptions.columns[tableColumnsIndex].width = columns[savedColumnIndex].width;
+                    if (gridOptions.reorderable) {
+                        // Only re-arrange columns if there is a possibility for the user to arrange them.
+                        let moveColumn = gridOptions.columns.splice(tableColumnsIndex, 1)[0];
+                        gridOptions.columns.splice(savedColumnIndex, 0, moveColumn);
+                    }
+
+                    break;
                 }
             }
         } catch (error) {
