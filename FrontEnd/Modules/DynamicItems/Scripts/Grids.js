@@ -1563,25 +1563,18 @@ export class Grids {
      * @param {any} event
      */
     async onGridSelectionChange(event) {
-        // // Some buttons in the toolbar of a grid require that at least one row is selected. Hide these buttons while no row is selected.
-        // event.sender.wrapper.find(".hide-when-no-selected-rows").toggleClass("hidden", event.sender.select().length === 0);
-        //
-        // // Show/hide button groups where all buttons are hidden/visible.
-        // for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
-        //     const buttonGroupElement = $(buttonGroup);
-        //     const amountOfToggleableButtons = buttonGroupElement.find(".hide-when-no-selected-rows").length;
-        //     const totalAmountOfButtons = buttonGroupElement.find("a.k-button").length;
-        //     buttonGroupElement.toggleClass("hidden", event.sender.select().length === 0 && amountOfToggleableButtons === totalAmountOfButtons);
-        // }
-        
-        // Check based on given condition to hide
+        // Check based on given condition to hide.
         const conditionalButtons = event.sender.wrapper.find('.k-button.hide-when-no-selected-rows');
         conditionalButtons.each(async function () {
             const button = $(this);
             const condition = button.data('condition');
             
+            // Do not hide buttons by default.
             let shouldHide = false;
+            
+            // Conditional check.
             if(condition) {
+                // Gather field data for each selected row in the grid.
                 const selectedData = [];
                 event.sender.wrapper.find('tr.k-state-selected').each(function() {
                     const row = $(this);
@@ -1590,6 +1583,7 @@ export class Grids {
                     selectedData.push(rowData);
                 });
 
+                // Evaluate the condition for every selected row in the grid.
                 shouldHide = !selectedData.every(function(element, index, array) {
                     const parameterNames = Object.keys(element);
                     const parameterValues = Object.values(element);
@@ -1599,9 +1593,11 @@ export class Grids {
                 });
             }
             
+            // Show or hide the action button based on the evaluated condition or default value.
             button.toggleClass('hidden', shouldHide || event.sender.select().length === 0);
         });
-
+        
+        // Check whether to hide a button group when no buttons are visible in the group.
         for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
             const buttonGroupElement = $(buttonGroup);
             const totalAmountOfButtons = buttonGroupElement.find("a.k-button:not(.hidden)").length;
