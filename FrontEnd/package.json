@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@marker.io/browser": "^0.16.0",
-    "@vue/compiler-sfc": "^3.3.4",
+    "@vue/compiler-sfc": "^3.4.22",
     "css-loader": "^6.7.3",
     "html-webpack-plugin": "^5.5.3",
     "sass": "^1.71.0",
