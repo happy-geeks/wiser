@@ -2550,7 +2550,7 @@ ORDER BY {orderByClause}";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null)
+        public async Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null, bool setOrdering = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var tenant  = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
@@ -2570,7 +2570,7 @@ ORDER BY {orderByClause}";
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("linkType", linkType);
 
-            string query;
+            string query = "";
             if (linkTypeSettings.UseItemParentId)
             {
                 if (destinationIds.Count != 1)
@@ -2587,11 +2587,28 @@ ORDER BY {orderByClause}";
             }
             else
             {
-                query = $@"INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
-                        SELECT source.id, destination.id, ?linkType
-                        FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
-                        JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
-                        WHERE source.id IN ({String.Join(",", sourceIds)})";
+                if (setOrdering)
+                {
+                    foreach (var destinationId in destinationIds)
+                    {
+                        query = $@"{query}SET @ordering = 0;
+                                INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type, ordering)                                
+                                SELECT source.id, destination.id, ?linkType, (@ordering:=IF(@ordering=0,IFNULL(MAX(link.ordering),0),0) + @ordering + 1)
+                                FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
+                                JOIN {tablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id = {destinationId.ToString()}
+                                LEFT JOIN {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link ON link.destination_item_id = {destinationId.ToString()} AND link.type = ?linkType
+                                WHERE source.id IN ({String.Join(",", sourceIds)})
+                                GROUP BY source.id;";
+                    }
+                }
+                else
+                {
+                    query = $@"INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
+                            SELECT source.id, destination.id, ?linkType
+                            FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
+                            JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
+                            WHERE source.id IN ({String.Join(",", sourceIds)})";    
+                }
             }
 
             await clientDatabaseConnection.ExecuteAsync(query);
@@ -2603,7 +2620,7 @@ ORDER BY {orderByClause}";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null)
+        public async Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null, bool setOrdering = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
@@ -2638,7 +2655,24 @@ ORDER BY {orderByClause}";
             }
             else
             {
-                query = $@"DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} WHERE type = ?linkType AND destination_item_id IN ({String.Join(",", destinationIds)}) AND item_id IN ({String.Join(",", sourceIds)})";
+                query = $@"DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} WHERE type = ?linkType AND destination_item_id IN ({String.Join(",", destinationIds)}) AND item_id IN ({String.Join(",", sourceIds)});";
+                
+                if (setOrdering) // Set ordering for the remaining items.
+                {
+                    foreach (var destinationId in destinationIds)
+                    {
+                        query = $@"{query}SET @ordering = 0;
+                                UPDATE {linkTablePrefix}{WiserTableNames.WiserItemLink} l
+                                JOIN (
+	                                SELECT id, (@ordering:=@ordering + 1) AS newordering
+	                                FROM {linkTablePrefix}{WiserTableNames.WiserItemLink}
+	                                WHERE destination_item_id = {destinationId.ToString()}
+	                                AND type = ?linkType
+	                                ORDER BY ordering
+                                ) AS ord ON ord.id = l.id
+                                SET l.ordering = ord.newordering;";
+                    }
+                }
             }
 
             await clientDatabaseConnection.ExecuteAsync(query);

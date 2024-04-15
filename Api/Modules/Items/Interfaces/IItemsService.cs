@@ -245,7 +245,8 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="encryptedDestinationIds">The encrypted IDs of the destination items.</param>
         /// <param name="linkType">The link type to use for all of the links.</param>
         /// <param name="sourceEntityType">Optional: The entity type of the items that are being linked. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null);
+        /// <param name="setOrdering">Optional: If the ordering of the links being inserted matters, this parameter can be set to true to ensure that links are inserted according to subsequent ordering.</param>
+        Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null, bool setOrdering = false);
 
         /// <summary>
         /// Removed one or more links between items.
@@ -255,7 +256,8 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="encryptedDestinationIds">The encrypted IDs of the destination items.</param>
         /// <param name="linkType">The link type to use for all of the links.</param>
         /// <param name="sourceEntityType">Optional: The entity type of the source items. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null);
+        /// <param name="setOrdering">Optional: If the ordering of the links being removed matters, this parameter can be set to true to ensure that links are removed with subsequent ordering.</param>
+        Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<string> encryptedSourceIds, List<string> encryptedDestinationIds, int linkType, string sourceEntityType = null, bool setOrdering = false);
 
         /// <summary>
         /// Translate all fields of an item into one or more other languages, using the Google Translation API.
