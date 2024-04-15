@@ -1681,6 +1681,38 @@ export class Misc {
         // Returning is necessary, since adding new properties to objects is not by reference, but by value.
         return writeRootObject;
     }
+    
+    static encodeHtml(input) {
+        let encodedInput = input.replace(/[<>&]/g, function(match) {
+            switch(match) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+            }
+        });
+
+        encodedInput = encodedInput.replace(/[\u00A0-\u9999]/g, function(match) {
+            return '&#' + match.charCodeAt(0) + ';';
+        });
+        
+        return encodedInput;
+    }
+    
+    static decodeHtml(input) {
+        let decodedInput = input.replace(/&#\d+;/g, function(match) {
+            return String.fromCharCode(match.match(/\d+/g)[0]);
+        });
+        
+        decodedInput = decodedInput.replace(/(&lt;|&gt;|&ampt;)/g, function(match) {
+            switch(match) {
+                case '&lt;': return '<';
+                case '&gt;': return '>';
+                case '&amp;': return '&';
+            }
+        });
+        
+        return decodedInput;
+    }
 }
 
 // Make the classes globally available, so that they also work in scripts that are not loaded via Webpack.

@@ -1097,11 +1097,13 @@ export class Grids {
             }
             
             const conditionAttribute = customAction.condition
-                ? `data-condition=${customAction.condition}`
+                ? `data-condition="${Misc.encodeHtml(customAction.condition)}"`
                 : '';
             
             const selector = gridSelector.replace(/#/g, "\\#");
-
+            
+            const { condition, ...customActionData } = customAction;
+            
             if (customAction.groupName) {
                 let group = groups.filter(g => g.name === customAction.groupName)[0];
                 if (!group) {
@@ -1114,12 +1116,12 @@ export class Grids {
                     groups.push(group);
                 }
                 
-                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customActionData)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
                     name: `customAction${i.toString()}`,
                     text: customAction.text,
-                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customActionData)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                 });
             }
         }
@@ -1587,6 +1589,8 @@ export class Grids {
             
             // Conditional check.
             if(condition) {
+                const decodedCondition = Misc.decodeHtml(condition);
+                
                 // Gather field data for each selected row in the grid.
                 const selectedData = [];
                 event.sender.wrapper.find('tr.k-state-selected').each(function() {
@@ -1601,7 +1605,7 @@ export class Grids {
                     const parameterNames = Object.keys(element);
                     const parameterValues = Object.values(element);
 
-                    const func = new Function(...parameterNames, `return ${condition}`);
+                    const func = new Function(...parameterNames, `return ${decodedCondition}`);
                     return func(...parameterValues);
                 });
             }
