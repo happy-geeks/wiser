@@ -2271,12 +2271,32 @@ export class Fields {
                     // Calls an API.
                     case "apiCall": {
                         try {
-                            if (selectedItems && selectedItems.length > 0) {
-                                // We have an array with selected items, which means this is an action button in a grid and we want to execute this action by using values from all selected items.
-                                await combineValuesFromAllSelectedItemsAndAddToUserParameters();
-                            }
+                            const isIterative = action.iterative ?? false;
+                            
+                            if(selectedItems && selectedItems.length > 0) {
+                                if(isIterative) {
+                                    for(const selectedItem of selectedItems) {
+                                        const selectedItemData = selectedItem['dataItem'];
+                                        
+                                        let extraData = {};
+                                        for(const selectedItemKey in selectedItemData) {
+                                            if (
+                                                !selectedItemData.hasOwnProperty(selectedItemKey) ||
+                                                (typeof selectedItemData[selectedItemKey] === "object" && !(selectedItemData[selectedItemKey] || {}).getDate)) {
+                                                continue;
+                                            }
 
-                            const apiCallResult = await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
+                                            const key = `selected_${selectedItemKey}`;
+                                            extraData[key] = selectedItemData[selectedItemKey];
+                                        }
+
+                                        await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, extraData);
+                                    }
+                                } else {
+                                    await combineValuesFromAllSelectedItemsAndAddToUserParameters();
+                                    await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
+                                }
+                            }
                         } catch (apiCallException) {
                             if (typeof apiCallException === "string") {
                                 kendo.alert(apiCallException);
