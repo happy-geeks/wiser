@@ -1095,6 +1095,12 @@ export class Grids {
             if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
                 continue;
             }
+            
+            const conditionAttribute = customAction.condition
+                ? `data-condition=${customAction.condition}`
+                : '';
+            
+            const selector = gridSelector.replace(/#/g, "\\#");
 
             if (customAction.groupName) {
                 let group = groups.filter(g => g.name === customAction.groupName)[0];
@@ -1107,13 +1113,13 @@ export class Grids {
 
                     groups.push(group);
                 }
-
-                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+                
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
                     name: `customAction${i.toString()}`,
                     text: customAction.text,
-                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                 });
             }
         }
@@ -1569,16 +1575,46 @@ export class Grids {
      * Event handler for when a user (de)selects one or more rows in a Kendo UI grid.
      * @param {any} event
      */
-    onGridSelectionChange(event) {
-        // Some buttons in the toolbar of a grid require that at least one row is selected. Hide these buttons while no row is selected.
-        event.sender.wrapper.find(".hide-when-no-selected-rows").toggleClass("hidden", event.sender.select().length === 0);
+    async onGridSelectionChange(event) {
+        // Check based on given condition to hide.
+        const conditionalButtons = event.sender.wrapper.find('.k-button.hide-when-no-selected-rows');
+        conditionalButtons.each(async function () {
+            const button = $(this);
+            const condition = button.data('condition');
+            
+            // Do not hide buttons by default.
+            let shouldHide = false;
+            
+            // Conditional check.
+            if(condition) {
+                // Gather field data for each selected row in the grid.
+                const selectedData = [];
+                event.sender.wrapper.find('tr.k-state-selected').each(function() {
+                    const row = $(this);
+                    const grid = row.closest('.k-grid').data('kendoGrid');
+                    const rowData = grid.dataItem(row);
+                    selectedData.push(rowData);
+                });
 
-        // Show/hide button groups where all buttons are hidden/visible.
+                // Evaluate the condition for every selected row in the grid.
+                shouldHide = !selectedData.every(function(element, index, array) {
+                    const parameterNames = Object.keys(element);
+                    const parameterValues = Object.values(element);
+
+                    const func = new Function(...parameterNames, `return ${condition}`);
+                    return func(...parameterValues);
+                });
+            }
+            
+            // Show or hide the action button based on the evaluated condition or default value.
+            button.toggleClass('hidden', shouldHide || event.sender.select().length === 0);
+        });
+        
+        // Check whether to hide a button group when no buttons are visible in the group.
         for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
             const buttonGroupElement = $(buttonGroup);
-            const amountOfToggleableButtons = buttonGroupElement.find(".hide-when-no-selected-rows").length;
-            const totalAmountOfButtons = buttonGroupElement.find("a.k-button").length;
-            buttonGroupElement.toggleClass("hidden", event.sender.select().length === 0 && amountOfToggleableButtons === totalAmountOfButtons);
+            const totalAmountOfButtons = buttonGroupElement.find("a.k-button:not(.hidden)").length;
+            buttonGroupElement.toggleClass("hidden", totalAmountOfButtons === 0);
         }
     }
 
