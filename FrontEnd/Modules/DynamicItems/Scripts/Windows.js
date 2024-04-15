@@ -29,7 +29,8 @@ export class Windows {
             parentId: null,
             plainParentId: 0,
             senderGrid: null,
-            entityType: null
+            entityType: null,
+            setOrdering: false
         };
         this.searchItemsGrid = null;
         this.searchItemsGridFirstLoad = true;
@@ -607,6 +608,10 @@ export class Windows {
             if (this.searchItemsWindowSettings.currentItemIsSourceId) {
                 addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
                 removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
+            }
+            if (this.searchItemsWindowSettings.setOrdering) {
+                addLinksRequest.setOrdering = this.searchItemsWindowSettings.setOrdering;
+                removeLinksRequest.setOrdering = this.searchItemsWindowSettings.setOrdering;
             }
             kendo.ui.progress(grid.element, true);
             for (let element of allItemsOnCurrentPage) {

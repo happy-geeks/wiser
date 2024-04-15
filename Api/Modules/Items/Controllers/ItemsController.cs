@@ -439,7 +439,7 @@ namespace Api.Modules.Items.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> AddMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
         {
-            return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.EncryptedSourceIds, data.EncryptedDestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+            return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.EncryptedSourceIds, data.EncryptedDestinationIds, data.LinkType, data.SourceEntityType, data.SetOrdering)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -451,7 +451,7 @@ namespace Api.Modules.Items.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> RemoveMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
         {
-            return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.EncryptedSourceIds, data.EncryptedDestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+            return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.EncryptedSourceIds, data.EncryptedDestinationIds, data.LinkType, data.SourceEntityType, data.SetOrdering)).GetHttpResponseMessage();
         }
 
         /// <summary>

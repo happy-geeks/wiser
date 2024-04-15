@@ -1302,7 +1302,8 @@ export class Grids {
             entityType: entityType,
             linkTypeNumber: linkTypeNumber,
             propertyId: propertyId,
-            currentItemIsSourceId: gridOptions.currentItemIsSourceId
+            currentItemIsSourceId: gridOptions.currentItemIsSourceId,
+            setOrdering: gridOptions.toolbar.linkItemsSetOrdering
         });
         $.extend(this.base.windows.searchGridSettings, {
             hideIdColumn: hideIdColumn,
