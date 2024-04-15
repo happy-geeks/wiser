@@ -26,5 +26,10 @@ namespace Api.Modules.Items.Models
         /// Gets or sets the entity type of the source item(s).
         /// </summary>
         public string SourceEntityType { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the setting to set the ordering of the links.
+        /// </summary>
+        public bool SetOrdering { get; set; }
     }
 }
