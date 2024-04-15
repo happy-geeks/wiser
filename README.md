@@ -8,16 +8,16 @@ Wiser v3. This includes the API and the front-end projects.
 
 ### Compile front-end
 1. Open PowerShell/CMD Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
-1. Run `npm install`.
-1. Run `node_modules\.bin\webpack --mode=development`.
+2. Run `npm install`.
+3. Run `node_modules\.bin\webpack --mode=development`.
 
 If you get an error for not having enough rights to execute the script please execute the following in PowerShell as administrator:
 ```Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted```
 
 ### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
-1. Open `appSettings.[Environment].json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`. When running Wiser locally on your PC, you need the file `appSettings.Development.json`. Please note that this directory should always end with a slash. Example: `Z:\AppSettings\Wiser\FrontEnd\`.
-1. The `appsettings-secrets.json` files should look like this:
+2. Open `appSettings.[Environment].json` in both projects and save the directory to the secrets in the property `GCL.SecretsBaseDirectory`. When running Wiser locally on your PC, you need the file `appSettings.Development.json`. Please note that this directory should always end with a slash. Example: `Z:\AppSettings\Wiser\FrontEnd\`.
+3. The `appsettings-secrets.json` files should look like this:
 #### API
 ```json
 {
@@ -101,25 +101,25 @@ After installation, you can login with the username `admin` and password `admin`
 You can also install Wiser manually:
 We have several SQL scripts to create these tables and add the minimum amount of data required to be able to login. These scripts can be found in `API\Core\Queries\WiserInstallation`. You should execute these script in the following order:
 1. The queries in the section `Setting up multitenancy`.
-1. `CreateTables.sql`
-1. `CreateTriggers.sql`
-1. `StoredProcedures.sql`
-1. `InsertInitialData.sql`
+2. `CreateTables.sql`
+3. `CreateTriggers.sql`
+4. `StoredProcedures.sql`
+5. `InsertInitialData.sql`
 
 The scripts `InsertInitialDataConfigurator.sql` and `InsertInitialDataEcommerce.sql` can be used if you want to run a website that uses the GeeksCoreLibrary that can be managed in Wiser. If you have a website with a webshop, run `InsertInitialDataEcommerce.sql` and if you have a website with a product configurator, run `InsertInitialDataConfigurator.sql` to setup Wiser to work with those kinds of websites.
 
 # Using terser for JavaScript template minification (optional)
 The API can be configured to use an npm package called [terser](https://terser.org/) to handle the minification of JavaScript templates that are created in the Templates module instead of [NUglify](https://github.com/trullock/NUglify). To do this, the terser npm package must be installed in the root directory where the API is running on the server:
 1. Open PowerShell/CMD window in the directory where the API is running.
-1. Run the command `npm install terser`. This will install terser and all its dependencies, and create terser command files in the `node_modules/.bin` folder. After the installation is done, verify that the `node_modules/.bin` directory exists in the root directory of the API and that it contains these files:
+2. Run the command `npm install terser`. This will install terser and all its dependencies, and create terser command files in the `node_modules/.bin` folder. After the installation is done, verify that the `node_modules/.bin` directory exists in the root directory of the API and that it contains these files:
     - `terser`
     - `terser.cmd`
     - `terser.ps1`
-1. Open the `appsettings-secrets.json` file of the API in an editor.
+3. Open the `appsettings-secrets.json` file of the API in an editor.
     - See the [Setup secrets](#setup-secrets) section above to check where this file is located.
-1. Set the value of the setting `Api.UseTerserForTemplateScriptMinification` to `true`.
+4. Set the value of the setting `Api.UseTerserForTemplateScriptMinification` to `true`.
     - See the [Setup secrets](#setup-secrets) section above for an example.
-1. (Re)start the API.
+5. (Re)start the API.
 
 The reason the setting is saved in the `appsettings-secrets.json` file instead of the `appSettings.json` file is to avoid the value getting overwritten when deploying a new version.
 
@@ -128,10 +128,10 @@ Because terser works with input files, the API will create a temporary file wher
 
 # Debugging
 1. Open PowerShell/CMS Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
-1. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
-1. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
-1. If you use Rider, we already have a configuration saved for this, it's called "Debug Both". If you don't see it, you can also set that up yourself. To do this, click `Edit configuration` in the configurations dropdown (in the toolbar), this will open a new screen. In that screen select the root item `.NET Launch Settings Profile`, then click the plus icon on the top left. Now add a `Compound` and give it any name, such as "Debug both". Lastly, add the configurations `.NET Launch Settings Profile 'Api'` and `.NET Launch Settings Profile 'FrontEnd'` to that compount and click `OK`.
-1. When debugging, Rider/Visual Studio will create a self-signed certificate. You need to add this certificate to the trusted sources on your computer, otherwise you won't be able to run/debug Wiser properly. In Rider you can do this by pressing `CTRL+SHIFT+A`, then typing `Certificate` and clicking the result (Set up ASP.NET Core Developer certificate). You will then get a pop-up asking for confirmation to add the certificate to the trusted sources. Click yes here. Now you should be able to run Wiser locally. If you don't do this, you will get the error `System.InvalidOperationException: IDX20803: Unable to obtain configuration` when loading the list of modules and other things.
+2. Run the command `node_modules\.bin\webpack --mode=development -w`. This will make webpack watch your javascript and automatically rebuild them when needed, so you don't have to rebuild it manully every time.
+3. To make debugging a little easier, you can setup Visual Studio to always start both the API and FrontEnd projects at the same time. You can do this by right clicking the solution and then `Properties`. Then go to `Common Properties --> Startup Project` and choose `Multiple startup projects`. Then set both `Api` and `FrontEnd` to `Start` and click `OK`.
+4. If you use Rider, we already have a configuration saved for this, it's called "Debug Both". If you don't see it, you can also set that up yourself. To do this, click `Edit configuration` in the configurations dropdown (in the toolbar), this will open a new screen. In that screen select the root item `.NET Launch Settings Profile`, then click the plus icon on the top left. Now add a `Compound` and give it any name, such as "Debug both". Lastly, add the configurations `.NET Launch Settings Profile 'Api'` and `.NET Launch Settings Profile 'FrontEnd'` to that compount and click `OK`.
+5. When debugging, Rider/Visual Studio will create a self-signed certificate. You need to add this certificate to the trusted sources on your computer, otherwise you won't be able to run/debug Wiser properly. In Rider you can do this by pressing `CTRL+SHIFT+A`, then typing `Certificate` and clicking the result (Set up ASP.NET Core Developer certificate). You will then get a pop-up asking for confirmation to add the certificate to the trusted sources. Click yes here. Now you should be able to run Wiser locally. If you don't do this, you will get the error `System.InvalidOperationException: IDX20803: Unable to obtain configuration` when loading the list of modules and other things.
 
 # Multitenancy
 Wiser works with multitenancy, but only with different (sub) domains. So for example, if Wiser runs on the domain `wiser.nl`, then you can use different sub domains for multi tenancy (eg. `foobar.wiser.nl`). Or you can just use multiple domains, like `example.com` and `foorbar.com`. When someone opens a (sub) domain of Wiser, that (sub) domain will then be looked up in `easy_customers`, via the column `subdomain`. If a row has been found, a connectionstring will be generated with the data from that row and that will be used for all requests on that sub domain.
