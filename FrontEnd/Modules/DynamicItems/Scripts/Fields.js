@@ -2273,39 +2273,39 @@ export class Fields {
                         try {
                             // Retrieve the optional attribute whether this action has to be run iteratively.
                             const isIterative = action.iterative ?? false;
+                            const hasItemsSelected = selectedItems && selectedItems.length > 0;
                             
-                            // Check whether any items have been selected.
-                            if(selectedItems && selectedItems.length > 0) {
-                                if(isIterative) {
-                                    // Loop over all of the selected items from the grid.
-                                    for(const selectedItem of selectedItems) {
-                                        const selectedItemData = selectedItem['dataItem'];
-                                        
-                                        // Prepare an object with the data of the currently selected item in the iteration.
-                                        let extraData = {};
-                                        // Loop over all data fields of the currently selected item in the iteration.
-                                        for(const selectedItemKey in selectedItemData) {
-                                            // Exclude data fields if they are irrelevant to the data provided to the API call (objects, functions, etc).
-                                            if (
-                                                !selectedItemData.hasOwnProperty(selectedItemKey) ||
-                                                (typeof selectedItemData[selectedItemKey] === "object" && !(selectedItemData[selectedItemKey] || {}).getDate)) {
-                                                continue;
-                                            }
-                                            
-                                            // Push the data field from the currently selected item in the iteration to the data object.
-                                            const key = `selected_${selectedItemKey}`;
-                                            extraData[key] = selectedItemData[selectedItemKey];
+                            if(isIterative && hasItemsSelected) {
+                                // Loop over all of the selected items from the grid.
+                                for(const selectedItem of selectedItems) {
+                                    const selectedItemData = selectedItem['dataItem'];
+
+                                    // Prepare an object with the data of the currently selected item in the iteration.
+                                    let extraData = {};
+                                    // Loop over all data fields of the currently selected item in the iteration.
+                                    for(const selectedItemKey in selectedItemData) {
+                                        // Exclude data fields if they are irrelevant to the data provided to the API call (objects, functions, etc).
+                                        if (
+                                            !selectedItemData.hasOwnProperty(selectedItemKey) ||
+                                            (typeof selectedItemData[selectedItemKey] === "object" && !(selectedItemData[selectedItemKey] || {}).getDate)) {
+                                            continue;
                                         }
 
-                                        // Make an API call for the currently selected item in the iteration.
-                                        await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, extraData);
+                                        // Push the data field from the currently selected item in the iteration to the data object.
+                                        const key = `selected_${selectedItemKey}`;
+                                        extraData[key] = selectedItemData[selectedItemKey];
                                     }
-                                } else {
-                                    // Combine all values of the selected items.
-                                    await combineValuesFromAllSelectedItemsAndAddToUserParameters();
-                                    // Make an API call for all selected items.
-                                    await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
+
+                                    // Make an API call for the currently selected item in the iteration.
+                                    await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, extraData);
                                 }
+                            } else {
+                                // Combine all values of the selected items.
+                                if(hasItemsSelected)
+                                    await combineValuesFromAllSelectedItemsAndAddToUserParameters();
+                                
+                                // Make an API call for all selected items.
+                                await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
                             }
                         } catch (apiCallException) {
                             if (typeof apiCallException === "string") {
