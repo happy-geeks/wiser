@@ -178,18 +178,6 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return await templatesService.GeneratePreviewAsync(identity, componentId, requestModel);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return await templatesService.GeneratePreviewAsync(identity, requestModel);
-        }
-
-        /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
         {
             return await templatesService.CheckDefaultHeaderConflict(templateId, regexString);
@@ -236,6 +224,12 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments? environment = null, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1, bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
             return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
+        {
+            return await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync(identity);
         }
     }
 }

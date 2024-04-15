@@ -23,7 +23,8 @@
         #linkExistingDynamicContentDialog,
         #htmlSourceWindow,
         #NotMainBranchNotification,
-        #translationsDialog {
+        #translationsDialog,
+        #fileManagerWindow {
             display: none;
         }
     </style>
@@ -51,6 +52,7 @@
             @if (Model.TemplateId == 0)
             {
                 <div class="window-header">
+                    <button id="importLegacyButton" class="k-secondary saveButton">Importeren van Wiser 1</button>
                     <form id="searchForm" class="search-container">
                         <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
                         <button class="icon-line-search"></button>
@@ -64,11 +66,8 @@
             }
 
             <div class="window-content">
-
                 <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
-
                     <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
-
                         @if (Model.TemplateId == 0)
                         {
                             <div id="left-pane" style="background-color: #cccccc;">
@@ -81,13 +80,11 @@
                             </div>
                         }
 
-
                         <div id="right-pane" style="background-color: #eeeeee;">
                             <div class="tabstrip k-tabstrip-wrapper">
                                 <ul>
                                     <li class="development-tab k-state-active" data-name="development">Development</li>
                                     <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
-                                    <li class="preview-tab" data-name="preview">Preview</li>
                                     <li class="history-tab" data-name="history">Historie</li>
                                     <li class="measurements-tab" data-name="measurements">Metingen</li>
                                 </ul>
@@ -95,14 +92,12 @@
                                 <div id="dynamicContentTab">
                                     <partial name="Tabs/DynamicContentTab"/>
                                 </div>
-                                <div id="previewTab"></div>
                                 <div id="historyTab"></div>
                                 <div id="measurementsTab"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -122,6 +117,20 @@
                 <button class="addDynamicContent"></button>
             </div>
         </footer>
+    </div>
+
+    <!-- File manager window -->
+    <div id="fileManagerWindow" class="popup-container">
+        <div class="horizontal">
+            <iframe frameborder="0" id="fileManagerFrame"></iframe>
+
+            <!-- FIXED FOOTER -->
+            <footer class="fixed">
+                <div class="actions">
+                    <button class="k-primary saveButton" name="addFileToEditor">Invoegen</button>
+                </div>
+            </footer>
+        </div>
     </div>
 
     <div id="createNewItemDialog">

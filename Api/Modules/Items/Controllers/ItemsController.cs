@@ -51,13 +51,14 @@ namespace Api.Modules.Items.Controllers
         /// The results will be returned in multiple pages, with a max of 500 items per page.
         /// </summary>
         /// <param name="pagedRequest">Optional: Which page to get and how many items per page to get.</param>
+        /// <param name="useFriendlyPropertyNames">Optional: Whether to use friendly property names or not. Default is <see langword="true"/>.</param>
         /// <param name="filters">Optional: Add filters if you only want specific results.</param>
         /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsAsync([FromQuery]PagedRequest pagedRequest = null, [FromQuery]WiserItemModel filters = null)
+        public async Task<IActionResult> GetItemsAsync([FromQuery]PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, [FromQuery]WiserItemModel filters = null)
         {
-            return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, pagedRequest, filters)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, pagedRequest, useFriendlyPropertyNames, filters)).GetHttpResponseMessage();
         }
 
         /// <summary>

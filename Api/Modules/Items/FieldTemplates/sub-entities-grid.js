@@ -289,6 +289,13 @@ async function generateGrid(data, model, columns) {
             text: "",
             template: '<div class="counterContainer"><span class="counter">0</span> <span class="plural">resultaten</span><span class="singular" style="display: none;">resultaat</span></div>'
         });
+    } else {
+        toolbar.push({
+            name: "whitespace",
+            iconClass: "",
+            text: "",
+            template: '<div class="counterContainer"></div>'
+        });
     }
 
     if (!readonly && (!options.toolbar || !options.toolbar.hideCreateButton)) {

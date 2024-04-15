@@ -64,4 +64,9 @@
 	--notify-warning:	#F5A600;
 	--notify-success:	#5FB662;
 	--notify-info:		#333333;
-}
+
+	--padding-large:	5px .6em;
+	--small-radius:     3px;
+	--medium-radius:    5px;
+	--large-radius:     7px;
+	}

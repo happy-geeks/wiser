@@ -642,19 +642,14 @@ footer {
     display: none;
 }
 
-/* Measurements */
-.row.measurement-settings .flex-container.item > label {
-    margin-bottom: 5px;
+#fileManagerWindow .horizontal {
+    border: 0;
+    height: 100%;
+    width: 100%;
 }
-.row.measurement-settings .flex-container.item .inline {
-    margin: 0;
-}
-.row.measurement-filters {
-    flex-direction: row;
-}
-.row.measurement-filters .col {
-    flex: 1 1 25%;
-}
-.row.measurement-filters .col .flex-container.item > .k-input {
-    margin: 5px 0;
+
+#fileManagerWindow iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
 }

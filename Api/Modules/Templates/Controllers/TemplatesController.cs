@@ -5,14 +5,13 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Tenants.Models;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
-using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
@@ -36,17 +35,15 @@ namespace Api.Modules.Templates.Controllers
     public class TemplatesController : ControllerBase
     {
         private readonly ITemplatesService templatesService;
-        private readonly IPreviewService previewService;
         private readonly IHistoryService historyService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of TemplatesController.
         /// </summary>
-        public TemplatesController(ITemplatesService templatesService, IOptions<GclSettings> gclSettings, IPreviewService previewService, IHistoryService historyService)
+        public TemplatesController(ITemplatesService templatesService, IOptions<GclSettings> gclSettings, IHistoryService historyService)
         {
             this.templatesService = templatesService;
-            this.previewService = previewService;
             this.historyService = historyService;
             this.gclSettings = gclSettings.Value;
         }
@@ -121,19 +118,6 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GetHistoryAsync(int templateId, int pageNumber = 1, int itemsPerPage = 50)
         {
             return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Retrieve al the preview profiles for an item.
-        /// </summary>
-        /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
-        /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
-        [HttpGet]
-        [Route("{templateId:int}/preview")]
-        [ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> PreviewTabAsync(int templateId)
-        {
-            return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -304,62 +288,6 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Retrieve al the preview profiles for an item.
-        /// </summary>
-        /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
-        /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
-        [HttpGet]
-        [Route("{templateId:int}/profiles")]
-        [ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreviewProfilesAsync(int templateId)
-        {
-            return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Creates a new instance of a preview profile with the given data.
-        /// </summary>
-        /// <param name="profile">A PreviewProfileModel containing the data of the profile to create</param>
-        /// <param name="templateId"></param>
-        [HttpPost]
-        [Route("{templateId:int}/profiles")]
-        [ProducesResponseType(typeof(PreviewProfileModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreatePreviewProfileAsync(int templateId, PreviewProfileModel profile)
-        {
-            return (await previewService.CreateAsync(profile, templateId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Edit an existing profile. The existing profile with the given Id in the profile will be overwritten.
-        /// </summary>
-        /// <param name="templateId">The id of the template that is bound to the profile</param>
-        /// <param name="profileId">The ID of the profile to update.</param>
-        /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
-        /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPut]
-        [Route("{templateId:int}/profiles/{profileId:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> EditPreviewProfileAsync(int templateId, int profileId, PreviewProfileModel profile)
-        {
-            profile.Id = profileId;
-            return (await previewService.UpdateAsync(profile, templateId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Delete a profile from the database.
-        /// </summary>
-        /// <param name="templateId">The id of the template bound to the profile. This is added a an extra security for the deletion.</param>
-        /// <param name="profileId">The id of the profile that is to be deleted</param>
-        /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpDelete]
-        [Route("{templateId:int}/profiles/{profileId:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> DeletePreviewProfilesAsync(int templateId, int profileId)
-        {
-            return (await previewService.DeleteAsync(templateId, profileId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
         /// Gets the tree view including template settings of all templates.
         /// </summary>
         /// <param name="startFrom">Set the place from which to start the tree view, folders separated by comma.</param>
@@ -371,19 +299,6 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "", Environments? environment = null)
         {
             return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity)User.Identity, 0, startFrom, environment)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Generates a preview for a HTML template.
-        /// </summary>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the template as it would look on the website.</returns>
-        [HttpPost]
-        [Route("preview")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GeneratePreviewAsync(GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -503,6 +418,15 @@ namespace Api.Modules.Templates.Controllers
             bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
         {
             return (await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Converts a JCL template to a GCL template.
+        /// </summary>
+        [HttpPost, Route("import-legacy"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ConvertLegacyTemplatesToNewTemplatesAsync()
+        {
+            return (await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
     }
 }

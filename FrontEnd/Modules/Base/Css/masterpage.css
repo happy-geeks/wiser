@@ -217,6 +217,16 @@ dd {
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid .k-grid-content {
 	flex-grow: 1;
 }
+
+/* Editor in an iframe / full window */
+.maximize-editor-window {
+	padding-bottom: 7px;
+}
+.maximize-editor-window > .pane-content,
+.maximize-editor-window > .pane-content table.k-editor {
+	height: 100%;
+}
+
 #alert {
 	display: none;
 }
@@ -397,10 +407,20 @@ dd {
 	overflow: hidden;
 }
 .dynamicTabContent > .gridview:only-child {
-	height: calc(100vh - 293px);
+	height: calc(100vh - 113px);
 }
 .popup-container .dynamicTabContent > .gridview:only-child {
-	height: calc(100vh - 230px);
+	height: calc(100vh - 222px);
+}
+.dynamicTabContent > .gridview:only-child .k-grid {
+	height: 100%;
+	min-height: 100px;
+	flex-wrap: nowrap;
+}
+.popup-container .dynamicTabContent > .gridview:only-child .k-grid {
+	height: 100%;
+	min-height: 100px;
+	flex-wrap: nowrap;
 }
 .dynamicTabContent > .gridview:only-child h4 {
 	display: none;
@@ -632,7 +652,7 @@ dd {
 .item[data-label-style="normal"] .k-input:focus + .k-form-error {
 	background: var(--error-bg-color);
 	color: var(--white-color);
-	
+
 }
 .item.error[data-label-style="normal"] h4,
 .item.error[data-label-style="normal"] h4 > label {

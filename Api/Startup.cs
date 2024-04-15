@@ -93,6 +93,7 @@ namespace Api
             // Use the options pattern for all GCL settings in appSettings.json.
             services.AddOptions();
             services.Configure<ApiSettings>(Configuration.GetSection("Api"));
+            services.Configure<StyledOutputSettings>(Configuration.GetSection("StyledOutput"));
             services.Configure<DigitalOceanSettings>(Configuration.GetSection("DigitalOcean"));
             services.Configure<GoogleSettings>(Configuration.GetSection("Google"));
             services.Configure<TinyPngSettings>(Configuration.GetSection("TinyPNG"));
