@@ -793,13 +793,24 @@ export class Wiser {
                             }
                             break;
                     }
+                    
+                    let postQueryData = apiResults;
+                    
+                    const appendDataWithApiResults = action.appendDataWithApiResults ?? false;
+                    if(appendDataWithApiResults) {
+                        postQueryData = {};
+                        postQueryData['response'] = apiResults;
+                        postQueryData['data'] = extraData;
+
+                        postQueryData = Misc.flattenObject(postQueryData);
+                    }
 
                     // If a postRequestQueryId is set, execute that query after the API call, so that the results of the API call can be used in the query.
                     if (action.postRequestQueryId && itemDetails) {
                         const postRequestQueryResult = await Wiser.api({
                             method: "POST",
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.postRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
-                            data: !apiResults ? null : JSON.stringify(apiResults),
+                            data: !postQueryData ? null : JSON.stringify(postQueryData),
                             contentType: "application/json"
                         });
                     }
@@ -1626,6 +1637,49 @@ export class Misc {
                 toolTip.classList.remove("tooltip-left");
             }
         });
+    }
+
+    /**
+     * Flattens an object with a finite amount of nested objects into a one-dimensional object. The keys of all
+     * properties will be transformed by prefixing them with the path leading to the original property separated by a
+     * period.
+     * @param originalRootObject The object to flatten.
+     * @param writeRootObject (Internal) used during recursion to refer back to the object to flatten.
+     * @param currentPath (Internal) used during recursion to keep track of the current path leading to the object that
+     * is being flattened.
+     * @returns {{Object}} A copy of the given object represented in a flattened state.
+     */
+    static flattenObject(originalRootObject, writeRootObject = {}, currentPath = null) {
+        // Get the current path in the recursion as segments in an array.
+        const pathSegments = currentPath !== null ? currentPath.split('.') : [];
+        // Get the current object in the recursion given by the path.
+        let currentObject = originalRootObject;
+        for(let pathSegment of pathSegments)
+            currentObject = currentObject[pathSegment];
+
+        // List all property names.
+        const keys = Object.keys(currentObject);
+        // Loop through all properties in the current object of the recursion.
+        for(let key of keys) {
+            // Get the absolute path of the property.
+            const propertyPath = (currentPath !== null ? currentPath + "." : '') + key;
+            
+            // Get the value of the property.
+            const propertyValue = currentObject[key];
+            
+            // Check whether the property is an object. If so, perform a new recursion iteration over this object.
+            // Otherwise, flatten the property by saving its value and path (as key) to the object that will be
+            // returned.
+            if(propertyValue instanceof Object && !Array.isArray(propertyValue)) {
+                writeRootObject = this.flattenObject(originalRootObject, writeRootObject, propertyPath);
+            } else {
+                writeRootObject[propertyPath] = propertyValue;
+            }
+        }
+        
+        // Give back the object in it's current state.
+        // Returning is necessary, since adding new properties to objects is not by reference, but by value.
+        return writeRootObject;
     }
 }
 
