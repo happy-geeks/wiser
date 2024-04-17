@@ -66,6 +66,7 @@ export class Fields {
             const data = {
                 key: fieldName,
                 itemLinkId: parseInt(fieldData.itemLinkId) || 0,
+                linkType: parseInt(fieldData.linkType) || 0,
                 languageCode: fieldData.languageCode || ""
             };
 

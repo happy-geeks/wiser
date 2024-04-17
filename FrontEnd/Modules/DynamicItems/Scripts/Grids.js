@@ -1,4 +1,4 @@
-﻿import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
@@ -482,6 +482,8 @@ export class Grids {
                     filterable: true,
                     allPages: true
                 },
+                columnResize: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
+                columnReorder: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 columnHide: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 columnShow: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 dataBound: async (event) => {
@@ -641,13 +643,27 @@ export class Grids {
             return;
         }
 
-        for (let column of gridOptions.columns) {
-            const savedColumn = columns.filter(c => c.field === column.field);
-            if (savedColumn.length === 0) {
-                continue;
-            }
+        // Try to retrieve and set all saved grid settings.
+        try {
+            for (let savedColumnIndex = 0; savedColumnIndex < columns.length; savedColumnIndex++) {
+                for (let tableColumnsIndex= 0; tableColumnsIndex < gridOptions.columns.length; tableColumnsIndex++) {
+                    if (columns[savedColumnIndex].field !== gridOptions.columns[tableColumnsIndex].field) {
+                        continue;
+                    }
 
-            column.hidden = savedColumn[0].hidden;
+                    gridOptions.columns[tableColumnsIndex].hidden = columns[savedColumnIndex].hidden;
+                    gridOptions.columns[tableColumnsIndex].width = columns[savedColumnIndex].width;
+                    if (gridOptions.reorderable) {
+                        // Only re-arrange columns if there is a possibility for the user to arrange them.
+                        let moveColumn = gridOptions.columns.splice(tableColumnsIndex, 1)[0];
+                        gridOptions.columns.splice(savedColumnIndex, 0, moveColumn);
+                    }
+
+                    break;
+                }
+            }
+        } catch (error) {
+            console.error("Reading and setting grid settings failed:", error);
         }
     }
 
