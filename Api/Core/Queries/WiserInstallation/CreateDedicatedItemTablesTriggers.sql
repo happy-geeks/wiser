@@ -294,80 +294,97 @@ END;
 DROP TRIGGER IF EXISTS `{tablePrefix}FileUpdate`;
 CREATE TRIGGER `{tablePrefix}FileUpdate` AFTER UPDATE ON `{tablePrefix}wiser_itemfile` FOR EACH ROW BEGIN
     DECLARE previousItemId BIGINT;
+    DECLARE updateChangeDate BOOL;
     
+    SET updateChangeDate = FALSE;
+
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         IF NEW.item_id <> OLD.item_id THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'item_id', OLD.item_id, NEW.item_id);
         END IF;
 
         IF NEW.content_type <> OLD.content_type THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'content_type', OLD.content_type, NEW.content_type);
         END IF;
 
         IF NEW.content <> OLD.content THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'content_length', CONCAT(FORMAT(OCTET_LENGTH(OLD.content), 0, 'nl-NL'), ' bytes'), CONCAT(FORMAT(OCTET_LENGTH(NEW.content), 0, 'nl-NL'), ' bytes'));
         END IF;
 
         IF NEW.content_url <> OLD.content_url THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'content_url', OLD.content_url, NEW.content_url);
         END IF;
 
         IF NEW.width <> OLD.width THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'width', OLD.width, NEW.width);
         END IF;
 
         IF NEW.height <> OLD.height THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'height', OLD.height, NEW.height);
         END IF;
 
         IF NEW.file_name <> OLD.file_name THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'file_name', OLD.file_name, NEW.file_name);
         END IF;
 
         IF NEW.extension <> OLD.extension THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'extension', OLD.extension, NEW.extension);
         END IF;
 
         IF NEW.title <> OLD.title THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'title', OLD.title, NEW.title);
         END IF;
 
         IF NEW.property_name <> OLD.property_name THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'property_name', OLD.property_name, NEW.property_name);
         END IF;
 
         IF NEW.itemlink_id <> OLD.itemlink_id THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'itemlink_id', OLD.itemlink_id, NEW.itemlink_id);
         END IF;
 
         IF NEW.protected <> OLD.protected THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'protected', OLD.protected, NEW.protected);
         END IF;
 
         IF NEW.ordering <> OLD.ordering THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'ordering', OLD.ordering, NEW.ordering);
         END IF;
 
         IF NEW.extra_data <> OLD.extra_data THEN
+            SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'extra_data', OLD.extra_data, NEW.extra_data);
         END IF;
     END IF;
 
-    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+    IF IFNULL(@performParentUpdate, TRUE) = TRUE AND updateChangeDate = TRUE  THEN
         IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
             INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
             VALUES (
