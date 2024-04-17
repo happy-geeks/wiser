@@ -4,7 +4,7 @@ import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
 import "../Css/Measurements.css";
-import { WtsConfiguration } from "./WtsConfiguration.js";
+import {WtsConfiguration} from "./WtsConfiguration.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -23,9 +23,6 @@ require("@progress/kendo-ui/js/dataviz/chart/chart.js");
 require("@progress/kendo-ui/js/dataviz/chart/kendo-chart.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/Templates.css";
-import {Init} from "codemirror/src/edit/options";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -555,7 +552,7 @@ const moduleSettings = {
             }
 
             await this.loadTemplate(dataItem.id, virtualItem);
-            
+
             // Check the type of the template
             const templateType = this.templateSettings.type.toUpperCase();
             const configurationTab = this.mainTabStrip.element.find(".config-tab");
@@ -2293,7 +2290,7 @@ const moduleSettings = {
                 if (this.mainTabStrip.select().data("name") === "configuration") {
                     data = this.wtsConfiguration.getCurrentSettings();
                     this.saving = true;
-                    
+
                     const response = await Wiser.api({
                         url: `${this.settings.wiserApiRoot}templates/${templateId}/wtsconfiguration`,
                         dataType: "json",
@@ -2304,7 +2301,7 @@ const moduleSettings = {
                     reloadTemplateAfterSave = true;
                 } else {
                     data = this.getCurrentTemplateSettings();
-                    
+
                     // Check if there's a conflict if the template is marked as default header and/or footer.
                     const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
                     const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
@@ -3088,7 +3085,7 @@ const moduleSettings = {
         }
     }
 
-    
+
 
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.Templates = new Templates(settings);
