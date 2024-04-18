@@ -12,6 +12,7 @@ using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Tenants.Models;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
@@ -144,6 +145,33 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GetSettingsAsync(int templateId)
         {
             return (await templatesService.GetTemplateSettingsAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Retrieve the latest version of the editor value of the template in an object instead of raw XML.
+        /// Also add the options for the available fields.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the editor value of.</param>
+        /// <returns>A object model containing the data of the template editor value.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/wtsconfiguration")]
+        [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetWtsConfigurationAsync(int templateId)
+        {
+            return (await templatesService.GetTemplateWtsConfigurationAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Save the configuration for the given template.
+        /// </summary>
+        /// <param name="templateId">The id of the template to save the configuration to.</param>
+        /// <param name="data"> A <see cref="TemplateWtsConfigurationModel"/> containing the data of the template editor value.</param>
+        [HttpPost]
+        [Route("{templateId:int}/wtsconfiguration")]
+        [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveConfigurationAsync(int templateId, TemplateWtsConfigurationModel data)
+        {
+            return (await templatesService.SaveAsync((ClaimsIdentity)User.Identity, templateId, data)).GetHttpResponseMessage();
         }
 
         /// <summary>

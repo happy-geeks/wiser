@@ -1,9 +1,11 @@
-﻿import {TrackJS} from "trackjs";
+import {TrackJS} from "trackjs";
 import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
 import "../Css/Measurements.css";
+// Disabled until we can complete this feature.
+//import {WtsConfiguration} from "./WtsConfiguration.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -105,6 +107,7 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.connectedUsers = new TemplateConnectedUsers(this);
+            //this.wtsConfiguration = new WtsConfiguration(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -353,6 +356,26 @@ const moduleSettings = {
                     dataSpriteCssClassField: "spriteCssClass"
                 }).data("kendoTreeView");
             });
+
+            this.searchResultsTreeView = $("#search-results-treeview").kendoTreeView({
+                loadOnDemand: false,
+                dragAndDrop: false,
+                dataTextField: "templateName",
+                dataSpriteCssClassField: "spriteCssClass",
+                select: this.onTreeViewSelect.bind(this),
+            }).data("kendoTreeView");
+
+            this.treeViewContextMenu = $("#treeViewContextMenu").kendoContextMenu({
+                dataSource: [
+                    {text: "Item toevoegen", attr: {action: "addNewItem"}},
+                    {text: "Hernoemen", attr: {action: "rename"}},
+                    {text: "Verwijderen", attr: {action: "delete"}}
+                ],
+                target: ".tabstrip-treeview",
+                filter: ".k-item",
+                open: this.onContextMenuOpen.bind(this),
+                select: this.onContextMenuSelect.bind(this)
+            }).data("kendoContextMenu");
         }
 
         /**
@@ -435,6 +458,14 @@ const moduleSettings = {
                     break;
                 case "measurements":
                     this.reloadMeasurementsTab();
+                    break;
+                case "configuration":
+                    // Check if the template is an XML template.
+                    const templateType = this.templateSettings.type ? this.templateSettings.type.toUpperCase() : "UNKNOWN";
+                    // Prevent loading the configuration tab if the template is not an XML template.
+                    if (templateType === "XML") {
+                        //this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
+                    }
                     break;
             }
         }
@@ -522,6 +553,22 @@ const moduleSettings = {
             }
 
             await this.loadTemplate(dataItem.id, virtualItem);
+
+            // Check the type of the template
+            const templateType = this.templateSettings.type.toUpperCase();
+            const configurationTab = this.mainTabStrip.element.find(".config-tab");
+            const developmentTab = this.mainTabStrip.element.find(".development-tab");
+            if (templateType !== "XML") {
+                this.mainTabStrip.disable(configurationTab);
+                // If the template is not an XML template, and the currently
+                // selected tab is the configuration tab, switch to the development tab.
+                if (this.mainTabStrip.select().hasClass("config-tab")) {
+                    this.mainTabStrip.select(developmentTab);
+                }
+            }
+            else {
+                this.mainTabStrip.enable(configurationTab);
+            }
         }
 
         /**
@@ -2239,34 +2286,52 @@ const moduleSettings = {
                     return false;
                 }
 
-                const data = this.getCurrentTemplateSettings();
+                // Check to see if we're only uploading xml or the whole template
+                let data = null;
+                if (this.mainTabStrip.select().data("name") === "configuration") {
+                    data = this.wtsConfiguration.getCurrentSettings();
+                    this.saving = true;
 
-                // Check if there's a conflict if the template is marked as default header and/or footer.
-                const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
-                const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
-                if (defaultHeaderCheckbox && defaultFooterCheckbox) {
-                    const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
-                    const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
+                    const response = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}/wtsconfiguration`,
+                        dataType: "json",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(data)
+                    });
+                    reloadTemplateAfterSave = true;
+                } else {
+                    data = this.getCurrentTemplateSettings();
 
-                    if (conflictCheck.hasConflict) {
-                        kendo.alert(`Er is al een standaard header en/of footer met dezelfde regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
-                        window.processing.removeProcess(process);
-                        return false;
+                    // Check if there's a conflict if the template is marked as default header and/or footer.
+                    const defaultHeaderCheckbox = document.getElementById("isDefaultHeader");
+                    const defaultFooterCheckbox = document.getElementById("isDefaultFooter");
+                    if (defaultHeaderCheckbox && defaultFooterCheckbox) {
+                        const defaultHeaderFooterRegexInput = document.getElementById("defaultHeaderFooterRegex");
+                        const conflictCheck = await this.checkDefaultHeaderOrFooterConflict(data.templateId, defaultHeaderCheckbox.checked, defaultFooterCheckbox.checked, defaultHeaderFooterRegexInput.value);
+
+                        if (conflictCheck.hasConflict) {
+                            kendo.alert(`Er is al een standaard header en/of footer met dezelfde regex. Conflicterende template(s): ${conflictCheck.conflictedWith.join(", ")}`);
+                            window.processing.removeProcess(process);
+                            return false;
+                        }
                     }
+
+                    // No conflicts, continue saving.
+                    this.saving = true;
+
+                    const response = await Wiser.api({
+                        url: `${this.settings.wiserApiRoot}templates/${templateId}`,
+                        dataType: "json",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(data)
+                    });
                 }
 
-                // No conflicts, continue saving.
-                this.saving = true;
-
-                const response = await Wiser.api({
-                    url: `${this.settings.wiserApiRoot}templates/${templateId}`,
-                    dataType: "json",
-                    type: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify(data)
-                });
-
-                window.popupNotification.show(`Template '${data.name}' is succesvol opgeslagen`, "info");
+                // Q: Replaced the data.name since data from wtsconfiguration doesn't grab that same name
+                // and what data.name used, is what is used here now. Is that okay?
+                window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
                 this.lastLoadedHistoryPartNumber = 0;
 
                 const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
@@ -2279,7 +2344,10 @@ const moduleSettings = {
                 }
 
                 // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
-                this.initialTemplateSettings = data;
+                if (this.mainTabStrip.select().data("name") !== "configuration") {
+                    // Q: This currently only works for the development tab, should a feature be added to also make this work for the configuration tab?
+                    this.initialTemplateSettings = data;
+                }
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan, probeer het a.u.b. opnieuw of neem contact op.");
@@ -2998,6 +3066,8 @@ const moduleSettings = {
             window.processing.removeProcess(process);
         }
     }
+
+
 
     // Initialize the DynamicItems class and make one instance of it globally available.
     window.Templates = new Templates(settings);
