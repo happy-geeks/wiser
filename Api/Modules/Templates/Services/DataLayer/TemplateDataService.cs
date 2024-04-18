@@ -1,21 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Serialization;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
-using Api.Modules.Templates.Enums;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
-using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -178,62 +173,6 @@ LIMIT 1");
             }
 
             return TemplateHelpers.DataRowToTemplateSettingsModel(dataTable.Rows[0]);
-        }
-
-        /// <inheritdoc />
-        public async Task<TemplateSettingsModel> GetXmlAsync(int templateId, Environments? environment = null, int? version = null)
-        {
-            // Clear any parameters that might be set.
-            clientDatabaseConnection.ClearParameters();
-            
-            string publishedVersionWhere;
-            
-            // Check if we're looking for a specific version.
-            if (version.HasValue)
-            {
-                // Use the version parameter to get the specific version.
-                clientDatabaseConnection.AddParameter("version", version.Value);
-                publishedVersionWhere = "AND template.version = ?version";
-            }
-            else
-            {
-                // If no version is specified, check if we're looking for a specific environment.
-                publishedVersionWhere = environment switch
-                {
-                    null => "",
-                    Environments.Hidden => "AND template.published_environment = 0",
-                    _ => $"AND (template.published_environment & {(int) environment}) = {(int) environment}"
-                };
-            }
-
-            clientDatabaseConnection.AddParameter("templateId", templateId);
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT 
-                template.template_id,
-                template.template_data
-            FROM {WiserTableNames.WiserTemplate} AS template 
-            WHERE template.template_id = ?templateId
-            {publishedVersionWhere}
-            AND template.removed = 0
-            ORDER BY template.version DESC 
-            LIMIT 1");
-
-            // If no rows are returned, return an empty model.
-            if (dataTable.Rows.Count == 0)
-            {
-                return new TemplateSettingsModel()
-                {
-                    TemplateId = templateId
-                };
-            }
-
-            // If a row is returned, return the model with the data.
-            var templateData = new TemplateSettingsModel()
-            {
-                TemplateId = dataTable.Rows[0].Field<int>("template_id"),
-                EditorValue = dataTable.Rows[0].Field<string>("template_data")
-            };
-
-            return templateData;
         }
 
         /// <inheritdoc />
@@ -667,39 +606,6 @@ WHERE id = ?id";
 
                 await clientDatabaseConnection.ExecuteAsync(query);
             }
-        }
-
-        /// <inheritdoc />
-        public async Task SaveConfigurationAsync(int templateId, string xml, string username)
-        {
-            // Debug log whats going
-            System.Diagnostics.Debug.WriteLine("Start SaveConfigurationAsync");
-            
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("templateId", templateId);
-            
-            // Get the ID and published environment of the latest version of the template.
-            var latestVersion = await GetLatestVersionAsync(templateId);
-            
-            // If the latest version is published to live, create a new version, because we never want to edit the version that is published to live directly.
-            if ((latestVersion.Environment & Environments.Live) == Environments.Live)
-            {
-                latestVersion.Id = await CreateNewVersionAsync(templateId);
-            }
-            
-            clientDatabaseConnection.AddParameter("id", latestVersion.Id);
-            clientDatabaseConnection.AddParameter("editorValue", xml);
-            clientDatabaseConnection.AddParameter("now", DateTime.Now);
-            clientDatabaseConnection.AddParameter("username", username);
-
-            var query = $@"UPDATE {WiserTableNames.WiserTemplate}
-                SET template_data = ?editorValue,
-                changed_on = ?now,
-                changed_by = ?username,
-                is_dirty = TRUE
-                WHERE id = ?id";
-            
-            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         /// <inheritdoc />
@@ -1510,25 +1416,12 @@ AND otherVersion.id IS NULL";
         }
 
         /// <inheritdoc />
-        public string DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
+        public void DecryptEditorValueIfEncrypted(string encryptionKey, TemplateSettingsModel rawTemplateModel)
         {
-            if (rawTemplateModel.Type == TemplateTypes.Xml)
+            if (rawTemplateModel.Type == TemplateTypes.Xml && !String.IsNullOrWhiteSpace(rawTemplateModel.EditorValue) && !rawTemplateModel.EditorValue.Trim().StartsWith("<"))
             {
-                return DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModel.EditorValue);
+                rawTemplateModel.EditorValue = rawTemplateModel.EditorValue.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
             }
-
-            return null;
-        }
-
-        /// <inheritdoc />
-        public string DecryptEditorValueIfEncrypted(string encryptionKey, string xml)
-        {
-            if (String.IsNullOrWhiteSpace(xml) && !xml.Trim().StartsWith("<"))
-            {
-                return xml;
-            }
-            
-            return xml.DecryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
         }
 
         /// <inheritdoc />

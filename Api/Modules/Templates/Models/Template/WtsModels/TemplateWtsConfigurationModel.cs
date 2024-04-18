@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
+using Api.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels
 {
@@ -13,7 +14,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// <summary>
         /// Gets or sets the service name of the editor value of the template.
         /// </summary>
-        [XmlElement("ServiceName"), WtsAttributes.WtsProperty(
+        [XmlElement("ServiceName"), WtsProperty(
             IsVisible = true,
             IsRequired = true,
             Title = "Naam",
@@ -22,11 +23,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             KendoComponent = KendoComponents.TextBox
         )]
         public string ServiceName { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the connection string of the editor value of the template.
         /// </summary>
-        [XmlElement("ConnectionString"), WtsAttributes.WtsProperty(
+        [XmlElement("ConnectionString"), WtsProperty(
              IsVisible = true,
              IsRequired = true,
              Title = "Connectiestring",
@@ -35,20 +36,20 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
              KendoComponent = KendoComponents.TextBox
         )]
         public string ConnectionString { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the log settings for the configuration (Global if not overwritten)
         /// </summary>
-        [WtsAttributes.WtsProperty(
+        [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Service
         )]
         public LogSettings LogSettings { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the run schemes settings for the configuration
         /// </summary>
-        [WtsAttributes.WtsProperty(
+        [WtsProperty(
             IsVisible = true,
             Title = "Timers",
             Description = "",
@@ -76,22 +77,22 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             "
         )]
         public List<RunScheme> RunSchemes { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the queries in the configuration.
         /// </summary>
         [XmlElement("Query")]
-        [WtsAttributes.WtsProperty(
+        [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Actions
         )]
         public List<QueryModel> Queries { get; set; }
-        
+
         /// <summary>
         /// Gets or sets the http api's in the configuration.
         /// </summary>
         [XmlElement("HttpApi")]
-        [WtsAttributes.WtsProperty(
+        [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Actions
         )]

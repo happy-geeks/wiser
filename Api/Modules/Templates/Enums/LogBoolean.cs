@@ -1,15 +1,20 @@
-namespace Api.Modules.Templates.Enums
+namespace Api.Modules.Templates.Enums;
+
+/// <summary>
+/// The options for log booleans.
+/// </summary>
+public enum LogBoolean
 {
     /// <summary>
-    /// The options for log booleans, this includes inherit
+    /// Inherit the value from the parent.
     /// </summary>
-    public enum LogBoolean
-    {
-        inherit,
-        /// <summary>
-        /// true and false are reserved keywords in C#, so we use @ instead
-        /// </summary>
-        @true,
-        @false
-    }
+    inherit,
+    /// <summary>
+    /// Enable the log, no matter what the parent is set to.
+    /// </summary>
+    @true,
+    /// <summary>
+    /// Disable the log, no matter what the parent is set to.
+    /// </summary>
+    @false
 }

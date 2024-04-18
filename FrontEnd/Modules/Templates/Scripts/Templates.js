@@ -4,7 +4,8 @@ import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
 import "../Css/Measurements.css";
-import {WtsConfiguration} from "./WtsConfiguration.js";
+// Disabled until we can complete this feature.
+//import {WtsConfiguration} from "./WtsConfiguration.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -106,7 +107,7 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.connectedUsers = new TemplateConnectedUsers(this);
-            this.wtsConfiguration = new WtsConfiguration(this);
+            //this.wtsConfiguration = new WtsConfiguration(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -463,7 +464,7 @@ const moduleSettings = {
                     const templateType = this.templateSettings.type ? this.templateSettings.type.toUpperCase() : "UNKNOWN";
                     // Prevent loading the configuration tab if the template is not an XML template.
                     if (templateType === "XML") {
-                        this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
+                        //this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
                     }
                     break;
             }
@@ -2436,25 +2437,6 @@ const moduleSettings = {
             $("#deployLive, #deployAccept, #deployTest").kendoButton();
             $("#published-environments .combo-select").kendoDropDownList();
             this.bindDeployButtons(templateId);
-
-            // Bind save buttons.
-            $("#saveButton, #saveAndDeployToTestButton").kendoButton({
-                icon: "save"
-            });
-
-            if (!this.branches || !this.branches.length) {
-                $(".branch-container").addClass("hidden");
-            } else {
-                $(".branch-container").removeClass("hidden");
-                $("#branchesDropDown").kendoDropDownList({
-                    dataSource: this.branches,
-                    dataValueField: "id",
-                    dataTextField: "name",
-                    optionLabel: "Kies een branch..."
-                });
-            }
-
-            this.bindDeploymentTabEvents();
 
             // Database elements (views, routines and templates) disable some functionality that do not apply to these functions.
             this.toggleElementsForDatabaseTemplates(this.templateSettings.type);

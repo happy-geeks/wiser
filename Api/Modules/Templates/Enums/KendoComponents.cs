@@ -1,4 +1,4 @@
-namespace Api.Modules.Templates.Attributes
+namespace Api.Modules.Templates.Enums
 {
     public enum KendoComponents
     {

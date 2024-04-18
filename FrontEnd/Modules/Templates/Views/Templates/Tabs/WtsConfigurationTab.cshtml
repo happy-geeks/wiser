@@ -1,9 +1,9 @@
 @using System.Collections
 @using System.Reflection
 @using Api.Modules.Templates.Attributes
-@using Api.Modules.Templates.Models.Template.WtsModels;
+@using Api.Modules.Templates.Enums
 @using Newtonsoft.Json.Linq
-@model TemplateWtsConfigurationModel;
+@model Api.Modules.Templates.Models.Template.WtsModels.TemplateWtsConfigurationModel;
 <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
     <ul class="k-tabstrip-items k-reset" role="none">
         <li class="service-tab k-state-active" data-name="wts-service">Service</li>
@@ -22,14 +22,14 @@
             @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
         </div>
     </div>
-    
+
     <div id="actionsTab">
         <div class="formview compact">
             @* This is currently commented out since the actions tab is not working yet *@
             @* @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");} *@
         </div>
     </div>
-    
+
     <div id="statisticTab">
         <em>Informatie over hoe lang de service erover deed
             om te draaien komt hier te staan. Liefst in een
@@ -53,7 +53,7 @@
 
 
 @functions {
-    async Task RenderProperty(object data, PropertyInfo property, WtsAttributes.WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
+    async Task RenderProperty(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
         // If there is any dependsonvalue, we should create a comma seperated string of the values
         var dependsOnValue = "";
@@ -127,12 +127,12 @@
                         <label class="checkbox">
                             @if (data != null && (bool)data)
                             {
-                                <input 
-                                    type="checkbox" 
-                                    name="@property.Name" 
+                                <input
+                                    type="checkbox"
+                                    name="@property.Name"
                                     trace="@trace"
-                                    data-kendo-tab="@tab" 
-                                    checked 
+                                    data-kendo-tab="@tab"
+                                    checked
                                     data-kendo-component="@KendoComponents.CheckBox"
                                     data-kendo-options="@attributes?.KendoOptions"
                                     data-depend-on-field="@attributes?.DependsOnField"
@@ -144,11 +144,11 @@
                             else
                             {
                                 <input
-                                    type="checkbox" 
-                                    name="@property.Name" 
+                                    type="checkbox"
+                                    name="@property.Name"
                                     trace="@trace"
-                                    data-kendo-tab="@tab" 
-                                    data-kendo-component="@KendoComponents.CheckBox" 
+                                    data-kendo-tab="@tab"
+                                    data-kendo-component="@KendoComponents.CheckBox"
                                     data-kendo-options="@attributes?.KendoOptions"
                                     data-depend-on-field="@attributes?.DependsOnField"
                                     data-depend-on-value="@dependsOnValue"
@@ -183,11 +183,11 @@
                         // We can't continue if there is no dataSource
                         if (!success) goto default;
                     }
-                    
+
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
-                        <select 
-                            name="@property.Name" 
+                        <select
+                            name="@property.Name"
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.DropDownList"
@@ -215,10 +215,10 @@
                 case KendoComponents.Grid:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
-                        <table 
-                            name="@property.Name" 
+                        <table
+                            name="@property.Name"
                             trace="@trace"
-                            data-kendo-component="@KendoComponents.Grid" 
+                            data-kendo-component="@KendoComponents.Grid"
                             data-kendo-tab="@tab"
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"
@@ -250,8 +250,8 @@
     {
         foreach (var property in type.GetProperties())
         {
-            var attributes = property.GetCustomAttributes(typeof(WtsAttributes.WtsPropertyAttribute), false).Cast<WtsAttributes.WtsPropertyAttribute>().FirstOrDefault();
-        
+            var attributes = property.GetCustomAttributes(typeof(WtsPropertyAttribute), false).Cast<WtsPropertyAttribute>().FirstOrDefault();
+
             // Only render properties that have attributes and where isVisible is true
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
             if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
@@ -289,10 +289,10 @@
 
             // Check if property has child properties
             if (!property.PropertyType.IsClass || property.PropertyType == typeof(string)) continue;
-            
+
             // Only render child properties if the tab is the same as what is defined in the parameter
             if (attributes != null && attributes.ConfigurationTab != tab) continue;
-                
+
             // Check if the property is a list
             if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
             {
@@ -300,7 +300,7 @@
                 var genericTypes = property.PropertyType.GetGenericArguments();
                 if (!genericTypes.Any()) continue; // If there are no generic types, continue to the next property
                 var listType = genericTypes[0];
-                // Get the list from the data 
+                // Get the list from the data
                 var dataList = data?.GetType().GetProperty(property.Name)?.GetValue(data, null) as IList;
                 RenderProperties(dataList, listType, tab, false, trace + $"/{property?.Name}");
             }
