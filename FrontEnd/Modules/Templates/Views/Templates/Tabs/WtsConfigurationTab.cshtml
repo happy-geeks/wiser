@@ -1,0 +1,322 @@
+@using System.Collections
+@using System.Reflection
+@using Api.Modules.Templates.Attributes
+@using Api.Modules.Templates.Enums
+@using Newtonsoft.Json.Linq
+@model Api.Modules.Templates.Models.Template.WtsModels.TemplateWtsConfigurationModel;
+<div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
+    <ul class="k-tabstrip-items k-reset" role="none">
+        <li class="service-tab k-state-active" data-name="wts-service">Service</li>
+        <li class="timers-tab" data-name="wts-timers">Timers</li>
+        <li class="actions-tab" data-name="wts-actions">Actions</li>
+        <li class="statistic-tab" data-name="wts-statistic">Statistiek</li>
+        <li class="logging-tab" data-name="wts-logging">Logging</li>
+    </ul>
+    <div id="serviceTab">
+        <div class="formview compact">
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
+        </div>
+    </div>
+    <div id="timersTab">
+        <div class="formview compact">
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
+        </div>
+    </div>
+
+    <div id="actionsTab">
+        <div class="formview compact">
+            @* This is currently commented out since the actions tab is not working yet *@
+            @* @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");} *@
+        </div>
+    </div>
+
+    <div id="statisticTab">
+        <em>Informatie over hoe lang de service erover deed
+            om te draaien komt hier te staan. Liefst in een
+            grafiek met de laatste x-keer dat deze gedraaid
+            heeft. En of er fouten waren en zo ja welke</em>
+    </div>
+    <div id="loggingTab">
+        <em>Hier worden de logs geopend van deze service.
+            Per actie moet je de logs kunnen filteren. Tevens
+            op periode filteren...</em>
+    </div>
+</div>
+
+<footer>
+    <div class="version-actions">
+        @* Commented out since it currently doesn't function *@
+        @* <button id="saveAndDeployToTestButtonWtsConfiguration" class="k-button k-primary" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button> *@
+        <button id="saveButtonWtsConfiguration" class="k-button k-primary">Configuratie opslaan</button>
+    </div>
+</footer>
+
+
+@functions {
+    async Task RenderProperty(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
+    {
+        // If there is any dependsonvalue, we should create a comma seperated string of the values
+        var dependsOnValue = "";
+        if (attributes?.DependsOnValue != null)
+        {
+            dependsOnValue = string.Join(",", attributes.DependsOnValue);
+        }
+        <div class="item">
+            @switch (attributes?.KendoComponent)
+            {
+                case KendoComponents.TextBox:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <input
+                            type="text"
+                            name="@property.Name"
+                            value="@(data ?? "")"
+                            trace="@trace"
+                            data-kendo-tab="@tab"
+                            data-kendo-component="@KendoComponents.TextBox"
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                        />
+                        <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponents.NumericTextBox:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <input
+                            type="number"
+                            name="@property.Name"
+                            value="@(data ?? "")"
+                            trace="@trace"
+                            data-kendo-tab="@tab"
+                            data-kendo-component="@KendoComponents.NumericTextBox"
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                        />
+                        <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponents.TimePicker:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <input
+                            type="time"
+                            name="@property.Name"
+                            value="@(data ?? "")"
+                            trace="@trace"
+                            data-kendo-tab="@tab"
+                            data-kendo-component="@KendoComponents.TimePicker"
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                        />
+                        <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponents.CheckBox:
+                    <h4></h4>
+                    <span>
+                        <label class="checkbox">
+                            @if (data != null && (bool)data)
+                            {
+                                <input
+                                    type="checkbox"
+                                    name="@property.Name"
+                                    trace="@trace"
+                                    data-kendo-tab="@tab"
+                                    checked
+                                    data-kendo-component="@KendoComponents.CheckBox"
+                                    data-kendo-options="@attributes?.KendoOptions"
+                                    data-depend-on-field="@attributes?.DependsOnField"
+                                    data-depend-on-value="@dependsOnValue"
+                                    is-required="@attributes?.IsRequired.ToString().ToLower()"
+                                    use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                                />
+                            }
+                            else
+                            {
+                                <input
+                                    type="checkbox"
+                                    name="@property.Name"
+                                    trace="@trace"
+                                    data-kendo-tab="@tab"
+                                    data-kendo-component="@KendoComponents.CheckBox"
+                                    data-kendo-options="@attributes?.KendoOptions"
+                                    data-depend-on-field="@attributes?.DependsOnField"
+                                    data-depend-on-value="@dependsOnValue"
+                                    is-required="@attributes?.IsRequired.ToString().ToLower()"
+                                    use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                                />
+                            }
+                            <span>@attributes?.Description</span>
+                        </label>
+                    </span>
+                    break;
+                case KendoComponents.DropDownList:
+                    Array enumData = Array.Empty<object>();
+                    // Check if the property is an enum
+                    if (property.PropertyType.IsEnum)
+                    {
+                        // Get the enum values from the property
+                        enumData = Enum.GetValues(property.PropertyType);
+                        if (enumData.Length == 0) break;
+                    }
+                    else
+                    {
+                        // Check if the dataSource is defined in the kendoOptions attribute
+                        var kendoOptions = JObject.Parse(attributes?.KendoOptions);
+                        // Check if there is a dataSource
+                        var success = false;
+                        foreach (var opt in kendoOptions)
+                        {
+                            if (opt.Key != "dataSource") continue;
+                            success = true;
+                        }
+                        // We can't continue if there is no dataSource
+                        if (!success) goto default;
+                    }
+
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <select
+                            name="@property.Name"
+                            trace="@trace"
+                            data-kendo-tab="@tab"
+                            data-kendo-component="@KendoComponents.DropDownList"
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                        >
+                            @foreach (var opt in enumData)
+                            {
+                                if (opt.ToString() == selectedValue)
+                                {
+                                    <option value="@opt" selected>@opt</option>
+                                }
+                                else
+                                {
+                                    <option value="@opt">@opt</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
+                case KendoComponents.Grid:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
+                        <table
+                            name="@property.Name"
+                            trace="@trace"
+                            data-kendo-component="@KendoComponents.Grid"
+                            data-kendo-tab="@tab"
+                            data-kendo-options="@attributes?.KendoOptions"
+                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-depend-on-value="@dependsOnValue"
+                            allow-edit="@attributes?.AllowEdit.ToString().ToLower()"
+                            is-required="@attributes?.IsRequired.ToString().ToLower()"
+                            id-property="@attributes?.IdProperty"
+                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                        >
+                        </table>
+                    </span>
+                    if (attributes?.AllowEdit == true)
+                    {
+                        <span>
+                            <button id="@($"{property.Name}CreateButton")" for-list="@property.Name" class="k-button k-primary">Nieuwe rij maken</button>
+                            <button id="@($"{property.Name}SaveButton")" for-list="@property.Name" class="k-button k-primary">Wijzigingen opslaan</button>
+                            <button id="@($"{property.Name}DeleteButton")" for-list="@property.Name" class="k-button k-primary" style="background-color: var(--color-2) !important;">Geselecteerde rij verwijderen</button>
+                        </span>
+                    }
+                    break;
+                default:
+                    <p style="color: #721c24; background-color: #f8d7da; padding: 10px; border: 3px solid #f5c6cb; border-radius: 7px;">Fout: Onbekende eigenschap "@property.Name". Meld dit aan het team voor verdere assistentie.</p>
+                    break;
+            }
+        </div>
+    }
+
+    void RenderProperties(object data, Type type, string tab, bool IsFilled, string trace)
+    {
+        foreach (var property in type.GetProperties())
+        {
+            var attributes = property.GetCustomAttributes(typeof(WtsPropertyAttribute), false).Cast<WtsPropertyAttribute>().FirstOrDefault();
+
+            // Only render properties that have attributes and where isVisible is true
+            // Or when the KendoTab is null, since that means it should be rendered on all tabs
+            if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
+            {
+                if (data is IList list)
+                {
+                    RenderProperty(null, property, attributes, null, tab, trace);
+                }
+                else
+                {
+                    // Check if we're sending a enum, if so also send the selected value
+                    if (property.PropertyType.IsEnum)
+                    {
+                        if (IsFilled)
+                        {
+                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab, trace);
+                        }
+                        else
+                        {
+                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
+                        }
+                        continue;
+                    }
+                    // Check if we should send the data
+                    if (IsFilled)
+                    {
+                        RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
+                    }
+                    else
+                    {
+                        RenderProperty(null, property, attributes, null, tab, trace);
+                    }
+                }
+            }
+
+            // Check if property has child properties
+            if (!property.PropertyType.IsClass || property.PropertyType == typeof(string)) continue;
+
+            // Only render child properties if the tab is the same as what is defined in the parameter
+            if (attributes != null && attributes.ConfigurationTab != tab) continue;
+
+            // Check if the property is a list
+            if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                // Get the type of the list
+                var genericTypes = property.PropertyType.GetGenericArguments();
+                if (!genericTypes.Any()) continue; // If there are no generic types, continue to the next property
+                var listType = genericTypes[0];
+                // Get the list from the data
+                var dataList = data?.GetType().GetProperty(property.Name)?.GetValue(data, null) as IList;
+                RenderProperties(dataList, listType, tab, false, trace + $"/{property?.Name}");
+            }
+            else
+            {
+                if (data is IList list)
+                {
+                    // Since data is a list, we should let the function know that we shouldn't fill any data
+                    RenderProperties(null, property.PropertyType, tab, false, trace + $"/{property?.Name}");
+                }
+                else
+                {
+                    // Render the properties of the class
+                    RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property?.Name}");
+                }
+            }
+        }
+    }
+}

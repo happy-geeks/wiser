@@ -27,6 +27,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Components.DataSelectorParser;
@@ -97,6 +98,7 @@ namespace Api.Modules.Templates.Services
         private readonly IBranchesService branchesService;
         private readonly IMeasurementsDataService measurementsDataService;
         private readonly IDynamicContentDataService dynamicContentDataService;
+        private readonly IWtsConfigurationService wtsConfigurationService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
@@ -121,7 +123,8 @@ namespace Api.Modules.Templates.Services
             IWebHostEnvironment webHostEnvironment,
             IBranchesService branchesService,
             IMeasurementsDataService measurementsDataService,
-            IDynamicContentDataService dynamicContentDataService)
+            IDynamicContentDataService dynamicContentDataService,
+            IWtsConfigurationService wtsConfigurationService)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserTenantsService = wiserTenantsService;
@@ -144,6 +147,7 @@ namespace Api.Modules.Templates.Services
             this.branchesService = branchesService;
             this.measurementsDataService = measurementsDataService;
             this.dynamicContentDataService = dynamicContentDataService;
+            this.wtsConfigurationService = wtsConfigurationService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -1406,6 +1410,30 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        {
+            var templateSettings = await GetTemplateSettingsAsync(identity, templateId, environment);
+            if (templateSettings.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<TemplateWtsConfigurationModel>
+                {
+                    ErrorMessage = templateSettings.ErrorMessage,
+                    StatusCode = templateSettings.StatusCode
+                };
+            }
+
+            if (templateSettings.ModelObject.Type != TemplateTypes.Xml)
+            {
+                return new ServiceResult<TemplateWtsConfigurationModel>(new TemplateWtsConfigurationModel());
+            }
+
+            // Parse the xml
+            var templateXml = wtsConfigurationService.ParseXmlToObject(templateSettings.ModelObject.EditorValue);
+
+            return new ServiceResult<TemplateWtsConfigurationModel>(templateXml);
+        }
+
+        /// <inheritdoc />
         public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null)
         {
             if (templateId <= 0)
@@ -1474,6 +1502,24 @@ LIMIT 1";
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
             return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            // Convert the configuration object to raw XML
+            var updatedEditorValue = wtsConfigurationService.ParseObjectToXml(configuration);
+
+            // Get the latest version of the template
+            var latestVersion = await GetTemplateSettingsAsync(identity, templateId);
+
+            // Convert the latest version to a model we can work with
+            var latestVersionModel = latestVersion.ModelObject;
+
+            // Update the model with the new configuration
+            latestVersionModel.EditorValue = updatedEditorValue;
+
+            return await SaveAsync(identity, latestVersionModel);
         }
 
         /// <inheritdoc />

@@ -100,8 +100,8 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <summary>
         /// Retrieves a section of the tree view around the given id. In case the id is 0 the root section of the tree will be retrieved.
         /// </summary>
-        /// <param name="parentId">The id of the parent element of the treesection that needs to be retrieved</param>
-        /// <returns>A list of templatetreeview items that are children of the given id.</returns>
+        /// <param name="parentId">The id of the parent element of the tree section that needs to be retrieved</param>
+        /// <returns>A list of <see cref="TemplateTreeViewDao"/> items that are children of the given id.</returns>
         Task<List<TemplateTreeViewDao>> GetTreeViewSectionAsync(int parentId);
 
         /// <summary>
@@ -187,7 +187,7 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task<bool> DeleteAsync(int templateId, string username, bool alsoDeleteChildren = true);
 
         /// <summary>
-        /// Decrypt editor values that have been encrypted.
+        /// Check if editor value is xml and if so, decrypt it.
         /// </summary>
         /// <param name="encryptionKey">The key used for encryption.</param>
         /// <param name="rawTemplateModel">The <see cref="TemplateSettingsModel"/> to perform the decryption on.</param>
