@@ -1759,6 +1759,11 @@ export class Fields {
                             break;
                         }
 
+                        // The queryActionResult are from a previously executed query. This way you can combine the actions executeQuery(Once) and openUrl to open a newly created or updated item in a specific URL.
+                        if (queryActionResult && queryActionResult.otherData && queryActionResult.otherData.length>0 && queryActionResult.otherData[0].urlPart) {
+                            action.url = action.url.replace(/{urlPart}/gi, queryActionResult.otherData[0].urlPart || "");
+                        }
+
                         if (action.dataFromQuery) {
                             const executeQueryResult = await executeQuery();
                             if (!executeQueryResult.success) {
