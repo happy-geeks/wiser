@@ -159,7 +159,7 @@
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.23.7" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.26.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.21.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.4.0" />
