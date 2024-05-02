@@ -1163,6 +1163,7 @@ const moduleSettings = {
             $("#saveButton").kendoButton({
                 icon: "save"
             });
+            $("#closeButton").kendoButton();
 
             if (!this.branches || !this.branches.length) {
                 $(".branch-container").addClass("hidden");
@@ -2025,6 +2026,7 @@ const moduleSettings = {
         }
 
         bindDeploymentTabEvents() {
+            document.getElementById("closeButton").addEventListener("click", this.closeTemplate.bind(this));
             document.getElementById("saveButton").addEventListener("click", this.saveTemplate.bind(this));
             document.getElementById("saveAndDeployToTestButton").addEventListener("click", this.saveTemplate.bind(this, true));
             document.getElementById("deployToBranchButton").addEventListener("click", this.deployToBranch.bind(this, true));
@@ -2237,6 +2239,29 @@ const moduleSettings = {
             finally {
                 window.processing.removeProcess(process);
             }
+        }
+        
+        async closeTemplate() {
+            // check for unsaved changes
+            if (this.selectedId && !this.canUnloadTemplate()) {
+                try {
+                    await kendo.confirm("U heeft nog openstaande wijzigingen. Weet u zeker dat u door wilt gaan?");
+                } catch {
+                    // Abort if cancelled
+                    return;
+                }
+            }
+            // reset treeview selections
+            for (let index = 0; index < this.mainTreeView.length; index++) {
+                this.mainTreeView[index].select($());
+            }
+            // unload loaded template
+            this.loadTemplate(0);
+            this.selectedId = 0;
+            this.lastLoadedHistoryPartNumber = 0;
+            this.measurementsLoaded = false;
+            // enable add button
+            $("#addButton").toggleClass("hidden", false);
         }
 
         /**
