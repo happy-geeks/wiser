@@ -1309,7 +1309,9 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.is_scss_include_template,
     template.use_in_wiser_html_editors,
     template.pre_load_query,
-    template.return_not_found_when_pre_load_query_has_no_data
+    template.return_not_found_when_pre_load_query_has_no_data,
+    template.widget_content,
+    template.widget_location
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
