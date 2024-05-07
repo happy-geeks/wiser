@@ -653,7 +653,7 @@ namespace Api.Core.Services
         }
 
         /// <inheritdoc />
-        public async Task ChangeConnectionStringsAsync(string newConnectionStringForReading, string newConnectionStringForWriting)
+        public async Task ChangeConnectionStringsAsync(string newConnectionStringForReading, string newConnectionStringForWriting, SshSettings sshSettingsForReading = null, SshSettings sshSettingsForWriting = null)
         {
             connectionStringForReading = newConnectionStringForReading;
             connectionStringForWriting = newConnectionStringForReading;
