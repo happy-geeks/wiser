@@ -72,6 +72,20 @@ public class TemplateHelpers
             WidgetLocation = (PageWidgetLocations) Convert.ToInt32(dataRow["widget_location"])
         };
 
+        // Set routine properties.
+        if (dataTable.Columns.Contains("routine_type"))
+        {
+            templateData.RoutineType = dataRow.Field<RoutineTypes>("routine_type");
+        }
+        if (dataTable.Columns.Contains("routine_parameters"))
+        {
+            templateData.RoutineParameters = dataRow.Field<string>("routine_parameters");
+        }
+        if (dataTable.Columns.Contains("routine_return_type"))
+        {
+            templateData.RoutineReturnType = dataRow.Field<string>("routine_return_type");
+        }
+
         if (dataTable.Columns.Contains("external_files_json"))
         {
             var jsonString = dataRow.Field<string>("external_files_json");
