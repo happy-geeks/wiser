@@ -1,7 +1,8 @@
 ﻿using System;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using FrontEnd.Core.Interfaces;
-using FrontEnd.Modules.Base.Models;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
 using GeeksCoreLibrary.Modules.Templates.Enums;
@@ -21,9 +22,25 @@ namespace FrontEnd.Modules.Templates.Controllers
             this.dynamicContentService = dynamicContentService;
         }
 
-        public IActionResult Index()
+        public IActionResult Index([FromQuery]TemplateViewModel viewModel)
         {
-            var viewModel = baseService.CreateBaseViewModel<BaseModuleViewModel>();
+            viewModel ??= new TemplateViewModel();
+            var defaultModel = baseService.CreateBaseViewModel();
+
+            viewModel.Settings = defaultModel.Settings;
+            viewModel.WiserVersion = defaultModel.WiserVersion;
+            viewModel.SubDomain = defaultModel.SubDomain;
+            viewModel.IsTestEnvironment = defaultModel.IsTestEnvironment;
+            viewModel.Wiser1BaseUrl = defaultModel.Wiser1BaseUrl;
+            viewModel.ApiAuthenticationUrl = defaultModel.ApiAuthenticationUrl;
+            viewModel.ApiRoot = defaultModel.ApiRoot;
+            viewModel.LoadPartnerStyle = defaultModel.LoadPartnerStyle;
+
+            if (viewModel.TemplateId > 0)
+            {
+                viewModel.BodyCssClass = "for-iframe";
+            }
+
             return View(viewModel);
         }
 
@@ -56,7 +73,15 @@ namespace FrontEnd.Modules.Templates.Controllers
                 _ => null
             };
 
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/DevelopmentTab", tabViewData);
+        }
+        
+        [HttpPost, Route("WtsConfigurationTab")]
+        public IActionResult WtsConfigurationTab([FromBody]TemplateWtsConfigurationModel data)
+        {
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Tabs/WtsConfigurationTab", data);
         }
 
         [HttpPost, Route("HistoryTab")]
@@ -70,18 +95,36 @@ namespace FrontEnd.Modules.Templates.Controllers
                 }
             }
 
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/HistoryTab", tabViewData);
         }
-
-        [HttpGet, Route("PreviewTab")]
-        public IActionResult PreviewTab()
+        
+        [HttpPost, Route("HistoryTabRows")]
+        public IActionResult HistoryTabRows([FromBody]HistoryTabViewModel tabViewData)
         {
-            return PartialView("Tabs/PreviewTab");
+            foreach (var templateHistory in tabViewData.TemplateHistory)
+            {
+                foreach (var history in templateHistory.DynamicContentChanges)
+                {
+                    history.ChangedFields = dynamicContentService.GenerateChangesListForHistory(history.Changes);
+                }
+            }
+
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Partials/HistoryTabRows", tabViewData);
+        }
+
+        [HttpPost, Route("MeasurementsTab")]
+        public IActionResult MeasurementsTab([FromBody]MeasurementSettings measurementSettings)
+        {
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Tabs/MeasurementsTab", measurementSettings);
         }
 
         [HttpPost, Route("PublishedEnvironments")]
         public IActionResult PublishedEnvironments([FromBody]TemplateSettingsModel tabViewData)
         {
+            // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Partials/PublishedEnvironments", tabViewData);
         }
     }

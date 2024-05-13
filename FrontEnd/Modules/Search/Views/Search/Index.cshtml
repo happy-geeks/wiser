@@ -1,13 +1,11 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
 
 <head runat="server">
-    <title>@Localizer["Wiser 3 - Search"]</title>
+    <title>Wiser 3 - Search</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -37,17 +35,17 @@
                 <select id="propertyComboBox"></select>
                 <select id="operatorComboBox"></select>
                 <div class="text-container">
-                    <input type="text" placeholder="@Localizer["Enter a search value (press enter to search)..."]" id="search-field" class="k-input" />
+                    <input type="text" placeholder="Vul een zoekwaarde in (druk op enter om te zoeken)..." id="search-field" class="k-input" />
                     <div class="icon-line-search"></div>
                     <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
                 </div>
                 <div class="checkbox-container">
                     <input type="checkbox" id="includingDeletedItems" name="includingDeletedItems" class="hidden" />
-                    <label for="includingDeletedItems"><span>@Localizer["Also find deleted items"]</span></label>
+                    <label for="includingDeletedItems"><span>Ook verwijderde items zoeken</span></label>
                 </div>
             </div>
             <div class="search-output">
-                <h3>Zoekresultaten: <span id="resultsCount">0</span> @Localizer["items"]</h3>
+                <h3>Zoekresultaten: <span id="resultsCount">0</span> items</h3>
 
                 <div id="search-grid" class="grid"></div>
             </div>
@@ -56,8 +54,10 @@
 
     <div id="dynamicItemWindow"></div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Search.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="Search.js"></webpack-script>
 </body>
 </html>

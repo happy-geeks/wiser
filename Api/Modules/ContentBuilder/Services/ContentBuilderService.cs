@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.ContentBuilder.Interfaces;
 using Api.Modules.ContentBuilder.Models;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -25,17 +25,17 @@ namespace Api.Modules.ContentBuilder.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IObjectsService objectsService;
         private readonly IWiserItemsService wiserItemsService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ContentBuilderService"/>.
         /// </summary>
-        public ContentBuilderService(IDatabaseConnection clientDatabaseConnection, IObjectsService objectsService, IWiserItemsService wiserItemsService, IWiserCustomersService wiserCustomersService)
+        public ContentBuilderService(IDatabaseConnection clientDatabaseConnection, IObjectsService objectsService, IWiserItemsService wiserItemsService, IWiserTenantsService wiserTenantsService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.objectsService = objectsService;
             this.wiserItemsService = wiserItemsService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
         }
 
         /// <inheritdoc />
@@ -112,21 +112,43 @@ namespace Api.Modules.ContentBuilder.Services
             var results = new List<ContentBoxTemplateModel>();
 
             var query = $@"SELECT
-                            template.id,
-                            template.title,
-                            category.id AS categoryId,
-                            category.title AS category,
-                            CONCAT_WS('', html.value, html.long_value) AS html,
-                            file.file_name
-                        FROM {WiserTableNames.WiserItem} AS template
-                        JOIN {WiserTableNames.WiserItemLink} AS link ON link.item_id = template.id AND link.type = 1
-                        JOIN {WiserTableNames.WiserItem} AS category ON category.id = link.destination_item_id AND category.entity_type = 'map'
-                        LEFT JOIN {WiserTableNames.WiserItemLink} AS linkToRoot ON linkToRoot.item_id = category.id AND linkToRoot.type = 1
-                        LEFT JOIN {WiserTableNames.WiserItemFile} AS file ON file.item_id = template.id AND file.property_name = 'preview'
-                        LEFT JOIN {WiserTableNames.WiserItemDetail} AS html ON html.item_id = template.id AND html.`key` = 'html'
-                        WHERE template.entity_type = 'content-box-template'
-                        GROUP BY category.id, template.id
-                        ORDER BY linkToRoot.ordering ASC, link.ordering ASC";
+    template.id,
+    template.title,
+    category.id AS categoryId,
+    category.title AS category,
+    CONCAT_WS('', html.value, html.long_value) AS html,
+    file.file_name,
+	link.ordering,
+	linkToRoot.ordering AS parentOrdering
+FROM {WiserTableNames.WiserItem} AS template
+JOIN {WiserTableNames.WiserItemLink} AS link ON link.item_id = template.id AND link.type = 1
+JOIN {WiserTableNames.WiserItem} AS category ON category.id = link.destination_item_id AND category.entity_type = 'map'
+LEFT JOIN {WiserTableNames.WiserItemLink} AS linkToRoot ON linkToRoot.item_id = category.id AND linkToRoot.type = 1
+LEFT JOIN {WiserTableNames.WiserItemFile} AS file ON file.item_id = template.id AND file.property_name = 'preview'
+LEFT JOIN {WiserTableNames.WiserItemDetail} AS html ON html.item_id = template.id AND html.`key` = 'html'
+WHERE template.entity_type = 'content-box-template'
+GROUP BY category.id, template.id
+
+UNION
+
+SELECT
+    template.id,
+    template.title,
+    category.id AS categoryId,
+    category.title AS category,
+    CONCAT_WS('', html.value, html.long_value) AS html,
+    file.file_name,
+	template.ordering,
+	IFNULL(linkToRoot.ordering, category.ordering) AS parentOrdering
+FROM {WiserTableNames.WiserItem} AS template
+JOIN {WiserTableNames.WiserItem} AS category ON category.id = template.parent_item_id AND category.entity_type = 'map'
+LEFT JOIN {WiserTableNames.WiserItemLink} AS linkToRoot ON linkToRoot.item_id = category.id AND linkToRoot.type = 1
+LEFT JOIN {WiserTableNames.WiserItemFile} AS file ON file.item_id = template.id AND file.property_name = 'preview'
+LEFT JOIN {WiserTableNames.WiserItemDetail} AS html ON html.item_id = template.id AND html.`key` = 'html'
+WHERE template.entity_type = 'content-box-template'
+GROUP BY category.id, template.id
+
+ORDER BY ordering ASC, parentOrdering ASC";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -156,15 +178,31 @@ namespace Api.Modules.ContentBuilder.Services
             var results = new List<ContentBoxTemplateModel>();
 
             var query = $@"SELECT
-                            category.id AS categoryId,
-                            category.title AS category
-                        FROM {WiserTableNames.WiserItem} AS template
-                        JOIN {WiserTableNames.WiserItemLink} AS link ON link.item_id = template.id AND link.type = 1
-                        JOIN {WiserTableNames.WiserItem} AS category ON category.id = link.destination_item_id AND category.entity_type = 'map'
-                        LEFT JOIN {WiserTableNames.WiserItemLink} AS linkToRoot ON linkToRoot.item_id = category.id AND linkToRoot.type = 1
-                        WHERE template.entity_type = 'content-box-template'
-                        GROUP BY category.id
-                        ORDER BY linkToRoot.ordering ASC, link.ordering ASC";
+	category.id AS categoryId,
+	category.title AS category,
+	link.ordering,
+	linkToRoot.ordering AS parentOrdering
+FROM {WiserTableNames.WiserItem} AS template
+JOIN {WiserTableNames.WiserItemLink} AS link ON link.item_id = template.id AND link.type = 1
+JOIN {WiserTableNames.WiserItem} AS category ON category.id = link.destination_item_id AND category.entity_type = 'map'
+LEFT JOIN {WiserTableNames.WiserItemLink} AS linkToRoot ON linkToRoot.item_id = category.id AND linkToRoot.type = 1
+WHERE template.entity_type = 'content-box-template'
+GROUP BY category.id
+
+UNION
+
+SELECT
+	category.id AS categoryId,
+	category.title AS category,
+	template.ordering,
+	IFNULL(linkToRoot.ordering, category.ordering) AS parentOrdering
+FROM {WiserTableNames.WiserItem} AS template
+JOIN {WiserTableNames.WiserItem} AS category ON category.id = template.parent_item_id AND category.entity_type = 'map'
+LEFT JOIN {WiserTableNames.WiserItemLink} AS linkToRoot ON linkToRoot.item_id = category.id AND linkToRoot.type = 1
+WHERE template.entity_type = 'content-box-template'
+GROUP BY category.id
+
+ORDER BY ordering ASC, parentOrdering ASC";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -186,7 +224,7 @@ namespace Api.Modules.ContentBuilder.Services
         /// <inheritdoc />
         public async Task<ServiceResult<string>> GetTemplateJavascriptFileAsync(ClaimsIdentity identity)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             var templatesResult = await GetTemplatesAsync(identity);
             if (templatesResult.StatusCode != HttpStatusCode.OK)
             {
@@ -231,7 +269,7 @@ namespace Api.Modules.ContentBuilder.Services
                 DesignId = x.Id
             });
             var javascript = $@"var data_templates = {{
-    name: '{customer.Name}',
+    name: '{tenant.Name}',
     categories: [{String.Join(", ", categoriesArray)}],
     designs: {JsonConvert.SerializeObject(templatesForJavascript, serializerSettings)}
 }};

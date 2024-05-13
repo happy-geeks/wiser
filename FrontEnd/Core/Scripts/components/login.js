@@ -1,4 +1,4 @@
-﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN } from "../store/mutation-types";
+﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN, USE_TOTP_BACKUP_CODE } from "../store/mutation-types";
 import { ComboBox } from "@progress/kendo-vue-dropdowns";
 
 export default {
@@ -12,7 +12,9 @@ export default {
                 password: "",
                 rememberMe: true,
                 selectedUser: "",
-                capslock: false
+                capslock: false,
+                totpPin: "",
+                totpBackupCode: ""
             },
             users: null,
             showForgotPasswordScreen: false,
@@ -23,15 +25,12 @@ export default {
             changePasswordForm: {
                 newPassword: "",
                 newPasswordRepeat: ""
-            }
+            },
+            showTotpBackupCodeScreen: false
         };
     },
     async created() {
         await this.$store.dispatch(AUTH_REQUEST);
-
-        if (this.$store.state.login.requirePasswordChange && this.loginForm.password === "") {
-            //this.$store.dispatch(AUTH_LOGOUT);
-        }
     },
     computed: {
         loginStatus() {
@@ -58,12 +57,20 @@ export default {
             return this.$store.state.login.requirePasswordChange;
         },
 
-        customerTitle() {
-            return this.$store.state.customers.title;
+        tenantTitle() {
+            return this.$store.state.tenants.title;
         },
 
         validSubDomain() {
-            return this.$store.state.customers.validSubDomain;
+            return this.$store.state.tenants.validSubDomain;
+        },
+
+        totpQrImageUrl() {
+            return this.$store.state.login.totpQrImageUrl;
+        },
+
+        user() {
+            return this.$store.state.login.user;
         }
     },
     components: {
@@ -78,7 +85,7 @@ export default {
                     return;
                 }
 
-                await this.$store.dispatch(FORGOT_PASSWORD, { user: Object.assign({}, this.forgotPasswordForm) });
+                await this.$store.dispatch(FORGOT_PASSWORD, {user: Object.assign({}, this.forgotPasswordForm)});
                 return;
             } else if (this.requirePasswordChange) {
                 if (event.submitter.id === "submitPasswordChange") {
@@ -100,18 +107,23 @@ export default {
                 return;
             }
 
-            await this.$store.dispatch(AUTH_REQUEST, { user: Object.assign({}, this.loginForm) });
+            await this.$store.dispatch(AUTH_REQUEST, { 
+                user: Object.assign({}, this.loginForm),
+                loginStatus: this.loginStatus
+            });
+            
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
             }
-            else if(this.users && this.users.length > 0) {
+            else if (this.users && this.users.length > 0) {
                 this.loginForm.selectedUser = this.users[0];
             }
         },
 
-        logout() {
-            this.$store.dispatch(AUTH_LOGOUT);
+        async logout() {
+            await this.$store.dispatch(AUTH_LOGOUT);
+            this.toggleTotpBackupCodeScreen(false);
         },
 
         userFilterChange(event) {
@@ -133,6 +145,10 @@ export default {
 
         togglePasswordForgottenScreen(show) {
             this.showForgotPasswordScreen = show;
+        },
+
+        toggleTotpBackupCodeScreen(show) {
+            this.showTotpBackupCodeScreen = show;
         },
 
         async forgotPassword() {

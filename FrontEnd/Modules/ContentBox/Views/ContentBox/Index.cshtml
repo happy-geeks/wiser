@@ -2,7 +2,7 @@
 @inject IViewLocalizer Localizer
 @using System.Web
 @model FrontEnd.Modules.ContentBox.Models.ContentBoxViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html lang="nl">
@@ -46,6 +46,9 @@
     }
     </script>
     <script type="module" src="/ContentBox/contentbox/lang/en.js"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("ContentBox.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="contentbox.js"></webpack-script>
+    <webpack-script file-name="ContentBox.js"></webpack-script>
 </body>
 </html>

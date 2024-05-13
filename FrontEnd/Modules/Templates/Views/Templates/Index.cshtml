@@ -1,7 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+﻿@model FrontEnd.Modules.Templates.Models.TemplateViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @{
     Layout = "";
 }
@@ -10,7 +8,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>@Localizer["Wiser 3 - Templates module"]</title>
+    <title>Wiser 3 - Templates module</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -24,7 +22,9 @@
         #addDynamicContentToHtmlDialog,
         #linkExistingDynamicContentDialog,
         #htmlSourceWindow,
-        #NotMainBranchNotification {
+        #NotMainBranchNotification,
+        #translationsDialog,
+        #fileManagerWindow {
             display: none;
         }
     </style>
@@ -37,58 +37,70 @@
       data-track-js-token="@Model.Settings.TrackJsToken"
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret"
-      data-pusher-app-key="@Model.Settings.PusherAppKey">
+      data-pusher-app-key="@Model.Settings.PusherAppKey"
+      data-template-id="@Model.TemplateId"
+      data-initial-tab="@Model.InitialTab">
     <span id="popupNotification"></span>
     <div id="NotMainBranchNotification" class="hidden">
         <p>
-            @Localizer["You are currently logged in to a branch of this customer. It is not possible/allowed to use the template module in an industry.<br/> Please log into the customer's live environment and work in the template module there."]
+            Je bent op dit moment ingelogd bij een branch van deze klant. Het is niet mogelijk/toegestaan om de templatemodule te gebruiken in een branch.<br/>
+            Log a.u.b. in op de live-omgeving van de klant en werk daar in de templatemodule.
         </p>
     </div>
     <div id="wiser">
         <div id="window" style="margin: 0 auto; padding: 0;">
-            <div class="window-header">
-                <form id="searchForm" class="search-container">
-                    <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
-                    <button class="icon-line-search"></button>
-                    <div class="loader-icon"><div></div><div></div><div></div><div></div></div>
-                </form>
-            </div>
+            @if (Model.TemplateId == 0)
+            {
+                <div class="window-header">
+                    <button id="importLegacyButton" class="k-secondary saveButton">Importeren van Wiser 1</button>
+                    <form id="searchForm" class="search-container">
+                        <input type="text" placeholder="Zoeken" id="search-field" class="k-input" autocomplete="off">
+                        <button class="icon-line-search"></button>
+                        <div class="loader-icon">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                    </form>
+                </div>
+            }
 
             <div class="window-content">
-
                 <div id="panelwithsplitter" style="height: 100%; margin: 0; padding: 0; border: 0;">
-
                     <div id="horizontal" style="border: 0; height: 100%; width: 100%;">
-
-                        <div id="left-pane" style="background-color: #cccccc;">
-                            <div class="pane-content">
-                                <div class="tabstrip-treeview k-tabstrip-wrapper">
+                        @if (Model.TemplateId == 0)
+                        {
+                            <div id="left-pane" style="background-color: #cccccc;">
+                                <div class="pane-content">
+                                    <div class="tabstrip-treeview k-tabstrip-wrapper">
+                                    </div>
+                                    <button id="addButton" class="k-primary k-button-round"></button>
                                 </div>
-                                <button id="addButton" class="k-primary k-button-round"></button>
+                                <ul id="treeViewContextMenu"></ul>
                             </div>
-                            <ul id="treeViewContextMenu"></ul>
-                        </div>
-
+                        }
 
                         <div id="right-pane" style="background-color: #eeeeee;">
-                            <div class="tabstrip k-tabstrip-wrapper">
+                            <div id="tabStrip" class="tabstrip k-tabstrip-wrapper">
                                 <ul>
-                                    <li class="development-tab k-state-active" data-name="development">@Localizer["Development"]</li>
-                                    <li class="dynamic-tab" data-name="dynamic-content">@Localizer["Dynamic Content"]</li>
-                                    <li class="preview-tab" data-name="preview">@Localizer["Preview"]</li>
-                                    <li class="history-tab" data-name="history">@Localizer["History"]</li>
+                                    <li class="development-tab k-state-active" data-name="development">Development</li>
+                                    @* <li class="config-tab" data-name="configuration" disabled>Configuration</li> *@
+                                    <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
+                                    <li class="history-tab" data-name="history">Historie</li>
+                                    <li class="measurements-tab" data-name="measurements">Metingen</li>
                                 </ul>
                                 <div id="developmentTab"></div>
-                                <div>
-                                    <partial name="Tabs/DynamicContentTab" />
+                                @* <div id="wtsConfigurationTab"></div> *@
+                                <div id="dynamicContentTab">
+                                    <partial name="Tabs/DynamicContentTab"/>
                                 </div>
-                                <div id="previewTab"></div>
                                 <div id="historyTab"></div>
+                                <div id="measurementsTab"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -103,22 +115,36 @@
         </div>
         <footer class="fixed clear">
             <div class="actions">
-                <button class="k-primary" name="save">@Localizer["Update"]</button>
-                <button class="k-secondary" name="cancel">@Localizer["Cancel"]</button>
+                <button class="k-primary" name="save">Update</button>
+                <button class="k-secondary" name="cancel">Annuleren</button>
                 <button class="addDynamicContent"></button>
             </div>
         </footer>
+    </div>
+
+    <!-- File manager window -->
+    <div id="fileManagerWindow" class="popup-container">
+        <div class="horizontal">
+            <iframe frameborder="0" id="fileManagerFrame"></iframe>
+
+            <!-- FIXED FOOTER -->
+            <footer class="fixed">
+                <div class="actions">
+                    <button class="k-primary saveButton" name="addFileToEditor">Invoegen</button>
+                </div>
+            </footer>
+        </div>
     </div>
 
     <div id="createNewItemDialog">
         <div class="formview full static-fields">
             <div class="item">
                 <span class="inline">
-                    <label class="checkbox"><input type="checkbox" id="newItemIsDirectoryCheckBox" class="textField k-input" /><span>@Localizer["Is folder"]</span></label>
+                    <label class="checkbox"><input type="checkbox" id="newItemIsDirectoryCheckBox" class="textField k-input" /><span>Is map</span></label>
                 </span>
             </div>
             <div class="item">
-                <h4><label for="newItemTitleField">@Localizer["Name"]</label></h4>
+                <h4><label for="newItemTitleField">Naam</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="text" id="newItemTitleField" class="textField k-input" autocomplete="off" />
                 </span>
@@ -129,9 +155,9 @@
     <div id="addDynamicContentToHtmlDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label for="dynamicContentDropDown">@Localizer["Choose a component"]</label></h4>
+                <h4><label for="dynamicContentDropDown">Kies een component</label></h4>
                 <div class="flex-container">
-                    <select id="dynamicContentDropDown" class="select" placeholder="@Localizer["Make your choice..."]" data-placeholder="@Localizer["Make your choice..."]"></select>
+                    <select id="dynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
                 </div>
             </div>
         </div>
@@ -140,9 +166,9 @@
     <div id="linkExistingDynamicContentDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label for="allDynamicContentDropDown">@Localizer["Choose a component"]</label></h4>
+                <h4><label for="allDynamicContentDropDown">Kies een component</label></h4>
                 <div class="flex-container">
-                    <select id="allDynamicContentDropDown" class="select" placeholder="@Localizer["Make your choice..."]" data-placeholder="@Localizer["Make your choice..."]"></select>
+                    <select id="allDynamicContentDropDown" class="select" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
                 </div>
             </div>
         </div>
@@ -157,8 +183,10 @@
         </div>
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Templates.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="Templates.js"></webpack-script>
 </body>
 </html>

@@ -1,11 +1,11 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../Css/ImportExport.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/ImportExport.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const exportModuleSettings = {
@@ -35,7 +35,7 @@ const exportModuleSettings = {
 
             // Default settings
             this.settings = {
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend"
             };
             Object.assign(this.settings, settings);
@@ -54,7 +54,7 @@ const exportModuleSettings = {
             if (!this.exportHtml) {
                 return;
             }
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -68,7 +68,7 @@ const exportModuleSettings = {
             // Setup processing.
             document.addEventListener("processing.Busy", this.toggleMainLoader.bind(this, true));
             document.addEventListener("processing.Idle", this.toggleMainLoader.bind(this, false));
-            
+
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
@@ -76,7 +76,7 @@ const exportModuleSettings = {
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
-                
+
                 this.toggleMainLoader(false);
                 return;
             }
@@ -89,17 +89,17 @@ const exportModuleSettings = {
                     token: this.settings.trackJsToken
                 });
             }
-            
+
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
-            
+
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
-            
+
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
@@ -142,69 +142,80 @@ const exportModuleSettings = {
                 return;
             }
 
+            const fileFormat = $("#fileFormatList").data("kendoDropDownList").dataItem();
+            if (!fileFormat) {
+                kendo.alert("Kies a.u.b. eerst een bestandsformaat");
+                return;
+            }
+
+            const process = `exportToFile_${Date.now()}`;
+            window.processing.addProcess(process);
+            let result;
+            let fileName;
+
             switch (exportType) {
                 case "dataselector": {
                     const dropDownList = $("#DataSelectorList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     const dataSelectorId = dataItem.encryptedId;
-                    const fileName = `${dataItem.name}.xlsx`;
-
-                    const process = `exportToExcel_${Date.now()}`;
-                    window.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.getItemsUrl}/excel?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
+                    fileName = `${dataItem.name}.${fileFormat.extension}`;
+                    
+                    result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });
-                    await Misc.downloadFile(result, fileName);
-                    window.processing.removeProcess(process);
                     break;
                 }
                 case "query": {
                     const dropDownList = $("#QueryList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
                     const queryId = dataItem.encryptedId;
-                    const fileName = `${dataItem.description}.xlsx`;
-
-                    const process = `exportToExcel_${Date.now()}`;
-                    window.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.getItemsUrl}/excel?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
+                    fileName = `${dataItem.description}.${fileFormat.extension}`;
+                    
+                    result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });
-                    await Misc.downloadFile(result, fileName);
-                    window.processing.removeProcess(process);
                     break;
                 }
                 case "module": {
                     const dropDownList = $("#ModuleList").data("kendoDropDownList");
                     const dataItem = dropDownList.dataItem();
-                    
+
                     const moduleId = dataItem.moduleId;
-                    const fileName = `${dataItem.name}.xlsx`;
-                    
-                    const process = `exportToExcel_${Date.now()}`;
-                    window.processing.addProcess(process);
-                    const result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}`, {
+                    fileName = `${dataItem.name}.${fileFormat.extension}`;
+
+                    result = await fetch(`${this.settings.wiserApiRoot}modules/${moduleId}/export?fileName=${encodeURIComponent(fileName)}&fileFormat=${fileFormat.value}`, {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });
-                    await Misc.downloadFile(result, fileName);
-                    window.processing.removeProcess(process);
+
                     break;
                 }
                 default:
+                    window.processing.removeProcess(process);
                     kendo.alert("Ongeldig exporttype geselecteerd.");
                     return;
             }
+
+            if (result.status !== 200) {
+                const error = await result.text();
+                kendo.alert(`Er is iets fout gegaan met het exporteren. Probeer het a.u.b. nogmaals of neem contact op met ons.<br>De fout was:<br>${error}`);
+            }
+            else {
+                await Misc.downloadFile(result, fileName);
+            }
+
+            window.processing.removeProcess(process);
         }
 
         /**
@@ -300,6 +311,27 @@ const exportModuleSettings = {
             }
 
             window.processing.removeProcess(process);
+            
+            let fileFormatDataSource = [
+                {
+                    name: 'Excel',
+                    value: 'excel',
+                    extension: 'xlsx',
+                },
+                {
+                    name: 'CSV',
+                    value: 'csv',
+                    extension: 'csv',
+                }
+            ]
+
+            $(context).find('#fileFormatList').kendoDropDownList(
+                {
+                    dataTextField: "name",
+                    dataValueField: "value",
+                    dataSource: fileFormatDataSource
+                }
+            );
 
             //BUTTONS
             $(context).find(".saveButton").kendoButton({

@@ -4,7 +4,7 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/ImportExport.css";
+import "../Css/ImportExport.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const importModuleSettings = {
@@ -16,7 +16,7 @@ const importModuleSettings = {
      */
     class Import {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Import.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
@@ -46,7 +46,7 @@ const importModuleSettings = {
 
             // Default settings
             this.settings = {
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend"
             };
             Object.assign(this.settings, settings);
@@ -105,12 +105,12 @@ const importModuleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.hasEmailAddress = !!userData.emailAddress;
             $("#EmailAddressContainer").toggle(!this.settings.hasEmailAddress);
@@ -546,7 +546,7 @@ const importModuleSettings = {
                     invalidMaxFileSize: "Bestand mag maar maximaal 25 MB zijn"
                 },
                 validation: {
-                    allowedExtensions: [".csv"],
+                    allowedExtensions: [".csv", ".xlsx"],
                     maxFileSize: 26214400 // 25 MB = 25 * 1024 * 1024
                 },
                 multiple: false,
@@ -916,7 +916,33 @@ const importModuleSettings = {
                                 optionLabel: "Kies een eigenschap",
                                 dataSource: {
                                     transport: {
-                                        read: `${this.settings.wiserApiRoot}imports/entity-properties?linkType=${options.model.linkType}`
+                                        read: (kendoReadOptions) => {
+                                            Wiser.api({
+                                                url: `${this.settings.wiserApiRoot}imports/entity-properties?linkType=${options.model.linkType}`,
+                                                dataType: "json",
+                                                method: "GET",
+                                                data: kendoReadOptions.data
+                                            }).then((result) => {
+                                                const properties = [];
+                                                result.forEach(prop => {
+                                                    const options = prop.options !== "" ? JSON.parse(prop.options) : {};
+
+                                                    // Create data items out of the retrieved properties.
+                                                    properties.push({
+                                                        name: prop.displayName,
+                                                        value: prop.propertyName,
+                                                        languageCode: prop.languageCode,
+                                                        isImageField: prop.inputType === "ImageUpload",
+                                                        allowMultipleImages: options.hasOwnProperty("multiple") && options.multiple,
+                                                        propertyOrder: `${prop.ordering}_${prop.id}`
+                                                    });
+                                                });
+
+                                                kendoReadOptions.success(properties);
+                                            }).catch((result) => {
+                                                kendoReadOptions.error(result);
+                                            });
+                                        }
                                     }
                                 },
                                 change: (e) => {

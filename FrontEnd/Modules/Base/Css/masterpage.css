@@ -24,6 +24,12 @@ input:focus, textarea:focus, select:focus {
 ins {
 	text-decoration: none;
 }
+dl {
+	margin-top: 10px;
+}
+dd {
+	margin-left: 2em;
+}
 .hidden {
 	display: none !important;
 }
@@ -211,6 +217,16 @@ ins {
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .k-grid .k-grid-content {
 	flex-grow: 1;
 }
+
+/* Editor in an iframe / full window */
+.maximize-editor-window {
+	padding-bottom: 7px;
+}
+.maximize-editor-window > .pane-content,
+.maximize-editor-window > .pane-content table.k-editor {
+	height: 100%;
+}
+
 #alert {
 	display: none;
 }
@@ -252,6 +268,14 @@ ins {
 .item {
 	border: none;
 	position: relative;
+	background: var(--item-bg-color);
+	box-sizing: border-box;
+	padding: 6px;
+	min-width: 10%;
+	max-width: 100%;
+}
+.item .disabled {
+	opacity: 0.5;
 }
 .item .actions {
 	position: relative;
@@ -270,14 +294,6 @@ ins {
 }
 .item .actions.btn2 button:last-child {
 	margin: 0;
-}
-.item {
-	background: var(--item-bg-color);
-	box-sizing: border-box;
-	padding: 6px;
-	position: relative;
-	min-width: 10%;
-	max-width: 100%;
 }
 .emptyItem {
 	padding: 9px;
@@ -391,10 +407,20 @@ ins {
 	overflow: hidden;
 }
 .dynamicTabContent > .gridview:only-child {
-	height: calc(100vh - 293px);
+	height: calc(100vh - 113px);
 }
 .popup-container .dynamicTabContent > .gridview:only-child {
-	height: calc(100vh - 230px);
+	height: calc(100vh - 222px);
+}
+.dynamicTabContent > .gridview:only-child .k-grid {
+	height: 100%;
+	min-height: 100px;
+	flex-wrap: nowrap;
+}
+.popup-container .dynamicTabContent > .gridview:only-child .k-grid {
+	height: 100%;
+	min-height: 100px;
+	flex-wrap: nowrap;
 }
 .dynamicTabContent > .gridview:only-child h4 {
 	display: none;
@@ -614,8 +640,26 @@ ins {
 	left: 0;
 	bottom: calc(100% + 4px);
 }
+.item[data-label-style="normal"] .k-widget {
+	flex-wrap: wrap;
+}
+.item[data-label-style="normal"] .k-widget .k-form-error {
+	background: var(--item-bg-color);
+	margin: 0;
+	padding-left: 5px;
+	width: 100%;
+}
+.item[data-label-style="normal"] .k-input:focus + .k-form-error {
+	background: var(--error-bg-color);
+	color: var(--white-color);
 
-/* INLINE LABELS */
+}
+.item.error[data-label-style="normal"] h4,
+.item.error[data-label-style="normal"] h4 > label {
+	color: var(--white-color);
+}
+
+	/* INLINE LABELS */
 .item[data-label-style="inline"] {
 	display: flex;
 	flex-wrap: wrap;
@@ -868,6 +912,9 @@ ins {
 .checkbox, .radio {
 	cursor: pointer;
 }
+.checkbox, .radio {
+	cursor: pointer;
+}
 .checkbox > input,
 .radio > input {
 	height: 1px;
@@ -879,8 +926,7 @@ ins {
 .radio span {
 	display: inline-block;
 	line-height: 1em;
-	min-height: 28px;
-	padding: 12px 5px 12px 28px;
+	padding: 8px 5px 5px 28px;
 	position: relative;
 }
 .checkbox span:before,
@@ -891,7 +937,7 @@ ins {
 	height: 18px;
 	position: absolute;
 	left: 0;
-	top: 8px;
+	top: 4px;
 	width: 18px;
 }
 .toggle input:checked + label > span:after,
@@ -903,7 +949,7 @@ input:checked + .checkbox span:after,
 	height: 10px;
 	position: absolute;
 	left: 5px;
-	top: 13px;
+	top: 9px;
 	width: 10px;
 }
 .radio span:before,
@@ -946,6 +992,10 @@ input:checked + .checkbox span:after,
 	left: -8px;
 	width: 300px;
 	z-index: 1001;
+}
+.info.tooltip-left:before {
+	left: inherit;
+	right: -8px;
 }
 .info-link.right > span {
 	right: -8px;
@@ -1227,6 +1277,7 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 	display: flex;
 	flex-direction: column;
 	height: calc(100% - 20px);
+	max-height: calc(100% - 20px);
 }
 
 .k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:not(:only-child) {
@@ -1260,4 +1311,61 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 }
 
 body.gridViewMode {
+}
+
+/** ICONS **/
+.k-sprite {
+	color: var(--dark-txt);
+	font-family: 'icomoon' !important;
+	font-size: 16px;
+	margin-right: 5px;
+	padding-top: 1px;
+	speak: none;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.k-sprite.rootfolder:before {
+	content: "\e972";
+}
+
+.k-sprite.folder:before {
+	content: "\e968";
+}
+
+.k-sprite.wiserfolderclosed:before {
+	content: "\e96d";
+}
+
+.k-sprite.wiserfolderopened:before {
+	content: "\e965";
+}
+
+.k-sprite.pdf:before {
+	content: "\e956";
+}
+
+.k-sprite.html:before {
+	content: "\e957";
+}
+
+.k-sprite.image:before {
+	content: "\e9eb";
+}
+
+.k-sprite.file:before {
+	content: "\e94b";
+}
+
+.k-sprite.edit:before {
+	content: "\e9e8";
+}
+
+.k-sprite.delete:before {
+	content: "\e93f";
 }

@@ -1,4 +1,4 @@
-﻿@import "../../Base/scss/base.scss";
+﻿@import "../../Base/Scss/base.scss";
 
 html, body {
     height: 100%;
@@ -21,6 +21,10 @@ dt {
 
 dd {
     margin-bottom: 10px;
+}
+
+.dependency-hidden {
+    display: none;
 }
 
 .k-dialog #changeImageDataDialog,
@@ -48,16 +52,6 @@ dd {
         overflow: auto;
     }
 
-#imagesUploaderWindow img {
-    max-width: 100%;
-    max-height: 100%;
-}
-
-#imagesUploaderWindow #imagesUploaderTreeView,
-#filesUploaderWindow #filesUploaderTreeView,
-#templatesUploaderWindow #templatesUploaderTreeView {
-    min-height: 100px;
-}
 
 body.iframe .k-tabstrip .k-tabstrip-items,
 body.gridView .k-tabstrip .k-tabstrip-items {
@@ -134,10 +128,7 @@ body.gridViewMode #mainScreenForm {
     border: 0;
 }
 
-#horizontal,
-#imagesUploaderWindow .horizontal,
-#filesUploaderWindow .horizontal,
-#templatesUploaderWindow .horizontal {
+#horizontal {
     border: 0;
     height: 100%;
     width: 100%;
@@ -161,63 +152,6 @@ body.gridViewMode #mainScreenForm {
     min-height: fit-content;
     flex: 1 1 auto;
 }
-
-/** ICONS **/
-.k-sprite {
-    color: var(--dark-txt);
-    font-family: 'icomoon' !important;
-    font-size: 16px;
-    margin-right: 5px;
-    padding-top: 1px;
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-    .k-sprite.rootfolder:before {
-        content: "\e972";
-    }
-
-    .k-sprite.folder:before {
-        content: "\e968";
-    }
-
-    .k-sprite.wiserfolderclosed:before {
-        content: "\e96d";
-    }
-
-    .k-sprite.wiserfolderopened:before {
-        content: "\e965";
-    }
-
-    .k-sprite.pdf:before {
-        content: "\e956";
-    }
-
-    .k-sprite.html:before {
-        content: "\e957";
-    }
-
-    .k-sprite.image:before {
-        content: "\e9eb";
-    }
-
-    .k-sprite.file:before {
-        content: "\e94b";
-    }
-
-    .k-sprite.edit:before {
-        content: "\e9e8";
-    }
-
-    .k-sprite.delete:before {
-        content: "\e93f";
-    }
 
 /* FIELDS */
 .item .k-input .open-link {
@@ -385,6 +319,7 @@ body.iframe .editMenu {
     line-height: 38px;
     color: var(--dark-txt);
     margin-left: auto;
+    margin-right: 10px;
     order: 2;
 }
 
@@ -481,42 +416,20 @@ body.iframe .editMenu {
     justify-content: space-between;
 }
 
-.image-preview .group-columns .item-group:first-child,
-.file-preview .group-columns .item-group:first-child {
-    width: calc(75% - 10px);
-}
-
-.image-preview .group-columns .item-group:last-child,
-.file-preview .group-columns .item-group:last-child {
-    width: calc(25% - 10px);
-}
-
-.template-preview .group-columns .item-group:first-child {
-    width: 100%;
-}
-
-.imagesUploaderActions,
-.filesUploaderActions,
-.templatesUploaderActions {
-    background-color: var(--medium-color);
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
-    padding: 5px;
-    padding-bottom: 0;
-}
-
-    .imagesUploaderActions button,
-    .filesUploaderActions button,
-    .templatesUploaderActions button {
-        width: 100%;
-        margin-bottom: 5px;
-    }
-
 .template-preview-iframe {
     width: 100%;
     border: none;
     height: 550px;
+}
+
+#fileManagerWindow .horizontal {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#fileManagerWindow iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
 }

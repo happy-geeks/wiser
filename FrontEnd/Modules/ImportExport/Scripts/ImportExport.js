@@ -6,7 +6,7 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/ImportExport.css";
+import "../Css/ImportExport.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const importModuleSettings = {
@@ -18,7 +18,7 @@ const importModuleSettings = {
      */
     class ImportExport {
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of ImportExport.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor() {
@@ -33,7 +33,7 @@ const importModuleSettings = {
 
             // Default settings
             this.settings = {
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend",
             };
             Object.assign(this.settings, settings);

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace Api.Modules.Languages.Services;
 
+/// <inheritdoc />
 public class CachedLanguagesService : ILanguagesService
 {
     private readonly IAppCache cache;
@@ -42,11 +43,11 @@ public class CachedLanguagesService : ILanguagesService
     public async Task<ServiceResult<List<SimpleKeyValueModel>>> GetAllTranslationsAsync()
     {
         await databaseConnection.EnsureOpenConnectionForReadingAsync();
-        return await cache.GetOrAdd($"translations_{databaseConnection.GetDatabaseNameForCaching()}",
-                                    async cacheEntry =>
-                                    {
-                                        cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
-                                        return await languagesService.GetAllTranslationsAsync();
-                                    }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
+        return await cache.GetOrAddAsync($"translations_{databaseConnection.GetDatabaseNameForCaching()}",
+            async cacheEntry =>
+            {
+                cacheEntry.AbsoluteExpirationRelativeToNow = apiSettings.DefaultUsersCacheDuration;
+                return await languagesService.GetAllTranslationsAsync();
+            }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.WiserItems));
     }
 }

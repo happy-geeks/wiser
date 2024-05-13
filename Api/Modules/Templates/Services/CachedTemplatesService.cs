@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -7,8 +8,10 @@ using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -65,10 +68,10 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<string>> GetCssForHtmlEditorsAsync(ClaimsIdentity identity)
         {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await cache.GetOrAdd($"css_for_html_editors_{databaseConnection.GetDatabaseNameForCaching()}",
+            return await cache.GetOrAddAsync($"css_for_html_editors_{databaseConnection.GetDatabaseNameForCaching()}",
                 async cacheEntry =>
                 {
-                    cacheEntry.SlidingExpiration = gclSettings.DefaultTemplateCacheDuration;
+                    cacheEntry.AbsoluteExpirationRelativeToNow = gclSettings.DefaultTemplateCacheDuration;
                     return await templatesService.GetCssForHtmlEditorsAsync(identity);
                 }, cacheService.CreateMemoryCacheEntryOptions(CacheAreas.Templates));
         }
@@ -89,6 +92,12 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
             return await templatesService.GetTemplateSettingsAsync(identity, templateId, environment);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        {
+            return await templatesService.GetTemplateWtsConfigurationAsync(identity, templateId, environment);
         }
 
         /// <inheritdoc />
@@ -114,11 +123,23 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished, branchDatabaseName);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            return await templatesService.SaveAsync(identity, templateId, configuration);
+        }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
         {
-            return await templatesService.SaveTemplateVersionAsync(identity, template, skipCompilation);
+            return await templatesService.SaveAsync(identity, template, skipCompilation);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> CreateNewVersionAsync(int templateId, int versionBeingDeployed = 0)
+        {
+            return await templatesService.CreateNewVersionAsync(templateId, versionBeingDeployed);
         }
 
         /// <inheritdoc />
@@ -134,9 +155,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId, int pageNumber, int itemsPerPage)
         {
-            return await templatesService.GetTemplateHistoryAsync(identity, templateId);
+            return await templatesService.GetTemplateHistoryAsync(identity, templateId, pageNumber, itemsPerPage);
         }
 
         /// <inheritdoc />
@@ -170,23 +191,11 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return await templatesService.GeneratePreviewAsync(identity, componentId, requestModel);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return await templatesService.GeneratePreviewAsync(identity, requestModel);
-        }
-        
-        /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
         {
             return await templatesService.CheckDefaultHeaderConflict(templateId, regexString);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultFooterConflict(int templateId, string regexString)
         {
@@ -210,6 +219,30 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<bool>> DeployToBranchAsync(ClaimsIdentity identity, List<int> templateIds, int branchId)
         {
             return await templatesService.DeployToBranchAsync(identity, templateIds, branchId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
+        {
+            return await templatesService.GetMeasurementSettingsAsync(templateId, componentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
+        {
+            return await templatesService.SaveMeasurementSettingsAsync(settings, templateId, componentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0, string urlRegex = null, Environments? environment = null, ulong userId = 0, string languageCode = null, int pageSize = 500, int pageNumber = 1, bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            return await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
+        {
+            return await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync(identity);
         }
     }
 }

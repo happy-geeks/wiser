@@ -1,4 +1,4 @@
-﻿@import "../../Base/scss/base.scss";
+﻿@import "../../Base/Scss/base.scss";
 
 #htmlPreviewWindow {
     display: none;
@@ -49,33 +49,6 @@
     top: 74px;
 }
 
-#right-pane .k-tabstrip .k-tabstrip-items {
-    top: 5px;
-}
-
-#right-pane .previewContainer {
-    min-height: calc(100vh - 130px);
-    position: relative;
-}
-
-#right-pane .previewContainer .col-6 {
-    flex-basis: 100%;
-}
-
-#right-pane .previewContainer #previewHtml {
-    font-family: var(--regular-txt);
-    font-size: 13px;
-    font-weight: 400;
-    margin-right: 0;
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-}
-
-#right-pane .previewContainer #previewHtml .k-button-text {
-    padding-left: 5px;
-}
-
 #left-pane .k-tabstrip .k-content.k-state-active {
     padding: 12px;
 }
@@ -113,6 +86,7 @@
 
 .historyContainer .col-12 {
     flex-basis: 100%;
+	width: 0;
 }
 
 .historyHeader .col {

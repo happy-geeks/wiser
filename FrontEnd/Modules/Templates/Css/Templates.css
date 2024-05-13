@@ -1,4 +1,4 @@
-﻿@import "../../Base/scss/base.scss";
+﻿@import "../../Base/Scss/base.scss";
 
 #wiser {
     display: block;
@@ -165,6 +165,10 @@
     flex-grow: 1;
 }
 
+.k-dialog #translationsDialog {
+    display: block;
+}
+
 /** TREEVIEW **/
 #right-pane {
     width: auto;
@@ -248,7 +252,14 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    height: 100%;
+    flex-wrap: nowrap;
+}
+
+.developmentContainer > div {
+    flex: 1;
+    overflow: auto;
+    margin-bottom: 50px;
 }
 
 .linkedTemplates {
@@ -256,7 +267,7 @@
     width: 100%;
 }
 
-.editor-container {
+.developmentContainer > .editor-container {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
@@ -265,6 +276,44 @@
 .editor-container .CodeMirror,
 .editor-container table.k-editor {
     flex-grow: 1;
+}
+
+.checkboxlist .checkbox span {
+    padding: 8px 5px 5px 28px;
+}
+
+footer {
+    background: var(--white-color);
+    border-top: 1px solid #dddddd;
+    border-radius: 0 0 6px 6px;
+    box-sizing: content-box;
+    padding: 10px;
+    z-index: 250;
+    min-height: 47px;
+    flex-shrink: 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.version-actions {
+    width: 100%;
+    text-align: right;
+}
+
+.version-actions > .branch-container {
+    display: inline-block;
+}
+
+.version-actions > .branch-container > .k-picker {
+    width: 300px;
+}
+
+.version-actions > button,
+.version-actions > .branch-container > button{
+    min-width: 50px;
+    height: 42px;
 }
 
 /** ADVANCED **/
@@ -390,6 +439,7 @@
 
 .historyContainer .col-12 {
     flex-basis: 100%;
+	width: 0;
 }
 
 .historyHeader .col {
@@ -474,9 +524,7 @@
 }
 
 .historyDynamic {
-    border-top: 1px solid var(--body-color);
-    padding-top: 15px;
-    margin-top: 15px;
+    margin-left: 20px;
 }
 
 /** DYNAMIC CONTENT GRID **/
@@ -523,7 +571,6 @@
     opacity: 0.75;
 }
 
-
 #published-environments .item .flex-container .k-dropdown,
 #published-environments .item .flex-container .k-dropdownlist,
 #published-environments-dynamic-component .item .flex-container .k-dropdown,
@@ -536,61 +583,10 @@
     width: 40%;
 }
 
-/** ICONS **/
-.k-sprite {
-    color: var(--dark-txt);
-    font-family: 'icomoon' !important;
-    font-size: 16px;
-    margin-right: 5px;
-    padding-top: 1px;
-    speak: none;
-    font-style: normal;
-    font-weight: normal;
-    font-variant: normal;
-    text-transform: none;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.k-sprite.rootfolder:before {
-    content: "\e972";
-}
-
-.k-sprite.folder:before {
-    content: "\e968";
-}
-
-.k-sprite.wiserfolderclosed:before {
-    content: "\e96d";
-}
-
-.k-sprite.wiserfolderopened:before {
-    content: "\e965";
-}
-
-.k-sprite.pdf:before {
-    content: "\e956";
-}
-
-.k-sprite.html:before {
-    content: "\e957";
-}
-
-.k-sprite.image:before {
-    content: "\e9eb";
-}
-
-.k-sprite.file:before {
-    content: "\e94b";
-}
-
-.k-sprite.edit:before {
-    content: "\e9e8";
-}
-
-.k-sprite.delete:before {
-    content: "\e93f";
+/** MEASUREMENTS **/
+#measurementCharts {
+    width: 100%;
+    height: 700px
 }
 
 .k-state-default > .k-clear-value {
@@ -615,7 +611,7 @@
     overflow-x: auto;
 }
 
-/********************** 
+/**********************
 * CodeMirror
 **********************/
 .k-window-content .CodeMirror-fullscreen,
@@ -635,4 +631,25 @@
 
 .CodeMirror-lint-tooltip {
     z-index: 20000 !important;
+}
+
+/* IFRAME */
+.for-iframe .window-content {
+    top: 0;
+}
+
+.for-iframe .k-window-titlebar {
+    display: none;
+}
+
+#fileManagerWindow .horizontal {
+    border: 0;
+    height: 100%;
+    width: 100%;
+}
+
+#fileManagerWindow iframe {
+    border: 0;
+    height: 100%;
+    width: 100%;
 }

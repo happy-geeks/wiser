@@ -1,4 +1,4 @@
-@import "../../Base/scss/base.scss";
+@import "../../Base/Scss/base.scss";
 
 #fullForm {
     display: block;
@@ -115,7 +115,7 @@
     height: 10px;
     position: absolute;
     left: 5px;
-    top: 13px;
+    top: 9px;
     width: 10px;
 }
 
@@ -126,7 +126,7 @@
     height: 10px;
     position: absolute;
     left: 5px;
-    top: 13px;
+    top: 9px;
     width: 10px;
 }
 
@@ -203,6 +203,10 @@ textarea[data-limit] + span {
 
 .k-daterangepicker {
     gap: 0;
+}
+
+.k-dialog #translationsDialog {
+    display: block;
 }
 
 /* SUMMARY */

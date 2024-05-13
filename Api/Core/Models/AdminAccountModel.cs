@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using Api.Modules.Tenants.Models;
 using Newtonsoft.Json;
 
 namespace Api.Core.Models
@@ -38,6 +39,11 @@ namespace Api.Core.Models
         public bool Active { get; set; }
 
         /// <summary>
+        /// Gets or sets the TOTP settings (2FA).
+        /// </summary>
+        public TotpAuthenticationModel TotpAuthentication { get; set; }
+
+        /// <summary>
         /// Convert a <see cref="DataRow"/> to an <see cref="AdminAccountModel"/>.
         /// </summary>
         /// <param name="dataRow">The <see cref="DataRow"/> to convert.</param>
@@ -49,7 +55,13 @@ namespace Api.Core.Models
                 Id = dataRow.Field<ulong>("id"),
                 Login = dataRow.Field<string>("login"),
                 Name = dataRow.Field<string>("name"),
-                Active = Convert.ToBoolean(dataRow["active"])
+                Active = Convert.ToBoolean(dataRow["active"]),
+                TotpAuthentication = new TotpAuthenticationModel
+                {
+                    RequiresSetup = Convert.ToBoolean(dataRow["totpRequiresSetup"]),
+                    Enabled = Convert.ToBoolean(dataRow["totpEnabled"]),
+                    SecretKey = dataRow.Field<string>("totpSecret")
+                }
             };
         }
     }

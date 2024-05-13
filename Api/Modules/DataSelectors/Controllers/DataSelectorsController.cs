@@ -59,14 +59,28 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
         /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
         /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <param name="forBranches">Optional: Set to true to only get data selectors that can be used when creating branches.</param>
         /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<DataSelectorModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false)
+        public async Task<IActionResult> GetAsync(bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false, bool forBranches = false)
         {
-            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule)).GetHttpResponseMessage();
+            return (await dataSelectorsService.GetAsync((ClaimsIdentity)User.Identity, forExportModule, forRendering, forCommunicationModule, forBranches)).GetHttpResponseMessage();
         }
-        
+
+        /// <summary>
+        /// Check whether a data selector with the given name exists.
+        /// </summary>
+        /// <param name="name">The name of the data selector.</param>
+        /// <returns>The ID of the data selector if it exists, or 0 if it doesn't.</returns>
+        [HttpGet]
+        [Route("{name}/exists")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ExistsAsync(string name)
+        {
+            return (await dataSelectorsService.ExistsAsync(name)).GetHttpResponseMessage();
+        }
+
         /// <summary>
         /// Get templates that can be used with data selectors.
         /// </summary>
@@ -151,6 +165,25 @@ namespace Api.Modules.DataSelectors.Controllers
             var result = await dataSelectorsService.ToExcelAsync(data, (ClaimsIdentity)User.Identity);
             return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.xlsx", ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         }
+        
+        /// <summary>
+        /// Get the result of the data selector based on the request as an Excel file.
+        /// </summary>
+        /// <param name="dataFromUri">The request containing the information for the data selector in the query.</param>
+        [HttpPost]
+        [Route("csv")]
+        [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Produces("text/csv")]
+        public async Task<IActionResult> ToCsvAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
+        {
+            using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+            var dataFromBody = await reader.ReadToEndAsync();
+            var bodyModel = String.IsNullOrWhiteSpace(dataFromBody) ? new WiserDataSelectorRequestModel() : JsonConvert.DeserializeObject<WiserDataSelectorRequestModel>(dataFromBody, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
+            var data = CombineDataSelectorRequestModels(bodyModel, dataFromUri);
+            var result = await dataSelectorsService.ToCsvAsync(data, (ClaimsIdentity)User.Identity, ';');
+            return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.csv", ".csv", "text/csv");
+        }
 
         /// <summary>
         /// Get the result of the data selector based on the request as a HTML page.
@@ -191,7 +224,6 @@ namespace Api.Modules.DataSelectors.Controllers
         /// <summary>
         /// Replaces data selectors in a string to preview them in an HTML editor.
         /// </summary>
-        /// <param name="html">The HTML to replace the data selectors in for previewing in HTML editor.</param>
         [HttpPost]
         [Route("preview-for-html-editor")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
@@ -200,7 +232,7 @@ namespace Api.Modules.DataSelectors.Controllers
         {
             using var reader = new StreamReader(Request.Body, Encoding.UTF8);
             var html = await reader.ReadToEndAsync();
-            
+
             // Workaround for Axios, couldn't find a way to have it not add quotes around the HTML.
             if (html.StartsWith("\"") && html.EndsWith("\""))
             {
@@ -226,6 +258,21 @@ namespace Api.Modules.DataSelectors.Controllers
         public async Task<IActionResult> GetDataSelectorResultsAsJson(int id, [FromQuery] bool asKeyValuePair = false, [FromBody] List<KeyValuePair<string, object>> parameters = null)
         {
             return (await dataSelectorsService.GetDataSelectorResultAsJsonAsync((ClaimsIdentity) User.Identity, id, asKeyValuePair, parameters)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Checks if there is a data selector that already has "show in dashboard" enabled. If so, the name of the
+        /// data selector will be returned. Otherwise, `null`.
+        /// </summary>
+        /// <param name="id">The ID of the current data selector, which will be excluded from the check. This will be 0 if it's a new data selector.</param>
+        /// <returns>Name of a data selector that has "show in dashboard" enabled, or <see langword="null">null</see> if no data selector has that option enabled.</returns>
+        [HttpGet]
+        [Route("{id:int}/check-dashboard-conflict")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> CheckForDashboardConflictAsync(int id)
+        {
+            var dataSelectorName = await dataSelectorsService.CheckDashboardConflictAsync(id);
+            return Content(dataSelectorName.ModelObject, MediaTypeNames.Text.Plain);
         }
 
         /// <summary>

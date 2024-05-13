@@ -1,4 +1,4 @@
-﻿import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.tooltip.js");
@@ -82,7 +82,7 @@ export class Grids {
                 if (event.target.contentDocument.URL === "about:blank") {
                     return;
                 }
-                
+
                 window.processing.removeProcess(initialProcess);
 
                 dynamicItems.grids.informationBlockIframe[0].contentDocument.addEventListener("dynamicItems.onSaveButtonClick", () => {
@@ -111,7 +111,7 @@ export class Grids {
                         if (!createItemResult) {
                             return hideGrid;
                         }
-                        
+
                         const itemId = createItemResult.itemId;
                         this.informationBlockIframe.attr("src", `/Modules/DynamicItems?itemId=${itemId}&moduleId=${this.base.settings.moduleId}&iframe=true&readonly=${!!informationBlockSettings.initialItem.readOnly}&hideFooter=${!!informationBlockSettings.initialItem.hideFooter}&hideHeader=${!!informationBlockSettings.initialItem.hideHeader}`);
                     },
@@ -200,7 +200,7 @@ export class Grids {
                     $.globalEval(gridDataResult.extraJavascript);
                 }
             }
-            
+
             let disableOpeningOfItems = gridViewSettings.disableOpeningOfItems;
             if (!disableOpeningOfItems) {
                 if (gridDataResult.schemaModel && gridDataResult.schemaModel.fields) {
@@ -219,8 +219,19 @@ export class Grids {
                         name: "openDetails",
                         iconClass: "k-icon k-i-hyperlink-open",
                         text: "",
-                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }); }
+                        click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, false); }
                     });
+
+                    if (gridViewSettings.allowOpeningOfItemsInNewTab) {
+                        commandColumnWidth += 60;
+
+                        commands.push({
+                            name: "openDetailsInNewTab",
+                            iconClass: "k-icon k-i-window",
+                            text: "",
+                            click: (event) => { this.base.grids.onShowDetailsClick(event, this.mainGrid, { customQuery: true, usingDataSelector: usingDataSelector, fromMainGrid: true }, true); }
+                        });
+                    }
                 }
 
                 if (gridViewSettings.deleteItemQueryId && (typeof (gridViewSettings.showDeleteButton) === "undefined" || gridViewSettings.showDeleteButton === true)) {
@@ -298,6 +309,13 @@ export class Grids {
                     text: "",
                     template: `<div class="counterContainer"><span class="counter">0</span> <span class="plural">resultaten</span><span class="singular" style="display: none;">resultaat</span></div>`
                 });
+            } else {
+                toolbar.push({
+                    name: "whitespace",
+                    iconClass: "",
+                    text: "",
+                    template: `<div class="counterContainer"></div>`
+                });
             }
 
             if (!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideExportButton) {
@@ -305,7 +323,7 @@ export class Grids {
                     name: "excel"
                 });
             }
-            
+
             if ((!gridViewSettings.toolbar || !gridViewSettings.toolbar.hideCreateButton) && this.base.settings.permissions.canCreate) {
                 toolbar.push({
                     name: "add",
@@ -405,7 +423,7 @@ export class Grids {
 
                                 window.processing.addProcess(process);
 
-                                // If we're using the same filters as before, we don't need to count the total amount of results again, 
+                                // If we're using the same filters as before, we don't need to count the total amount of results again,
                                 // so we tell the API whether this is the case, so that it can skip the execution of the count query, to make scrolling through the grid faster.
                                 let currentFilters = null;
                                 if (transportOptions.data.filter) {
@@ -464,6 +482,8 @@ export class Grids {
                     filterable: true,
                     allPages: true
                 },
+                columnResize: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
+                columnReorder: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 columnHide: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 columnShow: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 dataBound: async (event) => {
@@ -500,6 +520,8 @@ export class Grids {
             }
 
             await this.loadGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, finalGridViewSettings);
+
+            await require("/kendo/messages/kendo.grid.nl-NL.js");
 
             this.mainGrid = $("#gridView").kendoGrid(finalGridViewSettings).data("kendoGrid");
 
@@ -551,7 +573,7 @@ export class Grids {
 
     /**
      * Save a certain state of a grid view in session storage and in database.
-     * @param key The key/name of the state that is being saved. This should be an unique key for every grid. 
+     * @param key The key/name of the state that is being saved. This should be an unique key for every grid.
      * @param dataToSave The stringified state data to save.
      * @returns {Promise<void>} The promise of the request.
      */
@@ -563,7 +585,7 @@ export class Grids {
             localStorageKey += `_${userData.id}`;
         }
         sessionStorage.setItem(localStorageKey, dataToSave);
-        
+
         return Wiser.api({
             url: `${this.base.settings.wiserApiRoot}users/grid-settings/${encodeURIComponent(key)}`,
             method: "POST",
@@ -579,14 +601,14 @@ export class Grids {
      */
     async loadGridViewState(key) {
         let value;
-        let localStorageKey = key; 
+        let localStorageKey = key;
 
         // Add the ID of the logged in user to the key for local storage. Just in case someone logs in as multiple users.
         const userData = await Wiser.getLoggedInUserData(this.base.settings.wiserApiRoot);
         if (userData) {
             localStorageKey += `_${userData.id}`;
         }
-        
+
         value = sessionStorage.getItem(localStorageKey);
         if (!value) {
             value = await Wiser.api({
@@ -597,13 +619,13 @@ export class Grids {
 
             sessionStorage.setItem(localStorageKey, value || "");
         }
-        
+
         return value;
     }
 
     /**
      * Load the saved state of columns back into a grid. Depending on the settings, users can hide/show whichever columns in a grid that they want.
-     * This method is to save that state so that the user's choices will be remembered. 
+     * This method is to save that state so that the user's choices will be remembered.
      * This method should be called BEFORE the grid is being initialized.
      * @param key The name/key of the state to load.
      * @param gridOptions The options object for the grid to load the state into.
@@ -621,13 +643,27 @@ export class Grids {
             return;
         }
 
-        for (let column of gridOptions.columns) {
-            const savedColumn = columns.filter(c => c.field === column.field);
-            if (savedColumn.length === 0) {
-                continue;
-            }
+        // Try to retrieve and set all saved grid settings.
+        try {
+            for (let savedColumnIndex = 0; savedColumnIndex < columns.length; savedColumnIndex++) {
+                for (let tableColumnsIndex= 0; tableColumnsIndex < gridOptions.columns.length; tableColumnsIndex++) {
+                    if (columns[savedColumnIndex].field !== gridOptions.columns[tableColumnsIndex].field) {
+                        continue;
+                    }
 
-            column.hidden = savedColumn[0].hidden;
+                    gridOptions.columns[tableColumnsIndex].hidden = columns[savedColumnIndex].hidden;
+                    gridOptions.columns[tableColumnsIndex].width = columns[savedColumnIndex].width;
+                    if (gridOptions.reorderable) {
+                        // Only re-arrange columns if there is a possibility for the user to arrange them.
+                        let moveColumn = gridOptions.columns.splice(tableColumnsIndex, 1)[0];
+                        gridOptions.columns.splice(savedColumnIndex, 0, moveColumn);
+                    }
+
+                    break;
+                }
+            }
+        } catch (error) {
+            console.error("Reading and setting grid settings failed:", error);
         }
     }
 
@@ -702,14 +738,25 @@ export class Grids {
                     const commands = [];
 
                     if (!options.disableOpeningOfItems) {
-                        commandColumnWidth += 80;
+                        commandColumnWidth += 60;
 
                         commands.push({
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     customQueryResults.columns.push({
@@ -726,7 +773,7 @@ export class Grids {
                     }
                 }
 
-                kendoGrid = this.generateGrid(field, loader, options, customQueryGrid, customQueryResults, propertyId, height, itemId, extraData);
+                kendoGrid = await this.generateGrid(field, loader, options, customQueryGrid, customQueryResults, propertyId, height, itemId, extraData);
             } else {
                 const gridSettings = await Wiser.api({
                     url: `${this.base.settings.wiserApiRoot}items/${itemId}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId=${propertyId}&mode=1`,
@@ -779,7 +826,7 @@ export class Grids {
 
                 // Add command columns separately, because of the click event that we can't do properly server-side.
                 if (!options.hideCommandColumn) {
-                    let commandColumnWidth = 80;
+                    let commandColumnWidth = 60;
                     let commands = [];
 
                     if (!options.disableOpeningOfItems) {
@@ -787,8 +834,19 @@ export class Grids {
                             name: "openDetails",
                             iconClass: "k-icon k-i-hyperlink-open",
                             text: "",
-                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options); }
+                            click: (event) => { this.onShowDetailsClick(event, kendoGrid, options, false); }
                         });
+
+                        if (options.allowOpeningOfItemsInNewTab) {
+                            commandColumnWidth += 60;
+
+                            commands.push({
+                                name: "openDetailsInNewTab",
+                                iconClass: "k-icon k-i-window",
+                                text: "",
+                                click: (event) => { this.onShowDetailsClick(event, kendoComponent, options, true); }
+                            });
+                        }
                     }
 
                     gridSettings.columns.push({
@@ -798,7 +856,7 @@ export class Grids {
                     });
                 }
 
-                kendoGrid = this.generateGrid(field, loader, options, customQueryGrid, gridSettings, propertyId, height, itemId, extraData);
+                kendoGrid = await this.generateGrid(field, loader, options, customQueryGrid, gridSettings, propertyId, height, itemId, extraData);
             }
 
         } catch (exception) {
@@ -807,7 +865,7 @@ export class Grids {
         }
     }
 
-    generateGrid(element, loader, options, customQueryGrid, data, propertyId, height, itemId, extraData) {
+    async generateGrid(element, loader, options, customQueryGrid, data, propertyId, height, itemId, extraData) {
         // TODO: Implement all functionality of all grids (https://app.asana.com/0/12170024697856/1138392544929161), so that we can use this method for everything.
         let isFirstLoad = true;
 
@@ -845,6 +903,8 @@ export class Grids {
             element.data("kendoGrid").destroy();
             element.empty();
         }
+
+        await require("/kendo/messages/kendo.grid.nl-NL.js");
 
         const kendoGrid = element.kendoGrid({
             dataSource: {
@@ -1011,12 +1071,14 @@ export class Grids {
 
     /**
      * Adds all custom buttons in the toolbar for a grid, in the correct groups, based on the given settings.
+     * @param gridSelector {any} The selector to find the corresponding grid in the DOM.
      * @param {any} toolbar The toolbar array of the grid.
      * @param {string} encryptedItemId The encrypted item ID of the item that the grid is located on, if applicable.
      * @param {number} propertyId The ID of the property with the sub-entities-grid, if applicable.
      * @param {any} customActions The custom actions from the grid settings.
+     * @param entityType {string} The entity type of the item that contains the grid.
      */
-    addCustomActionsToToolbar(gridSelector, encryptedItemId, propertyId, toolbar, customActions) {
+    addCustomActionsToToolbar(gridSelector, encryptedItemId, propertyId, toolbar, customActions, entityType) {
         const groups = [];
         const actionsWithoutGroups = [];
         encryptedItemId = encryptedItemId || "";
@@ -1037,10 +1099,16 @@ export class Grids {
                 continue;
             }
             
+            const conditionAttribute = customAction.condition
+                ? `data-condition=${customAction.condition}`
+                : '';
+            
+            const selector = gridSelector.replace(/#/g, "\\#");
+
             if (customAction.groupName) {
                 let group = groups.filter(g => g.name === customAction.groupName)[0];
                 if (!group) {
-                    group = { 
+                    group = {
                         name: customAction.groupName,
                         icon: customAction.icon,
                         actions: []
@@ -1048,13 +1116,13 @@ export class Grids {
 
                     groups.push(group);
                 }
-
-                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
+                
+                group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
                     name: `customAction${i.toString()}`,
                     text: customAction.text,
-                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${gridSelector.replace(/#/g, "\\#")}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event)' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
+                    template: `<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span class='k-icon k-i-${customAction.icon}'></span>${customAction.text}</a>`
                 });
             }
         }
@@ -1082,8 +1150,9 @@ export class Grids {
      * @param {any} event The event.
      * @param {any} grid The grid that executed the event.
      * @param {any} options The options for the grid.
+     * @param openInNewTab {boolean} Whether to open the item in a new tab in Wiser (like opening a new module).
      */
-    async onShowDetailsClick(event, grid, options) {
+    async onShowDetailsClick(event, grid, options, openInNewTab = false) {
         event.preventDefault();
 
         const dataItem = grid.dataItem($(event.currentTarget).closest("tr"));
@@ -1111,7 +1180,7 @@ export class Grids {
                 encryptedId = dataItem[`encryptedId_${options.entityType || entityType}`] || dataItem[`encryptedid_${options.entityType || entityType}`] || dataItem[`encrypted_id_${options.entityType || entityType}`] || dataItem[`idencrypted_${options.entityType || entityType}`] || encryptedId;
             } else if (!options.usingDataSelector) {
                 // If the clicked column has a field property, it should contain the entity name. Then we can find the ID column for that same entity.
-                const split = column.field.split(/_(.+)/).filter(s => s !== "");
+                const split = Strings.unmakeJsonPropertyName(column.field).split(/_(.+)/).filter(s => s !== "");
                 if (split.length < 2 && !entityType) {
                     if (!options.hideCommandColumn && (!this.base.settings.gridViewSettings || !this.base.settings.gridViewSettings.hideCommandColumn)) {
                         console.error(`Could not retrieve entity type from clicked column ('${column.field}')`);
@@ -1131,12 +1200,14 @@ export class Grids {
                             continue;
                         }
 
-                        if (!idFound && (key.indexOf(`ID_${entityType}`) === 0 || key.indexOf(`id_${entityType}`) === 0 || key.indexOf(`itemId_${entityType}`) === 0 || key.indexOf(`itemid_${entityType}`) === 0 || key.indexOf(`item_id_${entityType}`) === 0)) {
+                        const columnName = Strings.unmakeJsonPropertyName(key);
+
+                        if (!idFound && (columnName.indexOf(`ID_${entityType}`) === 0 || columnName.indexOf(`id_${entityType}`) === 0 || columnName.indexOf(`itemId_${entityType}`) === 0 || columnName.indexOf(`itemid_${entityType}`) === 0 || columnName.indexOf(`item_id_${entityType}`) === 0)) {
                             itemId = dataItem[key];
                             idFound = true;
                         }
 
-                        if (!encryptedIdFound && (key.indexOf(`encryptedId_${entityType}`) === 0 || key.indexOf(`encryptedid_${entityType}`) === 0 || key.indexOf(`encrypted_id_${entityType}`) === 0 || key.indexOf(`idencrypted_${entityType}`) === 0)) {
+                        if (!encryptedIdFound && (columnName.indexOf(`encryptedId_${entityType}`) === 0 || columnName.indexOf(`encryptedid_${entityType}`) === 0 || columnName.indexOf(`encrypted_id_${entityType}`) === 0 || columnName.indexOf(`idencrypted_${entityType}`) === 0)) {
                             encryptedId = dataItem[key];
                             encryptedIdFound = true;
                         }
@@ -1177,7 +1248,26 @@ export class Grids {
             return;
         }
 
-        this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        if (openInNewTab) {
+            if (!window.parent) {
+                kendo.alert("Er kan geen parent frame gevonden worden. Waarschijnlijk heeft u deze module in een losse browser tab geopend. Open de module a.u.b. via de normale manier in Wiser.")
+                return;
+            }
+
+            window.parent.postMessage({
+                action: "OpenItem",
+                actionData: {
+                    moduleId: this.base.settings.moduleId,
+                    name: title || `Item #${itemId}`,
+                    type: "dynamicItems",
+                    itemId: encryptedId,
+                    queryString: `?itemId=${encodeURIComponent(encryptedId)}&moduleId=${this.base.settings.moduleId}&iframe=true&entityType=${entityType}`
+                }
+            });
+        }
+        else {
+            this.base.windows.loadItemInWindow(false, itemId, encryptedId, entityType, title, !options.hideTitleFieldInWindow, grid, options, linkId, null, null, linkType);
+        }
     }
 
     /**
@@ -1342,9 +1432,9 @@ export class Grids {
                                 text: "Alleen koppeling",
                                 primary: true,
                                 action: (e) => {
-                                    console.log("huh", dataItem, senderGrid.element.closest(".item").data());
                                     const destinationItemId = dataItem.encryptedDestinationItemId || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number).then(() => {
+                                    const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
+                                    this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, linkType).then(() => {
                                         senderGrid.dataSource.read();
                                     });
                                 }
@@ -1381,7 +1471,8 @@ export class Grids {
                     }
 
                     const destinationItemId = dataItem.encryptedDestinationItemId || dataItem.encrypted_destination_item_id || senderGrid.element.closest(".item").data("itemIdEncrypted");
-                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, dataItem.linkTypeNumber || dataItem.link_type_number);
+                    const linkType = dataItem.linkTypeNumber || dataItem.link_type_number || dataItem.linktypenumber || dataItem.linkType || dataItem.link_type || dataItem.linktype;
+                    await this.base.removeItemLink(options.currentItemIsSourceId ? destinationItemId : encryptedId, options.currentItemIsSourceId ? encryptedId : destinationItemId, linkType);
                     senderGrid.dataSource.read();
                     break;
                 }
@@ -1396,7 +1487,7 @@ export class Grids {
     onItemLinkerSelectAll(treeViewSelector, checkAll) {
         const treeView = $(treeViewSelector);
 
-        Wiser.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`, 
+        Wiser.showConfirmDialog(`Weet u zeker dat u alles wilt ${checkAll ? "aanvinken" : "uitvinken"}? Indien dit veel items zijn kan dit lang duren.`,
             checkAll ? "Alles aanvinken" : "Alles uitvinken",
             "Annuleren",
             checkAll ? "Alles aanvinken" : "Alles uitvinken").then(() => {
@@ -1442,6 +1533,8 @@ export class Grids {
         }
 
         grid.dataSource.filter({});
+        // manually trigger the filter event to save the state because the above call doesn't do so
+        grid.trigger("filter", { filter: null, field: null });
     }
 
     /**
@@ -1456,7 +1549,7 @@ export class Grids {
             console.error("Grid not found, cannot maximize it.", event, $(event.target).closest(".k-grid"));
             return;
         }
-        
+
         const originalParent = grid.wrapper.parent();
         const gridWindow = $("#maximizeSubEntitiesGridWindow").clone(true);
         const titleElement = originalParent.find("h4");
@@ -1485,16 +1578,46 @@ export class Grids {
      * Event handler for when a user (de)selects one or more rows in a Kendo UI grid.
      * @param {any} event
      */
-    onGridSelectionChange(event) {
-        // Some buttons in the toolbar of a grid require that at least one row is selected. Hide these buttons while no row is selected.
-        event.sender.wrapper.find(".hide-when-no-selected-rows").toggleClass("hidden", event.sender.select().length === 0);
+    async onGridSelectionChange(event) {
+        // Check based on given condition to hide.
+        const conditionalButtons = event.sender.wrapper.find('.k-button.hide-when-no-selected-rows');
+        conditionalButtons.each(async function () {
+            const button = $(this);
+            const condition = button.data('condition');
+            
+            // Do not hide buttons by default.
+            let shouldHide = false;
+            
+            // Conditional check.
+            if(condition) {
+                // Gather field data for each selected row in the grid.
+                const selectedData = [];
+                event.sender.wrapper.find('tr.k-state-selected').each(function() {
+                    const row = $(this);
+                    const grid = row.closest('.k-grid').data('kendoGrid');
+                    const rowData = grid.dataItem(row);
+                    selectedData.push(rowData);
+                });
 
-        // Show/hide button groups where all buttons are hidden/visible.
+                // Evaluate the condition for every selected row in the grid.
+                shouldHide = !selectedData.every(function(element, index, array) {
+                    const parameterNames = Object.keys(element);
+                    const parameterValues = Object.values(element);
+
+                    const func = new Function(...parameterNames, `return ${condition}`);
+                    return func(...parameterValues);
+                });
+            }
+            
+            // Show or hide the action button based on the evaluated condition or default value.
+            button.toggleClass('hidden', shouldHide || event.sender.select().length === 0);
+        });
+        
+        // Check whether to hide a button group when no buttons are visible in the group.
         for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
             const buttonGroupElement = $(buttonGroup);
-            const amountOfToggleableButtons = buttonGroupElement.find(".hide-when-no-selected-rows").length;
-            const totalAmountOfButtons = buttonGroupElement.find("a.k-button").length;
-            buttonGroupElement.toggleClass("hidden", event.sender.select().length === 0 && amountOfToggleableButtons === totalAmountOfButtons);
+            const totalAmountOfButtons = buttonGroupElement.find("a.k-button:not(.hidden)").length;
+            buttonGroupElement.toggleClass("hidden", totalAmountOfButtons === 0);
         }
     }
 

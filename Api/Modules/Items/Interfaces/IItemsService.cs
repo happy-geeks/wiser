@@ -21,9 +21,10 @@ namespace Api.Modules.Items.Interfaces
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="pagedRequest">Optional: Which page to get and how many items per page to get.</param>
+        /// <param name="useFriendlyPropertyNames">Optional: Whether to use friendly property names or not. Default is <see langword="true"/>.</param>
         /// <param name="filters">Optional: Add filters if you only want specific results.</param>
         /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
-        Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, WiserItemModel filters = null);
+        Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, WiserItemModel filters = null);
 
         /// <summary>
         /// Creates a duplicate copy of an existing item.
@@ -44,6 +45,15 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>The copied item.</returns>
         Task<ServiceResult<WiserItemModel>> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments, ClaimsIdentity identity);
+
+        /// <summary>
+        /// Change the environments that an item should be visible in.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">The entity type of the item.</param>
+        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        Task<ServiceResult<bool>> ChangeEnvironmentAsync(string encryptedId, string entityType, Environments newEnvironments, ClaimsIdentity identity);
 
         /// <summary>
         /// Create a new item.
@@ -131,6 +141,18 @@ namespace Api.Modules.Items.Interfaces
         Task<ServiceResult<WiserItemModel>> GetItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null);
 
         /// <summary>
+        /// Returns all items linked to a given item, or all items the given item is linked to.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item to get.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+        /// <param name="linkType">Optional: The type number of the link.</param>
+        /// <param name="reversed">Optional: Whether to retrieve an item that is linked to this item (<see langword="true"/>), or an item that this item is linked to (<see langword="false"/>).</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<WiserItemModel>>> GetLinkedItemDetailsAsync(string encryptedId, ClaimsIdentity identity, string entityType = null, string itemIdEntityType = null, int linkType = 0, bool reversed = false);
+
+        /// <summary>
         /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
         /// </summary>
         /// <param name="encryptedId">The encrypted ID of the item.</param>
@@ -147,7 +169,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="alsoGetOptions">Whether to also get the options of the property.</param>
         /// <param name="itemId">Optional: If this query needs to be executed for a specific item, you can enter that ID here. If the query then contains the value "{itemId}", then that value will be replaced with this ID.</param>
         /// <typeparam name="T">The return type of the method you call this from.</typeparam>
-        /// <returns>The query, any errors and the options (if <see cref="alsoGetOptions"/> is set to <see langword="true"/>).</returns>
+        /// <returns>The query, any errors and the options (if alsoGetOptions is set to <see langword="true"/>).</returns>
         Task<(string Query, ServiceResult<T> ErrorResult, string RawOptions)> GetPropertyQueryAsync<T>(int propertyId, string queryColumnName, bool alsoGetOptions, ulong? itemId = null);
 
         /// <summary>
@@ -197,8 +219,9 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="encryptedParentId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="encryptedCheckId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
+        /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
         /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
-        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null);
+        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, string encryptedParentId = null, string orderBy = null, string encryptedCheckId = null, int linkType = 0);
 
         /// <summary>
         /// Move an item to a different position in the tree view.
@@ -242,5 +265,14 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
         /// <param name="settings">The settings for translating.</param>
         Task<ServiceResult<bool>> TranslateAllFieldsAsync(ClaimsIdentity identity, string encryptedId, TranslateItemRequestModel settings);
+
+        /// <summary>
+        /// Search for items.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="parentId">The ID of the parent to start searching. Can be 0.</param>
+        /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data);
     }
 }

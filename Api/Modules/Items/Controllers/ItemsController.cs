@@ -51,13 +51,14 @@ namespace Api.Modules.Items.Controllers
         /// The results will be returned in multiple pages, with a max of 500 items per page.
         /// </summary>
         /// <param name="pagedRequest">Optional: Which page to get and how many items per page to get.</param>
+        /// <param name="useFriendlyPropertyNames">Optional: Whether to use friendly property names or not. Default is <see langword="true"/>.</param>
         /// <param name="filters">Optional: Add filters if you only want specific results.</param>
         /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsAsync([FromQuery]PagedRequest pagedRequest = null, [FromQuery]WiserItemModel filters = null)
+        public async Task<IActionResult> GetItemsAsync([FromQuery]PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, [FromQuery]WiserItemModel filters = null)
         {
-            return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, pagedRequest, filters)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, pagedRequest, useFriendlyPropertyNames, filters)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -91,6 +92,24 @@ namespace Api.Modules.Items.Controllers
         public async Task<IActionResult> GetItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null)
         {
             return (await itemsService.GetItemDetailsAsync(encryptedId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Retrieve an item that the given item is linked to, or and item that is linked to the given item.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the main item.</param>
+        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+        /// <param name="linkType">Optional: The type number of the link.</param>
+        /// <param name="reversed">Optional: Whether to retrieve an item that that given item is linked to (<see langword="true"/>), or an item that is linked to the given item (<see langword="false"/>).</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{encryptedId}/linked/details")]
+        [ProducesResponseType(typeof(IEnumerable<WiserItemModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetLinkedItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null, [FromQuery]string itemIdEntityType = null, [FromQuery]int linkType = 0, [FromQuery]bool reversed = false)
+        {
+            return (await itemsService.GetLinkedItemDetailsAsync(encryptedId, (ClaimsIdentity)User.Identity, entityType, itemIdEntityType, linkType, reversed)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -183,9 +202,28 @@ namespace Api.Modules.Items.Controllers
         [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
         public async Task<IActionResult> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments)
         {
             return (await itemsService.CopyToEnvironmentAsync(encryptedId, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Change the environments that an item should be visible in.
+        /// </summary>
+        /// <param name="encryptedId">The encrypted ID of the item.</param>
+        /// <param name="entityType">The entity type of the item.</param>
+        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+        [HttpPatch]
+        [Route("{encryptedId}/environment/{newEnvironments:int}")]
+        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
+        public async Task<IActionResult> ChangeEnvironmentAsync(string encryptedId, Environments newEnvironments, [FromQuery]string entityType)
+        {
+            return (await itemsService.ChangeEnvironmentAsync(encryptedId, entityType, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -350,7 +388,6 @@ namespace Api.Modules.Items.Controllers
         /// This method will get the different entity types with the given ID.
         /// </summary>
         /// <param name="itemId">The ID of the item to render to HTML.</param>
-        /// <param name="identity">The identity of the authenticated user.</param>
         /// <returns>A list of all entity types that contain an item with this ID.</returns>
         [HttpGet]
         [Route("{itemId:long}/entity-types")]
@@ -369,13 +406,14 @@ namespace Api.Modules.Items.Controllers
         /// <param name="encryptedItemId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
+        /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
         /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
         [HttpGet]
         [Route("tree-view")]
         [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null)
+        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null, [FromQuery] int linkType = 0)
         {
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encryptedItemId, orderBy, checkId)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, encryptedItemId, orderBy, checkId, linkType)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -428,7 +466,7 @@ namespace Api.Modules.Items.Controllers
         {
             return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Translate all fields of an item into one or more other languages, using the Google Translation API.
         /// This will only translate fields that don't have a value yet for the destination language
@@ -443,6 +481,19 @@ namespace Api.Modules.Items.Controllers
         public async Task<IActionResult> GetEncryptedIdAsync(string encryptedId, TranslateItemRequestModel settings)
         {
             return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, encryptedId, settings)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Search for items.
+        /// </summary>
+        /// <param name="parentId">The ID of the parent to start searching. Can be 0.</param>
+        /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
+        [HttpGet]
+        [Route("{parentId:long}/search")]
+        [ProducesResponseType(typeof(List<SearchResponseModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SearchAsync(ulong parentId, [FromQuery]SearchRequestModel data)
+        {
+            return (await itemsService.SearchAsync((ClaimsIdentity)User.Identity, parentId, data)).GetHttpResponseMessage();
         }
     }
 }

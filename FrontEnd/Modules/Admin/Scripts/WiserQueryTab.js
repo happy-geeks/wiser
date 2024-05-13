@@ -9,7 +9,7 @@ export class WiserQueryTab {
 
     async initializeKendoComponents() {
         this.queryCombobox = $("#queryList").kendoDropDownList({
-            placeholder: "Select een query...",
+            placeholder: "Selecteer een query...",
             clearButton: false,
             height: 400,
             dataTextField: "description",
@@ -25,7 +25,7 @@ export class WiserQueryTab {
         }).data("kendoDropDownList");
 
         this.queryCombobox.one("dataBound", () => { this.queryListInitialized = true; });
-        
+
         this.rolesWithPermissions = $("#rolesWithPermissions").kendoMultiSelect({
             dataSource: {
                 transport: {
@@ -131,9 +131,9 @@ export class WiserQueryTab {
                 data: JSON.stringify(queryModel),
                 method: "PUT"
             });
-            
+
             this.base.showNotification("notification", `Query is succesvol bijgewerkt`, "success");
-            await this.getQueries();
+            await this.getQueries(true, id);
         }
         catch (exception) {
             console.error("Error while updating query", exception);
@@ -152,10 +152,10 @@ export class WiserQueryTab {
     }
 
     async addQuery(description) {
-        if (!description) { 
+        if (!description) {
             return;
         }
-        
+
         try {
             const result = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}queries`,
@@ -164,7 +164,7 @@ export class WiserQueryTab {
                 data: JSON.stringify(description),
                 method: "POST"
             });
-            
+
             this.base.showNotification("notification", `Query succesvol toegevoegd`, "success");
             await this.getQueries(true, result.id);
         }
@@ -192,6 +192,7 @@ export class WiserQueryTab {
     }
 
     async setQueryProperties(resultSet) {
+        document.getElementById("queryIdLbl").innerHTML = `id: ${resultSet.id}`;
         document.getElementById("queryDescription").value = resultSet.description;
         document.getElementById("showInExportModule").checked = resultSet.showInExportModule;
         document.getElementById("showInCommunicationModule").checked = resultSet.showInCommunicationModule;
@@ -226,6 +227,9 @@ export class WiserQueryTab {
 
             return false;
         }
+    }
 
+    hasChanges() {
+        return false;
     }
 }

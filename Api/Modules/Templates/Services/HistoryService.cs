@@ -6,7 +6,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
@@ -14,8 +13,8 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -27,24 +26,24 @@ namespace Api.Modules.Templates.Services
     {
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryDataService historyDataService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly ITemplateDataService templateDataService;
 
         /// <summary>
         /// Creates a new instance of <see cref="HistoryService"/>.
         /// </summary>
-        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserCustomersService wiserCustomersService, ITemplateDataService templateDataService)
+        public HistoryService(IDynamicContentDataService dataService, IHistoryDataService historyDataService, IWiserTenantsService wiserTenantsService, ITemplateDataService templateDataService)
         {
             this.dataService = dataService;
             this.historyDataService = historyDataService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.templateDataService = templateDataService;
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId)
+        public async Task<ServiceResult<List<HistoryVersionModel>>> GetChangesInComponentAsync(int contentId, int pageNumber, int itemsPerPage)
         {
-            var historyList = await GetHistoryOfComponent(contentId);
+            var historyList = await GetHistoryOfComponent(contentId, pageNumber, itemsPerPage);
             historyList = historyList.OrderByDescending(version => version.Version).ToList();
 
             for (var i = 0; i + 1 < historyList.Count; i++)
@@ -76,9 +75,9 @@ namespace Api.Modules.Templates.Services
                     }
                 }
             }
-            
+
             var componentAndMode = await dataService.GetComponentAndModeFromContentIdAsync(contentId);
-            await dataService.SaveSettingsStringAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity));
+            await dataService.SaveAsync(contentId, componentAndMode[0], componentAndMode[1], currentVersion.Key, currentVersion.Value, IdentityHelpers.GetUserName(identity, true));
             return new ServiceResult<int>
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -97,18 +96,23 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int templateId)
+        public async Task<PublishedEnvironmentModel> GetHistoryVersionsOfDynamicContent(int contentId)
         {
-            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(templateId);
-            
+            var versionsAndPublished = await historyDataService.GetPublishedEnvironmentsFromDynamicContentAsync(contentId);
+
             return PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished);
         }
-        
+
         /// <inheritdoc />
-        public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent)
+        public async Task<List<TemplateHistoryModel>> GetVersionHistoryFromTemplate(ClaimsIdentity identity, int templateId, Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>> dynamicContent, int pageNumber, int itemsPerPage)
         {
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
-            var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId);
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
+            var rawTemplateModels = await historyDataService.GetTemplateHistoryAsync(templateId, pageNumber, itemsPerPage);
+
+            if (rawTemplateModels.Count == 0)
+            {
+                return new List<TemplateHistoryModel>();
+            }
 
             templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, rawTemplateModels[0]);
 
@@ -138,11 +142,11 @@ namespace Api.Modules.Templates.Services
             templateHistory.Add(new TemplateHistoryModel(rawTemplateModels.Last().TemplateId, rawTemplateModels.Last().Version, rawTemplateModels.Last().ChangedOn, rawTemplateModels.Last().ChangedBy));
             return templateHistory;
         }
-        
+
         /// <inheritdoc />
-        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId)
+        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplate(int templateId, int pageNumber, int itemsPerPage)
         {
-            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId);
+            return await historyDataService.GetPublishHistoryFromTemplateAsync(templateId, pageNumber, itemsPerPage);
         }
 
         /// <summary>
@@ -154,46 +158,45 @@ namespace Api.Modules.Templates.Services
         private TemplateHistoryModel GenerateHistoryModelForTemplates(TemplateSettingsModel newVersion, TemplateSettingsModel oldVersion)
         {
             var historyModel = new TemplateHistoryModel(newVersion.TemplateId, newVersion.Version, newVersion.ChangedOn, newVersion.ChangedBy);
-            
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("name", newVersion.Name, oldVersion.Name, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", newVersion.EditorValue, oldVersion.EditorValue, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("useCache", newVersion.UseCache, oldVersion.UseCache, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheRegex", newVersion.CacheRegex, oldVersion.CacheRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleRequests", newVersion.HandleRequests, oldVersion.HandleRequests, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleSession", newVersion.HandleSession, oldVersion.HandleSession, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleObjects", newVersion.HandleObjects, oldVersion.HandleObjects, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleStandards", newVersion.HandleStandards, oldVersion.HandleStandards, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleTranslations", newVersion.HandleTranslations, oldVersion.HandleTranslations, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleDynamicContent", newVersion.HandleDynamicContent, oldVersion.HandleDynamicContent, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleLogicBlocks", newVersion.HandleLogicBlocks, oldVersion.HandleLogicBlocks, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("handleMutators", newVersion.HandleMutators, oldVersion.HandleMutators, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", newVersion.LoginRoles == null ? "" : String.Join(",", newVersion.LoginRoles), oldVersion.LoginRoles == null ? "" : String.Join(",", oldVersion.LoginRoles), historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", newVersion.InsertMode, oldVersion.InsertMode, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", String.Join(";", newVersion.ExternalFiles ?? new List<string>()), String.Join(";", oldVersion.ExternalFiles ?? new List<string>()), historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKeyColumnName", newVersion.GroupingKeyColumnName, oldVersion.GroupingKeyColumnName, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingValueColumnName", newVersion.GroupingValueColumnName, oldVersion.GroupingValueColumnName, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("preLoadQuery", newVersion.PreLoadQuery, oldVersion.PreLoadQuery, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("returnNotFoundWhenPreLoadQueryHasNoData", newVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, oldVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineType", newVersion.RoutineType, oldVersion.RoutineType, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineParameters", newVersion.RoutineParameters, oldVersion.RoutineParameters, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineReturnType", newVersion.RoutineReturnType, oldVersion.RoutineReturnType, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTiming", newVersion.TriggerTiming, oldVersion.TriggerTiming, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerEvent", newVersion.TriggerEvent, oldVersion.TriggerEvent, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTableName", newVersion.TriggerTableName, oldVersion.TriggerTableName, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultHeader", newVersion.IsDefaultHeader, oldVersion.IsDefaultHeader, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultFooter", newVersion.IsDefaultFooter, oldVersion.IsDefaultFooter, historyModel);
-            CheckIfValuesMatchAndSaveChangesToHistoryModel("defaultHeaderFooterRegex", newVersion.DefaultHeaderFooterRegex, oldVersion.DefaultHeaderFooterRegex, historyModel);
+
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("name", TemplateTypes.Normal, newVersion.Name, oldVersion.Name, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("editorValue", TemplateTypes.Html, newVersion.EditorValue, oldVersion.EditorValue, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheMinutes", TemplateTypes.Normal, newVersion.CacheMinutes, oldVersion.CacheMinutes, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheLocation", TemplateTypes.Normal, newVersion.CacheLocation, oldVersion.CacheLocation, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUrl", TemplateTypes.Normal, newVersion.CachePerUrl, oldVersion.CachePerUrl, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerUser", TemplateTypes.Normal, newVersion.CachePerUser, oldVersion.CachePerUser, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheUsingRegex", TemplateTypes.Normal, newVersion.CacheUsingRegex, oldVersion.CacheUsingRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerHostName", TemplateTypes.Normal, newVersion.CachePerHostName, oldVersion.CachePerHostName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerQueryString", TemplateTypes.Normal, newVersion.CachePerQueryString, oldVersion.CachePerQueryString, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheRegex", TemplateTypes.Normal, newVersion.CacheRegex, oldVersion.CacheRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", TemplateTypes.Normal, newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", TemplateTypes.Normal, newVersion.LoginRoles == null ? "" : String.Join(",", newVersion.LoginRoles), oldVersion.LoginRoles == null ? "" : String.Join(",", oldVersion.LoginRoles), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", TemplateTypes.Normal, newVersion.InsertMode, oldVersion.InsertMode, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("loadAlways", TemplateTypes.Normal, newVersion.LoadAlways, oldVersion.LoadAlways, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("disableMinifier", TemplateTypes.Normal, newVersion.DisableMinifier, oldVersion.DisableMinifier, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("urlRegex", TemplateTypes.Normal, newVersion.UrlRegex, oldVersion.UrlRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("externalFiles", TemplateTypes.Js, JsonConvert.SerializeObject(newVersion.ExternalFiles.OrderBy(x => x.Ordering), Formatting.Indented), JsonConvert.SerializeObject(oldVersion.ExternalFiles.OrderBy(x => x.Ordering), Formatting.Indented), historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingCreateObjectInsteadOfArray", TemplateTypes.Normal, newVersion.GroupingCreateObjectInsteadOfArray, oldVersion.GroupingCreateObjectInsteadOfArray, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingPrefix", TemplateTypes.Normal, newVersion.GroupingPrefix, oldVersion.GroupingPrefix, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKey", TemplateTypes.Normal, newVersion.GroupingKey, oldVersion.GroupingKey, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingKeyColumnName", TemplateTypes.Normal, newVersion.GroupingKeyColumnName, oldVersion.GroupingKeyColumnName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("groupingValueColumnName", TemplateTypes.Normal, newVersion.GroupingValueColumnName, oldVersion.GroupingValueColumnName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isScssIncludeTemplate", TemplateTypes.Normal, newVersion.IsScssIncludeTemplate, oldVersion.IsScssIncludeTemplate, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("useInWiserHtmlEditors", TemplateTypes.Normal, newVersion.UseInWiserHtmlEditors, oldVersion.UseInWiserHtmlEditors, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("preLoadQuery", TemplateTypes.Query, newVersion.PreLoadQuery, oldVersion.PreLoadQuery, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("returnNotFoundWhenPreLoadQueryHasNoData", TemplateTypes.Normal, newVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, oldVersion.ReturnNotFoundWhenPreLoadQueryHasNoData, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineType", TemplateTypes.Normal, newVersion.RoutineType, oldVersion.RoutineType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineParameters", TemplateTypes.Normal, newVersion.RoutineParameters, oldVersion.RoutineParameters, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("routineReturnType", TemplateTypes.Normal, newVersion.RoutineReturnType, oldVersion.RoutineReturnType, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTiming", TemplateTypes.Normal, newVersion.TriggerTiming, oldVersion.TriggerTiming, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerEvent", TemplateTypes.Normal, newVersion.TriggerEvent, oldVersion.TriggerEvent, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("triggerTableName", TemplateTypes.Normal, newVersion.TriggerTableName, oldVersion.TriggerTableName, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultHeader", TemplateTypes.Normal, newVersion.IsDefaultHeader, oldVersion.IsDefaultHeader, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isDefaultFooter", TemplateTypes.Normal, newVersion.IsDefaultFooter, oldVersion.IsDefaultFooter, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("defaultHeaderFooterRegex", TemplateTypes.Normal, newVersion.DefaultHeaderFooterRegex, oldVersion.DefaultHeaderFooterRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("isPartial", TemplateTypes.Normal, newVersion.IsPartial, oldVersion.IsPartial, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("widgetContent", TemplateTypes.Html, newVersion.WidgetContent, oldVersion.WidgetContent, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("widgetLocation", TemplateTypes.Normal, newVersion.WidgetLocation, oldVersion.WidgetLocation, historyModel);
 
             var oldLinkedTemplates = newVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             var newLinkedTemplates = oldVersion.LinkedTemplates.RawLinkList.Split(new [] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -204,7 +207,10 @@ namespace Api.Modules.Templates.Services
                 {
                     if (!newLinkedTemplates.Contains(item))
                     {
-                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(true, false));
+                        var templateData = item.Split(";");
+                        var id = templateData[0];
+                        var name = templateData[1];
+                        historyModel.LinkedTemplateChanges.Add($"{name} ({id})", new (true, false, TemplateTypes.Normal));
                     }
                 }
             }
@@ -214,7 +220,10 @@ namespace Api.Modules.Templates.Services
                 {
                     if (!oldLinkedTemplates.Contains(item))
                     {
-                        historyModel.LinkedTemplateChanges.Add(item.Split(";")[1], new KeyValuePair<object, object>(false, true));
+                        var templateData = item.Split(";");
+                        var id = templateData[0];
+                        var name = templateData[1];
+                        historyModel.LinkedTemplateChanges.Add( $"{name} ({id})", new (false, true, TemplateTypes.Normal));
                     }
                 }
             }
@@ -229,39 +238,45 @@ namespace Api.Modules.Templates.Services
         /// <param name="newValue">The new value of the property</param>
         /// <param name="oldValue">The old value of the property</param>
         /// <param name="templateModel">The TemplateHistoryModel to which differences will be saved</param>
-        private void CheckIfValuesMatchAndSaveChangesToHistoryModel(string propName, object newValue, object oldValue, TemplateHistoryModel templateModel)
+        private void CheckIfValuesMatchAndSaveChangesToHistoryModel(string propName, TemplateTypes type, object newValue, object oldValue, TemplateHistoryModel templateModel)
         {
             if (Equals(newValue, oldValue))
             {
                 return;
             }
-            
-            if ((newValue == null || (newValue is string stringValue && String.IsNullOrWhiteSpace(stringValue))) 
+
+            if ((newValue == null || (newValue is string stringValue && String.IsNullOrWhiteSpace(stringValue)))
                 && (oldValue == null || (oldValue is string oldStringValue && String.IsNullOrWhiteSpace(oldStringValue))))
             {
                 return;
             }
 
-            templateModel.TemplateChanges.Add(propName, new KeyValuePair<object, object>(newValue, oldValue));
+            templateModel.TemplateChanges.Add(propName, new (newValue, oldValue, type));
         }
 
         /// <summary>
         /// Get the raw list of versions of the component. These historymodels have a rawdatastring and no generated changes.
         /// </summary>
         /// <param name="templateId">The id of the content to retrieve the versions of.</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>List of HistoryVersionModels forming</returns>
-        private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId)
+        private async Task<List<HistoryVersionModel>> GetHistoryOfComponent(int templateId, int pageNumber, int itemsPerPage)
         {
-            var olderVersions = await historyDataService.GetDynamicContentHistoryAsync(templateId);
+            var olderVersions = await historyDataService.GetDynamicContentHistoryAsync(templateId, pageNumber, itemsPerPage);
 
             return olderVersions;
         }
 
         /// <summary>
-        /// Generates the changes between 2 versions. This will loop through the vesrions and will take the settings that have changed to add them to a versions changes.
+        /// Generates the changes between 2 versions. This will loop through the versions and will take the settings that have changed to add them to a versions changes.
         /// </summary>
+        /// <param name="newMode">The mode of the new version</param>
         /// <param name="newVersion">The raw datastring of the newer version</param>
+        /// <param name="oldMode">The mode of the old version</param>
         /// <param name="oldVersion">The raw datastring of the older version</param>
+        /// <param name="newComponent">The component of the new version</param>
+        /// <param name="oldComponent">the component of the old version</param>
         /// <returns>List of changes that can be added to the changes of the newer versions HistoryVersionModel.</returns>
         private List<DynamicContentChangeModel> GenerateChangeLogFromDataStrings(string newComponent, string newMode, string newVersion, string oldComponent, string oldMode, string oldVersion)
         {

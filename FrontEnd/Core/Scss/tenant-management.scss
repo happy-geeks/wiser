@@ -1,0 +1,10 @@
+﻿.new-tenant-form {
+    .step {
+        input {
+            &.small {
+                min-width: 300px;
+                width: 300px;
+            }
+        }
+    }
+}

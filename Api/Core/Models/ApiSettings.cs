@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Api.Modules.Customers.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 
 namespace Api.Core.Models
 {
@@ -35,7 +35,7 @@ namespace Api.Core.Models
         public List<string> JsonPropertiesToAlwaysEncrypt { get; set; }
 
         /// <summary>
-        /// The amount of time to cache results from functions of <see cref="IUsersService"/> and <see cref="IWiserCustomersService"/>.
+        /// The amount of time to cache results from functions of <see cref="IUsersService"/> and <see cref="IWiserTenantService"/>.
         /// </summary>
         public TimeSpan DefaultUsersCacheDuration { get; set; } = new(1, 0, 0);
 
@@ -45,7 +45,7 @@ namespace Api.Core.Models
         public string PusherAppId { get; set; }
 
         /// <summary>
-        /// The app key used for the Pusher server. 
+        /// The app key used for the Pusher server.
         /// </summary>
         public string PusherAppKey { get; set; }
 
@@ -74,5 +74,16 @@ namespace Api.Core.Models
         /// Gets or sets whether the NPM package 'terser' should be used when minifying scripts saved in the templates module.
         /// </summary>
         public bool UseTerserForTemplateScriptMinification { get; set; }
+
+        /// <summary>
+        /// Gets or sets the directory where the plugins are located.
+        /// </summary>
+        public string PluginsDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in seconds for very long queries, such as exports.
+        /// Default is 4 hours.
+        /// </summary>
+        public int SqlCommandTimeoutForExportsAndLongQueries { get; set; } = 14400;
     }
 }

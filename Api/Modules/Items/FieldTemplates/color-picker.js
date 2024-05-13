@@ -1,8 +1,10 @@
-﻿(function() {
-    var kendoComponent = $("#field_{propertyIdWithSuffix}").kendoColorPicker($.extend({
+﻿(() => {
+    const kendoComponent = $("#field_{propertyIdWithSuffix}").kendoColorPicker($.extend({
         buttons: false,
         change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields),
     }, {options})).data("kendoColorPicker");
-    var readonly = {readonly};
+    
+    const readonly = {readonly};
+    
     kendoComponent.enable(!readonly);
 })();

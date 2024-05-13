@@ -1,20 +1,50 @@
 ﻿namespace Api.Modules.Templates.Models.Template
 {
+    /// <summary>
+    /// Model class to keep track of the changes on the publish environments.
+    /// </summary>
     public class PublishLogModel
     {
+        /// <summary>
+        /// Gets or sets the ID of the PublishLog object
+        /// </summary>
         public int Id { get; set; }
 
+        /// <summary>
+        /// The old version number of the version on the live environment
+        /// </summary>
         public int OldLive { get; set; }
+        
+        /// <summary>
+        /// The old version number of the version on the acceptance environment
+        /// </summary>
         public int OldAccept { get; set; }
+        
+        /// <summary>
+        /// The old version number of the version on the test environment
+        /// </summary>
         public int OldTest { get; set; }
 
+        /// <summary>
+        /// The new version number of the version on the live environment
+        /// </summary>
         public int NewLive { get; set; }
+        
+        /// <summary>
+        /// The new version number of the version on the acceptance environment
+        /// </summary>
         public int NewAccept { get; set; }
+        
+        /// <summary>
+        /// The new version number of the version on the test environment
+        /// </summary>
         public int NewTest { get; set; }
-
+        
+        /// <summary>
+        /// Creates a new instance of <see cref="PublishLogModel"/>.
+        /// </summary>
         public PublishLogModel()
         {
-
         }
 
         /// <summary>

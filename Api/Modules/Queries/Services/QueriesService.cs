@@ -7,9 +7,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -17,7 +17,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
@@ -28,16 +28,16 @@ namespace Api.Modules.Queries.Services
     /// </summary>
     public class QueriesService : IQueriesService, IScopedService
     {
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="QueriesService"/>.
         /// </summary>
-        public QueriesService(IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
+        public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
         {
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
         }
@@ -86,7 +86,7 @@ GROUP BY query.id");
                 results.Add(new QueryModel
                 {
                     Id = dataRow.Field<int>("id"),
-                    EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                    EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                     Description = dataRow.Field<string>("description"),
                     Query = dataRow.Field<string>("query"),
                     ShowInExportModule = Convert.ToBoolean(dataRow["show_in_export_module"]),
@@ -123,16 +123,16 @@ WHERE query.id = ?id";
                     ErrorMessage = $"Wiser query with ID '{id}' does not exist."
                 };
             }
-                
+
             var dataRow = dataTable.Rows[0];
             var result = new QueryModel()
             {
                 Id = dataRow.Field<int>("id"),
-                EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                 Description = dataRow.Field<string>("description"),
                 Query = dataRow.Field<string>("query"),
-                ShowInExportModule = dataRow.Field<bool>("show_in_export_module"),
-                ShowInCommunicationModule = dataRow.Field<bool>("show_in_communication_module"),
+                ShowInExportModule = Convert.ToBoolean(dataRow["show_in_export_module"]),
+                ShowInCommunicationModule = Convert.ToBoolean(dataRow["show_in_communication_module"]),
                 RolesWithPermissions = dataRow.Field<string>("roles_with_permissions")
             };
 
@@ -166,7 +166,7 @@ WHERE query.id = ?id";
             clientDatabaseConnection.AddParameter("query", queryModel.Query);
             clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
             clientDatabaseConnection.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
-            
+
             var query = $@"INSERT INTO {WiserTableNames.WiserQuery}
 (
     description,
@@ -216,7 +216,7 @@ SELECT LAST_INSERT_ID();";
                     ErrorMessage = "Either 'Query' or 'Description' must contain a value."
                 };
             }
-            
+
             // Check if query exists.
             var queryResult = await GetAsync(identity, queryModel.Id);
             if (queryResult.StatusCode != HttpStatusCode.OK)
@@ -254,12 +254,12 @@ VALUES(?roleId, ?id, 15)";
                 clientDatabaseConnection.AddParameter("roleId", role);
                 await clientDatabaseConnection.ExecuteAsync(query);
             }
-            
+
             // Delete permissions for the roles that are missing in the allowed roles.
             clientDatabaseConnection.AddParameter("roles_with_permissions", queryModel.RolesWithPermissions);
             query = $"DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
             await clientDatabaseConnection.ExecuteAsync(query);
-            
+
             return new ServiceResult<bool>
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -270,7 +270,7 @@ VALUES(?roleId, ?id, 15)";
         public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            
+
             // Check if query exists.
             var queryResult = await GetAsync(identity, id);
             if (queryResult.StatusCode != HttpStatusCode.OK)
@@ -339,6 +339,15 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
             {
                 return new ServiceResult<JToken>(result);
             }
+            
+            if (!dataTable.Columns.Contains("key") || !dataTable.Columns.Contains("value"))
+            {
+                return new ServiceResult<JToken>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "The query result does not contain the expected columns 'key' and 'value'."
+                };
+            }
 
             var combinedResult = new JObject();
 
@@ -346,7 +355,7 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
             {
                 combinedResult.Add(item["key"].ToString(), item["value"]);
             }
-            
+
             return new ServiceResult<JToken>(combinedResult);
         }
 
@@ -377,7 +386,7 @@ ORDER BY description ASC");
                 yield return new QueryModel
                 {
                     Id = dataRow.Field<int>("id"),
-                    EncryptedId = await wiserCustomersService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
+                    EncryptedId = await wiserTenantsService.EncryptValue(dataRow.Field<int>("id").ToString(), identity),
                     Description = dataRow.Field<string>("description")
                 };
             }

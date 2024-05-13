@@ -10,6 +10,11 @@ namespace Api.Modules.Templates.Models.History
     public class HistoryVersionModel
     {
         /// <summary>
+        /// Get or sets the name.
+        /// </summary>
+        public string Name { get; set; }
+        
+        /// <summary>
         /// Get or sets the version number.
         /// </summary>
         public int Version { get; set; }

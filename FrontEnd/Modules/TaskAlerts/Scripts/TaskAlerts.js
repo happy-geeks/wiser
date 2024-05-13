@@ -1,5 +1,6 @@
 ﻿import { TrackJS } from "trackjs";
 import { Wiser } from "../../Base/Scripts/Utils.js";
+import { TaskUtils } from "./TaskUtils.js";
 import "../../Base/Scripts/Processing.js";
 
 require("@progress/kendo-ui/js/kendo.all.js");
@@ -7,7 +8,7 @@ require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 import Pusher from "pusher-js/with-encryption";
 
-import "../css/TaskAlerts.css";
+import "../Css/TaskAlerts.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -55,6 +56,7 @@ const moduleSettings = {
 
             // Other.
             this.mainLoader = null;
+            this.idOfLastCompletedTask = 0;
 
             // Fire event on page ready for direct actions
             document.addEventListener("DOMContentLoaded", () => {
@@ -91,12 +93,12 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = user.adminAccountName;
             
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
             
@@ -166,14 +168,6 @@ const moduleSettings = {
             this.mainLoader.toggleClass("loading", show);
         }
 
-        getTaskById(id) {
-            if (this.tasks.length === 0 || typeof id !== "number") {
-                return null;
-            }
-
-            return this.tasks.find((task) => task.id === id);
-        }
-
         getTaskByEncryptedId(encryptedId) {
             if (this.tasks.length === 0 || typeof encryptedId !== "string" || encryptedId === "") {
                 return null;
@@ -184,7 +178,7 @@ const moduleSettings = {
 
         async registerPusherAndEventListeners() {
             if (!this.settings.pusherAppKey) {
-                console.log("No pusher app key set. Task alerts will not receive new messages automatically.");
+                console.warn("No pusher app key set. Task alerts will not receive new messages automatically.");
                 return;
             }
 
@@ -195,19 +189,14 @@ const moduleSettings = {
             });
 
             // Wiser update channel for pusher messages
-            const channel = pusher.subscribe("Wiser");
-            channel.bind("update_event", (event) => {
-                console.log("Received message for `update_event`", event);
-            });
+            const channel = pusher.subscribe("agendering");
 
-            // Generate pusher event for the current logged-in customer
+            // Generate pusher event for the current logged-in tenant
             const eventId = await Wiser.api({ url: `${this.settings.wiserApiRoot}pusher/event-id` });
 
             // User update channel for pusher messages
-            channel.bind("agendering_" + eventId, (event) => {
+            channel.bind(`agendering_${eventId}`, (event) => {
                 $("#taskList li:not(#taskHistory)").remove(); // First remove all loaded tasks
-
-                console.log("Received message for pusher event `agendering`, for the logged-in user", event);
 
                 parent.postMessage({
                     action: "NewMessageReceived"
@@ -215,8 +204,6 @@ const moduleSettings = {
 
                 taskAlerts.loadTasks();
             });
-
-            console.log("New pusher element generated, and subscribed to the channel(s) `Wiser`");
         }
 
         /**
@@ -359,9 +346,33 @@ const moduleSettings = {
                         return;
                     }
 
-                    await this.completeTask(input.value);
-                    parent.classList.add("completed");
-                    this.updateTaskCount();
+                    await TaskUtils.completeTask(input.value, this.settings.username, this.settings.wiserApiRoot);
+
+                    let completionWasUndone = false;
+                    const notification = $("<div />").kendoNotification({
+                        autoHideAfter: 3000,
+                        position: {
+                            left: 10
+                        },
+                        hide: () => {
+                            if (completionWasUndone) {
+                                return;
+                            }
+                            
+                            parent.classList.add("completed");
+                            this.updateTaskCount();
+                        }
+                    }).data("kendoNotification");
+                    
+                    notification.show(`<p>De taak is gemarkeerd als afgerond.</p><button type="button" class="k-primary" id="undoCompleteTask">Ongedaan maken</button>`);
+                    $("#undoCompleteTask").kendoButton({
+                        click: (event) => {
+                            event.preventDefault();
+                            completionWasUndone = true;
+                            input.checked = false;
+                            TaskUtils.returnTask(input.value, this.settings.username, this.settings.wiserApiRoot);
+                        }
+                    });
                 });
             });
 
@@ -416,7 +427,10 @@ const moduleSettings = {
                         url: `${this.settings.wiserApiRoot}pusher/message`,
                         method: "POST",
                         contentType: "application/json",
-                        data: JSON.stringify({ userId: userId })
+                        data: JSON.stringify({
+                            channel: "agendering",
+                            userId: userId
+                        })
                     });
 
                     created++;
@@ -473,17 +487,20 @@ const moduleSettings = {
                 ];
 
                 // And finally update the newly created item.
-                await this.updateItem(this.taskInEdit.encryptedId, inputData);
+                await TaskUtils.updateItem(this.taskInEdit.encryptedId, inputData, this.settings.username, this.settings.wiserApiRoot);
 
                 // Refresh to reflect changes.
-                this.loadTasks();
+                await this.loadTasks();
 
                 // Send a pusher to notify the receiving user
                 await Wiser.api({
                     url: `${this.settings.wiserApiRoot}pusher/message`,
                     method: "POST",
                     contentType: "application/json",
-                    data: JSON.stringify({ userId: this.editTaskUserSelect.value() })
+                    data: JSON.stringify({
+                        channel: "agendering",
+                        userId: this.editTaskUserSelect.value()
+                    })
                 });
 
                 // After updating the task, immediately close the form.
@@ -548,7 +565,7 @@ const moduleSettings = {
                     contentType: "application/json",
                     data: JSON.stringify(newItem)
                 });
-                if (!skipUpdate) await this.updateItem(createItemResult.newItemId, data || [], true, entityType);
+                if (!skipUpdate) await TaskUtils.updateItem(createItemResult.newItemId, data || [], this.settings.username, this.settings.wiserApiRoot, true, entityType);
 
                 const workflowResult = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(createItemResult.newItemId)}/workflow?isNewItem=true`,
@@ -575,47 +592,6 @@ const moduleSettings = {
                 kendo.alert(`Er is iets fout gegaan met het aanmaken van het item. Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br><pre>${kendo.htmlEncode(error)}</pre>`);
                 return null;
             }
-        }
-
-        /**
-         * Updates an item in the database.
-         * @param {string} encryptedItemId The encrypted item ID.
-         * @param {Array<any>} inputData All values of all fields.
-         * @param {boolean} isNewItem Whether or not this is a new item.
-         * @returns {any} A promise with the result of the AJAX call.
-         */
-        async updateItem(encryptedItemId, inputData, isNewItem, entityType) {
-            const updateItemData = {
-                details: inputData,
-                changedBy: this.settings.username,
-                entityType: entityType,
-                publishedEnvironment: "Live"
-            };
-
-            return Wiser.api({
-                url: `${this.settings.wiserApiRoot}items/${encodeURIComponent(encryptedItemId)}?isNewItem=${!!isNewItem}`,
-                method: "PUT",
-                contentType: "application/json",
-                dataType: "JSON",
-                data: JSON.stringify(updateItemData)
-            });
-        }
-
-        async completeTask(taskId) {
-            const { DateTime } = await import("luxon");
-            const checkedOnValue = DateTime.now().toISO();
-
-            const inputData = [
-                {
-                    key: "checkedon",
-                    value: checkedOnValue
-                },
-                {
-                    key: "status",
-                    value: "afgerond"
-                }
-            ];
-            await this.updateItem(taskId, inputData);
         }
 
         updateTaskCount() {
@@ -667,6 +643,16 @@ const moduleSettings = {
                 element.kendoButton({
                     icon: element.data("icon")
                 });
+            });
+            
+            // Button for undoing the completion of a task.
+            $("#undoCompleteTask").kendoButton({
+                click: (event) => {
+                    event.preventDefault();
+                    TaskUtils.returnTask(this.idOfLastCompletedTask, this.settings.username, this.settings.wiserApiRoot).then(() => {
+                        this.loadTasks();
+                    });
+                }
             });
         }
 

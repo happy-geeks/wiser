@@ -50,18 +50,31 @@ if (customQueryGrid) {
             let commands = [];
             
             if (!options.disableOpeningOfItems) {
-                commandColumnWidth += 80;
+                commandColumnWidth += 60;
                 
                 commands.push({
                     name: "openDetails",
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); }
+                    title: "Item openen",
+                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
                 });
+                
+                if (options.allowOpeningOfItemsInNewTab) {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "openDetailsInNewTab",
+                        iconClass: "k-icon k-i-window",
+                        text: "",
+                        title: "Item openen in nieuwe tab",
+                        click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    });
+                }
             }
 
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
-                commandColumnWidth += 80;
+                commandColumnWidth += 60;
                 
                 commands.push({
                     name: "remove",
@@ -70,7 +83,7 @@ if (customQueryGrid) {
                     click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
                 });
             } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
-                commandColumnWidth += 160;
+                commandColumnWidth += 120;
                 
                 commands.push("destroy");
             }
@@ -155,20 +168,32 @@ if (customQueryGrid) {
         
         // Add command columns separately, because of the click event that we can't do properly server-side.
         if (!options.hideCommandColumn) {
-            let commandColumnWidth = 80;
+            let commandColumnWidth = 0;
             let commands = [];
             
             if (!options.disableOpeningOfItems && !options.fieldGroupName) {
+                commandColumnWidth += 60;
                 commands.push({
                     name: "openDetails",
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options); }
+                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
                 });
+
+                if (options.allowOpeningOfItemsInNewTab) {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "openDetailsInNewTab",
+                        iconClass: "k-icon k-i-window",
+                        text: "",
+                        click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    });
+                }
             }
             
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off" && !options.fieldGroupName) {
-                commandColumnWidth += 80;
+                commandColumnWidth += 60;
                 
                 commands.push({
                     name: "remove",
@@ -197,13 +222,42 @@ if (customQueryGrid) {
         }).then(done);
     } else {
         Wiser.api({
-            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
             method: "POST",
             contentType: "application/json"
         }).then(done);
     }
 }
     
+function mergeFilterData(data, newData){
+    // if grid had no filter data yet, the newData is all we have!
+    if (data === undefined) {
+        return newData;
+    }
+    
+    // newData.filters is usually length 1, but it doesn't hurt to support >1
+    newData.filters.forEach(newFilter => {
+        let i = data.filters.findIndex((f) => f.field === newFilter.field);
+        
+        // if the existing data already has a filter configured for this field, we are either removing it or changing it
+        if (i >= 0) {
+            // we are removing this filter
+            if (newFilter.operator == null) {
+                data.filters.splice(i, 1);
+            }
+            // it exists and need to be changed
+            else {
+                data.filters[i].operator = newFilter.operator;
+                data.filters[i].value = newFilter.value;
+            }
+        }
+        // existing data does not have this filter, add it (if it's not a removal somehow)
+        else if (newFilter.operator != null) {
+            data.filters.push(newFilter);
+        }
+    });
+    return data;
+}
 async function generateGrid(data, model, columns) {
     var toolbar = [];
     if (!options.toolbar || !options.toolbar.hideExportButton) {
@@ -235,6 +289,13 @@ async function generateGrid(data, model, columns) {
             text: "",
             template: '<div class="counterContainer"><span class="counter">0</span> <span class="plural">resultaten</span><span class="singular" style="display: none;">resultaat</span></div>'
         });
+    } else {
+        toolbar.push({
+            name: "whitespace",
+            iconClass: "",
+            text: "",
+            template: '<div class="counterContainer"></div>'
+        });
     }
 
     if (!readonly && (!options.toolbar || !options.toolbar.hideCreateButton)) {
@@ -256,7 +317,7 @@ async function generateGrid(data, model, columns) {
     }
 
     if (options.toolbar && options.toolbar.customActions && options.toolbar.customActions.length > 0) {
-        dynamicItems.grids.addCustomActionsToToolbar("#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", "{propertyId}", toolbar, options.toolbar.customActions);
+        dynamicItems.grids.addCustomActionsToToolbar("#overviewGrid{propertyIdWithSuffix}", "{itemIdEncrypted}", "{propertyId}", toolbar, options.toolbar.customActions, "{entityType}");
     }
 
     if (columns && columns.length) {
@@ -348,7 +409,7 @@ async function generateGrid(data, model, columns) {
                             });
                         } else {
                             Wiser.api({
-                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType)}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
+                                url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
@@ -400,10 +461,11 @@ async function generateGrid(data, model, columns) {
 
                         let itemModel = {
                             title: transportOptions.data.name,
-                            details: []
+                            details: [],
+                            entityType: "{entityType}"
                         };
 
-                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id;
+                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
@@ -449,7 +511,7 @@ async function generateGrid(data, model, columns) {
                                             "key": key,
                                             "value": transportOptions.data[key],
                                             "isLinkProperty": true,
-                                            "itemLinkId": transportOptions.data.link_id,
+                                            "itemLinkId": transportOptions.data.linkId || transportOptions.data.linkid || transportOptions.data.link_id,
                                             "linkType": options.linkTypeNumber || 0
                                         });
                                     }
@@ -490,7 +552,7 @@ async function generateGrid(data, model, columns) {
                                     "key": key,
                                     "value": transportOptions.data[key],
                                     "isLinkProperty": isLinkProperty,
-                                    "itemLinkId": transportOptions.data.linkId,
+                                    "itemLinkId": isLinkProperty ? (transportOptions.data.linkId || transportOptions.data.linkid || transportOptions.data.link_id) : 0,
                                     "linkType": options.linkTypeNumber || 0
                                 });
                             }
@@ -543,9 +605,11 @@ async function generateGrid(data, model, columns) {
 
                         if (options.fieldGroupName) {
                             let itemModel = {
-                                details: []
+                                details: [],
+                                entityType: "{entityType}" 
                             };
-                            var encryptedId = "{itemIdEncrypted}";
+                            
+                            const encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
                             // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
                             if (options.languageCode) {
@@ -616,7 +680,8 @@ async function generateGrid(data, model, columns) {
 
                         if (options.fieldGroupName) {
                             let itemModel = {
-                                details: []
+                                details: [],
+                                entityType: "{entityType}"
                             };
                             var encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
@@ -829,9 +894,22 @@ async function generateGrid(data, model, columns) {
                 });
             }
         },
-        filter: function (event) {
+        filter: function (event) {            
             if (options.keepFiltersState !== false) {
-                dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", kendo.stringify(event.filter));
+                try {
+                    if (event.field == null) { // manual event trigger, all filters were removed
+                        dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", "{}");
+                    }
+                    else {
+                        let mergedData = event.filter != null ?
+                            mergeFilterData(event.sender.dataSource.filter(), event.filter) : // filter was added
+                            mergeFilterData(event.sender.dataSource.filter(), { "filters": [{ "field": event.field, "operator": null }]}); // filter was removed
+                        dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", kendo.stringify(mergedData));
+                    }
+                } catch (exception) {
+                    kendo.alert("Er is iets fout gegaan tijdens het opslaan van de filter instellingen voor dit grid. Probeer het nogmaals, of neem contact op met ons.");
+                    console.error(exception);
+                }
             }
         },
         change: dynamicItems.grids.onGridSelectionChange.bind(dynamicItems.grids)
@@ -857,7 +935,7 @@ async function generateGrid(data, model, columns) {
 
     if (!options.disableOpeningOfItems) {
         field.on("dblclick", "tbody tr[data-uid] td", function (event) {
-            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options);
+            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false);
         });
     }
 

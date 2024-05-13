@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using Api.Modules.Templates.Enums;
+using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Template;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {
@@ -28,17 +27,32 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId)
+        public async Task<List<HistoryVersionModel>> GetDynamicContentHistoryAsync(int contentId, int page, int itemsPerPage)
         {
             connection.ClearParameters();
             connection.AddParameter("contentId", contentId);
-            var dataTable = await connection.GetAsync($"SELECT wdc.version, wdc.changed_on, wdc.changed_by, wdc.component, wdc.component_mode, wdc.settings FROM {WiserTableNames.WiserDynamicContent} wdc WHERE content_id = ?contentId ORDER BY wdc.version DESC");
+            connection.AddParameter("limit", (page - 1) * itemsPerPage);
+            connection.AddParameter("offset", itemsPerPage);
+
+            var dataTable = await connection.GetAsync($@"SELECT 
+    version,
+    changed_on,
+    changed_by,
+    component,
+    component_mode,
+    settings,
+    title
+FROM {WiserTableNames.WiserDynamicContent} 
+WHERE content_id = ?contentId 
+ORDER BY version DESC
+LIMIT ?limit, ?offset");
 
             var resultDict = new List<HistoryVersionModel>();
             foreach (DataRow row in dataTable.Rows)
             {
                 resultDict.Add(new HistoryVersionModel
                 {
+                    Name = row.Field<string>("title"),
                     Version = row.Field<int>("version"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
@@ -51,12 +65,16 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int templateId)
+        public async Task<Dictionary<int, int>> GetPublishedEnvironmentsFromDynamicContentAsync(int contentId)
         {
             var versionList = new Dictionary<int, int>();
 
-            connection.AddParameter("id", templateId);
-            var dataTable = await connection.GetAsync($"SELECT wdc.version, wdc.published_environment FROM `{WiserTableNames.WiserDynamicContent}` wdc WHERE wdc.content_id = ?id");
+            connection.AddParameter("id", contentId);
+            var dataTable = await connection.GetAsync(@$"SELECT 
+    version,
+    published_environment 
+FROM {WiserTableNames.WiserDynamicContent}
+WHERE content_id = ?id");
 
             foreach (DataRow row in dataTable.Rows)
             {
@@ -67,142 +85,108 @@ namespace Api.Modules.Templates.Services.DataLayer
         }
 
         /// <inheritdoc />
-        public async Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId)
+        public async Task<List<TemplateSettingsModel>> GetTemplateHistoryAsync(int templateId, int page, int itemsPerPage)
         {
             connection.ClearParameters();
             connection.AddParameter("templateId", templateId);
+            connection.AddParameter("limit", (page - 1) * itemsPerPage);
+            connection.AddParameter("offset", itemsPerPage);;
+
             var dataTable = await connection.GetAsync($@"SELECT 
-                                                                template.template_id, 
-                                                                template.parent_id, 
-                                                                template.template_name, 
-                                                                template.template_type, 
-                                                                template.template_data, 
-                                                                template.version, 
-                                                                template.changed_on, 
-                                                                template.changed_by, 
-                                                                template.use_cache,
-                                                                template.cache_minutes, 
-                                                                template.cache_location, 
-                                                                template.cache_regex, 
-                                                                template.handle_request, 
-                                                                template.handle_session, 
-                                                                template.handle_objects, 
-                                                                template.handle_standards, 
-                                                                template.handle_translations, 
-                                                                template.handle_dynamic_content, 
-                                                                template.handle_logic_blocks, 
-                                                                template.handle_mutators, 
-                                                                template.login_required, 
-                                                                template.login_role, 
-                                                                template.ordering, 
-                                                                GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linkedTemplates,
-                                                                template.insert_mode,
-                                                                template.load_always,
-                                                                template.disable_minifier,
-                                                                template.url_regex,
-                                                                template.external_files,
-                                                                template.grouping_create_object_instead_of_array,
-                                                                template.grouping_prefix,
-                                                                template.grouping_key,
-                                                                template.grouping_key_column_name,
-                                                                template.grouping_value_column_name,
-                                                                template.is_scss_include_template,
-                                                                template.use_in_wiser_html_editors,
-                                                                template.pre_load_query,
-                                                                template.return_not_found_when_pre_load_query_has_no_data,
-                                                                template.routine_type,
-                                                                template.routine_parameters,
-                                                                template.routine_return_type,
-                                                                template.trigger_timing,
-                                                                template.trigger_event,
-                                                                template.trigger_table_name,
-                                                                template.is_default_header,
-                                                                template.is_default_footer,
-                                                                template.default_header_footer_regex
-                                                            FROM {WiserTableNames.WiserTemplate} AS template 
-                                                            LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
-                                                            WHERE template.template_id = ?templateId
-                                                            AND template.removed = 0
-                                                            GROUP BY template.version
-                                                            ORDER BY version DESC");
+    template.template_id, 
+    template.parent_id, 
+    template.template_name, 
+    template.template_type, 
+    template.template_data, 
+    template.version, 
+    template.added_on,
+    template.added_by,
+    template.changed_on, 
+    template.changed_by, 
+    template.cache_per_url,
+    template.cache_per_querystring,
+    template.cache_per_hostname,
+    template.cache_per_user,
+    template.cache_using_regex,
+    template.cache_minutes, 
+    template.cache_location, 
+    template.cache_regex, 
+    template.login_required, 
+    template.login_role,
+    template.login_redirect_url, 
+    template.ordering, 
+    GROUP_CONCAT(CONCAT_WS(';', linkedTemplates.template_id, linkedTemplates.template_name, linkedTemplates.template_type)) AS linked_templates,
+    template.insert_mode,
+    template.load_always,
+    template.disable_minifier,
+    template.url_regex,
+    template.external_files,
+    IF(COUNT(externalFiles.external_file) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('uri', externalFiles.external_file, 'hash', externalFiles.hash, 'ordering', externalFiles.ordering))) AS external_files_json,
+    template.grouping_create_object_instead_of_array,
+    template.grouping_prefix,
+    template.grouping_key,
+    template.grouping_key_column_name,
+    template.grouping_value_column_name,
+    template.is_scss_include_template,
+    template.use_in_wiser_html_editors,
+    template.pre_load_query,
+    template.return_not_found_when_pre_load_query_has_no_data,
+    template.routine_type,
+    template.routine_parameters,
+    template.routine_return_type,
+    template.trigger_timing,
+    template.trigger_event,
+    template.trigger_table_name,
+    template.is_default_header,
+    template.is_default_footer,
+    template.default_header_footer_regex,
+    template.is_partial,
+    template.widget_content,
+    template.widget_location
+FROM {WiserTableNames.WiserTemplate} AS template 
+LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
+LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)
+WHERE template.template_id = ?templateId
+AND template.removed = 0
+GROUP BY template.version
+ORDER BY version DESC
+LIMIT ?limit, ?offset");
 
-            var resultList = new List<TemplateSettingsModel>();
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                var templateData = new TemplateSettingsModel
-                {
-                    TemplateId = row.Field<int>("template_id"),
-                    ParentId = row.Field<int?>("parent_id"),
-                    Type = row.Field<TemplateTypes>("template_type"),
-                    Name = row.Field<string>("template_name"),
-                    EditorValue = row.Field<string>("template_data"),
-                    Version = row.Field<int>("version"),
-                    ChangedOn = row.Field<DateTime>("changed_on"),
-                    ChangedBy = row.Field<string>("changed_by"),
-                    UseCache = (TemplateCachingModes)row.Field<int>("use_cache"),
-                    CacheMinutes = row.Field<int>("cache_minutes"),
-                    CacheLocation= (TemplateCachingLocations)row.Field<int>("cache_location"),
-                    HandleRequests = Convert.ToBoolean(row["handle_request"]),
-                    HandleSession = Convert.ToBoolean(row["handle_session"]),
-                    HandleStandards = Convert.ToBoolean(row["handle_standards"]),
-                    HandleObjects = Convert.ToBoolean(row["handle_objects"]),
-                    HandleTranslations = Convert.ToBoolean(row["handle_translations"]),
-                    HandleDynamicContent = Convert.ToBoolean(row["handle_dynamic_content"]),
-                    HandleLogicBlocks = Convert.ToBoolean(row["handle_logic_blocks"]),
-                    HandleMutators = Convert.ToBoolean(row["handle_mutators"]),
-                    LoginRequired = Convert.ToBoolean(row["login_required"]),
-                    Ordering = row.Field<int>("ordering"),
-                    LinkedTemplates = new LinkedTemplatesModel
-                    {
-                        RawLinkList = row.Field<string>("linkedTemplates")
-                    },
-                    InsertMode = row.Field<ResourceInsertModes>("insert_mode"),
-                    LoadAlways = Convert.ToBoolean(row["load_always"]),
-                    DisableMinifier = Convert.ToBoolean(row["disable_minifier"]),
-                    UrlRegex = row.Field<string>("url_regex"),
-                    ExternalFiles = row.Field<string>("external_files")?.Split(new [] {';', ',' }, StringSplitOptions.RemoveEmptyEntries)?.ToList() ?? new List<string>(),
-                    GroupingCreateObjectInsteadOfArray = Convert.ToBoolean(row["grouping_create_object_instead_of_array"]),
-                    GroupingPrefix = row.Field<string>("grouping_prefix"),
-                    GroupingKey = row.Field<string>("grouping_key"),
-                    GroupingKeyColumnName = row.Field<string>("grouping_key_column_name"),
-                    GroupingValueColumnName = row.Field<string>("grouping_value_column_name"),
-                    IsScssIncludeTemplate = Convert.ToBoolean(row["is_scss_include_template"]),
-                    UseInWiserHtmlEditors = Convert.ToBoolean(row["use_in_wiser_html_editors"]),
-                    PreLoadQuery = row.Field<string>("pre_load_query"),
-                    ReturnNotFoundWhenPreLoadQueryHasNoData = Convert.ToBoolean(row["return_not_found_when_pre_load_query_has_no_data"]),
-                    RoutineType = (RoutineTypes)row.Field<int>("routine_type"),
-                    RoutineParameters = row.Field<string>("routine_parameters"),
-                    RoutineReturnType = row.Field<string>("routine_return_type"),
-                    TriggerTiming = (TriggerTimings)row.Field<int>("trigger_timing"),
-                    TriggerEvent = (TriggerEvents)row.Field<int>("trigger_event"),
-                    TriggerTableName = row.Field<string>("trigger_table_name"),
-                    IsDefaultHeader = Convert.ToBoolean(row["is_default_header"]),
-                    IsDefaultFooter = Convert.ToBoolean(row["is_default_footer"]),
-                    DefaultHeaderFooterRegex = row.Field<string>("default_header_footer_regex")
-                };
-                
-                var loginRolesString = row.Field<string>("login_role");
-                if (!String.IsNullOrWhiteSpace(loginRolesString))
-                {
-                    templateData.LoginRoles = loginRolesString.Split(",").Select(Int32.Parse).ToList();
-                }
-
-                resultList.Add(templateData);
-            }
-
-            return resultList;
+            return dataTable.Rows.Cast<DataRow>().Select(TemplateHelpers.DataRowToTemplateSettingsModel).ToList();
         }
 
         /// <inheritdoc />
-        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplateAsync(int templateId)
+        public async Task<List<PublishHistoryModel>> GetPublishHistoryFromTemplateAsync(int templateId, int page, int itemsPerPage)
         {
             connection.ClearParameters();
-            connection.AddParameter("templateid", templateId);
+            connection.AddParameter("templateId", templateId);
+            connection.AddParameter("limit", (page - 1) * itemsPerPage);
+            connection.AddParameter("offset", itemsPerPage);
 
-            var dataTable = await connection.GetAsync($@"SELECT publink.template_id, publink.old_live, publink.old_accept, publink.old_test, publink.new_live, publink.new_accept, publink.new_test, publink.changed_on, publink.changed_by
-                    FROM {WiserTableNames.WiserTemplatePublishLog} publink WHERE publink.template_id=?templateid ORDER BY publink.changed_on DESC"
-            );
+            var dataTable = await connection.GetAsync($@"SELECT MIN(changed_on), MAX(changed_on)
+INTO @minDate, @maxDate
+FROM (
+    SELECT template.id, template.changed_on FROM {WiserTableNames.WiserTemplate} AS template
+    WHERE template.template_id = ?templateId
+    AND template.removed = 0
+    ORDER BY template.version DESC
+    LIMIT ?limit, ?offset
+) AS t;
+										
+SELECT 
+    template_id,
+    old_live,
+    old_accept,
+    old_test,
+    new_live,
+    new_accept,
+    new_test,
+    changed_on,
+    changed_by
+FROM {WiserTableNames.WiserTemplatePublishLog} 
+WHERE template_id = ?templateId 
+AND changed_on BETWEEN @minDate AND @maxDate
+ORDER BY changed_on DESC");
 
             var resultList = new List<PublishHistoryModel>();
 
@@ -210,7 +194,7 @@ namespace Api.Modules.Templates.Services.DataLayer
             {
                 var publishHistory = new PublishHistoryModel
                 {
-                    Templateid = row.Field<int>("template_id"),
+                    TemplateId = row.Field<int>("template_id"),
                     ChangedOn = row.Field<DateTime>("changed_on"),
                     ChangedBy = row.Field<string>("changed_by"),
                     PublishLog = new PublishLogModel(

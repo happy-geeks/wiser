@@ -1,19 +1,17 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Api.Core.Filters;
+using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Services;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Services;
 using Api.Modules.DigitalOcean.Models;
+using Api.Modules.Files.Models;
 using Api.Modules.Google.Models;
 using Api.Modules.Languages.Interfaces;
 using Api.Modules.Languages.Services;
@@ -23,17 +21,24 @@ using Api.Modules.Translations.Interfaces;
 using Api.Modules.Translations.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Services;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -43,6 +48,7 @@ using Serilog;
 
 namespace Api
 {
+#pragma warning disable CS1591
     public class Startup
     {
         private const string CorsPolicyName = "AllowAllOrigins";
@@ -89,8 +95,10 @@ namespace Api
             // Use the options pattern for all GCL settings in appSettings.json.
             services.AddOptions();
             services.Configure<ApiSettings>(Configuration.GetSection("Api"));
+            services.Configure<StyledOutputSettings>(Configuration.GetSection("StyledOutput"));
             services.Configure<DigitalOceanSettings>(Configuration.GetSection("DigitalOcean"));
             services.Configure<GoogleSettings>(Configuration.GetSection("Google"));
+            services.Configure<TinyPngSettings>(Configuration.GetSection("TinyPNG"));
 
             // Use Serilog as our main logger.
             services.AddLogging(builder => { builder.AddSerilog(); });
@@ -162,6 +170,7 @@ namespace Api
 
             // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
             services.AddGclServices(Configuration, false, true);
+            services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>();
 
             // Set default settings for JSON.NET.
             JsonConvert.DefaultSettings = () => new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
@@ -216,7 +225,24 @@ namespace Api
             }
             else
             {
-                identityServerBuilder.AddSigningCredential(Configuration.GetValue<string>("Api:SigningCredentialCertificate"));
+                // Create an X509Store for the Web Hosting store and see if the certificate is there.
+                var certificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
+                using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
+                webHostingStore.Open(OpenFlags.ReadOnly);
+                var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+                if (certificateCollection.Count == 0)
+                {
+                    using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                    personalStore.Open(OpenFlags.ReadOnly);
+                    certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+
+                    if (certificateCollection.Count == 0)
+                    {
+                        throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
+                    }
+                }
+
+                identityServerBuilder.AddSigningCredential(certificateCollection.First());
             }
 
             services.AddAuthentication("Bearer")
@@ -256,6 +282,7 @@ namespace Api
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
             services.Decorate<ILanguagesService, CachedLanguagesService>();
+            services.Decorate<IWiserTenantsService, CachedWiserTenantsService>();
 
             // Add JavaScriptEngineSwitcher services to the services container.
             services.AddJsEngineSwitcher(options => options.DefaultEngineName = ChakraCoreJsEngine.EngineName).AddChakraCore();
@@ -265,7 +292,7 @@ namespace Api
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger, IPluginsService pluginService)
         {
             if (env.IsDevelopment())
             {
@@ -326,6 +353,10 @@ namespace Api
                     Predicate = _ => true
                 });
             });
+
+            // Load plugins for GCL and Wiser.
+            pluginService.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"));
         }
     }
+#pragma warning restore CS1591
 }

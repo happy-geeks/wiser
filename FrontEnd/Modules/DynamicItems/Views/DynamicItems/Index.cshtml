@@ -1,13 +1,11 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@model FrontEnd.Modules.DynamicItems.Models.DynamicItemsViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+﻿@model FrontEnd.Modules.DynamicItems.Models.DynamicItemsViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
 
 <head runat="server">
-    <title>@Localizer["Wiser 3 - Dynamic items"]</title>
+    <title>Wiser 3 - Dynamic items</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -29,9 +27,7 @@
         #maximizeEditorWindow,
         #contentBuilderWindow,
         #maximizeEditorWindow,
-        #imagesUploaderWindow,
-        #filesUploaderWindow,
-        #templatesUploaderWindow,
+        #fileManagerWindow,
         #infoPanel_template,
         #maximizeSubEntitiesGridWindow,
         #changeImageDataDialog,
@@ -85,7 +81,7 @@
                             <div class="pane-content">
                                 <div id="treeview"></div>
 
-                                <button id="addButton" class="k-primary k-button-round" title="@Localizer["Create new item (SHIFT+N)"]"></button>
+                                <button id="addButton" class="k-primary k-button-round" title="Nieuw item aanmaken (SHIFT+N)"></button>
                             </div>
                         </div>
 
@@ -93,7 +89,7 @@
                         <div id="right-pane" style="background-color: #eee;">
                             <div id="alert-first" class="alert-overlay">
                                 <div class="alert">
-                                    <ins class="icon-arrow-left"></ins>@Localizer["First make a choice in the left menu."]
+                                    <ins class="icon-arrow-left"></ins>Maak eerst een keuze in het linkermenu.
                                 </div>
                             </div>
 
@@ -101,7 +97,7 @@
                                 <!-- FIXED HEADER -->
                                 <header class="fixed clear">
                                     <ul id="crumbTrail" class="path">
-                                        <li>@Localizer["No item selected yet"]</li>
+                                        <li>Nog geen item geselecteerd</li>
                                     </ul>
 
                                     <div class="actions">
@@ -119,21 +115,21 @@
                                         <ins class="icon-quickmenu"></ins>
                                         <ul id="editSub" class="editSub">
                                             <li>
-                                                <label class="reloadItem"><span>@Localizer["Reload item"]</span></label>
+                                                <label class="reloadItem"><span>Item verversen</span></label>
                                             </li>
                                             <li>
-                                                <label class="deleteItem"><span>@Localizer["Delete item"]</span></label>
+                                                <label class="deleteItem"><span>Item verwijderen</span></label>
                                             </li>
                                             <li>
-                                                <label class="translateItem"><span>@Localizer["Translate item"]</span></label>
+                                                <label class="translateItem"><span>Item vertalen</span></label>
                                             </li>
                                             <li>
-                                                <label class="undeleteItem"><span>@Localizer["Undelete item"]</span></label>
+                                                <label class="undeleteItem"><span>Verwijderen ongedaan maken</span></label>
                                             </li>
                                             @if (Model.IsAllowedToChangePropertyWidth)
                                             {
                                                 <li>
-                                                    <label for="widthToggle" class="widthToggle"><span>@Localizer["Adjust widths"]</span> <ins class="icon-check"></ins></label>
+                                                    <label for="widthToggle" class="widthToggle"><span>Breedtes aanpassen</span> <ins class="icon-check"></ins></label>
                                                 </li>
                                             }
                                         </ul>
@@ -143,15 +139,15 @@
                                 <!-- TABS -->
                                 <div id="tabstrip" class="k-tabstrip-wrapper">
                                     <ul>
-                                        <li class="k-state-active">@Localizer["Data."]</li>
-                                        <li class="overview-tab hidden">@Localizer["Overview"]</li>
+                                        <li class="k-state-active">Gegevens</li>
+                                        <li class="overview-tab hidden">Overzicht</li>
                                     </ul>
                                     <div>
                                         <div class="formview full static-fields itemNameFieldContainer">
                                             <div class="item _existingItemName" data-item-id="0" data-depends-on-field="" data-depends-on-operator="" data-depends-on-value="" data-property-name="title">
-                                                <h4><label>@Localizer["Name for item"]</label></h4>
+                                                <h4><label for="mainNameForExistingItem">Naam voor item</label></h4>
                                                 <span class="k-widget k-input k-state-default">
-                                                    <input type="text" class="textField k-input _nameForExistingItem itemNameField" name="_nameForExistingItem" autocomplete="off" value="">
+                                                    <input type="text" class="textField k-input _nameForExistingItem itemNameField" id="mainNameForExistingItem" name="_nameForExistingItem" autocomplete="off">
                                                 </span>
                                                 <div class="form-hint"></div>
                                             </div>
@@ -170,26 +166,26 @@
                             <footer class="fixed">
                                 <div id="metaData" class="metaData">
                                     <input type="checkbox" id="meta-toggle_main" class="hidden">
-                                    <p class="no-selection">@Localizer["No item selected yet"]</p>
+                                    <p class="no-selection">Nog geen item geselecteerd</p>
                                     <ul class="meta-data hidden">
-                                        <li class="visible">@Localizer["ID"]: <span class="id"></span></li>
-                                        <li>@Localizer["UUID"]: <span class="uuid"></span></li>
-                                        <li>@Localizer["Name"]: <span class="title"></span></li>
-                                        <li class="visible">@Localizer["Type"]: <span class="entity-type"></span></li>
-                                        <li>@Localizer["Environment"]: <span class="published-environment"></span></li>
-                                        <li>@Localizer["Read only"]: <span class="read-only"></span></li>
-                                        <li>@Localizer["Added on"]: <span class="added-on"></span></li>
-                                        <li>@Localizer["Added by"]: <span class="added-by"></span></li>
-                                        <li><a class="changedon-footer" href="javascript: void(0)">@Localizer["Changed on"]: <span class="changed-on"></span></a></li>
-                                        <li>@Localizer["Changed by"]: <span class="changed-by"></span></li>
-                                        <li class="meta-toggle"><label for="meta-toggle_main"><span>@Localizer["Show everything"]</span><span>@Localizer["Show less"]</span></label></li>
+                                        <li class="visible">ID: <span class="id"></span></li>
+                                        <li>UUID: <span class="uuid"></span></li>
+                                        <li>Naam: <span class="title"></span></li>
+                                        <li class="visible">Type: <span class="entity-type"></span></li>
+                                        <li>Omgeving: <span class="published-environment"></span></li>
+                                        <li>Alleen lezen: <span class="read-only"></span></li>
+                                        <li>Toegevoegd op: <span class="added-on"></span></li>
+                                        <li>Toegevoegd door: <span class="added-by"></span></li>
+                                        <li><a class="changedon-footer" href="javascript: void(0)">Gewijzigd op: <span class="changed-on"></span></a></li>
+                                        <li>Gewijzigd door: <span class="changed-by"></span></li>
+                                        <li class="meta-toggle"><label for="meta-toggle_main"><span>Alles tonen</span><span>Minder tonen</span></label></li>
                                     </ul>
                                 </div>
                                 <div class="actions">
                                     @if (!Model.ReadOnly)
                                     {
                                         <button id="saveBottom" class="k-primary saveButton">@Model.SaveButtonText</button>
-                                        <button id="saveAndCreateNewItemButton" class="k-primary saveButton hidden">@Localizer["Save and create new item"]</button>
+                                        <button id="saveAndCreateNewItemButton" class="k-primary saveButton hidden">Opslaan en nieuw item maken</button>
                                     }
                                 </div>
                             </footer>
@@ -216,12 +212,12 @@
         <div class="pane-content">
             <div class="tabStripPopup">
                 <ul>
-                    <li class="k-state-active">@Localizer["Data."]</li>
+                    <li class="k-state-active">Gegevens</li>
                 </ul>
                 <div>
                     <div class="formview full static-fields itemNameFieldContainer">
                         <div class="item _existingItemName" data-item-id="0" data-depends-on-field="" data-depends-on-operator="" data-depends-on-value="" data-property-name="title">
-                            <h4><label>@Localizer["Name for item"]</label></h4>
+                            <h4><label>Naam voor item</label></h4>
                             <span class="k-widget k-input k-state-default">
                                 <input type="text" class="textField k-input _nameForExistingItem itemNameField" name="_nameForExistingItem" autocomplete="off" value="">
                             </span>
@@ -243,25 +239,25 @@
         <footer class="fixed ">
             <div class="metaData">
                 <input type="checkbox" id="meta-toggle_template" class="hidden">
-                <p class="no-selection">@Localizer["No item selected yet"]</p>
+                <p class="no-selection">Nog geen item geselecteerd</p>
                 <ul class="meta-data hidden">
-                    <li class="visible">@Localizer["ID"]: <span class="id"></span></li>
-                    <li>@Localizer["UUID"]: <span class="uuid"></span></li>
-                    <li>@Localizer["Name"]: <span class="title"></span></li>
-                    <li class="visible">@Localizer["Type"]: <span class="entity-type"></span></li>
-                    <li>@Localizer["Environment"]: <span class="published-environment"></span></li>
-                    <li>@Localizer["Read only"]: <span class="read-only"></span></li>
-                    <li>@Localizer["Added on"]:: <span class="added-on"></span></li>
-                    <li>@Localizer["Added by"]: <span class="added-by"></span></li>
-                    <li><a class="changedon-footer" href="javascript: void(0)">@Localizer["Changed on"]: <span class="changed-on"></span></a></li>
-                    <li>@Localizer["Changed by"]: <span class="changed-by"></span></li>
-                    <li class="meta-toggle"><label for="meta-toggle_template"><span>@Localizer["Show everything"]</span><span>@Localizer["Show less"]</span></label></li>
+                    <li class="visible">ID: <span class="id"></span></li>
+                    <li>UUID: <span class="uuid"></span></li>
+                    <li>Naam: <span class="title"></span></li>
+                    <li class="visible">Type: <span class="entity-type"></span></li>
+                    <li>Omgeving: <span class="published-environment"></span></li>
+                    <li>Alleen lezen: <span class="read-only"></span></li>
+                    <li>Toegevoegd op: <span class="added-on"></span></li>
+                    <li>Toegevoegd door: <span class="added-by"></span></li>
+                    <li><a class="changedon-footer" href="javascript: void(0)">Gewijzigd op: <span class="changed-on"></span></a></li>
+                    <li>Gewijzigd door: <span class="changed-by"></span></li>
+                    <li class="meta-toggle"><label for="meta-toggle_template"><span>Alles tonen</span><span>Minder tonen</span></label></li>
                 </ul>
             </div>
             <div class="actions">
-                <button class="saveAndCloseBottomPopup k-primary saveButton" name="saveAndClose">@Localizer["Save and close"]</button>
-                <button class="saveBottomPopup k-secondary saveButton" name="save">@Localizer["Save"]</button>
-                <button class="cancelItemPopup k-secondary" name="cancel">@Localizer["Cancel"]</button>
+                <button class="saveAndCloseBottomPopup k-primary saveButton" name="saveAndClose">Opslaan en sluiten</button>
+                <button class="saveBottomPopup k-secondary saveButton" name="save">Opslaan</button>
+                <button class="cancelItemPopup k-secondary" name="cancel">Annuleren</button>
             </div>
         </footer>
 
@@ -289,7 +285,7 @@
     <!-- Item search popup / window -->
     <div id="searchItemsWindow">
         <div class="pane-content">
-            <p><strong>@Localizer["Attention!"]</strong> @Localizer["(De)selecting an item in this list will be immediately processed in the system."]</p>
+            <p><strong>Let op!</strong> Het (de)selecteren van een item in deze lijst wordt direct verwerkt in het systeem.</p>
             <div class="grid-parent">
                 <div id="searchItemsWindowGrid"></div>
             </div>
@@ -313,11 +309,11 @@
         </div>
         <footer class="fixed clear">
             <div class="actions">
-                <button id="normalPreview" class="k-secondary k-blue button-left">@Localizer["Example"]</button>
-                <button id="htmlPreview" class="k-secondary k-blue button-left">@Localizer["Change HTML"]</button>
-                <button id="savePreview" class="k-primary">@Localizer["Save as PDF"]</button>
-                <button id="printPreview" class="k-secondary k-blue">@Localizer["Print"]</button>
-                <button id="mailPreview" class="k-secondary k-blue">@Localizer["E-mail"]</button>
+                <button id="normalPreview" class="k-secondary k-blue button-left">Voorbeeld</button>
+                <button id="htmlPreview" class="k-secondary k-blue button-left">HTML wijzigen</button>
+                <button id="savePreview" class="k-primary">Opslaan als PDF</button>
+                <button id="printPreview" class="k-secondary k-blue">Printen</button>
+                <button id="mailPreview" class="k-secondary k-blue">E-Mail</button>
             </div>
         </footer>
     </div>
@@ -329,10 +325,10 @@
         </div>
         <footer class="fixed clear">
             <div class="actions">
-                <button class="k-primary" name="save">@Localizer["Update"]</button>
-                <button class="k-secondary" name="cancel">@Localizer["Cancel"]</button>
-                <button class="addTemplate" title="@Localizer["Add template"]"></button>
-                <button class="addImage" title="@Localizer["Add image"]"></button>
+                <button class="k-primary" name="save">Update</button>
+                <button class="k-secondary" name="cancel">Annuleren</button>
+                <button class="addTemplate" title="Template toevoegen"></button>
+                <button class="addImage" title="Afbeelding toevoegen"></button>
             </div>
         </footer>
     </div>
@@ -344,8 +340,8 @@
         </div>
         <footer class="fixed clear">
             <div class="actions">
-                <button class="k-primary" name="save">@Localizer["Update"]</button>
-                <button class="k-secondary" name="cancel">@Localizer["Cancel"]</button>
+                <button class="k-primary" name="save">Update</button>
+                <button class="k-secondary" name="cancel">Annuleren</button>
             </div>
         </footer>
     </div>
@@ -366,332 +362,77 @@
     <!-- Dialog for open URL links. -->
     <div id="openLinkWindow"></div>
 
-    <!-- Images uploader window -->
-    <div id="imagesUploaderWindow" class="popup-container">
-        <input type="file" id="newImageUpload" class="hidden" multiple />
+    <!-- File manager window -->
+    <div id="fileManagerWindow" class="popup-container">
         <div class="horizontal">
-            <div class="left-pane">
-                <div class="pane-content">
-                    <div id="imagesUploaderTreeView"></div>
-                    <ul id="imagesUploaderTreeViewContextMenu">
-                        <li data-action="delete"><span class="k-sprite icon-delete"></span> @Localizer["Delete image"]</li>
-                        <li data-action="rename"><span class="k-sprite icon-album-rename"></span> @Localizer["Rename image"]</li>
-                        <li data-action="add-directory"><span class="k-icon k-i-folder-add"></span> @Localizer["Add folder"]</li>
-                        <li data-action="add-image"><span class="k-icon k-i-image-insert"></span> @Localizer["Add image"]</li>
-                    </ul>
+            <iframe frameborder="0" id="fileManagerFrame"></iframe>
+            
+            <!-- FIXED FOOTER -->
+            <footer class="fixed">
+                <div class="actions">
+                    <button class="k-primary saveButton" name="addFileToEditor">Invoegen</button>
                 </div>
-
-                <div class="imagesUploaderActions">
-                    <button id="addNewImageButton" class="k-primary">@Localizer["Add new image"]</button>
-                    <button id="addNewImageDirectoryButton" class="k-primary">@Localizer["Add new folder"]</button>
-                </div>
-            </div>
-
-            <div class="right-pane hidden">
-                <div class="pane-content image-preview">
-
-                    <div class="formview full static-fields group-columns">
-                        <div class="item-group">
-                            <h3>@Localizer["Options"]</h3>
-
-                            <div class="item preferredWidth">
-                                <h4><label>@Localizer["Desired width (in pixels)"]</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="number" id="preferredWidth" class="textField k-input" name="preferredWidth" value="0" />
-                                </span>
-                                <div class="form-hint">
-                                    <p>@Localizer["Enter 0 to use the original width of the image."]</p>
-                                </div>
-                            </div>
-
-                            <div class="item preferredHeight">
-                                <h4><label>@Localizer["Desired height (in pixels)"]</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="number" id="preferredHeight" class="textField k-input" name="preferredHeight" value="0" />
-                                </span>
-                                <div class="form-hint">
-                                    <p>@Localizer["Enter 0 to use the original height of the image."]</p>
-                                </div>
-                            </div>
-
-                            <div class="item altText">
-                                <h4><label>@Localizer["Alt text"]</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="text" id="altText" class="textField k-input" name="altText" value="" />
-                                </span>
-                                <div class="form-hint">
-                                    <p>@Localizer["A description of the image."]</p>
-                                </div>
-                            </div>
-
-                            <div class="item resizeMode">
-                                <h4><label>@Localizer["Method"]</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <select id="resizeMode" name="resizeMode" class="select">
-                                        <option value="normal">@Localizer["Normal"]</option>
-                                        <option value="stretch">@Localizer["Stretch"]</option>
-                                        <option value="crop">@Localizer["Crop"]</option>
-                                        <option value="fill">@Localizer["Fill"]</option>
-                                    </select>
-                                </span>
-                                <div class="form-hint">
-                                    <p>@Localizer["The way to resize the image:"]</p>
-                                    <dl>
-                                        <dt>@Localizer["Normal"]</dt>
-                                        <dd>@Localizer["The image size will be made smaller or larger to the size closest to the desired size. Proportions of the original image can be preserved. Example: The image is 150x200 pixels and the desired size is 150x150. The final image size will then be 113x150 pixels."]</dd>
-                                        <dt>@Localizer["Stretch"]</dt>
-                                        <dd>@Localizer["The image is stretched or contracted until the resolution is exactly as specified. Warning: In many cases this causes distorted images."]</dd>
-                                        <dt>@Localizer["Crop"]</dt>
-                                        <dd>@Localizer["First, the image size will be made smaller until its width or height (whichever is greater) matches the specified size, then any remnants will be cutted off. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pizels, but because the proportions are now different, a piece of the image will be cutted off above and/or below. This can cause parts of an image to disappear."]</dd>
-                                        <dt>@Localizer["Fill"]</dt>
-                                        <dd>@Localizer["First, the image will be scaled down until the width or height (whichever is smaller) matches the specified size, then the image is filled with white space until the result exactly matches. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pixels, but because the proportions are now different, left and/or right white space will be added to the image."]</dd>
-                                    </dl>
-                                </div>
-                            </div>
-
-                            <div class="item anchorPosition hidden">
-                                <h4><label>@Localizer["Anchor position"]</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <select id="anchorPosition" name="anchorPosition" class="select">
-                                        <option value="center">@Localizer["Center"]</option>
-                                        <option value="top">@Localizer["Top"]</option>
-                                        <option value="bottom">@Localizer["Bottom"]</option>
-                                        <option value="left">@Localizer["Left"]</option>
-                                        <option value="right">@Localizer["Right"]</option>
-                                        <option value="topleft">@Localizer["Top-left"]</option>
-                                        <option value="topright">@Localizer["Top-right"]</option>
-                                        <option value="bottomleft">@Localizer["Bottom-left"]</option>
-                                        <option value="bottomright">@Localizer["Bottom-right"]</option>
-                                    </select>
-                                </span>
-                                <div class="form-hint">
-                                    <p>@Localizer["The position on the image from which to cut or fill."]</p>
-                                    <dl>
-                                        <dt>@Localizer["Center"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the top, bottom left and right."]</dd>
-                                        <dt>@Localizer["Top"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the bottom, left and right."]</dd>
-                                        <dt>@Localizer["Bottom"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the top, left and right."]</dd>
-                                        <dt>@Localizer["Left"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the top, bottom and right."]</dd>
-                                        <dt>@Localizer["Right"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the top, bottom and left."]</dd>
-                                        <dt>@Localizer["Top-left"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the bottom and right."]</dd>
-                                        <dt>@Localizer["Top-right"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the bottom and left."]</dd>
-                                        <dt>@Localizer["Bottom-left"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the top and right."]</dd>
-                                        <dt>@Localizer["Bottom-right"]</dt>
-                                        <dd>@Localizer["The image can be cutted off/filled at the top and left."]</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="item-group">
-                            <h3>@Localizer["Example"]</h3>
-                            <div class="item">
-                                <a class="image-preview-link" target="_blank"><img /></a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FIXED FOOTER -->
-                <footer class="fixed hidden">
-                    <div class="actions">
-                        <button class="test k-primary saveButton" name="addImageToEditor">@Localizer["Insert"]</button>
-                    </div>
-                </footer>
-            </div>
-        </div>
-
-        <div class="popup-loader fullscreen-loader loading">
-            <div class="loader-icon">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Files uploader window -->
-    <div id="filesUploaderWindow" class="popup-container">
-        <input type="file" id="newFileUpload" class="hidden" multiple />
-        <div class="horizontal">
-            <div class="left-pane">
-                <div class="pane-content">
-                    <div id="filesUploaderTreeView"></div>
-                    <ul id="filesUploaderTreeViewContextMenu">
-                        <li data-action="delete"><span class="k-sprite icon-delete"></span> @Localizer["Delete file"]</li>
-                        <li data-action="rename"><span class="k-sprite icon-album-rename"></span> @Localizer["Rename file"]</li>
-                        <li data-action="add-directory"><span class="k-icon k-i-folder-add"></span> @Localizer["Add folder"]</li>
-                        <li data-action="add-file"><span class="k-icon k-i-image-insert"></span> @Localizer["Add file"]</li>
-                    </ul>
-                </div>
-
-                <div class="filesUploaderActions">
-                    <button id="addNewFileButton" class="k-primary">@Localizer["Add new file"]</button>
-                    <button id="addNewFileDirectoryButton" class="k-primary">@Localizer["Add new folder"]</button>
-                </div>
-            </div>
-
-            <div class="right-pane hidden">
-                <div class="pane-content file-preview">
-
-                    <div class="formview full static-fields group-columns">
-                        <div class="item-group">
-                            <h3>@Localizer["Options"]</h3>
-
-                            <div class="item">
-                                <h4><label>@Localizer["Text"]</label></h4>
-                                <span class="k-widget k-input k-state-default">
-                                    <input type="text" id="fileLinkText" class="textField k-input" name="fileLinkText" />
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="item-group">
-                            <h3>@Localizer["Example"]</h3>
-                            <div class="item">
-                                <a class="file-preview-link" target="_blank">@Localizer["Download file"]</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FIXED FOOTER -->
-                <footer class="fixed hidden">
-                    <div class="actions">
-                        <button class="test k-primary saveButton" name="addFileToEditor">@Localizer["Insert"]</button>
-                    </div>
-                </footer>
-            </div>
-        </div>
-
-        <div class="popup-loader fullscreen-loader loading">
-            <div class="loader-icon">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Images uploader window -->
-    <div id="templatesUploaderWindow" class="popup-container">
-        <input type="file" id="newTemplateUpload" class="hidden" multiple />
-        <div class="horizontal">
-            <div class="left-pane">
-                <div class="pane-content">
-                    <div id="templatesUploaderTreeView"></div>
-                    <ul id="templatesUploaderTreeViewContextMenu">
-                        <li data-action="delete"><span class="k-sprite icon-delete"></span> @Localizer["Delete template"]</li>
-                        <li data-action="rename"><span class="k-sprite icon-album-rename"></span> @Localizer["Rename template"]</li>
-                        <li data-action="add-directory"><span class="k-icon k-i-folder-add"></span> @Localizer["Add folder"]</li>
-                        <li data-action="add-template"><span class="k-icon k-i-image-insert"></span> @Localizer["Add template"]</li>
-                    </ul>
-                </div>
-
-                <div class="templatesUploaderActions">
-                    <button id="addNewTemplateButton" class="k-primary">@Localizer["Add new template"]</button>
-                    <button id="addNewTemplateDirectoryButton" class="k-primary">@Localizer["Add new folder"]</button>
-                </div>
-            </div>
-
-            <div class="right-pane hidden">
-                <div class="pane-content template-preview">
-
-                    <div class="formview full static-fields group-columns">
-                        <div class="item-group">
-                            <h3>@Localizer["Example"]</h3>
-                            <div class="item">
-                                <iframe class="template-preview-iframe" src="about:blank"></iframe>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- FIXED FOOTER -->
-                <footer class="fixed hidden">
-                    <div class="actions">
-                        <button class="test k-primary saveButton" name="addTemplateToEditor">@Localizer["Insert"]</button>
-                    </div>
-                </footer>
-            </div>
-        </div>
-
-        <div class="popup-loader fullscreen-loader loading">
-            <div class="loader-icon">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-            </div>
+            </footer>
         </div>
     </div>
 
     <div id="sendMailDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Sender name"]</label></h4>
+                <h4><label for="sendMailDialogSenderName">Naam verzender</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="senderName" autocomplete="off" value="">
+                    <input type="text" class="textField k-input" id="sendMailDialogSenderName" name="senderName" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Sender email address"]</label></h4>
+                <h4><label for="sendMailDialogSenderEmail">E-mailadres verzender</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="senderEmail" autocomplete="off" value="" required>
+                    <input type="email" class="textField k-input" id="sendMailDialogSenderEmail" name="senderEmail" autocomplete="off" value="" required>
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Name reciever"]</label></h4>
+                <h4><label for="sendMailDialogReceiverName">Naam ontvanger</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="receiverName" autocomplete="off" value="">
+                    <input type="text" class="textField k-input" id="sendMailDialogReceiverName" name="receiverName" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["reciever email address"]</label></h4>
+                <h4><label for="sendMailDialogReceiverEmail">E-mailadres ontvanger</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="receiverEmail" autocomplete="off" value="" required>
+                    <input type="email" class="textField k-input" id="sendMailDialogReceiverEmail" name="receiverEmail" autocomplete="off" value="" required>
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["CC"]</label></h4>
+                <h4><label for="sendMailDialogCc">CC</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="cc" autocomplete="off" value="">
+                    <input type="email" class="textField k-input" id="sendMailDialogCc" name="cc" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["BCC"]</label></h4>
+                <h4><label for="sendMailDialogBcc">BCC</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="email" class="textField k-input" name="bcc" autocomplete="off" value="">
+                    <input type="email" class="textField k-input" id="sendMailDialogBcc" name="bcc" autocomplete="off" value="">
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Subject"]</label></h4>
+                <h4><label for="sendMailDialogSubject">Onderwerp</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="subject" autocomplete="off" value="" required>
+                    <input type="text" class="textField k-input" id="sendMailDialogSubject" name="subject" autocomplete="off" value="" required>
                 </span>
             </div>
         </div>
 
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Attachments"]</label></h4>
+                <h4><label for="sendMailDialogFiles">Extra bijlagen</label></h4>
                 <span class="k-widget k-input k-state-default" id="attachmentFilesContainer">
-                    <input name="files" type="file" aria-label="files" />
+                    <input id="sendMailDialogFiles" name="files" type="file" aria-label="files" />
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Content/"]</label></h4>
+                <h4><label for="sendMailDialogContent">Inhoud</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <textarea class="editor" name="subject"></textarea>
+                    <textarea id="sendMailDialogContent" class="editor" name="subject"></textarea>
                 </span>
             </div>
         </div>
@@ -709,15 +450,21 @@
     <div id="changeImageDataDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Filename"]</label></h4>
+                <h4><label for="changeImageDialogFileNameField">Bestandsnaam</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="fileName" autocomplete="off">
+                    <input type="text" class="textField k-input" id="changeImageDialogFileNameField" name="fileName" autocomplete="off">
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Description"]</label></h4>
+                <h4><label for="changeImageDialogTitleField">Algemene titel voor Wiser</label></h4>
                 <span class="k-widget k-input k-state-default">
-                    <input type="text" class="textField k-input" name="title" autocomplete="off" required>
+                    <input type="text" class="textField k-input" id="changeImageDialogTitleField" name="title" autocomplete="off">
+                </span>
+            </div>
+            <div class="item hidden alt-text-template">
+                <h4><label for="changeImageDialogAltText">Omschrijving <span class="language"></span></label></h4>
+                <span class="k-widget k-input k-state-default">
+                    <input type="text" class="textField k-input" id="changeImageDialogAltText" name="title" autocomplete="off">
                 </span>
             </div>
         </div>
@@ -726,11 +473,11 @@
     <div id="dataSelectorTemplateDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Data selector"]</label></h4>
+                <h4><label for="dataSelectorDropDown">Data selector</label></h4>
                 <select id="dataSelectorDropDown" class="select"></select>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Template"]</label></h4>
+                <h4><label for="dataSelectorTemplateDropDown">Template</label></h4>
                 <select id="dataSelectorTemplateDropDown" class="select"></select>
             </div>
         </div>
@@ -739,36 +486,36 @@
     <div id="youTubeDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Video-ID"]</label></h4>
+                <h4><label for="youTubeVideoId">Video-ID</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="text" class="textField k-input" name="youTubeVideoId" id="youTubeVideoId" autocomplete="off" required>
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Width"]</label></h4>
+                <h4><label for="youTubeVideoWidth">Breedte</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="number" class="textField k-input" name="youTubeVideoWidth" id="youTubeVideoWidth" autocomplete="off" required value="640">
                 </span>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Height"]</label></h4>
+                <h4><label for="youTubeVideoHeight">Hoogte</label></h4>
                 <span class="k-widget k-input k-state-default">
                     <input type="number" class="textField k-input" name="youTubeVideoHeight" id="youTubeVideoHeight" autocomplete="off" required value="390">
                 </span>
             </div>
             <div class="item">
                 <span class="inline">
-                    <label class="checkbox"><input type="checkbox" id="youTubeAllowFullScreen" class="textField k-input" name="youTubeAllowFullScreen" checked /><span>@Localizer["Allow full screen"]</span></label>
+                    <label class="checkbox"><input type="checkbox" id="youTubeAllowFullScreen" class="textField k-input" name="youTubeAllowFullScreen" checked /><span>Volledig scherm toestaan</span></label>
                 </span>
             </div>
             <div class="item">
                 <span class="inline">
-                    <label class="checkbox"><input type="checkbox" id="youTubeAutoPlay" class="textField k-input" name="youTubeAutoPlay" /><span>@Localizer["Auto play"]</span></label>
+                    <label class="checkbox"><input type="checkbox" id="youTubeAutoPlay" class="textField k-input" name="youTubeAutoPlay" /><span>Automatisch afspelen</span></label>
                 </span>
             </div>
             <div class="item">
                 <span class="inline">
-                    <label class="checkbox"><input type="checkbox" id="youTubeShowRelatedVideos" class="textField k-input" name="youTubeShowRelatedVideos" /><span>@Localizer["Show related videos"]</span></label>
+                    <label class="checkbox"><input type="checkbox" id="youTubeShowRelatedVideos" class="textField k-input" name="youTubeShowRelatedVideos" /><span>Gerelateerde video's weergeven</span></label>
                 </span>
             </div>
         </div>
@@ -777,7 +524,7 @@
     <div id="translationsDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Allows you to insert a translation word. This word is then automatically translated on the website into the language the user has chosen. These translation words can be entered in the 'Translations' module."]</label></h4>
+                <h4><label for="translationsDropDown">Hiermee kan een vertaalwoord ingevoegd worden. Dit woord wordt dan automatisch op de website vertaald naar de taal die de gebruiker heeft gekozen. Deze vertaalwoorden kunnen in de module "Vertalingen" ingevuld worden.</label></h4>
                 <select id="translationsDropDown" class="select"></select>
             </div>
         </div>
@@ -788,18 +535,18 @@
     <div id="translateItemDialog">
         <div class="formview full static-fields">
             <div class="item">
-                <h4><label>@Localizer["Source language"]</label></h4>
+                <h4><label for="sourceLanguageDropDown">Brontaal</label></h4>
                 <select id="sourceLanguageDropDown" class="select"></select>
                 <div class="form-hint">
-                    <p>@Localizer["Choose the language that serves as the source here. All fields on this item with this language will then be translated into other languages."]</p>
+                    <p>Kies hier de taal die als bron dient. Alle velden op dit item met deze taal zullen dan vertaald worden in andere talen.</p>
                 </div>
             </div>
             <div class="item">
-                <h4><label>@Localizer["Target languages"]</label></h4>
+                <h4><label for="targetLanguagesMultiSelect">Doeltalen</label></h4>
                 <select id="targetLanguagesMultiSelect" class="multi-select"></select>
                 <div class="form-hint">
-                    <p>@Localizer["Select the languages which all fields should be translated to. You can leave this field empty if you want to use all languages (that are set in the Master data module)."]</p>
-                    <p>@Localizer["Only fields that do not yet contain a value in the target languages will be translated. This functionality will never overwrite entered values."]</p>
+                    <p>Kies hier de talen waarin alle velden vertaald moeten worden. U kunt dit veld leeglaten indien u alle talen (die ingesteld staan in de Stamgegevensmodule) wilt gebruiken.</p>
+                    <p>Alleen velden die nog geen waarde bevatten in de doeltalen, zullen vertaald worden. Deze functionaliteit zal nooit ingevulde waardes overschrijven.</p>
                 </div>
             </div>
         </div>
@@ -833,8 +580,8 @@
     </script>
 
     <script id="uploaderTemplate" type="text/x-kendo-template">
-        <div class="product" data-item-id="#= itemId #" data-image-id="#= fileId #" data-item-link-id="#= itemLinkId #" data-file-name="#= name #" data-title="#= title #" data-entity-type="#= entityType || '' #" data-link-type="#= linkType || 0 #">
-            <img src="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(itemId) #/files/#= fileId #/#= encodeURIComponent(name) #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#= encodeURIComponent(itemLinkId) #&entityType=#= encodeURIComponent(entityType || '') #&linkType=#= linkType || 0 #" alt="#: name # image" />
+        <div class="product" data-item-id="#: itemId #" data-image-id="#: fileId #" data-item-link-id="#: itemLinkId #" data-file-name="#: name #" data-title="#: title #" data-entity-type="#: entityType || '' #" data-link-type="#: linkType || 0 #" data-extra-data="#: extraData || '' #">
+            <img src="#: window.dynamicItems.settings.wiserApiRoot #items/#: encodeURIComponent(itemId) #/files/#: fileId #/#: encodeURIComponent(name) #?encryptedCustomerId=#: encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#: encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#: window.dynamicItems.settings.isTestEnvironment #&subDomain=#: encodeURIComponent(window.dynamicItems.settings.subDomain) #&itemLinkId=#: encodeURIComponent(itemLinkId) #&entityType=#: encodeURIComponent(entityType || '') #&linkType=#: linkType || 0 #" alt="#: name # image" />
             <div class="imgTools">
                 <button type="button" class="imgZoom" title="Preview"></button>
                 # if(!readonly) { #
@@ -848,11 +595,11 @@
     <div id="createNewItemDialog"></div>
     <script id="createNewItemDialogTemplate" type="text/x-kendo-template">
         <div class="new-item-dialog-row" id="newItemEntityTypeContainer">
-            <h4><label for="newItemEntityTypeField">@Localizer["Choose an entity type"]</label></h4>
+            <h4><label for="newItemEntityTypeField">Kies een entiteit-type</label></h4>
             <select id="newItemEntityTypeField" class="select"></select>
         </div>
         <div class="new-item-dialog-row">
-            <h4><label for="newItemNameField">@Localizer["Enter a name"]</label></h4>
+            <h4><label for="newItemNameField">Vul een naam in</label></h4>
             <span class="k-widget k-input k-state-default">
                 <input type="text" id="newItemNameField" class="textField k-input" />
             </span>
@@ -872,7 +619,7 @@
     </script>
     <script id="userComboBoxParameterTemplate" type="text/x-kendo-template">
         <div class="new-item-dialog-row" id="comboBoxUserParameterContainer">
-            <select class="select" id="comboBoxUserParameter" name="comboBoxUserParameter" placeholder="@Localizer["Make your choice..."]" data-placeholder="@Localizer["Make your choice..."]"></select>
+            <select class="select" id="comboBoxUserParameter" name="comboBoxUserParameter" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."></select>
         </div>
     </script>
     <script id="userGridParameterTemplate" type="text/x-kendo-template">
@@ -900,9 +647,16 @@
         </div>
     </script>
 
-    @* <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script> *@
-    @* <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script> *@
-    <script src="@await WebPackService.GetManifestFileAsync("DynamicItems.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="DynamicItems.js"></webpack-script>
+    <webpack-script file-name="Fields.js"></webpack-script>
+    <webpack-script file-name="Dialogs.js"></webpack-script>
+    <webpack-script file-name="Windows.js"></webpack-script>
+    <webpack-script file-name="Grids.js"></webpack-script>
+    <webpack-script file-name="DragAndDrop.js"></webpack-script>
 
     <!-- CONTEXT MENU FOR TREEVIEW -->
     <ul id="menu"></ul>

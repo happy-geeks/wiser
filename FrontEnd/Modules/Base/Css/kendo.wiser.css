@@ -53,7 +53,7 @@
 .pane-content + footer {
 	background: var(--white-color);
 	border-top: 1px solid #dddddd;
-	border-radius: 0 0 6px 6px;
+	border-radius: 0 0 var(--large-radius) var(--large-radius);
 	box-sizing: content-box;
 	padding: 10px;
 	z-index: 250;
@@ -352,6 +352,8 @@
 .k-button-drop {
 	position: relative;
 	z-index: 10;
+	padding-right: 0px;
+	margin: 0px;
 }
 .k-button-drop > div {
 	box-shadow: var(--drop-shadow);
@@ -379,7 +381,7 @@
 .k-button-drop > div .k-button {
 	background-color: transparent;
 	justify-content: flex-start;
-	padding: 0.3em 0.5em;
+	padding: 0.8em 0em 0.8em 1em;
 	text-align: left;
 	width: 100%;
 }
@@ -1241,10 +1243,6 @@ span.k-input .k-input:hover {
 	bottom: 6px;
 	right: 5px;
 }
-.k-grid-header th.k-header .k-state-active {
-	background: none;
-	position: static;
-}
 .k-grid-header th.k-header .k-grid-filter.k-state-active:before {
 	content: "";
 	background-color: var(--bg-color);
@@ -1259,17 +1257,12 @@ span.k-input .k-input:hover {
 	position: relative;
 	z-index: 5;
 }
-.k-grid-header .k-grid-filter {
-	background: rgba(255,255,255,0.2);
-	border: none;
-	margin: -12px -4px -12px 0;
-}
 .k-grid-header .k-grid-filter.k-state-border-down {
 	background-color: var(--filter-color);
 }
 .k-grid-header th.k-header .k-grid-filter.k-state-active:before {
 	content: "";
-	background-color: var(--filter-color);
+	background-color: var(--color-1);
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -1278,7 +1271,8 @@ span.k-input .k-input:hover {
 	z-index: 0;
 }
 .k-grid-header th.k-header .k-grid-filter.k-state-active .k-icon {
-	color: var(--black-color);
+	color: var(--white-color);
+	opacity: 1;
 }
 .k-grid-header .k-link .k-icon.k-i-sort-asc-sm,
 .k-grid-header .k-link .k-icon.k-i-sort-desc-sm {
@@ -1300,8 +1294,9 @@ span.k-input .k-input:hover {
 	color: var(--light-txt);
 }
 .k-grid td {
-	padding: 2px .6em;
+	padding: var(--padding-large);
 	white-space: nowrap;
+	border-bottom-width: 0px!important;
 }
 .k-grid-content tr:last-child>td,
 .k-grid-content-locked tr:last-child>td {
@@ -1332,11 +1327,12 @@ span.k-input .k-input:hover {
 	min-width: 40px;
 	padding: 4px 6px;
 	height: 24px;
+	margin-right: 5px;
 }
 .k-grid .k-command-cell>.k-button+.k-button {
-	margin-left: 5px;
 	-webkit-margin-start: 0;
 	margin-inline-start: 0;
+	margin-right: 5px;
 }
 k-filter-menu .k-autocomplete,
 .k-filter-menu .k-combobox,
@@ -1702,7 +1698,7 @@ textarea[readonly],
 	height: 10px;
 	position: absolute;
 	left: 5px;
-	top: 13px;
+	top: 9px;
 	width: 10px;
 }
 .rToggle:checked ~ header .rToggle > span:after {
@@ -1712,7 +1708,7 @@ textarea[readonly],
 	height: 10px;
 	position: absolute;
 	left: 5px;
-	top: 13px;
+	top: 9px;
 	width: 10px;
 }
 
@@ -1757,7 +1753,10 @@ textarea[readonly],
 .k-editor .k-i-wiser-translation:before {
 	content: "\e701";
 }
-.maximize-editor-window table.k-editor-widget {
+.maximize-editor-window {
+	padding-bottom: 0;
+}
+.maximize-editor-window table.k-editor {
 	height: calc(100vh - 10px);
 }
 .html-source-window .CodeMirror,
@@ -2061,7 +2060,7 @@ table.k-editor {
 	transform: translate(-7px, 1px);
 }
 
-/********************** 
+/**********************
 * Table Wizard Popup fix
 **********************/
 .k-editor-dialog.k-editor-table-wizard-dialog .k-tabstrip .k-tabstrip-items {
@@ -2078,7 +2077,7 @@ table.k-editor {
 	overflow-y: scroll;
 }
 
-/********************** 
+/**********************
 * Focus for tab-navigation
 **********************/
 a:focus,
@@ -2100,7 +2099,7 @@ textarea:focus,
 	border-color: var(--primary-color);
 }
 
-/********************** 
+/**********************
 * Focus for tab-navigation
 **********************/
 a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus, .k-button:focus {
@@ -2116,7 +2115,7 @@ a:focus, button:focus, input:focus, select:focus, summary:focus, textarea:focus,
 	border-color: var(--primary-color);
 }
 
-/********************** 
+/**********************
 * CodeMirror
 **********************/
 .dynamicTabContent .CodeMirror-fullscreen {

@@ -5,23 +5,23 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Customers.Models;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
-using Api.Modules.Templates.Models.Preview;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Tenants.Models;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Templates.Enums;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
-using ITemplatesService = Api.Modules.Templates.Interfaces.ITemplatesService;
 
 namespace Api.Modules.Templates.Controllers
 {
@@ -36,47 +36,45 @@ namespace Api.Modules.Templates.Controllers
     public class TemplatesController : ControllerBase
     {
         private readonly ITemplatesService templatesService;
-        private readonly IPreviewService previewService;
         private readonly IHistoryService historyService;
         private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of TemplatesController.
         /// </summary>
-        public TemplatesController(ITemplatesService templatesService, IOptions<GclSettings> gclSettings, IPreviewService previewService, IHistoryService historyService)
+        public TemplatesController(ITemplatesService templatesService, IOptions<GclSettings> gclSettings, IHistoryService historyService)
         {
             this.templatesService = templatesService;
-            this.previewService = previewService;
             this.historyService = historyService;
             this.gclSettings = gclSettings.Value;
         }
 
         /// <summary>
-        /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the customer's website.
+        /// Gets the CSS that should be used for HTML editors, so that their content will look more like how it would look on the tenant's website.
         /// </summary>
         /// <returns>A string that contains the CSS that should be loaded in the HTML editor.</returns>
         [HttpGet]
         [Route("css-for-html-editors")]
         [ProducesResponseType(typeof(Dictionary<string, string>), StatusCodes.Status200OK)]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCssForHtmlEditorsAsync([FromQuery] CustomerInformationModel customerInformation)
+        public async Task<IActionResult> GetCssForHtmlEditorsAsync([FromQuery] TenantInformationModel tenantInformation)
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
-            var userId = String.IsNullOrWhiteSpace(customerInformation.encryptedUserId) ? 0 : Int32.Parse(customerInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+            var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.GroupSid, customerInformation.subDomain ?? "")
+                new Claim(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
             };
             var dummyClaimsIdentity = new ClaimsIdentity(claims);
             //Set the sub domain for the database connection.
-            HttpContext.Items[HttpContextConstants.SubDomainKey] = customerInformation.subDomain;
+            HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
             return (await templatesService.GetCssForHtmlEditorsAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/css");
         }
-        
+
         /// <summary>
-        /// Gets a query from the wiser database and executes it in the customer database.
+        /// Gets a query from the wiser database and executes it in the tenant database.
         /// </summary>
         /// <param name="templateName">The encrypted name of the wiser template.</param>f
         [HttpGet]
@@ -94,7 +92,7 @@ namespace Api.Modules.Templates.Controllers
 
             return (await templatesService.GetAndExecuteQueryAsync((ClaimsIdentity)User.Identity, templateName, requestPostData)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Retrieve the tree view section underlying the parentId. Transforms the tree view section into a list of TemplateTreeViewModels.
         /// </summary>
@@ -107,33 +105,22 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.GetTreeViewSectionAsync((ClaimsIdentity)User.Identity, parentId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Retrieve the history of the template. This will include changes made to dynamic content between the releases of templates and the publishes to different environments from this template. This data is collected and combined in a TemnplateHistoryOverviewModel
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the history from.</param>
+        /// <param name="pageNumber">page that needs to be loaded in</param>
+        /// <param name="itemsPerPage">amount of items per page</param>
         /// <returns>A TemplateHistoryOverviewModel containing a list of templatehistorymodels and a list of publishlogmodels. The model contains base info and a list of changes made within the version and its sub components (e.g. dynamic content, publishes).</returns>
         [HttpGet]
         [Route("{templateId:int}/history")]
         [ProducesResponseType(typeof(TemplateHistoryOverviewModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetHistoryAsync(int templateId)
+        public async Task<IActionResult> GetHistoryAsync(int templateId, int pageNumber = 1, int itemsPerPage = 50)
         {
-            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+            return (await templatesService.GetTemplateHistoryAsync((ClaimsIdentity)User.Identity, templateId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }
-        
-        /// <summary>
-        /// Retrieve al the preview profiles for an item.
-        /// </summary>
-        /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
-        /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
-        [HttpGet]
-        [Route("{templateId:int}/preview")]
-        [ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> PreviewTabAsync(int templateId)
-        {
-            return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
-        }
-        
+
         /// <summary>
         /// Get the meta data (name, changedOn, changedBy etc) from a template.
         /// </summary>
@@ -148,7 +135,7 @@ namespace Api.Modules.Templates.Controllers
         }
 
         /// <summary>
-        /// Retrieve the latest version of the template. 
+        /// Retrieve the latest version of the template.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve.</param>
         /// <returns>A template model containing the data of the templateversion.</returns>
@@ -158,6 +145,33 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GetSettingsAsync(int templateId)
         {
             return (await templatesService.GetTemplateSettingsAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Retrieve the latest version of the editor value of the template in an object instead of raw XML.
+        /// Also add the options for the available fields.
+        /// </summary>
+        /// <param name="templateId">The id of the template to retrieve the editor value of.</param>
+        /// <returns>A object model containing the data of the template editor value.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/wtsconfiguration")]
+        [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetWtsConfigurationAsync(int templateId)
+        {
+            return (await templatesService.GetTemplateWtsConfigurationAsync((ClaimsIdentity)User.Identity, templateId)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Save the configuration for the given template.
+        /// </summary>
+        /// <param name="templateId">The id of the template to save the configuration to.</param>
+        /// <param name="data"> A <see cref="TemplateWtsConfigurationModel"/> containing the data of the template editor value.</param>
+        [HttpPost]
+        [Route("{templateId:int}/wtsconfiguration")]
+        [ProducesResponseType(typeof(TemplateWtsConfigurationModel), StatusCodes.Status200OK)]
+        public async Task<IActionResult> SaveConfigurationAsync(int templateId, TemplateWtsConfigurationModel data)
+        {
+            return (await templatesService.SaveAsync((ClaimsIdentity)User.Identity, templateId, data)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -215,17 +229,16 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> PublishToEnvironmentAsync(int templateId, Environments environment, int version)
         {
             var currentPublished = await templatesService.GetTemplateEnvironmentsAsync(templateId);
-            return currentPublished.StatusCode != HttpStatusCode.OK 
-                ? currentPublished.GetHttpResponseMessage() 
+            return currentPublished.StatusCode != HttpStatusCode.OK
+                ? currentPublished.GetHttpResponseMessage()
                 : (await templatesService.PublishToEnvironmentAsync((ClaimsIdentity)User.Identity, templateId, version, environment, currentPublished.ModelObject)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Creates an empty template with the given name, type and parent template.
         /// </summary>
         /// <param name="parentId">The id of the parent template of the template that will be created.</param>
-        /// <param name="name">The name to give the template that will be created.</param>
-        /// <param name="type">The type of the new template that will be created.</param>
+        /// <param name="newTemplate">Model class with the needed info to make the template</param>
         /// <returns>The id of the newly created template. This can be used to update the interface accordingly.</returns>
         [HttpPut]
         [Route("{parentId:int}")]
@@ -247,9 +260,9 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> SaveAsync(int templateId, TemplateSettingsModel templateData, bool skipCompilation = false)
         {
             templateData.TemplateId = templateId;
-            return (await templatesService.SaveTemplateVersionAsync((ClaimsIdentity)User.Identity, templateData, skipCompilation)).GetHttpResponseMessage();
+            return (await templatesService.SaveAsync((ClaimsIdentity)User.Identity, templateData, skipCompilation)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Renames a template. This will create a new version of the template with the name, so that we can always see in the history that the name has been changed.
         /// </summary>
@@ -262,7 +275,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.RenameAsync((ClaimsIdentity)User.Identity, templateId, newName)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Deletes a template. This will not actually delete it from the database, but add a new version with removed = 1 instead.
         /// </summary>
@@ -275,7 +288,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.DeleteAsync((ClaimsIdentity)User.Identity, templateId, alsoDeleteChildren)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Search for a template.
         /// </summary>
@@ -287,7 +300,7 @@ namespace Api.Modules.Templates.Controllers
         {
             return (await templatesService.SearchAsync((ClaimsIdentity)User.Identity, searchValue)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Moves a template to a new position.
         /// </summary>
@@ -300,62 +313,6 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> MoveAsync(int sourceId, int destinationId, [FromQuery]TreeViewDropPositions dropPosition)
         {
             return (await templatesService.MoveAsync((ClaimsIdentity)User.Identity, sourceId, destinationId, dropPosition)).GetHttpResponseMessage();
-        }
-        
-        /// <summary>
-        /// Retrieve al the preview profiles for an item.
-        /// </summary>
-        /// <param name="templateId">the id of the item to retrieve the preview items of.</param>
-        /// <returns>A list of PreviewProfileModel containing the profiles that are available for the given template</returns>
-        [HttpGet]
-        [Route("{templateId:int}/profiles")]
-        [ProducesResponseType(typeof(List<PreviewProfileModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPreviewProfilesAsync(int templateId)
-        {
-            return (await previewService.GetAsync(templateId)).GetHttpResponseMessage();
-        }
-        
-        /// <summary>
-        /// Creates a new instance of a preview profile with the given data.
-        /// </summary>
-        /// <param name="profile">A PreviewProfileModel containing the data of the profile to create</param>
-        /// <param name="templateId"></param>
-        [HttpPost]
-        [Route("{templateId:int}/profiles")]
-        [ProducesResponseType(typeof(PreviewProfileModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> CreatePreviewProfileAsync(int templateId, PreviewProfileModel profile)
-        {
-            return (await previewService.CreateAsync(profile, templateId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Edit an existing profile. The existing profile with the given Id in the profile will be overwritten.
-        /// </summary>
-        /// <param name="templateId">The id of the template that is bound to the profile</param>
-        /// <param name="profileId">The ID of the profile to update.</param>
-        /// <param name="profile">A Json that meets the standards of a PreviewProfileModel</param>
-        /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpPut]
-        [Route("{templateId:int}/profiles/{profileId:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> EditPreviewProfileAsync(int templateId, int profileId, PreviewProfileModel profile)
-        {
-            profile.Id = profileId;
-            return (await previewService.UpdateAsync(profile, templateId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Delete a profile from the database. 
-        /// </summary>
-        /// <param name="templateId">The id of the template bound to the profile. This is added a an extra security for the deletion.</param>
-        /// <param name="profileId">The id of the profile that is to be deleted</param>
-        /// <returns>An int confirming the affected rows of the query.</returns>
-        [HttpDelete]
-        [Route("{templateId:int}/profiles/{profileId:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> DeletePreviewProfilesAsync(int templateId, int profileId)
-        {
-            return (await previewService.DeleteAsync(templateId, profileId)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -370,19 +327,6 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "", Environments? environment = null)
         {
             return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity)User.Identity, 0, startFrom, environment)).GetHttpResponseMessage();
-        }
-        
-        /// <summary>
-        /// Generates a preview for a HTML template.
-        /// </summary>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the template as it would look on the website.</returns>
-        [HttpPost]
-        [Route("preview")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GeneratePreviewAsync(GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, requestModel)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -450,6 +394,67 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> DeployToBranchAsync(int templateId, int branchId)
         {
             return (await templatesService.DeployToBranchAsync((ClaimsIdentity) User.Identity, new List<int> { templateId }, branchId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Get the settings for measurements of a template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to get the settings of.</param>
+        /// <returns>The measurement settings of the template.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/measurement-settings")]
+        [ProducesResponseType(typeof(MeasurementSettings), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMeasurementSettingsAsync(int templateId)
+        {
+            return (await templatesService.GetMeasurementSettingsAsync(templateId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Save the settings for measurements of this template.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to save the settings for.</param>
+        /// <param name="settings">The new settings.</param>
+        [HttpPut]
+        [Route("{templateId:int}/measurement-settings")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> SaveMeasurementSettingsAsync(int templateId, [FromBody]MeasurementSettings settings)
+        {
+            return (await templatesService.SaveMeasurementSettingsAsync(settings, templateId)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Get rendering logs from database, filtered by the parameters.
+        /// </summary>
+        /// <param name="templateId">The ID of the template to get the render logs for.</param>
+        /// <param name="version">The version of the template or component.</param>
+        /// <param name="urlRegex">A regex for filtering logs on certain URLs/pages.</param>
+        /// <param name="environment">The environment to get the logs for. Set to null to get the logs for all environments. Default value is null.</param>
+        /// <param name="userId">The ID of the website user, if you want to get the logs for a specific user only.</param>
+        /// <param name="languageCode">The language code that is used on the website, if you want to get the logs for a specific language only.</param>
+        /// <param name="pageSize">The amount of logs to get. Set to 0 to get all of then. Default value is 500.</param>
+        /// <param name="pageNumber">The page number. Default value is 1. Only applicable if pageSize is greater than zero.</param>
+        /// <param name="getDailyAverage">Set this to true to get the average render time per day, instead of getting every single render log separately. Default is false.</param>
+        /// <param name="start">Only get results from this start date and later.</param>
+        /// <param name="end">Only get results from this end date and earlier.</param>
+        /// <returns>A list of <see cref="RenderLogModel"/> with the results.</returns>
+        [HttpGet]
+        [Route("{templateId:int}/render-logs")]
+        [ProducesResponseType(typeof(MeasurementSettings), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetRenderLogsAsync(int templateId, int version = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
+            string languageCode = null, int pageSize = 500, int pageNumber = 1,
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            return (await templatesService.GetRenderLogsAsync(templateId, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Converts a JCL template to a GCL template.
+        /// </summary>
+        [HttpPost, Route("import-legacy"), ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ConvertLegacyTemplatesToNewTemplatesAsync()
+        {
+            return (await templatesService.ConvertLegacyTemplatesToNewTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
     }
 }

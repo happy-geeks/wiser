@@ -11,12 +11,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
-using Api.Modules.Customers.Interfaces;
 using Api.Modules.Kendo.Enums;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
@@ -24,12 +24,28 @@ using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.History;
+using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
+using Api.Modules.Tenants.Interfaces;
+using GeeksCoreLibrary.Components.Account;
+using GeeksCoreLibrary.Components.DataSelectorParser;
+using GeeksCoreLibrary.Components.Filter;
+using GeeksCoreLibrary.Components.Pagination;
+using GeeksCoreLibrary.Components.Pagination.Models;
+using GeeksCoreLibrary.Components.Repeater;
+using GeeksCoreLibrary.Components.Repeater.Models;
+using GeeksCoreLibrary.Components.ShoppingBasket;
+using GeeksCoreLibrary.Components.ShoppingBasket.Models;
+using GeeksCoreLibrary.Components.WebForm;
+using GeeksCoreLibrary.Components.WebForm.Models;
+using GeeksCoreLibrary.Components.WebPage;
+using GeeksCoreLibrary.Components.WebPage.Models;
+using GeeksCoreLibrary.Core.Cms;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -41,17 +57,12 @@ using GeeksCoreLibrary.Modules.Templates.Models;
 using LibSassHost;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Razor;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify;
 using NUglify.JavaScript;
@@ -66,7 +77,7 @@ namespace Api.Modules.Templates.Services
         private static readonly Dictionary<string, string> TemplateQueryStrings = new();
 
         private readonly IHttpContextAccessor httpContextAccessor;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService;
         private readonly IDatabaseConnection clientDatabaseConnection;
@@ -85,14 +96,38 @@ namespace Api.Modules.Templates.Services
         private readonly ApiSettings apiSettings;
         private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IBranchesService branchesService;
+        private readonly IMeasurementsDataService measurementsDataService;
+        private readonly IDynamicContentDataService dynamicContentDataService;
+        private readonly IWtsConfigurationService wtsConfigurationService;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
         /// </summary>
-        public TemplatesService(IHttpContextAccessor httpContextAccessor, IWiserCustomersService wiserCustomersService, IStringReplacementsService stringReplacementsService, GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService, IDatabaseConnection clientDatabaseConnection, IApiReplacementsService apiReplacementsService, ITemplateDataService templateDataService, IHistoryService historyService, IWiserItemsService wiserItemsService, IPagesService pagesService, IRazorViewEngine razorViewEngine, ITempDataProvider tempDataProvider, IObjectsService objectsService, IDatabaseHelpersService databaseHelpersService, ILogger<TemplatesService> logger, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment, IBranchesService branchesService)
+        public TemplatesService(IHttpContextAccessor httpContextAccessor,
+            IWiserTenantsService wiserTenantsService,
+            IStringReplacementsService stringReplacementsService,
+            GeeksCoreLibrary.Modules.Templates.Interfaces.ITemplatesService gclTemplatesService,
+            IDatabaseConnection clientDatabaseConnection,
+            IApiReplacementsService apiReplacementsService,
+            ITemplateDataService templateDataService,
+            IHistoryService historyService,
+            IWiserItemsService wiserItemsService,
+            IPagesService pagesService,
+            IRazorViewEngine razorViewEngine,
+            ITempDataProvider tempDataProvider,
+            IObjectsService objectsService,
+            IDatabaseHelpersService databaseHelpersService,
+            ILogger<TemplatesService> logger,
+            IOptions<GclSettings> gclSettings,
+            IOptions<ApiSettings> apiSettings,
+            IWebHostEnvironment webHostEnvironment,
+            IBranchesService branchesService,
+            IMeasurementsDataService measurementsDataService,
+            IDynamicContentDataService dynamicContentDataService,
+            IWtsConfigurationService wtsConfigurationService)
         {
             this.httpContextAccessor = httpContextAccessor;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.stringReplacementsService = stringReplacementsService;
             this.gclTemplatesService = gclTemplatesService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -110,6 +145,9 @@ namespace Api.Modules.Templates.Services
             this.apiSettings = apiSettings.Value;
             this.webHostEnvironment = webHostEnvironment;
             this.branchesService = branchesService;
+            this.measurementsDataService = measurementsDataService;
+            this.dynamicContentDataService = dynamicContentDataService;
+            this.wtsConfigurationService = wtsConfigurationService;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -152,10 +190,10 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetAndExecuteQueryAsync(ClaimsIdentity identity, string templateName, IFormCollection requestPostData = null)
         {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
 
             // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
-            GclSettings.Current.ExpiringEncryptionKey = customer.EncryptionKey;
+            GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
 
             var queryTemplate = GetQueryTemplate(0, templateName);
             queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
@@ -166,7 +204,7 @@ namespace Api.Modules.Templates.Services
                 queryTemplate.Content = stringReplacementsService.DoReplacements(queryTemplate.Content, requestPostData, true);
             }
 
-            var result = await gclTemplatesService.GetJsonResponseFromQueryAsync(queryTemplate, customer.EncryptionKey);
+            var result = await gclTemplatesService.GetJsonResponseFromQueryAsync(queryTemplate, tenant.EncryptionKey);
             return new ServiceResult<JToken>(result);
         }
 
@@ -216,8 +254,8 @@ namespace Api.Modules.Templates.Services
 	template.template_data_minified
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-WHERE (template.use_in_wiser_html_editors = 1 OR template.load_always = 1)
-AND template.template_type IN (2, 3)
+WHERE template.use_in_wiser_html_editors = 1
+AND template.template_type IN ({(int)TemplateTypes.Css}, {(int)TemplateTypes.Scss})
 AND otherVersion.id IS NULL
 ORDER BY template.ordering ASC");
 
@@ -273,7 +311,7 @@ ORDER BY template.ordering ASC");
         }
 
         /// <summary>
-        /// Return the query-string as it was formally stored in the database. These strings are now hardcoded. 
+        /// Return the query-string as it was formally stored in the database. These strings are now hardcoded.
         /// Settings are also hardcoded now.
         /// </summary>
         /// <param name="templateName"></param>
@@ -293,10 +331,7 @@ ORDER BY template.ordering ASC");
             {
                 if (new List<string>()
                     {
-                        "SEARCH_ITEMS_OLD",
                         "GET_ITEM_DETAILS",
-                        "GET_DESTINATION_ITEMS",
-                        "GET_DESTINATION_ITEMS_REVERSED",
                         "GET_DATA_FOR_TABLE",
                         "GET_DATA_FOR_FIELD_TABLE"
                     }.Contains(templateName))
@@ -335,217 +370,7 @@ ORDER BY template.ordering ASC");
         {
             if (TemplateQueryStrings.Count == 0)
             {
-                //MYSQL-QUERY TO GENERATE THE CODE TO FILL THE DICTIONARY
-                //select CONCAT('TemplateQueryStrings.Add("', name, '", @"', REPLACE(template, '"', '""'), '");') from easy_templates where binary upper(name) = name and COALESCE(trim(name), "") != "" and deleted = 0
-                //and version = (select MAX(version) from easy_templates M where M.name = easy_templates.name and M.deleted = 0)    //M.itemid = easy_templates.itemid => is itemid important here?
-
                 //load all the template queries into the dictionary
-                TemplateQueryStrings.Add("GET_DATA_FOR_RADIO_BUTTONS", @"SET @_itemId = {itemId};
-SET @entityproperty_id = {propertyid};
-SET @querytext = (SELECT data_query FROM wiser_entityproperty WHERE id=@entityproperty_id);
-
-PREPARE stmt1 FROM @querytext;
-EXECUTE stmt1; #USING @itemid;");
-                TemplateQueryStrings.Add("GET_ITEM_HTML_FOR_NEW_ITEMS", @"/********* IMPORTANT NOTE: If you change something in this query, please also change it in the query 'GET_ITEM_HTML' *********/
-SET SESSION group_concat_max_len = 1000000;
-SET @_moduleId = {moduleId};
-SET @_entityType = '{entityType}';
-
-SELECT 
-	e.tab_name,
-    
-	GROUP_CONCAT(
-        REPLACE(
-            REPLACE(
-                REPLACE(
-                    REPLACE(
-                         REPLACE(
-                             REPLACE(
-                                 REPLACE(
-                                   REPLACE(
-                                     REPLACE(
-                                       REPLACE(
-                                         REPLACE(t.html_template, '{title}', IFNULL(e.display_name,e.property_name))
-                                       ,'{options}', IFNULL(e.options, ''))
-                                     ,'{hint}', IFNULL(e.explanation,''))
-                                   ,'{default_value}', IFNULL(e.default_value, ''))
-                                 ,'{propertyId}', CONCAT('NEW_', e.id))
-                             ,'{itemId}', 0)
-                         ,'{propertyName}', e.property_name)
-                    ,'{extraAttribute}', IF(IFNULL(e.default_value, 0) > 0, 'checked', ''))
-                ,'{dependsOnField}', IFNULL(e.depends_on_field, ''))
-            ,'{dependsOnOperator}', IFNULL(e.depends_on_operator, ''))
-        ,'{dependsOnValue}', IFNULL(e.depends_on_value, ''))
-       ORDER BY e.tab_name ASC, e.ordering ASC SEPARATOR '') AS html_template,
-            
-        GROUP_CONCAT(
-            REPLACE(
-                REPLACE(
-                    REPLACE(
-                           REPLACE(
-                               REPLACE(
-                                   REPLACE(
-                                       REPLACE(
-                                           REPLACE(
-                                              REPLACE(t.script_template, '{propertyId}', CONCAT('NEW_', e.id)), 
-                                                 '{default_value}', CONCAT(""'"", REPLACE(IFNULL(e.default_value, """"), "","", ""','""), ""'"")
-                                              ),
-                                       '{options}', IF(e.options IS NULL OR e.options = '', '{}', e.options)),
-                                   '{propertyName}', e.property_name),
-                               '{itemId}', 0),
-                           '{title}', IFNULL(e.display_name, e.property_name)),
-                        '{dependsOnField}', IFNULL(e.depends_on_field, '')),
-                    '{dependsOnOperator}', IFNULL(e.depends_on_operator, '')),
-                '{dependsOnValue}', IFNULL(e.depends_on_value, ''))
-           ORDER BY e.tab_name ASC, e.ordering ASC SEPARATOR '') AS script_template
-            
-FROM wiser_entityproperty e
-JOIN wiser_field_templates t ON t.field_type = e.inputtype
-WHERE e.module_id = @_moduleId
-AND e.entity_name = @_entityType
-GROUP BY e.tab_name
-ORDER BY e.tab_name ASC, e.ordering ASC");
-                TemplateQueryStrings.Add("GET_EMAIL_TEMPLATES", @"# Module ID 64 is MailTemplates
-# Using texttypes 60 (subject) and 61 (content)
-
-SELECT
-    i.id AS template_id,
-    i.`name` AS template_name,
-    s.content AS email_subject,
-    c.content AS email_content
-FROM easy_items i
-JOIN item_content s ON s.item_id = i.id AND s.texttype_id = 60
-JOIN item_content c ON c.item_id = i.id AND c.texttype_id = 61
-WHERE i.moduleid = 64
-GROUP BY i.id");
-                TemplateQueryStrings.Add("SCHEDULER_GET_TEACHERS", @"SELECT 
-	""Kevin Manders"" AS `text`,
-    1 AS `value`
-UNION
-	SELECT 
-	""Test Docent 2"" ,
-    2
-UNION
-	SELECT 
-	""Test Docent 3"" ,
-    3
-UNION
-	SELECT 
-	""Test Docent 4"" ,
-    4");
-                TemplateQueryStrings.Add("SCHEDULER_UPDATE_FAVORITE", @"# insert ignore to favourite
-
-SET @user_id = '{userId}'; # for now always 1
-SET @favorite_id = '{favoriteId}';
-SET @search_input = '{search}';
-SET @view_type = '{type}';
-SET @set_teacher = '{teacher}';
-SET @set_category = '{category}';
-SET @set_location = '{location}';
-
-INSERT INTO schedule_favorites (user_id, favorite_id, search, view_type, teacher, category, location)
-VALUES(
-    @user_id, 
-    @favorite_id, 
-    @search_input, 
-    @view_type, 
-    @set_teacher, 
-    @set_category, 
-    @set_location)
-ON DUPLICATE KEY UPDATE 
-	search = @search_input, 
-    view_type = @view_type, 
-    teacher = @set_teacher, 
-    category = @set_category, 
-    location = @set_location;
-SELECT 1;");
-
-                TemplateQueryStrings.Add("SET_COMMUNICATION_DATA_SELECTOR", @"SET @_communication_id = {itemId};
-SET @_dataselector_id = {dataSelectorId};
-
-UPDATE wiser_communication
-SET receiver_selectionid = @_dataselector_id
-WHERE id = @_communication_id;
-
-SELECT ROW_COUNT() > 0 AS updateSuccessful;");
-                TemplateQueryStrings.Add("GET_ENTITY_TYPES", @"SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
-
-SELECT DISTINCT `name` AS entityType
-FROM wiser_entity
-WHERE
-    `name` <> ''
-    AND IF(@_module_list = '', 1 = 1, FIND_IN_SET(module_id, @_module_list)) > 0
-ORDER BY `name`");
-                TemplateQueryStrings.Add("CHECK_DATA_SELECTOR_NAME_EXISTS", @"SET @_name = '{name}';
-
-# Will automatically be NULL if it doesn't exist, which is good.
-SET @_item_id = (SELECT id FROM wiser_data_selector WHERE `name` = @_name LIMIT 1);
-
-SELECT @_item_id IS NOT NULL AS nameExists;");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_LINKED_TO", @"################################################
-#                                              #
-#   NOTE: THIS QUERY IS DEPRECATED!            #
-#   USE THE '_DOWN' OR '_UP' VERSION INSTEAD   #
-#                                              #
-################################################
-
-SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
-SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
-
-SELECT
-    display_name AS `name`,
-    CAST(IF(
-        inputtype = 'item-linker',
-        JSON_OBJECT(
-            'inputType', inputtype,
-            'type', `options`->>'$.linkTypeName',
-            'entityTypes', (SELECT GROUP_CONCAT(DISTINCT entity_name) FROM wiser_itemlink WHERE type_name = `options`->>'$.linkTypeName'),
-            'moduleId', `options`->>'$.moduleId'
-        ),
-        JSON_OBJECT(
-            'inputType', inputtype,
-            'type', `options`->>'$.entityType',
-            'entityTypes', `options`->>'$.entityType'
-        )
-    ) AS CHAR) AS `options`
-FROM wiser_entityproperty
-WHERE
-    IF(@_module_list = '', 1 = 1, FIND_IN_SET(module_id, @_module_list))
-    AND FIND_IN_SET(entity_name, @_entity_type_list)
-    AND inputtype IN ('item-linker', 'sub-entities-grid')
-ORDER BY display_name");
-                TemplateQueryStrings.Add("GET_WISER_TEMPLATES", @"SELECT
-    i.id AS template_id,
-    i.title AS template_name,
-    '' AS email_subject,
-    IF(d.long_value IS NULL OR d.long_value = '', d.`value`, d.long_value) AS email_content
-FROM wiser_item i
-JOIN wiser_itemdetail d ON d.item_id = i.id AND d.`key` = 'html_template'
-WHERE i.entity_type = 'template'
-ORDER BY i.title");
-                TemplateQueryStrings.Add("GET_PROPERTY_VALUES", @"SELECT wid.`value` AS `text`, wid.`value`
-FROM wiser_item wi
-JOIN wiser_itemdetail wid ON wid.item_id = wi.id
-WHERE wi.entity_type = '{entityName}' AND wid.`key` = '{propertyName}' AND wid.`value` <> ''
-GROUP BY wid.`value`
-ORDER BY wid.`value`
-LIMIT 25");
-                TemplateQueryStrings.Add("SCHEDULER_FAVORITE_CLEAR", @"SET @user_id = {userId};
-SET @favorite_id = {favId};
-
-DELETE FROM schedule_favorites WHERE user_id= @user_id AND favorite_id=@favorite_id LIMIT 1");
-                TemplateQueryStrings.Add("SCHEDULER_LOAD_FAVORITES", @"SET @user_id = '{userId}';
-
-
-SELECT 
-	favorite_id AS favoriteId,
-    search,
-    view_type AS type,
-    teacher,
-    category,
-    location
-FROM schedule_favorites WHERE user_id=@user_id;
-");
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_ENTITY_NAMES", @"SELECT `name`, module_id AS moduleId
 FROM wiser_entity
 WHERE `name` <> ''
@@ -555,17 +380,6 @@ SET removed = 1
 WHERE id = {itemId};
 
 SELECT ROW_COUNT() > 0 AS updateSuccessful;");
-                TemplateQueryStrings.Add("SET_ORDERING_DISPLAY_NAME", @"SET @_entity_name = {selectedEntityName};
-SET @_tab_name = {selectedTabName};
-SET @_order = {id};
-SET @_display_name = {dislayName};
-
-SET @_tab_name= IF( @_tab_name= ""gegevens"", """", @_tab_name);
-
-UPDATE wiser_entityproperty
-SET ordering = @_order
-WHERE entity_name = @_entity_name AND tab_name = @_tab_name AND display_name = @_display_name
-LIMIT 1");
                 TemplateQueryStrings.Add("UPDATE_LINK", @"SET @_linkId = {linkId};
 SET @_destinationId = {destinationId};
 SET @newOrderNumber = IFNULL((SELECT MAX(ordering) + 1 FROM wiser_itemlink WHERE destination_item_id = @destinationId), 1);
@@ -582,41 +396,18 @@ WHERE il1.id = @_linkId;
 UPDATE wiser_itemlink
 SET destination_item_id = @destinationId, ordering = @newOrderNumber
 WHERE id = @_linkId;");
-                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, display_name AS displayName, property_name AS propertyName FROM wiser_entityproperty
-WHERE entity_name = '{entityName}'");
+                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, CONCAT(IF(tab_name = """", ""Gegevens"", tab_name), "" --> "", display_name) AS displayName, property_name AS propertyName FROM wiser_entityproperty
+WHERE entity_name = '{entityName}'
+ORDER BY displayName");
 
-                TemplateQueryStrings.Add("GET_AIS_DASHBOARD_OVERVIEW_DATA", @"SET @totalResults = (SELECT COUNT(*) FROM `ais_dashboard` WHERE DATE(started) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND FIND_IN_SET(color, '{color}'));
-
-SELECT 
-	id,
-    taskname,
-    config,
-    friendlyname AS friendlyName,
-    DATE_FORMAT(started, '%Y-%m-%d') AS startedDate,
-    DATE_FORMAT(started, '%H:%i') AS startedTime,
-    SUBTIME(TIME(ended), TIME(started)) AS runtime,
-    IFNULL(percentage, 0) AS percentageCompleted,
-    IFNULL(result, '') AS result,
-    IFNULL(groupname, '') AS groupname,
-	color, 
-    counter,
-    IFNULL(debuginformation, '') AS debugInformation,
-    0 AS hasChildren,
-    @totalResults AS totalResults
-FROM `ais_dashboard`
-WHERE DATE(started) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) 
-AND FIND_IN_SET(color, '{color}')
-ORDER BY startedDate DESC, startedTime DESC
-LIMIT {skip}, {take}");
-                TemplateQueryStrings.Add("GET_ALL_INPUT_TYPES", @"SELECT DISTINCT inputtype FROM wiser_entityproperty ORDER BY inputtype");
                 TemplateQueryStrings.Add("DELETE_ENTITYPROPERTY", @"DELETE FROM wiser_entityproperty WHERE tab_name = '{tabName}' AND entity_name = '{entityName}' AND id = '{entityPropertyId}'");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_ADMIN", @"SELECT id, entity_name AS entityName, tab_name AS tabName, display_name AS displayName, ordering FROM wiser_entityproperty
-WHERE tab_name = '{tabName}' AND entity_name = '{entityName}'
+WHERE tab_name = IF('{tabName}' = 'Gegevens', '', '{tabName}') AND entity_name = '{entityName}'
 ORDER BY ordering ASC");
                 TemplateQueryStrings.Add("GET_ENTITY_LIST", @"SELECT 
 	entity.id,
 	IF(entity.name = '', 'ROOT', entity.name) AS name,
-	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(NULLIF(entity.friendly_name, ''), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
+	CONCAT(IFNULL(module.name, CONCAT('Module #', entity.module_id)), ' --> ', IFNULL(CONCAT(NULLIF(entity.friendly_name, ''), ' (', entity.name, ')'), IF(entity.name = '', 'ROOT', entity.name))) AS displayName,
     entity.module_id AS moduleId 
 FROM wiser_entity AS entity
 LEFT JOIN wiser_module AS module ON module.id = entity.module_id
@@ -631,31 +422,6 @@ WHERE
     AND language_code <> ''
 GROUP BY language_code
 ORDER BY language_code");
-                TemplateQueryStrings.Add("UPDATE_ORDERING_ENTITY_PROPERTY", @"SET @old_index = {oldIndex} + 1;
-SET @new_index = {newIndex};
-SET @id = {currentId}; 
-SET @entity_name = '{entityName}';
-
-# move property to given index
-UPDATE wiser_entityproperty SET ordering = @new_index WHERE id=@id;
-
-# set other items to given index
-UPDATE wiser_entityproperty 
-SET ordering = IF(@old_index > @new_index, ordering, ordering) 
-WHERE ordering > IF(@old_index > @new_index, @new_index, @old_index)
-AND ordering < IF(@old_index > @new_index, @old_index, @new_index)
-AND entity_name = @entity_name
-AND id <> @id;
-
-# update record where index equals the new index value
-UPDATE wiser_entityproperty
-	SET ordering = IF(@old_index > @new_index, ordering+1, ordering-1) 
-WHERE 
-	ordering = @new_index AND 
-	entity_name = @entity_name AND 
-	tab_name =  @tab_name AND
-	id <> @id;
-");
                 TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_TABNAMES", @"SELECT id, IF(tab_name = '', 'Gegevens', tab_name) AS tabName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'
 GROUP BY tab_name
@@ -665,10 +431,6 @@ WHERE role_name != ''
 ORDER BY role_name ASC;");
                 TemplateQueryStrings.Add("INSERT_ROLE", @"INSERT INTO `wiser_roles` (`role_name`) VALUES ('{displayName}');");
                 TemplateQueryStrings.Add("DELETE_ROLE", @"DELETE FROM `wiser_roles` WHERE id={roleId}");
-                TemplateQueryStrings.Add("GET_ITEMLINK_NAMES", @"SELECT DISTINCT type_name AS type_name_text, type_name AS type_name_value FROM `wiser_itemlink` WHERE type_name <> """" AND type_name IS NOT NULL");
-                TemplateQueryStrings.Add("DELETE_RIGHT_ASSIGNMENT", @"DELETE FROM `wiser_permission` 
-WHERE role_id = {role_id}
-	AND entity_property_id = {entity_id}");
                 TemplateQueryStrings.Add("UPDATE_ENTITY_PROPERTY_PERMISSIONS", @"INSERT INTO `wiser_permission` (
     role_id, 
     entity_name, 
@@ -685,147 +447,17 @@ WHERE role_id = {role_id}
 ON DUPLICATE KEY UPDATE permissions = {permissionCode}");
                 TemplateQueryStrings.Add("GET_GROUPNAME_FOR_SELECTION", @"SELECT DISTINCT group_name AS groupName FROM `wiser_entityproperty`
 WHERE entity_name = '{selectedEntityName}' AND tab_name = '{selectedTabName}';");
-
-                TemplateQueryStrings.Add("GET_UNDERLYING_ENTITY_TYPES", @"#SET @_entity_type_list = IF('{entityTypes}' LIKE '{%}', '', '{entityTypes}');
-SET @_entity_name = IF(
-    '{entityName}' NOT LIKE '{%}',
-    '{entityName}',
-    # Check for old query string name.
-    IF(
-        '{entityTypes}' NOT LIKE '{%}',
-        SUBSTRING_INDEX('{entityTypes}', ',', 1),
-        ''
-    )
-);
-
-SELECT inputType, `options`, '' AS acceptedChildTypes
-FROM wiser_entityproperty
-WHERE entity_name = @_entity_name AND inputtype IN ('item-linker', 'sub-entities-grid')
-
-UNION
-
-SELECT 'sub-entities-grid' AS inputType, '' AS `options`, accepted_childtypes AS acceptedChildTypes
-FROM wiser_entity
-WHERE name = @_entity_name AND accepted_childtypes <> ''");
-                TemplateQueryStrings.Add("GET_PARENT_ENTITY_TYPES", @"#SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
-SET @_entity_name = IF(
-    '{entity_name}' NOT LIKE '{%}',
-    '{entity_name}',
-    # Check for old query string name.
-    IF(
-        '{entity_types}' NOT LIKE '{%}',
-        SUBSTRING_INDEX('{entity_types}', ',', 1),
-        ''
-    )
-);
-
-SELECT entity_name AS `name`, 'sub-entities-grid' AS inputType, IFNULL(`options`, '') AS `options`
-FROM wiser_entityproperty
-#WHERE inputtype = 'sub-entities-grid' AND CheckValuesInString(@_entity_name, `options`, '""', '""') = 1
-WHERE inputtype = 'sub-entities-grid' AND `options` LIKE CONCAT('%""', @_entity_name, '""%')
-
-UNION
-
-SELECT `name`, 'sub-entities-grid' AS inputType, '' AS `options`
-FROM wiser_entity
-WHERE FIND_IN_SET(accepted_childtypes, @_entity_name) > 0");
-                TemplateQueryStrings.Add("INSERT_NEW_MODULE", @"INSERT INTO `wiser_module` (
-	`id`,
-    `custom_query`,
-    `count_query`
-) VALUES (
-    {moduleId},
-    '',
-    ''
-);");
-                TemplateQueryStrings.Add("CHECK_IF_MODULE_EXISTS", @"SELECT id FROM `wiser_module` WHERE id = {moduleId};");
-                TemplateQueryStrings.Add("GET_MODULE_FIELDS", @"SELECT 
-    IFNULL(JSON_EXTRACT(`options`, '$.gridViewSettings.columns'), '') AS `fields`
-FROM `wiser_module`
-WHERE id = {module_id}");
-                TemplateQueryStrings.Add("GET_API_ACTION", @"SELECT 
-	CASE '{actionType}'
-		WHEN 'after_insert' THEN api_after_insert
-        WHEN 'after_update' THEN api_after_update
-        WHEN 'before_update' THEN api_before_update
-        WHEN 'before_delete' THEN api_before_delete
-    END AS apiConnectionId_encrypt_withdate
-FROM wiser_entity 
-WHERE name = '{entityType}';");
                 TemplateQueryStrings.Add("UPDATE_API_AUTHENTICATION_DATA", @"UPDATE wiser_api_connection SET authentication_data = '{authenticationData}' WHERE id = {id:decrypt(true)};");
                 TemplateQueryStrings.Add("DELETE_MODULE", @"DELETE FROM `wiser_module` WHERE id = {module_id};");
-                TemplateQueryStrings.Add("SAVE_MODULE_SETTINGS", @"SET @moduleType := '{module_type}';
-SET @moduleOptions := '{options}';
-
-UPDATE `wiser_module` SET 
-	custom_query = '{custom_query}',
-    count_query = '{count_query}',
-    options = NULLIF(@moduleOptions, '')
-WHERE id = {module_id};");
                 TemplateQueryStrings.Add("INSERT_ENTITYPROPERTY", @"SET @newOrderNr = IFNULL((SELECT MAX(ordering)+1 FROM wiser_entityproperty WHERE entity_name='{entityName}' AND tab_name = '{tabName}'),1);
 
 INSERT INTO wiser_entityproperty(entity_name, tab_name, display_name, property_name, ordering)
 VALUES('{entityName}', '{tabName}', '{displayName}', '{propertyName}', @newOrderNr);
 #spaties vervangen door underscore");
-                TemplateQueryStrings.Add("SEARCH_ITEMS_OLD", @"SET @mid = {moduleid};
-SET @parent = '{id:decrypt(true)}';
-SET @_entityType = IF('{entityType}' LIKE '{%}', '', '{entityType}');
-SET @_searchValue = '{search}';
-SET @_searchInTitle = IF('{searchInTitle}' LIKE '{%}' OR '{searchInTitle}' = '1', TRUE, FALSE);
-SET @_searchFields = IF('{searchFields}' LIKE '{%}', '', '{searchFields}');
-SET @_searchEverywhere = IF('{searchEverywhere}' LIKE '{%}', FALSE, {searchEverywhere});
-
-SELECT 
-	i.id,
-	i.id AS encryptedId_encrypt_withdate,
-	i.title AS name,
-	IF(ilc.id IS NULL, 0, 1) AS haschilds,
-	we.icon AS spriteCssClass,
-	ilp.destination_item_id AS destination_item_id_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-    i.entity_type,
-    CreateJsonSafeProperty(id.`key`) AS property_name,
-    id.`value` AS property_value,
-    ilp.type_name AS link_type
-FROM wiser_item i
-LEFT JOIN wiser_itemlink ilp ON ilp.destination_item_id = @parent AND ilp.item_id = i.id
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-LEFT JOIN wiser_itemlink ilc ON ilc.destination_item_id = i.id
-LEFT JOIN wiser_entity we ON we.name = i.entity_type
-WHERE i.removed = 0
-AND i.entity_type = @_entityType
-AND (@_searchEverywhere = TRUE OR ilp.id IS NOT NULL)
-AND (
-    (NOT @_searchInTitle AND @_searchFields = '')
-    OR (@_searchInTitle AND i.title LIKE CONCAT('%', @_searchValue, '%'))
-    OR (@_searchFields <> '' AND FIND_IN_SET(id.key, @_searchFields) AND id.value LIKE CONCAT('%', @_searchValue, '%'))
-)
-
-GROUP BY i.id, id.id
-ORDER BY ilp.ordering, i.title
-#LIMIT {skip}, {take}");
-                TemplateQueryStrings.Add("PUBLISH_LIVE", @"UPDATE wiser_item SET published_environment=4 WHERE id={itemid:decrypt(true)};");
-                TemplateQueryStrings.Add("PUBLISH_ITEM", @"UPDATE wiser_item SET published_environment=4 WHERE id={itemid:decrypt(true)};");
-                TemplateQueryStrings.Add("HIDE_ITEM", @"UPDATE wiser_item SET published_environment=0 WHERE id={itemid:decrypt(true)};");
                 TemplateQueryStrings.Add("RENAME_ITEM", @"SET @item_id={itemid:decrypt(true)};
 SET @newname='{name}';
 
 UPDATE wiser_item SET title=@newname WHERE id=@item_id LIMIT 1;");
-                TemplateQueryStrings.Add("LOAD_USER_SETTING", @"SET @user_id = '{encryptedUserId:decrypt(true)}';
-SET @setting_name = '{settingName}';
-SET @entity_type = 'wiser_user_settings';
-
-SELECT CONCAT(`value`, long_value) AS `value`
-FROM wiser_itemdetail detail
-	JOIN wiser_item item ON item.id=detail.item_id AND item.unique_uuid = @user_id AND item.entity_type=@entity_type
-WHERE detail.`key` = @setting_name ");
                 TemplateQueryStrings.Add("GET_UNDERLYING_LINKED_TYPES", @"SET @_entity_name = IF(
     '{entityName}' NOT LIKE '{%}',
     '{entityName}',
@@ -856,31 +488,6 @@ SELECT destination_entity_type AS entityType, type AS linkTypeNumber, `name` AS 
 FROM wiser_link
 WHERE connected_entity_type = @_entity_name AND show_in_data_selector = 1
 ORDER BY entityType");
-                TemplateQueryStrings.Add("SAVE_USER_SETTING", @"SET @user_id = '{encryptedUserId:decrypt(true)}';
-SET @setting_name = '{settingName}';
-SET @setting_value = '{settingValue}';
-SET @entity_type = 'wiser_user_settings';
-SET @title = 'Wiser user settings';
-
-SET @itemId = (SELECT id FROM wiser_item item WHERE item.unique_uuid = @user_id AND item.entity_type=@entity_type AND @setting_name <> ''AND @user_id <> '' AND @user_id NOT LIKE '{%}');
-
-# make sure the wiser item exists
-INSERT IGNORE INTO wiser_item (id, unique_uuid, entity_type, title)
-	VALUES(@itemId, @user_id, @entity_type, @title);
-
-# now update the correct value
-INSERT INTO wiser_itemdetail (item_id, `key`, `value`, `long_value`)
-	SELECT 
-		item.id,
-		@setting_name,
-		IF(LENGTH(@setting_value > 1000), '', @setting_value),
-		IF(LENGTH(@setting_value >= 1000), @setting_value, null)
-	FROM wiser_item item WHERE item.unique_uuid = @user_id AND item.entity_type=@entity_type
-ON DUPLICATE KEY UPDATE 
-	`value` = IF(LENGTH(@setting_value > 1000), '', @setting_value), 
-	`long_value` = IF(LENGTH(@setting_value >= 1000), @setting_value, null);
-    
-SELECT @setting_value;");
                 TemplateQueryStrings.Add("GET_ITEM_VALUE", @"SELECT
 	id,
     `key`,
@@ -934,100 +541,9 @@ UNION SELECT 'Algemeen' AS tabName, 'Gewijzigd door' AS displayName, 'changed_by
 UNION SELECT 'Algemeen' AS tabName, 'Naam' AS displayName, 'title' AS propertyName
 
 ORDER BY tabName ASC, displayName ASC");
-                TemplateQueryStrings.Add("GET_ALL_MODULES_INFORMATION", @"SELECT 
-	id,
-	custom_query,
-	count_query,
-	`options`,
-	IF(`options` IS NULL, 0, 1) AS `isGridview`,    
-    IF(`options` IS NULL, 'treeview', 'gridview') AS `type`,
-# we check for type and isValidJson
-    IF(JSON_VALID(`options`) AND `options` IS NOT NULL AND `options` <> '', 1, 0) AS `isValidJson`,
-    #adding extra JSON_VALID to prevent errors in the query result.
-	IF(JSON_VALID(`options`),IFNULL(JSON_EXTRACT(`options`, '$.gridViewSettings.pageSize'), ''), '') AS `pageSize`,
-	IF(JSON_VALID(`options`),IF(JSON_EXTRACT(`options`, '$.gridViewSettings.toolbar.hideCreateButton') = true, 1, 0), 0) AS `hideCreationButton`,
-	IF(JSON_VALID(`options`),IF(JSON_EXTRACT(`options`, '$.gridViewSettings.hideCommandColumn') = true, 1, 0), 0) AS `hideCommandButton`
-FROM `wiser_module` 
-");
-
-                TemplateQueryStrings.Add("GET_AVAILABLE_ENTITY_TYPES", @"SELECT DISTINCT(e2.name)
-FROM wiser_entity e
-LEFT JOIN wiser_item i ON i.entity_type = e.name AND i.moduleid = e.module_id
-JOIN wiser_entity e2 ON e2.module_id = {moduleId} AND e2.name <> '' AND FIND_IN_SET(e2.name, e.accepted_childtypes)
-WHERE e.module_id = {moduleId}
-AND (({parentId:decrypt(true)} = 0 AND e.name = '') OR ({parentId:decrypt(true)} > 0 AND i.id = {parentId:decrypt(true)}))");
-
                 TemplateQueryStrings.Add("IMPORTEXPORT_GET_LINK_TYPES", @"SELECT type AS id, `name`
 FROM wiser_link
 ORDER BY `name`");
-                TemplateQueryStrings.Add("SAVE_INITIAL_VALUES", @"SET @_entity_name = '{entityName}';
-SET @_tab_name = '{tabName}';
-SET @_tab_name = IF( @_tab_name='gegevens', '', @_tab_name);
-SET @_display_name = '{displayName}';
-SET @_property_name = IF('{propertyName}' = '', @_display_name, '{propertyName}');
-SET @_overviewvisibility = '{visibleInOverview}';
-SET @_overviewvisibility = IF(@_overviewvisibility = TRUE OR @_overviewvisibility = 'true', 1, 0);
-SET @_overviewWidth = '{overviewWidth}';
-SET @_groupName = '{groupName}';
-SET @_input_type = '{inputtype}';
-SET @_explanation = '{explanation}';
-SET @_mandatory = '{mandatory}';
-SET @_mandatory = IF(@_mandatory = TRUE OR @_mandatory = 'true', 1, 0);
-SET @_readOnly = '{readonly}';
-SET @_readOnly = IF(@_readOnly = TRUE OR @_readOnly = 'true', 1, 0);
-SET @_seo = '{alsoSaveSeoValue}';
-SET @_seo = IF(@_seo = TRUE OR @_seo = 'true', 1, 0);
-SET @_width = '{width}';
-SET @_height = '{height}';
-SET @_langCode = '{languageCode}';
-SET @_dependsOnField = '{dependsOnField}';
-SET @_dependsOnOperator = IF('{dependsOnOperator}' = '', NULL, '{dependsOnOperator}');
-SET @_dependsOnValue = '{dependsOnValue}';
-SET @_css = '{css}';
-SET @_regexValidation = '{regexValidation}';
-SET @_defaultValue = '{defaultValue}';
-SET @_automation = '{automation}';
-SET @_customScript = '{customScript}';
-SET @_options = '{options}';
-SET @_data_query = '{dataQuery}';
-SET @_grid_delete_query = '{gridDeleteQuery}';
-SET @_grid_insert_query = '{gridInsertQuery}';
-SET @_grid_update_query = '{gridUpdateQuery}';
-
-SET @_id = {id};
-
-UPDATE wiser_entityproperty
-SET 
-inputtype = @_input_type,
-display_name = @_display_name,
-property_name = @_property_name,
-visible_in_overview= @_overviewvisibility,
-overview_width= @_overviewWidth,
-group_name= @_groupName,
-explanation= @_explanation,
-regex_validation= @_regexValidation,
-mandatory= @_mandatory,
-readonly= @_readOnly,
-default_value= @_defaultValue,
-automation= @_automation,
-css= @_css,
-width= @_width,
-height= @_height,
-depends_on_field= @_dependsOnField,
-depends_on_operator= @_dependsOnOperator,
-depends_on_value= @_dependsOnValue,
-language_code= @_langCode,
-custom_script= @_customScript,
-also_save_seo_value = @_seo,
-tab_name = @_tab_name,
-options = @_options,
-data_query = @_data_query,
-grid_delete_query = @_grid_delete_query, 
-grid_insert_query= @_grid_insert_query,
-grid_update_query = @_grid_update_query
-WHERE entity_name = @_entity_name AND id = @_id
-LIMIT 1; ");
-
                 TemplateQueryStrings.Add("MOVE_ITEM", @"#Item verplaatsen naar ander item
 SET @src_id = '{source:decrypt(true)}';
 SET @dest_id = '{destination:decrypt(true)}';
@@ -1251,15 +767,6 @@ UNION
 			OR 
 			(permission.permissions & 8) > 0
 		)");
-                TemplateQueryStrings.Add("GET_ITEMLINK_NUMBERS", @"SELECT 'Hoofdkoppeling' AS type_text, 1 AS type_value 
-UNION ALL
-SELECT 'Subkoppeling' AS type_text, 2 AS type_value 
-UNION ALL
-SELECT 'Automatisch gegeneerd' AS type_text, 3 AS type_value 
-UNION ALL
-SELECT 'Media' AS type_text, 4 AS type_value 
-UNION ALL
-SELECT DISTINCT type AS type_text, type AS type_value FROM `wiser_itemlink` WHERE type > 100");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_LINK_TABLE", @"SET @destinationId = {id:decrypt(true)};
 SET @_linkTypeNumber = IF('{linkTypeNumber}' LIKE '{%}' OR '{linkTypeNumber}' = '', '2', '{linkTypeNumber}');
 
@@ -1273,144 +780,17 @@ JOIN wiser_itemlink il ON il.item_id = i.id AND il.destination_item_id = @destin
 WHERE p.visible_in_overview = 1
 GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
 ORDER BY p.ordering;");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_BY_LINK", @"SET @_link_type = IF('{linktype}' LIKE '{%}', '', '{linktype}');
-SET @_entity_type = IF('{entitytype}' LIKE '{%}', '', '{entitytype}');
-
-SELECT
-    CONCAT_WS(' - ', wip.entity_name, NULLIF(wip.tab_name, ''), NULLIF(wip.group_name, ''), wip.display_name) AS `text`,
-    IF(property_name = '', CreateJsonSafeProperty(display_name), property_name) AS `value`
-FROM wiser_itemlink wil
-JOIN wiser_entityproperty wip ON wip.entity_name = wil.entity_name
-WHERE wil.type = @_link_type
-# Some entities should be ignored due to their input types.
-AND wip.inputtype NOT IN ('sub-entities-grid', 'item-linker', 'linked-item', 'auto-increment', 'file-upload', 'action-button')
-GROUP BY wip.id");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_LINKED_TO_UP", @"# Bovenliggende objecten.
-
-SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
-SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
-
-SELECT *
-FROM (
-    SELECT
-        entity_name AS `name`,
-        inputtype AS inputType,
-        entity_name AS type,
-        IF(
-            inputtype = 'item-linker',
-            (SELECT GROUP_CONCAT(DISTINCT entity_name) FROM wiser_itemlink WHERE type = `options`->>'$.linkTypeNumber'),
-            entity_name
-        ) AS entityTypes,
-        IF(inputtype = 'item-linker', module_id, 0) AS moduleId
-    FROM wiser_entityproperty
-    WHERE
-        IF(@_module_list = '', 1 = 1, FIND_IN_SET(module_id, @_module_list) > 0)
-        AND inputtype IN ('item-linker', 'sub-entities-grid')
-        AND IF(
-            inputtype = 'item-linker',
-            JSON_UNQUOTE(JSON_EXTRACT(`options`, JSON_UNQUOTE(JSON_SEARCH(`options`, 'one', @_entity_type_list)))) IS NOT NULL,
-            FIND_IN_SET(`options`->>'$.entityType', @_entity_type_list) > 0
-        )
-
-    UNION
-
-    SELECT
-        wep.entity_name AS `name`,
-        wep.inputtype AS inputType,
-        wep.entity_name AS type,
-        IF(
-            wep.inputtype = 'item-linker',
-            (SELECT GROUP_CONCAT(DISTINCT entity_name) FROM wiser_itemlink WHERE type = wep.`options`->>'$.linkTypeNumber'),
-            entity_name
-        ) AS entityTypes,
-        IF(inputtype = 'item-linker', wep.module_id, 0) AS moduleId
-    FROM wiser_entity we
-	JOIN wiser_entityproperty wep ON wep.entity_name = we.`name` AND wep.inputtype IN ('item-linker', 'sub-entities-grid')
-    WHERE
-        IF(@_module_list = '', 1 = 1, FIND_IN_SET(we.module_id, @_module_list) > 0)
-        AND CompareLists(@_entity_type_list, we.accepted_childtypes)
-) t
-GROUP BY t.type
-ORDER BY t.type");
-                TemplateQueryStrings.Add("GET_ENTITY_PROPERTIES_LINKED_TO_DOWN", @"# Onderliggende objecten.
-
-SET @_module_list = IF('{modules}' LIKE '{%}', '', '{modules}');
-SET @_entity_type_list = IF('{entity_types}' LIKE '{%}', '', '{entity_types}');
-
-SELECT *
-FROM (
-    SELECT
-        #display_name AS `name`,
-        CAST(IF(inputtype = 'item-linker', `options`->>'$.linkTypeNumber', `options`->>'$.entityType') AS CHAR) AS `name`,
-        inputtype AS inputType,
-        CAST(IF(inputtype = 'item-linker', `options`->>'$.linkTypeNumber', `options`->>'$.entityType') AS CHAR) AS type,
-        IF(
-            inputtype = 'item-linker',
-            IF(
-                `options`->>'$.entityTypes' IS NULL,
-                `options`->>'$.linkTypeNumber',
-                REPLACE(REPLACE(REPLACE(REPLACE(`options`->> '$.entityTypes', '[', ''), ']', ''), '""', '' ), ', ', ',')
-            ),
-            `options`->>'$.entityType'
-        ) AS entityTypes,
-        IF(inputtype = 'item-linker', `options`->>'$.moduleId', 0) AS moduleId
-    FROM wiser_entityproperty
-    WHERE
-        IF(@_module_list = '', 1 = 1, FIND_IN_SET(module_id, @_module_list) > 0)
-        AND FIND_IN_SET(entity_name, @_entity_type_list) > 0
-        AND inputtype IN ('item-linker', 'sub-entities-grid')
-
-    UNION
-
-    SELECT
-        #wep.display_name AS `name`,
-        CAST(IF(wep.inputtype = 'item-linker', wep.`options`->>'$.linkTypeNumber', wep.`options`->>'$.entityType') AS CHAR) AS `name`,
-        wep.inputtype AS inputType,
-        CAST(IF(wep.inputtype = 'item-linker', wep.`options`->>'$.linkTypeNumber', wep.`options`->>'$.entityType') AS CHAR) AS type,
-        IF(
-            wep.inputtype = 'item-linker',
-            IF(
-                wep.`options`->>'$.entityTypes' IS NULL,
-                wep.`options`->>'$.linkTypeNumber',
-                REPLACE(REPLACE(REPLACE(REPLACE(wep.`options`->> '$.entityTypes', '[', ''), ']', ''), '""', '' ), ', ', ',')
-            ),
-            wep.`options`->>'$.entityType'
-        ) AS entityTypes,
-        IF(wep.inputtype = 'item-linker', wep.`options`->>'$.moduleId', 0) AS moduleId
-    FROM wiser_entity we
-    JOIN wiser_entityproperty wep ON wep.inputtype IN ('item-linker', 'sub-entities-grid')
-    WHERE
-        FIND_IN_SET(wep.entity_name, we.accepted_childtypes) > 0
-        AND IF(@_module_list = '', 1 = 1, FIND_IN_SET(wep.module_id, @_module_list) > 0)
-) t
-GROUP BY t.type
-ORDER BY t.type");
-
                 TemplateQueryStrings.Add("GET_MODULES", @"SELECT id, name as moduleName
 FROM wiser_module
 ORDER BY name ASC;
 ");
-                TemplateQueryStrings.Add("GET_MODULE_ROLES", @"
-SELECT
-	permission.id AS `permission_id`,
-	role.id AS `role_id`,
-	role.role_name,
-	module.id AS `module_id`,
-	module.name AS module_name
-FROM wiser_roles AS role
-LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id
-LEFT JOIN wiser_module AS module ON permission.module_id = module.id
-WHERE role.id = {role_id}");
-                TemplateQueryStrings.Add("DELETE_MODULE_RIGHT_ASSIGNMENT", @"DELETE FROM `wiser_system`.`wiser_permission`
-WHERE role_id = {role_id} AND module_id={module_id}");
-
                 TemplateQueryStrings.Add("GET_ROLE_RIGHTS", @"SELECT
 	properties.id AS `propertyId`,
 	properties.entity_name AS `entityName`,
 	properties.display_name as `displayName`,
     properties.tab_name AS `tabName`,
     properties.group_name AS `groupName`,
-	IFNULL(permissions.permissions, 15) AS `permission`,
+	IFNULL(permissions.permissions, 0) AS `permission`,
     {roleId} AS `roleId`
 FROM `wiser_entityproperty` AS properties
 LEFT JOIN `wiser_permission` AS permissions ON permissions.entity_property_id = properties.id AND permissions.role_id = {roleId}
@@ -1418,45 +798,20 @@ WHERE NULLIF(properties.display_name, '') IS NOT NULL
 	AND NULLIF(properties.entity_name, '') IS NOT NULL
 GROUP BY properties.id
 ORDER BY properties.entity_name, properties.tab_name, properties.group_name, properties.display_name");
-                TemplateQueryStrings.Add("GET_MODULE_PERMISSIONS", @"SELECT
-	role.id AS `roleId`,
-	role.role_name AS `roleName`,
-	module.id AS `moduleId`,
-	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `moduleName`,
-	IFNULL(permission.permissions, 15) AS `permission`
-FROM wiser_module AS module
-JOIN wiser_roles AS role ON role.id = {roleId}
-LEFT JOIN wiser_permission AS permission ON role.id = permission.role_id AND permission.module_id = module.id
-ORDER BY moduleName ASC
-");
-                TemplateQueryStrings.Add("UPDATE_MODULE_PERMISSION", @" INSERT INTO `wiser_permission` (
-     `role_id`,
-     `entity_name`,
-     `item_id`,
-     `entity_property_id`,
-     `permissions`,
-     `module_id`
- ) 
- VALUES (
-     {roleId}, 
-     '',
-     0,
-     0,
-     {permissionCode},
-     {moduleId}
- )
-ON DUPLICATE KEY UPDATE permissions = {permissionCode};");
 
                 TemplateQueryStrings.Add("GET_DATA_SELECTOR_BY_ID", @"SET @_id = {id};
 
 SELECT
-    dataSelector.id, `name`,
+    dataSelector.id,
+    dataSelector.`name`,
     dataSelector.module_selection AS modules,
     dataSelector.request_json AS requestJson,
     dataSelector.saved_json AS savedJson,
     dataSelector.show_in_export_module AS showInExportModule,
     dataSelector.show_in_communication_module AS showInCommunicationModule,
     dataSelector.available_for_rendering AS availableForRendering,
+    dataSelector.show_in_dashboard AS showInDashboard,
+    dataSelector.available_for_branches AS availableForBranches,
     IFNULL(GROUP_CONCAT(permission.role_id), '') AS allowedRoles
 FROM wiser_data_selector AS dataSelector
 LEFT JOIN wiser_permission AS permission ON permission.data_selector_id = dataSelector.id
@@ -1497,109 +852,6 @@ GROUP BY i.id
 ORDER BY 
     CASE WHEN @_ordering = 'title' THEN i.title END ASC,
 	CASE WHEN @_ordering <> 'title' THEN ilp.ordering END ASC");
-                TemplateQueryStrings.Add("SEARCH_ITEMS", @"SET @mid = {moduleid};
-SET @parent = '{id:decrypt(true)}';
-SET @_entityType = IF('{entityType}' LIKE '{%}', '', '{entityType}');
-SET @_searchValue = '{search}';
-SET @_searchInTitle = IF('{searchInTitle}' LIKE '{%}' OR '{searchInTitle}' = '1', TRUE, FALSE);
-SET @_searchFields = IF('{searchFields}' LIKE '{%}', '', '{searchFields}');
-SET @_searchEverywhere = IF('{searchEverywhere}' LIKE '{%}', FALSE, {searchEverywhere});
-
-SELECT 
-	i.id,
-	i.id AS encryptedId_encrypt_withdate,
-	i.title AS name
-FROM wiser_item i
-LEFT JOIN wiser_itemlink ilp ON ilp.destination_item_id = @parent AND ilp.item_id = i.id
-LEFT JOIN wiser_itemdetail id ON id.item_id = i.id
-LEFT JOIN wiser_itemlink ilc ON ilc.destination_item_id = i.id
-LEFT JOIN wiser_entity we ON we.name = i.entity_type
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
-AND i.entity_type = @_entityType
-AND (@_searchEverywhere = TRUE OR ilp.id IS NOT NULL)
-AND (
-    (NOT @_searchInTitle AND @_searchFields = '')
-    OR (@_searchInTitle AND i.title LIKE CONCAT('%', @_searchValue, '%'))
-    OR (@_searchFields <> '' AND FIND_IN_SET(id.key, @_searchFields) AND id.value LIKE CONCAT('%', @_searchValue, '%'))
-)
-
-GROUP BY i.id
-ORDER BY ilp.ordering, i.title");
-                TemplateQueryStrings.Add("GET_DESTINATION_ITEMS", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
-SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
-SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT 
-	i.id, 
-	i.id AS encryptedId_encrypt_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-	i.title, 
-	i.entity_type, 
-	id.`key` AS property_name,
-	CONCAT(IFNULL(id.`value`, ''), IFNULL(id.`long_value`, '')) AS property_value,
-	il.type AS link_type, 
-    il.id AS link_id
-FROM wiser_itemlink il
-JOIN wiser_item i ON i.id = il.destination_item_id AND i.entity_type = @_entityType
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = il.destination_item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-WHERE il.item_id = @_itemId
-AND il.type = @_linkType
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-GROUP BY il.item_id, id.id
-ORDER BY il.ordering, i.title, i.id");
-                TemplateQueryStrings.Add("GET_DESTINATION_ITEMS_REVERSED", @"SET @_itemId = {itemId};
-SET @_entityType = IF('{entityType}' LIKE '{%}', 'item', '{entityType}');
-SET @_linkType = IF('{linkTypeNumber}' LIKE '{%}', '1', '{linkTypeNumber}');
-SET @userId = {encryptedUserId:decrypt(true)};
-
-SELECT 
-	i.id, 
-	i.id AS encryptedId_encrypt_withdate,
-    CASE i.published_environment
-    	WHEN 0 THEN 'onzichtbaar'
-        WHEN 1 THEN 'dev'
-        WHEN 2 THEN 'test'
-        WHEN 3 THEN 'acceptatie'
-        WHEN 4 THEN 'live'
-    END AS published_environment,
-	i.title, 
-	i.entity_type, 
-	id.`key` AS property_name,
-	CONCAT(IFNULL(id.`value`, ''), IFNULL(id.`long_value`, '')) AS property_value,
-	il.type AS link_type,
-    il.id AS link_id
-FROM wiser_itemlink il
-JOIN wiser_item i ON i.id = il.item_id AND i.entity_type = @_entityType
-
-# Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-LEFT JOIN wiser_user_roles user_role ON user_role.user_id = @userId
-LEFT JOIN wiser_permission permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-
-LEFT JOIN wiser_entityproperty p ON p.entity_name = i.entity_type
-LEFT JOIN wiser_itemdetail id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-WHERE il.destination_item_id = @_itemId
-AND il.type = @_linkType
-AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-GROUP BY il.destination_item_id, id.id
-ORDER BY il.ordering, i.title, i.id");
                 TemplateQueryStrings.Add("GET_COLUMNS_FOR_TABLE", @"SET @selected_id = {itemId:decrypt(true)}; # 3077
 
 SELECT 
@@ -1984,56 +1236,11 @@ AND (@_linkTypeNumber = '' OR il.type = @_linkTypeNumber)
 GROUP BY il.item_id, id2.id
 
 ORDER BY ordering, title");
-                TemplateQueryStrings.Add("GET_ITEM_FILES_AND_DIRECTORIES", @"SET @parent = IF('{id}' = '' OR '{id}' LIKE '{%}', '{rootId:decrypt(true)}', '{id:decrypt(true)}');
 
-SELECT
-	id AS id_encrypt_withdate,
-    id AS plainId,
-	file_name AS name,
-	content_type AS contentType,
-	0 AS isDirectory,
-	0 AS childrenCount,
-    property_name AS propertyName,
-    item_id AS itemId_encrypt_withdate,
-    item_id AS itemIdPlain,
-    CASE
-        WHEN content_type LIKE 'image/%' THEN 'image'
-        WHEN content_type = 'text/html' THEN 'html'
-        ELSE 'file'
-    END AS spriteCssClass,
-    IF(content_type IN('text/html', 'application/octet-stream'), CONVERT(content USING utf8), '') AS html
-FROM wiser_itemfile
-WHERE item_id = @parent
-
-UNION ALL
-
-SELECT
-	item.id AS id_encrypt_withdate,
-    item.id AS plainId,
-	item.title AS name,
-	'' AS contentType,
-	1 AS isDirectory,
-	COUNT(DISTINCT subItem.id) + COUNT(DISTINCT file.id) AS childrenCount,
-    '' AS property_name,
-	item.id AS itemId_encrypt_withdate,
-    item.id AS itemIdPlain,
-    'wiserfolderclosed' AS spriteCssClass,
-    '' AS html
-FROM wiser_item AS item
-LEFT JOIN wiser_item AS subItem ON subItem.entity_type = 'filedirectory' AND subItem.parent_item_id = item.id
-LEFT JOIN wiser_itemfile AS file ON file.item_id = item.id
-WHERE item.entity_type = 'filedirectory'
-AND item.parent_item_id = @parent
-GROUP BY item.id
-
-ORDER BY isDirectory DESC, name ASC");
-
-                TemplateQueryStrings.Add("GET_DATA_FROM_ENTITY_QUERY", @"SET @_itemId = {myItemId};
-SET @entityproperty_id = {propertyid};
-SET @querytext = (SELECT REPLACE(REPLACE(IFNULL(data_query, 'SELECT 0 AS id, "" AS name'), '{itemId}', @_itemId), '{itemid}', @_itemId) FROM wiser_entityproperty WHERE id=@entityproperty_id);
-
-PREPARE stmt1 FROM @querytext;
-EXECUTE stmt1;");
+                TemplateQueryStrings.Add("GET_WISER_LINK_LIST", @"SELECT *,
+CONCAT(`name`, ' --> #', type, ' connected entity: ""', connected_entity_type ,'"" destination entity: ""', destination_entity_type, '""')AS formattedName
+FROM `wiser_link`
+ORDER BY type");
             }
         }
 
@@ -2196,9 +1403,34 @@ LIMIT 1";
             }
 
             templateData.PublishedEnvironments = templateEnvironmentsResult.ModelObject;
-            templateDataService.DecryptEditorValueIfEncrypted((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, templateData);
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
+            templateDataService.DecryptEditorValueIfEncrypted(encryptionKey, templateData);
 
             return new ServiceResult<TemplateSettingsModel>(templateData);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        {
+            var templateSettings = await GetTemplateSettingsAsync(identity, templateId, environment);
+            if (templateSettings.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<TemplateWtsConfigurationModel>
+                {
+                    ErrorMessage = templateSettings.ErrorMessage,
+                    StatusCode = templateSettings.StatusCode
+                };
+            }
+
+            if (templateSettings.ModelObject.Type != TemplateTypes.Xml)
+            {
+                return new ServiceResult<TemplateWtsConfigurationModel>(new TemplateWtsConfigurationModel());
+            }
+
+            // Parse the xml
+            var templateXml = wtsConfigurationService.ParseXmlToObject(templateSettings.ModelObject.EditorValue);
+
+            return new ServiceResult<TemplateWtsConfigurationModel>(templateXml);
         }
 
         /// <inheritdoc />
@@ -2258,6 +1490,13 @@ LIMIT 1";
                 }
             }
 
+            // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
+            // Does not apply if the template was published to live within a branch.
+            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            {
+                await CreateNewVersionAsync(templateId, version);
+            }
+
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
@@ -2266,7 +1505,25 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> SaveTemplateVersionAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            // Convert the configuration object to raw XML
+            var updatedEditorValue = wtsConfigurationService.ParseObjectToXml(configuration);
+
+            // Get the latest version of the template
+            var latestVersion = await GetTemplateSettingsAsync(identity, templateId);
+
+            // Convert the latest version to a model we can work with
+            var latestVersionModel = latestVersion.ModelObject;
+
+            // Update the model with the new configuration
+            latestVersionModel.EditorValue = updatedEditorValue;
+
+            return await SaveAsync(identity, latestVersionModel);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, TemplateSettingsModel template, bool skipCompilation = false)
         {
             if (template == null)
             {
@@ -2351,12 +1608,14 @@ LIMIT 1";
                     template.MinifiedValue = template.EditorValue;
                     break;
                 case TemplateTypes.Xml:
-                    if (!template.EditorValue.StartsWith("<Configuration>") && !template.EditorValue.StartsWith("<OAuthConfiguration>"))
+                    var trimmedValue = template.EditorValue.Trim();
+                    if (!trimmedValue.StartsWith("<Configuration>", StringComparison.OrdinalIgnoreCase) && !trimmedValue.StartsWith("<OAuthConfiguration>", StringComparison.OrdinalIgnoreCase))
                     {
                         break;
                     }
 
-                    template.EditorValue = template.EditorValue.EncryptWithAes((await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject, useSlowerButMoreSecureMethod: true);
+                    var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
+                    template.EditorValue = trimmedValue.EncryptWithAes(encryptionKey, useSlowerButMoreSecureMethod: true);
 
                     break;
             }
@@ -2386,10 +1645,26 @@ LIMIT 1";
             var templates = await templateDataService.GetScssTemplatesThatAreNotIncludesAsync(template.TemplateId);
             foreach (var otherTemplate in templates)
             {
-                await SaveTemplateVersionAsync(identity, otherTemplate);
+                await SaveAsync(identity, otherTemplate);
             }
 
             return new ServiceResult<bool>(true);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> CreateNewVersionAsync(int templateId, int versionBeingDeployed = 0)
+        {
+            // ReSharper disable once InvertIf
+            if (versionBeingDeployed > 0)
+            {
+                var latestVersion = await templateDataService.GetLatestVersionAsync(templateId);
+                if (versionBeingDeployed != latestVersion.Version || latestVersion.Removed)
+                {
+                    return new ServiceResult<int>(0);
+                }
+            }
+
+            return new ServiceResult<int>(await templateDataService.CreateNewVersionAsync(templateId));
         }
 
         /// <inheritdoc />
@@ -2403,11 +1678,17 @@ LIMIT 1";
                 WiserTableNames.WiserTemplateDynamicContent,
                 WiserTableNames.WiserTemplatePublishLog,
                 WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog
+                WiserTableNames.WiserDynamicContentPublishLog,
+                WiserTableNames.WiserTemplateRenderLog,
+                WiserTableNames.WiserDynamicContentRenderLog
             });
 
             // Make sure the ordering is correct.
             await templateDataService.FixTreeViewOrderingAsync(parentId);
+
+            // Do any table updates that might be needed.
+            await templateDataService.KeepTablesUpToDateAsync();
+            await dynamicContentDataService.KeepTablesUpToDateAsync();
 
             // Get templates in correct order.
             var rawSection = await templateDataService.GetTreeViewSectionAsync(parentId);
@@ -2443,8 +1724,7 @@ LIMIT 1";
                 }
             }
 
-            var helper = new TreeViewHelper();
-            var convertedList = rawSection.Select(treeViewDao => helper.ConvertTemplateTreeViewDAOToTemplateTreeViewModel(treeViewDao)).ToList();
+            var convertedList = rawSection.Select(TreeViewHelper.ConvertTemplateTreeViewDaoToTemplateTreeViewModel).ToList();
 
             return new ServiceResult<List<TemplateTreeViewModel>>(convertedList);
         }
@@ -2452,12 +1732,12 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<SearchResultModel>>> SearchAsync(ClaimsIdentity identity, string searchValue)
         {
-            var encryptionKey = (await wiserCustomersService.GetEncryptionKey(identity, true)).ModelObject;
+            var encryptionKey = (await wiserTenantsService.GetEncryptionKey(identity, true)).ModelObject;
             return new ServiceResult<List<SearchResultModel>>(await templateDataService.SearchAsync(searchValue, encryptionKey));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId)
+        public async Task<ServiceResult<TemplateHistoryOverviewModel>> GetTemplateHistoryAsync(ClaimsIdentity identity, int templateId, int pageNumber, int itemsPerPage)
         {
             if (templateId <= 0)
             {
@@ -2477,14 +1757,14 @@ LIMIT 1";
             var dynamicContentHistory = new Dictionary<DynamicContentOverviewModel, List<HistoryVersionModel>>();
             foreach (var dc in dynamicContentOverview.ModelObject)
             {
-                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponentAsync(dc.Id)).ModelObject);
+                dynamicContentHistory.Add(dc, (await historyService.GetChangesInComponentAsync(dc.Id, pageNumber, itemsPerPage)).ModelObject);
             }
 
             var overview = new TemplateHistoryOverviewModel
             {
                 TemplateId = templateId,
-                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory),
-                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId),
+                TemplateHistory = await historyService.GetVersionHistoryFromTemplate(identity, templateId, dynamicContentHistory, pageNumber, itemsPerPage),
+                PublishHistory = await historyService.GetPublishHistoryFromTemplate(templateId, pageNumber, itemsPerPage),
                 PublishedEnvironment = (await GetTemplateEnvironmentsAsync(templateId)).ModelObject
             };
 
@@ -2542,7 +1822,7 @@ LIMIT 1";
 
             if (templateDataResponse.ModelObject.Type is not (TemplateTypes.View or TemplateTypes.Routine or TemplateTypes.Trigger))
             {
-                return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
+                return await SaveAsync(identity, templateDataResponse.ModelObject);
             }
 
             // Also rename the view, routine, or trigger that this template is managing.
@@ -2559,7 +1839,7 @@ LIMIT 1";
                     break;
             }
 
-            return await SaveTemplateVersionAsync(identity, templateDataResponse.ModelObject);
+            return await SaveAsync(identity, templateDataResponse.ModelObject);
         }
 
         /// <inheritdoc />
@@ -2595,7 +1875,7 @@ LIMIT 1";
 
                 if (templateTree.HasChildren)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject; 
+                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject;
                 }
                 else
                 {
@@ -2627,208 +1907,6 @@ LIMIT 1";
             };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, int componentId, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            var component = requestModel.Components.FirstOrDefault(c => c.Id == componentId);
-            if (component == null)
-            {
-                return new ServiceResult<string>("");
-            }
-
-            requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
-            await SetupGclForPreviewAsync(identity, requestModel);
-
-            var html = await gclTemplatesService.GenerateDynamicContentHtmlAsync(component);
-            return new ServiceResult<string>((string)html);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<string>> GeneratePreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            var outputHtml = requestModel?.TemplateSettings?.EditorValue;
-            if (String.IsNullOrWhiteSpace(outputHtml) || requestModel.TemplateSettings.Type != TemplateTypes.Html)
-            {
-                return new ServiceResult<string>(outputHtml);
-            }
-
-            var javascriptTemplates = new List<int>();
-            var cssTemplates = new List<int>();
-            var externalJavascript = new List<string>();
-            var externalCss = new List<string>();
-
-            javascriptTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedJavascript.Select(t => t.TemplateId));
-            cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedCssTemplates.Select(t => t.TemplateId));
-            cssTemplates.AddRange(requestModel.TemplateSettings.LinkedTemplates.LinkedScssTemplates.Select(t => t.TemplateId));
-
-            requestModel.Url ??= HttpContextHelpers.GetBaseUri(httpContextAccessor.HttpContext);
-            var queryString = QueryHelpers.ParseQuery(requestModel.Url.Query);
-            var ombouw = (!queryString.ContainsKey("ombouw") || !String.Equals(queryString["ombouw"].ToString(), "false", StringComparison.OrdinalIgnoreCase)) && !String.Equals(requestModel.PreviewVariables.FirstOrDefault(v => String.Equals(v.Key, "ombouw", StringComparison.OrdinalIgnoreCase))?.Value, "false", StringComparison.OrdinalIgnoreCase);
-
-            await SetupGclForPreviewAsync(identity, requestModel);
-            
-            var contentToWrite = new StringBuilder();
-
-            // Execute the pre load query before any replacements are being done and before any dynamic components are handled.
-            await gclTemplatesService.ExecutePreLoadQueryAndRememberResultsAsync(new Template { PreLoadQuery = requestModel.TemplateSettings.PreLoadQuery });
-
-            // Header template.
-            if (ombouw)
-            {
-                contentToWrite.Append(await pagesService.GetGlobalHeader(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
-            }
-
-            // Content template.
-            contentToWrite.Append(outputHtml);
-
-            // Footer template.
-            if (ombouw)
-            {
-                contentToWrite.Append(await pagesService.GetGlobalFooter(requestModel.Url.ToString(), javascriptTemplates, cssTemplates));
-            }
-
-            outputHtml = contentToWrite.ToString();
-            outputHtml = await stringReplacementsService.DoAllReplacementsAsync(outputHtml, null, requestModel.TemplateSettings.HandleRequests, false, true, false);
-            outputHtml = await gclTemplatesService.HandleIncludesAsync(outputHtml, false);
-            outputHtml = await gclTemplatesService.HandleImageTemplating(outputHtml);
-            outputHtml = await gclTemplatesService.ReplaceAllDynamicContentAsync(outputHtml, requestModel.Components);
-            outputHtml = stringReplacementsService.EvaluateTemplate(outputHtml);
-
-            if (!ombouw)
-            {
-                return new ServiceResult<string>(outputHtml);
-            }
-
-            // Generate view model.
-            var viewModel = await pagesService.CreatePageViewModelAsync(externalCss, cssTemplates, externalJavascript, javascriptTemplates, outputHtml);
-
-            // Determine main domain, using either the "maindomain" object or the "maindomain_wiser" object.
-            var mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain_wiser");
-            if (String.IsNullOrWhiteSpace(mainDomain))
-            {
-                mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("testdomainjuice");
-            }
-            if (String.IsNullOrWhiteSpace(mainDomain))
-            {
-                mainDomain = await objectsService.FindSystemObjectByDomainNameAsync("maindomain");
-            }
-
-            if (viewModel.Css != null)
-            {
-                var cssBuilder = new StringBuilder();
-                cssBuilder.AppendLine((await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Css)).Content);
-                cssBuilder.AppendLine(viewModel.Css.PageInlineHeadCss);
-                
-                var regex = new Regex("/css/gclcss_(.*).css");
-                var match = regex.Match(viewModel.Css.PageStandardCssFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Css.PageStandardCssFileName = null;
-                
-                match = regex.Match(viewModel.Css.PageAsyncFooterCssFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Css.PageAsyncFooterCssFileName = null;
-                
-                match = regex.Match(viewModel.Css.PageSyncFooterCssFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    cssBuilder.AppendLine((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Css.PageSyncFooterCssFileName = null;
-
-                viewModel.Css.PageInlineHeadCss = cssBuilder.ToString();
-            }
-
-            if (viewModel.Javascript != null)
-            {
-                viewModel.Javascript.PageInlineHeadJavascript ??= new List<string>();
-                viewModel.Javascript.PageInlineHeadJavascript.Insert(0, (await gclTemplatesService.GetGeneralTemplateValueAsync(TemplateTypes.Js)).Content);
-
-                var regex = new Regex("/css/gcljs_(.*).css");
-                var match = regex.Match(viewModel.Javascript.PageStandardJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.PageStandardJavascriptFileName = null;
-                
-                match = regex.Match(viewModel.Javascript.GeneralFooterJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.GeneralFooterJavascriptFileName = null;
-                
-                match = regex.Match(viewModel.Javascript.PageAsyncFooterJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.PageAsyncFooterJavascriptFileName = null;
-                
-                match = regex.Match(viewModel.Javascript.PageSyncFooterJavascriptFileName ?? "");
-                if (match.Success)
-                {
-                    var templateIdsList = match.Groups[1].Value.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(Int32.Parse).ToList();
-                    viewModel.Javascript.PageInlineHeadJavascript.Add((await gclTemplatesService.GetCombinedTemplateValueAsync(templateIdsList, TemplateTypes.Css)).Content);
-                }
-
-                viewModel.Javascript.PageSyncFooterJavascriptFileName = null;
-            }
-
-            // Generate HTML from view.
-            await using var writer = new StringWriter();
-            var executingAssemblyDirectoryAbsolutePath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-
-            var executingFilePath = executingAssemblyDirectoryAbsolutePath!.Replace('\\', '/');
-            const string viewPath = "~/Modules/Templates/Views/Shared/Template.cshtml";
-            var viewResult = razorViewEngine.GetView(executingFilePath, viewPath, true);
-
-            var actionContext = new ActionContext(httpContextAccessor.HttpContext!, new RouteData(), new ActionDescriptor());
-
-            if (viewResult.Success == false)
-            {
-                return new ServiceResult<string>($"A view with the name {viewResult.ViewName} could not be found");
-            }
-
-            var viewDictionary = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary())
-            {
-                Model = viewModel
-            };
-
-            var viewContext = new ViewContext(
-                actionContext,
-                viewResult.View,
-                viewDictionary,
-                new TempDataDictionary(actionContext.HttpContext, tempDataProvider),
-                writer,
-                new HtmlHelperOptions()
-            );
-
-            await viewResult.View.RenderAsync(viewContext);
-
-            var finalResult = writer.GetStringBuilder().ToString();
-            finalResult = finalResult.ReplaceCaseInsensitive("<head>", $"<head><base href='{AddMainDomainToUrl("/", mainDomain)}'>");
-            return new ServiceResult<string>(finalResult);
-        }
-        
         /// <inheritdoc />
         public async Task<ServiceResult<string>> CheckDefaultHeaderConflict(int templateId, string regexString)
         {
@@ -2931,7 +2009,7 @@ LIMIT 1";
                 SELECT template.template_name
                 FROM {WiserTableNames.WiserTemplate} AS template
                 JOIN (SELECT template_id, MAX(version) AS maxVersion FROM {WiserTableNames.WiserTemplate} GROUP BY template_id) AS maxVersion ON template.template_id = maxVersion.template_id AND template.version = maxVersion.maxVersion
-                WHERE template.template_type = 1 AND template.removed = 0 AND template.`{fieldName}` = 1 AND template.template_id <> ?templateId {regexWherePart}
+                WHERE template.template_type = {(int)TemplateTypes.Html} AND template.removed = 0 AND template.`{fieldName}` = 1 AND template.template_id <> ?templateId {regexWherePart}
                 GROUP BY template.template_id
                 LIMIT 1";
 
@@ -2941,11 +2019,9 @@ LIMIT 1";
                 : new ServiceResult<string>(result.Rows[0].Field<string>("template_name"));
         }
 
-        /// <summary>
-        /// Converts Wiser 1 templates to the Wiser 3 format.
-        /// </summary>
-        /// <returns></returns>
-        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplates()
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> ConvertLegacyTemplatesToNewTemplatesAsync(ClaimsIdentity identity)
         {
             // Make sure the tables are up-to-date.
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
@@ -3003,15 +2079,6 @@ SELECT
     IFNULL(item.lastchangedby, item.createdby) AS changed_by,
     IF(template.istest = 1, 2, 0) + IF(template.isacceptance = 1, 4, 0) + IF(template.islive = 1, 8, 0) AS published_environment,
     template.usecache AS use_cache,
-    template.cacheminutes AS cache_minutes,
-    template.handlerequest AS handle_request,
-    template.handlesession AS handle_session,
-    template.handleobjects AS handle_objects,
-    template.handlestandards AS handle_standards,
-    template.handletranslations AS handle_translations,
-    template.handledynamiccontent AS handle_dynamic_content,
-    template.handlelogicblocks AS handle_logic_blocks,
-    template.handlemutators AS handle_mutators,
     template.issecure AS login_required,
     template.securedsessionprefix AS login_session_prefix,
     CONCAT_WS(',', template.jstemplates, template.csstemplates) AS linked_templates,
@@ -3055,155 +2122,236 @@ JOIN (
 ) AS lowestVersionToConvert ON lowestVersionToConvert.id = item.id AND (template.id IS NULL OR template.version >= lowestVersionToConvert.version)
 WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
 
-            await using var reader = await clientDatabaseConnection.GetReaderAsync(query);
-            while (await reader.ReadAsync())
+            await clientDatabaseConnection.BeginTransactionAsync();
+            try
             {
-                // Get template type.
-                var templateType = TemplateTypes.Directory;
-                if (!reader.GetBoolean("is_directory"))
+                dataTable = await clientDatabaseConnection.GetAsync(query);
+
+                var allRootDirectories = new List<string> { "HTML", "JS", "SCSS", "CSS", "SQL", "SERVICES", "VIEWS", "ROUTINES", "TRIGGERS" };
+                var rootDirectoriesCreated = new List<string>();
+                foreach (DataRow dataRow in dataTable.Rows)
                 {
-                    var path = reader.GetStringHandleNull("path");
-
-                    if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
+                    // Get template type.
+                    var templateType = TemplateTypes.Directory;
+                    if (!Convert.ToBoolean(dataRow["is_directory"]))
                     {
-                        templateType = TemplateTypes.Html;
+                        var path = dataRow.Field<string>("path") ?? "";
+
+                        if (path.Contains("/html/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Html;
+                        }
+                        else if (path.Contains("/css/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Css;
+                        }
+                        else if (path.Contains("/scss/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Scss;
+                        }
+                        else if (path.Contains("/scripts/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Js;
+                        }
+                        else if (path.Contains("/query/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Query;
+                        }
+                        else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Xml;
+                        }
+                        else if (path.Contains("/routines/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            templateType = TemplateTypes.Routine;
+                        }
                     }
-                    else if (path.Contains("/css/", StringComparison.OrdinalIgnoreCase))
+
+                    // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
+                    var cdnDirectory = dataRow.Field<string>("type");
+                    if (String.Equals(cdnDirectory, "js"))
                     {
-                        templateType = TemplateTypes.Css;
+                        cdnDirectory = "scripts";
                     }
-                    else if (path.Contains("/scss/", StringComparison.OrdinalIgnoreCase))
+
+                    var externalFiles = dataRow.Field<string>("external_files") ?? "";
+                    var wiserCdnTemplates = dataRow.Field<string>("wiser_cdn_templates") ?? "";
+                    var allExternalFiles = externalFiles.Split(';').Where(f => !String.IsNullOrWhiteSpace(f)).ToList();
+                    allExternalFiles.AddRange(wiserCdnTemplates.Split(';').Where(f => !String.IsNullOrWhiteSpace(f)).Select(filename => $"https://app.wiser.nl/{cdnDirectory}/cdn/{filename}"));
+
+                    externalFiles = String.Join(";", allExternalFiles);
+
+                    var content = dataRow.Field<string>("template_data") ?? "";
+                    var minifiedContent = dataRow.Field<string>("template_data_minified") ?? "";
+
+                    // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
+                    if (templateType == TemplateTypes.Html)
                     {
-                        templateType = TemplateTypes.Scss;
+                        content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
+                        minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
                     }
-                    else if (path.Contains("/scripts/", StringComparison.OrdinalIgnoreCase))
+
+                    if (templateType is TemplateTypes.Html or TemplateTypes.Query)
                     {
-                        templateType = TemplateTypes.Js;
+                        content = ConvertLegacyReplacementMethodsToNewReplacementMethods(content);
+                        minifiedContent = ConvertLegacyReplacementMethodsToNewReplacementMethods(minifiedContent);
                     }
-                    else if (path.Contains("/query/", StringComparison.OrdinalIgnoreCase))
+
+                    var templateName = dataRow.Field<string>("template_name");
+                    var ordering = dataRow.IsNull("ordering") ? 0 : dataRow["ordering"];
+                    if (templateType == TemplateTypes.Directory && (dataRow.IsNull("parent_id") || Convert.ToInt32(dataRow["parent_id"]) == 0))
                     {
-                        templateType = TemplateTypes.Query;
+                        // Set the name and ordering of root directories to new Wiser 3 standards.
+                        switch (templateName.ToUpperInvariant())
+                        {
+                            case "HTML":
+                                ordering = 1;
+                                break;
+                            case "SCRIPTS":
+                                ordering = 2;
+                                templateName = "JS";
+                                break;
+                            case "SCSS":
+                                ordering = 3;
+                                break;
+                            case "CSS":
+                                ordering = 4;
+                                break;
+                            case "QUERY":
+                                ordering = 5;
+                                templateName = "SQL";
+                                break;
+                            case "AIS":
+                                ordering = 6;
+                                templateName = "SERVICES";
+                                break;
+                            case "VIEWS":
+                                ordering = 7;
+                                break;
+                            case "ROUTINES":
+                                ordering = 8;
+                                break;
+                            case "TRIGGERS":
+                                ordering = 9;
+                                break;
+                        }
+
+                        rootDirectoriesCreated.Add(templateName);
                     }
-                    else if (path.Contains("/ais/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        templateType = TemplateTypes.Xml;
-                    }
-                    else if (path.Contains("/routines/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        templateType = TemplateTypes.Routine;
-                    }
-                }
 
-                // Combine the wiser CDN files with the external files, because we don't use Wiser CDN anymore in Wiser 3.
-                var cdnDirectory = reader.GetStringHandleNull("type");
-                if (String.Equals(cdnDirectory, "js"))
-                {
-                    cdnDirectory = "scripts";
-                }
+                    var templateId = dataRow["template_id"];
+                    var publishedEnvironment = dataRow["published_environment"];
+                    var changedOn = dataRow["changed_on"];
+                    var changedBy = dataRow["changed_by"];
+                    clientDatabaseConnection.ClearParameters();
+                    clientDatabaseConnection.AddParameter("parent_id", dataRow["parent_id"]);
+                    clientDatabaseConnection.AddParameter("template_name", templateName);
+                    clientDatabaseConnection.AddParameter("template_data", content);
+                    clientDatabaseConnection.AddParameter("template_data_minified", minifiedContent);
+                    clientDatabaseConnection.AddParameter("template_type", templateType);
+                    clientDatabaseConnection.AddParameter("version", dataRow["version"]);
+                    clientDatabaseConnection.AddParameter("template_id", templateId);
+                    clientDatabaseConnection.AddParameter("changed_on", changedOn);
+                    clientDatabaseConnection.AddParameter("changed_by", changedBy);
+                    clientDatabaseConnection.AddParameter("published_environment", publishedEnvironment);
+                    clientDatabaseConnection.AddParameter("login_required", dataRow.IsNull("login_required") ? 0 : dataRow["login_required"]);
+                    clientDatabaseConnection.AddParameter("login_session_prefix", dataRow["login_session_prefix"]);
+                    clientDatabaseConnection.AddParameter("linked_templates", dataRow["linked_templates"]);
+                    clientDatabaseConnection.AddParameter("ordering", ordering);
+                    clientDatabaseConnection.AddParameter("insert_mode", dataRow.IsNull("insert_mode") ? 0 : dataRow["insert_mode"]);
+                    clientDatabaseConnection.AddParameter("load_always", dataRow.IsNull("load_always") ? 0 : dataRow["load_always"]);
+                    clientDatabaseConnection.AddParameter("url_regex", dataRow["url_regex"]);
+                    clientDatabaseConnection.AddParameter("external_files", externalFiles);
+                    clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", dataRow.IsNull("grouping_create_object_instead_of_array") ? 0 : dataRow["grouping_create_object_instead_of_array"]);
+                    clientDatabaseConnection.AddParameter("grouping_prefix", dataRow["grouping_prefix"]);
+                    clientDatabaseConnection.AddParameter("grouping_key", dataRow["grouping_key"]);
+                    clientDatabaseConnection.AddParameter("grouping_key_column_name", dataRow["grouping_key_column_name"]);
+                    clientDatabaseConnection.AddParameter("grouping_value_column_name", dataRow["grouping_value_column_name"]);
+                    clientDatabaseConnection.AddParameter("is_scss_include_template", dataRow.IsNull("is_scss_include_template") ? 0 : dataRow["is_scss_include_template"]);
+                    clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", dataRow.IsNull("use_in_wiser_html_editors") ? 0 : dataRow["use_in_wiser_html_editors"]);
 
-                var externalFiles = reader.GetStringHandleNull("external_files");
-                var wiserCdnTemplates = reader.GetStringHandleNull("wiser_cdn_templates");
-                var allExternalFiles = externalFiles.Split(';').ToList();
-                allExternalFiles.AddRange(wiserCdnTemplates.Select(filename => $"https://app.wiser.nl/{cdnDirectory}/cdn/{filename}"));
+                    var useCacheValue = dataRow.IsNull("use_cache") ? 0 : Convert.ToInt32(dataRow["use_cache"]);
+                    var cacheMinutesValue = dataRow.IsNull("cache_minutes") ? 0 : Convert.ToInt32(dataRow["cache_minutes"]);
+                    clientDatabaseConnection.AddParameter("cache_per_url", useCacheValue >= 3);
+                    clientDatabaseConnection.AddParameter("cache_per_querystring", useCacheValue >= 4);
+                    clientDatabaseConnection.AddParameter("cache_per_hostname", useCacheValue >= 5);
+                    clientDatabaseConnection.AddParameter("cache_using_regex", useCacheValue >= 6);
+                    clientDatabaseConnection.AddParameter("cache_minutes", useCacheValue == 0 && cacheMinutesValue <= 0 ? -1 : cacheMinutesValue);
 
-                externalFiles = String.Join(";", allExternalFiles);
+                    await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
 
-                var content = reader.GetStringHandleNull("template_data");
-                var minifiedContent = reader.GetStringHandleNull("template_data_minified");
-
-                // Convert dynamic components placeholders from Wiser 1 to Wiser 3 format.
-                if (templateType == TemplateTypes.Html)
-                {
-                    content = ConvertDynamicComponentsFromLegacyToNewInHtml(content);
-                    minifiedContent = ConvertDynamicComponentsFromLegacyToNewInHtml(minifiedContent);
-                }
-
-                var urlRegex = reader.GetStringHandleNull("url_regex");
-
-                // Handle routine settings.
-                var routineType = RoutineTypes.Unknown;
-                string routineParameters = null;
-                string routineReturnType = null;
-
-                if (templateType == TemplateTypes.Routine)
-                {
-                    var legacyType = reader.GetStringHandleNull("type");
-                    routineType = legacyType switch
-                    {
-                        "FUNCTION" => RoutineTypes.Function,
-                        "PROCEDURE" => RoutineTypes.Procedure,
-                        _ => routineType
-                    };
-
-                    routineParameters = reader.GetStringHandleNull("routine_parameters");
-                    // Old templates module used the "urlregex" field to store the return type.
-                    routineReturnType = urlRegex;
-
-                    // Set url_regex to null in Wiser 3 template for routine templates.
-                    urlRegex = null;
-                }
-
-                // TODO: Make method for converting legacy replacements (such as {title_htmlencode}) to GCL replacements (such as {title:HtmlEncode}).
-
-                clientDatabaseConnection.ClearParameters();
-                clientDatabaseConnection.AddParameter("parent_id", reader.GetValue("parent_id"));
-                clientDatabaseConnection.AddParameter("template_name", reader.GetValue("template_name"));
-                clientDatabaseConnection.AddParameter("template_data", content);
-                clientDatabaseConnection.AddParameter("template_data_minified", minifiedContent);
-                clientDatabaseConnection.AddParameter("template_type", templateType);
-                clientDatabaseConnection.AddParameter("version", reader.GetValue("version"));
-                clientDatabaseConnection.AddParameter("template_id", reader.GetValue("template_id"));
-                clientDatabaseConnection.AddParameter("changed_on", reader.GetValue("changed_on"));
-                clientDatabaseConnection.AddParameter("changed_by", reader.GetValue("changed_by"));
-                clientDatabaseConnection.AddParameter("published_environment", reader.GetValue("published_environment"));
-                clientDatabaseConnection.AddParameter("use_cache", reader.GetValue("use_cache"));
-                clientDatabaseConnection.AddParameter("cache_minutes", reader.GetValue("cache_minutes"));
-                clientDatabaseConnection.AddParameter("handle_request", reader.GetValue("handle_request"));
-                clientDatabaseConnection.AddParameter("handle_session", reader.GetValue("handle_session"));
-                clientDatabaseConnection.AddParameter("handle_objects", reader.GetValue("handle_objects"));
-                clientDatabaseConnection.AddParameter("handle_standards", reader.GetValue("handle_standards"));
-                clientDatabaseConnection.AddParameter("handle_translations", reader.GetValue("handle_translations"));
-                clientDatabaseConnection.AddParameter("handle_dynamic_content", reader.GetValue("handle_dynamic_content"));
-                clientDatabaseConnection.AddParameter("handle_logic_blocks", reader.GetValue("handle_logic_blocks"));
-                clientDatabaseConnection.AddParameter("handle_mutators", reader.GetValue("handle_mutators"));
-                clientDatabaseConnection.AddParameter("login_required", reader.GetValue("login_required"));
-                clientDatabaseConnection.AddParameter("login_session_prefix", reader.GetValue("login_session_prefix"));
-                clientDatabaseConnection.AddParameter("linked_templates", reader.GetValue("linked_templates"));
-                clientDatabaseConnection.AddParameter("ordering", reader.GetValue("ordering"));
-                clientDatabaseConnection.AddParameter("insert_mode", reader.GetValue("insert_mode"));
-                clientDatabaseConnection.AddParameter("load_always", reader.GetValue("load_always"));
-                clientDatabaseConnection.AddParameter("disable_minifier", reader.GetValue("disable_minifier"));
-                clientDatabaseConnection.AddParameter("url_regex", urlRegex);
-                clientDatabaseConnection.AddParameter("external_files", externalFiles);
-                clientDatabaseConnection.AddParameter("grouping_create_object_instead_of_array", reader.GetValue("grouping_create_object_instead_of_array"));
-                clientDatabaseConnection.AddParameter("grouping_prefix", reader.GetValue("grouping_prefix"));
-                clientDatabaseConnection.AddParameter("grouping_key", reader.GetValue("grouping_key"));
-                clientDatabaseConnection.AddParameter("grouping_key_column_name", reader.GetValue("grouping_key_column_name"));
-                clientDatabaseConnection.AddParameter("grouping_value_column_name", reader.GetValue("grouping_value_column_name"));
-                clientDatabaseConnection.AddParameter("is_scss_include_template", reader.GetValue("is_scss_include_template"));
-                clientDatabaseConnection.AddParameter("use_in_wiser_html_editors", reader.GetValue("use_in_wiser_html_editors"));
-                clientDatabaseConnection.AddParameter("routine_type", (int)routineType);
-                clientDatabaseConnection.AddParameter("routine_parameters", routineParameters);
-                clientDatabaseConnection.AddParameter("routine_return_type", routineReturnType);
-                await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserTemplate, 0);
-
-                // Convert dynamic content.
-                if (templateType == TemplateTypes.Html)
-                {
-                    query = @"SELECT *
-                            FROM easy_dynamiccontent
-                            WHERE itemid = ?template_id
-                            AND version = ?version";
-                    dataTable = await clientDatabaseConnection.GetAsync(query);
-                    if (dataTable.Rows.Count == 0)
+                    // Convert dynamic content.
+                    if (templateType != TemplateTypes.Html)
                     {
                         continue;
                     }
 
-                    var legacyComponentName = dataTable.Rows[0].Field<string>("freefield1");
-                    var legacySettingsJson = dataTable.Rows[0].Field<string>("filledvariables");
-                    var newSettings = ConvertDynamicComponentSettingsFromLegacyToNew(legacyComponentName, legacySettingsJson);
+                    query = @"SELECT *
+FROM easy_dynamiccontent
+WHERE itemid = ?template_id
+AND version = ?version";
+                    var dynamicContentDataTable = await clientDatabaseConnection.GetAsync(query);
+                    if (dynamicContentDataTable.Rows.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (DataRow dynamicContentRow in dynamicContentDataTable.Rows)
+                    {
+                        var contentId = dynamicContentRow.Field<int>("id");
+                        var legacyComponentName = dynamicContentRow.Field<string>("freefield1");
+                        var legacySettingsJson = dynamicContentRow.Field<string>("filledvariables");
+                        var (gclComponentName, gclSettingsJson, title, componentMode) = ConvertDynamicComponentSettingsFromLegacyToNew(legacyComponentName, legacySettingsJson);
+
+                        clientDatabaseConnection.ClearParameters();
+                        clientDatabaseConnection.AddParameter("content_id", contentId);
+                        clientDatabaseConnection.AddParameter("settings", gclSettingsJson);
+                        clientDatabaseConnection.AddParameter("component", gclComponentName);
+                        clientDatabaseConnection.AddParameter("component_mode", componentMode);
+                        clientDatabaseConnection.AddParameter("version", dynamicContentRow.Field<int>("version"));
+                        clientDatabaseConnection.AddParameter("title", title);
+                        clientDatabaseConnection.AddParameter("published_environment", publishedEnvironment);
+                        clientDatabaseConnection.AddParameter("changed_on", changedOn);
+                        clientDatabaseConnection.AddParameter("changed_by", changedBy);
+                        await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserDynamicContent, 0);
+
+                        clientDatabaseConnection.ClearParameters();
+                        clientDatabaseConnection.AddParameter("content_id", contentId);
+                        clientDatabaseConnection.AddParameter("destination_template_id", templateId);
+                        clientDatabaseConnection.AddParameter("added_on", changedOn);
+                        clientDatabaseConnection.AddParameter("added_by", changedBy);
+                        await clientDatabaseConnection.ExecuteAsync(@$"INSERT IGNORE INTO {WiserTableNames.WiserTemplateDynamicContent} (content_id, destination_template_id, added_on, added_by)
+VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
+                    }
                 }
+
+                await clientDatabaseConnection.CommitTransactionAsync();
+
+                // Add any missing root directories. For some reason we get timeouts/deadlocks when we do this in the same transaction as the rest of the conversion, so we have to to it after the commit.
+                var missingRootDirectories = allRootDirectories.Except(rootDirectoriesCreated);
+                foreach (var directory in missingRootDirectories)
+                {
+                    var ordering = directory.ToUpperInvariant() switch
+                    {
+                        "HTML" => 1,
+                        "SCRIPTS" => 2,
+                        "SCSS" => 3,
+                        "CSS" => 4,
+                        "QUERY" => 5,
+                        "AIS" => 6,
+                        "VIEWS" => 7,
+                        "ROUTINES" => 8,
+                        "TRIGGERS" => 9,
+                        _ => 0
+                    };
+
+                    await templateDataService.CreateAsync(directory, null, TemplateTypes.Directory, IdentityHelpers.GetUserName(identity, true), ordering: ordering);
+                }
+            }
+            catch
+            {
+                await clientDatabaseConnection.RollbackTransactionAsync();
+                throw;
             }
 
             return new ServiceResult<bool>(true);
@@ -3219,19 +2367,19 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch." 
+                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch."
                 };
             }
-            
+
             // Check if the branch exists.
-            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            var branchToDeploy = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
             if (branchToDeploy == null)
             {
                 return new ServiceResult<bool>
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Branch with ID {branchId} does not exist" 
+                    ErrorMessage = $"Branch with ID {branchId} does not exist"
                 };
             }
 
@@ -3242,7 +2390,7 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}" 
+                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}"
                 };
             }
 
@@ -3287,9 +2435,319 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             };
         }
 
-        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
+        /// <inheritdoc />
+        public async Task<ServiceResult<MeasurementSettings>> GetMeasurementSettingsAsync(int templateId = 0, int componentId = 0)
         {
-            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentid>\d+)['""][^>]*?\/?>");
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var result = new MeasurementSettings();
+
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            if (!String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                var ids = developmentRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnDevelopmentForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnDevelopmentForEverything = String.Equals(developmentRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                      || String.Equals(developmentRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                var ids = testRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnTestForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnTestForEverything = String.Equals(testRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(testRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                var ids = acceptanceRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnAcceptanceForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnAcceptanceForEverything = String.Equals(acceptanceRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                                     || String.Equals(acceptanceRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (!String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                var ids = liveRenderingSettings.Split(",").Select(value => !Int32.TryParse(value, out var id) ? 0 : id);
+                result.MeasureRenderTimesOnLiveForCurrent = ids.Contains(templateId);
+                result.MeasureRenderTimesOnLiveForEverything = String.Equals(liveRenderingSettings, "true", StringComparison.OrdinalIgnoreCase)
+                                                               || String.Equals(liveRenderingSettings, "all", StringComparison.OrdinalIgnoreCase);
+            }
+
+            return new ServiceResult<MeasurementSettings>(result);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveMeasurementSettingsAsync(MeasurementSettings settings, int templateId = 0, int componentId = 0)
+        {
+            switch (templateId)
+            {
+                case <= 0 when componentId <= 0:
+                    throw new Exception("Please specify either a template ID or a component ID.");
+                case > 0 when componentId > 0:
+                    throw new Exception("You have specified both a template ID and a component ID, please specify only one.");
+            }
+
+            var previousSettings = (await GetMeasurementSettingsAsync(templateId, componentId)).ModelObject;
+            if (previousSettings.MeasureRenderTimesOnDevelopmentForEverything || previousSettings.MeasureRenderTimesOnTestForEverything || previousSettings.MeasureRenderTimesOnAcceptanceForEverything || previousSettings.MeasureRenderTimesOnLiveForEverything)
+            {
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Cannot change these settings, because they are enabled globally."
+                };
+            }
+
+            // Get the current settings from database.
+            var name = templateId > 0 ? "templates" : "components";
+            var developmentRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_development");
+            var testRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_test");
+            var acceptanceRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_acceptance");
+            var liveRenderingSettings = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}_live");
+            var logAllRendering = await objectsService.FindSystemObjectByDomainNameAsync($"log_rendering_of_{name}");
+            if (String.IsNullOrWhiteSpace(developmentRenderingSettings))
+            {
+                developmentRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(testRenderingSettings))
+            {
+                testRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(acceptanceRenderingSettings))
+            {
+                acceptanceRenderingSettings = logAllRendering;
+            }
+            if (String.IsNullOrWhiteSpace(liveRenderingSettings))
+            {
+                liveRenderingSettings = logAllRendering;
+            }
+
+            // Add or remove the current template from the settings.
+            var developmentIds = developmentRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var testIds = testRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var acceptanceIds = acceptanceRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+            var liveIds = liveRenderingSettings.Split(",").Select(Int32.Parse).ToList();
+
+            if (settings.MeasureRenderTimesOnDevelopmentForCurrent)
+            {
+                if (!developmentIds.Contains(templateId)) developmentIds.Add(templateId);
+            }
+            else
+            {
+                if (developmentIds.Contains(templateId)) developmentIds.Remove(templateId);
+            }
+
+            if (settings.MeasureRenderTimesOnTestForCurrent)
+            {
+                if (!testIds.Contains(templateId)) testIds.Add(templateId);
+            }
+            else
+            {
+                if (testIds.Contains(templateId)) testIds.Remove(templateId);
+            }
+
+            if (settings.MeasureRenderTimesOnAcceptanceForCurrent)
+            {
+                if (!acceptanceIds.Contains(templateId)) acceptanceIds.Add(templateId);
+            }
+            else
+            {
+                if (acceptanceIds.Contains(templateId)) acceptanceIds.Remove(templateId);
+            }
+
+            if (settings.MeasureRenderTimesOnLiveForCurrent)
+            {
+                if (!liveIds.Contains(templateId)) liveIds.Add(templateId);
+            }
+            else
+            {
+                if (liveIds.Contains(templateId)) liveIds.Remove(templateId);
+            }
+
+            // Save the new settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}", ""); // These are saved empty, because we copied all IDs to the specific environment settings.
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_development", String.Join(",", developmentIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_test", String.Join(",", testIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_acceptance", String.Join(",", acceptanceIds));
+            await objectsService.SetSystemObjectValueAsync($"log_rendering_of_{name}_live", String.Join(",", liveIds));
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.NoContent
+            };
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<RenderLogModel>>> GetRenderLogsAsync(int templateId, int version = 0,
+            string urlRegex = null, Environments? environment = null, ulong userId = 0,
+            string languageCode = null, int pageSize = 500, int pageNumber = 1,
+            bool getDailyAverage = false, DateTime? start = null, DateTime? end = null)
+        {
+            var results = await measurementsDataService.GetRenderLogsAsync(templateId, 0, version, urlRegex, environment, userId, languageCode, pageSize, pageNumber, getDailyAverage, start, end);
+            return new ServiceResult<List<RenderLogModel>>(results);
+        }
+
+        /// <summary>
+        /// Converts JCL replacement methods (such as {title_seo}) to GCL replacement methods (such as {title:seo}).
+        /// </summary>
+        /// <param name="input">The string from the JCL to convert.</param>
+        /// <returns>The converted string that can be used in the GCL.</returns>
+        private static string ConvertLegacyReplacementMethodsToNewReplacementMethods(string input)
+        {
+            if (String.IsNullOrWhiteSpace(input))
+            {
+                return input;
+            }
+
+            // Decrypt.
+            input = ConvertEncryptOrDecryptReplacement(input, "decrypt_withdate", "Decrypt", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "normaldecrypt_withdate", "DecryptNormal", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "decrypt", "Decrypt", false);
+            input = ConvertEncryptOrDecryptReplacement(input, "normaldecrypt", "DecryptNormal", false);
+
+            // Encrypt.
+            input = ConvertEncryptOrDecryptReplacement(input, "encrypt_withdate", "Encrypt", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "normalencrypt_withdate", "EncryptNormal", true);
+            input = ConvertEncryptOrDecryptReplacement(input, "encrypt", "Encrypt", false);
+            input = ConvertEncryptOrDecryptReplacement(input, "normalencrypt", "EncryptNormal", false);
+
+            // Likes in queries.
+            if (input.Contains("like", StringComparison.OrdinalIgnoreCase))
+            {
+                input = Regex.Replace(input, @"LIKE '%\[\{(?<variableName>[^}]+?)\}\]%'", "LIKE CONCAT('%', '{${variableName}}', '%')");
+                input = Regex.Replace(input, @"LIKE '%\{(?<variableName>[^}]+?)\}%'", "LIKE CONCAT('%', '{${variableName}}', '%')");
+
+                input = Regex.Replace(input, @"LIKE '%\[\{(?<variableName>[^}]+?)\}\]'", "LIKE CONCAT('%', '{${variableName}}')");
+                input = Regex.Replace(input, @"LIKE '%\{(?<variableName>[^}]+?)\}'", "LIKE CONCAT('%', '{${variableName}}')");
+
+                input = Regex.Replace(input, @"LIKE '\[\{(?<variableName>[^}]+?)\}\]%'", "LIKE CONCAT('{${variableName}}', '%')");
+                input = Regex.Replace(input, @"LIKE '\{(?<variableName>[^}]+?)\}%'", "LIKE CONCAT('{${variableName}}', '%')");
+            }
+
+            input = ConvertBasicReplacement(input, "seo", "Seo");
+            input = ConvertBasicReplacement(input, "htmlencode", "HtmlEncode");
+            input = ConvertBasicReplacement(input, "sha512", "Sha512");
+            input = ConvertBasicReplacement(input, "urldataescape", "UrlEncode");
+            input = ConvertBasicReplacement(input, "urldataunescape", "UrlDecode");
+            input = ConvertBasicReplacement(input, "striphtml", "StripHtml");
+            input = ConvertBasicReplacement(input, "valuta", "Currency");
+            input = ConvertBasicReplacement(input, "valutasup", "CurrencySup");
+            input = ConvertBasicReplacement(input, "jsonsafe", "JsonSafe");
+            input = ConvertBasicReplacement(input, "stripstyle", "StripInlineStyle");
+            input = ConvertBasicReplacement(input, "base64", "Base64");
+            input = ConvertBasicReplacement(input, "price", "Currency", "true");
+            input = ConvertBasicReplacement(input, "currency", "Currency", "true");
+
+            // Miscellaneous conversions.
+            input = input.Replace("{items}", "{items:Raw}");
+
+            return input;
+        }
+
+        /// <summary>
+        /// Converts encryption/decryption replacements from JCL (eg {title_seo}) to GCL (eg {title:Seo}).
+        /// </summary>
+        /// <param name="input">The string from the JCL to do the replacements in.</param>
+        /// <param name="jclSuffix">The JCL suffix (without underscore) for the replacement to handle, such as "seo".</param>
+        /// <param name="gclSuffix">The suffix that it should be in the GCL.</param>
+        /// <param name="withDate">Whether this is an encryption/decryption that uses a datetime to make it invalid after X time.</param>
+        private static string ConvertEncryptOrDecryptReplacement(string input, string jclSuffix, string gclSuffix, bool withDate)
+        {
+            var regex = new Regex(@$"{{(?<variableName>.+)_{jclSuffix}(?<minutesOverride>[\|0-9]*)}}");
+            foreach (Match match in regex.Matches(input))
+            {
+                var minutesOverride = match.Groups["minutesOverride"].Value.TrimStart('|');
+                if (!String.IsNullOrWhiteSpace(minutesOverride))
+                {
+                    minutesOverride = $",{minutesOverride}";
+                }
+                var newVariable = $"{{{match.Groups["variableName"].Value}:{gclSuffix}({withDate}{minutesOverride})}}";
+                input = input.Replace(match.Value, newVariable);
+            }
+
+            return input;
+        }
+
+        /// <summary>
+        /// Converts basic replacements from JCL (eg {title_seo}) to GCL (eg {title:Seo}).
+        /// </summary>
+        /// <param name="input">The string from the JCL to do the replacements in.</param>
+        /// <param name="jclSuffix">The JCL suffix (without underscore) for the replacement to handle, such as "seo".</param>
+        /// <param name="gclSuffix">The suffix that it should be in the GCL.</param>
+        /// <param name="extraParameters">Any extra parameters that the replacement function in the GCL might need.</param>
+        private static string ConvertBasicReplacement(string input, string jclSuffix, string gclSuffix, string extraParameters = "")
+        {
+            if (!String.IsNullOrEmpty(gclSuffix))
+            {
+                gclSuffix = $":{gclSuffix}";
+            }
+
+            var regex = new Regex(@$"{{(?<variableName>[^\{{\}}\n]+)_{jclSuffix}(?<parameters>[\|][^\}}\n]*)?}}");
+            foreach (Match match in regex.Matches(input))
+            {
+                var extraBracketToReplace = "";
+                var parameters = match.Groups["parameters"].Value?.Trim('|');
+
+                if (parameters != null && parameters.StartsWith("{") && !parameters.EndsWith("}"))
+                {
+                    // This is a bit of a hack, because in some cases there will be values like "{price_currency|{culture}}" and our regex will return "{culture" without the last bracket.
+                    // But if we change the regex to include that bracket, then it will often return too much, like "{price_currency|{culture}} <div></div>{otherVariable}" for example.
+                    parameters += "}";
+                    extraBracketToReplace = "}";
+                }
+
+                parameters = String.IsNullOrWhiteSpace(parameters) ? extraParameters : $"{extraParameters},{parameters}";
+                if (!String.IsNullOrEmpty(parameters))
+                {
+                    parameters = $"({parameters})";
+                }
+
+                var newVariable = $"{{{match.Groups["variableName"].Value}{gclSuffix}{parameters}}}";
+                input = input.Replace($"{match.Value}{extraBracketToReplace}", newVariable);
+            }
+
+            return input;
+        }
+
+        /// <summary>
+        /// Converts all dynamic components in an HTML string from JCL tags to GCL tags.
+        /// The JCL uses img tags for components, the GCL uses divs.
+        /// </summary>
+        /// <param name="html">The HTML from the JCL templates module.</param>
+        /// <param name="forJson">Set to true if this is for JSON settings, so that quotes and such will be escaped.</param>
+        /// <returns>The HTML for the GCL templates module.</returns>
+        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html, bool forJson = false)
+        {
+            var regex = new Regex(@"<img[^>]*?(?:data=['\""\\]+(?<data>.*?)['\""\\]+[^>]*?)?contentid=['\""\\]+(?<contentId>\d+)['\""\\]+[^>]*?\/?>");
             var matches = regex.Matches(html);
             foreach (Match match in matches)
             {
@@ -3304,72 +2762,165 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
                     dataAttribute = $"data=\"{dataAttribute}\"";
                 }
 
-                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{match.Groups["contentId"].Value}\">";
-                html = html.Replace(match.Value, newElement);
+                var componentId = match.Groups["contentId"].Value;
+                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{componentId}\"><h2>Component {componentId}</h2></div>";
+                html = html.Replace(match.Value, forJson ? HttpUtility.JavaScriptStringEncode(newElement) : newElement);
             }
 
             return html;
         }
 
-        private static string ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
+        /// <summary>
+        /// Converts the settings JSON from the JCL to the settings JSON for the GCL.
+        /// </summary>
+        /// <param name="legacyComponentName">The name of the component in the JCL.</param>
+        /// <param name="legacySettingsJson">The JSON with the settings from the JCL.</param>
+        /// <returns>The name, settings, title and mode for the GCL component.</returns>
+        private static (string GclComponentName, string GclSettingsJson, string Title, string ComponentMode) ConvertDynamicComponentSettingsFromLegacyToNew(string legacyComponentName, string legacySettingsJson)
         {
+            legacySettingsJson ??= "";
+
             string viewComponentName;
+            string newSettingsJson;
+            string title;
+            string componentMode;
             switch (legacyComponentName)
             {
                 case "JuiceControlLibrary.MLSimpleMenu":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<MlSimpleMenuLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
                 case "JuiceControlLibrary.SimpleMenu":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<SimpleMenuLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
                 case "JuiceControlLibrary.ProductModule":
                 {
                     viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<ProductModuleLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
+                    break;
+                }
+                case "JuiceControlLibrary.DBField":
+                {
+                    viewComponentName = "Repeater";
+                    var legacySettings = JsonConvert.DeserializeObject<DbFieldLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Repeater.LegacyComponentMode.NonLegacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.AccountWiser2":
                 {
                     viewComponentName = "Account";
+                    var legacySettings = JsonConvert.DeserializeObject<CmsSettingsLegacy>(legacySettingsJson);
+                    componentMode = ((Account.ComponentModes)legacySettings.ComponentMode).ToString();
+                    // Settings for account are the same for JCL and GCL.
+                    newSettingsJson = legacySettingsJson;
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.ShoppingBasket":
                 {
                     viewComponentName = "ShoppingBasket";
+                    var legacySettings = JsonConvert.DeserializeObject<ShoppingBasketLegacySettingsModel>(legacySettingsJson);
+                    componentMode = ShoppingBasket.ComponentModes.Legacy.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.WebPage":
                 {
                     viewComponentName = "WebPage";
+                    var legacySettings = JsonConvert.DeserializeObject<WebPageLegacySettingsModel>(legacySettingsJson);
+                    componentMode = WebPage.ComponentModes.Render.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.Pagination":
                 {
                     viewComponentName = "Pagination";
+                    var legacySettings = JsonConvert.DeserializeObject<PaginationLegacySettingsModel>(legacySettingsJson);
+                    componentMode = Pagination.ComponentModes.Normal.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.DynamicFilter":
                 {
                     viewComponentName = "Filter";
+                    var legacySettings = JsonConvert.DeserializeObject<CmsSettingsLegacy>(legacySettingsJson);
+                    componentMode = Filter.ComponentModes.Aggregation.ToString();
+                    // Settings for account are the same for JCL and GCL.
+                    newSettingsJson = legacySettingsJson;
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.Sendform":
                 {
                     viewComponentName = "WebForm";
-                    break;
-                }
-                case "JuiceControlLibrary.Configurator":
-                {
-                    viewComponentName = "Configurator";
+                    var legacySettings = JsonConvert.DeserializeObject<WebFormLegacySettingsModel>(legacySettingsJson);
+                    componentMode = WebForm.ComponentModes.BasicForm.ToString();
+                    newSettingsJson = JsonConvert.SerializeObject(legacySettings?.ToSettingsModel());
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 case "JuiceControlLibrary.DataSelectorParser":
                 {
                     viewComponentName = "DataSelectorParser";
+                    var legacySettings = JsonConvert.DeserializeObject<CmsSettingsLegacy>(legacySettingsJson);
+                    componentMode = DataSelectorParser.ComponentModes.Render.ToString();
+                    // Settings for account are the same for JCL and GCL.
+                    newSettingsJson = legacySettingsJson;
+                    title = legacySettings?.VisibleDescription;
                     break;
                 }
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(legacyComponentName), legacyComponentName);
+                    return ("Unknown", legacySettingsJson, $"TODO - {legacyComponentName} - This needs to be converted manually!", "Default");
             }
 
-            // TODO: The main CmsSettingsModel of every component should have a method "ToSettingsModel", which will convert the legacy settings to the new settings. Use that.
+            newSettingsJson = ConvertDynamicComponentsFromLegacyToNewInHtml(newSettingsJson, true);
+            newSettingsJson = ConvertLegacyReplacementMethodsToNewReplacementMethods(newSettingsJson);
 
-            return null;
+            return (viewComponentName, newSettingsJson, title, componentMode);
+        }
+
+        private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
+        {
+            var regex = new Regex(@"<img[^>]*?(?:data=['""](?<data>.*?)['""][^>]*?)?contentid=['""](?<contentId>\d+)['""][^>]*?\/?>", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
+            var matches = regex.Matches(html);
+            foreach (Match match in matches)
+            {
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var dataAttribute = match.Groups["data"].Value;
+                if (!String.IsNullOrWhiteSpace(dataAttribute))
+                {
+                    dataAttribute = $"data=\"{dataAttribute}\"";
+                }
+
+                var componentId = match.Groups["contentId"].Value;
+                var newElement = $"<div class=\"dynamic-content\" {dataAttribute} component-id=\"{componentId}\"><h2>Component {componentId}</h2></div>";
+                html = html.Replace(match.Value, newElement);
+            }
+
+            return html;
         }
 
         /// <summary>
@@ -3414,60 +2965,6 @@ WHERE template.templatetype IS NULL OR template.templatetype <> 'normal'";
             domain = domain.TrimEnd('/');
             input = input.TrimStart('/');
             return $"{domain}/{input}";
-        }
-
-        /// <summary>
-        /// Sets URL and variables in http context, so the GCL can use them for replacements and settings and such while generating a preview for a template and/or dynamic content.
-        /// </summary>
-        private async Task SetupGclForPreviewAsync(ClaimsIdentity identity, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
-            if (requestModel.PreviewVariables != null && httpContextAccessor.HttpContext != null)
-            {
-                foreach (var previewVariable in requestModel.PreviewVariables)
-                {
-                    switch (previewVariable.Type.ToUpperInvariant())
-                    {
-                        case "POST":
-                            if (!requestModel.TemplateSettings.HandleRequests)
-                            {
-                                break;
-                            }
-
-                            if (previewVariable.Encrypt)
-                            {
-                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
-                            }
-
-                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
-                            break;
-                        case "SESSION":
-                            if (!requestModel.TemplateSettings.HandleSession)
-                            {
-                                break;
-                            }
-
-                            if (previewVariable.Encrypt)
-                            {
-                                previewVariable.Value = previewVariable.Value.EncryptWithAesWithSalt(customer.EncryptionKey);
-                            }
-
-                            httpContextAccessor.HttpContext.Items.Add(previewVariable.Key, previewVariable.Value);
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(previewVariable.Type), previewVariable.Type);
-                    }
-                }
-            }
-
-            // Let the GCL know that we want to use the given URL for everything, so the generated preview will be just like when a user opened the given URL on the actual website.
-            if (httpContextAccessor.HttpContext != null && requestModel.Url != null && requestModel.Url.IsAbsoluteUri)
-            {
-                httpContextAccessor.HttpContext.Items.Add(Constants.WiserUriOverrideForReplacements, requestModel.Url);
-            }
-
-            // Force the GCL environment to development, so that it will always use the latest versions of templates and dynamic components.
-            gclSettings.Environment = Environments.Development;
         }
 
         /// <summary>

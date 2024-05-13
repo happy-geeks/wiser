@@ -1,17 +1,17 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../Css/DataSelector.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../css/DataSelector.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
 };
 
-((jQuery, moduleSettings) => {
+((moduleSettings) => {
     class DataSelector {
         constructor(settings) {
             kendo.culture("nl-NL");
@@ -40,6 +40,7 @@ const moduleSettings = {
             this.selectedEntityType = "";
 
             // Saving and loading.
+            this.currentId = 0;
             this.currentName = "";
             this.dataLoad = new DataLoad(this);
 
@@ -90,12 +91,12 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
 
@@ -136,13 +137,10 @@ const moduleSettings = {
                     });
                     console.error(e);
                 }
-            } else {
-                // Set some initial values.
-                await this.updateAvailableEntityTypes();
-
-                // Hide loader at the end.
-                this.toggleMainLoader(false);
             }
+
+            // Hide loader at the end.
+            this.toggleMainLoader(false);
         }
 
         /**
@@ -155,6 +153,7 @@ const moduleSettings = {
 
         setBindings() {
             const exportModeCheckbox = document.getElementById("useExportMode");
+            const showInDashboardCheckbox = document.getElementById("showInDashboard");
             const newButton = document.getElementById("newButton");
             const saveButton = document.getElementById("saveButton");
             const loadButton = document.getElementById("loadButton");
@@ -181,6 +180,9 @@ const moduleSettings = {
                         exportModeCheckbox.checked = !exportModeCheckbox.checked;
                     });
                 });
+            }
+            if (showInDashboardCheckbox) {
+                showInDashboardCheckbox.addEventListener("change", this.checkForDashboardConflict.bind(this));
             }
 
             if (newButton) {
@@ -307,7 +309,6 @@ const moduleSettings = {
 
                 // This isn't really necessary, but it's nice to have the modules in a set order.
                 this.selectedModules.sort();
-                this.updateAvailableEntityTypes();
             });
 
             const selectEntity = $("#selectEntity").getKendoDropDownList();
@@ -382,19 +383,8 @@ const moduleSettings = {
         }
 
         async getAllEntityTypes() {
-            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=` });
-            this.allEntityTypes = response.map(ce => ce.entityType);
-        }
-
-        async updateAvailableEntityTypes() {
-            const response = await Wiser.api({ url: `${this.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${this.selectedModules.join(",")}` });
-            this.availableEntityTypes = response.map(ce => ce.entityType);
-
-            $("#selectEntity").getKendoDropDownList().setDataSource({
-                data: this.availableEntityTypes.map((entityType) => {
-                    return { text: entityType, value: entityType };
-                })
-            });
+            this.allEntityTypes = await Wiser.api({ url: `${this.settings.wiserApiRoot}entity-types` });
+            $("#selectEntity").getKendoDropDownList().setDataSource(this.allEntityTypes);
         }
 
         updateWidgetDataSource(widget, baseDataSource, includeAliasCheck = false) {
@@ -537,7 +527,7 @@ const moduleSettings = {
                 transport: {
                     read: (options) => {
                         Wiser.api({
-                            url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}&useExportMode=${this.useExportMode ? "1" : "0"}`,
+                            url: `${this.settings.wiserApiRoot}entity-properties/${encodeURIComponent(dataItem.entityName)}/unique-values/${encodeURIComponent(dataItem.propertyName)}?languageCode=${dataItem.languageCode}`,
                             dataType: "json"
                         }).then((result) => {
                             const items = [
@@ -549,7 +539,12 @@ const moduleSettings = {
                                     text: "Actuele datum en tijd",
                                     value: "{NowMysqlTime}"
                                 },
-                                ...result
+                                ...result.map(item => {
+                                    return {
+                                        text: item,
+                                        value: item
+                                    };
+                                })
                             ];
 
                             options.success(items);
@@ -1088,6 +1083,8 @@ const moduleSettings = {
                 showInExportModule: document.getElementById("showInExportModule").checked ? 1 : 0,
                 showInCommunicationModule: document.getElementById("showInCommunicationModule").checked ? 1 : 0,
                 availableForRendering: document.getElementById("availableForRendering").checked ? 1 : 0,
+                showInDashboard: document.getElementById("showInDashboard").checked ? 1 : 0,
+                availableForBranches: document.getElementById("availableForBranches").checked ? 1 : 0,
                 allowedRoles: this.allowedRoles.value().join()
             };
 
@@ -1106,9 +1103,13 @@ const moduleSettings = {
                 dropdown.getKendoDropDownList().dataSource.read();
             }
 
+            // Remember current ID and name.
+            this.currentId = saveResult;
+            this.currentName = name;
+
             // Set ID and name in header.
             const header = document.getElementById("dataSelectorId");
-            header.querySelector("h3 > label").innerHTML = `${name} (ID: ${saveResult})`;
+            header.querySelector("h3 > label").innerHTML = `${this.currentName} (ID: ${this.currentId})`;
             header.style.display = "";
 
             // Trigger save event. This event can be used on places that load the data selector in an iframe, such as the module DynamicItems.
@@ -1133,10 +1134,10 @@ const moduleSettings = {
 
             kendoPrompt.open().result.done((input) => {
                 window.processing.addProcess("checkSavedNameExists");
-                Wiser.api({ url: `${this.settings.serviceRoot}/CHECK_DATA_SELECTOR_NAME_EXISTS?name=${encodeURIComponent(input)}` }).then((existsResult) => {
+                Wiser.api({ url: `${this.settings.wiserApiRoot}data-selectors/${encodeURIComponent(input)}/exists` }).then((existsResult) => {
                     window.processing.removeProcess("checkSavedNameExists");
 
-                    if (!Wiser.validateArray(existsResult) || existsResult[0].nameExists !== 1) {
+                    if (existsResult === 0) {
                         this.currentName = input;
 
                         window.processing.addProcess("dataSelectorSave");
@@ -1157,6 +1158,7 @@ const moduleSettings = {
                                 });
                             }
                         );
+
                         return;
                     }
 
@@ -1206,7 +1208,7 @@ const moduleSettings = {
                     columns: [
                         { field: "k", title: "Naam" },
                         { field: "v", title: "Waarde" },
-                        { command: { name: "destroy", text: "Verwijder" }, width: 150 }
+                        { command: { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }, width: 150 }
                     ],
                     editable: {
                         mode: "incell",
@@ -1215,6 +1217,7 @@ const moduleSettings = {
                     },
                     selectable: true
                 }).getKendoGrid();
+                $("<div />").kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
                 const closeButton = $('<button type="button" style="margin-top: 1em;">Sluiten</button>').kendoButton().getKendoButton();
 
@@ -1365,7 +1368,7 @@ const moduleSettings = {
                         transport: {
                             read: (options) => {
                                 Wiser.api({
-                                    url: `${this.settings.serviceRoot}/GET_PROPERTY_VALUES?entityName=${dataItem.entityName}&propertyName=${dataItem.propertyName}&languageCode=${dataItem.languageCode}`,
+                                    url: `${this.settings.wiserApiRoot}entity-properties/${encodeURIComponent(dataItem.entityName)}/unique-values/${encodeURIComponent(dataItem.propertyName)}?languageCode=${dataItem.languageCode}`,
                                     dataType: "json"
                                 }).then((result) => {
                                     const items = [
@@ -1377,7 +1380,12 @@ const moduleSettings = {
                                             text: "Actuele datum en tijd",
                                             value: "{NowMysqlTime}"
                                         },
-                                        ...result
+                                        ...result.map(item => {
+                                            return {
+                                                text: item,
+                                                value: item
+                                            };
+                                        })
                                     ];
 
                                     options.success(items);
@@ -2091,7 +2099,7 @@ const moduleSettings = {
          * @param {HTMLElement | Document | jQuery} context The context, which can be a DOM element, Document, or jQuery object.
          */
         destroyChildKendoWidgets(context) {
-            if (!(context instanceof HTMLElement) && !(context instanceof HTMLDocument) && !(context instanceof jQuery)) {
+            if (!(context instanceof HTMLElement) && !(context instanceof Document) && !(context instanceof $)) {
                 return;
             }
 
@@ -2115,7 +2123,27 @@ const moduleSettings = {
                 kendoWidget.destroy();
             });
         }
+
+        /**
+         * Checks if there's a data selector that has "show in dashboard" already enabled. This will only occur if the
+         * checkbox for "show in dashboard" is be enabled.
+         */
+        async checkForDashboardConflict(event) {
+            if (!event.currentTarget.checked) return;
+
+            const result = await Wiser.api({
+                url: `${this.settings.wiserApiRoot}data-selectors/${this.currentId}/check-dashboard-conflict`,
+                method: "GET"
+            });
+
+            if (!result) return;
+
+            Wiser.alert({
+                title: "Andere data selector in gebruik",
+                content: `De data selector '${result}' wordt al gebruikt om te tonen in het dashboard. Als u deze data selector opslaat, dan zal '${result}' niet meer gebruikt worden in het dashboard.`
+            });
+        }
     }
 
     window.dataSelector = new DataSelector(moduleSettings);
-})($, moduleSettings);
+})(moduleSettings);

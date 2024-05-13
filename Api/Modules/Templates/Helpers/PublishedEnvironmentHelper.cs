@@ -7,6 +7,9 @@ using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Helpers
 {
+    /// <summary>
+    /// A class with helper functions for published environment of templates.
+    /// </summary>
     public class PublishedEnvironmentHelper
     {
         /// <summary>

@@ -4,7 +4,7 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/search.css";
+import "../Css/search.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -46,7 +46,7 @@ const moduleSettings = {
 
             // Default settings
             this.settings = {
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend"
             };
             Object.assign(this.settings, settings);
@@ -82,7 +82,7 @@ const moduleSettings = {
             
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
 
             this.searchField = $("#search-field");
@@ -119,8 +119,8 @@ const moduleSettings = {
                     },
                     {
                         template: (dataItem) => {
-                            const entityType = this.allEntityTypes.find(x => x.id === dataItem.entityType) || {};
-                            return `<strong>${dataItem.title}</strong><br><small>${entityType.displayName || dataItem.entityType}</small>`;
+                            const entityType = this.allEntityTypes.find(x => x.id === (dataItem.entityType || dataItem.entitytype)) || {};
+                            return `<strong>${dataItem.title}</strong><br><small>${entityType.displayName || dataItem.entityType || dataItem.entitytype}</small>`;
                         },
                         field: "title",
                         title: "Titel",
@@ -414,7 +414,7 @@ const moduleSettings = {
          */
         onShowDetailsClick(event) {
             const dataItem = this.resultsGrid.dataItem($(event.currentTarget).closest("tr"));
-            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType);
+            this.openDynamicItem(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid, dataItem.moduleId || dataItem.moduleid || dataItem.moduleId, dataItem.entityType || dataItem.entitytype);
         }
     }
 

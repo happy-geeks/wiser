@@ -11,15 +11,16 @@ using System.Threading.Tasks;
 using Api.Core.Extensions;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Customers.Models;
 using Api.Modules.Grids.Enums;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Grids.Models;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -28,7 +29,8 @@ using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using Microsoft.Extensions.Logging;
-using MySql.Data.MySqlClient;
+using Microsoft.Extensions.Options;
+using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -40,12 +42,14 @@ namespace Api.Modules.Grids.Services
     public class GridsService : IGridsService, IScopedService
     {
         private readonly IItemsService itemsService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly ILogger<GridsService> logger;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly IApiReplacementsService apiReplacementsService;
+        private readonly ApiSettings apiSettings;
+
         private static readonly List<string> ItemColumns = new()
         {
             "id",
@@ -72,15 +76,16 @@ namespace Api.Modules.Grids.Services
         /// <summary>
         /// Creates a new instance of GridsService.
         /// </summary>
-        public GridsService(IItemsService itemsService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService)
+        public GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IOptions<ApiSettings> apiSettings)
         {
             this.itemsService = itemsService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.logger = logger;
             this.stringReplacementsService = stringReplacementsService;
             this.apiReplacementsService = apiReplacementsService;
+            this.apiSettings = apiSettings.Value;
         }
 
         /// <inheritdoc />
@@ -98,9 +103,10 @@ namespace Api.Modules.Grids.Services
             ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var encryptionKey = customer.ModelObject.EncryptionKey;
-            var itemId = wiserCustomersService.DecryptValue<ulong>(encryptedId, customer.ModelObject);
+            clientDatabaseConnection.SetCommandTimeout(600);
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = tenant.ModelObject.EncryptionKey;
+            var itemId = wiserTenantsService.DecryptValue<ulong>(encryptedId, tenant.ModelObject);
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var fieldsInformation = new List<(string Field, string InputType, Dictionary<string, object> Options)>();
 
@@ -139,7 +145,7 @@ namespace Api.Modules.Grids.Services
                 useItemParentId = linkTypeSettings.UseItemParentId;
                 linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
             }
-            
+
             // Find out if there are custom queries for the grid.
             var columnsToSelect = "options";
             clientDatabaseConnection.ClearParameters();
@@ -167,7 +173,7 @@ namespace Api.Modules.Grids.Services
                     if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
                     {
                         countQuery = $@"SELECT COUNT(*) FROM (
-                                        {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                        {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                     ) AS x";
                     }
                 }
@@ -185,7 +191,7 @@ namespace Api.Modules.Grids.Services
             {
                 try
                 {
-                    var mainGridOptions = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(gridOptionsValue.ReplaceCaseInsensitive("{itemId}", itemId.ToString()));
+                    var mainGridOptions = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(gridOptionsValue.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase));
                     if (mainGridOptions?.SearchGridSettings?.GridViewSettings != null)
                     {
                         results = mainGridOptions.SearchGridSettings.GridViewSettings;
@@ -222,11 +228,11 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("itemId", itemId);
                     clientDatabaseConnection.AddParameter("userId", userId);
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings);
+                    selectQuery = selectQuery.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    selectQuery = selectQuery.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", fieldMappings: fieldMappings, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -263,7 +269,16 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("itemId", itemId);
 
-                    countQuery = $@"SELECT COUNT(*) FROM {WiserTableNames.WiserHistory} WHERE item_id = ?itemid AND action <> 'UPDATE_ITEMLINK'";
+                    countQuery = $@"SELECT COUNT(*)
+                                    FROM {WiserTableNames.WiserHistory}
+                                    WHERE item_id = ?itemid
+                                    AND action <> 'UPDATE_ITEMLINK'
+                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
+                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
+                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
+                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
+                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
+                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]";
 
                     selectQuery = $@"SELECT 
 	                                    current.id AS id,
@@ -276,17 +291,24 @@ namespace Api.Modules.Grids.Services
 	                                    current.oldvalue AS oldvalue,
 	                                    current.newvalue AS newvalue
                                     FROM {WiserTableNames.WiserHistory} current
-	                                   
+	                                
                                     WHERE current.item_id=?itemid
                                     # Item link IDs will also be saved in the column 'item_id'.
                                     # To prevent showing the history of an item link with the same id as the currently opened item, don't get history with action = 'UPDATE_ITEMLINK'.
                                     AND current.action <> 'UPDATE_ITEMLINK'
+                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
+                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
+                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
+                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
+                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
+                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]
+                                    
                                     GROUP BY current.id
                                     
                                     ORDER BY current.changed_on DESC, current.id DESC
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -311,10 +333,10 @@ namespace Api.Modules.Grids.Services
                                     FROM {WiserTableNames.WiserItem} i
 
                                     JOIN {WiserTableNames.WiserItemDetail} AS dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({{due_date}}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {{due_date_filter}}[endif] 
-                                    [if({{checked_date}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date}}!)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
-                                    [if({{sender}}=)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender}}!)]AND sender.`value` {{sender_filter}}[endif] 
-                                    JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver}}!)]AND receiver.`value` {{receiver_filter}}[endif] 
-                                    JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content}}!)]AND content.`value` {{content_filter}}[endif] 
+                                    [if({{checked_date_has_filter}}!1)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({{checked_date_has_filter}}=1)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {{checked_date_filter}}[endif] 
+                                    [if({{sender_has_filter}}!1)]LEFT [endif]JOIN {WiserTableNames.WiserItemDetail} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({{sender_has_filter}}=1)]AND sender.`value` {{sender_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({{receiver_has_filter}}=1)]AND receiver.`value` {{receiver_filter}}[endif] 
+                                    JOIN {WiserTableNames.WiserItemDetail} content ON content.item_id = i.id AND content.`key` = 'content' [if({{content_has_filter}}=1)]AND content.`value` {{content_filter}}[endif] 
 
                                     WHERE i.entity_type = 'agendering'";
 
@@ -338,7 +360,7 @@ namespace Api.Modules.Grids.Services
                                     {{sort}}
                                     {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -385,15 +407,15 @@ namespace Api.Modules.Grids.Services
                     if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
                     {
                         countQuery = $@"SELECT COUNT(*) FROM (
-                                            {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                            {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                         ) AS x";
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("'{itemId}'", "?itemId");
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    countQuery = countQuery?.ReplaceCaseInsensitive("{itemId}", "?itemId");
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "");
+                    selectQuery = selectQuery.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    selectQuery = selectQuery.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    countQuery = countQuery?.Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (!String.IsNullOrWhiteSpace(countQuery) && (options?.FirstLoad ?? true))
@@ -750,7 +772,7 @@ namespace Api.Modules.Grids.Services
                     }
 
                     clientDatabaseConnection.AddParameter("userId", userId);
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY due_date DESC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     clientDatabaseConnection.AddParameter("entityType", entityType.Equals("all", StringComparison.OrdinalIgnoreCase) ? "" : entityType);
@@ -827,7 +849,7 @@ namespace Api.Modules.Grids.Services
                                 {{sort}}
                                 {{limit}}";
 
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC");
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC", tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -894,12 +916,17 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.AddParameter("entityType", entityType);
                     clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
                     var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
+                    var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
 
                     if (columnsDataTable.Rows.Count > 0)
                     {
                         foreach (DataRow dataRow in columnsDataTable.Rows)
                         {
                             var fieldName = dataRow.Field<string>("field").ToLowerInvariant().MakeJsonPropertyName();
+                            if (reservedWordsArray.Contains(fieldName))
+                            {
+                                throw new Exception( $"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
+                            }
 
                             var field = new FieldModel
                             {
@@ -1368,7 +1395,7 @@ namespace Api.Modules.Grids.Services
                     }
 
                     var defaultSorting = mode == EntityGridModes.LinkOverview ? "ORDER BY i.title ASC" : $"ORDER BY {WiserItemsService.LinkOrderingFieldName} ASC, title ASC";
-                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting);
+                    (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
                     if (options?.FirstLoad ?? true)
@@ -1471,11 +1498,7 @@ namespace Api.Modules.Grids.Services
 
                     foreach (DataColumn dataColumn in dataTable.Columns)
                     {
-                        var columnName = dataColumn.ColumnName.Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
-                        if (mode == EntityGridModes.CustomQuery)
-                        {
-                            columnName = columnName.ToLowerInvariant();
-                        }
+                        var columnName = dataColumn.ColumnName.ToLowerInvariant().Replace("_encrypt_withdate", "").Replace("_encrypt", "").Replace("_hide", "").MakeJsonPropertyName();
 
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase)
                             || dataColumn.ColumnName.Contains("_encrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1483,7 +1506,7 @@ namespace Api.Modules.Grids.Services
                             || dataColumn.ColumnName.Contains("_encrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.EncryptValue(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.EncryptValue(value, tenant.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_decrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_decrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1491,7 +1514,7 @@ namespace Api.Modules.Grids.Services
                                  || dataColumn.ColumnName.Contains("_decrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.DecryptValue<string>(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.DecryptValue<string>(value, tenant.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_normalencrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_normalencrypt_hide", StringComparison.OrdinalIgnoreCase))
@@ -1593,7 +1616,7 @@ namespace Api.Modules.Grids.Services
                                  || dataColumn.ColumnName.Contains("_encrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.EncryptValue(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.EncryptValue(value, tenant.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_decrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_decrypt_hide", StringComparison.OrdinalIgnoreCase)
@@ -1601,7 +1624,7 @@ namespace Api.Modules.Grids.Services
                                  || dataColumn.ColumnName.Contains("_decrypt_withdate_hide", StringComparison.OrdinalIgnoreCase))
                         {
                             var value = dataRow.IsNull(dataColumn.ColumnName) ? "" : dataRow[dataColumn.ColumnName].ToString();
-                            rowData[columnName] = wiserCustomersService.DecryptValue<string>(value, customer.ModelObject);
+                            rowData[columnName] = wiserTenantsService.DecryptValue<string>(value, tenant.ModelObject);
                         }
                         else if (dataColumn.ColumnName.Contains("_normalencrypt", StringComparison.OrdinalIgnoreCase)
                                  || dataColumn.ColumnName.Contains("_normalencrypt_hide", StringComparison.OrdinalIgnoreCase))
@@ -1640,15 +1663,15 @@ namespace Api.Modules.Grids.Services
             {
                 throw new ArgumentNullException(nameof(moduleId));
             }
-            
+
             if (isForExport)
             {
                 // Timeout of 4 hours for exports.
-                clientDatabaseConnection.SetCommandTimeout(14400);
+                clientDatabaseConnection.SetCommandTimeout(apiSettings.SqlCommandTimeoutForExportsAndLongQueries);
             }
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
 
             // Get module settings.
             clientDatabaseConnection.ClearParameters();
@@ -1694,7 +1717,7 @@ namespace Api.Modules.Grids.Services
             if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
             {
                 countQuery = $@"SELECT COUNT(*) FROM (
-                                    {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                    {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                 ) AS x";
             }
 
@@ -1716,7 +1739,7 @@ namespace Api.Modules.Grids.Services
             dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
             BuildGridSchema(dataTable, results, results.Columns != null && results.Columns.Any());
-            FillGridData(dataTable, results, identity, IdentityHelpers.IsTestEnvironment(identity), customer.ModelObject);
+            FillGridData(dataTable, results, identity, IdentityHelpers.IsTestEnvironment(identity), tenant.ModelObject);
 
             if (results.ClientSidePaging || String.IsNullOrWhiteSpace(countQuery))
             {
@@ -1731,17 +1754,20 @@ namespace Api.Modules.Grids.Services
             string countQuery,
             ClaimsIdentity identity,
             string defaultSort = null,
-            List<FieldMapModel> fieldMappings = null)
+            List<FieldMapModel> fieldMappings = null,
+            string tablePrefix = null)
         {
-            // Note that this function contains ' ?? ""' after every ReplaceCaseInsensitive. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
+            tablePrefix ??= "";
+
+            // Note that this function contains ' ?? ""' after every Replace. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
             fieldMappings ??= new List<FieldMapModel>();
-            
+
             selectQuery = apiReplacementsService.DoIdentityReplacements(selectQuery ?? "", identity, true);
             countQuery = apiReplacementsService.DoIdentityReplacements(countQuery ?? "", identity, true);
 
             if (options == null)
             {
-                selectQuery = selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", defaultSort).ReplaceCaseInsensitive("{filters}", "") ?? "";
+                selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", defaultSort, StringComparison.OrdinalIgnoreCase).Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
             }
             else
             {
@@ -1764,11 +1790,11 @@ namespace Api.Modules.Grids.Services
                     counter++;
 
                     // Old way of filtering:
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
+                    selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false)) ?? "";
+                    selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
 
                     // New way of filtering.
                     string @operator;
@@ -1941,32 +1967,32 @@ namespace Api.Modules.Grids.Services
                         }
                         else
                         {
-                            filtersQuery.AppendLine($"JOIN {WiserTableNames.WiserItemDetail} AS `idv{counter}` ON `idv{counter}`.item_id = `{itemTableAlias}`.id AND `idv{counter}`.`key` = '{fieldName}' AND ({valueSelector} {@operator} {parameterInWhere} OR {longValueSelector} {@operator} {parameterInWhere})");
+                            filtersQuery.AppendLine($"JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `idv{counter}` ON `idv{counter}`.item_id = `{itemTableAlias}`.id AND `idv{counter}`.`key` = '{fieldName}' AND ({valueSelector} {@operator} {parameterInWhere} OR {longValueSelector} {@operator} {parameterInWhere})");
                         }
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}") ?? "";
-                    selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{fieldName}_has_filter}}", "1") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive($"{{{fieldName}_has_filter}}", "1") ?? "";
+                    selectQuery = selectQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase) ?? "";
+                    selectQuery = selectQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase) ?? "";
                     return counter;
                 }
 
 
                 if (options.Take <= 0)
                 {
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{limit}", "") ?? "";
+                    selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
                     clientDatabaseConnection.AddParameter("skip", options.Skip);
                     clientDatabaseConnection.AddParameter("take", options.Take);
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{limit}", "LIMIT ?skip, ?take") ?? "";
+                    selectQuery = selectQuery.Replace("{limit}", "LIMIT ?skip, ?take", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
 
                 if (options.Sort == null || !options.Sort.Any())
                 {
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{sort}", defaultSort ?? "") ?? "";
+                    selectQuery = selectQuery.Replace("{sort}", defaultSort ?? "", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
@@ -1995,25 +2021,25 @@ namespace Api.Modules.Grids.Services
 
                             fieldName = fieldName.ToMySqlSafeValue(false);
 
-                            joinsForSorting.AppendLine($"LEFT JOIN {WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
+                            joinsForSorting.AppendLine($"LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail} AS `{fieldName}` ON `{fieldName}`.item_id = `{itemTableAlias}`.id AND `{fieldName}`.`key` = '{fieldName}'");
                         }
 
-                        selectQuery = selectQuery.ReplaceCaseInsensitive("{joinsForSorting}", joinsForSorting.ToString());
+                        selectQuery = selectQuery.Replace("{joinsForSorting}", joinsForSorting.ToString(), StringComparison.OrdinalIgnoreCase);
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{sort}", $"ORDER BY {String.Join(", ", options.Sort.Select(s => $"{(!shouldCreateJoinsForSorting || ItemColumns.Any(x => x.Equals(s.Field, StringComparison.OrdinalIgnoreCase)) ? $"`{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`" : $"CONCAT_WS('', `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`value`, `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`long_value`)")} {s.Dir.ToMySqlSafeValue(false).ToUpperInvariant()}"))}") ?? "";
+                    selectQuery = selectQuery.Replace("{sort}", $"ORDER BY {String.Join(", ", options.Sort.Select(s => $"{(!shouldCreateJoinsForSorting || ItemColumns.Any(x => x.Equals(s.Field, StringComparison.OrdinalIgnoreCase)) ? $"`{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`" : $"CONCAT_WS('', `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`value`, `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`long_value`)")} {s.Dir.ToMySqlSafeValue(false).ToUpperInvariant()}"))}", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
 
                 if (options.Filter?.Filters == null || !options.Filter.Filters.Any())
                 {
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{filters}", "") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{filters}", "") ?? "";
+                    selectQuery = selectQuery.Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{hasWhere}", "0") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{hasWhere}", "0") ?? "";
+                    selectQuery = selectQuery.Replace("{hasWhere}", "0", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{hasWhere}", "0", StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
+                    selectQuery = selectQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
@@ -2021,8 +2047,8 @@ namespace Api.Modules.Grids.Services
                     var counter = 0;
                     var logic = options.Filter.Logic.ToMySqlSafeValue(false);
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{logic}", logic) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{logic}", logic) ?? "";
+                    selectQuery = selectQuery.Replace("{logic}", logic, StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{logic}", logic, StringComparison.OrdinalIgnoreCase) ?? "";
 
                     var mainWhereClause = (logic, new List<string>());
                     whereClause.Add(mainWhereClause);
@@ -2031,22 +2057,22 @@ namespace Api.Modules.Grids.Services
                         counter = AddFiltersToQuery(counter, filter, filtersQuery, mainWhereClause);
                     }
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{filters}", filtersQuery.ToString()) ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{filters}", filtersQuery.ToString()) ?? "";
+                    selectQuery = selectQuery.Replace("{filters}", filtersQuery.ToString(), StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{filters}", filtersQuery.ToString(), StringComparison.OrdinalIgnoreCase) ?? "";
 
-                    selectQuery = selectQuery.ReplaceCaseInsensitive("{hasWhere}", whereClause.Any() ? "1" : "0") ?? "";
-                    countQuery = countQuery.ReplaceCaseInsensitive("{hasWhere}", whereClause.Any() ? "1" : "0") ?? "";
+                    selectQuery = selectQuery.Replace("{hasWhere}", whereClause.Any() ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
+                    countQuery = countQuery.Replace("{hasWhere}", whereClause.Any() ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
 
                     if (!whereClause.Any(x => x.Item2.Any()))
                     {
-                        selectQuery = selectQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
-                        countQuery = countQuery.ReplaceCaseInsensitive("{where}", "TRUE") ?? "";
+                        selectQuery = selectQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
+                        countQuery = countQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
                     }
                     else
                     {
                         var value = String.Join($" {logic} ", whereClause.Select(x => !x.Item2.Any() ? "" : $"({String.Join($" {x.Item1} ", x.Item2)})").Where(x => !String.IsNullOrWhiteSpace(x)));
-                        selectQuery = selectQuery.ReplaceCaseInsensitive("{where}", value) ?? "";
-                        countQuery = countQuery.ReplaceCaseInsensitive("{where}", value) ?? "";
+                        selectQuery = selectQuery.Replace("{where}", value, StringComparison.OrdinalIgnoreCase) ?? "";
+                        countQuery = countQuery.Replace("{where}", value, StringComparison.OrdinalIgnoreCase) ?? "";
                     }
                 }
 
@@ -2054,21 +2080,21 @@ namespace Api.Modules.Grids.Services
                 {
                     foreach (var pair in options.ExtraValuesForQuery)
                     {
-                        selectQuery = selectQuery.ReplaceCaseInsensitive($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false)) ?? "";
-                        countQuery = countQuery.ReplaceCaseInsensitive($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false)) ?? "";
+                        selectQuery = selectQuery.Replace($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                        countQuery = countQuery.Replace($"{{{pair.Key}}}", pair.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
                     }
                 }
             }
 
             // Remove any left over variables that we can't use and handle [if] statements.
-            var regex = new Regex("{[^}]*}");
+            var regex = new Regex("{[^}]*}", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
             selectQuery = regex.Replace(selectQuery, "");
             countQuery = regex.Replace(countQuery, "");
 
             // Handle [if] statements in the query.
             selectQuery = stringReplacementsService.EvaluateTemplate(regex.Replace(selectQuery, ""));
             countQuery = stringReplacementsService.EvaluateTemplate(regex.Replace(countQuery, ""));
-            
+
             return (selectQuery, countQuery);
         }
 
@@ -2081,10 +2107,11 @@ namespace Api.Modules.Grids.Services
             ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = await wiserCustomersService.GetSingleAsync(identity);
-            var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : wiserCustomersService.DecryptValue<int>(encryptedQueryId, customer.ModelObject);
-            var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : wiserCustomersService.DecryptValue<int>(encryptedCountQueryId, customer.ModelObject);
-            var itemId = String.IsNullOrWhiteSpace(encryptedId) ? 0 : wiserCustomersService.DecryptValue<ulong>(encryptedId, customer.ModelObject);
+            clientDatabaseConnection.SetCommandTimeout(600);
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var queryId = String.IsNullOrWhiteSpace(encryptedQueryId) ? 0 : wiserTenantsService.DecryptValue<int>(encryptedQueryId, tenant.ModelObject);
+            var countQueryId = String.IsNullOrWhiteSpace(encryptedCountQueryId) ? 0 : wiserTenantsService.DecryptValue<int>(encryptedCountQueryId, tenant.ModelObject);
+            var itemId = String.IsNullOrWhiteSpace(encryptedId) ? 0 : wiserTenantsService.DecryptValue<ulong>(encryptedId, tenant.ModelObject);
             var hasPredefinedColumns = false;
             var results = new GridSettingsAndDataModel();
             var extraJavascript = new StringBuilder();
@@ -2129,7 +2156,7 @@ namespace Api.Modules.Grids.Services
             if (String.IsNullOrWhiteSpace(countQuery) && !String.IsNullOrWhiteSpace(selectQuery) && selectQuery.Contains("{limit}", StringComparison.OrdinalIgnoreCase))
             {
                 countQuery = $@"SELECT COUNT(*) FROM (
-                                    {selectQuery.ReplaceCaseInsensitive("{limit}", "").ReplaceCaseInsensitive("{sort}", "").Trim(';')}
+                                    {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
                                 ) AS x";
             }
 
@@ -2166,7 +2193,7 @@ namespace Api.Modules.Grids.Services
                 return new ServiceResult<GridSettingsAndDataModel>(results);
             }
 
-            FillGridData(dataTable, results, identity, IdentityHelpers.IsTestEnvironment(identity), customer.ModelObject);
+            FillGridData(dataTable, results, identity, IdentityHelpers.IsTestEnvironment(identity), tenant.ModelObject);
 
             return new ServiceResult<GridSettingsAndDataModel>(results);
         }
@@ -2181,7 +2208,7 @@ namespace Api.Modules.Grids.Services
             GridSettingsAndDataModel results = null;
             try
             {
-                results = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(rawOptions.ReplaceCaseInsensitive("{itemId}", itemId.ToString()));
+                results = JsonConvert.DeserializeObject<GridSettingsAndDataModel>(rawOptions.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase));
 
                 foreach (var column in results.Columns.Where(c => !String.IsNullOrWhiteSpace(c.Editor)))
                 {
@@ -2220,9 +2247,9 @@ namespace Api.Modules.Grids.Services
             return results;
         }
 
-        private void FillGridData(DataTable dataTable, GridSettingsAndDataModel results, ClaimsIdentity identity, bool isTest, CustomerModel customer)
+        private void FillGridData(DataTable dataTable, GridSettingsAndDataModel results, ClaimsIdentity identity, bool isTest, TenantModel tenant)
         {
-            var encryptionKey = customer.EncryptionKey;
+            var encryptionKey = tenant.EncryptionKey;
             foreach (DataRow dataRow in dataTable.Rows)
             {
                 var rowData = new Dictionary<string, object>();
@@ -2236,7 +2263,7 @@ namespace Api.Modules.Grids.Services
                     {
                         if (dataColumn.ColumnName.Contains("_encrypt", StringComparison.OrdinalIgnoreCase))
                         {
-                            rowData[columnName] = wiserCustomersService.EncryptValue(value, customer);
+                            rowData[columnName] = wiserTenantsService.EncryptValue(value, tenant);
                         }
                         else if (dataColumn.ColumnName.Contains("_normalencrypt", StringComparison.OrdinalIgnoreCase))
                         {
@@ -2331,7 +2358,7 @@ namespace Api.Modules.Grids.Services
             try
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-                var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
                 var (insertQuery, errorResult, _) = await itemsService.GetPropertyQueryAsync<Dictionary<string, object>>(propertyId, "grid_insert_query", false, itemId);
                 if (errorResult != null)
                 {
@@ -2366,7 +2393,7 @@ namespace Api.Modules.Grids.Services
             try
             {
                 await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-                var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+                var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
                 var (modifyQuery, errorResult, _) = await itemsService.GetPropertyQueryAsync<bool>(propertyId, "grid_update_query", false, itemId);
                 if (errorResult != null)
                 {
@@ -2401,7 +2428,7 @@ namespace Api.Modules.Grids.Services
         public async Task<ServiceResult<bool>> DeleteDataAsync(int propertyId, string encryptedId, Dictionary<string, object> data, ClaimsIdentity identity)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var itemId = await wiserCustomersService.DecryptValue<ulong>(encryptedId, identity);
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
             var (deleteQuery, errorResult, _) = await itemsService.GetPropertyQueryAsync<bool>(propertyId, "grid_delete_query", false, itemId);
             if (errorResult != null)
             {
@@ -2426,18 +2453,18 @@ namespace Api.Modules.Grids.Services
             foreach (var key in data.Keys)
             {
                 clientDatabaseConnection.AddParameter(key.UnmakeJsonPropertyName(), data[key]);
-                query = query.ReplaceCaseInsensitive($"{{propertyKey{counter}}}", key.UnmakeJsonPropertyName());
-                query = query.ReplaceCaseInsensitive($"{{propertyValue{counter}}}", data[key] == null ? "" : data[key].ToString().ToMySqlSafeValue(false));
+                query = query.Replace($"{{propertyKey{counter}}}", key.UnmakeJsonPropertyName(), StringComparison.OrdinalIgnoreCase);
+                query = query.Replace($"{{propertyValue{counter}}}", data[key] == null ? "" : data[key].ToString().ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
                 counter++;
             }
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            query = query.ReplaceCaseInsensitive("{userId}", userId.ToString());
-            query = query.ReplaceCaseInsensitive("{username}", IdentityHelpers.GetUserName(identity) ?? "");
-            query = query.ReplaceCaseInsensitive("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "");
-            query = query.ReplaceCaseInsensitive("{userType}", IdentityHelpers.GetRoles(identity) ?? "");
-            query = query.ReplaceCaseInsensitive("{encryptedId}", encryptedId);
-            query = query.ReplaceCaseInsensitive("{itemId}", itemId.ToString());
+            query = query.Replace("{userId}", userId.ToString(), StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{username}", IdentityHelpers.GetUserName(identity, true) ?? "", StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{userEmailAddress}", IdentityHelpers.GetEmailAddress(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{userType}", IdentityHelpers.GetRoles(identity) ?? "", StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{encryptedId}", encryptedId, StringComparison.OrdinalIgnoreCase);
+            query = query.Replace("{itemId}", itemId.ToString(), StringComparison.OrdinalIgnoreCase);
             return query;
         }
     }

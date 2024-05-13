@@ -5,14 +5,15 @@ import { EntityTab } from "../Scripts/EntityTab.js";
 import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
 import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
 import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+import { WiserLinkTab } from "../Scripts/WiserLinkTab.js";
+import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/Admin.css";
+import "../Css/Admin.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -25,7 +26,7 @@ const moduleSettings = {
     class Admin {
 
         /**
-         * Initializes a new instance of AisDashboard.
+         * Initializes a new instance of Admin.
          * @param {any} settings An object containing the settings for this class.
          */
         constructor(settings) {
@@ -33,8 +34,8 @@ const moduleSettings = {
             // Kendo components.
             this.mainWindow = null;
 
-            this.activeMainTab = "Modules"; 
-            
+            this.activeMainTab = "Modules";
+
             //classes
             this.entityTab = null;
             this.entityFieldTab = null;
@@ -43,6 +44,7 @@ const moduleSettings = {
             this.translations = null;
             this.roleTab = null;
             this.wiserQueryTab = null;
+            this.wiserLinkTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -51,10 +53,16 @@ const moduleSettings = {
             this.settings = {};
             Object.assign(this.settings, settings);
 
+            // Ask for confirmation when leaving the page if there are unsaved changes.
+            window.onbeforeunload = () => {
+                if (this.hasChanges()) {
+                    return false;
+                }
+            };
+
             // Fire event on page ready for direct actions
             $(document).ready(() => {
                 this.onPageReady();
-
             });
 
             // enum of available kendo prompts
@@ -84,7 +92,7 @@ const moduleSettings = {
                 ITEMLINKER: "ItemLinker",
                 LINKEDITEM: "LinkedItem",
                 MULTISELECT: "MultiSelect",
-                NUMERIC: "NumericInput",
+                NUMERICINPUT: "NumericInput",
                 RADIOBUTTON: "RadioButton",
                 SECUREINPUT: "SecureInput",
                 SUBENTITIESGRID: "SubEntitiesGrid",
@@ -97,7 +105,8 @@ const moduleSettings = {
             this.dataSourceType = Object.freeze({
                 PANEL1: { text: "Vaste waardes", id: "panel1" },
                 PANEL2: { text: "Lijst van entiteiten", id: "panel2" },
-                PANEL3: { text: "Query", id: "panel3" }
+                PANEL3: { text: "Query", id: "panel3" },
+                PANEL4: { text: "Data Selector", id: "panel4" }
             });
 
             this.textboxType = Object.freeze({
@@ -118,6 +127,7 @@ const moduleSettings = {
                 EXECUTEQUERYONCE: { text: "Voer query eenmalig uit", id: "executeQueryOnce" },
                 GENERATEFILE: { text: "Genereer bestand", id: "generateFile" },
                 REFRESHCURRENTITEM: { text: "Ververs het item", id: "refreshCurrentItem" },
+                ACTIONCONFIRMDIALOG: { text: "Bevestigingsvenster", id: "actionConfirmDialog" },
                 CUSTOM: { text: "Custom javascript", id: "custom" }
             });
             this.fieldTypesDropDown = Object.freeze({
@@ -137,7 +147,7 @@ const moduleSettings = {
         async onPageReady() {
             // Setup any settings from the body element data. These settings are added via the Wiser backend and they take preference.
             Object.assign(this.settings, $("body").data());
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -157,17 +167,33 @@ const moduleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
-            this.settings.happyEmployeeLoggedIn = user.juiceEmployeeName;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
+            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
+
+            // These are all entities, including duplicate ones that have the same name in different modules.
+            try {
+                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types 1", exception);
+                this.entityList = [];
+            }
+
+            // These are all entities grouped by name.
+            try {
+                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+            } catch (exception) {
+                console.error("Error occurred while trying to load all entity types", exception);
+                this.allUniqueEntityTypes = [];
+            }
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
@@ -175,6 +201,7 @@ const moduleSettings = {
             this.entityPropertyTab = new EntityPropertyTab(this);
             this.roleTab = new RoleTab(this);
             this.wiserQueryTab = new WiserQueryTab(this);
+            this.wiserLinkTab = new WiserLinkTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 
@@ -189,6 +216,14 @@ const moduleSettings = {
             } catch (e) {
                 return false;
             }
+        }
+
+        hasChanges() {
+            return this.entityTab.hasChanges()
+                || this.moduleTab.hasChanges()
+                || this.roleTab.hasChanges()
+                || this.wiserQueryTab.hasChanges()
+                || this.wiserLinkTab.hasChanges();
         }
 
         moveUp(e) {
@@ -224,6 +259,7 @@ const moduleSettings = {
             grid.dataSource.remove(record);
             grid.dataSource.insert(newIndex, record);
         }
+
         /**
          * Setup all basis bindings for this module.
          * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
@@ -240,40 +276,7 @@ const moduleSettings = {
                 icon: "save"
             });
 
-            $("#generateStandardEntities").kendoButton({
-                click: () => {
-                    const entitiesToGenerate = [], entitiesToGeneratePrettyName = [];
-                    document.querySelectorAll("#generateEntitiesGroup input[type=checkbox]:checked").forEach((e) => {
-                        entitiesToGenerate.push(e.dataset.entityGroup);
-                        entitiesToGeneratePrettyName.push(e.dataset.entityPrettyName);
-                    });
-                    if (entitiesToGenerate.length === 0) return;
-                    this.openDialog("Standaard entiteiten genereren", `Weet u zeker dat u de entiteiten ${entitiesToGeneratePrettyName.join()} voor wilt genereren?`, this.kendoPromptType.CONFIRM).then((data) => {
-
-                        entitiesToGenerate.forEach(async (e) => {
-                            const templateName = e;
-                            if (!templateName) {
-                                this.openDialog("Oeps...!", `Entiteiten groep "${e}", is nog niet correct ingesteld. Probeer het later opnieuw.`, this.kendoPromptType.ALERT);
-                                return;
-                            }
-                            try {
-                                const qResult = await Wiser.api({ 
-                                    url: `${this.settings.serviceRoot}/${templateName}?isTest=${encodeURIComponent(this.settings.isTestEnvironment)}`,
-                                    method: "GET"
-                                });
-                                if (qResult.success) {
-                                    this.showNotification(null, "Entiteiten zijn succesvol aangemaakt of bijgewerkt!", "success", 2000);
-                                }
-                            } catch (e) {
-                                console.log(e);
-                                this.openDialog("Oeps...!", `Er ging iets mis bij het genereren van de entiteiten, neem contact op met ons.`, this.kendoPromptType.ALERT);
-                            }
-                        });
-
-                    });
-                },
-                icon: "gear"
-            });
+            Misc.addEventToFixToolTipPositions();
         }
 
         async saveChanges(e) {
@@ -292,6 +295,9 @@ const moduleSettings = {
                     break;
                 case "modules":
                     await this.moduleTab.beforeSave();
+                    break;
+                case "links":
+                    await this.wiserLinkTab.beforeSave();
                     break;
                 default:
                     await this.entityTab.beforeSave();
@@ -437,6 +443,17 @@ const moduleSettings = {
                 case this.kendoPromptType.ALERT:
                     return $("<div></div>").kendoAlert(properties).data("kendoAlert").open().result;
             }
+        }
+
+        /**
+         * Reload the list of modules in the side bar (on the left) of Wiser.
+         */
+        async reloadModulesOnParentFrame() {
+            if (!window.parent || !window.parent.main || !window.parent.main.vueApp || typeof(window.parent.main.vueApp.reloadModules) !== "function") {
+                return;
+            }
+
+            await window.parent.main.vueApp.reloadModules();
         }
     }
 

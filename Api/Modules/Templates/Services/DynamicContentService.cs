@@ -9,16 +9,16 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
-using Api.Modules.Customers.Interfaces;
 using Api.Modules.Templates.Helpers;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
-using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace Api.Modules.Templates.Services
 {
@@ -28,17 +28,17 @@ namespace Api.Modules.Templates.Services
         private readonly IDynamicContentDataService dataService;
         private readonly IHistoryService historyService;
         private readonly IBranchesService branchesService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
 
         /// <summary>
         /// Creates a new instance of <see cref="DynamicContentService"/>.
         /// </summary>
-        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService, IBranchesService branchesService, IWiserCustomersService wiserCustomersService)
+        public DynamicContentService(IDynamicContentDataService dataService, IHistoryService historyService, IBranchesService branchesService, IWiserTenantsService wiserTenantsService)
         {
             this.dataService = dataService;
             this.historyService = historyService;
             this.branchesService = branchesService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
         }
 
         /// <inheritdoc />
@@ -68,7 +68,7 @@ namespace Api.Modules.Templates.Services
 
             return returnDict;
         }
-        
+
         /// <inheritdoc />
         public ServiceResult<List<ComponentModeModel>> GetComponentModes(string name)
         {
@@ -80,7 +80,7 @@ namespace Api.Modules.Templates.Services
                     ErrorMessage = "Name cannot be empty"
                 };
             }
-            
+
             var type = ReflectionHelper.GetComponentTypeByName(name);
             if (type == null)
             {
@@ -115,7 +115,7 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<Dictionary<string, object>>> GetComponentDataAsync(int contentId)
         {
             var data = (await dataService.GetComponentDataAsync(contentId)).Value;
-            
+
             if (data == null)
             {
                 return new ServiceResult<Dictionary<string, object>>
@@ -123,12 +123,12 @@ namespace Api.Modules.Templates.Services
                     StatusCode = HttpStatusCode.NotFound
                 };
             }
-            
+
             return new ServiceResult<Dictionary<string, object>>(data);
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> SaveNewSettingsAsync(ClaimsIdentity identity, int contentId, string component, int componentMode, string title, Dictionary<string, object> settings)
+        public async Task<ServiceResult<int>> SaveAsync(ClaimsIdentity identity, int contentId, string component, int componentMode, string title, Dictionary<string, object> settings)
         {
             var componentType = ReflectionHelper.GetComponentTypeByName(component);
             var modes = GetComponentModes(componentType);
@@ -151,8 +151,8 @@ namespace Api.Modules.Templates.Services
                         continue;
                     }
 
-                    var itemValue = setting.Value == null ? "" : setting.Value.ToString().Replace("\r", "").Replace("\n", "");
-                    var defaultValue = defaultValueAttribute.Value == null ? "" : defaultValueAttribute.Value.ToString().Replace("\r", "").Replace("\n", "");
+                    var itemValue = setting.Value == null ? "" : setting.Value.ToString()!.Replace("\r", "").Replace("\n", "");
+                    var defaultValue = defaultValueAttribute.Value == null ? "" : defaultValueAttribute.Value.ToString()!.Replace("\r", "").Replace("\n", "");
                     if (itemValue != defaultValue)
                     {
                         continue;
@@ -167,7 +167,24 @@ namespace Api.Modules.Templates.Services
                 }
             }
 
-            return new ServiceResult<int>(await dataService.SaveSettingsStringAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity, true)));
+            var id = await dataService.SaveAsync(contentId, component, componentModeName, title, settings, IdentityHelpers.GetUserName(identity, true));
+            return new ServiceResult<int>(id);
+        }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<int>> CreateNewVersionAsync(int contentId, int versionBeingDeployed = 0)
+        {
+            // ReSharper disable once InvertIf
+            if (versionBeingDeployed > 0)
+            {
+                var latestVersion = await dataService.GetLatestVersionAsync(contentId);
+                if (versionBeingDeployed != latestVersion.Version || latestVersion.Removed)
+                {
+                    return new ServiceResult<int>(0);
+                }
+            }
+
+            return new ServiceResult<int>(await dataService.CreateNewVersionAsync(contentId));
         }
 
         /// <inheritdoc />
@@ -225,7 +242,7 @@ namespace Api.Modules.Templates.Services
             }
 
             var versionsAndPublished = await dataService.GetPublishedEnvironmentsAsync(contentId, branchDatabaseName);
-            
+
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
@@ -242,6 +259,13 @@ namespace Api.Modules.Templates.Services
                 throw new ArgumentException("The version is invalid");
             }
             
+            // Create a new version of the dynamic content, so that any changes made after this will be done in the new version instead of the published one.
+            // Does not apply if the dynamic content was published to live within a branch.
+            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            {
+                await CreateNewVersionAsync(contentId, version);
+            }
+
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
@@ -260,14 +284,14 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteAsync(int contentId)
+        public async Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int contentId)
         {
             if (contentId <= 0)
             {
                 throw new ArgumentException("The Id is invalid");
             }
-            await dataService.DeleteAsync(contentId);
-            return new ServiceResult<bool>(true); 
+            await dataService.DeleteAsync(IdentityHelpers.GetUserName(identity, true), contentId);
+            return new ServiceResult<bool>(true);
         }
 
         /// <inheritdoc />
@@ -292,19 +316,19 @@ namespace Api.Modules.Templates.Services
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch." 
+                    ErrorMessage = "The current branch is not the main branch. This functionality can only be used from the main branch."
                 };
             }
-            
+
             // Check if the branch exists.
-            var branchToDeploy = (await wiserCustomersService.GetSingleAsync(branchId, true)).ModelObject;
+            var branchToDeploy = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
             if (branchToDeploy == null)
             {
                 return new ServiceResult<bool>
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = $"Branch with ID {branchId} does not exist" 
+                    ErrorMessage = $"Branch with ID {branchId} does not exist"
                 };
             }
 
@@ -315,7 +339,7 @@ namespace Api.Modules.Templates.Services
                 {
                     ModelObject = false,
                     StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}" 
+                    ErrorMessage = $"You don't have permissions to access a branch with ID {branchId}"
                 };
             }
 
@@ -344,7 +368,7 @@ namespace Api.Modules.Templates.Services
             }
 
             // Publish all templates to live environment in the branch, because a branch will never actually be used on a live environment
-            // and then we can make sure that the deployed templates will be up to date on whichever website environment uses that branch. 
+            // and then we can make sure that the deployed templates will be up to date on whichever website environment uses that branch.
             foreach (var dynamicContentId in dynamicContentIds)
             {
                 var contentData = await dataService.GetMetaDataAsync(dynamicContentId);

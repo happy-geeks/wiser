@@ -13,7 +13,7 @@ namespace Api.Modules.EntityTypes.Controllers
 {
     /// <summary>
     /// Controller for doing things with Wiser entity types.
-    /// An item in Wiser can have different entity types. This entity type decides what kind of item it is (order, basket, product, customer etc) and which fields will be available when opening the item in Wiser.
+    /// An item in Wiser can have different entity types. This entity type decides what kind of item it is (order, basket, product, tenant etc) and which fields will be available when opening the item in Wiser.
     /// </summary>
     [Route("api/v3/entity-types")]
     [ApiController]
@@ -23,7 +23,7 @@ namespace Api.Modules.EntityTypes.Controllers
     public class EntityTypesController : ControllerBase
     {
         private readonly IEntityTypesService entityTypesService;
-        
+
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesController"/>.
         /// </summary>
@@ -39,14 +39,15 @@ namespace Api.Modules.EntityTypes.Controllers
         /// <param name="onlyEntityTypesWithDisplayName">Optional: Set to false to get all entity types, or true to get only entity types that have a display name.</param>
         /// <param name="includeCount">Optional: Whether to count how many items of each entity type exist in the database.</param>
         /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when includeCount is set to true.</param>
+        /// <param name="moduleId">Optional: If you only want entity types from a specific module, enter the ID of that module here.</param>
         /// <returns>A list of all available entity types.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false)
+        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0)
         {
-            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems)).GetHttpResponseMessage();
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems, moduleId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets the settings for an entity type.
         /// </summary>
@@ -61,7 +62,7 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, entityType, moduleId)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets the settings for an entity type.
         /// </summary>
@@ -76,7 +77,7 @@ namespace Api.Modules.EntityTypes.Controllers
         {
             return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets all available entity types, based on module id and parent id.
         /// </summary>
@@ -105,7 +106,7 @@ namespace Api.Modules.EntityTypes.Controllers
         }
 
         /// <summary>
-        /// Creates a new entity type.
+        /// Updates an existing entity type.
         /// </summary>
         /// <param name="id">The ID of the entity type.</param>
         /// <param name="settings">The settings to save.</param>
@@ -116,6 +117,31 @@ namespace Api.Modules.EntityTypes.Controllers
         public async Task<IActionResult> UpdateAsync(int id, EntitySettingsModel settings)
         {
             return (await entityTypesService.UpdateAsync((ClaimsIdentity)User.Identity, id, settings)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Deletes an entity type. This will only delete the entity type itself, not any items that use this type.
+        /// </summary>
+        /// <param name="id">The ID of the entity type.</param>
+        [HttpDelete]
+        [Route("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> DeleteAsync(int id)
+        {
+            return (await entityTypesService.DeleteAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
+        }
+
+        /// <summary>
+        /// Gets the ID of an API connection (from wiser_api_connection) for a specific entity and action.
+        /// </summary>
+        /// <param name="entityType">The name of the entity type to get the API connection ID for.</param>
+        /// <param name="actionType">The action type, this can be "after_insert", "after_update", "before_update" or "before_delete".</param>
+        [HttpGet]
+        [Route("{entityType}/api-connection/{actionType}")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetApiConnectionIdAsync(string entityType, string actionType)
+        {
+            return (await entityTypesService.GetApiConnectionIdAsync(entityType, actionType)).GetHttpResponseMessage();
         }
     }
 }

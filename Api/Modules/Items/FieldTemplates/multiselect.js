@@ -1,28 +1,39 @@
 ﻿(function() {
-var options = $.extend({
-	autoClose: false,
-	dataTextField: "name",
-	dataValueField: "id",
-	change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields),
-	dataSource: {
-		transport: {
-            read: (kendoReadOptions) => {
-                Wiser.api({
-                    url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FROM_ENTITY_QUERY?propertyid={propertyId}&myItemId={itemId}",
-                    dataType: "json",
-                    method: "GET",
-                    data: kendoReadOptions.data
-                }).then((result) => {
-                    kendoReadOptions.success(result);
-                }).catch((result) => {
-                    kendoReadOptions.error(result);
-                });
-            }
-		}
-	}
-}, {options});
+const container = $("#container_{propertyIdWithSuffix}");
+const field = $("#field_{propertyIdWithSuffix}");
+const fieldOptions = {options};
+const options = $.extend({
+    autoClose: false,
+    dataTextField: "name",
+    dataValueField: "id",
+    change: window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields),
+    dataSource: {
+        transport: {
+            read: async (kendoReadOptions) => {
+                let inputData = window.dynamicItems.fields.getInputData(field.closest(".popup-container, .pane-content")) || [];
+                inputData = inputData.reduce((obj, item) => { obj[item.key] = item.value; return obj; });
 
-var defaultValue = {default_value};
+                try {
+                    const dataResult = await Wiser.api({
+                        method: "POST",
+                        contentType: "application/json",
+                        dataType: "json",
+                        url: `${dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/action-button/{propertyId}?queryId=${encodeURIComponent(fieldOptions.queryId || dynamicItems.settings.zeroEncrypted)}&itemLinkId={itemLinkId}&userType=${encodeURIComponent(dynamicItems.settings.userType)}`,
+                        data: JSON.stringify(inputData)
+                    });
+
+                    kendoReadOptions.success(dataResult.otherData);
+                } catch (exception) {
+                    console.error("read error - {title}", exception);
+                    kendoReadOptions.error(exception);
+                }
+            }
+        }
+    }
+}, fieldOptions);
+let kendoComponent;
+
+const defaultValue = {default_value};
 if (defaultValue) {
     options.value = typeof defaultValue === "string" ? defaultValue.split(",") : defaultValue;
 }
@@ -32,75 +43,92 @@ if (typeof options.dataSource === "string") {
         case "wiserusers":
             options.dataSource = {
                 transport: {
-                    read: (kendoReadOptions) => {
-                        Wiser.api({
-                            url: window.dynamicItems.settings.wiserApiRoot + "users",
-                            dataType: "json",
-                            method: "GET",
-                            data: kendoReadOptions.data
-                        }).then((result) => {
+                    read: async (kendoReadOptions) => {
+                        try {
+                            const result = await Wiser.api({
+                                url: `${window.dynamicItems.settings.wiserApiRoot}users`,
+                                dataType: "json",
+                                method: "GET",
+                                data: kendoReadOptions.data
+                            });
+
                             kendoReadOptions.success(result);
-                        }).catch((result) => {
-                            kendoReadOptions.error(result);
-                        });
+                        } catch (exception) {
+                            console.error("read error - {title}", exception);
+                            kendoReadOptions.error(exception);
+                        }
                     }
                 }
             }
             break;
         default:
-            kendo.alert("Onbekende datasource (' " + options.dataSource + "') opgegeven bij combobox-veld ('{title}'). Neem a.u.b. contact op met ons.");
+            kendo.alert(`Onbekende datasource (' ${options.dataSource}') opgegeven bij combobox-veld ('{title}'). Neem a.u.b. contact op met ons.`);
             break;
     }
 } else if (options.entityType) {
-    var searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true") ? 1 : 0;
-    var searchFields = options.searchFields || [];
-    var searchInTitle = typeof options.searchInTitle === "undefined" || options.searchInTitle === null || options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0 ? 1 : 0;
-	var searchModuleId = options.moduleId || 0;
-	if (!searchEverywhere && !searchModuleId) {
-		searchModuleId = window.dynamicItems.settings.moduleId;
-	}
-    options.dataSource.transport.read = (kendoReadOptions) => {
-        Wiser.api({
-            url: window.dynamicItems.settings.serviceRoot + "/SEARCH_ITEMS?id=" + encodeURIComponent("{itemIdEncrypted}") + "&moduleid=" + searchModuleId.toString() +
-                "&entityType=" + encodeURIComponent(options.entityType) + "&search=&searchInTitle=" + searchInTitle.toString() +
-                "&searchFields=" + encodeURIComponent(searchFields.join()) + "&searchEverywhere=" + searchEverywhere +
-                "&skip=0&take=999999",
-            dataType: "json",
-            method: "GET",
-            data: kendoReadOptions.data
-        }).then((result) => {
+    const searchEverywhere = options.searchEverywhere && (options.searchEverywhere > 0 || options.searchEverywhere.toLowerCase() === "true");
+    const searchFields = options.searchFields || [];
+    const searchInTitle = typeof options.searchInTitle === "undefined" || options.searchInTitle === null || options.searchInTitle === true || options.searchInTitle === "true" || options.searchInTitle > 0;
+
+    options.dataSource.transport.read = async (kendoReadOptions) => {
+        try {
+            let searchValue = "";
+
+            if (kendoReadOptions.data && kendoReadOptions.data.filter && kendoReadOptions.data.filter.filters && kendoReadOptions.data.filter.filters.length) {
+                searchValue = encodeURIComponent(kendoReadOptions.data.filter.filters[0].value);
+            }
+
+            const result = await Wiser.api({
+                url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/search?entityType=${encodeURIComponent(options.entityType)}&searchValue=${searchValue}&searchInTitle=${searchInTitle}&searchEveryWhere=${searchEverywhere}&searchFields=${encodeURIComponent(searchFields.join())}`,
+                dataType: "json",
+                method: "GET",
+                data: kendoReadOptions.data
+            });
+
             kendoReadOptions.success(result);
-        }).catch((result) => {
-            kendoReadOptions.error(result);
-        });
+        } catch (exception) {
+            console.error("read error - {title}", exception);
+            kendoReadOptions.error(exception);
+        }
     };
-	options.filter = "contains";
-	options.filtering = function(event) { window.dynamicItems.fields.onComboBoxFiltering(event, '{itemIdEncrypted}', options); };
+
+    options.dataSource.pageSize = 80;
+    options.dataSource.serverPaging = true;
+    options.dataSource.serverFiltering = true;
+    options.filter = "contains";
 } else if (options.dataSelectorId > 0) {
-    options.dataSource.transport.read = (kendoReadOptions) => {
-        Wiser.api({
-            url: window.dynamicItems.settings.getItemsUrl + "?trace=false&encryptedDataSelectorId=" + encodeURIComponent(options.dataSelectorId.toString()),
-            dataType: "json",
-            method: "GET",
-            data: kendoReadOptions.data
-        }).then((result) => {
+    options.dataSource.transport.read = async (kendoReadOptions) => {
+        try {
+            const result = await Wiser.api({
+                url: `${window.dynamicItems.settings.getItemsUrl}?trace=false&encryptedDataSelectorId=${encodeURIComponent(options.dataSelectorId.toString())}`,
+                dataType: "json",
+                method: "GET",
+                data: kendoReadOptions.data
+            });
+
             kendoReadOptions.success(result);
-        }).catch((result) => {
-            kendoReadOptions.error(result);
-        });
+        } catch (exception) {
+            console.error("read error - {title}", exception);
+            kendoReadOptions.error(exception);
+        }
     }
 }
 
-const field = $("#field_{propertyIdWithSuffix}");
-const container = field.closest(".item");
 const readonly = {readonly};
+
+if (options.newItems && options.newItems.allow && (options.newItems.entityType || options.entityType)) {
+    container.find(".newItemButton").removeClass("hidden").kendoButton({
+        icon: "plus",
+        click: window.dynamicItems.dialogs.openCreateItemDialog.bind(window.dynamicItems.dialogs, options.newItems.parentId, null, options.newItems.entityType || options.entityType, false, true, options.newItems.linkTypeNumber, options.newItems.moduleId, kendoComponent)
+    });
+}
 
 if (options.mode === "checkBoxGroup") {
     // Set the main image.
     let mainImageUrl = options.mainImageUrl;
     if (options.mainImageId) {
         mainImageUrl = `${window.dynamicItems.settings.wiserApiRoot}items/0/files/${options.imageId}/${encodeURIComponent("{propertyName}.png")}?encryptedCustomerId=${encodeURIComponent(window.dynamicItems.settings.customerId)}&encryptedUserId=${encodeURIComponent(window.dynamicItems.settings.userId)}&isTest=${window.dynamicItems.settings.isTestEnvironment}&subDomain=${encodeURIComponent(window.dynamicItems.settings.subDomain)}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`;
-    } 
+    }
     if (mainImageUrl) {
         container.find("#image_{propertyIdWithSuffix}").attr("src", mainImageUrl);
     }
@@ -130,7 +158,7 @@ if (options.mode === "checkBoxGroup") {
             } else {
                 html.find(".checkbox-img img").hide();
             }
-            
+
             html.find("input[type='checkbox']").prop("readonly", readonly).prop("checked", options.value.indexOf(item.id.toString()) > -1);
 
             panel.append(html);
@@ -139,8 +167,9 @@ if (options.mode === "checkBoxGroup") {
         field.prop("checked", panel.find("input[type='checkbox']:checked").length > 0);
     });
 } else {
-    var kendoComponent = field.kendoMultiSelect(options).data("kendoMultiSelect");
+    kendoComponent = field.kendoMultiSelect(options).data("kendoMultiSelect");
     kendoComponent.readonly(readonly);
 }
+
 {customScript}
 })();

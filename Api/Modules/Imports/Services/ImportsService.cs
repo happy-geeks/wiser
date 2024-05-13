@@ -1,14 +1,4 @@
-﻿using Api.Core.Helpers;
-using Api.Core.Services;
-using Api.Modules.Customers.Interfaces;
-using Api.Modules.Imports.Interfaces;
-using Api.Modules.Imports.Models;
-using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Models;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
@@ -19,34 +9,51 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Enums;
-using Api.Modules.Customers.Models;
+using Api.Core.Helpers;
+using Api.Core.Services;
 using Api.Modules.EntityProperties.Helpers;
 using Api.Modules.EntityProperties.Models;
+using Api.Modules.Imports.Interfaces;
+using Api.Modules.Imports.Models;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using GeeksCoreLibrary.Modules.Imports.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic.FileIO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Imports.Services
 {
+    /// <inheritdoc cref="Api.Modules.Imports.Interfaces.IImportsService" />
     public class ImportsService : IImportsService, IScopedService
     {
         private readonly IWiserItemsService wiserItemsService;
         private readonly IUsersService usersService;
-        private readonly IWiserCustomersService wiserCustomersService;
+        private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
+        private readonly IExcelService excelService;
         private readonly ILogger<ImportsService> logger;
 
         private const uint ImportLimit = 1000000;
 
-        public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserCustomersService wiserCustomersService, IDatabaseConnection clientDatabaseConnection, ILogger<ImportsService> logger)
+        /// <summary>
+        /// Creates a new instance of <see cref="ImportsService"/>.
+        /// </summary>
+        public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IExcelService excelService, ILogger<ImportsService> logger)
         {
             this.wiserItemsService = wiserItemsService;
             this.usersService = usersService;
-            this.wiserCustomersService = wiserCustomersService;
+            this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.excelService = excelService;
             this.logger = logger;
         }
 
@@ -71,7 +78,7 @@ namespace Api.Modules.Imports.Services
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var customer = (await wiserCustomersService.GetSingleAsync(identity)).ModelObject;
+            var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
             var entityType = importRequest.ImportSettings.Count > 0 ? Convert.ToString(importRequest.ImportSettings.First()["entityType"]) : "";
             var moduleId = importRequest.ImportSettings.Count > 0 ? Convert.ToInt32(importRequest.ImportSettings.First()["moduleId"]) : 0;
             var importResult = new ImportResultModel();
@@ -123,323 +130,71 @@ namespace Api.Modules.Imports.Services
 
             var importData = new List<ImportDataModel>();
 
-            using (var stringReader = new StringReader(fileContents))
+            if (importRequest.FilePath.EndsWith(".xlsx", StringComparison.InvariantCultureIgnoreCase))
             {
-                using (var reader = new TextFieldParser(stringReader))
+                var headerFields = excelService.GetColumnNames(importRequest.FilePath).ToArray();
+                var headerResult = CheckHeader(headerFields, importResult);
+
+                if (headerResult.result != null)
                 {
-                    reader.Delimiters = new[] { ";" };
-                    reader.TextFieldType = FieldType.Delimited;
-                    reader.HasFieldsEnclosedInQuotes = true;
+                    return headerResult.result;
+                }
 
-                    string[] headerFields = null;
-                    var firstLine = true;
-                    var rowsHandled = 0;
-                    var idIndex = -1;
-
-                    while (!reader.EndOfData)
+                var idIndex = headerResult.idIndex;
+                var rows = excelService.GetLines(importRequest.FilePath,  headerFields.Length, true, true);
+                var rowsHandled = 0;
+                foreach (var row in rows)
+                {
+                    if (rowsHandled > ImportLimit)
                     {
-                        if (firstLine)
-                        {
-                            headerFields = reader.ReadFields();
-                            firstLine = false;
-                            idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
+                        break;
+                    }
 
-                            if (idIndex < 0)
+                    await ProcessLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, tenant, subDomain);
+                    rowsHandled++;
+                }
+            }
+            else
+            {
+                using (var stringReader = new StringReader(fileContents))
+                {
+                    using (var reader = new TextFieldParser(stringReader))
+                    {
+                        reader.Delimiters = new[] {";"};
+                        reader.TextFieldType = FieldType.Delimited;
+                        reader.HasFieldsEnclosedInQuotes = true;
+
+                        string[] headerFields = null;
+                        var firstLine = true;
+                        var rowsHandled = 0;
+                        var idIndex = -1;
+
+                        while (!reader.EndOfData)
+                        {
+                            if (firstLine)
                             {
-                                importResult.Failed += 1U;
-                                importResult.Errors.Add("Can't do import because of missing ID column");
-                                importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
-                                return new ServiceResult<ImportResultModel>(importResult);
-                            }
+                                headerFields = reader.ReadFields();
+                                firstLine = false;
+                                var headerResult = CheckHeader(headerFields, importResult);
 
-                            continue;
-                        }
+                                if (headerResult.result != null)
+                                {
+                                    return headerResult.result;
+                                }
 
-                        if (rowsHandled > ImportLimit)
-                        {
-                            break;
-                        }
-
-                        rowsHandled += 1;
-
-                        var lineFields = reader.ReadFields();
-                        if (lineFields.All(String.IsNullOrWhiteSpace))
-                        {
-                            // Don't import empty rows.
-                            continue;
-                        }
-
-                        var importItem = new ImportDataModel
-                        {
-                            Item = new WiserItemModel
-                            {
-                                ChangedBy = IdentityHelpers.GetUserName(identity),
-                                ModuleId = moduleId
-                            }
-                        };
-                        importData.Add(importItem);
-
-
-                        var isNewItem = true;
-
-                        if (idIndex >= 0 && !String.IsNullOrWhiteSpace(lineFields[idIndex]))
-                        {
-                            // ID field exists and is filled; line is item update.
-                            importItem.Item.Id = Convert.ToUInt64(lineFields[idIndex]);
-                            isNewItem = importItem.Item.Id == 0;
-                        }
-
-                        // Only set entity type for new items, so that the import can never change the entity type of an existing item.
-                        if (isNewItem)
-                        {
-                            importItem.Item.EntityType = entityType;
-                        }
-
-                        // Now update the item with the fields from the import.
-                        var images = new List<ImageUploadSettingsModel>();
-
-                        // Item details and item links.
-                        for (var i = 0; i <= lineFields.Length - 1; i++)
-                        {
-                            var importColumnName = headerFields[i];
-
-                            // Ignore ID column.
-                            if (importColumnName.Equals("id", StringComparison.OrdinalIgnoreCase))
-                            {
+                                idIndex = headerResult.idIndex;
                                 continue;
                             }
 
-                            var lineSettings = importRequest.ImportSettings.FirstOrDefault(d => d["column"]?.ToString() == importColumnName);
-                            var linkSettings = importRequest.ImportLinkSettings.FirstOrDefault(d => d["column"]?.ToString() == importColumnName);
-
-                            if (lineSettings != null)
+                            if (rowsHandled > ImportLimit)
                             {
-                                var propertyName = lineSettings["propertyName"] as string;
-                                var isImageField = (bool)lineSettings["isImageField"];
-                                var allowMultipleImages = (bool)lineSettings["allowMultipleImages"];
-                                var languageCode = lineSettings["languageCode"] as string ?? "";
-
-                                if (isImageField)
-                                {
-                                    if (!String.IsNullOrWhiteSpace(importRequest.ImagesFileName))
-                                    {
-                                        images.Add(new ImageUploadSettingsModel { PropertyName = propertyName, FilePath = lineFields[i], AllowMultipleImages = allowMultipleImages });
-                                    }
-                                }
-                                else if (!String.IsNullOrWhiteSpace(propertyName))
-                                {
-                                    // TODO: Also handle unique_uuid, published_environment etc?
-                                    if (propertyName.Equals("itemTitle", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        importItem.Item.Title = lineFields[i];
-                                    }
-                                    else
-                                    {
-                                        var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item.Details, propertyName, lineFields[i], importResult, subDomain, identity, customer, false);
-                                        if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
-                                        {
-                                            continue;
-                                        }
-
-                                        var itemDetail = new WiserItemDetailModel
-                                        {
-                                            Key = propertyName,
-                                            Value = value,
-                                            LanguageCode = languageCode
-                                        };
-
-                                        importItem.Item.Details.Add(itemDetail);
-                                    }
-                                }
+                                break;
                             }
 
-                            if (linkSettings == null)
-                            {
-                                continue;
-                            }
+                            rowsHandled += 1;
 
-                            foreach (var value in lineFields[i].Split(','))
-                            {
-                                if (String.IsNullOrWhiteSpace(value))
-                                {
-                                    continue;
-                                }
-
-                                var itemLink = new ItemLinkImportModel
-                                {
-                                    Type = Convert.ToInt32(linkSettings["linkType"]),
-                                    DeleteExistingLinks = Convert.ToBoolean(linkSettings["deleteExistingLinks"])
-                                };
-
-                                if (Convert.ToBoolean(linkSettings["linkIsDestination"]))
-                                {
-                                    // Link newly made item to item in settings.
-                                    itemLink.ItemId = importItem.Item.Id;
-                                    itemLink.DestinationItemId = Convert.ToUInt64(value.Trim());
-                                }
-                                else
-                                {
-                                    // Link item in settings to newly made item.
-                                    itemLink.ItemId = Convert.ToUInt64(value.Trim());
-                                    itemLink.DestinationItemId = importItem.Item.Id;
-                                }
-                                
-                                // Make sure an item won't get linked to itself.
-                                if (itemLink.ItemId == itemLink.DestinationItemId)
-                                {
-                                    continue;
-                                }
-
-                                // Make sure that we don't import duplicate links.
-                                if (importItem.Links.Any(x => x.ItemId == itemLink.ItemId && x.DestinationItemId == itemLink.DestinationItemId && x.Type == itemLink.Type))
-                                {
-                                    continue;
-                                }
-
-                                importItem.Links.Add(itemLink);
-                            }
-                        }
-
-                        // Item link details. We do this in a separate loop to make sure that all links are known, before adding details to them, so that the order of the columns in the CSV does not matter.
-                        for (var i = 0; i <= lineFields.Length - 1; i++)
-                        {
-                            var importColumnName = headerFields[i];
-
-                            // Ignore ID column.
-                            if (importColumnName.Equals("id", StringComparison.OrdinalIgnoreCase))
-                            {
-                                continue;
-                            }
-
-                            var linkDetailSettings = importRequest.ImportLinkDetailSettings.FirstOrDefault(d => d["column"]?.ToString() == importColumnName);
-                            if (linkDetailSettings == null)
-                            {
-                                continue;
-                            }
-
-                            var itemLink = importItem.Links.FirstOrDefault(l => l.Type == Convert.ToInt32(linkDetailSettings["linkType"]));
-                            if (itemLink == null)
-                            {
-                                continue;
-                            }
-
-                            if (!linkComboBoxFields.ContainsKey(itemLink.Type))
-                            {
-                                linkComboBoxFields.Add(itemLink.Type, new List<ComboBoxDataModel>());
-                                clientDatabaseConnection.AddParameter("linkType", itemLink.Type);
-                                dataTable = await clientDatabaseConnection.GetAsync($@"SELECT property_name, display_name, options, inputtype, data_query, language_code
-                                                                                            FROM {WiserTableNames.WiserEntityProperty}
-                                                                                            WHERE link_type = ?linkType");
-                                if (dataTable.Rows.Count > 0)
-                                {
-                                    foreach (DataRow dataRow in dataTable.Rows)
-                                    {
-                                        var inputType = dataRow.Field<string>("inputtype");
-                                        var databasePropertyName = dataRow.Field<string>("property_name");
-                                        var options = dataRow.Field<string>("options");
-                                        var parsedOptions = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
-                                        linkProperties.Add((databasePropertyName, dataRow.Field<string>("language_code"), inputType, parsedOptions));
-
-                                        if (!inputType.Equals("combobox", StringComparison.OrdinalIgnoreCase) && !inputType.Equals("multiselect", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            continue;
-                                        }
-
-                                        linkComboBoxFields[itemLink.Type].Add(new ComboBoxDataModel
-                                        {
-                                            PropertyName = databasePropertyName,
-                                            DisplayName = dataRow.Field<string>("display_name"),
-                                            DataQuery = dataRow.Field<string>("data_query"),
-                                            Options = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options)
-                                        });
-                                    }
-                                }
-                            }
-
-                            var currentLinkComboBoxFields = linkComboBoxFields[itemLink.Type];
-                            var propertyName = linkDetailSettings["propertyName"] as string;
-                            var isImageField = (bool)linkDetailSettings["isImageField"];
-                            var allowMultipleImages = (bool)linkDetailSettings["allowMultipleImages"];
-                            var languageCode = linkDetailSettings["languageCode"] as string ?? "";
-
-                            if (isImageField)
-                            {
-                                if (!String.IsNullOrWhiteSpace(importRequest.ImagesFileName))
-                                {
-                                    images.Add(new ImageUploadSettingsModel { PropertyName = propertyName, FilePath = lineFields[i], AllowMultipleImages = allowMultipleImages });
-                                }
-                            }
-                            else if (!String.IsNullOrWhiteSpace(propertyName))
-                            {
-                                var value = await HandleComboBoxFieldAsync(currentLinkComboBoxFields, languageCode, importItem, itemLink.Details, propertyName, lineFields[i], importResult, subDomain, identity, customer, true);
-                                if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
-                                {
-                                    continue;
-                                }
-
-                                var itemDetail = new WiserItemDetailModel
-                                {
-                                    IsLinkProperty = true,
-                                    Key = propertyName,
-                                    Value = value,
-                                    LanguageCode = languageCode
-                                };
-
-                                itemLink.Details.Add(itemDetail);
-                            }
-                        }
-
-                        importResult.ItemsTotal += 1U;
-
-                        try
-                        {
-                            // Import files.
-                            if (images != null && images.Count > 0)
-                            {
-                                foreach (var image in images)
-                                {
-                                    var itemFile = new WiserItemFileModel
-                                    {
-                                        ItemId = importItem.Item.Id,
-                                        FileName = Path.GetFileName(image.FilePath),
-                                        Extension = Path.GetExtension(image.FilePath),
-                                        AddedBy = IdentityHelpers.GetUserName(identity),
-                                        PropertyName = image.PropertyName
-                                    };
-                                    importItem.Files.Add(itemFile);
-
-                                    if (isNewItem || image.AllowMultipleImages)
-                                    {
-                                        continue;
-                                    }
-
-                                    clientDatabaseConnection.ClearParameters();
-                                    clientDatabaseConnection.AddParameter("item_id", importItem.Item.Id);
-                                    clientDatabaseConnection.AddParameter("property_name", image.PropertyName);
-                                    dataTable = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserItemFile} WHERE item_id = ?item_id AND property_name = ?property_name LIMIT 1");
-                                    if (dataTable.Rows.Count > 0)
-                                    {
-                                        itemFile.Id = Convert.ToUInt64(dataTable.Rows[0]["id"]);
-                                    }
-                                }
-                            }
-
-                            // No errors here means it was successful.
-                            importResult.Successful += 1U;
-
-                            if (isNewItem)
-                            {
-                                importResult.ItemsCreated += 1U;
-                            }
-                            else
-                            {
-                                importResult.ItemsUpdated += 1U;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            importResult.Failed += 1U;
-                            importResult.Errors.Add(ex.Message);
+                            var lineFields = reader.ReadFields();
+                            await ProcessLineAsync(importResult, lineFields, identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties, tenant, subDomain);
                         }
                     }
                 }
@@ -455,8 +210,8 @@ namespace Api.Modules.Imports.Services
             var allItemIds = importData.Where(i => i.Item.Id > 0).Select(i => i.Item.Id).ToList();
             var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            // Check if all items are of the correct entity type.
-            if (allItemIds.Any())
+            // Check if all items are of the correct entity type if there are any items that are imported according to the settings
+            if (allItemIds.Any() && importRequest.ImportSettings.Any())
             {
                 dataTable = await clientDatabaseConnection.GetAsync($"SELECT id, entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", allItemIds)})");
                 if (dataTable.Rows.Count > 0)
@@ -482,43 +237,111 @@ namespace Api.Modules.Imports.Services
             if (itemIdsFromLinks.Any())
             {
                 allItemIds.AddRange(itemIdsFromLinks.Where(x => !allItemIds.Contains(x)));
-                dataTable = await clientDatabaseConnection.GetAsync($"SELECT id, entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", itemIdsFromLinks)})");
-                if (dataTable.Rows.Count > 0)
-                {
-                    var allRows = dataTable.Rows.Cast<DataRow>().ToList();
-                    var wiserLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
-                    existingItemIds.AddRange(allRows.Select(dataRow => dataRow.Field<ulong>("id")));
 
-                    foreach (var import in importData)
+                // First get all link type settings from database.
+                var wiserLinkSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
+
+                // Create some variables for caching data.
+                var tablePrefixes = new Dictionary<string, string>();
+                var tablesWithItems = new Dictionary<string, List<ulong>>();
+
+                foreach (var import in importData)
+                {
+                    foreach (var link in import.Links)
                     {
-                        foreach (var link in import.Links)
+                        var sourceEntityType = link.ItemId == 0 ? entityType : null;
+                        var destinationEntityType = link.DestinationItemId == 0 ? entityType : null;
+
+                        LinkSettingsModel currentLinkSettings = null;
+                        foreach (var linkSetting in wiserLinkSettings.Where(l => l.Type == link.Type))
                         {
-                            var sourceEntityType = link.ItemId == 0 ? entityType : allRows.FirstOrDefault(r => r.Field<ulong>("id") == link.ItemId)?.Field<string>("entity_type");
-                            var destinationEntityType = link.DestinationItemId == 0 ? entityType : allRows.FirstOrDefault(r => r.Field<ulong>("id") == link.DestinationItemId)?.Field<string>("entity_type");
-                            if (sourceEntityType == null || destinationEntityType == null)
+                            // If the item ID is 0, it means we're creating a new item and linking that to the destination item. In that case, we need to check if the entity type of the source item is the same as the entity type in the link settings.
+                            if (link.ItemId == 0 && !String.Equals(linkSetting.SourceEntityType, entityType, StringComparison.OrdinalIgnoreCase))
                             {
-                                // If one of the entity types is null, it means it doesn't exist. Then just continue, errors for non-existing items will be added later in the code.
                                 continue;
                             }
 
-                            var currentLinkSettings = wiserLinkSettings.FirstOrDefault(l => l.Type == link.Type && String.Equals(l.SourceEntityType, sourceEntityType, StringComparison.OrdinalIgnoreCase) && String.Equals(l.DestinationEntityType, destinationEntityType, StringComparison.OrdinalIgnoreCase));
-                            if (currentLinkSettings != null)
+                            // If the destination item ID is 0, it means we're creating a new item and making that the parent of another item. In that case, we need to check if the entity type of the destination item is the same as the entity type in the link settings.
+                            if (link.DestinationItemId == 0 && !String.Equals(linkSetting.DestinationEntityType, entityType, StringComparison.OrdinalIgnoreCase))
                             {
-                                if (!currentLinkSettings.UseItemParentId)
+                                continue;
+                            }
+
+                            if (link.ItemId > 0)
+                            {
+                                // Get the table prefix, if we don't know it yet for the current entity type.
+                                if (!tablePrefixes.TryGetValue(linkSetting.SourceEntityType, out var sourceEntityTablePrefix))
                                 {
-                                    continue;
+                                    sourceEntityTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSetting.SourceEntityType);
+                                    tablePrefixes.Add(linkSetting.SourceEntityType, sourceEntityTablePrefix);
                                 }
 
-                                import.Item.ParentItemId = link.DestinationItemId;
-                                link.UseParentItemId = true;
+                                if (!tablesWithItems.ContainsKey(sourceEntityTablePrefix))
+                                {
+                                    tablesWithItems.Add(sourceEntityTablePrefix, new List<ulong>());
+                                }
+
+                                // Add the item ID for a temporary list, so that we can get all items at once later.
+                                if (!tablesWithItems[sourceEntityTablePrefix].Contains(link.ItemId))
+                                {
+                                    tablesWithItems[sourceEntityTablePrefix].Add(link.ItemId);
+                                }
                             }
-                            else
+
+                            if (link.DestinationItemId > 0)
                             {
-                                importResult.Failed++;
-                                importResult.Errors.Add($"Trying to link item '{link.ItemId}' ({sourceEntityType}) to item '{link.DestinationItemId}' ({destinationEntityType}) with link type '{link.Type}', but this combination is not possible according to the settings in {WiserTableNames.WiserLink}.");
-                                importResult.UserFriendlyErrors.Add($"Import kan niet gedaan worden omdat de volgende gekozen koppeling niet mogelijk is: Bron item = '{link.ItemId}', bron entiteit = '{entityType}', doel item = '{link.DestinationItemId}', doel entiteit = '{destinationEntityType}', linktype = '{link.Type}'<br>Indien u denkt dat dit niet klopt, neem dan contact op met ons.");
+                                // Get the table prefix, if we don't know it yet for the current entity type.
+                                if (!tablePrefixes.TryGetValue(linkSetting.DestinationEntityType, out var destinationEntityTablePrefix))
+                                {
+                                    destinationEntityTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSetting.DestinationEntityType);
+                                    tablePrefixes.Add(linkSetting.DestinationEntityType, destinationEntityTablePrefix);
+                                }
+
+                                if (!tablesWithItems.ContainsKey(destinationEntityTablePrefix))
+                                {
+                                    tablesWithItems.Add(destinationEntityTablePrefix, new List<ulong>());
+                                }
+
+                                // Add the item ID for a temporary list, so that we can get all items at once later.
+                                if (!tablesWithItems[destinationEntityTablePrefix].Contains(link.DestinationItemId))
+                                {
+                                    tablesWithItems[destinationEntityTablePrefix].Add(link.DestinationItemId);
+                                }
                             }
                         }
+
+                        if (sourceEntityType == null || destinationEntityType == null || currentLinkSettings == null)
+                        {
+                            // If one of the entity types is null, it means it doesn't exist. Then just continue, errors for non-existing items will be added later in the code.
+                            continue;
+                        }
+
+                        if (currentLinkSettings != null)
+                        {
+                            if (!currentLinkSettings.UseItemParentId)
+                            {
+                                continue;
+                            }
+
+                            import.Item.ParentItemId = link.DestinationItemId;
+                            link.UseParentItemId = true;
+                        }
+                        else
+                        {
+                            importResult.Failed++;
+                            importResult.Errors.Add($"Trying to link item '{link.ItemId}' ({sourceEntityType}) to item '{link.DestinationItemId}' ({destinationEntityType}) with link type '{link.Type}', but this combination is not possible according to the settings in {WiserTableNames.WiserLink}.");
+                            importResult.UserFriendlyErrors.Add($"Import kan niet gedaan worden omdat de volgende gekozen koppeling niet mogelijk is: Bron item = '{link.ItemId}', bron entiteit = '{entityType}', doel item = '{link.DestinationItemId}', doel entiteit = '{destinationEntityType}', linktype = '{link.Type}'<br>Indien u denkt dat dit niet klopt, neem dan contact op met ons.");
+                        }
+                    }
+                }
+
+                // Check if all items exist in the database.
+                foreach (var (currentTablePrefix, itemIds) in tablesWithItems.Where(x => x.Value.Any()))
+                {
+                    dataTable = await clientDatabaseConnection.GetAsync($"SELECT id FROM {currentTablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", itemIds)})");
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        existingItemIds.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => dataRow.Field<ulong>("id")));
                     }
                 }
             }
@@ -560,10 +383,10 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("name", importRequest.Name);
                 clientDatabaseConnection.AddParameter("start_on", parsedDate);
-                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
+                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
                 clientDatabaseConnection.AddParameter("user_id", userId);
-                clientDatabaseConnection.AddParameter("customer_id", customer.CustomerId);
+                clientDatabaseConnection.AddParameter("customer_id", tenant.TenantId);
                 clientDatabaseConnection.AddParameter("data", json);
                 clientDatabaseConnection.AddParameter("server_name", Environment.MachineName);
                 clientDatabaseConnection.AddParameter("sub_domain", subDomain);
@@ -584,7 +407,7 @@ namespace Api.Modules.Imports.Services
                 clientDatabaseConnection.AddParameter("items_failed", importResult.Failed);
                 clientDatabaseConnection.AddParameter("errors", String.Join(Environment.NewLine, importResult.Errors));
                 clientDatabaseConnection.AddParameter("added_on", DateTime.Now);
-                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity));
+                clientDatabaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true));
                 await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync<int>(WiserTableNames.WiserImportLog);
             }
             catch (Exception exception)
@@ -598,13 +421,13 @@ namespace Api.Modules.Imports.Services
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            // Extract the images zip to a place where the AIS can find them.
+            // Extract the images zip to a place where the WTS can find them.
             if (String.IsNullOrWhiteSpace(importRequest.ImagesFileName) && String.IsNullOrWhiteSpace(importRequest.ImagesFilePath))
             {
                 return new ServiceResult<ImportResultModel>(importResult);
             }
 
-            var basePath = $@"C:\temp\AIS Import\{customer.CustomerId}\{wiserImportId}\";
+            var basePath = $@"C:\temp\WTS Import\{tenant.TenantId}\{wiserImportId}\";
 
             var imagesDirectory = new DirectoryInfo(basePath);
             imagesDirectory.Create();
@@ -619,6 +442,332 @@ namespace Api.Modules.Imports.Services
             }
 
             return new ServiceResult<ImportResultModel>(importResult);
+        }
+
+        /// <summary>
+        /// Check the header of the file to see if it contains an ID column.
+        /// </summary>
+        /// <param name="headerFields">The fields containing the headers.</param>
+        /// <param name="importResult">The result that will be given back to the front-end to set any errors if they occur.</param>
+        /// <returns>Returns the index of the ID column and depending if it was found the <see cref="ServiceResult{T}"/> to return.</returns>
+        private (ServiceResult<ImportResultModel> result, int idIndex) CheckHeader(string[] headerFields, ImportResultModel importResult)
+        {
+            var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
+
+            if (idIndex >= 0) return (null, idIndex);
+
+            importResult.Failed += 1U;
+            importResult.Errors.Add("Can't do import because of missing ID column");
+            importResult.UserFriendlyErrors.Add("De import kan niet gedaan worden omdat er geen kolom genaamd 'id' is gevonden in het importbestand. Er moet altijd een kolom met de naam 'id' zijn. Bij het wijzigen van bestaande items, moet daar het ID van het item im komen te staan. Bij het toevoegen van nieuwe items, kan de kolon leeg blijven, of '0' zijn. Bij het importeren van koppelingen moet daar het ID van een van de items in staan (en het andere ID moet dan in een andere kolom staan).");
+            return (new ServiceResult<ImportResultModel>(importResult), idIndex);
+        }
+
+        /// <summary>
+        /// Process a given line to determine the import action.
+        /// </summary>
+        /// <param name="importResult">The result to add the information to of the line.</param>
+        /// <param name="lineFields">The fields/columns in the line to process.</param>
+        /// <param name="identity">The identity of the logged-in user.</param>
+        /// <param name="moduleId">The ID of the module the item will be created in.</param>
+        /// <param name="linkComboBoxFields">A list of <see cref="ComboBoxDataModel"/>s to add information of the combobox for linked items to.</param>
+        /// <param name="linkProperties">A list of properties to add information of properties on the link to.</param>
+        /// <param name="importData">A list of <see cref="ImportDataModel"/>s containing the data that need to be imported.</param>
+        /// <param name="idIndex">The index of the ID column.</param>
+        /// <param name="entityType">The entity type being imported.</param>
+        /// <param name="headerFields">The names of the columns in the header.</param>
+        /// <param name="importRequest">The <see cref="ImportRequestModel"/> with the information filled in in Wiser.</param>
+        /// <param name="comboBoxFields">The information of combobox fields in the entity to be set.</param>
+        /// <param name="properties">The information of the properties in the entity to be set.</param>
+        /// <param name="tenant">The logged in user.</param>
+        /// <param name="subDomain">The sub domain where the import is prepared.</param>
+        private async Task ProcessLineAsync(ImportResultModel importResult,
+            string[] lineFields,
+            ClaimsIdentity identity,
+            int moduleId,
+            Dictionary<int, List<ComboBoxDataModel>> linkComboBoxFields,
+            List<(string PropertyName, string LanguageCode, string InputType, JObject Options)> linkProperties,
+            List<ImportDataModel> importData,
+            int idIndex,
+            string entityType,
+            string[] headerFields,
+            ImportRequestModel importRequest,
+            List<ComboBoxDataModel> comboBoxFields,
+            List<(string PropertyName, string LanguageCode, string InputType, JObject Options)> properties,
+            TenantModel tenant,
+            string subDomain)
+        {
+            if (lineFields.All(String.IsNullOrWhiteSpace))
+            {
+                // Don't import empty rows.
+                return;
+            }
+
+            var importItem = new ImportDataModel
+            {
+                Item = new WiserItemModel
+                {
+                    ChangedBy = IdentityHelpers.GetUserName(identity, true),
+                    ModuleId = moduleId,
+                    EntityType = entityType
+                }
+            };
+            importData.Add(importItem);
+
+            var isNewItem = true;
+
+            if (idIndex >= 0 && !String.IsNullOrWhiteSpace(lineFields[idIndex]))
+            {
+                // ID field exists and is filled; line is item update.
+                importItem.Item.Id = Convert.ToUInt64(lineFields[idIndex]);
+                isNewItem = importItem.Item.Id == 0;
+            }
+
+            // Now update the item with the fields from the import.
+            var images = new List<ImageUploadSettingsModel>();
+
+            // Item details and item links.
+            for (var i = 0; i <= lineFields.Length - 1; i++)
+            {
+                var importColumnName = headerFields[i];
+
+                // Ignore ID column.
+                if (importColumnName.Equals("id", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var lineSettings = importRequest.ImportSettings.FirstOrDefault(d => d["column"]?.ToString() == importColumnName);
+                var linkSettings = importRequest.ImportLinkSettings.FirstOrDefault(d => d["column"]?.ToString() == importColumnName);
+
+                if (lineSettings != null)
+                {
+                    var propertyName = lineSettings["propertyName"] as string;
+                    var isImageField = (bool)lineSettings["isImageField"];
+                    var allowMultipleImages = (bool)lineSettings["allowMultipleImages"];
+                    var languageCode = lineSettings["languageCode"] as string ?? "";
+
+                    if (isImageField)
+                    {
+                        if (!String.IsNullOrWhiteSpace(importRequest.ImagesFileName))
+                        {
+                            images.Add(new ImageUploadSettingsModel { PropertyName = propertyName, FilePath = lineFields[i], AllowMultipleImages = allowMultipleImages });
+                        }
+                    }
+                    else if (!String.IsNullOrWhiteSpace(propertyName))
+                    {
+                        // TODO: Also handle unique_uuid, published_environment etc?
+                        if (propertyName.Equals("itemTitle", StringComparison.OrdinalIgnoreCase))
+                        {
+                            importItem.Item.Title = lineFields[i];
+                        }
+                        else
+                        {
+                            var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item.Details, propertyName, lineFields[i], importResult, subDomain, identity, tenant, false);
+                            if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
+                            {
+                                continue;
+                            }
+
+                            var itemDetail = new WiserItemDetailModel
+                            {
+                                Key = propertyName,
+                                Value = value,
+                                LanguageCode = languageCode
+                            };
+
+                            importItem.Item.Details.Add(itemDetail);
+                        }
+                    }
+                }
+
+                if (linkSettings == null)
+                {
+                    continue;
+                }
+
+                foreach (var value in lineFields[i].Split(','))
+                {
+                    if (String.IsNullOrWhiteSpace(value))
+                    {
+                        continue;
+                    }
+
+                    var itemLink = new ItemLinkImportModel
+                    {
+                        Type = Convert.ToInt32(linkSettings["linkType"]),
+                        DeleteExistingLinks = Convert.ToBoolean(linkSettings["deleteExistingLinks"])
+                    };
+
+                    if (Convert.ToBoolean(linkSettings["linkIsDestination"]))
+                    {
+                        // Link newly made item to item in settings.
+                        itemLink.ItemId = importItem.Item.Id;
+                        itemLink.DestinationItemId = Convert.ToUInt64(value.Trim());
+                    }
+                    else
+                    {
+                        // Link item in settings to newly made item.
+                        itemLink.ItemId = Convert.ToUInt64(value.Trim());
+                        itemLink.DestinationItemId = importItem.Item.Id;
+                    }
+
+                    // Make sure an item won't get linked to itself.
+                    if (itemLink.ItemId == itemLink.DestinationItemId)
+                    {
+                        continue;
+                    }
+
+                    // Make sure that we don't import duplicate links.
+                    if (importItem.Links.Any(x => x.ItemId == itemLink.ItemId && x.DestinationItemId == itemLink.DestinationItemId && x.Type == itemLink.Type))
+                    {
+                        continue;
+                    }
+
+                    importItem.Links.Add(itemLink);
+                }
+            }
+
+            // Item link details. We do this in a separate loop to make sure that all links are known, before adding details to them, so that the order of the columns in the CSV does not matter.
+            for (var i = 0; i <= lineFields.Length - 1; i++)
+            {
+                var importColumnName = headerFields[i];
+
+                // Ignore ID column.
+                if (importColumnName.Equals("id", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var linkDetailSettings = importRequest.ImportLinkDetailSettings.FirstOrDefault(d => d["column"]?.ToString() == importColumnName);
+                if (linkDetailSettings == null)
+                {
+                    continue;
+                }
+
+                var itemLink = importItem.Links.FirstOrDefault(l => l.Type == Convert.ToInt32(linkDetailSettings["linkType"]));
+                if (itemLink == null)
+                {
+                    continue;
+                }
+
+                if (!linkComboBoxFields.ContainsKey(itemLink.Type))
+                {
+                    linkComboBoxFields.Add(itemLink.Type, new List<ComboBoxDataModel>());
+                    clientDatabaseConnection.AddParameter("linkType", itemLink.Type);
+                    var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT property_name, display_name, options, inputtype, data_query, language_code
+                                                                                FROM {WiserTableNames.WiserEntityProperty}
+                                                                                WHERE link_type = ?linkType");
+                    if (dataTable.Rows.Count > 0)
+                    {
+                        foreach (DataRow dataRow in dataTable.Rows)
+                        {
+                            var inputType = dataRow.Field<string>("inputtype");
+                            var databasePropertyName = dataRow.Field<string>("property_name");
+                            var options = dataRow.Field<string>("options");
+                            var parsedOptions = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options);
+                            linkProperties.Add((databasePropertyName, dataRow.Field<string>("language_code"), inputType, parsedOptions));
+
+                            if (!inputType.Equals("combobox", StringComparison.OrdinalIgnoreCase) && !inputType.Equals("multiselect", StringComparison.OrdinalIgnoreCase))
+                            {
+                                continue;
+                            }
+
+                            linkComboBoxFields[itemLink.Type].Add(new ComboBoxDataModel
+                            {
+                                PropertyName = databasePropertyName,
+                                DisplayName = dataRow.Field<string>("display_name"),
+                                DataQuery = dataRow.Field<string>("data_query"),
+                                Options = JObject.Parse(String.IsNullOrWhiteSpace(options) ? "{}" : options)
+                            });
+                        }
+                    }
+                }
+
+                var currentLinkComboBoxFields = linkComboBoxFields[itemLink.Type];
+                var propertyName = linkDetailSettings["propertyName"] as string;
+                var isImageField = (bool)linkDetailSettings["isImageField"];
+                var allowMultipleImages = (bool)linkDetailSettings["allowMultipleImages"];
+                var languageCode = linkDetailSettings["languageCode"] as string ?? "";
+
+                if (isImageField)
+                {
+                    if (!String.IsNullOrWhiteSpace(importRequest.ImagesFileName))
+                    {
+                        images.Add(new ImageUploadSettingsModel { PropertyName = propertyName, FilePath = lineFields[i], AllowMultipleImages = allowMultipleImages });
+                    }
+                }
+                else if (!String.IsNullOrWhiteSpace(propertyName))
+                {
+                    var value = await HandleComboBoxFieldAsync(currentLinkComboBoxFields, languageCode, importItem, itemLink.Details, propertyName, lineFields[i], importResult, subDomain, identity, tenant, true);
+                    if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
+                    {
+                        continue;
+                    }
+
+                    var itemDetail = new WiserItemDetailModel
+                    {
+                        IsLinkProperty = true,
+                        Key = propertyName,
+                        Value = value,
+                        LanguageCode = languageCode
+                    };
+
+                    itemLink.Details.Add(itemDetail);
+                }
+            }
+
+            importResult.ItemsTotal += 1U;
+
+            try
+            {
+                // Import files.
+                if (images != null && images.Count > 0)
+                {
+                    foreach (var image in images)
+                    {
+                        var itemFile = new WiserItemFileModel
+                        {
+                            ItemId = importItem.Item.Id,
+                            FileName = Path.GetFileName(image.FilePath),
+                            Extension = Path.GetExtension(image.FilePath),
+                            AddedBy = IdentityHelpers.GetUserName(identity, true),
+                            PropertyName = image.PropertyName
+                        };
+                        importItem.Files.Add(itemFile);
+
+                        if (isNewItem || image.AllowMultipleImages)
+                        {
+                            continue;
+                        }
+
+                        clientDatabaseConnection.ClearParameters();
+                        clientDatabaseConnection.AddParameter("item_id", importItem.Item.Id);
+                        clientDatabaseConnection.AddParameter("property_name", image.PropertyName);
+                        var dataTable = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserItemFile} WHERE item_id = ?item_id AND property_name = ?property_name LIMIT 1");
+                        if (dataTable.Rows.Count > 0)
+                        {
+                            itemFile.Id = Convert.ToUInt64(dataTable.Rows[0]["id"]);
+                        }
+                    }
+                }
+
+                // No errors here means it was successful.
+                importResult.Successful += 1U;
+
+                if (isNewItem)
+                {
+                    importResult.ItemsCreated += 1U;
+                }
+                else
+                {
+                    importResult.ItemsUpdated += 1U;
+                }
+            }
+            catch (Exception ex)
+            {
+                importResult.Failed += 1U;
+                importResult.Errors.Add(ex.Message);
+            }
         }
 
         private static bool HandleFieldValue(List<(string PropertyName, string LanguageCode, string InputType, JObject Options)> properties, string propertyName, string languageCode, ImportResultModel importResult, string importColumnName, ref string value)
@@ -677,6 +826,12 @@ namespace Api.Modules.Imports.Services
                     value = parsedDecimal.ToString(new CultureInfo("en-US"));
                     break;
                 case "date-time picker":
+                    if (String.IsNullOrEmpty(value))
+                    {
+                        // Don't do anything, empty values are allowed.
+                        break;
+                    }
+
                     if (!DateTime.TryParse(value, new CultureInfo("nl-NL"), DateTimeStyles.AssumeLocal, out var parsedDateTime))
                     {
                         importResult.Failed += 1U;
@@ -735,7 +890,7 @@ namespace Api.Modules.Imports.Services
                                                             ImportResultModel importResult,
                                                             string subDomain,
                                                             ClaimsIdentity identity,
-                                                            CustomerModel customer,
+                                                            TenantModel tenant,
                                                             bool isLinkProperty)
         {
             // If this is a property with input type combobox or multi select, then allow the users to import the text value. We will lookup the corresponding ID and import that ID.
@@ -745,7 +900,7 @@ namespace Api.Modules.Imports.Services
                 return value;
             }
 
-            await AddComboBoxValuesAsync(comboBoxField, subDomain, identity, customer);
+            await AddComboBoxValuesAsync(comboBoxField, subDomain, identity, tenant);
             var allValues = value.Split(',');
             var ids = new List<string>();
             var names = new List<string>();
@@ -803,7 +958,7 @@ namespace Api.Modules.Imports.Services
             return value;
         }
 
-        private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, CustomerModel customer)
+        private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, TenantModel tenant)
         {
             if (comboBox.Values != null && comboBox.Values.Any())
             {
@@ -880,10 +1035,10 @@ namespace Api.Modules.Imports.Services
             else if (!String.IsNullOrWhiteSpace(dataSelectorId))
             {
                 throw new NotImplementedException("TODO: Use data selector via GCL once it's implemented. Don't call get_items.jcl, that creates unneeded extra overhead.");
-                /*var wiser2DataUrl = customer.Wiser2DataUrl;
+                /*var wiser2DataUrl = tenant.Wiser2DataUrl;
                 var restClient = new RestClient(wiser2DataUrl);
 
-                var restRequest = new RestRequest($"get_items.jcl?dataselectorid={dataSelectorId.EncryptWithAesWithSalt(customer.EncryptionKey, true)}&trace=false", Method.GET);
+                var restRequest = new RestRequest($"get_items.jcl?dataselectorid={dataSelectorId.EncryptWithAesWithSalt(tenant.EncryptionKey, true)}&trace=false", Method.GET);
 
                 var restResponse = await restClient.ExecuteAsync(restRequest);
                 if (restResponse.StatusCode != HttpStatusCode.OK)
@@ -990,6 +1145,7 @@ AND item.entity_type = ?entityName";
         /// </summary>
         /// <param name="deleteItemsRequest">The criteria for the items to delete.</param>
         /// <param name="fileLines"></param>
+        /// <param name="tablePrefix">The prefix of the table where the items will be deleted</param>
         /// <returns>Returns the query for after the SELECT statement for an item's property</returns>
         private string CreatePrepareDeleteQueryBottomForProperty(DeleteItemsRequestModel deleteItemsRequest, IEnumerable<string> fileLines, string tablePrefix)
         {
@@ -1285,10 +1441,10 @@ AND destinationDetail.`value` IN({String.Join(",", destinationValues.Select(line
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0)
+        public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityPropertiesAsync(ClaimsIdentity identity, string entityName = null, int linkType = 0)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            
+
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
             clientDatabaseConnection.AddParameter("linkType", linkType);

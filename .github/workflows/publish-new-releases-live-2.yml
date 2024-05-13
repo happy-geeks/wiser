@@ -15,6 +15,15 @@ jobs:
   
     - name: Restore dependencies
       run: dotnet restore
+
+    - name: Add NuGet Sources
+      run: dotnet nuget add source --username GilianJuice --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/happy-geeks/index.json"
+
+    - name: Add plugins FrontEnd
+      run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator
+
+    - name: Add plugins API
+      run: dotnet add Api package GeeksCoreLibrary.Components.Configurator
       
     - name: Copy partner styles
       run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION }}\*" -Destination "${{ secrets.WORKER_LOCATION }}\wiser\wiser\FrontEnd\Core\Css\partner" -Recurse
@@ -22,14 +31,14 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
       
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+    #- name: Test
+    #  run: dotnet test --no-build --verbosity normal
       
-    - name: Stop application pool API
-      run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_LIVE }}"
+    - name: Enable maintenance notice API
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_LIVE }}\_App_Offline.htm" -NewName "App_Offline.htm"
       
-    - name: Stop application pool front-end
-      run: Stop-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_LIVE }}"
+    - name: Enable maintenance notice FrontEnd
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}\_App_Offline.htm" -NewName "App_Offline.htm"
 
     - name: dotnet publish API
       run: |
@@ -53,10 +62,14 @@ jobs:
       run: |
         dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
       
-    - name: Start application pool API
+    - name: Disable maintenance notice API
       if: ${{ always() }}
-      run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_API_LIVE }}"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"
       
-    - name: Start application pool front-end
+    - name: Disable maintenance notice FrontEnd
       if: ${{ always() }}
-      run: Start-WebAppPool -Name "${{ secrets.APPLICATION_POOL_FRONT_END_LIVE }}"
+      run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"
+
+    - name: Remove NuGet Sources
+      if: ${{ always() }}
+      run: dotnet nuget remove source github

@@ -54,11 +54,9 @@ public class ExternalCacheService : IExternalCacheService, IScopedService
             var response = await client.ExecuteAsync(request);
             if (!response.IsSuccessful)
             {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"De website gaf een HTTP {(int)response.StatusCode} fout. Heeft u de juiste URL ingevuld?"
-                };
+                // if gcl cache clear wasn't successful
+                // try to clear jcl cache
+                return await ClearJCLCacheAsync(client, uriBuilder);
             }
 
             return new ServiceResult<bool>(true)
@@ -87,14 +85,34 @@ public class ExternalCacheService : IExternalCacheService, IScopedService
             var response = await client.ExecuteAsync(request);
             if (!response.IsSuccessful)
             {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = $"De website gaf een HTTP {(int)response.StatusCode} fout. Heeft u de juiste URL ingevuld?"
-                };
+                // if gcl cache clear wasn't successful
+                // try to clear jcl cache
+                return await ClearJCLCacheAsync(client, uriBuilder);
             }
         }
 
+        return new ServiceResult<bool>(true)
+        {
+            StatusCode = HttpStatusCode.NoContent
+        };
+    }
+
+    private async Task<ServiceResult<bool>> ClearJCLCacheAsync(RestClient client, UriBuilder uriBuilder)
+    {
+        uriBuilder.Path = "clearallcache.jcl";
+        
+        var request = new RestRequest(uriBuilder.Uri);
+        var response = await client.ExecuteAsync(request);
+        
+        if (!response.IsSuccessful)
+        {
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = $"De website gaf een HTTP {(int)response.StatusCode} fout. Heeft u de juiste URL ingevuld?"
+            };
+        }
+        
         return new ServiceResult<bool>(true)
         {
             StatusCode = HttpStatusCode.NoContent

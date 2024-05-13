@@ -1,18 +1,15 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@using System.IO
-@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
 <head runat="server">
     <meta charset="utf-8" />
-    <title>@Localizer["Wiser 3 - Dashboard"]</title>
+    <title>Wiser 3 - Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.common-material.min.css" rel="stylesheet" />
-    <link href="//kendo.cdn.telerik.com/2021.2.511/styles/kendo.material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
+    <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.material.min.css" rel="stylesheet" />
 
     <script>
         window.wiserVersion = "@Model.WiserVersion";
@@ -37,36 +34,36 @@
             <div id="window" class="dashboard" style="margin: 0 auto; padding: 0;">
                 <header>
                     <div class="formview full">
-                        <div class="item">
+                        <div class="item drop-down">
                             <div class="flex-container">
-                                <label>@Localizer["Filter period"]</label>
-                                <select id="periodFilter" class="drop-down-list" placeholder="@Localizer["Make your choice..."]" data-role="dropdownlist">
-                                    <option value="all" selected="selected">@Localizer["No filter"]</option>
-                                    <option value="currentMonth">@Localizer["Current month"]</option>
-                                    <option value="lastMonth">@Localizer["Last month"]</option>
-                                    <option value="currentYear">@Localizer["Current year"]</option>
-                                    <option value="lastYear">@Localizer["Last year"]</option>
-                                    <option value="custom">@Localizer["Select period"] </option>
+                                <label>Filter periode</label>
+                                <select id="periodFilter" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="all" selected="selected">Geen filter</option>
+                                    <option value="currentMonth">Huidige maand</option>
+                                    <option value="lastMonth">Vorige maand</option>
+                                    <option value="currentYear">Dit jaar</option>
+                                    <option value="lastYear">Vorig jaar</option>
+                                    <option value="custom">Selecteer periode</option>
                                 </select>
                             </div>
                         </div>
                         <div class="item">
                             <div class="flex-container">
-                                <div id="periodPicker" class="daterangepicker" title="@Localizer["daterangepicker"]"></div>
+                                <div id="periodPicker" class="daterangepicker" title="daterangepicker"></div>
                             </div>
                         </div>
-                        <div class="item">
+                        <div class="item drop-down">
                             <div class="flex-container">
                                 <label>Branche</label>
-                                <select id="branchesSelect" class="drop-down-list" placeholder="@Localizer["Make your choice..."]" data-role="dropdownlist">
-                                    <option value="0">@Localizer["Active branch"]</option>
-                                    <option value="-1">@Localizer["All branches"]</option>
+                                <select id="branchesSelect" class="drop-down-list" placeholder="Maak uw keuze..." data-role="dropdownlist">
+                                    <option value="0">Actieve branch</option>
+                                    <option value="-1">Alle branches</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="item actions">
-                            <button type="button"><ins class="icon-reset" title="@Localizer["Reset"]" id="refreshDataButton"></ins></button>
+                            <button type="button"><ins class="icon-reset" title="Reset" id="refreshDataButton"></ins></button>
 
                             <ul id="mainEditMenu" class="editMenu">
                                 <li>
@@ -74,50 +71,50 @@
                                     <ul id="editSub" class="editSub">
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden" checked />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="dataChartCheckbox" class="hidden" data-toggle-tile="dataChart" />
+                                                <span>Data</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden"  />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="usersChartCheckbox" class="hidden" data-toggle-tile="usersChart" />
+                                                <span>Gebruikers</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden"  />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="updateLogCheckbox" class="hidden" data-toggle-tile="updateLog" />
+                                                <span>Update log</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden"  />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="servicesCheckbox" class="hidden" data-toggle-tile="services" />
+                                                <span>Services</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden"  />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="entityDataCheckbox" class="hidden" data-toggle-tile="entityData" />
+                                                <span>Entiteiten</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden"  />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="taskAlertsCheckbox" class="hidden" data-toggle-tile="taskAlerts" />
+                                                <span>Agenderingen</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
                                         <li>
                                             <label>
-                                                <input type="checkbox" name="" class="hidden"  />
-                                                <span>@Localizer["Name"]</span>
+                                                <input type="checkbox" id="dataSelectorCheckbox" class="hidden" data-toggle-tile="dataSelector" />
+                                                <span>Dataselector</span>
                                                 <ins class="icon-check"></ins>
                                             </label>
                                         </li>
@@ -127,25 +124,186 @@
                         </div>
                     </div>
                 </header>
-                
+
                 <main>
                     <div id="tiles"></div>
 
                     <!-- container text templates -->
                     <script id="update-log" type="text/x-kendo-template">
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
-                            @Html.Raw(await File.ReadAllTextAsync("./UpdateLog.html"))
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="updateLog">
+                            <div class="log-item">
+                                <h4>Versie 3.4.18 - 30 april 2024</h4>
+                                <ul>
+									<li><ins class="icon-check"></ins><span>Updated various scripts
+									<li><ins class="icon-check"></ins><span>Api call actie kunnen uitvoeren per geselecteerde regel in een grid
+									<li><ins class="icon-check"></ins><span>Extra data kunnen toevoegen wanneer je een post query uitvoerd
+                                    <li><ins class="icon-check"></ins><span>Url openen met een id van de query
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.17 - 16 april 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>GCL geüpdate naar versie 4.2.4</span></li>
+                                    <li><ins class="icon-check"></ins><span>Bug verholpen bij het creëren van nieuwe tenants</span></li>
+                                    <li><ins class="icon-check"></ins><span>Javascript is leesbaarder gemaakt.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Breedte en positie van kollommen in rasters worden ook opgeslagen</span></li>
+                                    <li><ins class="icon-check"></ins><span>Functionaliteit toegevoegd om een externe URL in een module te openen met versleutelde gebruikersinformatie</span></li>
+                                    <li><ins class="icon-check"></ins><span>linkType is toegevoegd aan field data voor API</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.16 - 2 april 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>De variable "{isMainBranch}" is toegevoegd voor query's van de styled output API.</span></li>
+                                    <li><ins class="icon-check"></ins><span>De "depends-on" functionaliteit is hersteld voor multiselects.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Een issue is opgelost met validatie voor verplichte velden die verborgen zijn.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Fullscreen layout voor HTML editors is verbeterd.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Ondersteuning voor styled output is toegevoegd aan branches.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Functionaliteit is toegevoegd voor het samenvoegen van PDF bestanden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>De kolommen in het grid van de WTS services zijn nu aanpasbaar.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Een issue is opgelost met versies bij templates en dynamic content bij het deployen.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.15 - 18 march 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Fout opgelost in dynamic components.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Fout opgelost met in warning die gebuikt maakt van een niet bekende variable.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Problemen opgelost met het aanmaken van nieuwe klanten.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Problemen opgelost met het aanmaken van nieuwe tenants. </span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost met template model loading.</span></li>
+                                    <li><ins class="icon-check"></ins><span>CreateTablesConfigurator script fouten opgelost.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost waar de isadmin value overschreven werd met false als een token was verlopen.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Extra info toegevoegd aan het wiser1/2 export window.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verbeteringen aan de version control module.</span></li>
+                                    <li><ins class="icon-check"></ins><span>MySQL command timeouts verlengd.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem met shortcuts in HTML-editors opgelost.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Updated GCL to 4.1.13.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Parent update logic toegeveogd.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost met het downloaden via unecrypted ids.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Laat error zien als er een column ontbreekt.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.14 - 26 februari 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Foutmelding opgelost wanneer een PDF wordt gedownload of gemailed, wanneer de bestandsnaam een cijfer bevat</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost dat bij het importeren er altijd vanuit werd gegaan dat een destination en source item altijd bestond in de tabel</span></li>
+									<li><ins class="icon-check"></ins><span>Ondersteuning voor DBField component</span></li>
+									<li><ins class="icon-check"></ins><span>Diverse aanpassingen m.b.t. het importeren van Wiser 1 omgevingen</span></li>
+									<li><ins class="icon-check"></ins><span>HTML editor tools kunnen worden toegevoegd door deze toe te voegen aan de custom options JSON</span></li>
+									<li><ins class="icon-check"></ins><span>Mysql.Data vervangen voor MysqlConnector</span></li>
+									<li><ins class="icon-check"></ins><span>Templates kunnen nu per gebruiker worden gecached</span></li>
+									<li><ins class="icon-check"></ins><span>Diverse backend code verbeteringen</span></li>
+									<li><ins class="icon-check"></ins><span>Preview functionalteit verwijderd uit Wiser</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.13 - 8 januari 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Validatie van velden verbeterd, zodat er duidelijkere fouten worden getoond en deze er netter uitzien.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende kleine verbeteringen aan de gebruikersinterface van Wiser.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Bij het versturen van mail vanuit Wiser, kunnen voortaan meerdere e-mailadressen tegelijk ingevuld worden (gescheiden met puntkomma).</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verbeteringen gedaan aan het maken en mergen van branches, zodat dit sneller en efficiënter gaat.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.12 - 4 oktober 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Verschillende bugs opgelost in grids, nummervelden etc.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Bug opgelost dat er soms validatie werd gedaan op onzichtbare velden, waardoor je soms wijzigingen niet kon opslaan.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Wat fouten/bugs opgelost in branch functionaliteit.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.11 - 4 oktober 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Mogelijkheid voor laden van plugins toegevoegd. Dit kunnen bijvoorbeeld custom componenten of modules zijn.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Wat fouten/bugs opgelost in branch functionaliteit.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende fouten/bugs opgelost in Wiser beheermodule.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.10 - 24 augustus 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Styledoutput uitgebreid met on-empty output</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende andere kleine bugs en fouten opgelost.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.9 - 9 augustus 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Exportmodule uitgebreid zodat er ook geëxporteerd kan worden naar CSV.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Mogelijkheid toegevoegd om dynamische bestandsnamen te genereren bij genereren van bestanden in Wiser.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende andere kleine bugs en fouten opgelost.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.8 - 18 juli 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Nieuwe functionaliteit toegevoegd waarmee we query's kunnen maken die externen kunnen aanroepen via de API van Wiser om zo data te kunnen ophalen uit Wiser. Hierbij kunnen we dan ook dynamisch instellen in welke structuur de JSON wordt getoond als resultaat.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Mogelijkheid toegevoegd voor het verwijderen van branches.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Bij aanmaken/terugzetten/verwijderen van een branch wordt voortaan een melding gegeven wanneer die klaar is.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Functionaliteit toegevoegd voor het uploaden van bijlagen bij het versturen van e-mails vanuit Wiser.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatemodule aangepast zodat er niet meer zoveel versies worden gemaakt. Vanaf nu worden er pas nieuwe versies gemaakt bij committen, i.p.v. voor elke wijziging.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende andere kleine bugs en fouten opgelost.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.7 - 28 juni 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Mogelijkheid toegevoegd aan de import/export-module voor het importeren van Excel-bestanden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost in import/export-module dat bij exporteren ongeldige bestanden werden gegenereerd als het iets fout gaat bij de export. Vanaf nu wordt er een foutmelding aan de gebruiker getoond en geen bestand gedownload.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Mogelijkheid toegevoegd voor het verkleinen van afbeeldingen tijdens upload via TinyPNG.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost dat bij sommige organisaties het heel lang duurde om de lijst van modules te laden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Notificaties tooltips verbeterd zodat die niet meer zo erg in de weg staan.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende andere kleine bugs en fouten opgelost.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.6 - 1 juni 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Meer opties toegevoegd voor instellen van caching voor websites.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.5 - 25 mei 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Automatisch tests toegevoegd met Selenium.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Verschillende verbeteringen aan de template- en versiebeheermodule waardoor die efficiënter werken en er makkelijker mee gewerkt kan worden.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.4 - 17 april 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Functionaliteit voor code reviews toegevoegd aan versiebeheermodule.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.3 - 30 maart 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Upgrade naar .NET 7.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.2 - 15 maart 2023</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Eerste versie dashboard.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Nieuwe module: File manager.</span></li>
+                                </ul>
+                            </div>
                         </div>
                     </script>
                     <script id="numbers" type="text/x-kendo-template">
-                        <div class="tile-content" id="entityData">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" id="entityData" data-tile="entityData">
                             <div class="btn-row" id="entityDataTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Totaal" data-filter="All" class="selected">
                                     <span>Totaal</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Nieuw" data-filter="NewlyCreated">
-                                    <span>@Localizer["New"]</span>
+                                    <span>Nieuw</span>
                                 </button>
                             </div>
                         </div>
@@ -161,67 +319,69 @@
                         </a>
                     </script>
                     <script id="dataselector-rate" type="text/x-kendo-template">
-                        <h3>@Localizer["Outcome data selector"]</h3>
-                        <div>@Localizer["Content"]</div>
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="dataSelector">
+                            <div id="data-selector-result">...</div>
+                        </div>
                     </script>
 
                     <!-- container chart templates -->
                     <script id="data-chart-template" type="text/x-kendo-template">
                         <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <div class="tile-content" data-tile="dataChart">
                             <div id="data-chart" style="width:100%"></div>
 
                             <div class="btn-row" id="itemsTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Alles" data-filter="All" class="selected">
-                                    <span>@Localizer["Everything"]</span>
+                                    <span>Alles</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Nieuw aangemaakt" data-filter="NewlyCreated">
-                                    <span>@Localizer["Newly created"]</span>
+                                    <span>Nieuw aangemaakt</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Gewijzigd" data-filter="Changed">
-                                    <span>@Localizer["Changed"]</span>
+                                    <span>Gewijzigd</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Actief" data-filter="Active" disabled>
-                                    <span>@Localizer["Active"]</span>
+                                    <span>Actief</span>
                                 </button>
                                 <button type="button" role="button" aria-label="Archief" data-filter="Archive" disabled>
-                                    <span>@Localizer["Archive"]</span>
+                                    <span>Archief</span>
                                 </button>
                             </div>
                         </div>
                     </script>
                     <script id="users-chart-template" type="text/x-kendo-template">
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="usersChart">
                             <div id="users-chart" style="width:100%"></div>
 
                             <div class="btn-row" id="userDataTypeFilterButtons">
                                 <button type="button" role="button" aria-label="Aantal logins" class="selected" data-filter="loginCount">
-                                    <span>@Localizer["Number of logins"]</span>
+                                    <span>Aantal logins</span>
                                 </button>
-                                <button type="button" role="button" aria-label="Ingelogde tijd" data-filter="loginTime">
-                                    <span>@Localizer["Logged in time"]</span>
+                                <button type="button" role="button" aria-label="Ingelogde tijd" data-filter="loginActive">
+                                    <span>Ingelogde tijd</span>
                                 </button>
                             </div>
                         </div>
                     </script>
                     <script id="subscriptions-chart-template" type="text/x-kendo-template">
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div class="tile-content">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="subscription">
                             <div class="tile-row">
-                                <label>@Localizer["Current subscription:"] Wiser Large.</label>
-                                <span>@Localizer["Price per month:"] &euro; 75,-</span>
-                                <a href="">@Localizer["cancel subscription?"]</a>
+                                <label>Huidige abonnement: Wiser Large.</label>
+                                <span>Prijs per maand: &euro; 75,-</span>
+                                <a href="">abonnement stopzetten?</a>
                             </div>
                             <div class="tile-row">
-                                <label>@Localizer["Number of Items:"]</label>
+                                <label>Aantal items:</label>
                                 <div class="progress">
                                     <span style="width: 65%;" data-value="6.500" data-percent="65"></span>
                                     <progress max="100" value="65" data-value="6.500" data-max="10K"></progress>
                                 </div>
                             </div>
                             <div class="tile-row">
-                                <label>@Localizer["Number of users:"]</label>
+                                <label>Aantal gebruikers:</label>
                                 <button type="button" role="button" aria-label="Naar gebruikers">
                                     <span class="k-icon k-i-hyperlink-open"></span>
                                 </button>
@@ -233,11 +393,12 @@
                         </div>
                     </script>
                     <script id="status-chart-template" type="text/x-kendo-template">
-                        <div class="tile-content">
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div class="tile-content" data-tile="taskAlerts">
                             <span class="number-item">
                                 <ins class="icon-list"></ins>
                                 <h3 id="totalOpenTaskAlerts">0</h3>
-                                <span>@Localizer["Open scheduling"]</span>
+                                <span>Openstaande agenderingen</span>
                             </span>
                             <div id="status-chart" style="height:98%;width:65%;"></div>
                         </div>
@@ -245,9 +406,9 @@
 
                     <!-- container grid templates -->
                     <script id="services-grid-template" type="text/x-kendo-template">
-                        <a id="refreshServices" class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button'><span class='k-button-icon k-icon k-i-refresh'></span></a>
-                        <a class='k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button'><span class='k-button-icon k-icon k-i-close'></span></a>
-                        <div id="services-grid" style="height:100%;">
+                        <a id="refreshServices" class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-refresh-button"><span class="k-button-icon k-icon k-i-refresh"></span></a>
+                        <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
+                        <div id="services-grid" style="height:100%;" data-tile="services">
                         </div>
                     </script>
                 </main>
@@ -259,6 +420,8 @@
         <div id="serviceLogGrid"></div>
     </div>
 
+    <div id="serviceTemplateWindow"></div>
+
     <div id="mainLoader" class="fullscreen-loader loading">
         <div class="loader-icon">
             <div></div>
@@ -268,8 +431,10 @@
         </div>
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Dashboard.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="Dashboard.js"></webpack-script>
 </body>
 </html>

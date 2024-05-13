@@ -1,7 +1,5 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@model FrontEnd.Modules.Templates.Models.DynamicContentViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+﻿@model FrontEnd.Modules.Templates.Models.DynamicContentViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @{
     Layout = "";
 }
@@ -9,7 +7,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>@Localizer["Wiser 3 - Dynamic content"]</title>
+    <title>Wiser 3 - Dynamic content</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -28,7 +26,8 @@
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret"
       data-selected-id="@Model.ContentId"
-      data-template-id="@Model.TemplateId">
+      data-template-id="@Model.TemplateId"
+      data-initial-tab="@Model.InitialTab">
     <span id="popupNotification"></span>
     <form id="mainScreenForm" autocomplete="off" novalidate>
         <div id="wiser">
@@ -41,9 +40,9 @@
                             <div class="input-container" id="DynamicContentComponentInputs">
                                 <div class="item" data-label-style="float" data-label-width="0">
                                     <span class="handler">&nbsp;</span>
-                                    <h4><label for="componentTypeDropDown">@Localizer["Select a component"]</label></h4>
+                                    <h4><label for="componentTypeDropDown">Selecteer een component</label></h4>
                                     <div class="flex-container">
-                                        <select id="componentTypeDropDown" class="combo-select" placeholder="@Localizer["Make your choice..."]">
+                                        <select id="componentTypeDropDown" class="combo-select" placeholder="Maak uw keuze...">
                                             @foreach (var (key, value) in Model.Components)
                                             {
                                                 if (value != null)
@@ -61,15 +60,15 @@
 
                                 <div class="item" data-label-style="float" data-label-width="0">
                                     <span class="handler">&nbsp;</span>
-                                    <h4><label for="componentMode">@Localizer["Component mode"]</label></h4>
+                                    <h4><label for="componentMode">Componentmodus</label></h4>
                                     <div class="flex-container">
-                                        <select id="componentMode" class="combo-select" placeholder="@Localizer["Make your choice..."]"></select>
+                                        <select id="componentMode" class="combo-select" placeholder="Maak uw keuze..."></select>
                                     </div>
                                 </div>
 
                                 <div class="item" data-label-style="float" data-label-width="0">
                                     <span class="handler">&nbsp;</span>
-                                    <h4><label for="visibleDescription">@Localizer["Name"]</label></h4>
+                                    <h4><label for="visibleDescription">Naam</label></h4>
                                     <span class="k-widget k-input k-state-default">
                                         <input type="text" id="visibleDescription" class="textField k-input" name="visibleDescription" autocomplete="off" required>
                                     </span>
@@ -80,45 +79,13 @@
                             </div>
                         </div>
                     </div>
-
-                    <div id="right-pane" style="background-color: #eee;">
-                        <div class="pane-content" style="border: 0; margin: 0; padding: 0; height: 100%">
-                            <div class="tabstrip">
-                                <ul>
-                                    <li class="preview-tab">@Localizer["Preview"]</li>
-                                    <li class="history-tab k-state-active">@Localizer["History"]</li>
-                                </ul>
-                                <div>
-                                    <div class="formview full previewContainer">
-                                        <div id="previewTab"></div>
-                                        <button id="previewHtml" role="button" class="k-button k-tool k-group-start k-group-end" title="View HTML" aria-label="View HTML" unselectable="on">
-                                            <span class="k-icon k-i-html"></span>
-                                            <span class="k-tool-text k-button-text">@Localizer["View HTML"]</span>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="formview full historyContainer">
-                                        <div class="row historyHeader">
-                                            <div class="col col-6">
-                                                <h3>@Localizer["Old"]</h3>
-                                            </div>
-                                            <div class="col col-6">
-                                                <h3>@Localizer["New"]</h3>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div class="window-footer">
-                <button id="saveAndCloseButton" class="btn btn-secondary btn-right">@Localizer["Save &amp; close"]</button>
-                <button id="saveAndDeployToTestButton" class="btn k-primary saveButton btn-right">@Localizer["Save &amp; deploy to test environment"]</button>
-                <button id="saveButton" class="btn btn-primary btn-right">@Localizer["Save"]</button>
+                <button id="saveAndCloseButton" class="btn btn-secondary btn-right">Opslaan &amp; sluiten</button>
+                <button id="saveAndDeployToTestButton" class="btn k-primary saveButton btn-right">Opslaan &amp; deploy naar test-omgeving</button>
+                <button id="saveButton" class="btn btn-primary btn-right">Opslaan</button>
             </div>
         </div>
     </form>
@@ -132,15 +99,10 @@
         </div>
     </div>
 
-    <!-- Window for previewing the HTML source of a dynamic component. -->
-    <div id="htmlPreviewWindow" class="html-preview-window">
-        <div class="k-content-frame pane-content">
-            <textarea class="editor-html"></textarea>
-        </div>
-    </div>
-
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("DynamicContent.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="DynamicContent.js"></webpack-script>
 </body>
 </html>

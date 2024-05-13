@@ -1,12 +1,10 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
-@inject FrontEnd.Core.Interfaces.IWebPackService WebPackService
+﻿@model FrontEnd.Modules.Base.Models.BaseModuleViewModel
+@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 
 <!DOCTYPE html>
 <html>
 <head runat="server">
-    <title>@Localizer["Wiser 3 - Import"]</title>
+    <title>Wiser 3 - Import</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="//kendo.cdn.telerik.com/2022.2.621/styles/kendo.common-material.min.css" rel="stylesheet" />
@@ -46,15 +44,17 @@
             <!-- WINDOW - ALERT -->
             <div id="import-upload" class="x-window alert-window">
                 <div class="item clear">
-                    <p>@Localizer["The import is prepared. You will be notified as soon as it is completed."]</p>
-                    <button id="closeButton" class="k-primary button rightButton">@Localizer["OK"]</button>
+                    <p>De import is klaargezet. Zodra deze gereed is, ontvangt u bericht.</p>
+                    <button id="closeButton" class="k-primary button rightButton">OK</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="@await WebPackService.GetManifestFileAsync("Utils.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Base.js")"></script>
-    <script src="@await WebPackService.GetManifestFileAsync("Import.js")"></script>
+    <webpack-script file-name="runtime.js"></webpack-script>
+    <webpack-script file-name="vendors.js"></webpack-script>
+    <webpack-script file-name="Processing.js"></webpack-script>
+    <webpack-script file-name="kendo-ui.js"></webpack-script>
+    <webpack-script file-name="Import.js"></webpack-script>
 </body>
 </html>

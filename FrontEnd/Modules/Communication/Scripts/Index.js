@@ -5,7 +5,7 @@ require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../css/Index.css";
+import "../Css/Index.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const communicationModuleSettings = {
@@ -34,7 +34,7 @@ const communicationModuleSettings = {
 
             // Default settings
             this.settings = {
-                customerId: 0,
+                tenantId: 0,
                 username: "Onbekend"
             };
             Object.assign(this.settings, settings);
@@ -83,12 +83,12 @@ const communicationModuleSettings = {
 
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
-            this.settings.username = user.adminAccountName ? `Happy Horizon (${user.adminAccountName})` : user.name;
+            this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
             this.settings.adminAccountLoggedIn = !!user.adminAccountName;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
-            this.settings.customerId = userData.encryptedCustomerId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
 
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;

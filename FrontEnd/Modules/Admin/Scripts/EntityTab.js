@@ -1,6 +1,6 @@
 ﻿import {EntityPropertyModel} from "../Scripts/EntityPropertyModel.js";
 import {EntityModel} from "../Scripts/EntityModel.js";
-import {Utils} from "../../Base/Scripts/Utils.js";
+import {Utils, Wiser} from "../../Base/Scripts/Utils.js";
 
 export class EntityTab {
     constructor(base) {
@@ -12,8 +12,7 @@ export class EntityTab {
         // init hide/show elements
         this.hideShowElementsBasedOnValue();
         this.fieldOptions = {};
-        this.previouslySelectedEntity = null;
-        this.previouslySelectedTab = null;
+        this.selectedTabOrProperty = null;
     }
 
     checkIfEntityIsSet() {
@@ -22,12 +21,12 @@ export class EntityTab {
         if (selectedTab !== "Velden") {
             return true;
         }
-        
+
         if ((!this.entitiesCombobox || !this.entitiesCombobox.dataItem() || this.entitiesCombobox.dataItem().id === "") && this.entityListInitialized === true) {
             this.base.showNotification("notification", `Selecteer eerst een entiteit!`, "error");
             return false;
         }
-        
+
         return true;
     }
 
@@ -39,12 +38,8 @@ export class EntityTab {
         // add an entity property
         $(".addBtn").kendoButton({
             click: (e) => {
-                if (!e.sender.element[0].dataset.type) {
-                    console.warn("Sender element has no dataset with key 'type'");
-                    return;
-                }
                 const addType = e.sender.element[0].dataset.type;
-                if (!this.checkIfEntityIsSet(addType)) {
+                if (!addType || !this.checkIfEntityIsSet(addType)) {
                     return;
                 }
 
@@ -63,59 +58,74 @@ export class EntityTab {
 
         // delete an entity property
         $(".delBtn").kendoButton({
-            click: () => {
-                if (!this.checkIfEntityIsSet()) {
-                    return;
-                }
-                const tabNameProp = this.listOfTabProperties;
-                const index = tabNameProp.select().index();
-                const dataItem = tabNameProp.dataSource.view()[index];
-                if (!dataItem) {
+            click: (event) => {
+                const addType = event.sender.element[0].dataset.type;
+                if (!addType || !this.checkIfEntityIsSet(addType)) {
                     return;
                 }
 
-                // ask for user confirmation before deleting
-                this.base.openDialog("Item verwijderen", `Weet u zeker dat u het veld "${dataItem.displayName}" wilt verwijderen?`, this.base.kendoPromptType.CONFIRM).then(() => {
-                    this.removeEntityProperty(dataItem.id);
-                });
+                if (addType === "entityProperty") {
+                    const dataItem = this.selectedTabOrProperty;
+                    if (!dataItem || dataItem.isTab) {
+                        this.base.showNotification("notification", "Kies a.u.b. eerst een veld om te verwijderen", "error");
+                        return;
+                    }
+
+                    Wiser.showConfirmDialog(`Weet u zeker dat u het veld "${dataItem.displayName}" wilt verwijderen?`).then(() => {
+                        this.removeEntityProperty(dataItem.id);
+                    });
+                } else if (addType === "entity") {
+                    const selectedEntity = this.entitiesCombobox.dataItem();
+                    if (!selectedEntity) {
+                        this.base.showNotification("notification", "Kies a.u.b. eerst een entiteit om te verwijderen", "error");
+                        return;
+                    }
+
+                    Wiser.showConfirmDialog(`Weet u zeker dat u de entiteit "${selectedEntity.name}" wilt verwijderen?`).then(() => {
+                        this.removeEntity(selectedEntity.id);
+                    });
+                }
             },
             icon: "delete"
         });
-        
+
         $(".copyToOtherLanguagesButton").kendoButton({
             click: () => {
-                const index = this.listOfTabProperties.select().index();
-                const dataItem = this.listOfTabProperties.dataSource.view()[index];
+                const dataItem = this.selectedTabOrProperty;
                 if (!dataItem) {
                     return;
                 }
 
                 $("<div id='copyEntityPropertyToOtherLanguagesDialog'></div>").kendoDialog({
-                    width: "505px",
+                    width: "550px",
                     title: "Kopieren naar andere talen",
-                    closable: false,
-                    modal: false,
-                    content: "<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?<p>",
+                    closable: true,
+                    modal: true,
+                    content: `<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?</p> 
+<div class="form-hint">
+    <p>Gegevens tab: de velden voor de verschillende talen komen onder elkaar te staan in de tab 'gegevens</p>
+    <p>Tab per taalcode: er komt een tab per taalcode, bijvoorbeeld 'NL, EN, etc.'</p>
+    <p>Tab per taal: er komt een tab per taal, bijvoorbeeld 'Nederlands, Engels, etc.'</p>
+</div>`,
                     actions: [
-                        { text: "Gegevens tab", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 0) } },
-                        { text: "Tab per taal (taalcode)", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 1) } },
-                        { text: "Tab per taal (taalnaam)", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 2) } }
+                        { text: "Tab 'gegevens'", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 0) } },
+                        { text: "Tab per taalcode", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 1) } },
+                        { text: "Tab per taal", primary: true, action: () => { this.copyEntityPropertyToOtherLanguages(dataItem.id, 2) } }
                     ],
                 }).data("kendoDialog").open();
             },
             icon: "globe"
         });
-        
+
         $(".duplicateEntityPropertyButton").kendoButton({
             click: () => {
-                const index = this.listOfTabProperties.select().index();
-                const dataItem = this.listOfTabProperties.dataSource.view()[index];
-                if (!dataItem) {
+                const dataItem = this.selectedTabOrProperty;
+                if (!dataItem || dataItem.isTab) {
                     return;
                 }
 
                 this.base.openDialog("Veld dupliceren", "Voer de naam in van het nieuwe veld (vul kommagescheiden meerdere namen in om het veld meerdere keren te dupliceren).").then((data) => {
-                    this.duplicateEntityProperty(dataItem.id, data);
+                    this.duplicateEntityProperty(dataItem, data);
                 });
             },
             icon: "copy"
@@ -128,7 +138,7 @@ export class EntityTab {
             lineNumbers: true
         });
 
-        this.jsonField = CodeMirror.fromTextArea(document.getElementById("jsonField"), {
+        this.optionsJsonField = CodeMirror.fromTextArea(document.getElementById("optionsJson"), {
             mode: "application/json",
             lineNumbers: true
         });
@@ -198,6 +208,16 @@ export class EntityTab {
             lineNumbers: true
         });
 
+        this.templateQueryField = CodeMirror.fromTextArea(document.getElementById("templateQuery"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
+        });
+
+        this.templateHtmlField = CodeMirror.fromTextArea(document.getElementById("templateHtml"), {
+            mode: "text/html",
+            lineNumbers: true
+        });
+
         document.getElementById("hasCustomInsertQuery").addEventListener("change", (e) => {
             const element = document.querySelector(".customInsert");
             if (e.target.checked) {
@@ -255,12 +275,10 @@ export class EntityTab {
             this.base.showNotification("notification", `Entiteit succesvol toegevoegd`, "success");
             await this.reloadEntityList(true);
 
-            this.entitiesCombobox.one("dataBound", () => {
-                this.entitiesCombobox.select((dataItem) => {
-                    return dataItem.name === name;
-                });
+            this.entitiesCombobox.select((dataItem) => {
+                return dataItem.name === name;
             });
-            
+
             // Select the entity tab again after creating a new entity.
             this.entityTabStrip.select(0);
         } catch (exception) {
@@ -274,23 +292,24 @@ export class EntityTab {
      * @param name The names of the properties to create. You can create more by separating them with commas.
      */
     async addEntityProperty(name) {
-        if (!name) {
-            return;
-        }
-
         try {
-            const names = name.split(",");
+            const names = (name || "").split(",");
             if (!names.length) {
                 return;
             }
-            
+
+            let tabName = "";
+            if (this.selectedTabOrProperty) {
+                tabName = this.selectedTabOrProperty.isTab ? this.selectedTabOrProperty.name : this.selectedTabOrProperty.tabName;
+            }
+
             const promises = [];
             for (let actualName of names) {
                 actualName = actualName.trim();
-                
+
                 const queryString = {
                     entityName: this.entitiesCombobox.dataItem().name,
-                    tabName: this.tabNameDropDownList.value() === "Gegevens" ? "" : this.tabNameDropDownList.value(),
+                    tabName: tabName === "Gegevens" ? "" : tabName,
                     displayName: actualName,
                     propertyName: actualName
                 };
@@ -300,27 +319,17 @@ export class EntityTab {
                     method: "GET"
                 }));
             }
-            
+
             await Promise.all(promises);
 
-            this.listOfTabProperties.one("dataBound", () => {
-                // select created item, except if tit is the only one.
-                this.selectPropertyInListView(names[0]);
-            });
-
-            // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically be selected
-            if (!this.tabNameDropDownList.dataItem()) {
-                // reset tab names if we didnt have any before
-                await this.onEntitiesComboBoxSelect(this);
-            } else {
-                // select the right tab
-                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
-            }
+            await this.onEntitiesComboBoxSelect();
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol aangemaakt, probeer het opnieuw`, "error");
         }
+
+        this.selectTabInTreeView(tabName === "" ? "Gegevens" : tabName, true);
     }
 
     /**
@@ -331,10 +340,12 @@ export class EntityTab {
         if (!id) {
             return;
         }
-        
+
+        const selectedProperty = this.selectedTabOrProperty;
+
         let queryString = {
             entityName: this.entitiesCombobox.dataItem().name,
-            tabName: this.tabNameDropDownList.value() === "Gegevens" ? "" : this.tabNameDropDownList.value(),
+            tabName: selectedProperty.tabName === "Gegevens" ? "" : selectedProperty.tabName,
             displayName: name,
             entityPropertyId: id
         };
@@ -344,19 +355,38 @@ export class EntityTab {
                 url: `${this.base.settings.serviceRoot}/DELETE_ENTITYPROPERTY${Utils.toQueryString(queryString, true)}`,
                 method: "GET"
             });
-            
-            this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
-            await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
 
-            // Select first item in list
-            const firstElement = this.listOfTabProperties.element.find("[data-item]").first();
-            this.listOfTabProperties.one("dataBound", () => {
-                this.selectPropertyInListView(firstElement.data("displayName"));
-            });
+            this.base.showNotification("notification", `Veld succesvol verwijderd`, "success");
+
+            await this.onEntitiesComboBoxSelect(this);
         }
         catch (exception) {
             console.error("Error while trying to delete an entity property", exception);
             this.base.showNotification("notification", `Veld is niet succesvol verwijderd, probeer het opnieuw`, "error");
+        }
+
+        this.selectTabInTreeView(selectedProperty.tabName, true);
+    }
+
+    /**
+     * Deletes an entity and all it's properties from the database.
+     * @param id The ID of the entity to delete.
+     */
+    async removeEntity(id) {
+        try {
+            await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-types/${id}`,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                method: "DELETE"
+            });
+
+            this.base.showNotification("notification", `Entiteit is succesvol verwijderd`, "success");
+            await this.reloadEntityList(true);
+            this.entityTabStrip.wrapper.hide();
+        } catch(exception) {
+            console.error(exception);
+            this.base.showNotification("notification", `Er is iets fout gegaan met het verwijderen van de module. Probeer het a.u.b. opnieuw of neem contact op met ons.`, "error");
         }
     }
 
@@ -371,8 +401,8 @@ export class EntityTab {
         }
 
         try {
-            const selectedTab = this.tabNameDropDownList.dataItem();
-            
+            const selectedProperty = this.selectedTabOrProperty;
+
             // Do the copy action.
             await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}entity-properties/${id}/copy-to-other-languages?tabOption=${tabOption}`,
@@ -382,7 +412,7 @@ export class EntityTab {
             // Re load everything, so the new entity properties will become visible.
             await this.onEntitiesComboBoxSelect(this);
             // Select the same tab as before.
-            this.tabNameDropDownList.value(selectedTab.tabName);
+            this.selectTabInTreeView(selectedProperty.tabName);
             this.base.showNotification("notification", `Veld is succesvol gekopieerd naar alle andere talen`, "success");
         }
         catch (exception) {
@@ -393,17 +423,13 @@ export class EntityTab {
 
     /**
      * Duplicate an entity property with a new name.
-     * @param id The ID of the entity property to duplicate.
+     * @param dataItem The data item of the entity property to duplicate.
      * @param name The name(s) for the new entity property (comma separated for multiple names).
      */
-    async duplicateEntityProperty(id, name) {
-        if (!id || !name) {
-            return;
-        }
-
+    async duplicateEntityProperty(dataItem, name) {
         try {
-            const names = name.split(",");
-            if (!names.length) {
+            const names = (name || "").split(",");
+            if (!names.length || !dataItem || dataItem.isTab) {
                 return;
             }
 
@@ -412,7 +438,7 @@ export class EntityTab {
                 actualName = actualName.trim();
 
                 promises.push(Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/${id}/duplicate`,
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${dataItem.id}/duplicate`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(actualName)
@@ -421,19 +447,9 @@ export class EntityTab {
 
             await Promise.all(promises);
 
-            this.listOfTabProperties.one("dataBound", () => {
-                // select created item, except if tit is the only one.
-                this.selectPropertyInListView(names[0]);
-            });
-
-            // if we have no items yet, and no data item of the tabname combobox. refresh entities combobox so the first tab will automatically be selected
-            if (!this.tabNameDropDownList.dataItem()) {
-                // reset tab names if we didnt have any before
-                await this.onEntitiesComboBoxSelect(this);
-            } else {
-                // select the right tab
-                await this.tabNameDropDownListSelect(this.tabNameDropDownList.dataItem());
-            }
+            await this.onEntitiesComboBoxSelect(this);
+            // Select the same tab as before.
+            this.selectTabInTreeView(dataItem.tabName, true);
         }
         catch (exception) {
             console.error("Error while trying to duplicate an entity property", exception);
@@ -442,33 +458,33 @@ export class EntityTab {
     }
 
     setEntityLists() {
-        this.entitiesCombobox.setDataSource(this.entityList);
-        this.dataSourceEntities.setDataSource(this.allUniqueEntityTypes);
-        this.linkedItemEntity.setDataSource(this.allUniqueEntityTypes);
-        this.itemLinkerEntity.setDataSource(this.allUniqueEntityTypes);
-        this.subEntityGridEntity.setDataSource(this.allUniqueEntityTypes);
-        this.timelineEntity.setDataSource(this.allUniqueEntityTypes);
+        this.entitiesCombobox.setDataSource(this.base.entityList);
+        this.dataSourceEntities.setDataSource(this.base.allUniqueEntityTypes);
+        this.linkedItemEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.itemLinkerEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.subEntityGridEntity.setDataSource(this.base.allUniqueEntityTypes);
+        this.timelineEntity.setDataSource(this.base.allUniqueEntityTypes);
     }
 
     async reloadEntityList(reloadDataSource = false) {
         if (reloadDataSource) {
             // These are all entities, including duplicate ones that have the same name in different modules.
             try {
-                this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
+                this.base.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types 1", exception);
-                this.entityList = [];
+                this.base.entityList = [];
             }
-            
+
             // These are all entities grouped by name.
             try {
-                this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
+                this.base.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
             } catch (exception) {
                 console.error("Error occurred while trying to load all entity types 2", exception);
-                this.allUniqueEntityTypes = [];
+                this.base.allUniqueEntityTypes = [];
             }
         }
-        
+
         this.setEntityLists();
     }
 
@@ -505,8 +521,7 @@ export class EntityTab {
             },
             activate: (event) => {
                 const tabName = event.item.querySelector(".k-link").innerHTML.toLowerCase();
-                console.log("entityTabStrip activate", tabName);
-                
+
                 if (tabName === "eigenschappen") {
                     // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
                     this.queryAfterInsert.refresh();
@@ -515,6 +530,8 @@ export class EntityTab {
                     this.queryBeforeDelete.refresh();
                     this.searchQueryField.refresh();
                     this.searchCountQueryField.refresh();
+                    this.templateQueryField.refresh();
+                    this.templateHtmlField.refresh();
                 }
             }
         }).data("kendoTabStrip");
@@ -573,43 +590,52 @@ export class EntityTab {
             format: "#"
         }).data("kendoNumericTextBox");
 
+        this.checkBoxImageId = $("#checkBoxImageId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox");
+
+        this.multiSelectMainImageId = $("#multiSelectMainImageId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox");
+
         this.lastSelectedProperty = -1;
-        // we use this property to check if the select in the tabname properties listview is by editing 
+        // we use this property to check if the select in the tabname properties listview is by editing
         // an item and it gets reloaded when you save it, or when a user manually selects it.
         this.isSaveSelect = false;
-        //LISTVIEWS
-        this.listOfTabProperties = $("#tabNameProperties").kendoListView({
-            template: '<li class="sortable" data-item="${id}" data-ordering="${ordering}" data-display-name="${displayName}">${displayName}</li>',
-            dataTextField: "displayName",
-            dataValueField: "id",
-            selectable: true,
-            change: this.optionSelected.bind(this)
-        }).data("kendoListView");
+
+        this.propertiesTreeView = $("#tabNameProperties").kendoTreeView({
+            dragAndDrop: true,
+            dataTextField: [ "name", "displayName" ],
+            change: this.onPropertiesTreeViewChange.bind(this),
+            drag: this.onPropertiesTreeViewDrag.bind(this),
+            drop: this.onPropertiesTreeViewDrop.bind(this),
+        }).data("kendoTreeView");
 
         // entity module
-        this.entityModule = $("#entityModule").kendoComboBox({
+        this.entityModule = $("#entityModule").kendoDropDownList({
             placeholder: "Selecteer een module...",
             filter: "contains",
             clearButton: false,
             dataTextField: "moduleName",
             dataValueField: "id",
             dataSource: []
-        }).data("kendoComboBox");
-
+        }).data("kendoDropDownList");
 
         this.acceptedChildTypes = $("#acceptedChildTypes").kendoMultiSelect({
             placeholder: "Selecteer entiteit(en)...",
             clearButton: false,
             filter: "contains",
             multiple: "multiple",
-            dataTextField: "entityType",
-            dataValueField: "entityType",
+            dataTextField: "displayName",
+            dataValueField: "id",
             dataSource: []
         }).data("kendoMultiSelect");
 
-        /* 
-            This list is generated by copying the contents of icons.css to Notepad++ 
-            and then using find & replace with the following regex: \.(icon-([a-z\-0-9A-Z]+)):before { content: "\\e.+ 
+        /*
+            This list is generated by copying the contents of icons.css to Notepad++
+            and then using find & replace with the following regex: \.(icon-([a-z\-0-9A-Z]+)):before { content: "\\e.+
             and the following "replace with" value: { text: "$2", value: "$1" },
          */
         const iconsDataSource = [
@@ -934,16 +960,16 @@ export class EntityTab {
         ];
 
         // Icon list
-        this.entityIcon = $("#entityIcon").kendoComboBox({
+        this.entityIcon = $("#entityIcon").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: iconsDataSource,
             dataTextField: "text",
             dataValueField: "value",
             template: `<ins class="iconpreview-icon #: data.value #"></ins><span class="iconpreview-name">#: data.text #</span>`
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.entityIconAdd = $("#entityIconAdd").kendoComboBox({
+        this.entityIconAdd = $("#entityIconAdd").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: iconsDataSource,
@@ -954,18 +980,18 @@ export class EntityTab {
                 text: "Maak uw keuze..."
             },
             template: `<ins class="iconpreview-icon #: data.value #"></ins><span class="iconpreview-name">#: data.text #</span>`
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.entityIconExpanded = $("#entityIconExpanded").kendoComboBox({
+        this.entityIconExpanded = $("#entityIconExpanded").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: iconsDataSource,
             dataTextField: "text",
             dataValueField: "value",
             template: `<ins class="iconpreview-icon #: data.value #"></ins><span class="iconpreview-name">#: data.text #</span>`
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.entityColor = $("#entityColor").kendoComboBox({
+        this.entityColor = $("#entityColor").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: [
@@ -977,9 +1003,9 @@ export class EntityTab {
             ],
             dataTextField: "text",
             dataValueField: "value"
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        this.defaultOrdering = $("#defaultOrdering").kendoComboBox({
+        this.defaultOrdering = $("#defaultOrdering").kendoDropDownList({
             placeholder: "Maak uw keuze...",
             clearButton: false,
             dataSource: [
@@ -988,28 +1014,20 @@ export class EntityTab {
             ],
             dataTextField: "text",
             dataValueField: "value"
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
 
-        //SORTABLE
-        this.sortableContainer = $("#tabNameProperties div").kendoSortable({
-            axis: "y",
-            hint: (element) => {
-                return element.clone().addClass("hint");
-            },
-            change: async (e) => {
-                const dataSource = this.listOfTabProperties.dataSource.view();
-                if (!this.checkIfEntityIsSet() || !dataSource || !dataSource[e.oldIndex] || !dataSource[e.newIndex] || !e.sender.draggedElement[0].dataset.item) {
-                    return;
-                }
-                
-                const id = e.sender.draggedElement[0].dataset.item;
-                await this.updateEntityPropertyOrdering(dataSource[e.oldIndex].ordering, dataSource[e.newIndex].ordering, id);
-            },
-            cursorOffset: {
-                top: -10,
-                left: -230
-            }
-        }).data("kendoSortable");
+        this.deleteAction = $("#deleteAction").kendoDropDownList({
+            placeholder: "Maak uw keuze...",
+            clearButton: false,
+            dataSource: [
+                { text: "Archiveren", value: "Archive" },
+                { text: "Permanent verwijderen", value: "Permanent" },
+                { text: "Verbergen", value: "Hide" },
+                { text: "Niet toestaan", value: "Disallow" },
+            ],
+            dataTextField: "text",
+            dataValueField: "value"
+        }).data("kendoDropDownList");
 
         //Sets the correct style for the sortable-object
         $("body").on("click", ".sortable", (event) => {
@@ -1034,11 +1052,10 @@ export class EntityTab {
             culture: "nl-NL",
             format: "HH:mm"
         }).data("kendoTimePicker");
-        // disable input to prevent bogus input.
-        //  $("#minimumTime").attr("readonly", true);
 
         //GRID
-        this.grid = $("#valuegrid").kendoGrid({
+        const gridElement = $("#valuegrid");
+        this.grid = gridElement.kendoGrid({
             resizable: true,
             toolbar: ["create"],
             remove: (e) => {
@@ -1057,22 +1074,34 @@ export class EntityTab {
                 title: "Id"
             }, {
                 command: [
-
-                    { text: "↑", click: this.base.moveUp.bind(this.base) },
-                    { text: "↓", click: this.base.moveDown.bind(this.base) },
-                    "destroy"
+                    { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                    { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                    { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
                 ]
             }]
         }).data("kendoGrid");
+        gridElement.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        gridElement.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        gridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         ////COMBOBOX - GENERAL
-        $("#checkedCheckbox").kendoComboBox({
-            select: (e) => {
-                const dataItem = e.dataItem;
-                this.filterOptions = dataItem.value;
-                $(`.item[data-visible*="${dataItem.value}"], label[data-visible*="${dataItem.value}"]`).show();
+        $("#checkedCheckbox").kendoDropDownList().data("kendoDropDownList");
+
+        this.checkBoxMode = $("#checkBoxMode").kendoDropDownList({
+            cascade: (cascadeEvent) => {
+                const dataItem = cascadeEvent.sender.dataItem();
+                $(".togglePanel.checkBoxMode").removeClass("active");
+                $(`.togglePanel.checkBoxMode[data-panel="${dataItem.value}"]`).addClass("active");
             }
-        }).data("kendoComboBox");
+        }).data("kendoDropDownList");
+
+        this.multiSelectMode = $("#multiSelectMode").kendoDropDownList({
+            cascade: (cascadeEvent) => {
+                const dataItem = cascadeEvent.sender.dataItem();
+                $(".togglePanel.multiSelectMode").removeClass("active");
+                $(`.togglePanel.multiSelectMode[data-panel="${dataItem.value}"]`).addClass("active");
+            }
+        }).data("kendoDropDownList");
 
         this.numberFormat = $("#numberFormat").kendoDropDownList({
             clearButton: false,
@@ -1141,28 +1170,17 @@ export class EntityTab {
             this.entityListInitialized = true;
         });
 
-        //combobox to select the correct tabname
-        this.tabNameDropDownList = $("#tabnames").kendoDropDownList({
-            clearButton: false,
-            dataTextField: "tabName",
-            dataValueField: "tabName",
-            filter: "contains",
-            minLength: 1,
-            cascade: this.tabNameDropDownListSelect.bind(this)
-        }).data("kendoDropDownList");
-
         // property tabname
         this.tabNameProperty = $("#tabNameProperty").kendoComboBox({
             placeholder: "Selecteer gewenste tab...",
             clearButton: false,
-            dataTextField: "tabName",
-            dataValueField: "tabName",
+            dataTextField: "name",
+            dataValueField: "name",
             minLength: 1,
             dataSource: []
         }).data("kendoComboBox");
 
         //Combobox to get all possible inputtypes used in the database
-        //TODO set to kendodropdownlist and add filter?
         this.inputTypeSelector = $("#inputtypes").kendoDropDownList({
             placeholder: "Selecteer invoertype...",
             height: 400,
@@ -1189,29 +1207,41 @@ export class EntityTab {
             }
         }).data("kendoDropDownList");
 
-        // These are all entities, including duplicate ones that have the same name in different modules.
-        try {
-            this.entityList = (await Wiser.api({url: `${this.base.settings.serviceRoot}/GET_ENTITY_LIST`})) || [];
-        } catch (exception) {
-            console.error("Error occurred while trying to load all entity types 1", exception);
-            this.entityList = [];
-        }
-
-        // These are all entities grouped by name.
-        try {
-            this.allUniqueEntityTypes = (await Wiser.api({url: `${this.base.settings.wiserApiRoot}entity-types?onlyEntityTypesWithDisplayName=false`})) || [];
-        } catch (exception) {
-            console.error("Error occurred while trying to load all entity types", exception);
-            this.allUniqueEntityTypes = [];
-        }
-
         this.dataSourceEntities = $("#dataSourceEntities").kendoDropDownList({
             clearButton: false,
             dataTextField: "displayName",
             dataValueField: "id",
             filter: "contains",
             minLength: 1,
-            dataSource: {}
+            dataSource: {},
+            cascade: async (event) => {
+                const dataItem = event.dataItem || event.sender.dataItem();
+                if (!dataItem) {
+                    return;
+                }
+
+                const fields = await Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${dataItem.id}`,
+                    method: "GET",
+                    contentType: "application/json"
+                });
+
+                this.searchFields.setDataSource(fields);
+            }
+        }).data("kendoDropDownList");
+
+        this.dataSelectors = await Wiser.api({
+            url: `${this.base.settings.wiserApiRoot}data-selectors`,
+            contentType: 'application/json',
+            method: "GET"
+        });
+        this.dataSourceDataSelector = $("#dataSourceDataSelector").kendoDropDownList({
+            clearButton: false,
+            dataTextField: "name",
+            dataValueField: "id",
+            filter: "contains",
+            minLength: 1,
+            dataSource: this.dataSelectors
         }).data("kendoDropDownList");
 
         this.linkedItemEntity = $("#linkedItemEntity").kendoDropDownList({
@@ -1349,34 +1379,15 @@ export class EntityTab {
             }
         }).data("kendoDropDownList");
 
-        function onDataBound(e) {
-            $('.k-multiselect .k-input').unbind('keyup');
-            $('.k-multiselect .k-input').on('keyup', onClickEnter);
-        }
-
-        function onClickEnter(e) {
-            if (e.keyCode === 13) {
-                const widget = $('#searchFields').getKendoMultiSelect();
-                const value = $(`.item.tagList .k-multiselect .k-input`).val().trim();
-                if (!value || value.length === 0) {
-                    return;
-                }
-                const newItem = {
-                    name: value
-                };
-
-                widget.dataSource.add(newItem);
-                widget.value(widget.value().concat([newItem.name]));
-            }
-        }
-
         this.searchFields = $("#searchFields").kendoMultiSelect({
-            dataTextField: "name",
-            dataValueField: "name",
-            dataSource: {
-                data: []
-            },
-            dataBound: onDataBound
+            placeholder: "Selecteer veld(en)...",
+            clearButton: false,
+            filter: "contains",
+            multiple: "multiple",
+            dataSource: [],
+            dataTextField: "displayName",
+            dataValueField: "propertyName",
+            groupName: "tabName"
         }).data("kendoMultiSelect");
 
         //COMBOBOX - INPUT-TYPE
@@ -1386,9 +1397,13 @@ export class EntityTab {
             dataValueField: "value",
             cascade: (cascadeEvent) => {
                 const dataItem = cascadeEvent.sender.dataItem();
-                $('.togglePanel.dataSource').removeClass('active');
-                $('.togglePanel.dataSource[data-panel="' + dataItem.id + '"]').addClass("active");
-                dataItem.id === "panel2" ? $("[data-show-for-panel=panel2]").show() : $("[data-show-for-panel=panel2]").hide();
+                $(".togglePanel.dataSource").removeClass("active");
+                if (!dataItem) {
+                    return;
+                }
+
+                $(`.togglePanel.dataSource[data-panel="${dataItem.id}"]`).addClass("active");
+                $("[data-show-for-panel=panel2]").toggle(dataItem.id === "panel2");
             }
         }).data("kendoDropDownList");
 
@@ -1447,11 +1462,11 @@ export class EntityTab {
                     dataValueField: "id",
                     valuePrimitive: true,
                     select: (e) => {
-                        const editButton = e.sender.element.closest("tr[role=row]").find("td.k-command-cell a[role=button].k-grid-Wijzigen");
+                        const editButton = e.sender.element.closest("tr[role=row]").find(".k-grid-edit");
                         if (e.dataItem.id === "refreshCurrentItem" || e.dataItem.id === "custom") {
-                            editButton.hide();
+                            editButton.addClass("k-disabled");
                         } else {
-                            editButton.show();
+                            editButton.removeClass("k-disabled");
                         }
                     },
                     optionLabel: {
@@ -1471,7 +1486,8 @@ export class EntityTab {
             }
         };
 
-        this.actionButtonActionsGrid = $("#actionButtonActionsGrid").kendoGrid({
+        const actionButtonActionsGridElement = $("#actionButtonActionsGrid");
+        this.actionButtonActionsGrid = actionButtonActionsGridElement.kendoGrid({
             dataSource: this.actionButtonActionsGridDataSourceSettings,
             resizable: true,
             toolbar: ["create"],
@@ -1497,23 +1513,33 @@ export class EntityTab {
                 },
                 {
                     command: [
-                        {
-                            text: "Wijzigen",
-                            click: this.onActionButtonGridEditButtonClick.bind(this),
-                            visible: function (dataItem) {
-                                // NOTE: Don't use arrow function here because Kendo throws an error with it.
-                                return dataItem.type !== "refreshCurrentItem" && dataItem.type !== "custom";
-                            }
-                        },
-                        { text: "↑", click: this.base.moveUp.bind(this.base) },
-                        { text: "↓", click: this.base.moveDown.bind(this.base) },
-                        "destroy"],
+                        { name: "edit", text: "", iconClass: "k-icon k-i-edit", click: this.onActionButtonGridEditButtonClick.bind(this) },
+                        { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                        { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                        { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
+                    ],
                     title: " ",
                     width: "170px"
-                }]
+                }],
+            dataBound: function (event) {
+                let grid = event.sender;
+                let dataSource = grid.dataSource;
+                //Loop through each record in a Kendo Grid to disable the edit buttons for refresh and custom items
+                $.each(grid.items(), function(index, item) {
+                    let uid = $(item).data("uid");
+                    let dataItem = dataSource.getByUid(uid);
+                    if (dataItem.type === "refreshCurrentItem" || dataItem.type === "custom")
+                        $(item).find(".k-grid-edit").addClass("k-disabled");
+                });
+            }
         }).data("kendoGrid");
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        actionButtonActionsGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
-        this.actionButtonGrid = $("#actionButtonGrid").kendoGrid({
+        const actionButtonGridElement = $("#actionButtonGrid");
+        this.actionButtonGrid = actionButtonGridElement.kendoGrid({
             dataSource: {},
             resizable: true,
             toolbar: ["create"],
@@ -1545,18 +1571,19 @@ export class EntityTab {
                 },
                 {
                     command: [
-                        {
-                            text: "Wijzigen",
-                            click: this.onActionGridEditButtonClick.bind(this)
-                        },
-                        { text: "↑", click: this.base.moveUp.bind(this.base) },
-                        { text: "↓", click: this.base.moveDown.bind(this.base) },
-                        "destroy"
+                        { name: "edit", text: "", iconClass: "k-icon k-i-edit", click: this.onActionGridEditButtonClick.bind(this) },
+                        { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                        { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                        { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
                     ],
                     title: " ",
                     width: "250px"
                 }]
         }).data("kendoGrid");
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-edit", content: "Bewerken" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+        actionButtonGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
         this.subEntityGridEntity = $("#subEntityGridEntity").kendoDropDownList({
             autoClose: false,
@@ -1631,7 +1658,11 @@ export class EntityTab {
             format: "dd-MM-yyyy",
             culture: "nl-NL"
         }).data("kendoDatePicker");
-        
+
+        $("#explanation").kendoEditor({
+            height: "400px"
+        });
+
         this.labelStyle = $("#labelStyle").kendoDropDownList({
             dataTextField: "text",
             dataValueField: "value",
@@ -1658,7 +1689,7 @@ export class EntityTab {
             ]
         }).data("kendoDropDownList");
 
-        // set entity dropdown lists 
+        // set entity dropdown lists
         this.reloadEntityList();
     }
 
@@ -1757,7 +1788,7 @@ export class EntityTab {
         let tabStrip = popUpHtml.find(".tabStripActionButton");
         let userParametersGrid = popUpHtml.find(".actionButtonUserParametersGrid");
         let itemLink = popUpHtml.find(".actionButtonItemLink");
-        let actionQueryId = popUpHtml.find("#actionButtonQueryItemId");
+        let actionQueryList = popUpHtml.find("#actionButtonQueryList");
         let dataSelectorId = popUpHtml.find("#dataSelectorId");
         let actionButtonUrlWindowHeight = popUpHtml.find("#actionButtonUrlWindowHeight");
         let actionButtonUrlWindowWidth = popUpHtml.find("#actionButtonUrlWindowWidth");
@@ -1787,7 +1818,7 @@ export class EntityTab {
             // open window and set to default
             $("#actionButtonPopupHtml").show();
             window.setOptions({
-                width: 1000,
+                width: 1200,
                 height: 800
             });
             // set to fields default
@@ -1799,7 +1830,7 @@ export class EntityTab {
             this.actionButtonUrlWindowHeight.value("");
             this.actionButtonUrlWindowWidth.value("");
             // query
-            this.actionButtonQueryItemId.value("");
+            this.actionButtonQueryList.value("");
             // hide extra fields
             popUpHtml.find("[data-visible]").hide();
             // empty generate file fields
@@ -1810,13 +1841,16 @@ export class EntityTab {
             document.getElementById("pdfBackgroundPropertyName").value = "";
             document.getElementById("pdfDocumentOptionsPropertyName").value = "";
             document.getElementById("pdfFilename").value = "";
+            // confirm dialog
+            document.getElementById("actionButtonConfirmDialogTitle").value = "";
+            document.getElementById("actionButtonConfirmDialogText").value = "";
             // reset user parameters grid
             const resetDs = this.userParametersGridDataSourceSettings;
             resetDs.data = [];
             this.userParametersGrid.setDataSource(resetDs);
         } else {
             window = $("#actionButtonPopupHtml").kendoWindow({
-                width: 1000,
+                width: 1200,
                 height: 800
             }).data("kendoWindow");
 
@@ -1825,7 +1859,7 @@ export class EntityTab {
                     if (e.item.dataset.visible === "generateFile") {
                         // show execute query tab if generateFile is selected, because we need the same properties.
                         tabStrip.data("kendoTabStrip").activateTab(e.item.parentElement.querySelector("[data-visible*=executeQuery]"));
-                        // get tab content of selected 
+                        // get tab content of selected
                         const content = tabStrip.data("kendoTabStrip").contentElement(tabStrip.data("kendoTabStrip").select().index());
                         $(content).find("[data-visible=generateFile]").show();
                     }
@@ -1879,7 +1913,8 @@ export class EntityTab {
                 columns: [
                     {
                         field: "name",
-                        title: "Naam parameter"
+                        title: "Naam parameter",
+                        width: "200px"
                     },
                     {
                         field: "question",
@@ -1891,23 +1926,28 @@ export class EntityTab {
                         editor: fieldTypeDropDownList,
                         template: (event) => {
                             return event.fieldTypeId === "" ? event.fieldType.text : this.base.fieldTypesDropDown[event.fieldTypeId.toUpperCase()].text;
-                        }
+                        },
+                        width: "125px"
                     },
                     {
                         field: "value",
-                        title: "Standaardwaarde"
+                        title: "Standaardwaarde",
+                        width: "150px"
                     },
                     {
                         field: "format",
-                        title: "Format"
+                        title: "Format",
+                        width: "100px"
                     },
                     {
                         field: "queryId",
-                        title: "Query id"
+                        title: "Query id",
+                        width: "75px"
                     },
                     {
                         field: "gridHeight",
-                        title: "Grid hoogte"
+                        title: "Grid hoogte",
+                        width: "95px"
                     },
                     {
                         field: "dataTextField",
@@ -1929,14 +1969,18 @@ export class EntityTab {
                     },
                     {
                         command: [
-                            { text: "↑", click: this.base.moveUp.bind(this.base) },
-                            { text: "↓", click: this.base.moveDown.bind(this.base) },
-                            "destroy"
-                        ]
+                            { name: "moveup", text: "↑", click: this.base.moveUp.bind(this.base) },
+                            { name: "movedown", text: "↓", click: this.base.moveDown.bind(this.base) },
+                            { name: "destroy", text: "", iconClass: "k-icon k-i-delete" }
+                        ],
+                        width: "152px" // minimum needed to not have the delete button disappear
                     }
 
                 ]
             }).data("kendoGrid");
+            userParametersGrid.kendoTooltip({ filter: ".k-grid-moveup", content: "Omhoog in volgorde" });
+            userParametersGrid.kendoTooltip({ filter: ".k-grid-movedown", content: "Omlaag in volgorde" });
+            userParametersGrid.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
 
             this.actionButtonItemLink = itemLink.kendoNumericTextBox({
                 decimals: 0,
@@ -1944,11 +1988,25 @@ export class EntityTab {
                 format: "#"
             }).data("kendoNumericTextBox");
 
-            this.actionButtonQueryItemId = actionQueryId.kendoNumericTextBox({
-                decimals: 0,
-                min: 0,
-                format: "#"
-            }).data("kendoNumericTextBox");
+            this.actionButtonQueryList = actionQueryList.kendoDropDownList({
+                placeholder: "Selecteer een query...",
+                clearButton: false,
+                height: 400,
+                dataTextField: "description",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    description: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: {},
+                cascade: (event) => {
+                    // update id label when selection changes
+                    let selectedQueryID = event.sender.dataItem() !== undefined ? event.sender.dataItem().id : -1;
+                    document.getElementById("actionButtonQueryIdLbl").innerHTML = `id: ${selectedQueryID}`;
+                }
+            }).data("kendoDropDownList");
 
             this.dataSelectorId = dataSelectorId.kendoNumericTextBox({
                 decimals: 0,
@@ -1999,7 +2057,7 @@ export class EntityTab {
                 ]
             }).data("kendoDropDownList");
         }
-        // bind and unbind to get the appropriate dataitem 
+        // bind and unbind to get the appropriate dataitem
         $(".actionButtonSave").unbind("click").bind("click",
             () => {
                 if (!this.beforeCreateActionDataItem(gridDataItem)) {
@@ -2015,6 +2073,9 @@ export class EntityTab {
         tagGroup.children().hide();
         tagGroup.find(`[data-visible*=${gridDataItem.type}]`).show().trigger("click");
         tagStrip.activateTab(tagGroup.find(`[data-visible*=${gridDataItem.type}]`));
+
+        // load existing queries into combobox
+        this.actionButtonQueryList.setDataSource(this.base.wiserQueryTab.queryList);
 
         // set properties accordingly
         if (gridDataItem.action) {
@@ -2036,7 +2097,9 @@ export class EntityTab {
                 case actionTypes.EXECUTEQUERY.id:
                 case actionTypes.EXECUTEQUERYONCE.id:
                 case actionTypes.GENERATEFILE.id: {
-                    this.actionButtonQueryItemId.value(gridDataItem.action.queryId);
+                    this.actionButtonQueryList.select((dataItem) => {
+                        return dataItem.id === gridDataItem.action.queryId;
+                    });
                     let up = gridDataItem.action.userParameters;
                     let rows = [];
 
@@ -2069,6 +2132,11 @@ export class EntityTab {
                         document.getElementById("pdfDocumentOptionsPropertyName").value = gridDataItem.action.pdfDocumentOptionsPropertyName;
                         document.getElementById("pdfFilename").value = gridDataItem.action.pdfFilename;
                     }
+                    break;
+                }
+                case actionTypes.ACTIONCONFIRMDIALOG.id: {
+                    document.getElementById("actionButtonConfirmDialogTitle").value = gridDataItem.action.title;
+                    document.getElementById("actionButtonConfirmDialogText").value = gridDataItem.action.text;
                     break;
                 }
             }
@@ -2131,7 +2199,7 @@ export class EntityTab {
                         return false;
                     }
                 }
-                //todo add checks
+
                 break;
         }
         return true;
@@ -2157,8 +2225,8 @@ export class EntityTab {
             case actionTypes.EXECUTEQUERY.id:
             case actionTypes.EXECUTEQUERYONCE.id:
             case actionTypes.GENERATEFILE.id:
-                // shared among executequery and generate file
-                action.queryId = this.actionButtonQueryItemId.value();
+                // shared among execute query and generate file
+                action.queryId = this.actionButtonQueryList.dataItem() !== undefined ? this.actionButtonQueryList.dataItem().id : 0;
                 action.userParameters = [];
                 var upg = this.userParametersGrid.dataSource.data();
                 for (let i = 0; i < upg.length; i++) {
@@ -2182,7 +2250,6 @@ export class EntityTab {
                 }
                 // generate file specific
                 if (action.type === actionTypes.GENERATEFILE.id) {
-                    //todo actions for generatefile
                     action.dataSelectorId = this.dataSelectorId.value();
                     action.contentItemId = this.contentItemId.value();
                     action.contentPropertyName = document.getElementById("contentPropertyName").value;
@@ -2192,24 +2259,42 @@ export class EntityTab {
                     action.emailDataQueryId = this.emailDataQueryId.value();
                 }
                 break;
+            case actionTypes.ACTIONCONFIRMDIALOG.id:
+                action.title = document.getElementById("actionButtonConfirmDialogTitle").value;
+                action.text = document.getElementById("actionButtonConfirmDialogText").value;
+                break;
         }
         return action;
     }
 
     // get all tabnames of selected entity
     async onEntitiesComboBoxSelect() {
-        if (!this.tabNameDropDownList || !this.tabNameProperty) {
+        if (!this.tabNameProperty) {
             this.entityTabStrip.wrapper.hide();
             return;
         }
 
         this.entityTabStrip.wrapper.show();
-        if (this.entitiesCombobox.dataItem().id) {
-            await this.getEntityPropertiesOfSelected(this.entitiesCombobox.dataItem().id);
+        const selectedItem = this.entitiesCombobox.dataItem();
+        if (selectedItem.id) {
+            await this.getEntityPropertiesOfSelected(selectedItem.id);
         }
 
-        // set tabnames 
-        await this.setTabNameDropDown();
+        $("#entityView .delBtn").toggleClass("hidden", !selectedItem.id);
+
+        const tabsAndFields = await Wiser.api({
+            url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
+            method: "GET"
+        });
+        this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
+            data: tabsAndFields,
+            schema: {
+                model: {
+                    children: "properties"
+                }
+            }
+        }));
+        this.tabNameProperty.setDataSource(tabsAndFields.filter((value) => value.isTab === true));
 
         // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
         this.queryAfterInsert.refresh();
@@ -2218,96 +2303,23 @@ export class EntityTab {
         this.queryBeforeDelete.refresh();
         this.searchQueryField.refresh();
         this.searchCountQueryField.refresh();
-    }
-
-    async setTabNameDropDown() {
-        this.tabNameDropDownList.text("");
-        this.tabNameProperty.text("");
-        const tabNames = await Wiser.api({
-            url: `${this.base.settings.serviceRoot}/GET_ENTITY_PROPERTIES_TABNAMES?entityName=${encodeURIComponent(this.entitiesCombobox.dataItem().name)}`,
-            method: "GET"
-        });
-        this.tabNameDropDownList.setDataSource(tabNames);
-        this.tabNameProperty.setDataSource(tabNames);
-
-        // set properties of tab
-        this.tabNameDropDownList.select((dataItem) => {
-            return dataItem.tabName === "Gegevens";
-        });
-    }
-
-    // update property ordering
-    async updateEntityPropertyOrdering(oldIndex, newIndex, id) {
-        const selectedTab = this.tabNameDropDownList.dataItem();
-        const tabName = !selectedTab || selectedTab.tabName === "Gegevens" ? "" : selectedTab.tabName;
-        
-        return Wiser.api({
-            url: `${this.base.settings.serviceRoot}/UPDATE_ORDERING_ENTITY_PROPERTY`,
-            method: "POST",
-            data: {
-                oldIndex: oldIndex,
-                newIndex: newIndex,
-                currentId: id,
-                tabName: tabName,
-                entityName: this.entitiesCombobox.dataItem().name
-            }
-        });
-    }
-
-    // get entity properties of tab when tabname is selected
-    async tabNameDropDownListSelect(eventOrDataItem) {
-        if (this.tabNameDropDownListSelectBusy) {
-            return;
-        }
-        
-        const entityType = this.entitiesCombobox.dataItem().name;
-        if (!eventOrDataItem || !entityType) {
-            return;
-        }
-        
-        let tabName = "";
-        tabName = eventOrDataItem.sender && eventOrDataItem.sender.dataItem() ? eventOrDataItem.sender.dataItem().tabName : eventOrDataItem.tabName;
-        tabName = tabName === "Gegevens" || !tabName ? "" : tabName;
-        
-        if (this.previouslySelectedTab === tabName && this.previouslySelectedEntity === entityType) {
-            return;
-        }
-
-        this.tabNameDropDownListSelectBusy = true;
-        try {
-            if (this.previouslySelectedEntity !== entityType) {
-                await Wiser.api({
-                    type: "PUT",
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(entityType)}/fix-ordering`,
-                    contentType: "application/json"
-                });
-            }
-
-            this.previouslySelectedTab = tabName;
-            this.previouslySelectedEntity = entityType;
-
-            this.listOfTabProperties.setDataSource(new kendo.data.DataSource({
-                serverFiltering: true,
-                transport: {
-                    read: {
-                        url: `${this.base.settings.serviceRoot}/GET_ENTITY_PROPERTIES_ADMIN?entityName=${encodeURIComponent(entityType)}&tabName=${encodeURIComponent(tabName)}`
-                    }
-                }
-            }));
-        } catch (exception) {
-            console.error(exception);
-            kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.");
-        } finally {
-            this.tabNameDropDownListSelectBusy = false;
-        }
+        this.templateQueryField.refresh();
+        this.templateHtmlField.refresh();
     }
 
     // get properties of entity fields and fill fields
-    async optionSelected(event) {
+    async onPropertiesTreeViewChange(event) {
+        const selectedElement = event.sender.select();
+        const index = selectedElement.index();
+        const dataItem = event.sender.dataItem(selectedElement);
+        this.selectedTabOrProperty = dataItem;
+        if (dataItem.isTab) {
+            $("#EntityTabStrip-2 .right-pane").hide();
+            return;
+        }
+
         $("#EntityTabStrip-2 .right-pane").show();
-        const index = event.sender.select().index();
-        const dataItem = event.sender.dataItem(event.sender.select());
-        const selectedEntityName = dataItem.entityName;
+        const selectedEntityName = dataItem.entityType;
         const selectedTabName = dataItem.tabName;
         if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabName && !this.isSaveSelect) {
             this.base.openDialog("Item opnieuw openen", "Wilt u dit item opnieuw openen? (u raakt gewijzigde gegevens kwijt)", this.base.kendoPromptType.CONFIRM).then(() => {
@@ -2323,7 +2335,7 @@ export class EntityTab {
 
         // Refresh code mirror isntances, otherwise they won't work properly because they were initialized while they were invisible.
         this.scriptField.refresh();
-        this.jsonField.refresh();
+        this.optionsJsonField.refresh();
         this.queryField.refresh();
         this.queryFieldSubEntities.refresh();
         this.queryDeleteField.refresh();
@@ -2335,17 +2347,135 @@ export class EntityTab {
         this.aggregateOptionsField.refresh();
     }
 
+    /**
+     * Event for when an item in a kendoTreeView gets dragged.
+     * @param {any} event The drop item event of a kendoTreeView.
+     */
+    onPropertiesTreeViewDrag(event) {
+        if (event.statusClass === "i-cancel") {
+            // Tree view already denies this operation
+            return;
+        }
+
+        const dropTarget = $(event.dropTarget);
+        let destinationNode = dropTarget.closest("li.k-item");
+        if (dropTarget.hasClass("k-mid")) {
+            // If the dropTarget is an element with class k-mid we need to go higher, because those elements are located inside an li.k-item instead of after/before them.
+            destinationNode = destinationNode.parentsUntil("li.k-item");
+        }
+        if (event.statusClass === "i-insert-down" || (event.statusClass === "i-insert-middle" && (dropTarget.hasClass("k-bot") || dropTarget.hasClass("k-in")))) {
+            // If the statusClass is i-insert-down, it means we are adding the item below the destination, so we need to check it's parent.
+            destinationNode = destinationNode.parentsUntil("li.k-item");
+        }
+
+        const sourceDataItem = event.sender.dataItem(event.sourceNode);
+        const destinationDataItem = event.sender.dataItem(destinationNode) || { isRoot: true, isTab: false };
+
+        sourceDataItem.isRoot = false;
+        sourceDataItem.isTab = sourceDataItem.isTab || false;
+        destinationDataItem.isRoot = destinationDataItem.isRoot || false;
+        destinationDataItem.isTab = destinationDataItem.isTab || false;
+
+        if (!sourceDataItem) {
+            console.warn("Source data item not found.");
+            event.setStatusClass("k-i-cancel");
+            return;
+        }
+
+        if ((!sourceDataItem.isTab && destinationDataItem.isTab) || (sourceDataItem.isTab && destinationDataItem.isRoot) || (!sourceDataItem.isTab && destinationDataItem.isRoot)) {
+            return;
+        }
+
+        // Tell the kendo tree view to deny the drag to this item, if the current item is another field.
+        // Fields can only be dragged to tabs and tabs can only be dragged into the root.
+        event.setStatusClass("k-i-cancel");
+    }
+
+    /**
+     * Event for when an item in a kendoTreeView gets dropped.
+     * @param {any} event The drop item event of a kendoTreeView.
+     */
+    async onPropertiesTreeViewDrop(event) {
+        if (!event.valid) {
+            return;
+        }
+
+        try {
+            const sourceDataItem = event.sender.dataItem(event.sourceNode);
+            const destinationDataItem = event.sender.dataItem(event.destinationNode);
+
+            let sourceTabName = sourceDataItem.isTab ? sourceDataItem.name : sourceDataItem.tabName;
+            sourceTabName = sourceTabName === "Gegevens" ? "" : sourceTabName;
+            let destinationTabName = destinationDataItem.isTab ? destinationDataItem.name : destinationDataItem.tabName;
+            destinationTabName = destinationTabName === "Gegevens" ? "" : destinationTabName;
+
+            if (sourceDataItem.isTab) {
+                return Wiser.api({
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/move-tab`,
+                    method: "PUT",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        currentTabName: sourceTabName,
+                        destinationTabName: destinationTabName,
+                        entityType: this.entitiesCombobox.dataItem().name,
+                        dropPosition: event.dropPosition
+                    })
+                });
+            }
+
+            const oldIndex = sourceDataItem.ordering;
+            let newIndex = destinationDataItem.ordering;
+
+            switch (event.dropPosition) {
+                case "over":
+                    if (destinationDataItem) {
+                        destinationDataItem.set("expanded", true);
+                        newIndex = event.sender.dataItem(event.destinationNode.querySelector("ul li:last-child")).ordering;
+                    }
+                    break;
+                case "after":
+                    newIndex++;
+                    break;
+            }
+
+            return Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
+                method: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    currentIndex: oldIndex,
+                    newIndex: newIndex,
+                    id: sourceDataItem.id,
+                    currentTabName: sourceTabName,
+                    newTabName: destinationTabName,
+                    entityType: this.entitiesCombobox.dataItem().name
+                })
+            });
+        } catch (exception) {
+            console.error(exception);
+            kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit veld. De fout was:<br>${exception.responseText || exception.statusText}`);
+            event.setValid(false);
+        }
+    }
+
     async getEntityPropertiesOfSelected(id) {
         const resultSet = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}entity-types/id/${id}`,
             contentType: 'application/json',
             method: "GET"
         });
-        
+
         this.selectedEntityType = resultSet;
 
         this.setEntityPropertiesToDefault();
         this.setEntityProperties(resultSet);
+
+        // Make sure all fields have proper ascending ordering numbers, otherwise dragging & dropping to change the order of fields won't work properly.
+        await Wiser.api({
+            type: "PUT",
+            url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/fix-ordering`,
+            contentType: "application/json"
+        });
     }
 
     async getEntityFieldPropertiesOfSelected(id, selectedEntityName, selectedTabName) {
@@ -2370,10 +2500,10 @@ export class EntityTab {
                 }
             }
         }));
-        
+
         // first set all properties to default;
         this.setEntityFieldPropertiesToDefault();
-        
+
         // then set all the properties accordingly
         this.setEntityFieldProperties(this.selectedEntityProperty);
     }
@@ -2381,7 +2511,7 @@ export class EntityTab {
     // actions handled before save, such as checks
     async beforeSave() {
         // If no property is selected, we assume we only need to update the entity
-        const typeToSave = (this.listOfTabProperties.select().index() === -1) ? "entity" : "entityProperty";
+        const typeToSave = this.entityTabStrip.select().data("name");
 
         // check if entity is selected
         if (!this.checkIfEntityIsSet(typeToSave)) {
@@ -2391,14 +2521,8 @@ export class EntityTab {
         if (typeToSave === "entity") {
             await this.saveEntityProperties();
         } else {
-            // check if tab is selected
-            if (!this.tabNameDropDownList.dataItem()) {
-                this.base.showNotification("notification", "Selecteer eerst een bestaand tab!", "error");
-                return false;
-            }
-
             // check if property is selected
-            if (this.listOfTabProperties.select().index() === -1) {
+            if (!this.selectedTabOrProperty || this.selectedTabOrProperty.isTab) {
                 this.base.showNotification("notification", "Selecteer eerst een eigenschap!", "error");
                 return false;
             }
@@ -2428,7 +2552,7 @@ export class EntityTab {
             //inputtype specific
             const inputTypes = this.base.inputTypes;
             switch (this.inputTypeSelector.dataItem().text) {
-                case inputTypes.NUMERIC:
+                case inputTypes.NUMERICINPUT:
                     if (this.minNumber.value() && this.minNumber.value() >= this.maxNumber.value()) {
                         this.base.showNotification("notification",
                             "Minimale waarde mag niet hoger zijn dan de maximale waarde!",
@@ -2524,8 +2648,8 @@ export class EntityTab {
                     }
                     break;
                 case inputTypes.CHART:
-                    var jsonField = this.jsonField.getValue();
-                    if (jsonField === "" || !this.base.isJson(jsonField)) {
+                    const jsonFieldValue = this.optionsJsonField.getValue();
+                    if (jsonFieldValue === "" || !this.base.isJson(jsonFieldValue)) {
                         this.base.showNotification("notification", "Vul de json data in van de chart opties!", "error");
                         return false;
                     }
@@ -2538,39 +2662,62 @@ export class EntityTab {
         }
     }
 
+    /**
+     * Get the current entity settings, these are the settings that are currently set in the fields, including unsaved changes.
+     * @returns {EntityModel|null} The settings for the entity, or null if no module has been selected.
+     */
+    getCurrentEntitySettings() {
+        const entityDataItem = this.entitiesCombobox.dataItem();
+        if (!entityDataItem || !entityDataItem.id) {
+            return null;
+        }
+
+        const entity = new EntityModel();
+        entity.id = entityDataItem.id;
+        entity.entityType = document.getElementById("entityName").value;
+
+        entity.moduleId = this.entityModule.value();
+        entity.acceptedChildtypes = this.acceptedChildTypes.value();
+        entity.icon = this.entityIcon.value();
+        entity.iconAdd = this.entityIconAdd.value();
+        entity.iconExpanded = this.entityIconExpanded.value();
+        entity.defaultOrdering = this.defaultOrdering.value();
+        entity.color = this.entityColor.value();
+        entity.deleteAction = this.deleteAction.value();
+
+        entity.showInTreeView = document.getElementById("showInTreeView").checked;
+        entity.showInSearch = document.getElementById("showInSearch").checked;
+        entity.showOverviewTab = document.getElementById("showInOverviewTab").checked;
+        entity.saveTitleAsSeo = document.getElementById("saveTitleAsSEO").checked;
+        entity.showTitleField = document.getElementById("showTitleField").checked;
+        entity.saveHistory = document.getElementById("saveHistory").checked;
+        entity.showInDashboard = document.getElementById("showInDashboard").checked;
+        entity.enableMultipleEnvironments = document.getElementById("enableMultipleEnvironments").checked;
+
+        entity.displayName = document.getElementById("friendlyName").value;
+        entity.queryAfterInsert = this.queryAfterInsert.getValue();
+        entity.queryAfterUpdate = this.queryAfterUpdate.getValue();
+        entity.queryBeforeUpdate = this.queryBeforeUpdate.getValue();
+        entity.queryBeforeDelete = this.queryBeforeDelete.getValue();
+        entity.templateQuery = this.templateQueryField.getValue();
+        entity.templateHtml = this.templateHtmlField.getValue();
+
+        entity.dedicatedTablePrefix = document.getElementById("entityDedicatedTablePrefix").value;
+
+        return entity;
+    }
+
     async saveEntityProperties() {
         try {
-            const entity = new EntityModel();
+            const entity = this.getCurrentEntitySettings();
+            if (!entity) {
+                kendo.alert("Selecteer eerst een entiteit.");
+                return;
+            }
+
             const entityDataItem = this.entitiesCombobox.dataItem();
             const oldName = entityDataItem.name === "ROOT" ? "" : entityDataItem.name;
             const oldModuleId = entityDataItem.moduleId;
-
-            entity.id = entityDataItem.id;
-            entity.entityType = document.getElementById("entityName").value;
-
-            entity.moduleId = this.entityModule.value();
-            entity.acceptedChildtypes = this.acceptedChildTypes.value();
-            entity.icon = this.entityIcon.value();
-            entity.iconAdd = this.entityIconAdd.value();
-            entity.iconExpanded = this.entityIconExpanded.value();
-            entity.defaultOrdering = this.defaultOrdering.value();
-            entity.color = this.entityColor.value();
-
-            entity.showInTreeView = document.getElementById("showInTreeView").checked;
-            entity.showInSearch = document.getElementById("showInSearch").checked;
-            entity.showOverviewTab = document.getElementById("showInOverviewTab").checked;
-            entity.saveTitleAsSeo = document.getElementById("saveTitleAsSEO").checked;
-            entity.showTitleField = document.getElementById("showTitleField").checked;
-            entity.saveHistory = document.getElementById("saveHistory").checked;
-
-            entity.displayName = document.getElementById("friendlyName").value;
-            entity.queryAfterInsert = this.queryAfterInsert.getValue();
-            entity.queryAfterUpdate = this.queryAfterUpdate.getValue();
-            entity.queryBeforeUpdate = this.queryBeforeUpdate.getValue();
-            entity.queryBeforeDelete = this.queryBeforeDelete.getValue();
-
-            entity.dedicatedTablePrefix = document.getElementById("entityDedicatedTablePrefix").value;
-
             document.querySelector(".loaderWrap").classList.add("active");
 
             //save to database
@@ -2587,15 +2734,26 @@ export class EntityTab {
             if (oldName !== entity.entityType || parseInt(oldModuleId) !== parseInt(entity.moduleId)) {
                 await this.reloadEntityList(true);
 
-                this.entitiesCombobox.one("dataBound", () => {
-                    this.entitiesCombobox.select((dataItem) => {
-                        return dataItem.name === entity.entityType;
+                this.entitiesCombobox.one("dataBound",
+                    () => {
+                        this.entitiesCombobox.select((dataItem) => {
+                            return dataItem.name === entity.entityType;
+                        });
                     });
-                });
             }
         } catch (exception) {
             console.error(exception);
-            this.base.showNotification("notification", `Entiteit is niet succesvol aangepast, probeer het opnieuw`, "error");
+            if (e.responseText.indexOf("Duplicate entry")) {
+                this.base.showNotification("notification",
+                    `Er bestaat al een entiteit met naam '${entity.name}' gekoppeld aan de module ${this.entityModule
+                    .dataItem().moduleName}`,
+                    "error");
+            } else {
+                this.base.showNotification("notification",
+                    `Entiteit is niet succesvol aangepast, probeer het opnieuw`,
+                    "error");
+            }
+            document.querySelector(".loaderWrap").classList.remove("active");
         }
     }
 
@@ -2603,8 +2761,7 @@ export class EntityTab {
     async saveEntityFieldProperties() {
         // create entity property model
         const entityProperties = new EntityPropertyModel();
-        let index = this.listOfTabProperties.select().index();
-        let dataItem = this.listOfTabProperties.dataSource.view()[index];
+        let dataItem = this.selectedTabOrProperty;
         entityProperties.id = dataItem.id;
         entityProperties.moduleId = this.selectedEntityType.moduleId;
         entityProperties.entityType = this.entitiesCombobox.dataItem().name;
@@ -2617,7 +2774,7 @@ export class EntityTab {
         entityProperties.inputType = this.inputTypeSelector.value();
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
-        entityProperties.explanation = $("textarea#explanation").val();
+        entityProperties.explanation = $("textarea#explanation").data("kendoEditor").value();
         entityProperties.regexValidation = $('#regexValidation').val();
         entityProperties.mandatory = $("#mandatory").is(":checked");
         entityProperties.readOnly = $("#readonly").is(":checked");
@@ -2631,40 +2788,49 @@ export class EntityTab {
         entityProperties.ordering = this.selectedEntityProperty.ordering;
         entityProperties.extendedExplanation = document.getElementById("extendedExplanation").checked;
         entityProperties.saveOnChange = document.getElementById("saveOnChange").checked;
+        entityProperties.saveOnEnter = document.getElementById("saveOnEnter").checked;
         entityProperties.labelStyle = this.labelStyle.value();
         entityProperties.labelWidth = this.labelWidth.value();
         entityProperties.accessKey = $("#accessKey").val();
         entityProperties.visibilityPathRegex = $("#visibilityPathRegex").val();
         entityProperties.enableAggregation = document.getElementById("enableAggregation").checked;
         entityProperties.aggregateOptions = this.aggregateOptionsField.getValue();
-        
+
         entityProperties.dependsOn = {
             field: this.dependencyFields.value(),
             operator: this.dependencyOperator.value(),
             value: $("#dependingValue").val(),
             action: this.dependencyAction.value()
         };
-        
+
         entityProperties.overview = {
             visible: document.getElementById("visible-in-table").checked,
             width: this.widthInTable.value()
         };
 
         // declare empty options
-        entityProperties.options = {};
+        const optionsJsonValue = this.optionsJsonField.getValue();
+        if (optionsJsonValue && this.base.isJson(optionsJsonValue)) {
+            entityProperties.options = JSON.parse(optionsJsonValue);
+        } else {
+            entityProperties.options = {};
+        }
 
         //inputtype specific
         const inputTypes = this.base.inputTypes;
         switch (this.inputTypeSelector.text()) {
             case inputTypes.RADIOBUTTON:
-                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoComboBox").value();
+                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoDropDownList").value();
                 entityProperties.dataQuery = this.queryContentField.getValue();
                 break;
             case inputTypes.CHECKBOX:
                 // set default value to checkbox checked(1) or unchecked (0)
-                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoComboBox").value();
+                entityProperties.defaultValue = $("#checkedCheckbox").data("kendoDropDownList").value();
+                entityProperties.options.mode = this.checkBoxMode.value();
+                entityProperties.options.imageId = this.checkBoxImageId.value();
+                entityProperties.options.imageUrl = $("#checkBoxImageUrl").val();
                 break;
-            case inputTypes.NUMERIC:
+            case inputTypes.NUMERICINPUT:
                 entityProperties.options.decimals = this.numberOfDec.value();
                 entityProperties.options.format = this.numberFormat.value() === "anders" ? document.getElementById("differentFormat").value : this.numberFormat.value();
                 entityProperties.options.round = document.getElementById("roundNumeric").checked;
@@ -2698,47 +2864,69 @@ export class EntityTab {
                 } else {
                     entityProperties.options.useDropDownList = null;
                 }
-                // check if panel 1 is selected, which is "Vaste waardes"
-                if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL1.id) {
-                    var data = this.grid.dataSource.data();
-                    var dataSource = [];
-                    // specific check if all itemrows are filled.
-                    for (var i = 0; i < data.length; i++) {
-                        if (data[i].id == null || data[i].id === "" || data[i].name == null || data[i].name === "") {
-                            this.base.showNotification("notification", `Vul bij "Vaste waardes" alle items met naam en id in!`, "error");
+
+                entityProperties.options.mode = this.multiSelectMode.value();
+                entityProperties.options.mainImageId = this.multiSelectMainImageId.value();
+                entityProperties.options.mainImageUrl = $("#multiSelectMainImageUrl").val();
+                entityProperties.options.imagePropertyName = $("#multiSelectImagePropertyName").val();
+entityProperties.options.saveValueAsItemLink = document.getElementById("saveValueAsItemLink").checked;
+
+                switch (this.dataSourceFilter.dataItem().id) {
+                    case this.base.dataSourceType.PANEL1.id: {
+                        const data = this.grid.dataSource.data();
+                        const dataSource = [];
+                        // specific check if all itemrows are filled.
+                        for (let i = 0; i < data.length; i++) {
+                            if (data[i].id == null || data[i].id === "" || data[i].name == null || data[i].name === "") {
+                                this.base.showNotification("notification", `Vul bij "Vaste waardes" alle items met naam en id in!`, "error");
+                                return;
+                            }
+                            dataSource.push({id: data[i].id, name: data[i].name});
+                        }
+                        entityProperties.options.dataSource = dataSource;
+                        entityProperties.options.entityType = null;
+                        entityProperties.options.searchInTitle = null;
+                        entityProperties.options.searchEverywhere = null;
+                        break;
+                    }
+                    case this.base.dataSourceType.PANEL2.id: {
+                        // check if entity to search for is set, show error if not
+                        if (!this.dataSourceEntities.dataItem()) {
+                            this.base.showNotification("notification", `Selecteer eerst een entiteit waar naar gezocht moet worden!`, "error");
                             return;
                         }
-                        dataSource.push({id: data[i].id, name: data[i].name});
+                        entityProperties.options.entityType = this.dataSourceEntities.dataItem().id;
+                        entityProperties.options.dataSource = null;
+                        entityProperties.options.searchInTitle = document.getElementById("searchInTitle").checked;
+                        entityProperties.options.searchEverywhere = document.getElementById("searchEverywhere").checked;
+                        entityProperties.options.searchFields = this.searchFields.value();
+
+                        // overwrite the preserved options, else the options would
+                        this.fieldOptions.searchFields = this.searchFields.value();
+                        break;
                     }
-                    entityProperties.options.dataSource = dataSource;
-                    entityProperties.options.entityType = null;
-                    entityProperties.options.searchInTitle = null;
-                    entityProperties.options.searchEverywhere = null;
-
-                    // check if panel 2 is selected, which is "Lijst van entiteiten"
-                } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL2.id) {
-                    // check if entity to search for is set, show error if not
-                    if (!this.dataSourceEntities.dataItem()) {
-                        this.base.showNotification("notification", `Selecteer eerst een entiteit waar naar gezocht moet worden!`, "error");
-                        return;
+                    case this.base.dataSourceType.PANEL3.id: {
+                        // get value through codemirror function getValue() because textarea is empty
+                        entityProperties.dataQuery = this.queryField.getValue();
+                        entityProperties.options.dataSource = null;
+                        entityProperties.options.entityType = null;
+                        entityProperties.options.searchInTitle = null;
+                        entityProperties.options.searchEverywhere = null;
+                        break;
                     }
-                    entityProperties.options.entityType = this.dataSourceEntities.dataItem().name;
-                    entityProperties.options.dataSource = null;
-                    entityProperties.options.searchInTitle = document.getElementById("searchInTitle").checked;
-                    entityProperties.options.searchEverywhere = document.getElementById("searchEverywhere").checked;
-                    entityProperties.options.searchFields = this.searchFields.value();
-
-                    // overwrite the preserved options, else the options would 
-                    this.fieldOptions.searchFields = this.searchFields.value();
-
-                    // check if panel 1 is selected, which is "Query"
-                } else if (this.dataSourceFilter.dataItem().id === this.base.dataSourceType.PANEL3.id) {
-                    // get value through codemirror function getValue() because textarea is empty
-                    entityProperties.dataQuery = this.queryField.getValue();
-                    entityProperties.options.dataSource = null;
-                    entityProperties.options.entityType = null;
-                    entityProperties.options.searchInTitle = null;
-                    entityProperties.options.searchEverywhere = null;
+                    case this.base.dataSourceType.PANEL4.id: {
+                        // check if entity to search for is set, show error if not
+                        if (!this.dataSourceDataSelector.dataItem()) {
+                            this.base.showNotification("notification", `Selecteer eerst een data selector die gebruikt moet worden`, "error");
+                            return;
+                        }
+                        entityProperties.options.dataSelectorId = this.dataSourceDataSelector.dataItem().id;
+                        entityProperties.options.entityType = null;
+                        entityProperties.options.dataSource = null;
+                        entityProperties.options.searchInTitle = null;
+                        entityProperties.options.searchEverywhere = null;
+                        break;
+                    }
                 }
                 break;
             case inputTypes.SECUREINPUT:
@@ -2785,7 +2973,7 @@ export class EntityTab {
                     entityProperties.options.toolbar.hideCreateButton = document.getElementById("hideCreateButton").checked;
                 }
 
-                // module id is only available for item linker 
+                // module id is only available for item linker
                 // entity is a multiselect for item linker
                 if (this.inputTypeSelector.text() === inputTypes.ITEMLINKER) {
                     const moduleId = $("#itemLinkerModuleId").data("kendoNumericTextBox").value();
@@ -2794,7 +2982,7 @@ export class EntityTab {
                     // .value returns a string array of all selected entities
                     entityProperties.options.entityTypes = this.itemLinkerEntity.value();
 
-                    // overwrite the preserved options, else the options would 
+                    // overwrite the preserved options, else the options would
                     this.fieldOptions.entityTypes = this.itemLinkerEntity.value();
 
                     // order by is itemlinker only
@@ -2912,18 +3100,13 @@ export class EntityTab {
                 entityProperties.options.queryId = $("#queryId").data("kendoNumericTextBox").value();
                 break;
             case inputTypes.DATERANGE:
-                // TODO how to save values?
-                // kendo.toString(new Date(), "MM/dd/yyyy")
                 entityProperties.options.from = $("#daterangeFrom").data("kendoDatePicker").value();
                 entityProperties.options.till = $("#daterangeTill").data("kendoDatePicker").value();
                 break;
             case inputTypes.QUERYBUILDER:
-                // TODO is this the correct way?
                 entityProperties.options.queryId = $("#queryId").data("kendoNumericTextBox").value();
                 break;
             case inputTypes.CHART:
-                // options field is already set in the field
-                entityProperties.options = this.jsonField.getValue();
                 break;
             case inputTypes.TEXTBOX:
                 entityProperties.options.type = this.textboxTypeDropDown.dataItem() && this.textboxTypeDropDown.dataItem().id !== "" ? this.textboxTypeDropDown.dataItem().id : null;
@@ -2956,7 +3139,7 @@ export class EntityTab {
         }
 
         document.querySelector(".loaderWrap").classList.add("active");
-        
+
         try {
             // save to database
             await Wiser.api({
@@ -2965,25 +3148,15 @@ export class EntityTab {
                 contentType: "application/json",
                 data: JSON.stringify(entityProperties)
             });
-            
+
             this.base.showNotification("notification", `Item succesvol aangepast`, "success");
-            this.afterSave(entityProperties);
-            document.querySelector(".loaderWrap").classList.remove("active");
+            await this.afterSave(entityProperties);
         }
         catch (exception) {
             console.error("Error while saving initial values", exception);
             this.base.showNotification("notification", `Item is niet succesvol aangepast, probeer het opnieuw`, "error");
         }
-    }
-
-    selectPropertyInListView(displayName) {
-        // remove selected class
-        $(".sortable").removeClass("selected");
-        const elementToSelect = this.listOfTabProperties.element.find(`[data-display-name='${displayName}']`);
-        // select element in listview
-        this.listOfTabProperties.select(elementToSelect);
-        // add selected class
-        elementToSelect.addClass('selected');
+        document.querySelector(".loaderWrap").classList.remove("active");
     }
 
     removeOnAutoIndex(targetObject = {}, autoIndexId = 0) {
@@ -2996,7 +3169,6 @@ export class EntityTab {
                     if (found) return;
                     const value = target[prop];
                     if (prop === "autoIndex" && value == index) {
-                        console.log("FOUND!!");
                         // Found, remove depending on type
                         if (Utils.isArray(parent)) {
                             // base type is an array item
@@ -3024,44 +3196,40 @@ export class EntityTab {
 
         findIndex(targetObject, autoIndexId);
 
-        console.log(found ? "Found and removed.." : "Object not found");
         return found;
     }
 
     // actions handled after saving, selecting right tab and such
-    afterSave(entityProperties) {
-        const selectCorrectListViewItem = () => {
-            // select correct entity display name
-            this.listOfTabProperties.one("dataBound",
-                () => {
-                    this.selectPropertyInListView(entityProperties.displayName);
-                });
-        };
+    async afterSave(property) {
+        await this.onEntitiesComboBoxSelect();
+        this.selectPropertyInTreeView(property);
+    }
 
-        // only update tabname list if tab has been added/changed
-        if (this.tabNameDropDownList.value() !== entityProperties.tabName) {
-            // trigger select to get the new tab in the list
-            this.onEntitiesComboBoxSelect(this);
-            this.tabNameDropDownList.one("dataBound", (event) => {
-                // automatically select the newly added tab 
-                this.tabNameDropDownList.select((dataItem) => {
-                    return dataItem.tabName === (entityProperties.tabName === "" ? "Gegevens" : entityProperties.tabName);
-                });
-                selectCorrectListViewItem();
-            });
+    selectTabInTreeView(tabName, alsoExpand = false) {
+        const selectedTab = this.propertiesTreeView.dataSource.get(tabName);
+        if (selectedTab === undefined) {
+            console.warn(`Unable to open tab ${tabName} in tree view`);
+            return;
+        }
+        const nodeToSelect = this.propertiesTreeView.findByUid(selectedTab.uid);
+        this.propertiesTreeView.select(nodeToSelect);
+        if (!alsoExpand) {
+            return;
         }
 
-        const index = this.listOfTabProperties.select().index();
-        const dataItem = this.listOfTabProperties.dataSource.view()[index];
-        // only update tabname properties list if display name has been changed
-        if (this.tabNameDropDownList.value() === entityProperties.tabName && dataItem !== null && dataItem !== undefined && dataItem.displayName !== entityProperties.displayName) {
-            this.tabNameDropDownListSelect(dataItem);
-            selectCorrectListViewItem();
-        } else if (dataItem !== null && dataItem !== undefined && this.tabNameDropDownList.value() === entityProperties.tabName) {
-            // update if name and tab havent been changed
-            this.isSaveSelect = false;
-            this.getEntityFieldPropertiesOfSelected(dataItem.id, this.entitiesCombobox.dataItem().name, this.tabNameDropDownList.dataItem().tabName);
-        }
+        this.propertiesTreeView.expand(nodeToSelect);
+    }
+
+    selectPropertyInTreeView(property) {
+        // First we need to expand the tab, otherwise the children of the tab will be empty in the data source of Kendo.
+        const tabDataItem = this.propertiesTreeView.dataSource.get(property.tabName || "Gegevens");
+        const tabNode = this.propertiesTreeView.findByUid(tabDataItem.uid);
+        this.propertiesTreeView.expand(tabNode);
+
+        // Then we can select the property itself.
+        const fieldDataItem = this.propertiesTreeView.dataSource.get(property.id);
+        const propertyNode = this.propertiesTreeView.findByUid(fieldDataItem.uid);
+        this.propertiesTreeView.select(propertyNode);
     }
 
     /**
@@ -3072,20 +3240,23 @@ export class EntityTab {
         if (!curValue) {
             return;
         }
-        
+
         // Show all related inputs.
         $(".item[data-visible], label[data-visible]").each((index, element) => {
-            const items = element.dataset.visible.split(",");
+            const items = element.dataset.visible.split(" ");
             const filteredResults = items.filter(item => item.trim().toLowerCase() === curValue.toLowerCase());
             $(element).toggle(filteredResults.length > 0);
         });
-        
+
         // Hide all related inputs.
         $(".item[invisible], label[invisible]").each((index, element) => {
-            const items = element.dataset.visible.split(",");
+            const items = element.dataset.visible.split(" ");
             const filteredResults = items.filter(item => item.trim().toLowerCase() === curValue.toLowerCase());
             $(element).toggle(filteredResults.length === 0);
         });
+
+        // Set the input name in the field group.
+        $("#inputTypeNameLegend").text(curValue);
     }
 
     setEntityPropertiesToDefault() {
@@ -3096,12 +3267,16 @@ export class EntityTab {
         document.getElementById("saveTitleAsSEO").checked = false;
         document.getElementById("showTitleField").checked = false;
         document.getElementById("saveHistory").checked = false;
+        document.getElementById("showInDashboard").checked = false;
+        document.getElementById("enableMultipleEnvironments").checked = false;
 
         // codemirror fields
         this.queryAfterInsert.setValue("");
         this.queryAfterUpdate.setValue("");
         this.queryBeforeUpdate.setValue("");
         this.queryBeforeDelete.setValue("");
+        this.templateQueryField.setValue("");
+        this.templateHtmlField.setValue("");
     }
 
     setEntityFieldPropertiesToDefault() {
@@ -3110,7 +3285,7 @@ export class EntityTab {
 
         // numeric default
         this.defaultNumeric.value(0);
-        this.numberOfDec.value(2);
+        this.numberOfDec.value(0);
         this.numberFormat.select("");
         $("#differentFormatHolder").hide();
         document.getElementById("differentFormat").value = "";
@@ -3133,12 +3308,12 @@ export class EntityTab {
         this.grid.setDataSource(null);
         this.dataSourceEntities.select("");
         this.dataSourceFilter.select(0);
+        this.dataSourceDataSelector.select(0);
         this.searchFields.value([]);
         document.getElementById("useDropDownList").checked = false;
         document.getElementById("searchInTitle").checked = false;
         document.getElementById("searchEverywhere").checked = false;
-        $("[data-show-for-panel=panel2]").hide();
-
+        document.getElementById("saveValueAsItemLink").checked = false;
 
         // secure input default
         $("#typeSecureInput").data("kendoDropDownList").select(0);
@@ -3219,7 +3394,7 @@ export class EntityTab {
 
         // codemirror fields
         this.scriptField.setValue("");
-        this.jsonField.setValue("");
+        this.optionsJsonField.setValue("");
         this.queryField.setValue("");
         this.queryFieldSubEntities.setValue("");
         this.queryDeleteField.setValue("");
@@ -3247,14 +3422,18 @@ export class EntityTab {
         document.getElementById("saveTitleAsSEO").checked = resultSet.saveTitleAsSeo;
         document.getElementById("friendlyName").value = resultSet.displayName || "";
         document.getElementById("entityDedicatedTablePrefix").value = resultSet.dedicatedTablePrefix;
+        document.getElementById("showInDashboard").checked = resultSet.showInDashboard;
+        document.getElementById("enableMultipleEnvironments").checked = resultSet.enableMultipleEnvironments;
 
         // CodeMirror fields
         this.setCodeMirrorFields(this.queryAfterInsert, resultSet.queryAfterInsert);
         this.setCodeMirrorFields(this.queryAfterUpdate, resultSet.queryAfterUpdate);
         this.setCodeMirrorFields(this.queryBeforeUpdate, resultSet.queryBeforeUpdate);
         this.setCodeMirrorFields(this.queryBeforeDelete, resultSet.queryBeforeDelete);
+        this.setCodeMirrorFields(this.templateQueryField, resultSet.templateQuery);
+        this.setCodeMirrorFields(this.templateHtmlField, resultSet.templateHtml);
 
-        //Select items in combobox 
+        //Select items in combobox
         this.entityIcon.select("");
         this.entityIcon.select((dataItem) => {
             return dataItem.value === resultSet.icon;
@@ -3280,6 +3459,11 @@ export class EntityTab {
             return dataItem.value === resultSet.color;
         });
 
+        this.deleteAction.select("");
+        this.deleteAction.select((dataItem) => {
+            return dataItem.value == resultSet.deleteAction;
+        });
+
         this.getEntityModules(resultSet.moduleId);
         this.getAcceptedChildTypes(resultSet.moduleId, resultSet.acceptedChildTypes);
     }
@@ -3297,9 +3481,9 @@ export class EntityTab {
     }
 
     async getAcceptedChildTypes(moduleId, acceptedChildTypes) {
-        const dsAcceptedChildTypes = await Wiser.api({ 
-            url: `${this.base.settings.serviceRoot}/GET_ENTITY_TYPES?modules=${encodeURIComponent(moduleId)}`,
-            method: "GET" 
+        const dsAcceptedChildTypes = await Wiser.api({
+            url: `${this.base.settings.wiserApiRoot}entity-types?moduleId=${encodeURIComponent(moduleId)}`,
+            method: "GET"
         });
         this.acceptedChildTypes.setDataSource(dsAcceptedChildTypes);
         this.acceptedChildTypes.value(acceptedChildTypes);
@@ -3316,7 +3500,7 @@ export class EntityTab {
     setEntityFieldProperties(resultSet) {
         resultSet.dependsOn = resultSet.dependsOn || {};
         resultSet.overview = resultSet.overview || {};
-        
+
         // set dropdown value for inputtype field
         this.inputTypeSelector.select((dataItem) => {
             return (dataItem.id || "").toLowerCase() === (resultSet.inputType || "").toLowerCase();
@@ -3326,12 +3510,12 @@ export class EntityTab {
         this.hideShowElementsBasedOnValue(resultSet.inputType || "input");
         // checkboxes proper set
         document.getElementById("visible-in-table").checked = resultSet.overview.visible || false;
-        document.getElementById("mandatory").checked = resultSet.mandatory || "";
-        document.getElementById("readonly").checked = resultSet.readOnly || "";
-        document.getElementById("seofriendly").checked = resultSet.alsoSaveSeoValue || "";
-        document.getElementById("saveOnChange").checked = resultSet.saveOnChange || "";
-        document.getElementById("extendedExplanation").checked = resultSet.extendedExplanation || "";
-        document.getElementById("enableAggregation").checked = resultSet.enableAggregation || "";
+        document.getElementById("mandatory").checked = resultSet.mandatory || false;
+        document.getElementById("readonly").checked = resultSet.readOnly || false;
+        document.getElementById("seofriendly").checked = resultSet.alsoSaveSeoValue || false;
+        document.getElementById("saveOnChange").checked = resultSet.saveOnChange || false;
+        document.getElementById("extendedExplanation").checked = resultSet.extendedExplanation || false;
+        document.getElementById("enableAggregation").checked = resultSet.enableAggregation || false;
 
         // numeric textboxes
         this.widthInTable.value(resultSet.overview.width);
@@ -3343,7 +3527,7 @@ export class EntityTab {
         document.getElementById("propertyname").value = resultSet.propertyName || "";
         document.getElementById("regexValidation").value = resultSet.regexValidation || "";
         document.getElementById("langCode").value = resultSet.languageCode || "";
-        document.getElementById("explanation").value = resultSet.explanation || "";
+        $("#explanation").data("kendoEditor").value(resultSet.explanation || "");
         document.getElementById("defaultValue").value = resultSet.defaultValue || "";
         document.getElementById("accessKey").value = resultSet.accessKey || "";
         document.getElementById("visibilityPathRegex").value = resultSet.visibilityPathRegex || "";
@@ -3359,7 +3543,7 @@ export class EntityTab {
                 });
             });
 
-        // set depending filter
+        // Drop downs
         this.dependencyOperator.select((dataItem) => {
             return (dataItem.value || "").toLowerCase() === (resultSet.dependsOn.operator || "").toLowerCase();
         });
@@ -3386,12 +3570,12 @@ export class EntityTab {
             this.scriptField.refresh();
         }
 
-        // set dropdown value for tabname field
+        // Set dropdown value for tab name field.
         this.tabNameProperty.select((dataItem) => {
-            return (dataItem.tabName === "Gegevens" ? "" : dataItem.tabName) === (resultSet.tabName === "Gegevens" ? "" : resultSet.tabName);
+            return (dataItem.name === "Gegevens" ? "" : dataItem.name) === (resultSet.tabName === "Gegevens" ? "" : resultSet.tabName);
         });
-        
-        //set groupNameComboBox field using one time dataBound because of the racing condition when filling.
+
+        // Set groupNameComboBox field using one time dataBound because of the racing condition when filling.
         this.groupNameComboBox.one("dataBound",
             (e) => {
                 // set dropdown value for groupname field
@@ -3400,10 +3584,22 @@ export class EntityTab {
                 });
             });
 
-        // get options from resultset and parse them as json, if options are empty check
-        const options = JSON.parse(resultSet.options === "" || !resultSet.options ? "{}" : resultSet.options);
+        // Get options from resultset and parse them as json.
+        const options = JSON.parse(!resultSet.options ? "{}" : resultSet.options);
+        let remainingOptionsForOptionsJsonField = $.extend(true, {}, options);
 
-        function addIdsToArrayObjectItems(targetObject = {}) {
+        /**
+         * Gets a value from the options JSON and then deletes that value from remainingOptionsForOptionsJsonField.
+         * This is done so that in the end we only show the options that don't have specific fields, in the general options JSON field.
+         * @param key The property name in the options JSON.
+         * @param defaultValue The value to return if the requested option was not found.
+         */
+        const getOptionValueAndDeleteForOptionsField = (key, defaultValue) => {
+            delete remainingOptionsForOptionsJsonField[key];
+
+            return options[key] || defaultValue;
+        };
+        const addIdsToArrayObjectItems = (targetObject = {}) => {
             let autoIncrement = 0;
 
             const addIds = (target) => {
@@ -3437,97 +3633,120 @@ export class EntityTab {
         addIdsToArrayObjectItems(options);
         this.fieldOptions = options;
 
+        document.getElementById("saveOnEnter").checked = getOptionValueAndDeleteForOptionsField("saveOnEnter", false);
+
+        const optionsEntityType = getOptionValueAndDeleteForOptionsField("entityType", "");
+        const optionsDataSource = getOptionValueAndDeleteForOptionsField("dataSource");
+        const optionsType = getOptionValueAndDeleteForOptionsField("type");
+        const optionsLinkType = getOptionValueAndDeleteForOptionsField("linkType");
+        const optionsMode = getOptionValueAndDeleteForOptionsField("mode");
         const inputTypes = this.base.inputTypes;
         switch (resultSet.inputType) {
             case inputTypes.TEXTBOX:
                 this.textboxTypeDropDown.select((dataItem) => {
-                    return dataItem.id === options.type;
+                    return dataItem.id === optionsType;
                 });
+
+                delete remainingOptionsForOptionsJsonField.type;
                 break;
             case inputTypes.AUTOINCREMENT:
                 this.defaultNumeric.value(resultSet.defaultValue);
                 break;
-            case inputTypes.NUMERIC: {
+            case inputTypes.NUMERICINPUT: {
                 this.defaultNumeric.value(resultSet.defaultValue);
-                document.getElementById("roundNumeric").checked = options.round;
-                document.getElementById("cultureNumber").value = options.culture || "";
+                document.getElementById("roundNumeric").checked = getOptionValueAndDeleteForOptionsField("round");
+                document.getElementById("cultureNumber").value = getOptionValueAndDeleteForOptionsField("culture", "");
 
-                this.maxNumber.value(options.max);
-                this.minNumber.value(options.min);
-                this.stepNumber.value(options.step);
-                this.factorNumber.value(options.factor);
+                this.maxNumber.value(getOptionValueAndDeleteForOptionsField("max"));
+                this.minNumber.value(getOptionValueAndDeleteForOptionsField("min"));
+                this.stepNumber.value(getOptionValueAndDeleteForOptionsField("step"));
+                this.factorNumber.value(getOptionValueAndDeleteForOptionsField("factor"));
 
                 // set decimals from options
-                this.numberOfDec.value(options.decimals);
-                // set format dropdown 
+                this.numberOfDec.value(getOptionValueAndDeleteForOptionsField("decimals", 0));
+                // set format dropdown
                 let found = false;
+                const format = getOptionValueAndDeleteForOptionsField("format", "");
                 this.numberFormat.select((dataItem) => {
-                    if (dataItem.value === options.format) {
+                    if (dataItem.value === format) {
                         return found = true;
                     }
                 });
-                if (!found && options.format !== "") {
+                if (!found && format !== "") {
                     this.numberFormat.select((dataItem) => {
                         return dataItem.value === "anders";
                     });
                     $("#differentFormatHolder").show();
-                    document.getElementById("differentFormat").value = options.format;
+                    document.getElementById("differentFormat").value = format;
                 }
                 break;
             }
             case inputTypes.HTMLEDITOR:
                 // check if mode is null or undefined
-                if (options.mode != null) {
-                    document.getElementById(`mode${options.mode}`).checked = true;
+                if (optionsMode != null) {
+                    document.getElementById(`mode${optionsMode}`).checked = true;
                 }
                 break;
             case inputTypes.DATETIMEPICKER:
-                // set dropdown to mode
+                // Set dropdown to the correct mode.
                 $("#dateTimeDropDown").data("kendoDropDownList").select((dataItem) => {
-                    return dataItem.value === options.type;
+                    return dataItem.value === optionsType;
                 });
-                // check if value isnt null, undefined or empty string and value should be set to NOW()
-                if (options.value !== undefined && options.value !== "" && options.value === "NOW()") {
+
+                // Check if value isnt null, undefined or empty string and value should be set to NOW().
+                const dateTimePickerValue = getOptionValueAndDeleteForOptionsField("value");
+                if (dateTimePickerValue !== undefined && dateTimePickerValue !== "" && dateTimePickerValue === "NOW()") {
                     document.getElementById("dateTimePickerSetNow").checked = true;
                 }
-                // check if min is not null or empty string, set minTimeBox to the value
-                if (options.min !== undefined && options.min !== "") {
-                    this.minTimeBox.value(options.min);
+
+                // Check if min is not null or empty string, set minTimeBox to the value.
+                const dateTimePickerMin = getOptionValueAndDeleteForOptionsField("min");
+                if (dateTimePickerMin !== undefined && dateTimePickerMin !== "") {
+                    this.minTimeBox.value(dateTimePickerMin);
                 }
                 break;
             case inputTypes.COMBOBOX:
             case inputTypes.MULTISELECT:
+                const dataSelectorId = getOptionValueAndDeleteForOptionsField("dataSelectorId", "");
                 if (resultSet.inputType === inputTypes.COMBOBOX) {
-                    document.getElementById("useDropDownList").checked = options.useDropDownList;
+                    document.getElementById("useDropDownList").checked = getOptionValueAndDeleteForOptionsField("useDropDownList");
                 }
-                var panel = "";
+
+                document.getElementById("saveValueAsItemLink").checked = getOptionValueAndDeleteForOptionsField("saveValueAsItemLink");
+
+                this.multiSelectMode.select((dataItem) => {
+                    return (dataItem.value || "").toString().toLowerCase() === (optionsMode || "").toString().toLowerCase();
+                });
+                this.multiSelectMainImageId.value(getOptionValueAndDeleteForOptionsField("mainImageId", ""));
+                $("#multiSelectMainImageUrl").val(getOptionValueAndDeleteForOptionsField("mainImageUrl", ""));
+                $("#multiSelectImagePropertyName").val(getOptionValueAndDeleteForOptionsField("imagePropertyName", ""));
+this.dataSourceDataSelector.value(dataSelectorId);
+                let panel = "";
                 // if dataQuery is set, set the codemirror field to the field's value
-                if (resultSet.dataQuery !== "") {
+                if (resultSet.dataQuery) {
                     panel = this.base.dataSourceType.PANEL3.id;
                     this.queryField.setValue(resultSet.dataQuery);
                     this.queryField.refresh();
                 } // if entity type is set, set datasource dropdown to entities and select right option
-                else if (options.entityType !== undefined) {
+                else if (optionsEntityType) {
                     panel = this.base.dataSourceType.PANEL2.id;
                     this.dataSourceEntities.select((dataItem) => {
-                        return dataItem.name === options.entityType;
+                        return (dataItem.id || "").toLowerCase() === (optionsEntityType || "").toLowerCase();
                     });
-                    document.getElementById("searchInTitle").checked = options.searchInTitle;
-                    document.getElementById("searchEverywhere").checked = options.searchEverywhere;
 
-                    $.each(options.searchFields, (i, v) => {
-                        const newItem = {
-                            name: v
-                        };
-                        const widget = this.searchFields;
-                        widget.dataSource.add(newItem);
-                        widget.value(widget.value().concat([newItem.name]));
-                    });
+                    document.getElementById("searchInTitle").checked = getOptionValueAndDeleteForOptionsField("searchInTitle", false);
+                    document.getElementById("searchEverywhere").checked = getOptionValueAndDeleteForOptionsField("searchEverywhere", false);
+
+                    const searchFields = getOptionValueAndDeleteForOptionsField("searchFields", []);
+                    this.searchFields.value(searchFields);
 
                 } // if dataSource is set, set the grid datasource to the options dataSource
-                else if (options.dataSource !== undefined) {
+                else if (optionsDataSource) {
                     panel = this.base.dataSourceType.PANEL1.id;
-                    this.grid.setDataSource(options.dataSource);
+                    this.grid.setDataSource(optionsDataSource);
+                }
+                else if (dataSelectorId) {
+                    panel = this.base.dataSourceType.PANEL4.id;
                 }
                 // set dropdown to right panel
                 this.dataSourceFilter.select((dataItem) => {
@@ -3537,71 +3756,76 @@ export class EntityTab {
             case inputTypes.SECUREINPUT:
                 // set type of secure input
                 $("#typeSecureInput").data("kendoDropDownList").select((dataItem) => {
-                    return dataItem.value === options.type;
+                    return dataItem.value === optionsType;
                 });
 
                 // set securty method
+                const securityMethod = getOptionValueAndDeleteForOptionsField("securityMethod");
                 $("#securityMethod").data("kendoDropDownList").select((dataItem) => {
-                    return dataItem.value === options.securityMethod;
+                    return dataItem.value === securityMethod;
                 });
-                if (options.securityMethod === "JCL_AES" || options.securityMethod === "AES") {
+
+                if (securityMethod === "JCL_AES" || securityMethod === "AES") {
                     // set securitykey, but only when security method is JCL_AES or AES
-                    document.getElementById("securityKey").value = options.securityKey;
+                    document.getElementById("securityKey").value = getOptionValueAndDeleteForOptionsField("securityKey");
                 }
                 break;
             case inputTypes.LINKEDITEM:
                 // set link type on databound of field
                 this.linkType.one("dataBound", () => {
                     this.linkType.select((dataItem) => {
-                        return dataItem.typeValue === options.linkType;
+                        return dataItem.typeValue === optionsLinkType;
                     });
                     // if no linkType has been found in the selection, link typ hasnt been made yet and we set it manually
                     if (this.linkType.value() === "") {
                         // toString because kendo does a .toLowerCase in the background and linkType is an integer
-                        this.linkType.text(options.linkType.toString());
+                        this.linkType.text(optionsLinkType.toString());
                     }
                 });
 
                 // set linked item entity to option defined type
                 this.linkedItemEntity.select((dataItem) => {
-                    return dataItem.id === options.entityType;
+                    return dataItem.id === optionsEntityType;
                 });
                 // set the template
-                document.getElementById("linkedItemTemplate").value = options.template;
-                document.getElementById("textOnly").checked = options.textOnly;
+                document.getElementById("linkedItemTemplate").value = getOptionValueAndDeleteForOptionsField("template");
+                document.getElementById("textOnly").checked = getOptionValueAndDeleteForOptionsField("textOnly");
                 break;
             case inputTypes.DATASELECTOR:
-                document.getElementById("dataSelectorText").value = options.text;
+                document.getElementById("dataSelectorText").value = getOptionValueAndDeleteForOptionsField("text");
                 break;
             case inputTypes.ITEMLINKER:
             case inputTypes.SUBENTITIESGRID:
             case inputTypes.ACTIONBUTTON:
-
-                // module id is only available for item linker 
+                // module id is only available for item linker
                 // entity is a multiselect for item linker
                 if (resultSet.inputType === inputTypes.ITEMLINKER) {
-                    $("#itemLinkerModuleId").data("kendoNumericTextBox").value(options.moduleId);
+                    $("#itemLinkerModuleId").data("kendoNumericTextBox").value(getOptionValueAndDeleteForOptionsField("moduleId"));
                     // select multiselect options
-                    this.itemLinkerEntity.value(options.entityTypes);
-                    document.getElementById("itemLinkerOrderBy").value = options.orderBy;
+                    this.itemLinkerEntity.value(getOptionValueAndDeleteForOptionsField("entityTypes"));
+                    document.getElementById("itemLinkerOrderBy").value = getOptionValueAndDeleteForOptionsField("orderBy");
                 }
+
+                const toolbar = getOptionValueAndDeleteForOptionsField("toolbar", {});
 
                 // shared properties through out sub entities grid and item linker
                 if (resultSet.inputType !== inputTypes.ACTIONBUTTON) {
                     // select item linker type number
-                    this.itemLinkerTypeNumber.value(options.linkTypeNumber);
+                    this.itemLinkerTypeNumber.value(getOptionValueAndDeleteForOptionsField("linkTypeNumber"));
 
+                    const deletionOfItems = getOptionValueAndDeleteForOptionsField("deletionOfItems");
                     $("#itemLinkerDeletionOfItems").data("kendoDropDownList").select((dataItem) => {
-                        return dataItem.value === options.deletionOfItems;
+                        return dataItem.value === deletionOfItems;
                     });
+
                     // set checkboxes
-                    document.getElementById("hideCommandColumn").checked = options.hideCommandColumn;
-                    document.getElementById("disableInlineEditing").checked = options.disableInlineEditing;
-                    document.getElementById("disableOpeningOfItems").checked = options.disableOpeningOfItems;
-                    document.getElementById("hideExportButton").checked = options.toolbar.hideExportButton;
-                    document.getElementById("hideCheckAllButton").checked = options.toolbar.hideCheckAllButton;
-                    document.getElementById("hideUncheckAllButton").checked = options.toolbar.hideUncheckAllButton;
-                    document.getElementById("hideCreateButton").checked = options.toolbar.hideCreateButton;
+                    document.getElementById("hideCommandColumn").checked = getOptionValueAndDeleteForOptionsField("hideCommandColumn");
+                    document.getElementById("disableInlineEditing").checked = getOptionValueAndDeleteForOptionsField("disableInlineEditing");
+                    document.getElementById("disableOpeningOfItems").checked = getOptionValueAndDeleteForOptionsField("disableOpeningOfItems");
+                    document.getElementById("hideExportButton").checked = toolbar.hideExportButton;
+                    document.getElementById("hideCheckAllButton").checked = toolbar.hideCheckAllButton;
+                    document.getElementById("hideUncheckAllButton").checked = toolbar.hideUncheckAllButton;
+                    document.getElementById("hideCreateButton").checked = toolbar.hideCreateButton;
                 }
 
                 // actions which are available for action button and sub entities grid.
@@ -3610,16 +3834,16 @@ export class EntityTab {
                     if (resultSet.inputType === inputTypes.ACTIONBUTTON) {
                         // set button array options
                         buttonArray.push({
-                            text: options.text,
-                            icon: options.icon,
-                            autoIndex: options.autoIndex,
+                            text: getOptionValueAndDeleteForOptionsField("text"),
+                            icon: getOptionValueAndDeleteForOptionsField("icon"),
+                            autoIndex: getOptionValueAndDeleteForOptionsField("autoIndex"),
                             button: {
-                                actions: options.actions
+                                actions: getOptionValueAndDeleteForOptionsField("actions", [])
                             }
                         });
                     } else {
                         // actions come from custom actions property within toolbar for sub entity grid
-                        const customActions = options.toolbar.customActions;
+                        const customActions = toolbar.customActions || [];
                         for (let i = 0; i < customActions.length; i++) {
                             buttonArray.push(
                                 {
@@ -3637,106 +3861,107 @@ export class EntityTab {
 
                 // only available to sub entities grid
                 if (resultSet.inputType === inputTypes.SUBENTITIESGRID) {
-                    // set entity dropdown 
+                    // set entity dropdown
                     this.subEntityGridEntity.select((dataItem) => {
-                        return dataItem.id === options.entityType;
+                        return dataItem.id === optionsEntityType;
                     });
 
+                    //Cast options.selectable to string because it could be a boolean
+                    const selectableString = getOptionValueAndDeleteForOptionsField("selectable", "").toString();
                     this.subEntitiesGridSelectOptions.select((dataItem) => {
-                        //Cast options.selectable to string because it could be a boolean
-                        const selectableString = String(options.selectable);
                         return dataItem.value === selectableString;
                     });
 
                     // set data selector id
-                    this.dataSelectorIdSubEntitiesGrid.value(options.dataSelectorId);
+                    this.dataSelectorIdSubEntitiesGrid.value(getOptionValueAndDeleteForOptionsField("dataSelectorId"));
                     // set checkboxes
-                    document.getElementById("refreshGridAfterInlineEdit").checked = options.refreshGridAfterInlineEdit;
-                    document.getElementById("showChangedByColumn").checked = options.showChangedByColumn;
-                    document.getElementById("showChangedOnColumn").checked = options.showChangedOnColumn;
-                    document.getElementById("showAddedByColumn").checked = options.showAddedByColumn;
-                    document.getElementById("showAddedOnColumn").checked = options.showAddedOnColumn;
-                    document.getElementById("showDeleteConformations").checked = options.showDeleteConformations;
-                    document.getElementById("checkboxes").checked = options.checkboxes;
+                    document.getElementById("refreshGridAfterInlineEdit").checked = getOptionValueAndDeleteForOptionsField("refreshGridAfterInlineEdit");
+                    document.getElementById("showChangedByColumn").checked = getOptionValueAndDeleteForOptionsField("showChangedByColumn");
+                    document.getElementById("showChangedOnColumn").checked = getOptionValueAndDeleteForOptionsField("showChangedOnColumn");
+                    document.getElementById("showAddedByColumn").checked = getOptionValueAndDeleteForOptionsField("showAddedByColumn");
+                    document.getElementById("showAddedOnColumn").checked = getOptionValueAndDeleteForOptionsField("showAddedOnColumn");
+                    document.getElementById("showDeleteConformations").checked = getOptionValueAndDeleteForOptionsField("showDeleteConformations");
+                    document.getElementById("checkboxes").checked = getOptionValueAndDeleteForOptionsField("checkboxes");
 
-                    if (options.customQuery && resultSet.dataQuery && resultSet.dataQuery !== "") {
+                    if (getOptionValueAndDeleteForOptionsField("customQuery", false) && resultSet.dataQuery) {
                         $("#customQuery").trigger("click");
                         this.queryFieldSubEntities.setValue(resultSet.dataQuery);
                         this.queryFieldSubEntities.refresh();
                     }
 
-                    if (options.hasCustomDeleteQuery && resultSet.gridDeleteQuery && resultSet.gridDeleteQuery !== "") {
+                    if (getOptionValueAndDeleteForOptionsField("hasCustomDeleteQuery") && resultSet.gridDeleteQuery) {
                         $("#hasCustomDeleteQuery").trigger("click");
                         this.queryDeleteField.setValue(resultSet.gridDeleteQuery);
                         this.queryDeleteField.refresh();
                     }
 
-                    if (options.hasCustomUpdateQuery && resultSet.gridInsertQuery && resultSet.gridUpdateQuery !== "") {
+                    if (getOptionValueAndDeleteForOptionsField("hasCustomUpdateQuery", false) && resultSet.gridInsertQuery) {
                         $("#hasCustomUpdateQuery").trigger("click");
                         this.queryUpdateField.setValue(resultSet.gridUpdateQuery);
                         this.queryUpdateField.refresh();
                     }
 
-                    if (options.hasCustomInsertQuery && resultSet.gridInsertQuery && resultSet.gridInsertQuery !== "") {
+                    if (getOptionValueAndDeleteForOptionsField("hasCustomInsertQuery") && resultSet.gridInsertQuery) {
                         $("#hasCustomInsertQuery").trigger("click");
                         this.queryInsertField.setValue(resultSet.gridInsertQuery);
                         this.queryInsertField.refresh();
                     }
 
-                    if (resultSet.searchQuery && resultSet.searchQuery !== "") {
+                    if (resultSet.searchQuery) {
                         this.searchQueryField.setValue(resultSet.searchQuery);
                         this.searchQueryField.refresh();
                     }
 
-                    if (resultSet.searchCountQuery && resultSet.searchCountQuery !== "") {
+                    if (resultSet.searchCountQuery) {
                         this.searchCountQueryField.setValue(resultSet.searchCountQuery);
                         this.searchCountQueryField.refresh();
                     }
 
-                    document.getElementById("disableInlineEditing").checked = options.disableInlineEditing;
-                    document.getElementById("disableOpeningOfItems").checked = options.disableOpeningOfItems;
-                    document.getElementById("hideTitleColumn").checked = options.hideTitleColumn;
-                    document.getElementById("hideEnvironmentColumn").checked = options.hideEnvironmentColumn;
-                    document.getElementById("hideTypeColumn").checked = options.hideTypeColumn;
-                    document.getElementById("hideLinkIdColumn").checked = options.hideLinkIdColumn;
-                    document.getElementById("hideIdColumn").checked = options.hideIdColumn;
-                    document.getElementById("hideTitleFieldInWindow").checked = options.hideTitleFieldInWindow;
-                    document.getElementById("hideLinkButton").checked = options.toolbar.hideLinkButton;
-                    document.getElementById("hideCount").checked = options.toolbar.hideCount;
-                    document.getElementById("hideClearFiltersButton").checked = options.toolbar.hideClearFiltersButton;
+                    document.getElementById("disableInlineEditing").checked = getOptionValueAndDeleteForOptionsField("disableInlineEditing", false);
+                    document.getElementById("disableOpeningOfItems").checked = getOptionValueAndDeleteForOptionsField("disableOpeningOfItems", false);
+                    document.getElementById("hideTitleColumn").checked = getOptionValueAndDeleteForOptionsField("hideTitleColumn", false);
+                    document.getElementById("hideEnvironmentColumn").checked = getOptionValueAndDeleteForOptionsField("hideEnvironmentColumn", false);
+                    document.getElementById("hideTypeColumn").checked = getOptionValueAndDeleteForOptionsField("hideTypeColumn", false);
+                    document.getElementById("hideLinkIdColumn").checked = getOptionValueAndDeleteForOptionsField("hideLinkIdColumn", false);
+                    document.getElementById("hideIdColumn").checked = getOptionValueAndDeleteForOptionsField("hideIdColumn", false);
+                    document.getElementById("hideTitleFieldInWindow").checked = getOptionValueAndDeleteForOptionsField("hideTitleFieldInWindow", false);
+                    document.getElementById("hideLinkButton").checked = toolbar.hideLinkButton;
+                    document.getElementById("hideCount").checked = toolbar.hideCount;
+                    document.getElementById("hideClearFiltersButton").checked = toolbar.hideClearFiltersButton;
                 }
                 break;
             case inputTypes.TIMELINE:
                 this.timelineEntity.select((dataItem) => {
-                    return dataItem.id === options.entityType;
+                    return dataItem.id === optionsEntityType;
                 });
-                $("#queryId").data("kendoNumericTextBox").value(options.queryId);
-                $("#timelineEventHeight").data("kendoNumericTextBox").value(options.eventHeight);
-                document.getElementById("disableOpeningOfItemsTimeLine").checked = options.disableOpeningOfItems;
+                $("#queryId").data("kendoNumericTextBox").value(getOptionValueAndDeleteForOptionsField("queryId"));
+                $("#timelineEventHeight").data("kendoNumericTextBox").value(getOptionValueAndDeleteForOptionsField("eventHeight"));
+                document.getElementById("disableOpeningOfItemsTimeLine").checked = getOptionValueAndDeleteForOptionsField("disableOpeningOfItems");
                 break;
             case inputTypes.FILEUPLOAD:
             case inputTypes.IMAGEUPLOAD:
-                document.getElementById("allowMultipleFiles").checked = options.multiple;
-                if (options.validation && options.validation.allowedExtensions)
-                    document.getElementById("allowedExtensions").value = options.validation.allowedExtensions;
-                else
+                document.getElementById("allowMultipleFiles").checked = getOptionValueAndDeleteForOptionsField("multiple");
+                const validation = getOptionValueAndDeleteForOptionsField("validation");
+                if (validation && validation.allowedExtensions && validation.allowedExtensions.length > 0) {
+                    document.getElementById("allowedExtensions").value = validation.allowedExtensions.join(",");
+                }
+                else if (resultSet.inputType === inputTypes.IMAGEUPLOAD) {
+                    document.getElementById("allowedExtensions").value = ".jpg,.jpeg,.png,.bmp,.gif,.svg,.webp";
+                }
+                else {
                     document.getElementById("allowedExtensions").value = "";
+                }
                 break;
             case inputTypes.DATERANGE:
-                // TODO parse given date like so? kendo.parseDate("10-11-2019", "dd-MM-yyyy")
-                $("#daterangeFrom").data("kendoDatePicker").value(options.from);
-                $("#daterangeTill").data("kendoDatePicker").value(options.till);
+                $("#daterangeFrom").data("kendoDatePicker").value(getOptionValueAndDeleteForOptionsField("from"));
+                $("#daterangeTill").data("kendoDatePicker").value(getOptionValueAndDeleteForOptionsField("till"));
                 break;
             case inputTypes.QUERYBUILDER:
             case inputTypes.SCHEDULER:
-                $("#queryId").data("kendoNumericTextBox").value(options.queryId);
-                break;
-            case inputTypes.CHART:
-                this.jsonField.setValue(JSON.stringify(options, null, 2));
-                this.jsonField.refresh();
+                $("#queryId").data("kendoNumericTextBox").value(getOptionValueAndDeleteForOptionsField("queryId"));
                 break;
             case inputTypes.QR:
-                document.getElementById("pixelSize").value = options.size;
+                document.getElementById("pixelSize").value = getOptionValueAndDeleteForOptionsField("size");
                 if (resultSet.dataQuery !== "") {
                     this.queryContentField.setValue(resultSet.dataQuery);
                     this.queryContentField.refresh();
@@ -3748,7 +3973,29 @@ export class EntityTab {
                     this.queryContentField.refresh();
                 }
                 break;
+            case inputTypes.CHECKBOX:
+                this.checkBoxMode.select((dataItem) => {
+                    return (dataItem.value || "").toString().toLowerCase() === (optionsMode || "").toString().toLowerCase();
+                });
+                this.checkBoxImageId.value(getOptionValueAndDeleteForOptionsField("imageId", ""));
+                $("#checkBoxImageUrl").val(getOptionValueAndDeleteForOptionsField("imageUrl", ""));
+                break;
+            case inputTypes.COLORPICKER:
+                if (!remainingOptionsForOptionsJsonField || JSON.stringify(remainingOptionsForOptionsJsonField, null, 4) === "{}") {
+                    remainingOptionsForOptionsJsonField = {
+                        input: true,
+                        preview:false,
+                        value: "#ffffff",
+                        buttons: false,
+                        views: ["gradient","palette"]
+                    };
+                }
+                break;
         }
+
+        const optionsValue = JSON.stringify(remainingOptionsForOptionsJsonField, null, 4);
+        this.optionsJsonField.setValue(optionsValue === "{}" ? "" : optionsValue);
+        this.optionsJsonField.refresh();
     }
 
     // return array of of different input types from inputtypes enum
@@ -3765,5 +4012,9 @@ export class EntityTab {
             returnVal.push({ text: v, id: i });
         });
         return returnVal;
+    }
+
+    hasChanges() {
+        return false;
     }
 }

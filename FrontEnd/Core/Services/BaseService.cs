@@ -38,11 +38,11 @@ namespace FrontEnd.Core.Services
             var result = "";
             if (requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
             {
-                // E.g.: customername.localhost
+                // E.g.: tenantname.localhost
                 var lastDotIndex = requestUrl.Host.LastIndexOf('.');
                 result = requestUrl.Host[..lastDotIndex];
             }
-            else if (requestUrl.Host.Contains("."))
+            else if (requestUrl.Host.Contains('.'))
             {
                 result = frontEndSettings.WiserHostNames.Where(host => !String.IsNullOrWhiteSpace(host)).Aggregate(requestUrl.Host, (current, host) => current.Replace(host, ""));
             }
@@ -101,8 +101,11 @@ namespace FrontEnd.Core.Services
             }
 
             var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
-            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
-
+            if (partnerStylesDirectory.Exists)
+            {
+                viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
+            }
+            
             return viewModel;
         }
 

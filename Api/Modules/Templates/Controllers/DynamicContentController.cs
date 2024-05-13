@@ -71,14 +71,16 @@ namespace Api.Modules.Templates.Controllers
         /// Get the history of the current component.
         /// </summary>
         /// <param name="contentId">The component of the history.</param>
+        /// <param name="pageNumber">What page number to load</param>
+        /// <param name="itemsPerPage">How many versions are being loaded per page</param>
         /// <returns>History PartialView containing the retrieved history of the component</returns>
         [HttpGet]
         [Route("{contentId:int}/history")]
         [ProducesResponseType(typeof(List<HistoryVersionModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId)
+        public async Task<IActionResult> GetHistoryOfComponentAsync(int contentId, int pageNumber = 1, int itemsPerPage = 50)
         {
-            return (await historyService.GetChangesInComponentAsync(contentId)).GetHttpResponseMessage();
+            return (await historyService.GetChangesInComponentAsync(contentId, pageNumber, itemsPerPage)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -92,7 +94,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveSettingsAsync(int id, DynamicContentOverviewModel data)
         {
-            return (await dynamicContentService.SaveNewSettingsAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
+            return (await dynamicContentService.SaveAsync((ClaimsIdentity)User.Identity, id, data.Component, data.ComponentModeId ?? 0, data.Title, data.Data)).GetHttpResponseMessage();
         }
 
         /// <summary>
@@ -120,21 +122,6 @@ namespace Api.Modules.Templates.Controllers
         public async Task<IActionResult> AddLinkToTemplateAsync(int contentId, int templateId)
         {
             return (await dynamicContentService.AddLinkToTemplateAsync((ClaimsIdentity)User.Identity, contentId, templateId)).GetHttpResponseMessage();
-        }
-        
-        /// <summary>
-        /// Generates a preview for a dynamic component.
-        /// </summary>
-        /// <param name="componentId">The ID of the component.</param>
-        /// <param name="requestModel">The template settings, they don't have to be saved yet.</param>
-        /// <returns>The HTML of the component as it would look on the website.</returns>
-        [HttpPost]
-        [Route("{componentId:int}/html-preview")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        [Produces(MediaTypeNames.Text.Html)]
-        public async Task<IActionResult> GenerateHtmlForComponentAsync(int componentId, GenerateTemplatePreviewRequestModel requestModel)
-        {
-            return (await templatesService.GeneratePreviewAsync((ClaimsIdentity)User.Identity, componentId, requestModel)).GetHttpResponseMessage(MediaTypeNames.Text.Html);
         }
 
         /// <summary>
@@ -177,7 +164,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> DeleteAsync(int contentId)
         {
-            return (await dynamicContentService.DeleteAsync(contentId)).GetHttpResponseMessage();
+            return (await dynamicContentService.DeleteAsync((ClaimsIdentity)User.Identity, contentId)).GetHttpResponseMessage();
         }
 
         /// <summary>

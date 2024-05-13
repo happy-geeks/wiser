@@ -3,6 +3,9 @@ using System.Text;
 
 namespace Api.Core.Helpers
 {
+    /// <summary>
+    /// Class that contains String helpers
+    /// </summary>
     public class StringHelpers
     {
         /// <summary>

@@ -1,6 +1,4 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@{
+﻿@{
     var versionList = Model.PublishedEnvironments.VersionList;
 }
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
@@ -11,54 +9,42 @@
         <div class="item version-live">
             <div class="flex-container">
                 <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.PublishedEnvironments.LiveVersion ? "selected" : "")>@version</!option>
                     }
                 </select>
 
-                <button id="deployLive" class="k-primary">@Localizer["Deploy to live"]</button>
+                <button id="deployLive" class="k-primary">Deploy naar live</button>
             </div>
         </div>
 
         <div class="item version-accept">
             <div class="flex-container">
                 <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.PublishedEnvironments.AcceptVersion ? "selected" : "")>@version</!option>
                     }
                 </select>
 
-                <button id="deployAccept" class="k-primary">@Localizer["Deploy to acceptance"]</button>
+                <button id="deployAccept" class="k-primary">Deploy naar acceptatie</button>
             </div>
         </div>
 
         <div class="item version-test">
             <div class="flex-container">
                 <select class="combo-select">
+                    <option value="0">Geen</option>
                     @foreach (var version in versionList)
                     {
                         <!option value="@version" @(version == Model.PublishedEnvironments.TestVersion ? "selected" : "")>@version</!option>
                     }
                 </select>
 
-                <button id="deployTest" class="k-primary">@Localizer["Deploy to test"]</button>
-            </div>
-        </div>
-
-        <div class="item version-actions">
-            <button id="saveAndDeployToTestButton" class="k-primary saveButton">@Localizer["Save &amp; deploy to test environment"]</button>
-            <button id="saveButton" class="k-primary saveButton">@Localizer["Save"]</button>
-        </div>
-    </div>
-        
-    <div class="formview full">
-        <div class="item branch-container">
-            <div class="flex-container">
-                <select id="branchesDropDown"></select>
-
-                <button id="deployToBranchButton" class="k-primary">@Localizer["Deploy to selected branch"]</button>
+                <button id="deployTest" class="k-primary">Deploy naar test</button>
             </div>
         </div>
     </div>

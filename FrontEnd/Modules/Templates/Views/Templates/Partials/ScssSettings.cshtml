@@ -1,43 +1,69 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@using GeeksCoreLibrary.Modules.Templates.Enums
+﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 <div class="item item-left">
     <div class="item full-width" data-label-style="float" data-label-width="0">
-        <h4><label for="combo-cache">@Localizer["Cache"]</label></h4>
         <div class="flex-container">
-            <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList" name="useCache">
-                <!option value="@((int)TemplateCachingModes.NoCaching)" @(Model.UseCache == TemplateCachingModes.NoCaching ? "selected" : "")>@Localizer["No caching"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCaching)" @(Model.UseCache == TemplateCachingModes.ServerSideCaching ? "selected" : "")>@Localizer["server caching full template (regardless of URL)"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrl)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrl ? "selected" : "")>@Localizer["server caching full template (per SEO friendly URL different)"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrlAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrlAndQueryString ? "selected" : "")>@Localizer["server caching full template (per SEO friendly URL + query string combination different)"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>@Localizer["server caching full template (based on full URL, including domain and query string)"]</!option>
-            </select>
+            <div class="item">
+                <input id="cachePerUrl" name="cachePerUrl" type="checkbox" @(Model.CachePerUrl ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerUrl">
+                    <span>Cache op Url</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerQueryString" name="cachePerQueryString" type="checkbox" @(Model.CachePerQueryString ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerQueryString">
+                    <span>Cache op query string</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerHostName" name="cachePerHostName" type="checkbox" @(Model.CachePerHostName ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerHostName">
+                    <span>Cache op domein</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerUser" name="cachePerUser" type="checkbox" @(Model.CachePerUser ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerUser">
+                    <span>Cache apart per gebruiker</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cacheUsingRegex" name="cacheUsingRegex" type="checkbox" @(Model.CacheUsingRegex ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cacheUsingRegex">
+                    <span>Cache met Regex</span>
+                </label>
+            </div>
         </div>
-        <div class="form-hint"><span>@Localizer["Should caching be enabled for this template? If yes, what kind of caching. For example, caching can be the same for all URLs, or separate cache per URL/querystring."]</span></div>
+        <div class="form-hint">
+            <p>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</p>
+            <p>Indien de optie "Cache met regex" is geselecteerd, moet hieronder het veld "Cache regex" ook ingevuld worden. De template wordt dan gecached per unieke combinatie van alle genaamde groepen in de regex.</p>
+            <p>Voorbeeld: Als je de regex "\/products\/(?&lt;category&gt;.*)\/(?&lt;subCategory&gt;.*)\/(?&lt;product&gt;.*)\/" gebruikt, daar staan 3 groepen in met een naam (category, subCategory en product). Als je dan de URL "/products/drinks/soda/coca-cola/" zou openen, dan krijg je de volgende naam voor de cache: "Template_123_drinks_soda_coca-cola". Dit zorgt er dan dus voor dat deze template per product apart wordt gecacht.</p>
+            <p>Voorbeeld 2: Als je de regex "\/(?&lt;page&gt;[^\/]*)?(\/.*)?" gebruikt, dan wordt deze template alleen apart gecacht voor elke hoofdpagina en juist niet apart per product.</p>
+            <p>Wanneer caching met regex is geselecteerd geven de andere checkboxes aan welke delen van de url gematcht worden met de regex</p>
+        </div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="cache-location">@Localizer["Cache location"]</label></h4>
+        <h4><label for="cache-location">Cache locatie</label></h4>
         <div class="flex-container">
             <select id="cache-location" class="combo-select" data-kendo-control="kendoDropDownList" name="cacheLocation">
-                <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>@Localizer["In memory"]</!option>
-                <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>@Localizer["On hard disk"]</!option>
+                <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>In geheugen</!option>
+                <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
-        <div class="form-hint"><span>@Localizer["Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted."]</span></div>
+        <div class="form-hint"><span>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="cacheMinutes">@Localizer["Cache number of minutes"]</label></h4>
+        <h4><label for="cacheMinutes">Cache aantal minuten</label></h4>
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
         </span>
-        <div class="form-hint"><span>@Localizer["How long should the cache be kept? If this value is 0 or less, the setting 'GCL.DefaultTemplateCacheDuration' will be used for the appsettings.json."]</span></div>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json. Indien de waarde kleiner is dan 0, wordt caching uitgeschakeld.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="insertMode">@Localizer["Insert mode"]</label></h4>
+        <h4><label for="insertMode">Invoegmodus</label></h4>
         <div class="flex-container">
             <select id="insertMode" class="combo-select" name="insertMode" data-kendo-control="kendoDropDownList">
                 @foreach (var value in Enum.GetValues(Model.InsertMode.GetType()))
@@ -46,36 +72,36 @@
                 }
             </select>
         </div>
-        <div class="form-hint"><span>@Localizer["How and where on the page should this SCSS-template be added?"]</span></div>
+        <div class="form-hint"><span>Hoe en waar op de pagina moet deze SCSS-template toegevoegd worden?</span></div>
     </div>
 
     <ul class="checkColumns">
         <li>
             <label class="checkbox">
                 <input id="loadAlways" name="loadAlways" type="checkbox" @(Model.LoadAlways ? "checked" : "")>
-                <span>@Localizer["Load on every page"]</span>
+                <span>Laden op iedere pagina</span>
             </label>
         </li>
         <li>
             <label class="checkbox">
                 <input id="isScssIncludeTemplate" name="isScssIncludeTemplate" type="checkbox" @(Model.IsScssIncludeTemplate ? "checked" : "")>
-                <span>@Localizer["Is SCSS include template"]</span>
+                <span>Is SCSS include template</span>
             </label>
-            <div class="form-hint"><span>@Localizer["Is this a SCSS template which is used by means of an import in other SCSS templates?"]</span></div>
+            <div class="form-hint"><span>Is dit een SCSS template welke dmv een import in andere SCSS templates gebruikt wordt?</span></div>
         </li>
         <li>
             <label class="checkbox">
                 <input id="useInWiserHtmlEditors" name="useInWiserHtmlEditors" type="checkbox" @(Model.UseInWiserHtmlEditors ? "checked" : "")>
-                <span>@Localizer["Load in Wiser HTML editors"]</span>
+                <span>Laden in Wiser HTML-editors</span>
             </label>
         </li>
     </ul>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="urlRegex">@Localizer["URL Regex"]</label></h4>
+        <h4><label for="urlRegex">URL Regex</label></h4>
         <span class="k-widget k-input k-state-default">
             <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
         </span>
-        <div class="form-hint"><span>@Localizer["The regular expression that the URL must meet to load this generic template."]</span></div>
+        <div class="form-hint"><span>De regular expression waar de URL aan moet voldoen om deze generieke template in te laden. Bijvoorbeeld ^((?!newsitem).)*$ voor alle paginas waar 'newsitem' niet in de naam voorkomt.</span></div>
     </div>
 </div>

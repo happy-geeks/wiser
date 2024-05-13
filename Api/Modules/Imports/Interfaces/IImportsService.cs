@@ -14,7 +14,7 @@ namespace Api.Modules.Imports.Interfaces
     public interface IImportsService
     {
         /// <summary>
-        /// Prepare an import to be imported by the AIS.
+        /// Prepare an import to be imported by the WTS.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="importRequest">The information needed for the import.</param>
@@ -61,6 +61,6 @@ namespace Api.Modules.Imports.Interfaces
         /// <param name="entityName">The name of the property whose properties will be retrieved.</param>
         /// <param name="linkType">Optional link type, in case the properties should be retrieved by link type instead of entity name.</param>
         /// <returns>A collection of <see cref="EntityPropertyModel"/> objects.</returns>
-        Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityProperties(ClaimsIdentity identity, string entityName = null, int linkType = 0);
+        Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityPropertiesAsync(ClaimsIdentity identity, string entityName = null, int linkType = 0);
     }
 }

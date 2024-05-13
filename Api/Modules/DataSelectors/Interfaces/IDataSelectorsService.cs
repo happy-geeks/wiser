@@ -29,8 +29,9 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="forExportModule">Optional: Set to true to only get data selectors that can be shown in the export module.</param>
         /// <param name="forRendering">Optional: Set to true to only get data selectors to use with templating rendering.</param>
         /// <param name="forCommunicationModule">Optional: Set to true to only get data selectors that can be shown in the communication module.</param>
+        /// <param name="forBranches">Optional: Set to true to only get data selectors that can be used when creating branches.</param>
         /// <returns>A list of <see cref="DataSelectorModel"/>.</returns>
-        Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false);
+        Task<ServiceResult<List<DataSelectorModel>>> GetAsync(ClaimsIdentity identity, bool forExportModule = false, bool forRendering = false, bool forCommunicationModule = false, bool forBranches = false);
 
         /// <summary>
         /// Saves a data selector based on name. The ID will be ignored. If a data selector with the given name already exists, it will be overwritten.
@@ -80,6 +81,14 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// <param name="data">The request containing the information for the data selector.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
         Task<ServiceResult<FileContentResult>> ToPdfAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity);
+        
+        /// <summary>
+        /// Get the result of the data selector based on the request as a Csv file.
+        /// </summary>
+        /// <param name="data">The request containing the information for the data selector.</param>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="separator">The character used to</param>
+        Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator = ',');
 
         /// <summary>
         /// Create a file result for the user to download.
@@ -105,15 +114,31 @@ namespace Api.Modules.DataSelectors.Interfaces
         /// </summary>
         /// <returns>A list of WiserItemModel.</returns>
         Task<ServiceResult<List<WiserItemModel>>> GetTemplatesAsync(ClaimsIdentity identity);
-        
-        /// /// <summary>
+
+        /// <summary>
         /// Execute a data selector by ID and return the results as JSON.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the data selector.</param>
         /// <param name="asKeyValuePair">If set to true the result of the query will be converted to a single object. Only columns with the names "key" and "value" are used.</param>
         /// <param name="parameters">The parameters to set before executing the data selector.</param>
+        /// <param name="skipPermissionsCheck">Optional: Whether the permissions check should be skipped. This should only ever be set to <see langword="true"/> when calling this function internally.</param>
         /// <returns>The results of the data selector as JSON.</returns>
-        Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters);
+        Task<ServiceResult<JToken>> GetDataSelectorResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters, bool skipPermissionsCheck = false);
+
+        /// <summary>
+        /// Checks if there is a data selector that already has "show in dashboard" enabled. If so, the name of the
+        /// data selector will be returned. Otherwise, <see langword="null">null</see>.
+        /// </summary>
+        /// <param name="id">The ID of the current data selector, which will be excluded from the check. This will be 0 if it's a new data selector.</param>
+        /// <returns>Name of a data selector that has "show in dashboard" enabled, or <see langword="null">null</see> if no data selector has that option enabled.</returns>
+        Task<ServiceResult<string>> CheckDashboardConflictAsync(int id);
+
+        /// <summary>
+        /// Check whether a data selector with the given name exists.
+        /// </summary>
+        /// <param name="name">The name of the data selector.</param>
+        /// <returns>The ID of the data selector if it exists, or 0 if it doesn't.</returns>
+        Task<ServiceResult<int>> ExistsAsync(string name);
     }
 }

@@ -1,87 +1,113 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
-@using GeeksCoreLibrary.Modules.Templates.Enums
+﻿@using GeeksCoreLibrary.Modules.Templates.Enums
 @model Api.Modules.Templates.Models.Template.TemplateSettingsModel
 <div class="item full-width" data-label-style="float" data-label-width="0">
-    <h4><label for="cacheMinutes">@Localizer["URL Regex"]</label></h4>
+    <h4><label for="cacheMinutes">URL Regex</label></h4>
     <span class="k-widget k-input k-state-default">
         <input type="text" id="urlRegex" class="textField k-input" name="urlRegex" value="@Model.UrlRegex" autocomplete="off" pattern=".*">
     </span>
-    <div class="form-hint"><span>@Localizer["From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:"] \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
+    <div class="form-hint"><span>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld: \/product\/(?&lt;productId&gt;[0-9]+)\/</span></div>
 </div>
 <div class="item item-left" style="width: 60%">
     <div class="item full-width" data-label-style="float" data-label-width="0">
-        <h4><label for="combo-cache">@Localizer["Cache"]</label></h4>
         <div class="flex-container">
-            <select id="combo-cache" class="combo-select" data-kendo-control="kendoDropDownList" name="useCache">
-                <!option value="@((int)TemplateCachingModes.NoCaching)" @(Model.UseCache == TemplateCachingModes.NoCaching ? "selected" : "")>@Localizer["No caching"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCaching)" @(Model.UseCache == TemplateCachingModes.ServerSideCaching ? "selected" : "")>@Localizer["server caching full template (regardless of URL)"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrl)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrl ? "selected" : "")>@Localizer["server caching full template (per SEO friendly URL different)"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerUrlAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerUrlAndQueryString ? "selected" : "")>@Localizer["server caching full template (per SEO friendly URL + query string combination different)"]</!option>
-                <!option value="@((int)TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString)" @(Model.UseCache == TemplateCachingModes.ServerSideCachingPerHostNameAndQueryString ? "selected" : "")>@Localizer["server caching full template (based on full URL, including domain and query string)"]</!option>
-            </select>
+            <div class="item">
+                <input id="cachePerUrl" name="cachePerUrl" type="checkbox" @(Model.CachePerUrl ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerUrl">
+                    <span>Cache op Url</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerQueryString" name="cachePerQueryString" type="checkbox" @(Model.CachePerQueryString ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerQueryString">
+                    <span>Cache op query string</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerHostName" name="cachePerHostName" type="checkbox" @(Model.CachePerHostName ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerHostName">
+                    <span>Cache op domein</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cachePerUser" name="cachePerUser" type="checkbox" @(Model.CachePerUser ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cachePerUser">
+                    <span>Cache apart per gebruiker</span>
+                </label>
+            </div>
+            <div class="item">
+                <input id="cacheUsingRegex" name="cacheUsingRegex" type="checkbox" @(Model.CacheUsingRegex ? "checked" : "") class="hidden"/>
+                <label class="checkbox" for="cacheUsingRegex">
+                    <span>Cache met Regex</span>
+                </label>
+            </div>
         </div>
-        <div class="form-hint"><span>@Localizer["Should caching be enabled for this template? If yes, what kind of caching. For example, caching can be the same for all URLs, or separate cache per URL/querystring."]</span></div>
+        <div class="form-hint">
+            <p>Moet caching geselecteerd worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</p>
+            <p>Indien de optie "Cache met regex" is geselecteert, moet hieronder het veld "Cache regex" ook ingevuld worden. De template wordt dan gecached per unieke combinatie van alle genaamde groepen in de regex.</p>
+            <p>Voorbeeld: Als je de regex "\/products\/(?&lt;category&gt;.*)\/(?&lt;subCategory&gt;.*)\/(?&lt;product&gt;.*)\/" gebruikt, daar staan 3 groepen in met een naam (category, subCategory en product). Als je dan de URL "/products/drinks/soda/coca-cola/" zou openen, dan krijg je de volgende naam voor de cache: "Template_123_drinks_soda_coca-cola". Dit zorgt er dan dus voor dat deze template per product apart wordt gecacht.</p>
+            <p>Voorbeeld 2: Als je de regex "\/(?&lt;page&gt;[^\/]*)?(\/.*)?" gebruikt, dan wordt deze template alleen apart gecacht voor elke hoofdpagina en juist niet apart per product.</p>
+            <p>Wanneer caching met regex is geselecteerd geven de andere checkboxes aan welke delen van de url gematcht worden met de regex</p>
+        </div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="cache-location">@Localizer["Cache location"]</label></h4>
+        <h4><label for="cache-location">Cache locatie</label></h4>
         <div class="flex-container">
             <select id="cache-location" class="combo-select" data-kendo-control="kendoDropDownList" name="cacheLocation">
-                <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>@Localizer["In memory"]</!option>
-                <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>@Localizer["On hard disk"]</!option>
+                <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>In geheugen</!option>
+                <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
             </select>
         </div>
-        <div class="form-hint"><span>@Localizer["Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted."]</span></div>
+        <div class="form-hint"><span>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="cacheMinutes">@Localizer["Cache number of minutes"]</label></h4>
+        <h4><label for="cacheMinutes">Cache aantal minuten</label></h4>
         <span class="k-widget k-input k-state-default">
             <input type="number" id="cacheMinutes" class="textField k-input" name="cacheMinutes" value="@Model.CacheMinutes" autocomplete="off" pattern=".*">
         </span>
-        <div class="form-hint"><span>@Localizer["How long should the cache be kept? If this value is 0 or less, the setting 'GCL.DefaultTemplateCacheDuration' will be used for the appsettings.json."]</span></div>
+        <div class="form-hint"><span>Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 is, wordt de instelling "GCL.DefaultTemplateCacheDuration" gebruikt van de appsettings.json. Indien de waarde kleiner is dan 0, wordt caching uitgeschakeld.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="groupingKey">@Localizer["Group column"]</label></h4>
+        <h4><label for="groupingKey">Groepeerkolom</label></h4>
         <span class="k-widget k-input k-state-default">
             <input type="text" id="groupingKey" class="textField k-input" name="groupingKey" value="@Model.GroupingKey" autocomplete="off" pattern=".*">
         </span>
-        <div class="form-hint"><span>@Localizer["If the results of the query should be grouped, enter the column by which to group."]</span></div>
+        <div class="form-hint"><span>Indien de resultaten van de query gegroepeerd moeten worden, vul dan hier de kolom in waarop gegroepeerd moet worden.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
-        <h4><label for="groupingPrefix">@Localizer["Group fields prefix"]</label></h4>
+        <h4><label for="groupingPrefix">Groepeer velden prefix</label></h4>
         <span class="k-widget k-input k-state-default">
             <input type="text" id="groupingPrefix" class="textField k-input" name="groupingPrefix" value="@Model.GroupingPrefix" autocomplete="off" pattern=".*">
         </span>
-        <div class="form-hint"><span>@Localizer["If the results of the query should be grouped, enter the prefix here for all columns that are from sub-items. These relevant columns must then start with this value in the results of the query."]</span></div>
+        <div class="form-hint"><span>Indien de resultaten van de query gegroepeerd moeten worden, vul dan hier de prefix in voor alle kolommen die van sub-items zijn. Deze betreffende kolommen moeten dan in de resultaten van de query beginnen met deze waarde.</span></div>
     </div>
 
     <div class="item" data-label-style="float" data-label-width="0">
         <input id="groupingCreateObjectInsteadOfArray" name="groupingCreateObjectInsteadOfArray" type="checkbox" @(Model.GroupingCreateObjectInsteadOfArray ? "checked" : "") class="hidden">
         <label class="checkbox" for="groupingCreateObjectInsteadOfArray">
-            <span>@Localizer["Object instead of array"]</span>
+            <span>Object i.p.v. array</span>
         </label>
-        <div class="form-hint"><span>@Localizer["By default, a JSON array of objects is always created for the results of the query. If this option is enabled, one object will be created with keys and values."]</span></div>
+        <div class="form-hint"><span>Standaard wordt er altijd een JSON array met objecten gemaakt voor de resultaten van de query. Indien deze optie aan staat, wordt er één object gemaakt met keys en values.</span></div>
     </div>
 
     <div class="object-grouping-panel">
         <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="groupingKeyColumnName">@Localizer["Column name with key"]</label></h4>
+            <h4><label for="groupingKeyColumnName">Kolomnaam met key</label></h4>
             <span class="k-widget k-input k-state-default">
                 <input type="text" id="groupingKeyColumnName" class="textField k-input" name="groupingKeyColumnName" value="@Model.GroupingKeyColumnName" autocomplete="off" pattern=".*">
             </span>
-            <div class="form-hint"><span>@Localizer["The column in the query that contains the key for the object."]</span></div>
+            <div class="form-hint"><span>De kolom in de query die de key voor het object bevat.</span></div>
         </div>
 
         <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="groupingValueColumnName">@Localizer["Column name with value"]</label></h4>
+            <h4><label for="groupingValueColumnName">Kolomnaam met value</label></h4>
             <span class="k-widget k-input k-state-default">
                 <input type="text" id="groupingValueColumnName" class="textField k-input" name="groupingValueColumnName" value="@Model.GroupingValueColumnName" autocomplete="off" pattern=".*">
             </span>
-            <div class="form-hint"><span>@Localizer["The column in the query that contains the value for the object."]</span></div>
+            <div class="form-hint"><span>De kolom in de query die de value voor het object bevat.</span></div>
         </div>
     </div>
 </div>
@@ -89,12 +115,12 @@
 <div class="item item-right" style="width: 40%;">
     <input id="loginRequired" name="loginRequired" type="checkbox" @(Model.LoginRequired ? "checked" : "") class="hidden">
     <label class="checkbox" for="loginRequired">
-        <span>@Localizer["User must be logged in to view this template"]</span>
+        <span>Gebruiker moet ingelogd zijn om deze template te zien</span>
     </label>
 
     <div class="user-check-panel">
         <div class="item" data-label-style="float" data-label-width="0">
-            <h4><label for="loginRoles">@Localizer["Roles"]</label></h4>
+            <h4><label for="loginRoles">Rollen</label></h4>
             <div class="flex-container">
                 <select id="loginRoles" name="loginRoles" multiple="multiple" data-kendo-control="kendoMultiSelect">
                 </select>
