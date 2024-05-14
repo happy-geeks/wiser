@@ -11,6 +11,7 @@ using Api.Modules.Templates.Models.History;
 using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -92,6 +93,12 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.GetTemplateSettingsAsync(identity, templateId, environment);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
+        {
+            return await templatesService.GetTemplateWtsConfigurationAsync(identity, templateId, environment);
+        }
 
         /// <inheritdoc />
         public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName)
@@ -115,6 +122,12 @@ namespace Api.Modules.Templates.Services
         public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName)
         {
             return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished, branchDatabaseName);
+        }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
+        {
+            return await templatesService.SaveAsync(identity, templateId, configuration);
         }
 
         /// <inheritdoc />

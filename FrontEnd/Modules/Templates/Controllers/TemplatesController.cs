@@ -1,6 +1,7 @@
 ﻿using System;
 using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Templates.Models.Template.WtsModels;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Models;
@@ -74,6 +75,13 @@ namespace FrontEnd.Modules.Templates.Controllers
 
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/DevelopmentTab", tabViewData);
+        }
+        
+        [HttpPost, Route("WtsConfigurationTab")]
+        public IActionResult WtsConfigurationTab([FromBody]TemplateWtsConfigurationModel data)
+        {
+            // ReSharper disable once Mvc.PartialViewNotResolved
+            return PartialView("Tabs/WtsConfigurationTab", data);
         }
 
         [HttpPost, Route("HistoryTab")]

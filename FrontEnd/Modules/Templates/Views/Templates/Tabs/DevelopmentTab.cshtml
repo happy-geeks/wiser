@@ -1,8 +1,10 @@
 ﻿@using GeeksCoreLibrary.Modules.Templates.Enums
+@using Microsoft.AspNetCore.Mvc.TagHelpers
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 @* ReSharper disable Mvc.PartialViewNotResolved *@
 <div class="formview full developmentContainer @Model.TemplateSettings.Type.ToString()Tab">
     <div class="settings-container">
+        <button id="closeButton" class="k-secondary closeButton" style="float: right; z-index: 10; margin: 5px; height: 30px;"><ins class="icon-line-close k-button-text"></ins></button>
         <partial name="Partials/ConnectedUsers"/>
 
         <partial name="Partials/PublishedEnvironments" model="@Model.TemplateSettings"/>

@@ -60,7 +60,8 @@
                             <div></div>
                             <div></div>
                             <div></div>
-                            <div></div></div>
+                            <div></div>
+                        </div>
                     </form>
                 </div>
             }
@@ -81,14 +82,16 @@
                         }
 
                         <div id="right-pane" style="background-color: #eeeeee;">
-                            <div class="tabstrip k-tabstrip-wrapper">
+                            <div id="tabStrip" class="tabstrip k-tabstrip-wrapper">
                                 <ul>
                                     <li class="development-tab k-state-active" data-name="development">Development</li>
+                                    @* <li class="config-tab" data-name="configuration" disabled>Configuration</li> *@
                                     <li class="dynamic-tab" data-name="dynamic-content">Dynamische content</li>
                                     <li class="history-tab" data-name="history">Historie</li>
                                     <li class="measurements-tab" data-name="measurements">Metingen</li>
                                 </ul>
                                 <div id="developmentTab"></div>
+                                @* <div id="wtsConfigurationTab"></div> *@
                                 <div id="dynamicContentTab">
                                     <partial name="Tabs/DynamicContentTab"/>
                                 </div>
