@@ -12,6 +12,7 @@ using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Queries.Interfaces;
+using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -23,6 +24,7 @@ using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using IdentityServer4.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Queries.Services
@@ -155,7 +157,7 @@ namespace Api.Modules.Queries.Services
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id); 
             
-            var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, format_empty, return_type FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
+            var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, format_empty, return_type, options FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
             
             var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
             if (dataTable.Rows.Count == 0)
@@ -177,6 +179,7 @@ namespace Api.Modules.Queries.Services
             var formatEmptyValue = "";
             var formatExpectedReturnJson = "";
             int formatQueryId = -1;
+            var options = "";
 
             if (dataTable.Rows.Count != 0)
             {
@@ -185,6 +188,8 @@ namespace Api.Modules.Queries.Services
                 formatEndValue = dataTable.Rows[0].Field<string>("format_end");
                 formatEmptyValue = dataTable.Rows[0].Field<string>("format_empty");
                 formatExpectedReturnJson = dataTable.Rows[0].Field<string>("return_type");
+                
+                options = dataTable.Rows[0].Field<string>("options");
 
                 if (stripNewlinesAndTabs)
                 {
@@ -235,6 +240,17 @@ namespace Api.Modules.Queries.Services
                     StatusCode = HttpStatusCode.Unauthorized,
                     ErrorMessage = errorMsg
                 };
+            }
+
+            // this styled output has settings to parse
+            if (options.Length > 0)
+            {
+                var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(options);
+                
+                if (optionsObject.maxResultsPerPage > 0)
+                {
+                    maxResultsPerPage = optionsObject.maxResultsPerPage;
+                }
             }
 
             var query = await queriesService.GetAsync(identity, formatQueryId);
