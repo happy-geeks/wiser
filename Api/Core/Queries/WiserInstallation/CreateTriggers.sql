@@ -618,8 +618,6 @@ END;
 -- ----------------------------
 DROP TRIGGER IF EXISTS `DetailInsert`;
 CREATE TRIGGER `DetailInsert` AFTER INSERT ON `wiser_itemdetail` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
-
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEM','wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
@@ -644,8 +642,7 @@ DROP TRIGGER IF EXISTS `DetailUpdate`;
 CREATE TRIGGER `DetailUpdate` AFTER UPDATE ON `wiser_itemdetail` FOR EACH ROW BEGIN
     DECLARE oldValue MEDIUMTEXT;
     DECLARE newValue MEDIUMTEXT;
-    DECLARE previousItemId BIGINT;
-
+    
     SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
     SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
 
@@ -673,8 +670,6 @@ END;
 
 DROP TRIGGER IF EXISTS `DetailDelete`;
 CREATE TRIGGER `DetailDelete` AFTER DELETE ON `wiser_itemdetail` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
-
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
         VALUES ('UPDATE_ITEM', 'wiser_itemdetail', OLD.item_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
@@ -700,8 +695,6 @@ END;
 -- ----------------------------
 DROP TRIGGER IF EXISTS `LinkInsert`;
 CREATE TRIGGER `LinkInsert` AFTER INSERT ON `wiser_itemlink` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
-
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('ADD_LINK', 'wiser_itemlink', NEW.destination_item_id, IFNULL(@_username, USER()), CONCAT(IFNULL(NEW.`type`, '1'), ',', IFNULL(NEW.`ordering`, '0')), NULL, NEW.item_id);
@@ -724,7 +717,6 @@ END;
 
 DROP TRIGGER IF EXISTS `LinkUpdate`;
 CREATE TRIGGER `LinkUpdate` AFTER UPDATE ON `wiser_itemlink` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
     DECLARE updateChangeDate BOOL;
     
     SET updateChangeDate = FALSE;
@@ -771,8 +763,6 @@ END;
 
 DROP TRIGGER IF EXISTS `linkDelete`;
 CREATE TRIGGER `linkDelete` AFTER DELETE ON `wiser_itemlink` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
-
     DELETE FROM wiser_itemlinkdetail WHERE itemlink_id = OLD.id;
     DELETE FROM wiser_itemfile WHERE itemlink_id = OLD.id;
 
@@ -834,7 +824,6 @@ END;
 -- ----------------------------
 DROP TRIGGER IF EXISTS `FileInsert`;
 CREATE TRIGGER `FileInsert` AFTER INSERT ON `wiser_itemfile` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
     DECLARE prevLinkedItemId BIGINT;
 
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
@@ -909,7 +898,6 @@ END;
 
 DROP TRIGGER IF EXISTS `FileUpdate`;
 CREATE TRIGGER `FileUpdate` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
     DECLARE updateChangeDate BOOL;
 
     SET updateChangeDate = FALSE;
@@ -1005,8 +993,6 @@ END;
 
 DROP TRIGGER IF EXISTS `FileDelete`;
 CREATE TRIGGER `FileDelete` AFTER DELETE ON `wiser_itemfile` FOR EACH ROW BEGIN
-    DECLARE previousItemId BIGINT;
-
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('DELETE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), IFNULL(OLD.property_name, ''), IF(IFNULL(OLD.item_id, 0) > 0, 'item_id', 'itemlink_id'), IF(IFNULL(OLD.item_id, 0) > 0, OLD.item_id, OLD.itemlink_id));
