@@ -26,6 +26,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NUglify.Helpers;
 
 namespace Api.Modules.Queries.Services
 {
@@ -243,7 +244,7 @@ namespace Api.Modules.Queries.Services
             }
 
             // this styled output has settings to parse
-            if (options.Length > 0)
+            if (options.IsNullOrWhiteSpace())
             {
                 var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(options);
                 
