@@ -248,9 +248,9 @@ namespace Api.Modules.Queries.Services
             {
                 var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(options);
                 
-                if (optionsObject.maxResultsPerPage > 0)
+                if (optionsObject.MaxResultsPerPage > 0)
                 {
-                    maxResultsPerPage = optionsObject.maxResultsPerPage;
+                    maxResultsPerPage = optionsObject.MaxResultsPerPage;
                 }
             }
 

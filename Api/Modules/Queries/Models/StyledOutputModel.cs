@@ -48,6 +48,6 @@
         /// <summary>
         /// Gets or Sets the option field, this is a JSON style option string field that gets parsed for every run
         /// </summary>
-        public string options { get; set; }
+        public string Options { get; set; }
     }
 }

@@ -8,6 +8,6 @@
         /// <summary>
         /// Gets or sets the Max result set per Page that gets used when pagination is used
         /// </summary>
-        public int maxResultsPerPage { get; set; }
+        public int MaxResultsPerPage { get; set; }
     }
 }
