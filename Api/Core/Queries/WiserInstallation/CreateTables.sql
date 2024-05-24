@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS `wiser_history`  (
   `newvalue` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `language_code` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `target_id` bigint UNSIGNED DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_item_id`(`item_id`, `field`) USING BTREE,
   INDEX `idx_changed_on`(`changed_on`) USING BTREE
