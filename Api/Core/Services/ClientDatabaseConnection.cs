@@ -100,6 +100,24 @@ namespace Api.Core.Services
         }
 
         /// <inheritdoc />
+        public DbConnection GetConnectionForReading()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public DbConnection GetConnectionForWriting()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
+        public Task<int> BulkInsertAsync(DataTable dataTable, string tableName, bool useWritingConnectionIfAvailable = true, bool useInsertIgnore = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <inheritdoc />
         public string ConnectedDatabase { get; protected set; }
 
         /// <inheritdoc />

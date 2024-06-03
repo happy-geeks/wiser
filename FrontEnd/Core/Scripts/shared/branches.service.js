@@ -12,6 +12,10 @@ export default class BranchesService extends BaseService {
             const postData = {
                 name: data.name,
                 startOn: data.startOn,
+                databaseHost: data.databaseHost,
+                databasePort: data.databasePort,
+                databaseUsername: data.databaseUsername,
+                databasePassword: data.databasePassword,
                 entities: []
             };
 
