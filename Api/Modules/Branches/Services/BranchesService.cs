@@ -1153,7 +1153,12 @@ LIMIT 1";
                 };
             }
 
+            // Save the database settings for the WTS.
             settings.DatabaseName = selectedBranchTenant.Database.DatabaseName;
+            settings.DatabaseHost = selectedBranchTenant.Database.Host.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePort = selectedBranchTenant.Database.PortNumber;
+            settings.DatabaseUsername = selectedBranchTenant.Database.Username.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePassword = selectedBranchTenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey).EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
 
             DateTime? lastMergeDate = null;
 
