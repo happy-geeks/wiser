@@ -181,7 +181,7 @@ namespace Api.Modules.Branches.Services
             }
             if (!String.IsNullOrWhiteSpace(settings.DatabasePassword))
             {
-                newTenant.Database.Password = settings.DatabasePassword;
+                newTenant.Database.Password = settings.DatabasePassword.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
                 settings.DatabasePassword = settings.DatabasePassword.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
             }
 
