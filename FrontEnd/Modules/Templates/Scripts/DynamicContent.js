@@ -129,6 +129,8 @@ const moduleSettings = {
 
             this.initializeButtons();
             await this.loadComponentHistory();
+
+            this.initBindings();
             
             window.processing.removeProcess(process);
         }
@@ -165,6 +167,31 @@ const moduleSettings = {
                 }
                 lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
             }
+        }
+        
+        initBindings() {
+            const removeDefaultValue = function (event) {
+                let target = event.currentTarget;
+                let elemContainer = target.closest('.has-default-value');
+                elemContainer.classList.remove('has-default-value');
+                target.removeEventListener('change', removeDefaultValue);
+            }
+
+            document.querySelectorAll(".has-default-value button.k-spinner-increase").forEach(input => {
+                input.addEventListener('click', removeDefaultValue)
+            });
+
+            document.querySelectorAll(".has-default-value button.k-spinner-decrease").forEach(input => {
+                input.addEventListener('click', removeDefaultValue)
+            });
+            
+            document.querySelectorAll(".has-default-value input").forEach(input => {
+                input.addEventListener('change', removeDefaultValue)
+            });
+
+            document.querySelectorAll(".has-default-value textarea").forEach(input => {
+                input.addEventListener('change', removeDefaultValue)
+            })
         }
 
         /**
@@ -261,6 +288,7 @@ const moduleSettings = {
                 $("#DynamicContentTabPane").html(response);
                 this.initializeDynamicKendoComponents();
                 await this.transformCodeMirrorViews();
+                this.initBindings();
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan. Probeer het a.u.b. opnieuw");
@@ -657,8 +685,19 @@ const moduleSettings = {
                     mode: element.dataset.fieldType
                 });
 
+                codeMirrorInstance.on('change', this.onCodeMirrorChange);
+
                 $(element).data("CodeMirrorInstance", codeMirrorInstance);
             });
+        }
+        
+        onCodeMirrorChange(codeMirrorElement) {
+            const textarea = codeMirrorElement.getTextArea();
+            let elemContainer = textarea.closest('.has-default-value');
+            
+            if (elemContainer) {
+                elemContainer.classList.remove('has-default-value');
+            }
         }
 
         /**
