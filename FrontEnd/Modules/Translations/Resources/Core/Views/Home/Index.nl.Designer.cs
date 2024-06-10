@@ -60,6 +60,2930 @@ namespace FrontEnd.Modules.Translations.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &apos; gekregen..
+        /// </summary>
+        internal static string __ {
+            get {
+                return ResourceManager.GetString("\'.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to char.
+        /// </summary>
+        internal static string _char {
+            get {
+                return ResourceManager.GetString("char", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het (de)selecteren van een item in deze lijst wordt direct verwerkt in het systeem..
+        /// </summary>
+        internal static string _De_selecting_an_item_in_this_list_will_be_immediately_processed_in_the_system_ {
+            get {
+                return ResourceManager.GetString("(De)selecting an item in this list will be immediately processed in the system.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to decimal.
+        /// </summary>
+        internal static string _decimal {
+            get {
+                return ResourceManager.GetString("decimal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to double.
+        /// </summary>
+        internal static string _double {
+            get {
+                return ResourceManager.GetString("double", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to enum.
+        /// </summary>
+        internal static string _enum {
+            get {
+                return ResourceManager.GetString("enum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to float.
+        /// </summary>
+        internal static string _float {
+            get {
+                return ResourceManager.GetString("float", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to int.
+        /// </summary>
+        internal static string _int {
+            get {
+                return ResourceManager.GetString("int", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Er bestaat al een klant met deze naam. Kies a.u.b. een andere naam..
+        /// </summary>
+        internal static string A_customer_with_this_name_already_exists__Please_choose_another_name_ {
+            get {
+                return ResourceManager.GetString("A customer with this name already exists. Please choose another name.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Er bestaat al een klant met dit subdomein. Kies a.u.b. een ander subdomein..
+        /// </summary>
+        internal static string A_customer_with_this_subdomain_already_exists__Please_choose_another_subdomain_ {
+            get {
+                return ResourceManager.GetString("A customer with this subdomain already exists. Please choose another subdomain.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Een beschrijving van de afbeelding..
+        /// </summary>
+        internal static string A_description_of_the_image_ {
+            get {
+                return ResourceManager.GetString("A description of the image.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hier kan een nieuwe branch gemaakt worden. Een branch is een (deel-)kopie van uw database. 
+        ///                            Dit kan gebruikt worden om wijzigingen in Wiser op een veilige manier door te voeren en te testen in een aparte omgeving.
+        ///                            Nadat u klaar bent met testen, kunt u de wijzigingen in een branch weer terugzetten naar de productie-omgeving.
+        /// </summary>
+        internal static string A_new_branch_can_be_created_here__A_branch_is_a__partial__copy_of_your_database__This_can_be_used_to_safely_implement_changes_in_Wiser_and_test_in_a_separate_environment__After_you_ve_finished_testing__you_can_rollback_the_changes_in_a_branch_back_to_the_production_environment_ {
+            get {
+                return ResourceManager.GetString(@"A new branch can be created here. A branch is a (partial) copy of your database. This can be used to safely implement changes in Wiser and test in a separate environment. After you've finished testing, you can rollback the changes in a branch back to the production environment.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Accept.
+        /// </summary>
+        internal static string Accept {
+            get {
+                return ResourceManager.GetString("Accept", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Acceptatie.
+        /// </summary>
+        internal static string Acceptance {
+            get {
+                return ResourceManager.GetString("Acceptance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geaccepteerde entiteit(en).
+        /// </summary>
+        internal static string Accepted_entity_ies_ {
+            get {
+                return ResourceManager.GetString("Accepted entity(ies)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Actie.
+        /// </summary>
+        internal static string Action {
+            get {
+                return ResourceManager.GetString("Action", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Actieknop.
+        /// </summary>
+        internal static string Action_button {
+            get {
+                return ResourceManager.GetString("Action button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Acties.
+        /// </summary>
+        internal static string Actions {
+            get {
+                return ResourceManager.GetString("Actions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Actief.
+        /// </summary>
+        internal static string Active {
+            get {
+                return ResourceManager.GetString("Active", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Actieve branch.
+        /// </summary>
+        internal static string Active_branch {
+            get {
+                return ResourceManager.GetString("Active branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toevoegen.
+        /// </summary>
+        internal static string Add {
+            get {
+                return ResourceManager.GetString("Add", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voeg een taak toe.
+        /// </summary>
+        internal static string Add_a_task {
+            get {
+                return ResourceManager.GetString("Add a task", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checkboxen toevoegen aan grid.
+        /// </summary>
+        internal static string Add_checkboxes_to_grid {
+            get {
+                return ResourceManager.GetString("Add checkboxes to grid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Onderliggend object toevoegen.
+        /// </summary>
+        internal static string Add_child_object {
+            get {
+                return ResourceManager.GetString("Add child object", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Klant toevoegen.
+        /// </summary>
+        internal static string Add_customer {
+            get {
+                return ResourceManager.GetString("Add customer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestand toevoegen.
+        /// </summary>
+        internal static string Add_file {
+            get {
+                return ResourceManager.GetString("Add file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Map toevoegen.
+        /// </summary>
+        internal static string Add_folder {
+            get {
+                return ResourceManager.GetString("Add folder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Having toevoegen.
+        /// </summary>
+        internal static string Add_having {
+            get {
+                return ResourceManager.GetString("Add having", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Icoon toevoegen.
+        /// </summary>
+        internal static string Add_icon {
+            get {
+                return ResourceManager.GetString("Add icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afbeelding toevoegen.
+        /// </summary>
+        internal static string Add_image {
+            get {
+                return ResourceManager.GetString("Add image", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laag toevoegen.
+        /// </summary>
+        internal static string Add_layer {
+            get {
+                return ResourceManager.GetString("Add layer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuw bestand toevoegen.
+        /// </summary>
+        internal static string Add_new_file {
+            get {
+                return ResourceManager.GetString("Add new file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuw map toevoegen.
+        /// </summary>
+        internal static string Add_new_folder {
+            get {
+                return ResourceManager.GetString("Add new folder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe afbeelding toevoegen.
+        /// </summary>
+        internal static string Add_new_image {
+            get {
+                return ResourceManager.GetString("Add new image", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe template toevoegen.
+        /// </summary>
+        internal static string Add_new_template {
+            get {
+                return ResourceManager.GetString("Add new template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe Wiser account toevoegen....
+        /// </summary>
+        internal static string Add_new_Wiser_account___ {
+            get {
+                return ResourceManager.GetString("Add new Wiser account...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bovenliggend object toevoegen.
+        /// </summary>
+        internal static string Add_parent_object {
+            get {
+                return ResourceManager.GetString("Add parent object", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Scope toevoegen.
+        /// </summary>
+        internal static string Add_scope {
+            get {
+                return ResourceManager.GetString("Add scope", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template toevoegen.
+        /// </summary>
+        internal static string Add_template {
+            get {
+                return ResourceManager.GetString("Add template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruikers toevoegen.
+        /// </summary>
+        internal static string Add_users {
+            get {
+                return ResourceManager.GetString("Add users", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toegevoegd door.
+        /// </summary>
+        internal static string Added_by {
+            get {
+                return ResourceManager.GetString("Added by", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toegevoegd op.
+        /// </summary>
+        internal static string Added_on {
+            get {
+                return ResourceManager.GetString("Added on", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breedtes aanpassen.
+        /// </summary>
+        internal static string Adjust_widths {
+            get {
+                return ResourceManager.GetString("Adjust widths", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geavanceerd.
+        /// </summary>
+        internal static string Advanced {
+            get {
+                return ResourceManager.GetString("Advanced", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aggregatie.
+        /// </summary>
+        internal static string Aggregation {
+            get {
+                return ResourceManager.GetString("Aggregation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aggregatie-instellingen.
+        /// </summary>
+        internal static string Aggregation_settings {
+            get {
+                return ResourceManager.GetString("Aggregation-settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alias.
+        /// </summary>
+        internal static string Alias {
+            get {
+                return ResourceManager.GetString("Alias", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alle onderstaande.
+        /// </summary>
+        internal static string All_below {
+            get {
+                return ResourceManager.GetString("All below", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alle branches.
+        /// </summary>
+        internal static string All_branches {
+            get {
+                return ResourceManager.GetString("All branches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alle opties.
+        /// </summary>
+        internal static string All_options {
+            get {
+                return ResourceManager.GetString("All options", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Volledig scherm toestaan.
+        /// </summary>
+        internal static string Allow_full_screen {
+            get {
+                return ResourceManager.GetString("Allow full screen", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toegestane extensies.
+        /// </summary>
+        internal static string Allowed_extensions {
+            get {
+                return ResourceManager.GetString("Allowed extensions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hiermee kan een vertaalwoord ingevoegd worden. Dit woord wordt dan automatisch op de website vertaald naar de taal die de gebruiker heeft gekozen. Deze vertaalwoorden kunnen in de module &quot;Vertalingen&quot; ingevuld worden..
+        /// </summary>
+        internal static string Allows_you_to_insert_a_translation_word__This_word_is_then_automatically_translated_on_the_website_into_the_language_the_user_has_chosen__These_translation_words_can_be_entered_in_the__Translations__module_ {
+            get {
+                return ResourceManager.GetString("Allows you to insert a translation word. This word is then automatically translat" +
+                        "ed on the website into the language the user has chosen. These translation words" +
+                        " can be entered in the \'Translations\' module.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ook verwijderde items zoeken.
+        /// </summary>
+        internal static string Also_find_deleted_items {
+            get {
+                return ResourceManager.GetString("Also find deleted items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alt tekst.
+        /// </summary>
+        internal static string Alt_text {
+            get {
+                return ResourceManager.GetString("Alt text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal.
+        /// </summary>
+        internal static string Amount {
+            get {
+                return ResourceManager.GetString("Amount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal items:.
+        /// </summary>
+        internal static string Amount_of_items_ {
+            get {
+                return ResourceManager.GetString("Amount of items:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Een email is verstuurd met uw nieuwe wachtwoord..
+        /// </summary>
+        internal static string An_email_with_your_new_password_has_been_sent_ {
+            get {
+                return ResourceManager.GetString("An email with your new password has been sent.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hier kan een bestaande branch geopend worden..
+        /// </summary>
+        internal static string An_existing_branch_can_be_opened_here_ {
+            get {
+                return ResourceManager.GetString("An existing branch can be opened here.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ankerpositie.
+        /// </summary>
+        internal static string Anchor_position {
+            get {
+                return ResourceManager.GetString("Anchor position", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to en.
+        /// </summary>
+        internal static string and {
+            get {
+                return ResourceManager.GetString("and", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to en geef toestemming op die pagina..
+        /// </summary>
+        internal static string and_give_permission_on_that_page_ {
+            get {
+                return ResourceManager.GetString("and give permission on that page.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alles wat toegevoegd is na X.
+        /// </summary>
+        internal static string Anything_added_after_X {
+            get {
+                return ResourceManager.GetString("Anything added after X", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alles wat toegevoegd is tussen X en Y.
+        /// </summary>
+        internal static string Anything_added_between_X_and_Y {
+            get {
+                return ResourceManager.GetString("Anything added between X and Y", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toepassen.
+        /// </summary>
+        internal static string Apply {
+            get {
+                return ResourceManager.GetString("Apply", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keur goed.
+        /// </summary>
+        internal static string Approve {
+            get {
+                return ResourceManager.GetString("Approve", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het goedkeuren van een conflict betekent dat de aanpassing van de geselecteerde branch wordt gebruikt en de waarde in de originele/productie branch wordt overschreven en dus verloren gaat. Het afkeuren van een wijziging is andersom, dan wordt de wijziging van de originele/productie branch behouden en gaat de wijziging van de geselecteerde branch verloren..
+        /// </summary>
+        internal static string Approving_a_conflict_means_that_the_modification_of_the_selected_branch_will_be_used_and_the_value_in_the_original_production_branch_will_be_overwritten_and_thus_lost__Rejecting_a_change_is_the_other_way_around__the_change_from_the_original_production_branch_will_be_kept_and_the_change_from_the_selected_branch_will_be_lost_ {
+            get {
+                return ResourceManager.GetString(@"Approving a conflict means that the modification of the selected branch will be used and the value in the original/production branch will be overwritten and thus lost. Rejecting a change is the other way around, the change from the original/production branch will be kept and the change from the selected branch will be lost.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Archief.
+        /// </summary>
+        internal static string Archive {
+            get {
+                return ResourceManager.GetString("Archive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bevestiging vragen bij verwijderen van item.
+        /// </summary>
+        internal static string Ask_when_deleting_item_to_Confirm {
+            get {
+                return ResourceManager.GetString("Ask when deleting item to Confirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extra bijlagen.
+        /// </summary>
+        internal static string Attachments {
+            get {
+                return ResourceManager.GetString("Attachments", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!.
+        /// </summary>
+        internal static string ATTENTION__not_all_conflicts_have_have_been_approved_or_denied_yet_ {
+            get {
+                return ResourceManager.GetString("ATTENTION: not all conflicts have have been approved or denied yet!", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Automatisch afspelen.
+        /// </summary>
+        internal static string Auto_play {
+            get {
+                return ResourceManager.GetString("Auto play", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item automatisch opslaan wanneer de waarde van dit veld wordt aangepast.
+        /// </summary>
+        internal static string Automatically_save_item_when_the_value_of_this_field_is_changed {
+            get {
+                return ResourceManager.GetString("Automatically save item when the value of this field is changed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gemiddelde waarde (AVG).
+        /// </summary>
+        internal static string Average_value__AVG_ {
+            get {
+                return ResourceManager.GetString("Average value (AVG)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Terug.
+        /// </summary>
+        internal static string Back {
+            get {
+                return ResourceManager.GetString("Back", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to BCC.
+        /// </summary>
+        internal static string BCC {
+            get {
+                return ResourceManager.GetString("BCC", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to bigint.
+        /// </summary>
+        internal static string bigint {
+            get {
+                return ResourceManager.GetString("bigint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to binary.
+        /// </summary>
+        internal static string binary {
+            get {
+                return ResourceManager.GetString("binary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to bit.
+        /// </summary>
+        internal static string bit {
+            get {
+                return ResourceManager.GetString("bit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to blob.
+        /// </summary>
+        internal static string blob {
+            get {
+                return ResourceManager.GetString("blob", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Onder.
+        /// </summary>
+        internal static string Bottom {
+            get {
+                return ResourceManager.GetString("Bottom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Linksonder.
+        /// </summary>
+        internal static string Bottom_left {
+            get {
+                return ResourceManager.GetString("Bottom-left", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rechtsboven.
+        /// </summary>
+        internal static string Bottom_right {
+            get {
+                return ResourceManager.GetString("Bottom-right", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Branche gewijzigd op.
+        /// </summary>
+        internal static string Branche_changed_on {
+            get {
+                return ResourceManager.GetString("Branche changed on", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop icoon.
+        /// </summary>
+        internal static string Button_icon {
+            get {
+                return ResourceManager.GetString("Button icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop text.
+        /// </summary>
+        internal static string Button_text {
+            get {
+                return ResourceManager.GetString("Button text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to door.
+        /// </summary>
+        internal static string by {
+            get {
+                return ResourceManager.GetString("by", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Standaard wordt er altijd een JSON array met objecten gemaakt voor de resultaten van de query. Indien deze optie aan staat, wordt er één object gemaakt met keys en values..
+        /// </summary>
+        internal static string By_default__a_JSON_array_of_objects_is_always_created_for_the_results_of_the_query__If_this_option_is_enabled__one_object_will_be_created_with_keys_and_values_ {
+            get {
+                return ResourceManager.GetString("By default, a JSON array of objects is always created for the results of the quer" +
+                        "y. If this option is enabled, one object will be created with keys and values.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache.
+        /// </summary>
+        internal static string Cache {
+            get {
+                return ResourceManager.GetString("Cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache locatie.
+        /// </summary>
+        internal static string Cache_location {
+            get {
+                return ResourceManager.GetString("Cache location", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache aantal minuten.
+        /// </summary>
+        internal static string Cache_number_of_minutes {
+            get {
+                return ResourceManager.GetString("Cache number of minutes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache regex.
+        /// </summary>
+        internal static string Cache_regex {
+            get {
+                return ResourceManager.GetString("Cache regex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Annuleren.
+        /// </summary>
+        internal static string Cancel {
+            get {
+                return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to abonnement stopzetten?.
+        /// </summary>
+        internal static string cancel_subscription_ {
+            get {
+                return ResourceManager.GetString("cancel subscription?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Caps lock staat aan.
+        /// </summary>
+        internal static string Caps_lock_is_on {
+            get {
+                return ResourceManager.GetString("Caps lock is on", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CC.
+        /// </summary>
+        internal static string CC {
+            get {
+                return ResourceManager.GetString("CC", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Midden.
+        /// </summary>
+        internal static string Center {
+            get {
+                return ResourceManager.GetString("Center", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wijzigen.
+        /// </summary>
+        internal static string Change {
+            get {
+                return ResourceManager.GetString("Change", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wijzigingsdatum branch.
+        /// </summary>
+        internal static string Change_date_branch {
+            get {
+                return ResourceManager.GetString("Change date branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wijzigingsdatum origineel.
+        /// </summary>
+        internal static string Change_date_original {
+            get {
+                return ResourceManager.GetString("Change date original", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to HTML wijzigen.
+        /// </summary>
+        internal static string Change_HTML {
+            get {
+                return ResourceManager.GetString("Change HTML", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wachtwoord wijzigen.
+        /// </summary>
+        internal static string Change_password {
+            get {
+                return ResourceManager.GetString("Change password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gewijzigd.
+        /// </summary>
+        internal static string Changed {
+            get {
+                return ResourceManager.GetString("Changed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gewijzigd door.
+        /// </summary>
+        internal static string Changed_by {
+            get {
+                return ResourceManager.GetString("Changed by", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gewijzigd op.
+        /// </summary>
+        internal static string Changed_on {
+            get {
+                return ResourceManager.GetString("Changed on", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zet dit vinkje aan indien de klant ook een configurator krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld configuration en configurationlines..
+        /// </summary>
+        internal static string Check_this_box_if_the_customer_also_gets_a_configurator__Then_will_entities_be_added_for__for_example__configuration_and_configurationlines_ {
+            get {
+                return ResourceManager.GetString("Check this box if the customer also gets a configurator. Then will entities be ad" +
+                        "ded for, for example, configuration and configurationlines.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zet dit vinkje aan indien de klant ook een webshop krijgt. Dan worden extra entiteiten toegevoegd voor bijvoorbeeld verzendmethodes, btw-regels etc..
+        /// </summary>
+        internal static string Check_this_box_if_the_customer_also_gets_a_webshop__Then_exstra_entities_will_be_added_for__for_example__shipping_methods__VAT_rules__etc_ {
+            get {
+                return ResourceManager.GetString("Check this box if the customer also gets a webshop. Then exstra entities will be " +
+                        "added for, for example, shipping methods, VAT rules, etc.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zet dit vinkje aan indien de website van de klant meertalig wordt. Dan wordt de vertalingenmodule en bijbehorende entiteit toegevoegd..
+        /// </summary>
+        internal static string Check_this_box_if_the_customer_s_website_will_be_multilingual__Then_will_the_translations_module_and_associated_entity_be_added_ {
+            get {
+                return ResourceManager.GetString("Check this box if the customer\'s website will be multilingual. Then will the tran" +
+                        "slations module and associated entity be added.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aangevinkt.
+        /// </summary>
+        internal static string Checked {
+            get {
+                return ResourceManager.GetString("Checked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Onderliggende objecten.
+        /// </summary>
+        internal static string Child_objects {
+            get {
+                return ResourceManager.GetString("Child objects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een component.
+        /// </summary>
+        internal static string Choose_a_component {
+            get {
+                return ResourceManager.GetString("Choose a component", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een datatype....
+        /// </summary>
+        internal static string Choose_a_data_type___ {
+            get {
+                return ResourceManager.GetString("Choose a data type...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een formatting....
+        /// </summary>
+        internal static string Choose_a_format___ {
+            get {
+                return ResourceManager.GetString("Choose a format...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een taalcode....
+        /// </summary>
+        internal static string Choose_a_language_code___ {
+            get {
+                return ResourceManager.GetString("Choose a language code...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een status....
+        /// </summary>
+        internal static string Choose_a_status___ {
+            get {
+                return ResourceManager.GetString("Choose a status...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een tabel.
+        /// </summary>
+        internal static string Choose_a_table {
+            get {
+                return ResourceManager.GetString("Choose a table", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een moment waarop de import gedaan moet worden. Indien er geen waarde wordt ingevuld, of een moment in het verleden, zal de import zo snel mogelijk gestart worden..
+        /// </summary>
+        internal static string Choose_a_time_when_the_import_should_be_started__If_no_value_is_entered__or_a_moment_in_the_past__the_import_will_be_started_as_soon_as_possible_ {
+            get {
+                return ResourceManager.GetString("Choose a time when the import should be started. If no value is entered, or a mom" +
+                        "ent in the past, the import will be started as soon as possible.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een moment uit waarop er niet veel gebruikers zijn, bijvoorbeeld in de nacht, omdat het importeren van data een zwaar proces is..
+        /// </summary>
+        internal static string Choose_a_time_when_there_are_not_many_users__for_example_at_night__because_importing_data_is_a_heavy_process_ {
+            get {
+                return ResourceManager.GetString("Choose a time when there are not many users, for example at night, because import" +
+                        "ing data is a heavy process.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een entiteit-type.
+        /// </summary>
+        internal static string Choose_an_entity_type {
+            get {
+                return ResourceManager.GetString("Choose an entity type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een event.
+        /// </summary>
+        internal static string Choose_an_event {
+            get {
+                return ResourceManager.GetString("Choose an event", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies in de kolom &amp;quot;Importeren naar&amp;quot; het entiteit-type van de items in het importbestand. Deze wordt daarna automatisch gevuld bij alle andere rijen. Bij specificatienaam zal er vervolgens per eigenschap die geïmporteerd moet worden een keuze gemaakt moeten worden. Alleen rijen met een vinkje worden meegenomen in de import..
+        /// </summary>
+        internal static string Choose_in_the_column__quot_Import_to_quot__the_entity_type_of_the_items_in_the_import_file__This_will_automatically_be_filled_in_all_other_rows__At_specification_name__a_choice_will_have_to_be_made_for_each_property_to_be_imported__Only_rows_with_a_check_mark_are_included_in_the_import_ {
+            get {
+                return ResourceManager.GetString(@"Choose in the column &quot;Import to&quot; the entity type of the items in the import file. This will automatically be filled in all other rows. At specification name, a choice will have to be made for each property to be imported. Only rows with a check mark are included in the import.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies in de kolom &amp;quot;Koppeltype&amp;quot; het koppeltype van de items in het importbestand. Hiermee kunnen waardes gevuld worden die opgeslagen worden bij een koppeling tussen 2 items. In Wiser zijn deze velden altijd te vinden op het tabblad &quot;Velden vanuit koppeling&quot;. Bij specificatienaam zal er vervolgens per eigenschap die geïmporteerd moet worden een keuze gemaakt moeten worden. Alleen rijen met een vinkje worden meegenomen in de import..
+        /// </summary>
+        internal static string Choose_in_the_column__quot_Linktype_quot__the_link_type_of_the_items_in_the_import_file__This_allows_values_to_be_filled_that_are_stored_with_a_link_between_2_items__In_Wiser__these_fields_can_always_be_found_on_the__Fields_from_link__tab__At_specification_name__a_choice_will_have_to_be_made_for_each_property_to_be_imported__Only_rows_with_a_check_mark_are_included_in_the_import_ {
+            get {
+                return ResourceManager.GetString(@"Choose in the column &quot;Linktype&quot; the link type of the items in the import file. This allows values to be filled that are stored with a link between 2 items. In Wiser, these fields can always be found on the 'Fields from link' tab. At specification name, a choice will have to be made for each property to be imported. Only rows with a check mark are included in the import.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies een van de bestaande communicatie-uitingen om te openen en te bewerken..
+        /// </summary>
+        internal static string Choose_one_of_the_existing_communications_to_open_and_edit_ {
+            get {
+                return ResourceManager.GetString("Choose one of the existing communications to open and edit.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies de entiteiten waartussen koppelingen moeten worden verwijderd en kies de eigenschapen waarvan de waardes overeen moeten komen met de aangeleverde gegevens..
+        /// </summary>
+        internal static string Choose_the_entities_between_which_links_should_be_removed_and_choose_the_properties_of_values_which_should_match_the_supplied_data_ {
+            get {
+                return ResourceManager.GetString("Choose the entities between which links should be removed and choose the properti" +
+                        "es of values which should match the supplied data.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies de entititeit van de items die verwijderd moeten worden..
+        /// </summary>
+        internal static string Choose_the_entity_of_the_items_to_be_deleted_ {
+            get {
+                return ResourceManager.GetString("Choose the entity of the items to be deleted.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies hier de taal die als bron dient. Alle velden op dit item met deze taal zullen dan vertaald worden in andere talen..
+        /// </summary>
+        internal static string Choose_the_language_that_serves_as_the_source_here__All_fields_on_this_item_with_this_language_will_then_be_translated_into_other_languages_ {
+            get {
+                return ResourceManager.GetString("Choose the language that serves as the source here. All fields on this item with " +
+                        "this language will then be translated into other languages.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies het koppelingstype waarmee de koppeling is gelegd die je wilt verwijderen. Het aangeleverde bestand kan de ids van zowel de oorsprong als de bestemming bevatten..
+        /// </summary>
+        internal static string Choose_the_link_type_which_is_linked_and_you_want_to_delete__The_supplied_file_can_contain_the_IDs_of_both_the_origin_and_the_destination_ {
+            get {
+                return ResourceManager.GetString("Choose the link type which is linked and you want to delete. The supplied file ca" +
+                        "n contain the IDs of both the origin and the destination.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies de eigenschap waarvan de waarde overeen moet komen met de aangeleverde gegevens..
+        /// </summary>
+        internal static string Choose_the_property_of_the_value_which_should_match_the_supplied_data_ {
+            get {
+                return ResourceManager.GetString("Choose the property of the value which should match the supplied data.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies de gebruiker waarmee u wilt inloggen.
+        /// </summary>
+        internal static string Choose_the_user_you_want_to_log_in_with {
+            get {
+                return ResourceManager.GetString("Choose the user you want to log in with", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies gebruikers....
+        /// </summary>
+        internal static string Choose_users___ {
+            get {
+                return ResourceManager.GetString("Choose users...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache legen.
+        /// </summary>
+        internal static string Clear_cache {
+            get {
+                return ResourceManager.GetString("Clear cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cache van website legen.
+        /// </summary>
+        internal static string Clear_website_cache {
+            get {
+                return ResourceManager.GetString("Clear website cache", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Klik op toevoegen om een veld toe te voegen aan de entiteit.
+        /// </summary>
+        internal static string Click__Add__to_add_a_field_to_the_entity {
+            get {
+                return ResourceManager.GetString("Click \'Add\' to add a field to the entity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to module sluiten.
+        /// </summary>
+        internal static string close_module {
+            get {
+                return ResourceManager.GetString("close module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kleur.
+        /// </summary>
+        internal static string Color {
+            get {
+                return ResourceManager.GetString("Color", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolomnaam met key.
+        /// </summary>
+        internal static string Column_name_with_key {
+            get {
+                return ResourceManager.GetString("Column name with key", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolomnaam met value.
+        /// </summary>
+        internal static string Column_name_with_value {
+            get {
+                return ResourceManager.GetString("Column name with value", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Commit.
+        /// </summary>
+        internal static string Commit {
+            get {
+                return ResourceManager.GetString("Commit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Communicatie.
+        /// </summary>
+        internal static string Communication {
+            get {
+                return ResourceManager.GetString("Communication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afronden.
+        /// </summary>
+        internal static string Complete {
+            get {
+                return ResourceManager.GetString("Complete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Complete HTML pagina&apos;s.
+        /// </summary>
+        internal static string Complete_HTML_pages {
+            get {
+                return ResourceManager.GetString("Complete HTML pages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afgerond.
+        /// </summary>
+        internal static string Completed {
+            get {
+                return ResourceManager.GetString("Completed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Componentmodus.
+        /// </summary>
+        internal static string Component_mode {
+            get {
+                return ResourceManager.GetString("Component mode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuratoren.
+        /// </summary>
+        internal static string Configurators {
+            get {
+                return ResourceManager.GetString("Configurators", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Conflicten.
+        /// </summary>
+        internal static string Conflicts {
+            get {
+                return ResourceManager.GetString("Conflicts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to conflicten akkoord.
+        /// </summary>
+        internal static string conflicts_approved {
+            get {
+                return ResourceManager.GetString("conflicts approved", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to bevat.
+        /// </summary>
+        internal static string contains {
+            get {
+                return ResourceManager.GetString("contains", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Content.
+        /// </summary>
+        internal static string Content {
+            get {
+                return ResourceManager.GetString("Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inhoud.
+        /// </summary>
+        internal static string Content_ {
+            get {
+                return ResourceManager.GetString("Content/", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Content Box.
+        /// </summary>
+        internal static string Content_Box {
+            get {
+                return ResourceManager.GetString("Content Box", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Content Builder.
+        /// </summary>
+        internal static string Content_Builder {
+            get {
+                return ResourceManager.GetString("Content Builder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Content item id.
+        /// </summary>
+        internal static string Content_item_id {
+            get {
+                return ResourceManager.GetString("Content item id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Content property naam.
+        /// </summary>
+        internal static string Content_property_name {
+            get {
+                return ResourceManager.GetString("Content property name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inhoud SMS.
+        /// </summary>
+        internal static string Content_SMS {
+            get {
+                return ResourceManager.GetString("Content SMS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verder.
+        /// </summary>
+        internal static string Continue {
+            get {
+                return ResourceManager.GetString("Continue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Branch URL kopiëren.
+        /// </summary>
+        internal static string Copy_Branch_URL {
+            get {
+                return ResourceManager.GetString("Copy Branch URL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kopiëren naar andere talen.
+        /// </summary>
+        internal static string Copy_to_other_languages {
+            get {
+                return ResourceManager.GetString("Copy to other languages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Telling resultaten (COUNT).
+        /// </summary>
+        internal static string Count_results__COUNT_ {
+            get {
+                return ResourceManager.GetString("Count results (COUNT)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Telling unieke resultaten (COUNT DISTINCT).
+        /// </summary>
+        internal static string Count_unique_results__COUNT_DISTINCT_ {
+            get {
+                return ResourceManager.GetString("Count unique results (COUNT DISTINCT)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maak een nieuwe automatische communicatie-uiting aan. Bepaald ontvangers en de inhoud van de e-mail en/of SMS-berichten..
+        /// </summary>
+        internal static string Create_a_new_automatic_communication_message__Determine_recipients_and_the_content_of_the_e_mail_and_or_text_messages_ {
+            get {
+                return ResourceManager.GetString("Create a new automatic communication message. Determine recipients and the conten" +
+                        "t of the e-mail and/or text messages.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe communicatie-uiting aanmaken.
+        /// </summary>
+        internal static string Create_a_new_communication {
+            get {
+                return ResourceManager.GetString("Create a new communication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nog een klant aanmaken.
+        /// </summary>
+        internal static string Create_another_customer {
+            get {
+                return ResourceManager.GetString("Create another customer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Branch maken.
+        /// </summary>
+        internal static string Create_branch {
+            get {
+                return ResourceManager.GetString("Create branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe branch maken.
+        /// </summary>
+        internal static string Create_new_branch {
+            get {
+                return ResourceManager.GetString("Create new branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuw databaseschema maken.
+        /// </summary>
+        internal static string Create_new_database_schema {
+            get {
+                return ResourceManager.GetString("Create new database schema", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuw item aanmaken (SHIFT+N).
+        /// </summary>
+        internal static string Create_new_item__SHIFT_N_ {
+            get {
+                return ResourceManager.GetString("Create new item (SHIFT+N)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe aanmaken.
+        /// </summary>
+        internal static string Create_new_one {
+            get {
+                return ResourceManager.GetString("Create new one", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knippen.
+        /// </summary>
+        internal static string Crop {
+            get {
+                return ResourceManager.GetString("Crop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Huidige datum.
+        /// </summary>
+        internal static string Current_date {
+            get {
+                return ResourceManager.GetString("Current date", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Huidige maand.
+        /// </summary>
+        internal static string Current_month {
+            get {
+                return ResourceManager.GetString("Current month", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Huidige abonnement:.
+        /// </summary>
+        internal static string Current_subscription_ {
+            get {
+                return ResourceManager.GetString("Current subscription:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dit jaar.
+        /// </summary>
+        internal static string Current_year {
+            get {
+                return ResourceManager.GetString("Current year", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Custom delete-query.
+        /// </summary>
+        internal static string Custom_delete_query {
+            get {
+                return ResourceManager.GetString("Custom delete-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Custom insert-query.
+        /// </summary>
+        internal static string Custom_insert_query {
+            get {
+                return ResourceManager.GetString("Custom insert-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Custom query.
+        /// </summary>
+        internal static string Custom_query {
+            get {
+                return ResourceManager.GetString("Custom query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Custom update-query.
+        /// </summary>
+        internal static string Custom_update_query {
+            get {
+                return ResourceManager.GetString("Custom update-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to klant.happygeeks.dev.
+        /// </summary>
+        internal static string customer_happygeeks_dev {
+            get {
+                return ResourceManager.GetString("customer.happygeeks.dev", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data.
+        /// </summary>
+        internal static string Data {
+            get {
+                return ResourceManager.GetString("Data", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gegevens.
+        /// </summary>
+        internal static string Data_ {
+            get {
+                return ResourceManager.GetString("Data.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data-bestand.
+        /// </summary>
+        internal static string Data_file {
+            get {
+                return ResourceManager.GetString("Data file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data-bestand of URL.
+        /// </summary>
+        internal static string Data_file_or_URL {
+            get {
+                return ResourceManager.GetString("Data file or URL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data selector.
+        /// </summary>
+        internal static string Data_selector {
+            get {
+                return ResourceManager.GetString("Data selector", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data Selector voor export module.
+        /// </summary>
+        internal static string Data_Selector_for_export_module {
+            get {
+                return ResourceManager.GetString("Data Selector for export module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data selector id.
+        /// </summary>
+        internal static string Data_selector_id {
+            get {
+                return ResourceManager.GetString("Data selector id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Databron.
+        /// </summary>
+        internal static string Data_source {
+            get {
+                return ResourceManager.GetString("Data source", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Datatype.
+        /// </summary>
+        internal static string Data_type {
+            get {
+                return ResourceManager.GetString("Data type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Database.
+        /// </summary>
+        internal static string Database {
+            get {
+                return ResourceManager.GetString("Database", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to date.
+        /// </summary>
+        internal static string date {
+            get {
+                return ResourceManager.GetString("date", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Datum:.
+        /// </summary>
+        internal static string Date_ {
+            get {
+                return ResourceManager.GetString("Date:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Datum en tijd.
+        /// </summary>
+        internal static string Date_and_time {
+            get {
+                return ResourceManager.GetString("Date and time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to daterangepicker.
+        /// </summary>
+        internal static string daterangepicker {
+            get {
+                return ResourceManager.GetString("daterangepicker", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to datetime.
+        /// </summary>
+        internal static string datetime {
+            get {
+                return ResourceManager.GetString("datetime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dag van de maand.
+        /// </summary>
+        internal static string Day_of_the_month {
+            get {
+                return ResourceManager.GetString("Day of the month", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Standaardwaarde.
+        /// </summary>
+        internal static string Default_value {
+            get {
+                return ResourceManager.GetString("Default value", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijderen.
+        /// </summary>
+        internal static string Delete {
+            get {
+                return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Communicatie verwijderen.
+        /// </summary>
+        internal static string Delete_communication {
+            get {
+                return ResourceManager.GetString("Delete communication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijder gemakkelijk meerdere items binnen Wiser..
+        /// </summary>
+        internal static string Delete_easily_multiple_items_within_Wiser_ {
+            get {
+                return ResourceManager.GetString("Delete easily multiple items within Wiser.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestand verwijderen.
+        /// </summary>
+        internal static string Delete_file {
+            get {
+                return ResourceManager.GetString("Delete file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afbeelding verwijderen.
+        /// </summary>
+        internal static string Delete_image {
+            get {
+                return ResourceManager.GetString("Delete image", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item verwijderen.
+        /// </summary>
+        internal static string Delete_items {
+            get {
+                return ResourceManager.GetString("Delete items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijderen items.
+        /// </summary>
+        internal static string Delete_items_ {
+            get {
+                return ResourceManager.GetString("Delete items/", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijderen koppelingen.
+        /// </summary>
+        internal static string Delete_links {
+            get {
+                return ResourceManager.GetString("Delete links", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rol verwijderen.
+        /// </summary>
+        internal static string Delete_role {
+            get {
+                return ResourceManager.GetString("Delete role", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template verwijderen.
+        /// </summary>
+        internal static string Delete_template {
+            get {
+                return ResourceManager.GetString("Delete template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijder deze branche na succesvol mergen.
+        /// </summary>
+        internal static string Delete_this_branch_after_successful_merging {
+            get {
+                return ResourceManager.GetString("Delete this branch after successful merging", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijderd.
+        /// </summary>
+        internal static string Deleted {
+            get {
+                return ResourceManager.GetString("Deleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijderen van items.
+        /// </summary>
+        internal static string Deletion_of_items {
+            get {
+                return ResourceManager.GetString("Deletion of items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afhankelijkheid.
+        /// </summary>
+        internal static string Dependency {
+            get {
+                return ResourceManager.GetString("Dependency", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploy.
+        /// </summary>
+        internal static string Deploy {
+            get {
+                return ResourceManager.GetString("Deploy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploy naar acceptatie.
+        /// </summary>
+        internal static string Deploy_to_acceptance {
+            get {
+                return ResourceManager.GetString("Deploy to acceptance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploy naar live.
+        /// </summary>
+        internal static string Deploy_to_live {
+            get {
+                return ResourceManager.GetString("Deploy to live", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploy naar geselecteerde branch.
+        /// </summary>
+        internal static string Deploy_to_selected_branch {
+            get {
+                return ResourceManager.GetString("Deploy to selected branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deploy naar test.
+        /// </summary>
+        internal static string Deploy_to_test {
+            get {
+                return ResourceManager.GetString("Deploy to test", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Omschrijving.
+        /// </summary>
+        internal static string Description {
+            get {
+                return ResourceManager.GetString("Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Omschrijving van de taak....
+        /// </summary>
+        internal static string Description_of_the_task___ {
+            get {
+                return ResourceManager.GetString("Description of the task...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gewenste hoogte (in pixels).
+        /// </summary>
+        internal static string Desired_height__in_pixels_ {
+            get {
+                return ResourceManager.GetString("Desired height (in pixels)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gewenste language-code.
+        /// </summary>
+        internal static string Desired_language_code {
+            get {
+                return ResourceManager.GetString("Desired language code", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gewenste breedte (in pixels).
+        /// </summary>
+        internal static string Desired_width__in_pixels_ {
+            get {
+                return ResourceManager.GetString("Desired width (in pixels)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Development.
+        /// </summary>
+        internal static string Development {
+            get {
+                return ResourceManager.GetString("Development", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ander format.
+        /// </summary>
+        internal static string Different_format {
+            get {
+                return ResourceManager.GetString("Different format", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Digital Ocean access token.
+        /// </summary>
+        internal static string Digital_Ocean_access_token {
+            get {
+                return ResourceManager.GetString("Digital Ocean access token", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Direct.
+        /// </summary>
+        internal static string Direct {
+            get {
+                return ResourceManager.GetString("Direct", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Minifier uitschakelen.
+        /// </summary>
+        internal static string Disable_minifier {
+            get {
+                return ResourceManager.GetString("Disable minifier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Keur af.
+        /// </summary>
+        internal static string Disapprove {
+            get {
+                return ResourceManager.GetString("Disapprove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to begint niet met.
+        /// </summary>
+        internal static string does_not_begin_with {
+            get {
+                return ResourceManager.GetString("does not begin with", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to bevat niet.
+        /// </summary>
+        internal static string does_not_contain {
+            get {
+                return ResourceManager.GetString("does not contain", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to eindigt niet met.
+        /// </summary>
+        internal static string does_not_end_with {
+            get {
+                return ResourceManager.GetString("does not end with", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Domein.
+        /// </summary>
+        internal static string Domain {
+            get {
+                return ResourceManager.GetString("Domain", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Domein dev.
+        /// </summary>
+        internal static string Domain_dev {
+            get {
+                return ResourceManager.GetString("Domain dev", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Domein live.
+        /// </summary>
+        internal static string Domain_live {
+            get {
+                return ResourceManager.GetString("Domain live", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Domein test.
+        /// </summary>
+        internal static string Domain_test {
+            get {
+                return ResourceManager.GetString("Domain test", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Download bestand.
+        /// </summary>
+        internal static string Download_file {
+            get {
+                return ResourceManager.GetString("Download file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sleep items om de volgorde te veranderen.
+        /// </summary>
+        internal static string Drag_items_to_change_the_order {
+            get {
+                return ResourceManager.GetString("Drag items to change the order", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Veld dupliceren.
+        /// </summary>
+        internal static string Duplicate_field {
+            get {
+                return ResourceManager.GetString("Duplicate field", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden.
+        ///Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn. Zorg daarom dat u het samenvoegen start op een moment waarbij dit het minste impact heeft (zoals &apos;s nachts)..
+        /// </summary>
+        internal static string During_restoring_a_branch__the_database_will_be_locked_so_that_no_other_changes_can_be_made_in_between__This_means_that_Wiser_and_any_other_products__such_as_a_website__that_are_linked_to_the_same_database_will_also_be_unavailable__Therefore__make_sure_you_start_the_merge_at_a_time_when_it_will_have_the_least_impact__such_as_at_night__ {
+            get {
+                return ResourceManager.GetString(@"During restoring a branch, the database will be locked so that no other changes can be made in between. This means that Wiser and any other products (such as a website) that are linked to the same database will also be unavailable. Therefore, make sure you start the merge at a time when it will have the least impact (such as at night).", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dynamische Content.
+        /// </summary>
+        internal static string Dynamic_Content {
+            get {
+                return ResourceManager.GetString("Dynamic Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to E-commerce entiteiten.
+        /// </summary>
+        internal static string E_commerce_entities {
+            get {
+                return ResourceManager.GetString("E-commerce entities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to E-mail.
+        /// </summary>
+        internal static string E_mail {
+            get {
+                return ResourceManager.GetString("E-mail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to E-mailadres.
+        /// </summary>
+        internal static string E_mail_address {
+            get {
+                return ResourceManager.GetString("E-mail address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Elke.
+        /// </summary>
+        internal static string Each {
+            get {
+                return ResourceManager.GetString("Each", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam wijzigen.
+        /// </summary>
+        internal static string Edit_Name {
+            get {
+                return ResourceManager.GetString("Edit Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Taak aanpassen.
+        /// </summary>
+        internal static string Edit_task {
+            get {
+                return ResourceManager.GetString("Edit task", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inhoud mail.
+        /// </summary>
+        internal static string Email_content {
+            get {
+                return ResourceManager.GetString("Email content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Email data selector id.
+        /// </summary>
+        internal static string Email_data_selector_id {
+            get {
+                return ResourceManager.GetString("Email data selector id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aggregatie inschakelen.
+        /// </summary>
+        internal static string Enable_aggregation {
+            get {
+                return ResourceManager.GetString("Enable aggregation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zorgt ervoor dat de dataselector gebruikt kan worden in HTML-editors in Wiser om zo dynamische blokken van content toe te voegen op een pagina.
+        /// </summary>
+        internal static string Enables_the_data_selector_to_be_used_in_HTML_editors_in_Wiser_to_add_dynamic_blocks_of_content_to_a_page {
+            get {
+                return ResourceManager.GetString("Enables the data selector to be used in HTML editors in Wiser to add dynamic bloc" +
+                        "ks of content to a page", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zorgt ervoor dat de dataselector gebruikt kan worden in de communicatiemodule.
+        /// </summary>
+        internal static string Enables_the_data_selector_to_be_used_in_the_communication_module {
+            get {
+                return ResourceManager.GetString("Enables the data selector to be used in the communication module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zorgt ervoor dat de dataselector gebruikt kan worden in de exportmodule.
+        /// </summary>
+        internal static string Enables_the_data_selector_to_be_used_in_the_export_module {
+            get {
+                return ResourceManager.GetString("Enables the data selector to be used in the export module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to eindigt met.
+        /// </summary>
+        internal static string ends_with {
+            get {
+                return ResourceManager.GetString("ends with", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zorgt ervoor dat talen apart geladen worden.
+        /// </summary>
+        internal static string Ensures_that_languages_are_loaded_separately {
+            get {
+                return ResourceManager.GetString("Ensures that languages are loaded separately", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul 0 in om de originele hoogte van de afbeelding te gebruiken..
+        /// </summary>
+        internal static string Enter_0_to_use_the_original_height_of_the_image_ {
+            get {
+                return ResourceManager.GetString("Enter 0 to use the original height of the image.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul 0 in om de originele breedte van de afbeelding te gebruiken..
+        /// </summary>
+        internal static string Enter_0_to_use_the_original_width_of_the_image_ {
+            get {
+                return ResourceManager.GetString("Enter 0 to use the original width of the image.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een naam in.
+        /// </summary>
+        internal static string Enter_a_name {
+            get {
+                return ResourceManager.GetString("Enter a name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een naam in voor een databaseschema die nog niet bestaat..
+        /// </summary>
+        internal static string Enter_a_name_for_a_database_schema_that_does_not_exist_yet_ {
+            get {
+                return ResourceManager.GetString("Enter a name for a database schema that does not exist yet.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een naam in voor een databagebruiker die nog niet bestaat..
+        /// </summary>
+        internal static string Enter_a_name_for_a_database_user_that_does_not_exist_yet_ {
+            get {
+                return ResourceManager.GetString("Enter a name for a database user that does not exist yet.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geef een naam op voor de nieuwe branche.
+        /// </summary>
+        internal static string Enter_a_name_for_the_new_branch {
+            get {
+                return ResourceManager.GetString("Enter a name for the new branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een naam in voor deze import, waar u deze import later nog aan kunt herkennen..
+        /// </summary>
+        internal static string Enter_a_name_for_this_import_so_that_you_can_recognize_this_import_later_ {
+            get {
+                return ResourceManager.GetString("Enter a name for this import so that you can recognize this import later.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een naam in van een bestaand databaseschema..
+        /// </summary>
+        internal static string Enter_a_name_of_an_existing_database_schema_ {
+            get {
+                return ResourceManager.GetString("Enter a name of an existing database schema.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een naam in van een bestaande databasegebruiker..
+        /// </summary>
+        internal static string Enter_a_name_of_an_existing_database_user_ {
+            get {
+                return ResourceManager.GetString("Enter a name of an existing database user.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vul een zoekwaarde in (druk op enter om te zoeken)....
+        /// </summary>
+        internal static string Enter_a_search_value__press_enter_to_search____ {
+            get {
+                return ResourceManager.GetString("Enter a search value (press enter to search)...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geef een waarde....
+        /// </summary>
+        internal static string Enter_a_value___ {
+            get {
+                return ResourceManager.GetString("Enter a value...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geef de URL op van uw website.
+        /// </summary>
+        internal static string Enter_the_URL_of_your_website {
+            get {
+                return ResourceManager.GetString("Enter the URL of your website", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entiteiten.
+        /// </summary>
+        internal static string Entities {
+            get {
+                return ResourceManager.GetString("Entities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entiteit.
+        /// </summary>
+        internal static string Entity {
+            get {
+                return ResourceManager.GetString("Entity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entiteit van het type.
+        /// </summary>
+        internal static string Entity_of_the_type {
+            get {
+                return ResourceManager.GetString("Entity of the type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entiteit om te koppelen.
+        /// </summary>
+        internal static string Entity_to_link {
+            get {
+                return ResourceManager.GetString("Entity to link", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Omgeving.
+        /// </summary>
+        internal static string Environment {
+            get {
+                return ResourceManager.GetString("Environment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Event.
+        /// </summary>
+        internal static string Event {
+            get {
+                return ResourceManager.GetString("Event", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alles.
+        /// </summary>
+        internal static string Everything {
+            get {
+                return ResourceManager.GetString("Everything", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alles wat toegevoegd is voor X.
+        /// </summary>
+        internal static string Everything_added_for_X {
+            get {
+                return ResourceManager.GetString("Everything added for X", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voorbeeld.
+        /// </summary>
+        internal static string Example {
+            get {
+                return ResourceManager.GetString("Example", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query uitvoeren.
+        /// </summary>
+        internal static string Execute_query {
+            get {
+                return ResourceManager.GetString("Execute query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toelichting.
+        /// </summary>
+        internal static string Explanation {
+            get {
+                return ResourceManager.GetString("Explanation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Export.
+        /// </summary>
+        internal static string Export {
+            get {
+                return ResourceManager.GetString("Export", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uitgebreide uitleg.
+        /// </summary>
+        internal static string Extended_explanation {
+            get {
+                return ResourceManager.GetString("Extended explanation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Externe bestanden.
+        /// </summary>
+        internal static string External_files {
+            get {
+                return ResourceManager.GetString("External files", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Extra entiteiten.
+        /// </summary>
+        internal static string Extra_entities {
+            get {
+                return ResourceManager.GetString("Extra entities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Factor.
+        /// </summary>
+        internal static string Factor {
+            get {
+                return ResourceManager.GetString("Factor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Veld.
+        /// </summary>
+        internal static string Field {
+            get {
+                return ResourceManager.GetString("Field", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Veld naam.
+        /// </summary>
+        internal static string Field_name {
+            get {
+                return ResourceManager.GetString("Field name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Velden.
+        /// </summary>
+        internal static string Fields {
+            get {
+                return ResourceManager.GetString("Fields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestand.
+        /// </summary>
+        internal static string File {
+            get {
+                return ResourceManager.GetString("File", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestandsnaam.
+        /// </summary>
+        internal static string Filename {
+            get {
+                return ResourceManager.GetString("Filename", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestanden / afbeeldingen.
+        /// </summary>
+        internal static string Files___Images {
+            get {
+                return ResourceManager.GetString("Files / Images", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opvullen.
+        /// </summary>
+        internal static string Fill {
+            get {
+                return ResourceManager.GetString("Fill", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filter periode.
+        /// </summary>
+        internal static string Filter_period {
+            get {
+                return ResourceManager.GetString("Filter period", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding wordt eerst verkleind totdat de breedte of de hoogte (degene die het grootste is) overeenkomt met de opgegeven maat, daarna worden overblijfsels afgeknipt. Voorbeeld: De afbeelding is 150x200 pixels en het gewenste formaat is 100x100 pixels. De uiteindelijke afbeelding wordt dan exact 100x100 pizels, maar omdat de verhoudingen nu anders zijn, wordt er boven en/of onder een stuk van de afbeelding afgeknipt. Hierdoor kunnen dus delen van een afbeelding verdwijnen..
+        /// </summary>
+        internal static string First__the_image_size_will_be_made_smaller_until_its_width_or_height__whichever_is_greater__matches_the_specified_size__then_any_remnants_will_be_cuted_off__Example__The_image_is_150x200_pixels_and_the_desired_size_is_100x100_pixels__The_final_image_will_then_be_exactly_100x100_pizels__but_because_the_proportions_are_now_different__a_piece_of_the_image_will_be_cuted_off_above_and_or_below__This_can_cause_parts_of_an_image_to_disappear_ {
+            get {
+                return ResourceManager.GetString(@"First, the image size will be made smaller until its width or height (whichever is greater) matches the specified size, then any remnants will be cuted off. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pizels, but because the proportions are now different, a piece of the image will be cuted off above and/or below. This can cause parts of an image to disappear.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding wordt eerst verkleind totdat de breedte of de hoogte (degene die het kleinste is) overeenkomt met de opgegeven maat, daarna wordt de afbeelding opgevuld met witruimte totdat de resulatie exact overeenkomt. Voorbeeld: De afbeelding is 150x200 pixels en het gewenste formaat is 100x100 pixels. De uiteindelijke afbeelding wordt dan exact 100x100 pizels, maar omdat de verhoudingen nu anders zijn, wordt er links en/of rechts witruimte toegevoegd aan de afbeelding..
+        /// </summary>
+        internal static string First__the_image_will_be_scaled_down_until_the_width_or_height__whichever_is_smaller__matches_the_specified_size__then_the_image_is_filled_with_white_space_until_the_result_exactly_matches__Example__The_image_is_150x200_pixels_and_the_desired_size_is_100x100_pixels__The_final_image_will_then_be_exactly_100x100_pixels__but_because_the_proportions_are_now_different__left_and_or_right_white_space_will_be_added_to_the_image_ {
+            get {
+                return ResourceManager.GetString(@"First, the image will be scaled down until the width or height (whichever is smaller) matches the specified size, then the image is filled with white space until the result exactly matches. Example: The image is 150x200 pixels and the desired size is 100x100 pixels. The final image will then be exactly 100x100 pixels, but because the proportions are now different, left and/or right white space will be added to the image.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maak eerst een keuze in het linkermenu..
+        /// </summary>
+        internal static string First_make_a_choice_in_the_left_menu_ {
+            get {
+                return ResourceManager.GetString("First make a choice in the left menu.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open eerst deze pagina.
+        /// </summary>
+        internal static string First_open_this_page {
+            get {
+                return ResourceManager.GetString("First open this page", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vast moment.
+        /// </summary>
+        internal static string Fixed_time {
+            get {
+                return ResourceManager.GetString("Fixed time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vaste waardes.
+        /// </summary>
+        internal static string Fixed_values {
+            get {
+                return ResourceManager.GetString("Fixed values", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voor elke laag die u toevoegt, moet u een kolom in uw query hebben met de naam &quot;idN&quot;, waarbij &quot;N&quot; het dieptenummer is (beginnend met 1)..
+        /// </summary>
+        internal static string For_each_layer_that_you_add__you_need_to_have_a_column_in_your_query_named__idN___where__N__is_the_depth_number__starting_with_1__ {
+            get {
+                return ResourceManager.GetString("For each layer that you add, you need to have a column in your query named \'idN\'," +
+                        " where \'N\' is the depth number (starting with 1).", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voor welk soort event de trigger zal worden uitgevoerd..
+        /// </summary>
+        internal static string For_what_kind_of_event_the_trigger_will_be_executed_for_ {
+            get {
+                return ResourceManager.GetString("For what kind of event the trigger will be executed for.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Voor welke tabel deze trigger gemaakt of aangepast wordt..
+        /// </summary>
+        internal static string For_which_table_this_trigger_is_created_or_modified_ {
+            get {
+                return ResourceManager.GetString("For which table this trigger is created or modified.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wachtwoord vergeten?.
+        /// </summary>
+        internal static string Forgot_your_password_ {
+            get {
+                return ResourceManager.GetString("Forgot your password?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Format.
+        /// </summary>
+        internal static string Format {
+            get {
+                return ResourceManager.GetString("Format", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Formatting.
+        /// </summary>
+        internal static string Formatting {
+            get {
+                return ResourceManager.GetString("Formatting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Formule.
+        /// </summary>
+        internal static string Formula {
+            get {
+                return ResourceManager.GetString("Formula", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to vrijdag.
+        /// </summary>
+        internal static string friday {
+            get {
+                return ResourceManager.GetString("friday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vriendelijke Naam.
+        /// </summary>
+        internal static string Friendly_Name {
+            get {
+                return ResourceManager.GetString("Friendly Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Van.
+        /// </summary>
+        internal static string From {
+            get {
+                return ResourceManager.GetString("From", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to van.
+        /// </summary>
+        internal static string from_ {
+            get {
+                return ResourceManager.GetString("from_", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld:.
+        /// </summary>
+        internal static string From_which_URL_should_this_template_be_accessible__Here_a_regular_expression_can_be_specified_for_dynamic_values_and_parameters__If_you_divide_the_regular_expression_into_groups_and_give_those_groups_names__then_those_names_can_be_used_as_variables_in_this_template__Example_ {
+            get {
+                return ResourceManager.GetString(@"From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Functie.
+        /// </summary>
+        internal static string Function {
+            get {
+                return ResourceManager.GetString("Function", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entiteiten Genereren.
+        /// </summary>
+        internal static string Generate_Entities {
+            get {
+                return ResourceManager.GetString("Generate Entities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Genereer bestand.
+        /// </summary>
+        internal static string Generate_file {
+            get {
+                return ResourceManager.GetString("Generate file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Genereer standaard entiteiten.
+        /// </summary>
+        internal static string Generate_standard_entities {
+            get {
+                return ResourceManager.GetString("Generate standard entities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to geometry.
+        /// </summary>
+        internal static string geometry {
+            get {
+                return ResourceManager.GetString("geometry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to geometrycollection.
+        /// </summary>
+        internal static string geometrycollection {
+            get {
+                return ResourceManager.GetString("geometrycollection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Haal clusters op.
+        /// </summary>
+        internal static string Get_clusters {
+            get {
+                return ResourceManager.GetString("Get clusters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Groep.
+        /// </summary>
+        internal static string Group {
+            get {
+                return ResourceManager.GetString("Group", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Groeperen op.
+        /// </summary>
+        internal static string Group_by {
+            get {
+                return ResourceManager.GetString("Group by", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Groepeerkolom.
+        /// </summary>
+        internal static string Group_column {
+            get {
+                return ResourceManager.GetString("Group column", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Groepeer velden prefix.
+        /// </summary>
+        internal static string Group_fields_prefix {
+            get {
+                return ResourceManager.GetString("Group fields prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heeft custom delete-query.
+        /// </summary>
+        internal static string Has_custom_delete_query {
+            get {
+                return ResourceManager.GetString("Has custom delete-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heeft custom insert-query.
+        /// </summary>
+        internal static string Has_custom_insert_query {
+            get {
+                return ResourceManager.GetString("Has custom insert-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Heeft custom update-query.
+        /// </summary>
+        internal static string Has_custom_update_query {
+            get {
+                return ResourceManager.GetString("Has custom update-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Having.
+        /// </summary>
+        internal static string Having {
+            get {
+                return ResourceManager.GetString("Having", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Header/footer regex.
+        /// </summary>
+        internal static string Header_footer_regex {
+            get {
+                return ResourceManager.GetString("Header/footer regex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoogte.
+        /// </summary>
+        internal static string Height {
+            get {
+                return ResourceManager.GetString("Height", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoogte (in pixels).
+        /// </summary>
+        internal static string Height__in_pixels_ {
+            get {
+                return ResourceManager.GetString("Height (in pixels)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoogte van het event gedeelte.
+        /// </summary>
+        internal static string Height_of_the_event_area {
+            get {
+                return ResourceManager.GetString("Height of the event area", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Hallo.
         /// </summary>
         internal static string Hello {
@@ -69,11 +2993,4075 @@ namespace FrontEnd.Modules.Translations.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Hier kan een dataselector of query gekozen worden voor gebruik in de inhoud van de communicatie. Deze dataselector of query wordt per ontvanger uitgevoerd en moet dus ook alleen data voor die ontvanger ophalen. Dit is geheel optioneel..
+        /// </summary>
+        internal static string Here_a_data_selector_or_query_can_be_chosen_for_use_in_the_content_of_the_communication__This_data_selector_or_query_is_performed_per_receiver_and_must_therefore_only_retrieve_data_for_that_receiver__This_is_completely_optional_ {
+            get {
+                return ResourceManager.GetString("Here a data selector or query can be chosen for use in the content of the communi" +
+                        "cation. This data selector or query is performed per receiver and must therefore" +
+                        " only retrieve data for that receiver. This is completely optional.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hier kan ingesteld worden hoe de geïmporteerde items gekoppeld moeten gaan worden. De waarde van het veld die een koppeling gaat leggen moet de numerieke waarde zijn van een item, ofwel het item ID. Koppeltype wat voor soort link het wordt. De kolom &amp;quot;Waarde is het doelitem&amp;quot; houdt in dat het geïmporteerde item wordt gekoppeld aan dat item, i.p.v. dat het item van die koppeling gekoppeld wordt aan het geïmporteerde item. Alleen rijen met een vinkje worden meegenomen in de import. &lt;br /&gt;&lt;br /&gt;Indien  [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string Here_you_can_set_how_the_imported_items_should_be_linked__The_value_of_the_field_that_will_create_a_link_must_be_the_numerical_value_of_an_item__i_e__the_item_ID__Link_type_what_kind_of_link_it_will_be__The_column__quot_Value_is_the_target_item_quot__means_that_the_imported_item_is_linked_to_that_item__instead_of_the_item_from_that_link_being_linked_to_the_imported_item__Only_rows_with_a_check_mark_are_included_in_the_import_ {
+            get {
+                return ResourceManager.GetString(@"Here you can set how the imported items should be linked. The value of the field that will create a link must be the numerical value of an item, i.e. the item ID. Link type what kind of link it will be. The column &quot;Value is the target item&quot; means that the imported item is linked to that item, instead of the item from that link being linked to the imported item. Only rows with a check mark are included in the import.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop om alle filters te wissen verbergen.
+        /// </summary>
+        internal static string Hide_clear_all_filters_button {
+            get {
+                return ResourceManager.GetString("Hide clear all filters button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolom omgeving verbergen.
+        /// </summary>
+        internal static string Hide_column_environment {
+            get {
+                return ResourceManager.GetString("Hide column environment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolom id verbergen.
+        /// </summary>
+        internal static string Hide_column_id {
+            get {
+                return ResourceManager.GetString("Hide column id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolom link-id verbergen.
+        /// </summary>
+        internal static string Hide_column_link_id {
+            get {
+                return ResourceManager.GetString("Hide column link-id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolom titel verbergen.
+        /// </summary>
+        internal static string Hide_column_title {
+            get {
+                return ResourceManager.GetString("Hide column title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolom type verbergen.
+        /// </summary>
+        internal static string Hide_column_type {
+            get {
+                return ResourceManager.GetString("Hide column type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kolom met extra knoppen/acties verbergen.
+        /// </summary>
+        internal static string Hide_column_with_additional_buttons_actions {
+            get {
+                return ResourceManager.GetString("Hide column with additional buttons/actions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop nieuw item aanmaken verbergen.
+        /// </summary>
+        internal static string Hide_create_new_item_button {
+            get {
+                return ResourceManager.GetString("Hide create new item button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop alles deselecteren verbergen.
+        /// </summary>
+        internal static string Hide_deselect_all_button {
+            get {
+                return ResourceManager.GetString("Hide deselect all button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop exporteren naar Excel verbergen.
+        /// </summary>
+        internal static string Hide_export_to_Excel_button {
+            get {
+                return ResourceManager.GetString("Hide export to Excel button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verbergen indien geen link.
+        /// </summary>
+        internal static string Hide_if_no_link {
+            get {
+                return ResourceManager.GetString("Hide if no link", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop bestaande items linken verbergen.
+        /// </summary>
+        internal static string Hide_link_existing_items_button {
+            get {
+                return ResourceManager.GetString("Hide link existing items button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal resultaten verbergen.
+        /// </summary>
+        internal static string Hide_number_of_results {
+            get {
+                return ResourceManager.GetString("Hide number of results", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Knop alles selecteren verbergen.
+        /// </summary>
+        internal static string Hide_select_all_button {
+            get {
+                return ResourceManager.GetString("Hide select all button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Titelveld bij openen van item verbergen.
+        /// </summary>
+        internal static string Hide_title_field_when_opening_item {
+            get {
+                return ResourceManager.GetString("Hide title field when opening item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoogste waarde (MAX).
+        /// </summary>
+        internal static string Highest_value__MAX_ {
+            get {
+                return ResourceManager.GetString("Highest value (MAX)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Historie.
+        /// </summary>
+        internal static string History {
+            get {
+                return ResourceManager.GetString("History", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Host.
+        /// </summary>
+        internal static string Host {
+            get {
+                return ResourceManager.GetString("Host", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sneltoets (access key).
+        /// </summary>
+        internal static string Hotkey__access_key_ {
+            get {
+                return ResourceManager.GetString("Hotkey (access key)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoe en waar op de pagina moet deze CSS-template toegevoegd worden?.
+        /// </summary>
+        internal static string How_and_where_on_the_page_should_this_CSS_template_be_added_ {
+            get {
+                return ResourceManager.GetString("How and where on the page should this CSS template be added?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoe en waar op de pagina moet deze javascript-template toegevoegd worden?.
+        /// </summary>
+        internal static string How_and_where_on_the_page_should_this_Javascript_template_be_added_ {
+            get {
+                return ResourceManager.GetString("How and where on the page should this Javascript-template be added?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoe en waar op de pagina moet deze SCSS-template toegevoegd worden?.
+        /// </summary>
+        internal static string How_and_where_on_the_page_should_this_SCSS_template_be_added_ {
+            get {
+                return ResourceManager.GetString("How and where on the page should this SCSS-template be added?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hoe lang moet de cache bewaard blijven? Indien deze waarde 0 of kleiner is, wordt de instelling &quot;GCL.DefaultTemplateCacheDuration&quot; gebruikt van de appsettings.json..
+        /// </summary>
+        internal static string How_long_should_the_cache_be_kept__If_this_value_is_0_or_less__the_setting__GCL_DefaultTemplateCacheDuration__will_be_used_for_the_appsettings_json_ {
+            get {
+                return ResourceManager.GetString("How long should the cache be kept? If this value is 0 or less, the setting \'GCL.D" +
+                        "efaultTemplateCacheDuration\' will be used for the appsettings.json.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to HTML.
+        /// </summary>
+        internal static string HTML {
+            get {
+                return ResourceManager.GetString("HTML", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to HTML editor - opmaak.
+        /// </summary>
+        internal static string HTML_editor___formatting {
+            get {
+                return ResourceManager.GetString("HTML editor - formatting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Icoon.
+        /// </summary>
+        internal static string Icon {
+            get {
+                return ResourceManager.GetString("Icon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Icoon uitgeklapt.
+        /// </summary>
+        internal static string Icon_expanded {
+            get {
+                return ResourceManager.GetString("Icon expanded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ID.
+        /// </summary>
+        internal static string ID {
+            get {
+                return ResourceManager.GetString("ID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien hieronder een pre-load query is ingevuld en deze query geeft geen resultaat, dan kan er een 404 getoond worden aan de bezoeker..
+        /// </summary>
+        internal static string If_a_pre_load_query_has_been_filled_in_below_and_this_query_does_not_give_a_result__a_404_can_be_shown_to_the_visitor_ {
+            get {
+                return ResourceManager.GetString("If a pre-load query has been filled in below and this query does not give a resul" +
+                        "t, a 404 can be shown to the visitor.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien hier een geldige regex is ingevuld, wordt deze header of footer alleen gebruikt voor URL&apos;s die voldoen aan deze regex..
+        /// </summary>
+        internal static string If_a_valid_regex_is_entered_here__this_header_or_footer_will_only_be_used_for_URLs_that_match_this_regex_ {
+            get {
+                return ResourceManager.GetString("If a valid regex is entered here, this header or footer will only be used for URL" +
+                        "s that match this regex.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien hier een geldige regex is ingevuld, wordt deze template alleen gecached voor URL&apos;s die voldoen aan deze regex..
+        /// </summary>
+        internal static string If_a_valid_regex_is_entered_here__this_template_will_only_be_cached_for_URLs_that_match_this_regex_ {
+            get {
+                return ResourceManager.GetString("If a valid regex is entered here, this template will only be cached for URLs that" +
+                        " match this regex.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien de resultaten van de query gegroepeerd moeten worden, vul dan hier de kolom in waarop gegroepeerd moet worden..
+        /// </summary>
+        internal static string If_the_results_of_the_query_should_be_grouped__enter_the_column_by_which_to_group_ {
+            get {
+                return ResourceManager.GetString("If the results of the query should be grouped, enter the column by which to group" +
+                        ".", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien de resultaten van de query gegroepeerd moeten worden, vul dan hier de prefix in voor alle kolommen die van sub-items zijn. Deze betreffende kolommen moeten dan in de resultaten van de query beginnen met deze waarde..
+        /// </summary>
+        internal static string If_the_results_of_the_query_should_be_grouped__enter_the_prefix_here_for_all_columns_that_are_from_sub_items__These_relevant_columns_must_then_start_with_this_value_in_the_results_of_the_query_ {
+            get {
+                return ResourceManager.GetString("If the results of the query should be grouped, enter the prefix here for all colu" +
+                        "mns that are from sub-items. These relevant columns must then start with this va" +
+                        "lue in the results of the query.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien er CSS van een CDN o.i.d. geladen moet worden, kunnen de URL&apos;s daarvan hier ingevuld worden..
+        /// </summary>
+        internal static string If_there_is_CSS_from_a_CDN_or_similar__needs_to_be_loaded__its_URLs_can_be_entered_here_ {
+            get {
+                return ResourceManager.GetString("If there is CSS from a CDN or similar, needs to be loaded, its URLs can be entere" +
+                        "d here.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien er javascript van een CDN o.i.d. geladen moet worden, kunnen de URL&apos;s daarvan hier ingevuld worden..
+        /// </summary>
+        internal static string If_there_is_javascript_from_a_CDN_or_similar__needs_to_be_loaded__its_URLs_can_be_entered_here_ {
+            get {
+                return ResourceManager.GetString("If there is javascript from a CDN or similar, needs to be loaded, its URLs can be" +
+                        " entered here.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indien u hierboven een mailtemplate en een taal (indien u meertaligheid heeft in Wiser) selecteert, wordt die template automatisch hier gevuld. De mail kan dan vervolgens nog aangepast worden indien u wilt afwijken van de gekozen template. Hier kunnen dynamische waardes ingezet worden die uit een dataselector of query komen, deze dynamische waardes moeten binnen accolades staan (bijoorbeeld: &quot;{firstName}&quot;). Welke waardes u hier kunt invullen, kunt u zien in de dataselectormodule. Open daar de betreffende da [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string If_you_select_a_mail_template_and_a_language__if_you_have_multilingual_in_Wiser__above__that_template_will_automatically_be_filled_here_ {
+            get {
+                return ResourceManager.GetString("If you select a mail template and a language (if you have multilingual in Wiser) " +
+                        "above, that template will automatically be filled here.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afbeeldingen.
+        /// </summary>
+        internal static string Images {
+            get {
+                return ResourceManager.GetString("Images", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import.
+        /// </summary>
+        internal static string Import {
+            get {
+                return ResourceManager.GetString("Import", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Importeren eigenschappen van koppelingen.
+        /// </summary>
+        internal static string Import_link_properties {
+            get {
+                return ResourceManager.GetString("Import link properties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Importeren koppelingen.
+        /// </summary>
+        internal static string Import_links {
+            get {
+                return ResourceManager.GetString("Import links", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Importeren eigenschappen.
+        /// </summary>
+        internal static string Import_properties {
+            get {
+                return ResourceManager.GetString("Import properties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verder zijn nog de volgende databasegebruikers aangemaakt:.
+        /// </summary>
+        internal static string In_addition__the_following_database_users_have_been_created_ {
+            get {
+                return ResourceManager.GetString("In addition, the following database users have been created:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In geheugen.
+        /// </summary>
+        internal static string In_memory {
+            get {
+                return ResourceManager.GetString("In memory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In behandeling.
+        /// </summary>
+        internal static string In_progress {
+            get {
+                return ResourceManager.GetString("In progress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In dit geval moet er géén http(s) toegevoegd worden en ook geen slash o.i.d. aan het einde. Alleen het hoofddomein van de klant..
+        /// </summary>
+        internal static string In_this_case_no_http_s__need_to_be_added_and_no_slash_or_similar_at_the_end__Only_the_customer_s_primary_domain_ {
+            get {
+                return ResourceManager.GetString("In this case no http(s) need to be added and no slash or similar at the end. Only" +
+                        " the customer\'s primary domain.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invoertype.
+        /// </summary>
+        internal static string InputType {
+            get {
+                return ResourceManager.GetString("InputType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invoegen.
+        /// </summary>
+        internal static string Insert {
+            get {
+                return ResourceManager.GetString("Insert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invoegmodus.
+        /// </summary>
+        internal static string Insert_mode {
+            get {
+                return ResourceManager.GetString("Insert mode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to integer.
+        /// </summary>
+        internal static string integer {
+            get {
+                return ResourceManager.GetString("integer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is tussen.
+        /// </summary>
+        internal static string is_between {
+            get {
+                return ResourceManager.GetString("is between", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is configurator.
+        /// </summary>
+        internal static string Is_configurator {
+            get {
+                return ResourceManager.GetString("Is configurator", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is leeg.
+        /// </summary>
+        internal static string is_empty {
+            get {
+                return ResourceManager.GetString("is empty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is gelijk aan.
+        /// </summary>
+        internal static string is_equal_to {
+            get {
+                return ResourceManager.GetString("is equal to", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is map.
+        /// </summary>
+        internal static string Is_folder {
+            get {
+                return ResourceManager.GetString("Is folder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is groter dan.
+        /// </summary>
+        internal static string is_greater_than {
+            get {
+                return ResourceManager.GetString("is greater than", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is hoger dan of gelijk aan.
+        /// </summary>
+        internal static string is_greater_than_or_equal_to {
+            get {
+                return ResourceManager.GetString("is greater than or equal to", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is item ID.
+        /// </summary>
+        internal static string Is_item_ID {
+            get {
+                return ResourceManager.GetString("Is item ID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is kleiner dan.
+        /// </summary>
+        internal static string is_less_than {
+            get {
+                return ResourceManager.GetString("is less than", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is kleiner dan of gelijk aan.
+        /// </summary>
+        internal static string is_less_than_or_equal_to {
+            get {
+                return ResourceManager.GetString("is less than or equal to", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is meertalig.
+        /// </summary>
+        internal static string Is_multilingual {
+            get {
+                return ResourceManager.GetString("Is multilingual", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is niet leeg.
+        /// </summary>
+        internal static string is_not_empty {
+            get {
+                return ResourceManager.GetString("is not empty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to is ongelijk aan.
+        /// </summary>
+        internal static string is_not_equal_to {
+            get {
+                return ResourceManager.GetString("is not equal to", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is SCSS include template.
+        /// </summary>
+        internal static string Is_SCSS_include_template {
+            get {
+                return ResourceManager.GetString("Is SCSS include template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is dit een SCSS template welke dmv een import in andere SCSS templates gebruikt wordt?.
+        /// </summary>
+        internal static string Is_this_a_SCSS_template_which_is_used_by_means_of_an_import_in_other_SCSS_templates_ {
+            get {
+                return ResourceManager.GetString("Is this a SCSS template which is used by means of an import in other SCSS templat" +
+                        "es?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Is webshop.
+        /// </summary>
+        internal static string Is_webshop {
+            get {
+                return ResourceManager.GetString("Is webshop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item.
+        /// </summary>
+        internal static string Item {
+            get {
+                return ResourceManager.GetString("Item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item id.
+        /// </summary>
+        internal static string Item_id {
+            get {
+                return ResourceManager.GetString("Item id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item link.
+        /// </summary>
+        internal static string Item_link {
+            get {
+                return ResourceManager.GetString("Item link", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item selectie opties.
+        /// </summary>
+        internal static string Item_selection_options {
+            get {
+                return ResourceManager.GetString("Item selection options", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to items.
+        /// </summary>
+        internal static string items {
+            get {
+                return ResourceManager.GetString("items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Items kunnen niet in de rij aangepast worden.
+        /// </summary>
+        internal static string Items_cannot_be_edited_in_the_line {
+            get {
+                return ResourceManager.GetString("Items cannot be edited in the line", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Items kunnen niet geopend worden.
+        /// </summary>
+        internal static string Items_cannot_be_opened {
+            get {
+                return ResourceManager.GetString("Items cannot be opened", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to json.
+        /// </summary>
+        internal static string json {
+            get {
+                return ResourceManager.GetString("json", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Label stijl.
+        /// </summary>
+        internal static string Label_style {
+            get {
+                return ResourceManager.GetString("Label style", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breedte label.
+        /// </summary>
+        internal static string Label_width {
+            get {
+                return ResourceManager.GetString("Label width", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Taal.
+        /// </summary>
+        internal static string Language {
+            get {
+                return ResourceManager.GetString("Language", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Taalcode.
+        /// </summary>
+        internal static string Language_code {
+            get {
+                return ResourceManager.GetString("Language code", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vorige maand.
+        /// </summary>
+        internal static string Last_month {
+            get {
+                return ResourceManager.GetString("Last month", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laatste X items.
+        /// </summary>
+        internal static string Last_X_items {
+            get {
+                return ResourceManager.GetString("Last X items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vorig jaar.
+        /// </summary>
+        internal static string Last_year {
+            get {
+                return ResourceManager.GetString("Last year", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laag 0 is een speciaal geval; Als u maar één laag hebt, dan is laag 0 de enige laag die u nodig hebt. Als u meer dan 1 laag heeft, kunt u in laag 0 een globale header, footer en no-data template toevoegen. Laag 1 en hoger zijn de templates die overeenkomen met de lagen die de query retourneert..
+        /// </summary>
+        internal static string Layer_0_is_a_special_case__If_you_only_have_a_single_layer__then_layer_0_is_the_one_and_only_layer_that_you_need__If_you_have_more_than_1_layers__then_layer_0_is_where_you_can_add_a_global_header__footer_and_no_data_template__Layer_1_and_higher_are_the_templates_that_correspond_with_the_layers_that_the_query_returns_ {
+            get {
+                return ResourceManager.GetString(@"Layer 0 is a special case; If you only have a single layer, then layer 0 is the one and only layer that you need. If you have more than 1 layers, then layer 0 is where you can add a global header, footer and no-data template. Layer 1 and higher are the templates that correspond with the layers that the query returns.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Links.
+        /// </summary>
+        internal static string Left {
+            get {
+                return ResourceManager.GetString("Left", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beperkte opmaak + lay-out (uitlijnen en tabellen).
+        /// </summary>
+        internal static string Limited_formatting___layout__align_and_tables_ {
+            get {
+                return ResourceManager.GetString("Limited formatting + layout (align and tables)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beperkte opmaak + lay-out (uitlijnen en tabellen) + templates.
+        /// </summary>
+        internal static string Limited_formatting___layout__align_and_tables____templates {
+            get {
+                return ResourceManager.GetString("Limited formatting + layout (align and tables) + templates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alleen beperkte opmaak.
+        /// </summary>
+        internal static string Limited_formatting_only {
+            get {
+                return ResourceManager.GetString("Limited formatting only", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to linestring.
+        /// </summary>
+        internal static string linestring {
+            get {
+                return ResourceManager.GetString("linestring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Link type.
+        /// </summary>
+        internal static string Link_type {
+            get {
+                return ResourceManager.GetString("Link type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Koppeltype.
+        /// </summary>
+        internal static string Link_type_ {
+            get {
+                return ResourceManager.GetString("Link type/", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Link type nummer.
+        /// </summary>
+        internal static string Link_type_number {
+            get {
+                return ResourceManager.GetString("Link type number", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gekoppelde (S)CSS templates.
+        /// </summary>
+        internal static string Linked__S_CSS_templates {
+            get {
+                return ResourceManager.GetString("Linked (S)CSS templates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gekoppelde JS templates.
+        /// </summary>
+        internal static string Linked_JS_templates {
+            get {
+                return ResourceManager.GetString("Linked JS templates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gekoppelde Templates:.
+        /// </summary>
+        internal static string Linked_Templates_ {
+            get {
+                return ResourceManager.GetString("Linked Templates:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lijst van entiteiten.
+        /// </summary>
+        internal static string List_of_entities {
+            get {
+                return ResourceManager.GetString("List of entities", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Live.
+        /// </summary>
+        internal static string Live {
+            get {
+                return ResourceManager.GetString("Live", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laden in Wiser HTML-editors.
+        /// </summary>
+        internal static string Load_in_Wiser_HTML_editors {
+            get {
+                return ResourceManager.GetString("Load in Wiser HTML editors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laden op iedere pagina.
+        /// </summary>
+        internal static string Load_on_every_page {
+            get {
+                return ResourceManager.GetString("Load on every page", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data onbeveiligd inladen.
+        /// </summary>
+        internal static string Loading_data_unsecured {
+            get {
+                return ResourceManager.GetString("Loading data unsecured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uitloggen.
+        /// </summary>
+        internal static string Log_out {
+            get {
+                return ResourceManager.GetString("Log out", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ingelogde tijd.
+        /// </summary>
+        internal static string Logged_in_time {
+            get {
+                return ResourceManager.GetString("Logged in time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Inloggen.
+        /// </summary>
+        internal static string Login {
+            get {
+                return ResourceManager.GetString("Login", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to longblob.
+        /// </summary>
+        internal static string longblob {
+            get {
+                return ResourceManager.GetString("longblob", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to longtext.
+        /// </summary>
+        internal static string longtext {
+            get {
+                return ResourceManager.GetString("longtext", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laagste waarde (MIN).
+        /// </summary>
+        internal static string Lowest_value__MIN_ {
+            get {
+                return ResourceManager.GetString("Lowest value (MIN)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beschikbaar maken voor rendering.
+        /// </summary>
+        internal static string Make_available_for_rendering {
+            get {
+                return ResourceManager.GetString("Make available for rendering", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beschikbaar maken in communicatiemodule.
+        /// </summary>
+        internal static string Make_available_in_communication_module {
+            get {
+                return ResourceManager.GetString("Make available in communication module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beschikbaar maken in exportmodule.
+        /// </summary>
+        internal static string Make_available_in_export_module {
+            get {
+                return ResourceManager.GetString("Make available in export module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maak uw keuze....
+        /// </summary>
+        internal static string Make_your_choice___ {
+            get {
+                return ResourceManager.GetString("Make your choice...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Matchen tegen.
+        /// </summary>
+        internal static string Match_against {
+            get {
+                return ResourceManager.GetString("Match against", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Matchen kolommen.
+        /// </summary>
+        internal static string Match_columns {
+            get {
+                return ResourceManager.GetString("Match columns", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Maximale waarde.
+        /// </summary>
+        internal static string Maximum_value {
+            get {
+                return ResourceManager.GetString("Maximum value", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to mediumblob.
+        /// </summary>
+        internal static string mediumblob {
+            get {
+                return ResourceManager.GetString("mediumblob", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to mediumint.
+        /// </summary>
+        internal static string mediumint {
+            get {
+                return ResourceManager.GetString("mediumint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to mediumtext.
+        /// </summary>
+        internal static string mediumtext {
+            get {
+                return ResourceManager.GetString("mediumtext", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Menu.
+        /// </summary>
+        internal static string Menu {
+            get {
+                return ResourceManager.GetString("Menu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Methode.
+        /// </summary>
+        internal static string Method {
+            get {
+                return ResourceManager.GetString("Method", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Minimale tijd.
+        /// </summary>
+        internal static string Minimum_time {
+            get {
+                return ResourceManager.GetString("Minimum time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Minimale waarde.
+        /// </summary>
+        internal static string Minimum_value {
+            get {
+                return ResourceManager.GetString("Minimum value", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mode.
+        /// </summary>
+        internal static string Mode {
+            get {
+                return ResourceManager.GetString("Mode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Module.
+        /// </summary>
+        internal static string Module {
+            get {
+                return ResourceManager.GetString("Module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ID van de module.
+        /// </summary>
+        internal static string Module_ID {
+            get {
+                return ResourceManager.GetString("Module ID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam van de module.
+        /// </summary>
+        internal static string Module_name {
+            get {
+                return ResourceManager.GetString("Module name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Modules.
+        /// </summary>
+        internal static string Modules {
+            get {
+                return ResourceManager.GetString("Modules", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to maandag.
+        /// </summary>
+        internal static string monday {
+            get {
+                return ResourceManager.GetString("monday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to maand/maanden.
+        /// </summary>
+        internal static string month_months {
+            get {
+                return ResourceManager.GetString("month/months", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to multilinestring.
+        /// </summary>
+        internal static string multilinestring {
+            get {
+                return ResourceManager.GetString("multilinestring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Meerdere bestanden.
+        /// </summary>
+        internal static string Multiple_files {
+            get {
+                return ResourceManager.GetString("Multiple files", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to multipoint.
+        /// </summary>
+        internal static string multipoint {
+            get {
+                return ResourceManager.GetString("multipoint", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to multipolygon.
+        /// </summary>
+        internal static string multipolygon {
+            get {
+                return ResourceManager.GetString("multipolygon", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam.
+        /// </summary>
+        internal static string Name {
+            get {
+                return ResourceManager.GetString("Name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam voor item.
+        /// </summary>
+        internal static string Name_for_item {
+            get {
+                return ResourceManager.GetString("Name for item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam ontvanger.
+        /// </summary>
+        internal static string Name_reciever {
+            get {
+                return ResourceManager.GetString("Name reciever", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuw.
+        /// </summary>
+        internal static string New {
+            get {
+                return ResourceManager.GetString("New", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuwe rol.
+        /// </summary>
+        internal static string New_role {
+            get {
+                return ResourceManager.GetString("New role", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nieuw aangemaakt.
+        /// </summary>
+        internal static string Newly_created {
+            get {
+                return ResourceManager.GetString("Newly created", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geen aggregatie.
+        /// </summary>
+        internal static string No_aggregation {
+            get {
+                return ResourceManager.GetString("No aggregation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to geen caching.
+        /// </summary>
+        internal static string No_caching {
+            get {
+                return ResourceManager.GetString("No caching", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geen entiteiten gevonden. Neem a.u.b. contact op met ons..
+        /// </summary>
+        internal static string No_entities_found__Please_contact_us_ {
+            get {
+                return ResourceManager.GetString("No entities found. Please contact us.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geen filter.
+        /// </summary>
+        internal static string No_filter {
+            get {
+                return ResourceManager.GetString("No filter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geen formatting.
+        /// </summary>
+        internal static string No_formatting {
+            get {
+                return ResourceManager.GetString("No formatting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nog geen item geselecteerd.
+        /// </summary>
+        internal static string No_item_selected_yet {
+            get {
+                return ResourceManager.GetString("No item selected yet", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geen koppeltypes gevonden..
+        /// </summary>
+        internal static string No_pairing_types_found_ {
+            get {
+                return ResourceManager.GetString("No pairing types found.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geen status.
+        /// </summary>
+        internal static string No_status {
+            get {
+                return ResourceManager.GetString("No status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Normaal.
+        /// </summary>
+        internal static string Normal {
+            get {
+                return ResourceManager.GetString("Normal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Let op: bij items worden ook altijd &lt;strong&gt;alle&lt;/strong&gt; gekoppelde items meegenomen!.
+        /// </summary>
+        internal static string Note__with_items__strong_alle__strong__linked_items_are_always_included_ {
+            get {
+                return ResourceManager.GetString("Note: with items <strong>alle</strong> linked items are always included!", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Niets.
+        /// </summary>
+        internal static string Nothing {
+            get {
+                return ResourceManager.GetString("Nothing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal decimalen.
+        /// </summary>
+        internal static string Number_of_decimals {
+            get {
+                return ResourceManager.GetString("Number of decimals", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal items:.
+        /// </summary>
+        internal static string Number_of_Items_ {
+            get {
+                return ResourceManager.GetString("Number of Items:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal logins.
+        /// </summary>
+        internal static string Number_of_logins {
+            get {
+                return ResourceManager.GetString("Number of logins", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Aantal gebruikers:.
+        /// </summary>
+        internal static string Number_of_users_ {
+            get {
+                return ResourceManager.GetString("Number of users:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Numeriek.
+        /// </summary>
+        internal static string Numeric {
+            get {
+                return ResourceManager.GetString("Numeric", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to numeric.
+        /// </summary>
+        internal static string numeric_ {
+            get {
+                return ResourceManager.GetString("numeric.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Object i.p.v. array.
+        /// </summary>
+        internal static string Object_instead_of_array {
+            get {
+                return ResourceManager.GetString("Object instead of array", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OK.
+        /// </summary>
+        internal static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Oud.
+        /// </summary>
+        internal static string Old {
+            get {
+                return ResourceManager.GetString("Old", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Op.
+        /// </summary>
+        internal static string On {
+            get {
+                return ResourceManager.GetString("On", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Op harde schijf.
+        /// </summary>
+        internal static string On_hard_disk {
+            get {
+                return ResourceManager.GetString("On hard disk", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Een of meerdere vaste ontvangers (e-mailadres of GSM-nummer). Vul meerdere waardes in (deze mogen gescheiden worden door komma&apos;s, puntkomma&apos;s en/of enters)..
+        /// </summary>
+        internal static string One_or_more_fixed_receivers {
+            get {
+                return ResourceManager.GetString("One or more fixed receivers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alleen velden die nog geen waarde bevatten in de doeltalen, zullen vertaald worden. Deze functionaliteit zal nooit ingevulde waardes overschrijven..
+        /// </summary>
+        internal static string Only_fields_that_do_not_yet_contain_a_value_in_the_target_languages_will_be_translated__This_functionality_will_never_overwrite_entered_values_ {
+            get {
+                return ResourceManager.GetString("Only fields that do not yet contain a value in the target languages will be trans" +
+                        "lated. This functionality will never overwrite entered values.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alleen het subdomein, met kleine letters, bijvoorbeeld &apos;happygeeks&apos;. Dit is verplicht voor Wiser klanten, die moeten kunnen inloggen via een subdomein, zoals &apos;happygeeks.wiser.nl&apos;..
+        /// </summary>
+        internal static string Only_the_subdomain__with_lowercase_letters__for_example__happygeeks___This_is_required_for_Wiser_customers__who_must_be_able_to_log_in_via_a_subdomain__such_as__happygeeks_wiser_nl__ {
+            get {
+                return ResourceManager.GetString("Only the subdomain, with lowercase letters, for example \'happygeeks\'. This is req" +
+                        "uired for Wiser customers, who must be able to log in via a subdomain, such as \'" +
+                        "happygeeks.wiser.nl\'.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Openen.
+        /// </summary>
+        internal static string Open {
+            get {
+                return ResourceManager.GetString("Open", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Branch openen.
+        /// </summary>
+        internal static string Open_branch {
+            get {
+                return ResourceManager.GetString("Open branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Openstaande wijzigingen.
+        /// </summary>
+        internal static string Open_changes {
+            get {
+                return ResourceManager.GetString("Open changes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestaande communicatie-uiting openen.
+        /// </summary>
+        internal static string Open_existing_communication {
+            get {
+                return ResourceManager.GetString("Open existing communication", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Openstaande agenderingen.
+        /// </summary>
+        internal static string Open_scheduling {
+            get {
+                return ResourceManager.GetString("Open scheduling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Url openen in.
+        /// </summary>
+        internal static string Open_url_in {
+            get {
+                return ResourceManager.GetString("Open url in", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open venster.
+        /// </summary>
+        internal static string Open_window {
+            get {
+                return ResourceManager.GetString("Open window", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wiser item openen.
+        /// </summary>
+        internal static string Open_Wiser_item {
+            get {
+                return ResourceManager.GetString("Open Wiser item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Optioneel.
+        /// </summary>
+        internal static string Optional {
+            get {
+                return ResourceManager.GetString("Optional", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opties.
+        /// </summary>
+        internal static string Options {
+            get {
+                return ResourceManager.GetString("Options", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opties JSON.
+        /// </summary>
+        internal static string Options_JSON {
+            get {
+                return ResourceManager.GetString("Options JSON", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OF.
+        /// </summary>
+        internal static string OR {
+            get {
+                return ResourceManager.GetString("OR", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Orderen.
+        /// </summary>
+        internal static string Order_by {
+            get {
+                return ResourceManager.GetString("Order by", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Origineel gewijzigd op.
+        /// </summary>
+        internal static string Original_changed_on {
+            get {
+                return ResourceManager.GetString("Original changed on", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Overige.
+        /// </summary>
+        internal static string Others {
+            get {
+                return ResourceManager.GetString("Others", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uitkomst dataselector.
+        /// </summary>
+        internal static string Outcome_data_selector {
+            get {
+                return ResourceManager.GetString("Outcome data selector", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Overzicht.
+        /// </summary>
+        internal static string Overview {
+            get {
+                return ResourceManager.GetString("Overview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameters.
+        /// </summary>
+        internal static string Parameters {
+            get {
+                return ResourceManager.GetString("Parameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bovenliggende objecten.
+        /// </summary>
+        internal static string Parent_objects {
+            get {
+                return ResourceManager.GetString("Parent objects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wachtwoord.
+        /// </summary>
+        internal static string Password {
+            get {
+                return ResourceManager.GetString("Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PDF veldnaam achtergrond.
+        /// </summary>
+        internal static string PDF_background_field_name {
+            get {
+                return ResourceManager.GetString("PDF background field name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PDF document opties veldnaam.
+        /// </summary>
+        internal static string PDF_document_options_dield_name {
+            get {
+                return ResourceManager.GetString("PDF document options dield name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to PDF bestandsnaam.
+        /// </summary>
+        internal static string PDF_file_name {
+            get {
+                return ResourceManager.GetString("PDF file name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Telefoonnummer selector.
+        /// </summary>
+        internal static string Phone_number_selector {
+            get {
+                return ResourceManager.GetString("Phone number selector", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to point.
+        /// </summary>
+        internal static string point {
+            get {
+                return ResourceManager.GetString("point", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Poortnummer.
+        /// </summary>
+        internal static string Port_number {
+            get {
+                return ResourceManager.GetString("Port number", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pre-load query.
+        /// </summary>
+        internal static string Pre_load_query {
+            get {
+                return ResourceManager.GetString("Pre-load query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Import klaarzetten.
+        /// </summary>
+        internal static string Prepare_import {
+            get {
+                return ResourceManager.GetString("Prepare import", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preview.
+        /// </summary>
+        internal static string Preview {
+            get {
+                return ResourceManager.GetString("Preview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Prijs per maand:.
+        /// </summary>
+        internal static string Price_per_month_ {
+            get {
+                return ResourceManager.GetString("Price per month:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Printen.
+        /// </summary>
+        internal static string Print {
+            get {
+                return ResourceManager.GetString("Print", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Procedure.
+        /// </summary>
+        internal static string Procedure {
+            get {
+                return ResourceManager.GetString("Procedure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Eigenschappen.
+        /// </summary>
+        internal static string Properties {
+            get {
+                return ResourceManager.GetString("Properties", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Eigenschap naam.
+        /// </summary>
+        internal static string Property_name {
+            get {
+                return ResourceManager.GetString("Property name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gepubliceerde omgeving.
+        /// </summary>
+        internal static string Published_Environment {
+            get {
+                return ResourceManager.GetString("Published Environment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query.
+        /// </summary>
+        internal static string Query {
+            get {
+                return ResourceManager.GetString("Query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query na toevoegen.
+        /// </summary>
+        internal static string Query_after_insert {
+            get {
+                return ResourceManager.GetString("Query after insert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query na bewerken.
+        /// </summary>
+        internal static string Query_after_update {
+            get {
+                return ResourceManager.GetString("Query after update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query na verwijderen.
+        /// </summary>
+        internal static string Query_before_delete {
+            get {
+                return ResourceManager.GetString("Query before delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query voor het bijwerken.
+        /// </summary>
+        internal static string Query_before_update {
+            get {
+                return ResourceManager.GetString("Query before update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beschrijving van de query.
+        /// </summary>
+        internal static string Query_description {
+            get {
+                return ResourceManager.GetString("Query description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query voor het aantal records.
+        /// </summary>
+        internal static string Query_for_the_number_of_records {
+            get {
+                return ResourceManager.GetString("Query for the number of records", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query item id.
+        /// </summary>
+        internal static string Query_item_id {
+            get {
+                return ResourceManager.GetString("Query item id", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query&apos;s.
+        /// </summary>
+        internal static string Query_s {
+            get {
+                return ResourceManager.GetString("Query\'s", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Willekeurig X items.
+        /// </summary>
+        internal static string Random_X_items {
+            get {
+                return ResourceManager.GetString("Random X items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alleen lezen.
+        /// </summary>
+        internal static string Read_only {
+            get {
+                return ResourceManager.GetString("Read only", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alleen lezen veld.
+        /// </summary>
+        internal static string Read_only_field {
+            get {
+                return ResourceManager.GetString("Read-only field", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ontvangers.
+        /// </summary>
+        internal static string Receivers {
+            get {
+                return ResourceManager.GetString("Receivers", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to E-mailadres ontvanger.
+        /// </summary>
+        internal static string reciever_email_address {
+            get {
+                return ResourceManager.GetString("reciever email address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Periodiek.
+        /// </summary>
+        internal static string Recurring {
+            get {
+                return ResourceManager.GetString("Recurring", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Periode.
+        /// </summary>
+        internal static string Recurring_date {
+            get {
+                return ResourceManager.GetString("Recurring date", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Redirect URL.
+        /// </summary>
+        internal static string Redirect_URL {
+            get {
+                return ResourceManager.GetString("Redirect URL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Redirects.
+        /// </summary>
+        internal static string Redirects {
+            get {
+                return ResourceManager.GetString("Redirects", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ververs grid na aanpassing in rij.
+        /// </summary>
+        internal static string Refresh_grid_after_line_edit {
+            get {
+                return ResourceManager.GetString("Refresh grid after line edit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Regex voor pad.
+        /// </summary>
+        internal static string Regex_for_Path {
+            get {
+                return ResourceManager.GetString("Regex for Path", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Regex validatie.
+        /// </summary>
+        internal static string Regex_validation {
+            get {
+                return ResourceManager.GetString("Regex validation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item verversen.
+        /// </summary>
+        internal static string Reload_item {
+            get {
+                return ResourceManager.GetString("Reload item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Filters onthouden per gebruiker.
+        /// </summary>
+        internal static string Remember_filters_per_user {
+            get {
+                return ResourceManager.GetString("Remember filters per user", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laag verwijderen.
+        /// </summary>
+        internal static string Remove_layer {
+            get {
+                return ResourceManager.GetString("Remove layer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijder profiel.
+        /// </summary>
+        internal static string Remove_profile {
+            get {
+                return ResourceManager.GetString("Remove profile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestand hernoemen.
+        /// </summary>
+        internal static string Rename_file {
+            get {
+                return ResourceManager.GetString("Rename file", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Afbeelding hernoemen.
+        /// </summary>
+        internal static string Rename_image {
+            get {
+                return ResourceManager.GetString("Rename image", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template hernoemen.
+        /// </summary>
+        internal static string Rename_template {
+            get {
+                return ResourceManager.GetString("Rename template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nogmaals uw nieuwe wachtwoord.
+        /// </summary>
+        internal static string Repeat_your_new_password {
+            get {
+                return ResourceManager.GetString("Repeat your new password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bug melden!.
+        /// </summary>
+        internal static string Report_bug_ {
+            get {
+                return ResourceManager.GetString("Report bug!", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verplicht veld.
+        /// </summary>
+        internal static string Required_field {
+            get {
+                return ResourceManager.GetString("Required field", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reset.
+        /// </summary>
+        internal static string Reset {
+            get {
+                return ResourceManager.GetString("Reset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Branch terugzetten.
+        /// </summary>
+        internal static string Restore_branch {
+            get {
+                return ResourceManager.GetString("Restore branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Bestaande branch terugzetten naar productie.
+        /// </summary>
+        internal static string Restore_existing_branch_to_production {
+            get {
+                return ResourceManager.GetString("Restore existing branch to production", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geef 404 status indien pre-load query geen resultaten heeft.
+        /// </summary>
+        internal static string Return_404_status_if_pre_load_query_has_no_results {
+            get {
+                return ResourceManager.GetString("Return 404 status if pre-load query has no results", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Returns.
+        /// </summary>
+        internal static string Returns {
+            get {
+                return ResourceManager.GetString("Returns", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Omdraaien.
+        /// </summary>
+        internal static string Reverse {
+            get {
+                return ResourceManager.GetString("Reverse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rechts.
+        /// </summary>
+        internal static string Right {
+            get {
+                return ResourceManager.GetString("Right", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rollen.
+        /// </summary>
+        internal static string Roles {
+            get {
+                return ResourceManager.GetString("Roles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rollen die deze data selector mogen uitvoeren via de API.
+        /// </summary>
+        internal static string Roles_that_are_allowed_to_execute_this_data_selector_via_the_API {
+            get {
+                return ResourceManager.GetString("Roles that are allowed to execute this data selector via the API", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rollen die permisies hebben op de query.
+        /// </summary>
+        internal static string Roles_that_have_permissions_on_the_query {
+            get {
+                return ResourceManager.GetString("Roles that have permissions on the query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Routine type.
+        /// </summary>
+        internal static string Routine_type {
+            get {
+                return ResourceManager.GetString("Routine type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to zaterdag.
+        /// </summary>
+        internal static string saturday {
+            get {
+                return ResourceManager.GetString("saturday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opslaan.
+        /// </summary>
+        internal static string Save {
+            get {
+                return ResourceManager.GetString("Save", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opslaan &amp;amp; sluiten.
+        /// </summary>
+        internal static string Save__amp__close {
+            get {
+                return ResourceManager.GetString("Save &amp; close", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opslaan &amp;amp; deploy naar test-omgeving.
+        /// </summary>
+        internal static string Save__amp__deploy_to_test_environment {
+            get {
+                return ResourceManager.GetString("Save &amp; deploy to test environment", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opslaan en sluiten.
+        /// </summary>
+        internal static string Save_and_close {
+            get {
+                return ResourceManager.GetString("Save and close", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opslaan en nieuw item maken.
+        /// </summary>
+        internal static string Save_and_create_new_item {
+            get {
+                return ResourceManager.GetString("Save and create new item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Opslaan als PDF.
+        /// </summary>
+        internal static string Save_as_PDF {
+            get {
+                return ResourceManager.GetString("Save as PDF", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geschiedenis opslaan.
+        /// </summary>
+        internal static string Save_history {
+            get {
+                return ResourceManager.GetString("Save history", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Profiel opslaan.
+        /// </summary>
+        internal static string Save_profile {
+            get {
+                return ResourceManager.GetString("Save profile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Profiel opslaan als....
+        /// </summary>
+        internal static string Save_profile_as___ {
+            get {
+                return ResourceManager.GetString("Save profile as...", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SEO titel opslaan.
+        /// </summary>
+        internal static string Save_title_as_SEO {
+            get {
+                return ResourceManager.GetString("Save title as SEO", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waarde van dit veld ook opslaan als zoekmachine-vriendelijke tekst.
+        /// </summary>
+        internal static string Save_value_of_this_field_also_as_search_engine_friendly_text {
+            get {
+                return ResourceManager.GetString("Save value of this field also as search engine friendly text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wijzigingen opslaan.
+        /// </summary>
+        internal static string Saving_Changes {
+            get {
+                return ResourceManager.GetString("Saving Changes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Agendering historie.
+        /// </summary>
+        internal static string Scheduling_history {
+            get {
+                return ResourceManager.GetString("Scheduling history", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Schemanaam.
+        /// </summary>
+        internal static string Schema_name {
+            get {
+                return ResourceManager.GetString("Schema name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Scope.
+        /// </summary>
+        internal static string Scope {
+            get {
+                return ResourceManager.GetString("Scope", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Script.
+        /// </summary>
+        internal static string Script {
+            get {
+                return ResourceManager.GetString("Script", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zoek-teller-query.
+        /// </summary>
+        internal static string Search_counter_query {
+            get {
+                return ResourceManager.GetString("Search-counter-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zoek in velden.
+        /// </summary>
+        internal static string Search_in_fields {
+            get {
+                return ResourceManager.GetString("Search in fields", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zoeken in titel.
+        /// </summary>
+        internal static string Search_in_title {
+            get {
+                return ResourceManager.GetString("Search in title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Zoek-query.
+        /// </summary>
+        internal static string Search_query {
+            get {
+                return ResourceManager.GetString("Search-query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beveligingssleutel.
+        /// </summary>
+        internal static string Security_key {
+            get {
+                return ResourceManager.GetString("Security key", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Beveiligingsmethode.
+        /// </summary>
+        internal static string Security_method {
+            get {
+                return ResourceManager.GetString("Security method", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer een component.
+        /// </summary>
+        internal static string Select_a_component {
+            get {
+                return ResourceManager.GetString("Select a component", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer een data-bestand... (max. 25 MB).
+        /// </summary>
+        internal static string Select_a_data_file_____max__25_MB_ {
+            get {
+                return ResourceManager.GetString("Select a data file... (max. 25 MB)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer een dataselector.
+        /// </summary>
+        internal static string Select_a_data_selector {
+            get {
+                return ResourceManager.GetString("Select a data selector", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer een query.
+        /// </summary>
+        internal static string Select_a_query {
+            get {
+                return ResourceManager.GetString("Select a query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer een ZIP-bestand met afbeeldingen... (max. 400 MB).
+        /// </summary>
+        internal static string Select_a_ZIP_file_with_images_____max__400_MB_ {
+            get {
+                return ResourceManager.GetString("Select a ZIP file with images... (max. 400 MB)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entiteit selecteren of toevoegen.
+        /// </summary>
+        internal static string Select_or_add_entity {
+            get {
+                return ResourceManager.GetString("Select or add entity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Module selecteren of toevoegen.
+        /// </summary>
+        internal static string Select_or_add_module {
+            get {
+                return ResourceManager.GetString("Select or add module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Query selecteren of toevoegen.
+        /// </summary>
+        internal static string Select_or_add_query {
+            get {
+                return ResourceManager.GetString("Select or add query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer periode.
+        /// </summary>
+        internal static string Select_period {
+            get {
+                return ResourceManager.GetString("Select period", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer benodigde gegevens.
+        /// </summary>
+        internal static string Select_required_data {
+            get {
+                return ResourceManager.GetString("Select required data", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer benodigde gegevens van koppelingen.
+        /// </summary>
+        internal static string Select_required_information_from_links {
+            get {
+                return ResourceManager.GetString("Select required information from links", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer de branch die u wilt openen.
+        /// </summary>
+        internal static string Select_the_branch_you_want_to_open {
+            get {
+                return ResourceManager.GetString("Select the branch you want to open", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer eerst de branch die u wilt synchroniseren.
+        /// </summary>
+        internal static string Select_the_branch_you_want_to_synchronize_first {
+            get {
+                return ResourceManager.GetString("Select the branch you want to synchronize first", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kies hier de talen waarin alle velden vertaald moeten worden. U kunt dit veld leeglaten indien u alle talen (die ingesteld staan in de Stamgegevensmodule) wilt gebruiken..
+        /// </summary>
+        internal static string Select_the_languages_which_all_fields_should_be_translated_to__You_can_leave_this_field_empty_if_you_want_to_use_all_languages__that_are_set_in_the_Master_data_module__ {
+            get {
+                return ResourceManager.GetString("Select the languages which all fields should be translated to. You can leave this" +
+                        " field empty if you want to use all languages (that are set in the Master data m" +
+                        "odule).", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer de ontvangers via een dataselector..
+        /// </summary>
+        internal static string Select_the_receivers_via_a_data_selector_ {
+            get {
+                return ResourceManager.GetString("Select the receivers via a data selector.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer de ontvangers via een vooraf ingestelde query..
+        /// </summary>
+        internal static string Select_the_receivers_via_a_preset_query_ {
+            get {
+                return ResourceManager.GetString("Select the receivers via a preset query.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selecteer te synchroniseren Wiser data.
+        /// </summary>
+        internal static string Select_to_synchronize_Wiser_data {
+            get {
+                return ResourceManager.GetString("Select to synchronize Wiser data", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selectie.
+        /// </summary>
+        internal static string Selection {
+            get {
+                return ResourceManager.GetString("Selection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verzenden.
+        /// </summary>
+        internal static string Send {
+            get {
+                return ResourceManager.GetString("Send", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verstuur op.
+        /// </summary>
+        internal static string Send_on {
+            get {
+                return ResourceManager.GetString("Send on", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verzendpatroon.
+        /// </summary>
+        internal static string Send_pattern {
+            get {
+                return ResourceManager.GetString("Send pattern", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verzendtijd.
+        /// </summary>
+        internal static string Send_time {
+            get {
+                return ResourceManager.GetString("Send time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to E-mailadres verzender.
+        /// </summary>
+        internal static string Sender_email_address {
+            get {
+                return ResourceManager.GetString("Sender email address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam verzender.
+        /// </summary>
+        internal static string Sender_name {
+            get {
+                return ResourceManager.GetString("Sender name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SEO.
+        /// </summary>
+        internal static string SEO {
+            get {
+                return ResourceManager.GetString("SEO", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to server caching volledige template (obv volledige URL, inclusief domein en querystring).
+        /// </summary>
+        internal static string server_caching_full_template__based_on_full_URL__including_domain_and_query_string_ {
+            get {
+                return ResourceManager.GetString("server caching full template (based on full URL, including domain and query strin" +
+                        "g)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to server caching volledige template (per SEO vriendelijke URL + querystring combinatie verschillend).
+        /// </summary>
+        internal static string server_caching_full_template__per_SEO_friendly_URL___query_string_combination_different_ {
+            get {
+                return ResourceManager.GetString("server caching full template (per SEO friendly URL + query string combination dif" +
+                        "ferent)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to server caching volledige template (per SEO vriendelijke URL verschillend).
+        /// </summary>
+        internal static string server_caching_full_template__per_SEO_friendly_URL_different_ {
+            get {
+                return ResourceManager.GetString("server caching full template (per SEO friendly URL different)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to server caching volledige template (ongeacht URL).
+        /// </summary>
+        internal static string server_caching_full_template__regardless_of_URL_ {
+            get {
+                return ResourceManager.GetString("server caching full template (regardless of URL)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stel 0 in voor geen limiet.
+        /// </summary>
+        internal static string Set_0_for_no_limit {
+            get {
+                return ResourceManager.GetString("Set 0 for no limit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stel een limiet in.
+        /// </summary>
+        internal static string Set_a_limit {
+            get {
+                return ResourceManager.GetString("Set a limit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Huidige datum als default invullen.
+        /// </summary>
+        internal static string Set_current_date_as_default {
+            get {
+                return ResourceManager.GetString("Set current date as default", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stel de sorteervolgorde in.
+        /// </summary>
+        internal static string Set_the_sort_order {
+            get {
+                return ResourceManager.GetString("Set the sort order", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Instellingen.
+        /// </summary>
+        internal static string Settings {
+            get {
+                return ResourceManager.GetString("Settings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Winkelmandjes.
+        /// </summary>
+        internal static string Shopping_baskets {
+            get {
+                return ResourceManager.GetString("Shopping baskets", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL&apos;s, of per URL/querystring aparte cache..
+        /// </summary>
+        internal static string Should_caching_be_enabled_for_this_template__If_yes__what_kind_of_caching__For_example__caching_can_be_the_same_for_all_URLs__or_separate_cache_per_URL_querystring_ {
+            get {
+                return ResourceManager.GetString("Should caching be enabled for this template? If yes, what kind of caching. For ex" +
+                        "ample, caching can be the same for all URLs, or separate cache per URL/querystri" +
+                        "ng.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon toegevoegd door kolom.
+        /// </summary>
+        internal static string Show_added_by_column {
+            get {
+                return ResourceManager.GetString("Show added by column", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon toegevoegd op kolom.
+        /// </summary>
+        internal static string Show_added_on_column {
+            get {
+                return ResourceManager.GetString("Show added on column", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon alle items, i.p.v. alleen gekoppelde items.
+        /// </summary>
+        internal static string Show_all_items__instead_of_only_linked_items {
+            get {
+                return ResourceManager.GetString("Show all items, instead of only linked items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon gewijzigd op kolom.
+        /// </summary>
+        internal static string Show_changed_on_column {
+            get {
+                return ResourceManager.GetString("Show changed on column", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alles tonen.
+        /// </summary>
+        internal static string Show_everything {
+            get {
+                return ResourceManager.GetString("Show everything", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tonen in communicatiemodule.
+        /// </summary>
+        internal static string Show_in_communication_module {
+            get {
+                return ResourceManager.GetString("Show in communication module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tonen in exportmodule.
+        /// </summary>
+        internal static string Show_in_export_module {
+            get {
+                return ResourceManager.GetString("Show in export module", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tonen in overzicht.
+        /// </summary>
+        internal static string Show_in_overview_tab {
+            get {
+                return ResourceManager.GetString("Show in overview tab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tonen bij zoeken.
+        /// </summary>
+        internal static string Show_in_search {
+            get {
+                return ResourceManager.GetString("Show in search", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tonen in tree view.
+        /// </summary>
+        internal static string Show_in_tree_view {
+            get {
+                return ResourceManager.GetString("Show in tree view", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon JSON.
+        /// </summary>
+        internal static string Show_JSON {
+            get {
+                return ResourceManager.GetString("Show JSON", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Minder tonen.
+        /// </summary>
+        internal static string Show_less {
+            get {
+                return ResourceManager.GetString("Show less", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon query.
+        /// </summary>
+        internal static string Show_query {
+            get {
+                return ResourceManager.GetString("Show query", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gerelateerde video&apos;s weergeven.
+        /// </summary>
+        internal static string Show_related_videos {
+            get {
+                return ResourceManager.GetString("Show related videos", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon resultaat.
+        /// </summary>
+        internal static string Show_result {
+            get {
+                return ResourceManager.GetString("Show result", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tekst tonen indien geen link.
+        /// </summary>
+        internal static string Show_text_if_no_link {
+            get {
+                return ResourceManager.GetString("Show text if no link", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Toon titel veld.
+        /// </summary>
+        internal static string Show_title_field {
+            get {
+                return ResourceManager.GetString("Show title field", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Grootte in pixels.
+        /// </summary>
+        internal static string Size_in_pixels {
+            get {
+                return ResourceManager.GetString("Size in pixels", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to SMS.
+        /// </summary>
+        internal static string SMS {
+            get {
+                return ResourceManager.GetString("SMS", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Sortering.
+        /// </summary>
+        internal static string Sorting {
+            get {
+                return ResourceManager.GetString("Sorting", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Brontaal.
+        /// </summary>
+        internal static string Source_language {
+            get {
+                return ResourceManager.GetString("Source language", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start acties.
+        /// </summary>
+        internal static string Start_actions {
+            get {
+                return ResourceManager.GetString("Start actions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start aanmaken nieuwe branch.
+        /// </summary>
+        internal static string Start_creating_new_branch {
+            get {
+                return ResourceManager.GetString("Start creating new branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Startdatum en -tijd.
+        /// </summary>
+        internal static string Start_date_and_time {
+            get {
+                return ResourceManager.GetString("Start date and time", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Direct starten.
+        /// </summary>
+        internal static string Start_directly {
+            get {
+                return ResourceManager.GetString("Start directly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start export.
+        /// </summary>
+        internal static string Start_export {
+            get {
+                return ResourceManager.GetString("Start export", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Starten op:.
+        /// </summary>
+        internal static string Start_on_ {
+            get {
+                return ResourceManager.GetString("Start on:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start terugzet procedure.
+        /// </summary>
+        internal static string Start_restore_procedure {
+            get {
+                return ResourceManager.GetString("Start restore procedure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to begint met.
+        /// </summary>
+        internal static string starts_with {
+            get {
+                return ResourceManager.GetString("starts with", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Status.
+        /// </summary>
+        internal static string Status {
+            get {
+                return ResourceManager.GetString("Status", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ingelogd blijven.
+        /// </summary>
+        internal static string Stay_logged_in {
+            get {
+                return ResourceManager.GetString("Stay logged in", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Stapwaarde.
+        /// </summary>
+        internal static string Step_value {
+            get {
+                return ResourceManager.GetString("Step value", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uitrekken.
+        /// </summary>
+        internal static string Stretch {
+            get {
+                return ResourceManager.GetString("Stretch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Onderwerp.
+        /// </summary>
+        internal static string Subject {
+            get {
+                return ResourceManager.GetString("Subject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Som van waardes (SUM).
+        /// </summary>
+        internal static string Sum_of_values__SUM_ {
+            get {
+                return ResourceManager.GetString("Sum of values (SUM)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to zondag.
+        /// </summary>
+        internal static string sunday {
+            get {
+                return ResourceManager.GetString("sunday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tab.
+        /// </summary>
+        internal static string Tab {
+            get {
+                return ResourceManager.GetString("Tab", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tabel.
+        /// </summary>
+        internal static string Table {
+            get {
+                return ResourceManager.GetString("Table", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tabelnaam voorvoegsel.
+        /// </summary>
+        internal static string Table_name_prefix {
+            get {
+                return ResourceManager.GetString("Table name prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tabnaam.
+        /// </summary>
+        internal static string Tabname {
+            get {
+                return ResourceManager.GetString("Tabname", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Doeltalen.
+        /// </summary>
+        internal static string Target_languages {
+            get {
+                return ResourceManager.GetString("Target languages", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Taakomschrijving.
+        /// </summary>
+        internal static string Task_description {
+            get {
+                return ResourceManager.GetString("Task description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Template.
+        /// </summary>
+        internal static string Template {
+            get {
+                return ResourceManager.GetString("Template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Templates.
+        /// </summary>
+        internal static string Templates {
+            get {
+                return ResourceManager.GetString("Templates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Test.
+        /// </summary>
+        internal static string Test {
+            get {
+                return ResourceManager.GetString("Test", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tekst.
+        /// </summary>
+        internal static string Text {
+            get {
+                return ResourceManager.GetString("Text", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tekst op knop.
+        /// </summary>
+        internal static string Text_on_button {
+            get {
+                return ResourceManager.GetString("Text on button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Alleen tekst.
+        /// </summary>
+        internal static string Text_only {
+            get {
+                return ResourceManager.GetString("Text only", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Textbox type.
+        /// </summary>
+        internal static string Textbox_type {
+            get {
+                return ResourceManager.GetString("Textbox type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De kolom in de query die de key voor het object bevat..
+        /// </summary>
+        internal static string The_column_in_the_query_that_contains_the_key_for_the_object_ {
+            get {
+                return ResourceManager.GetString("The column in the query that contains the key for the object.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De kolom in de query die de value voor het object bevat..
+        /// </summary>
+        internal static string The_column_in_the_query_that_contains_the_value_for_the_object_ {
+            get {
+                return ResourceManager.GetString("The column in the query that contains the value for the object.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De klant is successvol aangemaakt en heeft als ID &apos;.
+        /// </summary>
+        internal static string The_customer_has_been_successfully_created_and_has_ID__ {
+            get {
+                return ResourceManager.GetString("The customer has been successfully created and has ID \'", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De volledige bedrijfsnaam van de klant. Bijvoorbeeld &apos;Happy Geeks B.V.&apos;. Alleen wij zien deze naam terug, de klant ziet deze naam nergens..
+        /// </summary>
+        internal static string The_customer_s_full_company_name__For_example___Happy_Geeks_B_V____Only_we_see_this_name__the_customer_does_not_see_this_name_anywhere_ {
+            get {
+                return ResourceManager.GetString("The customer\'s full company name. For example, \'Happy Geeks B.V.\'. Only we see th" +
+                        "is name, the customer does not see this name anywhere.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het domein wat straks voor de live gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.&lt;br /&gt;.
+        /// </summary>
+        internal static string The_domain_that_will_be_used_for_the_live__If_you_do_not_enter_it_now__you_will_have_to_enter_it_later_in_the_settings_module_at_the_customer__br___ {
+            get {
+                return ResourceManager.GetString("The domain that will be used for the live. If you do not enter it now, you will h" +
+                        "ave to enter it later in the settings module at the customer.<br />", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het domein wat straks voor de test gebruikt zal worden. Indien je die nu niet invult, moet je die later in de instellingenmodule bij de klant invullen.&lt;br /&gt;.
+        /// </summary>
+        internal static string The_domain_that_will_be_used_for_the_test__If_you_do_not_enter_it_now__you_will_have_to_enter_it_later_in_the_settings_module_at_the_customer__br___ {
+            get {
+                return ResourceManager.GetString("The domain that will be used for the test. If you do not enter it now, you will h" +
+                        "ave to enter it later in the settings module at the customer.<br />", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan onder, links en rechts afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_bottom__left_and_right_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the bottom, left and right.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan onder en links afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_bottom_and_left_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the bottom and left.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan onder en rechts afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_bottom_and_right_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the bottom and right.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan boven, onder en links afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_top__bottom_and_left_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the top, bottom and left.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan boven, onder en rechts afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_top__bottom_and_right_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the top, bottom and right.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan boven, onder links en rechts afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_top__bottom_left_and_right_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the top, bottom left and right.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan boven, links en rechts afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_top__left_and_right_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the top, left and right.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan boven en links afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_top_and_left_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the top and left.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding kan boven en rechts afgeknipt/opgevuld worden..
+        /// </summary>
+        internal static string The_image_can_be_cutted_off_filled_at_the_top_and_right_ {
+            get {
+                return ResourceManager.GetString("The image can be cutted off/filled at the top and right.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding wordt uitgerekt of ingekrompen totdat de resulutie exact is zoals opgegeven. Waarschuwing: Dit zorgt in veel gevallen voor misvormde afbeeldingen..
+        /// </summary>
+        internal static string The_image_is_stretched_or_contracted_until_the_resolution_is_exactly_as_specified__Warning__In_many_cases_this_causes_distorted_images_ {
+            get {
+                return ResourceManager.GetString("The image is stretched or contracted until the resolution is exactly as specified" +
+                        ". Warning: In many cases this causes distorted images.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De afbeelding wordt verkleind of vergroot naar de afmeting die het dichtst bij het gewenste formaat komt. Verhoudingen van de originele afbeelding worden hierbij behouden. Voorbeeld: De afbeelding is 150x200 pixels en het gewenste formaat is 150x150. De uiteindelijke afbeelding wordt dan 113x150 pixels..
+        /// </summary>
+        internal static string The_image_size_will_be_made_smaller_or_larger_to_the_size_closest_to_the_desired_size__Proportions_of_the_original_image_can_be_preserved__Example__The_image_is_150x200_pixels_and_the_desired_size_is_150x150__The_final_image_size_will_then_be_113x150_pixels_ {
+            get {
+                return ResourceManager.GetString(@"The image size will be made smaller or larger to the size closest to the desired size. Proportions of the original image can be preserved. Example: The image is 150x200 pixels and the desired size is 150x150. The final image size will then be 113x150 pixels.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De import is klaargezet. Zodra deze gereed is, ontvangt u bericht..
+        /// </summary>
+        internal static string The_import_is_prepared__You_will_be_notified_as_soon_as_it_is_completed_ {
+            get {
+                return ResourceManager.GetString("The import is prepared. You will be notified as soon as it is completed.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De positie op de afbeelding vanuit waar geknipt of opgevuld moet worden..
+        /// </summary>
+        internal static string The_position_on_the_image_from_which_to_cut_or_fill_ {
+            get {
+                return ResourceManager.GetString("The position on the image from which to cut or fill.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De regular expression waar de URL aan moet voldoen om deze generieke template in te laden. Bijvoorbeeld ^((?!newsitem).)*$ voor alle paginas waar &apos;newsitem&apos; niet in de naam voorkomt..
+        /// </summary>
+        internal static string The_regular_expression_that_the_URL_must_meet_to_load_this_generic_template_ {
+            get {
+                return ResourceManager.GetString("The regular expression that the URL must meet to load this generic template.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De geselecteerde items kunnen versleept worden.
+        /// </summary>
+        internal static string The_selected_items_can_be_dragged {
+            get {
+                return ResourceManager.GetString("The selected items can be dragged", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het SMS-bericht dat gestuurd moet worden.
+        /// </summary>
+        internal static string The_SMS_message_to_be_sent {
+            get {
+                return ResourceManager.GetString("The SMS message to be sent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het opgegeven ID komt meerdere keren voor. Kies welk type u wilt openen:.
+        /// </summary>
+        internal static string The_specified_ID_occurs_more_than_once__Choose_which_type_you_want_to_open_ {
+            get {
+                return ResourceManager.GetString("The specified ID occurs more than once. Choose which type you want to open:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Het type van de data die terug wordt verwacht. Dit is alleen voor functions, niet voor stored procedures..
+        /// </summary>
+        internal static string The_type_of_data_that_is_expected_back__This_is_only_for_functions__not_stored_procedures_ {
+            get {
+                return ResourceManager.GetString("The type of data that is expected back. This is only for functions, not stored pr" +
+                        "ocedures.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De URL voor Wiser dev is geworden:.
+        /// </summary>
+        internal static string The_URL_for_Wiser_dev_has_become_ {
+            get {
+                return ResourceManager.GetString("The URL for Wiser dev has become:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De URL voor Wiser Live is geworden:.
+        /// </summary>
+        internal static string The_URL_for_Wiser_Live_has_become_ {
+            get {
+                return ResourceManager.GetString("The URL for Wiser Live has become:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De waarde van het veld in het data-bestand die de afbeelding moet importeren moet de naam van de afbeelding bevatten zoals deze in het ZIP-bestand zit, bijvoorbeeld &amp;quot;product.jpg&amp;quot;. De afbeeldingen in het ZIP-bestand mogen niet in een folder staan..
+        /// </summary>
+        internal static string The_value_of_the_field_in_the_data_file_that_should_import_the_image_must_contain_the_name_of_the_image_as_it_is_contained_in_the_ZIP_file__for_example__quot_product_jpg_quot___The_images_in_the_ZIP_file_must_not_be_in_a_folder_ {
+            get {
+                return ResourceManager.GetString("The value of the field in the data file that should import the image must contain" +
+                        " the name of the image as it is contained in the ZIP file, for example &quot;pro" +
+                        "duct.jpg&quot;. The images in the ZIP file must not be in a folder.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De manier waarop de afmetingen van de afbeelding aangepast moet worden:.
+        /// </summary>
+        internal static string The_way_to_resize_the_image_ {
+            get {
+                return ResourceManager.GetString("The way to resize the image:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to De naam van de website, deze wordt op elke pagina achteraan de titel toegevoegd. Voorbeeld: Contact - Happy Geeks.
+        /// </summary>
+        internal static string The_website_name__which_is_added_to_the_back_of_the_title_on_every_page__Example__Contact___Happy_Geeks {
+            get {
+                return ResourceManager.GetString("The website name, which is added to the back of the title on every page. Example:" +
+                        " Contact - Happy Geeks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vervolgens krijg je wat JSON te zien. Kopieer hieruit de waarde van &quot;access_token&quot; en plak die in dit veld. &lt;br /&gt; Klik daarna op de knop &quot;Haal clusters op&quot; hieronder en selecteer daarna het cluster waar de klant aan toegevoegd moet worden..
+        /// </summary>
+        internal static string Then_you_will_see_some_JSON__Copy_the_value_of__access_token__and_paste_it_into_this_field___br____Then_click_on_the__Get_Clusters__button_below_and_then_select_the_cluster_to_which_the_customer_should_be_added_ {
+            get {
+                return ResourceManager.GetString("Then you will see some JSON. Copy the value of \'access_token\' and paste it into t" +
+                        "his field. <br /> Then click on the \'Get Clusters\' button below and then select " +
+                        "the cluster to which the customer should be added.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Er zijn geen wijzigingen aan Wiser data om te synchroniseren..
+        /// </summary>
+        internal static string There_are_no_changes_in_Wiser_data_to_synchronize_ {
+            get {
+                return ResourceManager.GetString("There are no changes in Wiser data to synchronize.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan..
+        /// </summary>
+        internal static string This_action_cannot_be_undone__If_you_do_not_check_all_the_options_above__changes_may_be_lost_ {
+            get {
+                return ResourceManager.GetString("This action cannot be undone. If you do not check all the options above, changes " +
+                        "may be lost.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hiermee kunnen wijzigingen die in een branch gedaan zijn, overgezet worden naar de productie-omgeving. U kunt dan kiezen welke wijzigingen doorgezet moeten worden, dat hoeft niet per se alles te zijn. Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving..
+        /// </summary>
+        internal static string This_allows_changes_which_is_made_in_a_branch_to_be_transferred_to_the_production_environment__You_can_then_choose_which_changes_should_be_implemented__which_does_not_necessarily_have_to_be_everything__It_is_not_possible_to_merge_different_branches__The_merge_always_goes_from_a_branch_to_the_production_environment_ {
+            get {
+                return ResourceManager.GetString(@"This allows changes which is made in a branch to be transferred to the production environment. You can then choose which changes should be implemented, which does not necessarily have to be everything. It is not possible to merge different branches. The merge always goes from a branch to the production environment.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hiermee kan dit veld gekopieerd worden naar alle talen die dit veld nog niet hebben..
+        /// </summary>
+        internal static string This_allows_rhis_field_to_be_copied_to_all_languages_that_do_not_yet_have_this_field_ {
+            get {
+                return ResourceManager.GetString("This allows rhis field to be copied to all languages that do not yet have this fi" +
+                        "eld.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hiermee kan aangegeven worden waar het e-mailadres van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld &quot;emailadres&quot; komt, dan kan hier de waarde &quot;emailadres&quot; ingevuld worden. Als het e-mailadres op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld.
+        /// </summary>
+        internal static string This_can_be_used_to_indicate_where_the_e_mail_address_of_the_reseivers_is_exactly_in_the_results_of_the_query_or_data_selector__This_can_be_left_blank_if_fixed_reseivers_are_entered__If__for_example__there_is_an__email_address__field_in_the_data_selector__then_the_value__email_address__can_be_entered_here__If_the_e_mail_address_is_on_a_deeper_level__this_can_also_be_done_by_by_separating_with_points__for_example {
+            get {
+                return ResourceManager.GetString(@"This can be used to indicate where the e-mail address of the reseivers is exactly in the results of the query or data selector. This can be left blank if fixed reseivers are entered. If, for example, there is an 'email address' field in the data selector, then the value 'email address' can be entered here. If the e-mail address is on a deeper level, this can also be done by by separating with points, for example", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hiermee kan aangegeven worden waar het telefoonnummer van de ontvangers precies staat in de resultaten van de query of dataselector. Dit kan leeggelaten worden indien er vaste ontvangers zijn ingevuld. Indien er in de dataselector bijvoorbeeld een veld &quot;telefoonnummer&quot; komt, dan kan hier de waarde &quot;{telefoonnummer}&quot; ingevuld worden. Als het telefoonnummer op een dieper niveau staat dan kan dat ook door te scheiden met punten, bijvoorbeeld &quot;{customer.phone}&quot;..
+        /// </summary>
+        internal static string This_can_be_used_to_indicate_where_the_telephone_number_of_the_recipients_is_exactly_in_the_results_of_the_query_or_data_selector__This_can_be_left_blank_if_fixed_recipients_are_entered__If__for_example__there_is_a_field__telephone_number__in_the_data_selector__then_the_value___telephone_number___can_be_entered_here__If_the_phone_number_is_on_a_deeper_level__you_can_also_separate_it_with_dots__for_example___customer_phone___ {
+            get {
+                return ResourceManager.GetString(@"This can be used to indicate where the telephone number of the recipients is exactly in the results of the query or data selector. This can be left blank if fixed recipients are entered. If, for example, there is a field 'telephone number' in the data selector, then the value '{telephone number}' can be entered here. If the phone number is on a deeper level, you can also separate it with dots, for example '{customer.phone}'.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dit werkt alleen als de dataselector op basis van ID geladen wordt.
+        /// </summary>
+        internal static string This_only_works_if_the_data_selector_is_loaded_based_on_ID {
+            get {
+                return ResourceManager.GetString("This only works if the data selector is loaded based on ID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deze query wordt 1 keer helemaal aan het begin uitgevoerd tijdens het laden van deze template. De resultaten van deze query kunnen dan op andere plekken in de template gebruikt worden met de prefix &quot;template.&quot;. Als de query bijvoorbeeld een kolom &quot;title&quot; terruggeeft, dan kan de variabele &quot;{template.title}&quot; overal in de template gebruikt worden, inclusief dynamische componenten. Alleen de eerste regel van het resultaat van de query kan gebruikt worden. Deze query kan ook gebruikt worden om SEO meta tags op d [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string This_query_is_executed_1_time_at_the_beginning_while_loading_this_template__The_results_of_this_query_can_be_used_elsewhere_in_the_template_with_the_prefix__template____For_example__if_the_query_returns_a__title__column__then_the_variable___template_title___can_be_used_anywhere_in_the_template__including_dynamic_components__Only_the_first_line_of_the_query_result_can_be_used__This_query_can_also_be_used_to_put_SEO_meta_tags_on_the_page_ {
+            get {
+                return ResourceManager.GetString(@"This query is executed 1 time at the beginning while loading this template. The results of this query can be used elsewhere in the template with the prefix 'template.'. For example, if the query returns a 'title' column, then the variable '{template.title}' can be used anywhere in the template, including dynamic components. Only the first line of the query result can be used. This query can also be used to put SEO meta tags on the page.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deze template is de standaard footer.
+        /// </summary>
+        internal static string This_template_is_the_default_footer {
+            get {
+                return ResourceManager.GetString("This template is the default footer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Deze template is de standaard header.
+        /// </summary>
+        internal static string This_template_is_the_default_header {
+            get {
+                return ResourceManager.GetString("This template is the default header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to donderdag.
+        /// </summary>
+        internal static string thursday {
+            get {
+                return ResourceManager.GetString("thursday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tot.
+        /// </summary>
+        internal static string Till {
+            get {
+                return ResourceManager.GetString("Till", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Timing.
+        /// </summary>
+        internal static string Timing {
+            get {
+                return ResourceManager.GetString("Timing", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Om een nieuwe tab te maken; maak een nieuw veld aan, of wijzig een bestaand veld, en vul bij &quot;Tab&quot; de naam voor de nieuwe tab in..
+        /// </summary>
+        internal static string To_create_a_new_tab__create_a_new_field__or_change_an_existing_field__and_enter_the_name_for_the_new_tab_at__Tab_ {
+            get {
+                return ResourceManager.GetString("To create a new tab; create a new field, or change an existing field, and enter t" +
+                        "he name for the new tab at \'Tab\'", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Boven.
+        /// </summary>
+        internal static string Top {
+            get {
+                return ResourceManager.GetString("Top", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Linksboven.
+        /// </summary>
+        internal static string Top_left {
+            get {
+                return ResourceManager.GetString("Top-left", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rechtsboven.
+        /// </summary>
+        internal static string Top_right {
+            get {
+                return ResourceManager.GetString("Top-right", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Item vertalen.
+        /// </summary>
+        internal static string Translate_item {
+            get {
+                return ResourceManager.GetString("Translate item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vertalingen.
+        /// </summary>
+        internal static string Translations {
+            get {
+                return ResourceManager.GetString("Translations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to dinsdag.
+        /// </summary>
+        internal static string tuesday {
+            get {
+                return ResourceManager.GetString("tuesday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type.
+        /// </summary>
+        internal static string Type {
+            get {
+                return ResourceManager.GetString("Type", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uitgevinkt.
+        /// </summary>
+        internal static string Unchecked {
+            get {
+                return ResourceManager.GetString("Unchecked", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Verwijderen ongedaan maken.
+        /// </summary>
+        internal static string Undelete_item {
+            get {
+                return ResourceManager.GetString("Undelete item", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ongedaan maken.
+        /// </summary>
+        internal static string Undo {
+            get {
+                return ResourceManager.GetString("Undo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update.
+        /// </summary>
+        internal static string Update {
+            get {
+                return ResourceManager.GetString("Update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Laden.
+        /// </summary>
+        internal static string Upload {
+            get {
+                return ResourceManager.GetString("Upload", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Url.
+        /// </summary>
+        internal static string Url {
+            get {
+                return ResourceManager.GetString("Url", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to URL Regex.
+        /// </summary>
+        internal static string URL_Regex {
+            get {
+                return ResourceManager.GetString("URL Regex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to URL naar website.
+        /// </summary>
+        internal static string URL_to_website {
+            get {
+                return ResourceManager.GetString("URL to website", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Combobox als dropdown gebruiken.
+        /// </summary>
+        internal static string Use_combobox_as_dropdown {
+            get {
+                return ResourceManager.GetString("Use combobox as dropdown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruik de Data selector om een selectie te maken welke items verwijderd moeten worden..
+        /// </summary>
+        internal static string Use_the_Data_selector_to_select_which_items_should_be_deleted_ {
+            get {
+                return ResourceManager.GetString("Use the Data selector to select which items should be deleted.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruiker.
+        /// </summary>
+        internal static string User {
+            get {
+                return ResourceManager.GetString("User", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruiker moet ingelogd zijn om deze template te zien.
+        /// </summary>
+        internal static string User_must_be_logged_in_to_view_this_template {
+            get {
+                return ResourceManager.GetString("User must be logged in to view this template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loginnaam.
+        /// </summary>
+        internal static string User_name_ {
+            get {
+                return ResourceManager.GetString("User name_", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruiker parameters.
+        /// </summary>
+        internal static string User_parameters {
+            get {
+                return ResourceManager.GetString("User parameters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruikersnaam.
+        /// </summary>
+        internal static string Username {
+            get {
+                return ResourceManager.GetString("Username", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gebruikers die deze template geopend hebben.
+        /// </summary>
+        internal static string Users_who_have_opened_this_template {
+            get {
+                return ResourceManager.GetString("Users who have opened this template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to UUID.
+        /// </summary>
+        internal static string UUID {
+            get {
+                return ResourceManager.GetString("UUID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waarde branch.
+        /// </summary>
+        internal static string Value_branch {
+            get {
+                return ResourceManager.GetString("Value branch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waarde origineel.
+        /// </summary>
+        internal static string Value_original {
+            get {
+                return ResourceManager.GetString("Value original", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Versie.
+        /// </summary>
+        internal static string Version {
+            get {
+                return ResourceManager.GetString("Version", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Video-ID.
+        /// </summary>
+        internal static string Video_ID {
+            get {
+                return ResourceManager.GetString("Video-ID", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to HTML bekijken.
+        /// </summary>
+        internal static string View_HTML {
+            get {
+                return ResourceManager.GetString("View HTML", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Standaard zichtbaar in overzichtstabellen.
+        /// </summary>
+        internal static string Visible_by_default_in_summary_tables {
+            get {
+                return ResourceManager.GetString("Visible by default in summary tables", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wacht op reactie.
+        /// </summary>
+        internal static string Waiting_for_response {
+            get {
+                return ResourceManager.GetString("Waiting for response", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to We hebben geen e-mailadres gevonden in uw account. Vul a.u.b. een e-mailadres in zodat we u een bericht kunnen sturen wanneer de import klaar is..
+        /// </summary>
+        internal static string We_couldn_t_find_an_email_address_in_your_account__Please_enter_an_email_address_so_we_can_notify_you_when_the_import_is_completed_ {
+            get {
+                return ResourceManager.GetString("We couldn\'t find an email address in your account. Please enter an email address " +
+                        "so we can notify you when the import is completed.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Naam van website.
+        /// </summary>
+        internal static string Website_name {
+            get {
+                return ResourceManager.GetString("Website name", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to woensdag.
+        /// </summary>
+        internal static string wednesday {
+            get {
+                return ResourceManager.GetString("wednesday", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to week/weken.
+        /// </summary>
+        internal static string week_weeks {
+            get {
+                return ResourceManager.GetString("week/weeks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Welkom.
         /// </summary>
         internal static string Welcome {
             get {
                 return ResourceManager.GetString("Welcome", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wat.
+        /// </summary>
+        internal static string What {
+            get {
+                return ResourceManager.GetString("What", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wat is de gewenste bedrijfsnaam en/of accountnaam?.
+        /// </summary>
+        internal static string What_is_the_desired_company_name_and_or_account_name_ {
+            get {
+                return ResourceManager.GetString("What is the desired company name and/or account name?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wat is het subdomein dat gebruikt moet worden voor Wiser?.
+        /// </summary>
+        internal static string What_is_the_subdomain_to_use_for_Wiser_ {
+            get {
+                return ResourceManager.GetString("What is the subdomain to use for Wiser?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waar wilt u de branch openen?.
+        /// </summary>
+        internal static string Where_do_you_want_to_open_the_branch_ {
+            get {
+                return ResourceManager.GetString("Where do you want to open the branch?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool..
+        /// </summary>
+        internal static string Where_should_the_cache_be_stored__In_memory_is_the_fastest__but_this_cache_is_lost_when_the_application_pool_is_restarted_ {
+            get {
+                return ResourceManager.GetString("Where should the cache be stored? In memory is the fastest, but this cache is los" +
+                        "t when the application pool is restarted.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Welke data wil je naar de branche overzetten?.
+        /// </summary>
+        internal static string Which_data_do_you_want_to_transfer_to_the_branche_ {
+            get {
+                return ResourceManager.GetString("Which data do you want to transfer to the branche?", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breedte.
+        /// </summary>
+        internal static string Width {
+            get {
+                return ResourceManager.GetString("Width", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breedte (in %).
+        /// </summary>
+        internal static string Width__in___ {
+            get {
+                return ResourceManager.GetString("Width (in %)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Breedte in tabel (in pixels).
+        /// </summary>
+        internal static string Width_in_table__in_pixels_ {
+            get {
+                return ResourceManager.GetString("Width in table (in pixels)", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Venster hoogte.
+        /// </summary>
+        internal static string Window_height {
+            get {
+                return ResourceManager.GetString("Window height", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Venster breedte.
+        /// </summary>
+        internal static string Window_width {
+            get {
+                return ResourceManager.GetString("Window width", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wiser branches.
+        /// </summary>
+        internal static string Wiser_branches {
+            get {
+                return ResourceManager.GetString("Wiser branches", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Wiser items.
+        /// </summary>
+        internal static string Wiser_items {
+            get {
+                return ResourceManager.GetString("Wiser items", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Work in progress.
+        /// </summary>
+        internal static string Work_in_progress {
+            get {
+                return ResourceManager.GetString("Work in progress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Je bent op dit moment ingelogd bij een branch van deze klant. Het is niet mogelijk/toegestaan om de templatemodule te gebruiken in een branch.&lt;br/&gt; Log a.u.b. in op de live-omgeving van de klant en werk daar in de templatemodule..
+        /// </summary>
+        internal static string You_are_currently_logged_in_to_a_branch_of_this_customer__It_is_not_possible_allowed_to_use_the_template_module_in_an_industry__br___Please_log_into_the_customer_s_live_environment_and_work_in_the_template_module_there_ {
+            get {
+                return ResourceManager.GetString("You are currently logged in to a branch of this customer. It is not possible/allo" +
+                        "wed to use the template module in an industry.<br/> Please log into the customer" +
+                        "\'s live environment and work in the template module there.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Je hebt de volgende databasegebruiker ingevuld:.
+        /// </summary>
+        internal static string You_entered_the_following_database_user_ {
+            get {
+                return ResourceManager.GetString("You entered the following database user:", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to U heeft nog geen andere branches. Maak a.u.b. eerst een nieuwe branch aan via de optie &apos;Nieuwe branch aanmaken&apos;..
+        /// </summary>
+        internal static string You_have_no_other_branches_yet__Please_create_a_new_branch_first_using_the__Create_new_branch__option_ {
+            get {
+                return ResourceManager.GetString("You have no other branches yet. Please create a new branch first using the \'Creat" +
+                        "e new branch\' option.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons..
+        /// </summary>
+        internal static string You_have_used_an_invalid_subdomain__Please_check_the_subdomain_or_contact_us_ {
+            get {
+                return ResourceManager.GetString("You have used an invalid subdomain. Please check the subdomain or contact us.", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in.
+        /// </summary>
+        internal static string You_need_to_choose_a_new_password__please_enter_it_here {
+            get {
+                return ResourceManager.GetString("You need to choose a new password, please enter it here", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uw huidig wachtwoord.
+        /// </summary>
+        internal static string Your_current_password {
+            get {
+                return ResourceManager.GetString("Your current password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Uw nieuwe wachtwoord.
+        /// </summary>
+        internal static string Your_new_password {
+            get {
+                return ResourceManager.GetString("Your new password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nogmaals uw nieuwe wachtwoord.
+        /// </summary>
+        internal static string Your_new_password_again {
+            get {
+                return ResourceManager.GetString("Your new password again", resourceCulture);
             }
         }
     }

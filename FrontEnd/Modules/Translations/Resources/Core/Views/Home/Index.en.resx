@@ -117,6 +117,200 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  
+  <data name="STR_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="STR_Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="STR_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="STR_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="STR_EmailAddress" xml:space="preserve">
+    <value>Email address</value>
+  </data>
+  <data name="STR_Login" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="STR_Logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="STR_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="STR_Send" xml:space="preserve">
+    <value>Send</value>
+  </data>
+  <data name="STR_Submit" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+  <data name="STR_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  
+  <data name="Login_ForgotPassword" xml:space="preserve">
+    <value>Forgot your password?</value>
+  </data>
+  <data name="Login_StayLoggedIn" xml:space="preserve">
+    <value>Stay logged in</value>
+  </data>
+  <data name="Login_ChooseUser" xml:space="preserve">
+    <value>Choose the user you want to log in with</value>
+  </data>
+  <data name="Login_ResetMailSend" xml:space="preserve">
+    <value>An email with your new password has been sent.</value>
+  </data>
+  <data name="Login_CreateNewPassword" xml:space="preserve">
+    <value>You need to choose a new password, please enter it here.</value>
+  </data>
+  <data name="Login_CurrentPassword" xml:space="preserve">
+    <value>Your current password</value>
+  </data>
+  <data name="Login_NewPassword" xml:space="preserve">
+    <value>Your new password</value>
+  </data>
+  <data name="Login_NewPasswordAgain" xml:space="preserve">
+    <value>Your new password again</value>
+  </data>
+  <data name="Login_InvalidSubdomain" xml:space="preserve">
+    <value>You have used an invalid subdomain. Please check the subdomain or contact us.</value>
+  </data>
+  <data name="Login_ScanQR" xml:space="preserve">
+    <value>Scan the QR-code in your authenticator app and enter the code.</value>
+  </data>
+  <data name="Login_EnterWithBackupCode" xml:space="preserve">
+    <value>Login with a backup code?</value>
+  </data>
+  <data name="Login_EnterBackupCode" xml:space="preserve">
+    <value>Enter your backup codes here.</value>
+  </data>
+  <data name="Login_EnterAuthenticatorCode" xml:space="preserve">
+    <value>Enter the code from your authenticator app.</value>
+  </data>
+  
+  <data name="Menu_WiserConfiguration" xml:space="preserve">
+    <value>Wiser Configuration</value>
+  </data>
+  <data name="Menu_ApplicationDevelopment" xml:space="preserve">
+    <value>Application and development</value>
+  </data>
+  <data name="Menu_WiserDesign" xml:space="preserve">
+    <value>Wiser design</value>
+  </data>
+  <data name="Menu_DataManagement" xml:space="preserve">
+    <value>Data management</value>
+  </data>
+  <data name="Menu_PersonalSettings" xml:space="preserve">
+    <value>Personal settings</value>
+  </data>
+  <data name="Menu_Templates" xml:space="preserve">
+    <value>Templates</value>
+  </data>
+  <data name="Menu_VersionControl" xml:space="preserve">
+    <value>Version Control</value>
+  </data>
+  <data name="Menu_EmptyApplicationCache" xml:space="preserve">
+    <value>Empty application cache</value>
+  </data>
+  <data name="Menu_Translations" xml:space="preserve">
+    <value>Translations</value>
+  </data>
+  <data name="Menu_SEO" xml:space="preserve">
+    <value>SEO</value>
+  </data>
+  <data name="Menu_Redirect" xml:space="preserve">
+    <value>Redirect</value>
+  </data>
+  <data name="Menu_WiserManagement" xml:space="preserve">
+    <value>Wiser Management</value>
+  </data>
+  <data name="Menu_Users" xml:space="preserve">
+    <value>Users</value>
+  </data>
+  <data name="Menu_ReportBug" xml:space="preserve">
+    <value>Report a bug</value>
+  </data>
+  <data name="Menu_NewClient" xml:space="preserve">
+    <value>New Client</value>
+  </data>
+  <data name="Menu_MasterData" xml:space="preserve">
+    <value>Master Data</value>
+  </data>
+  <data name="Menu_MailTemplates" xml:space="preserve">
+    <value>Mail Templates</value>
+  </data>
+  <data name="Menu_OrderProcesses" xml:space="preserve">
+    <value>Order Processes</value>
+  </data>
+  <data name="Menu_PSPs" xml:space="preserve">
+    <value>Payment Service Providers</value>
+  </data>
+  <data name="Menu_HeaderContent" xml:space="preserve">
+    <value>Header Content</value>
+  </data>
+  <data name="Menu_ContentBuilderSnippets" xml:space="preserve">
+    <value>Content Builder Snippets</value>
+  </data>
+  <data name="Menu_ContentBoxTemplates" xml:space="preserve">
+    <value>Contentbox Templates</value>
+  </data>
+  <data name="Menu_GCLSettings" xml:space="preserve">
+    <value>GCL Settings</value>
+  </data>
+  <data name="Menu_DataSelectorTemplates" xml:space="preserve">
+    <value>Data Selector Templates</value>
+  </data>
+  <data name="Menu_DashboardSetup" xml:space="preserve">
+    <value>Dashboard Setup</value>
+  </data>
+  <data name="Menu_FTPConfig" xml:space="preserve">
+    <value>FTP Configuration</value>
+  </data>
+  <data name="Menu_ImportExport" xml:space="preserve">
+    <value>Import / Export</value>
+  </data>
+  <data name="Menu_ImportHistory" xml:space="preserve">
+    <value>Import History</value>
+  </data>
+  <data name="Menu_DataSelector" xml:space="preserve">
+    <value>Data Selector</value>
+  </data>
+  <data name="Menu_Communication" xml:space="preserve">
+    <value>Communication</value>
+  </data>
+  <data name="Menu_Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Menu_OpenItem" xml:space="preserve">
+    <value>Open Item</value>
+  </data>
+  <data name="Menu_Branches" xml:space="preserve">
+    <value>Branches</value>
+  </data>
+  <data name="Menu_ChangePassword" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="Menu_MyProfile" xml:space="preserve">
+    <value>My Profile</value>
+  </data>
+  <data name="Menu_Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Menu_" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Menu_" xml:space="preserve">
+    <value></value>
+  </data>
+  
+  <data name="Warning_CapsOn" xml:space="preserve">
+    <value>Caps lock is on</value>
+  </data>
+  
   <data name="'." xml:space="preserve">
     <value>'.</value>
   </data>
@@ -270,9 +464,6 @@
   <data name="Amount of items:" xml:space="preserve">
     <value>Amount of items:</value>
   </data>
-  <data name="An email with your new password has been sent." xml:space="preserve">
-    <value>An email with your new password has been sent.</value>
-  </data>
   <data name="An existing branch can be opened here." xml:space="preserve">
     <value>An existing branch can be opened here.</value>
   </data>
@@ -387,9 +578,6 @@
   <data name="cancel subscription?" xml:space="preserve">
     <value>cancel subscription?</value>
   </data>
-  <data name="Caps lock is on" xml:space="preserve">
-    <value>Caps lock is on</value>
-  </data>
   <data name="CC" xml:space="preserve">
     <value>CC</value>
   </data>
@@ -491,9 +679,6 @@
   </data>
   <data name="Choose the property of the value which should match the supplied data." xml:space="preserve">
     <value>Choose the property of the value which should match the supplied data.</value>
-  </data>
-  <data name="Choose the user you want to log in with" xml:space="preserve">
-    <value>Choose the user you want to log in with</value>
   </data>
   <data name="Choose users..." xml:space="preserve">
     <value>Choose users...</value>
@@ -1008,9 +1193,6 @@
   <data name="For which table this trigger is created or modified." xml:space="preserve">
     <value>For which table this trigger is created or modified.</value>
   </data>
-  <data name="Forgot your password?" xml:space="preserve">
-    <value>Forgot your password?</value>
-  </data>
   <data name="Format" xml:space="preserve">
     <value>Format</value>
   </data>
@@ -1401,9 +1583,6 @@
   <data name="Logged in time" xml:space="preserve">
     <value>Logged in time</value>
   </data>
-  <data name="Login" xml:space="preserve">
-    <value>Login</value>
-  </data>
   <data name="longblob" xml:space="preserve">
     <value>longblob</value>
   </data>
@@ -1637,9 +1816,6 @@
   </data>
   <data name="Parent objects" xml:space="preserve">
     <value>Parent objects</value>
-  </data>
-  <data name="Password" xml:space="preserve">
-    <value>Password</value>
   </data>
   <data name="PDF background field name" xml:space="preserve">
     <value>PDF background field name</value>
@@ -2079,9 +2255,6 @@
   <data name="Status" xml:space="preserve">
     <value>Status</value>
   </data>
-  <data name="Stay logged in" xml:space="preserve">
-    <value>Stay logged in</value>
-  </data>
   <data name="Step value" xml:space="preserve">
     <value>Step value</value>
   </data>
@@ -2325,12 +2498,6 @@
   <data name="User must be logged in to view this template" xml:space="preserve">
     <value>User must be logged in to view this template</value>
   </data>
-  <data name="User name" xml:space="preserve">
-    <value>User name</value>
-  </data>
-  <data name="User name_" xml:space="preserve">
-    <value>User name</value>
-  </data>
   <data name="User parameters" xml:space="preserve">
     <value>User parameters</value>
   </data>
@@ -2426,9 +2593,6 @@
   </data>
   <data name="You have no other branches yet. Please create a new branch first using the 'Create new branch' option." xml:space="preserve">
     <value>You have no other branches yet. Please create a new branch first using the 'Create new branch' option.</value>
-  </data>
-  <data name="You have used an invalid subdomain. Please check the subdomain or contact us." xml:space="preserve">
-    <value>You have used an invalid subdomain. Please check the subdomain or contact us.</value>
   </data>
   <data name="You need to choose a new password, please enter it here" xml:space="preserve">
     <value>You need to choose a new password, please enter it here</value>

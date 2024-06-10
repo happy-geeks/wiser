@@ -1,5 +1,7 @@
 ﻿@model FrontEnd.Core.Models.BaseViewModel
 @addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -27,177 +29,178 @@
       data-api-client-id="@Model.Settings.ApiClientId"
       data-api-client-secret="@Model.Settings.ApiClientSecret"
       data-track-js-token="@Model.Settings.TrackJsToken">
+
 <form id="fullForm">
     @* NOTE: The commented HTML in this file is for functionality that will be added in the future, for now they need to stay commented. *@
     <div id="wiser" class="configuration">
         <div class="group-container">
             <div class="group-wrapper">
                 <div class="group-wrapper-title">
-                    Applicatie en ontwikkeling
+                    @Localizer["Menu_ApplicationDevelopment"]
                 </div>
                 <a class="group-item hidden" data-module-type="Templates">
                     <ins class="icon-document-fold"></ins>
-                    <span>Templates</span>
+                    <span>@Localizer["Menu_Templates"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                     @* <div class="tooltip">Nullam quam lacus, cursus non ligula et, euismod posuere felis. Nullam vitae accumsan quam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</div> *@
                 </a>
                 <a class="group-item hidden" data-module-type="VersionControl">
                     <ins class="icon-git"></ins>
-                    <span>Versiebeheer</span>
+                    <span>@Localizer["Menu_VersionControl"]</span>
                     @* @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                     @* <div class="tooltip">Nullam quam lacus, cursus non ligula et, euismod posuere felis. Nullam vitae accumsan quam. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.</div> *@
                 </a>
                 <a class="group-item" data-action="OpenClearCachePrompt">
                     <ins class="icon-line-refresh"></ins>
-                    <span>Applicatie cache legen</span>
+                    <span>@Localizer["Menu_EmptyApplicationCache"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Translations">
                     <ins class="icon-flag"></ins>
-                    <span>Vertaalwoorden</span>
+                    <span>@Localizer["Menu_Translations"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Seo">
                     <ins class="icon-seo"></ins>
-                    <span>SEO</span>
+                    <span>@Localizer["Menu_SEO"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Redirect">
                     <ins class="icon-reset"></ins>
-                    <span>Redirect</span>
+                    <span>@Localizer["Menu_Redirect"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
             </div>
             <div class="group-wrapper">
                 <div class="group-wrapper-title">
-                    Inrichting van Wiser
+                    @Localizer["Menu_WiserDesign"]
                 </div>
                 <a class="group-item hidden" data-module-type="Admin">
                     <ins class="icon-config"></ins>
-                    <span>Wiser beheer</span>
+                    <span>@Localizer["Menu_WiserManagement"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Users">
                     <ins class="icon-users"></ins>
-                    <span>Gebruikers</span>
+                    <span>@Localizer["Menu_Users"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item" data-action="OpenMarkerIoScreen">
                     <ins class="icon-line-bug"></ins>
-                    <span>Bug melden</span>
+                    <span>@Localizer["Menu_ReportBug"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-action="OpenTenantManagement" data-requires-admin="true">
                     <ins class="icon-line-user-plus"></ins>
-                    <span>Nieuwe klant</span>
+                    <span>@Localizer["Menu_NewClient"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <div class="group-item has-sub hidden" data-module-type="MasterData">
                     <ins class="icon-line-sliders"></ins>
-                    <span>Stamgegevens</span>
+                    <span>@Localizer["Menu_MasterData"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
 
                     <div class="group-sub">
                         <a href="#" class="group-sub-item">
                             <ins class="icon-line-mail"></ins>
-                            <span>Mailtemplates</span>
+                            <span>@Localizer["Menu_MailTemplates"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-line-return"></ins>
-                            <span>Bestelprocessen</span>
+                            <span>@Localizer["Menu_OrderProcesses"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-line-credit-card"></ins>
-                            <span>PSP's</span>
+                            <span>@Localizer["Menu_PSPs"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-theater"></ins>
-                            <span>Headercontent</span>
+                            <span>@Localizer["Menu_HeaderContent"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-liveboard"></ins>
-                            <span>Contentbuilder snippets</span>
+                            <span>@Localizer["Menu_ContentBuilderSnippets"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-line-server"></ins>
-                            <span>Contentbox templates</span>
+                            <span>@Localizer["Menu_ContentBoxTemplates"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-line-sliders"></ins>
-                            <span>Instellingen GCL</span>
+                            <span>@Localizer["Menu_GCLSettings"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-line-document-add"></ins>
-                            <span>Dataselectortemplates</span>
+                            <span>@Localizer["Menu_DataSelectorTemplates"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-project"></ins>
-                            <span>Dashboard setup</span>
+                            <span>@Localizer["Menu_DashboardSetup"]</span>
                         </a>
                         <a href="#" class="group-sub-item">
                             <ins class="icon-folder-duplicate"></ins>
-                            <span>FTP Configuration</span>
+                            <span>@Localizer["Menu_FTPConfig"]</span>
                         </a>
                     </div>
                 </div>
             </div>
             <div class="group-wrapper">
-            <div class="group-wrapper-title">
-                Data en gegevens
+                <div class="group-wrapper-title">
+                    @Localizer["Menu_DataManagement"]
+                </div>
+                <a class="group-item hidden" data-module-type="ImportExport">
+                    <ins class="icon-im-ex"></ins>
+                    <span>@Localizer["Menu_ImportExport"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
+                <a class="group-item hidden" data-module-type="ImportHistory">
+                    <ins class="icon-database"></ins>
+                    <span>@Localizer["Menu_ImportHistory"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
+                <a class="group-item hidden" data-module-type="DataSelector">
+                    <ins class="icon-settings"></ins>
+                    <span>@Localizer["Menu_DataSelector"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
+                <a class="group-item hidden" data-module-type="Communication">
+                    <ins class="icon-mail-forward"></ins>
+                    <span>@Localizer["Menu_Communication"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
+                <a class="group-item hidden" data-module-type="Search">
+                    <ins class="icon-search"></ins>
+                    <span>@Localizer["Menu_Search"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
+                <a class="group-item" data-action="OpenWiserIdPrompt">
+                    <ins class="icon-clipboard"></ins>
+                    <span>@Localizer["Menu_OpenItem"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
+                <a class="group-item" data-action="OpenWiserBranchesPrompt">
+                    <ins class="icon-table-backup"></ins>
+                    <span>@Localizer["Menu_Branches"]</span>
+                    @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
+                </a>
             </div>
-            <a class="group-item hidden" data-module-type="ImportExport">
-                <ins class="icon-im-ex"></ins>
-                <span>Import- / export</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-            <a class="group-item hidden" data-module-type="ImportHistory">
-                <ins class="icon-database"></ins>
-                <span>Importhistorie</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-            <a class="group-item hidden" data-module-type="DataSelector">
-                <ins class="icon-settings"></ins>
-                <span>Dataselector</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-            <a class="group-item hidden" data-module-type="Communication">
-                <ins class="icon-mail-forward"></ins>
-                <span>Communicatie</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-            <a class="group-item hidden" data-module-type="Search">
-                <ins class="icon-search"></ins>
-                <span>Zoeken</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-            <a class="group-item" data-action="OpenWiserIdPrompt">
-                <ins class="icon-clipboard"></ins>
-                <span>Item openen</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-            <a class="group-item" data-action="OpenWiserBranchesPrompt">
-                <ins class="icon-table-backup"></ins>
-                <span>Branches</span>
-                @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
-            </a>
-        </div>
             <div class="group-wrapper">
                 <div class="group-wrapper-title">
-                    Mijn gegevens en inzicht
+                    @Localizer["Menu_PersonalSettings"]
                 </div>
                 <a class="group-item" data-action="OpenChangePasswordPrompt">
                     <ins class="icon-line-settings"></ins>
-                    <span>Wachtwoord wijzigen</span>
+                    <span>@Localizer["Menu_ChangePassword"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item" data-action="OpenUserData">
                     <ins class="icon-line-lock"></ins>
-                    <span>Mijn gegevens</span>
+                    <span>@Localizer["Menu_MyProfile"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
                 <a class="group-item hidden" data-module-type="Dashboard">
                     <ins class="icon-project"></ins>
-                    <span>Dashboard</span>
+                    <span>@Localizer["Menu_Dashboard"]</span>
                     @* <button class="pin-item"><ins class="icon-line-pin-empty"></ins></button> *@
                 </a>
             </div>

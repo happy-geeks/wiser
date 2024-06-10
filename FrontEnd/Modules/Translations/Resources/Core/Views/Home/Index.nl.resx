@@ -117,6 +117,195 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  
+  <data name="STR_Cancel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="STR_Continue" xml:space="preserve">
+    <value>Verder</value>
+  </data>
+  <data name="STR_Edit" xml:space="preserve">
+    <value>Wijzigen</value>
+  </data>
+  <data name="STR_Email" xml:space="preserve">
+    <value>E-mail</value>
+  </data>
+  <data name="STR_EmailAddress" xml:space="preserve">
+    <value>E-mail adres</value>
+  </data>
+  <data name="STR_Login" xml:space="preserve">
+    <value>Inloggen</value>
+  </data>
+  <data name="STR_Logout" xml:space="preserve">
+    <value>Uitloggen</value>
+  </data>
+  <data name="STR_Password" xml:space="preserve">
+    <value>Wachtwoord</value>
+  </data>
+  <data name="STR_Send" xml:space="preserve">
+    <value>Verzenden</value>
+  </data>
+  <data name="STR_Submit" xml:space="preserve">
+    <value>Indienen</value>
+  </data>
+  <data name="STR_Username" xml:space="preserve">
+    <value>Gebruikersnaam</value>
+  </data>
+  
+  <data name="Login_ForgotPassword" xml:space="preserve">
+    <value>Wachtwoord vergeten?</value>
+  </data>
+  <data name="Login_StayLoggedIn" xml:space="preserve">
+    <value>Ingelogd blijven</value>
+  </data>
+  <data name="Login_ChooseUser" xml:space="preserve">
+    <value>Kies de gebruiker waarmee u wilt inloggen</value>
+  </data>  
+  <data name="Login_ResetMailSend" xml:space="preserve">
+    <value>Een email is verstuurd met uw nieuwe wachtwoord.</value>
+  </data>
+  <data name="Login_CreateNewPassword" xml:space="preserve">
+    <value>U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in</value>
+  </data>
+  <data name="Login_CurrentPassword" xml:space="preserve">
+    <value>Uw huidig wachtwoord</value>
+  </data>
+  <data name="Login_NewPassword" xml:space="preserve">
+    <value>Uw nieuwe wachtwoord</value>
+  </data>
+  <data name="Login_NewPasswordAgain" xml:space="preserve">
+    <value>Nogmaals uw nieuwe wachtwoord</value>
+  </data>
+  <data name="Login_InvalidSubdomain" xml:space="preserve">
+    <value>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</value>
+  </data>
+  <data name="Login_ScanQR" xml:space="preserve">
+    <value>Scan de QR-code in uw authenticator-app en vul daarna de code in.</value>
+  </data>
+  <data name="Login_EnterWithBackupCode" xml:space="preserve">
+    <value>Inloggen via backup-code?</value>
+  </data>
+  <data name="Login_EnterBackupCode" xml:space="preserve">
+    <value>Vul hier een van uw backup-codes in.</value>
+  </data>
+  <data name="Login_EnterAuthenticatorCode" xml:space="preserve">
+    <value>Vul de code in van uw authenticator app.</value>
+  </data>
+  
+  <data name="Menu_WiserConfiguration" xml:space="preserve">
+    <value>Wiser Configuration</value>
+  </data>
+  <data name="Menu_ApplicationDevelopment" xml:space="preserve">
+    <value>Applicatie en ontwikkeling</value>
+  </data>
+  <data name="Menu_WiserDesign" xml:space="preserve">
+    <value>Inrichten van Wiser</value>
+  </data>
+  <data name="Menu_DataManagement" xml:space="preserve">
+    <value>Data en gegevens</value>
+  </data>
+  <data name="Menu_PersonalSettings" xml:space="preserve">
+    <value>Mijn gegevens en inzicht</value>
+  </data>
+  <data name="Menu_Templates" xml:space="preserve">
+    <value>Templates</value>
+  </data>
+  <data name="Menu_VersionControl" xml:space="preserve">
+    <value>Versiebeheer</value>
+  </data>
+  <data name="Menu_EmptyApplicationCache" xml:space="preserve">
+    <value>Applicate cache legen</value>
+  </data>
+  <data name="Menu_Translations" xml:space="preserve">
+    <value>Vertaalwoorden</value>
+  </data>
+  <data name="Menu_SEO" xml:space="preserve">
+    <value>SEO</value>
+  </data>
+  <data name="Menu_Redirect" xml:space="preserve">
+    <value>Redirect</value>
+  </data>
+  <data name="Menu_WiserManagement" xml:space="preserve">
+    <value>Wiser beheer</value>
+  </data>
+  <data name="Menu_Users" xml:space="preserve">
+    <value>Gebruikers</value>
+  </data>
+  <data name="Menu_ReportBug" xml:space="preserve">
+    <value>Bug melden</value>
+  </data>
+  <data name="Menu_NewClient" xml:space="preserve">
+    <value>Nieuwe klant</value>
+  </data>
+  <data name="Menu_MasterData" xml:space="preserve">
+    <value>Stamgegevens</value>
+  </data>
+  <data name="Menu_MailTemplates" xml:space="preserve">
+    <value>Mailtemplates</value>
+  </data>
+  <data name="Menu_OrderProcesses" xml:space="preserve">
+    <value>Bestelprocessen</value>
+  </data>
+  <data name="Menu_PSPs" xml:space="preserve">
+    <value>PSP's</value>
+  </data>
+  <data name="Menu_HeaderContent" xml:space="preserve">
+    <value>Headercontent</value>
+  </data>
+  <data name="Menu_ContentBuilderSnippets" xml:space="preserve">
+    <value>Contentbuilder snippets</value>
+  </data>
+  <data name="Menu_ContentBoxTemplates" xml:space="preserve">
+    <value>Contentbox templates</value>
+  </data>
+  <data name="Menu_GCLSettings" xml:space="preserve">
+    <value>Instellingen GCL</value>
+  </data>
+  <data name="Menu_DataSelectorTemplates" xml:space="preserve">
+    <value>Dataselectortemplates</value>
+  </data>
+  <data name="Menu_DashboardSetup" xml:space="preserve">
+    <value>Dashboard setup</value>
+  </data>
+  <data name="Menu_FTPConfig" xml:space="preserve">
+    <value>FTP configuratie</value>
+  </data>
+  <data name="Menu_ImportExport" xml:space="preserve">
+    <value>Import- / export</value>
+  </data>
+  <data name="Menu_ImportHistory" xml:space="preserve">
+    <value>Importhistorie</value>
+  </data>
+  <data name="Menu_DataSelector" xml:space="preserve">
+    <value>Dataselector</value>
+  </data>
+  <data name="Menu_Communication" xml:space="preserve">
+    <value>Communicatie</value>
+  </data>
+  <data name="Menu_Search" xml:space="preserve">
+    <value>Zoeken</value>
+  </data>
+  <data name="Menu_OpenItem" xml:space="preserve">
+    <value>Item openen</value>
+  </data>
+  <data name="Menu_Branches" xml:space="preserve">
+    <value>Branches</value>
+  </data>
+  <data name="Menu_ChangePassword" xml:space="preserve">
+    <value>Wachtwoord wijzigen</value>
+  </data>
+  <data name="Menu_MyProfile" xml:space="preserve">
+    <value>Mijn gegevens</value>
+  </data>
+  <data name="Menu_Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  
+  <data name="Warning_CapsOn" xml:space="preserve">
+    <value>Caps lock staat aan</value>
+  </data>  
+  
+  
   <data name="'." xml:space="preserve">
     <value>' gekregen.</value>
   </data>
@@ -272,9 +461,6 @@
   <data name="Amount of items:" xml:space="preserve">
     <value>Aantal items:</value>
   </data>
-  <data name="An email with your new password has been sent." xml:space="preserve">
-    <value>Een email is verstuurd met uw nieuwe wachtwoord.</value>
-  </data>
   <data name="An existing branch can be opened here." xml:space="preserve">
     <value>Hier kan een bestaande branch geopend worden.</value>
   </data>
@@ -389,9 +575,6 @@
   <data name="cancel subscription?" xml:space="preserve">
     <value>abonnement stopzetten?</value>
   </data>
-  <data name="Caps lock is on" xml:space="preserve">
-    <value>Caps lock staat aan</value>
-  </data>
   <data name="CC" xml:space="preserve">
     <value>CC</value>
   </data>
@@ -493,9 +676,6 @@
   </data>
   <data name="Choose the property of the value which should match the supplied data." xml:space="preserve">
     <value>Kies de eigenschap waarvan de waarde overeen moet komen met de aangeleverde gegevens.</value>
-  </data>
-  <data name="Choose the user you want to log in with" xml:space="preserve">
-    <value>Kies de gebruiker waarmee u wilt inloggen</value>
   </data>
   <data name="Choose users..." xml:space="preserve">
     <value>Kies gebruikers...</value>
@@ -1011,9 +1191,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   <data name="For which table this trigger is created or modified." xml:space="preserve">
     <value>Voor welke tabel deze trigger gemaakt of aangepast wordt.</value>
   </data>
-  <data name="Forgot your password?" xml:space="preserve">
-    <value>Wachtwoord vergeten?</value>
-  </data>
   <data name="Format" xml:space="preserve">
     <value>Format</value>
   </data>
@@ -1404,9 +1581,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   <data name="Logged in time" xml:space="preserve">
     <value>Ingelogde tijd</value>
   </data>
-  <data name="Login" xml:space="preserve">
-    <value>Inloggen</value>
-  </data>
   <data name="longblob" xml:space="preserve">
     <value>longblob</value>
   </data>
@@ -1640,9 +1814,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   </data>
   <data name="Parent objects" xml:space="preserve">
     <value>Bovenliggende objecten</value>
-  </data>
-  <data name="Password" xml:space="preserve">
-    <value>Wachtwoord</value>
   </data>
   <data name="PDF background field name" xml:space="preserve">
     <value>PDF veldnaam achtergrond</value>
@@ -2082,9 +2253,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   <data name="Status" xml:space="preserve">
     <value>Status</value>
   </data>
-  <data name="Stay logged in" xml:space="preserve">
-    <value>Ingelogd blijven</value>
-  </data>
   <data name="Step value" xml:space="preserve">
     <value>Stapwaarde</value>
   </data>
@@ -2328,9 +2496,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   <data name="User must be logged in to view this template" xml:space="preserve">
     <value>Gebruiker moet ingelogd zijn om deze template te zien</value>
   </data>
-  <data name="User name" xml:space="preserve">
-    <value>Gebruikersnaam</value>
-  </data>
   <data name="User name_" xml:space="preserve">
     <value>Loginnaam</value>
   </data>
@@ -2429,20 +2594,5 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   </data>
   <data name="You have no other branches yet. Please create a new branch first using the 'Create new branch' option." xml:space="preserve">
     <value>U heeft nog geen andere branches. Maak a.u.b. eerst een nieuwe branch aan via de optie 'Nieuwe branch aanmaken'.</value>
-  </data>
-  <data name="You have used an invalid subdomain. Please check the subdomain or contact us." xml:space="preserve">
-    <value>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</value>
-  </data>
-  <data name="You need to choose a new password, please enter it here" xml:space="preserve">
-    <value>U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in</value>
-  </data>
-  <data name="Your current password" xml:space="preserve">
-    <value>Uw huidig wachtwoord</value>
-  </data>
-  <data name="Your new password" xml:space="preserve">
-    <value>Uw nieuwe wachtwoord</value>
-  </data>
-  <data name="Your new password again" xml:space="preserve">
-    <value>Nogmaals uw nieuwe wachtwoord</value>
   </data>
 </root>

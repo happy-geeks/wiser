@@ -1,6 +1,8 @@
 ﻿@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @using GeeksCoreLibrary.Core.Enums
 @model FrontEnd.Core.Models.BaseViewModel
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
 <style>
     [v-cloak] {
         display: none;
@@ -57,9 +59,9 @@
                     </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" @@click="openMarkerIoScreen"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
-                    <li><a href="#" @@click="openConfigurationModule"><ins class="icon-config"></ins><span>Wiser configuratie</span></a></li>
-                    <li><a href="#" @@click="logout"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
+                    <li><a href="#" @@click="openMarkerIoScreen"><ins class="icon-line-bug"></ins><span>@Localizer["Menu_ReportBug"]! (CTRL+B)</span></a></li>
+                    <li><a href="#" @@click="openConfigurationModule"><ins class="icon-config"></ins><span>@Localizer["Menu_WiserConfiguration"]</span></a></li>
+                    <li><a href="#" @@click="logout"><ins class="icon-line-log-out"></ins><span>@Localizer["STR_Logout"]</span></a></li>
                 </ul>
             </li>
             <li class="logo">
@@ -738,37 +740,38 @@
             </section>
             <section class="full-error" v-if="!validSubDomain">
                 <ins class="icon-line-alert"></ins>
-                <span>U heeft een ongeldig subdomein gebruikt. Controleer a.u.b. het subdomein of neem contact op met ons.</span>
+                <span>@Localizer["Login_InvalidSubdomain"]</span>
             </section>
 
             <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && loginStatus !== 'totp' && loginStatus !== 'totp_loading' && loginStatus !== 'totp_error' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
-                    <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
+                    <input type="text" id="username" placeholder="@Localizer["STR_Username"]" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
 
                 <div class="form-row">
-                    <input type="password" id="password" placeholder="Wachtwoord" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
+                    <input type="password" id="password" placeholder="@Localizer["STR_Password"]" autocomplete="off" v-model="loginForm.password" @@keydown="checkCapslock($event)" required>
                     <ins id="password-toggle" class="icon-eye-visible" v-on:click="togglePassword()"></ins>
 
-                    <div class="pwd-message" v-if="loginForm.capslock">Caps lock staat aan</div>
+                    <div class="pwd-message" v-if="loginForm.capslock">@Localizer["Warning_CapsOn"]</div>
                 </div>
 
                 <div class="form-row">
                     <label id="remember" class="check-box">
-                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>Ingelogd blijven</span>
+                        <input type="checkbox" name="remember" class="no-form" v-model="loginForm.rememberMe"><span>@Localizer["Login_StayLoggedIn"]</span>
                     </label>
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">Inloggen</button>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'loading' }">@Localizer["STR_Login"]</button>
 
-                    <a href="#" @@click="togglePasswordForgottenScreen(true)" id="forgotten-password">Wachtwoord vergeten?</a>
+                    <a href="#" @@click="togglePasswordForgottenScreen(true)" id="forgotten-password">@Localizer["Login_ForgotPassword"]</a>
                 </div>
             </div>
+            <partial name="/Modules/Translations/Views/Partials/SelectLanguage"/>
             <div v-if="(loginStatus === 'totp' || loginStatus === 'totp_loading' || loginStatus === 'totp_error') && !showForgotPasswordScreen" class="totp">
-                <p v-if="totpQrImageUrl">Scan de QR-code in uw authenticator-app en vul daarna de code in.</p>
-                <p v-else-if="showTotpBackupCodeScreen">Vul hier een van uw backup-codes in.</p>
-                <p v-else>Vul de code in van uw authenticator app.</p>
+                <p v-if="totpQrImageUrl">@Localizer["Login_ScanQR"]</p>
+                <p v-else-if="showTotpBackupCodeScreen">@Localizer["Login_EnterBackupCode"]</p>
+                <p v-else>@Localizer["Login_EnterAuthenticatorCode"]</p>
 
                 <div class="form-row" v-if="totpQrImageUrl">
                     <img :src="totpQrImageUrl" alt="2FA Setup QR" />
@@ -780,53 +783,53 @@
                     <input type="text" name="totpPin" v-model="loginForm.totpPin" />
                 </div>
 
-                <a v-if="!totpQrImageUrl && !showTotpBackupCodeScreen && !user.adminLogin" href="#" @@click="toggleTotpBackupCodeScreen(true)" id="totpBackupCode">Inloggen via backup-code?</a>
+                <a v-if="!totpQrImageUrl && !showTotpBackupCodeScreen && !user.adminLogin" href="#" @@click="toggleTotpBackupCodeScreen(true)" id="totpBackupCode">@Localizer["Login_EnterWithBackupCode"]</a>
 
                 <div class="btn-row">
-                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'totp_loading' }">Verder</button>
+                    <a href="#" class="btn btn-secundary" @@click="logout()">@Localizer["STR_Cancel"]</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'totp_loading' }">@Localizer["STR_Continue"]</button>
                 </div>
             </div>
             <div v-if="(loginStatus === 'list' || loginStatus === 'list_loading') && !showForgotPasswordScreen">
-                <p>Kies de gebruiker waarmee u wilt inloggen</p>
+                <p>@Localizer["Login_ChooseUser"]</p>
 
                 <div class="form-row">
                     <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 
                 <div class="btn-row">
-                    <a href="#" class="btn btn-secundary" @@click="logout()">Annuleren</a>
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">Verder</button>
+                    <a href="#" class="btn btn-secundary" @@click="logout()">@Localizer["STR_Cancel"]</a>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true, loading: loginStatus === 'list_loading' }">@Localizer["STR_Continue"]</button>
                 </div>
             </div>
             <div v-if="showForgotPasswordScreen" class="forgotPasswordScreen">
                 <section class="success" v-if="resetPassword">
-                    <span>Een email is verstuurd met uw nieuwe wachtwoord.</span>
+                    <span>@Localizer["Login_ResetMailSend"]</span>
                 </section>
                 <div class="form-row">
-                    <input type="text" class="loginField usernameField" placeholder="Gebruikersnaam" v-model="forgotPasswordForm.username" />
+                    <input type="text" class="loginField usernameField" placeholder="@Localizer["STR_Username"]" v-model="forgotPasswordForm.username" />
                 </div>
                 <div class="form-row">
-                    <input type="text" class="loginField passwordField" placeholder="E-mailadres" v-model="forgotPasswordForm.email" />
+                    <input type="text" class="loginField passwordField" placeholder="@Localizer["STR_EmailAddress"]" v-model="forgotPasswordForm.email" />
                 </div>
 
                 <div class="btn-row">
-                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">Verzenden</button>
-                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">Annuleren</div>
+                    <button type="submit" :class="{ btn: true, 'btn-primary': true }">@Localizer["STR_Edit"]</button>
+                    <div :class="{ btn: true }" v-on:click="togglePasswordForgottenScreen(false)">@Localizer["STR_Cancel"]</div>
                 </div>
             </div>
             <div class="changePasswordAfterLogin" v-if="requirePasswordChange">
-                <h3>U moet een nieuw wachtwoord kiezen, vul dit a.u.b. hier in</h3>
+                <h3>@Localizer["Login_CreateNewPassword"]</h3>
                 <div class="form-row">
-                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="Uw nieuwe wachtwoord" v-model="changePasswordForm.newPassword" />
+                    <input type="password" id="newPassword" name="newPassword" class="loginField passwordField" placeholder="@Localizer["Login_NewPassword"]" v-model="changePasswordForm.newPassword" />
                 </div>
                 <div class="form-row">
-                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="Nogmaals uw nieuwe wachtwoord" v-model="changePasswordForm.newPasswordRepeat" />
+                    <input type="password" id="newPasswordRepeat" name="newPasswordRepeat" class="loginField passwordField" placeholder="@Localizer["Login_NewPasswordAgain"]" v-model="changePasswordForm.newPasswordRepeat" />
                 </div>
 
                 <div class="btn-row">
-                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">Wijzigen</button>
-                    <button id="cancelPasswordChange" :class="{ btn: true }">Annuleren</button>
+                    <button id="submitPasswordChange" type="submit" :class="{ btn: true, 'btn-primary': true }">@Localizer["STR_Submit"]</button>
+                    <button id="cancelPasswordChange" :class="{ btn: true }">@Localizer["STR_Cancel"]</button>
                 </div>
             </div>
         </form>
