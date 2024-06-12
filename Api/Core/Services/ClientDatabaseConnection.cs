@@ -84,6 +84,21 @@ namespace Api.Core.Services
             return transaction != null;
         }
 
+        public DbConnection GetConnectionForReading()
+        {
+            throw new NotImplementedException();
+        }
+
+        public DbConnection GetConnectionForWriting()
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<int> BulkInsertAsync(DataTable dataTable, string tableName, bool useWritingConnectionIfAvailable = true, bool useInsertIgnore = false)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <inheritdoc />
         public string ConnectedDatabase { get; protected set; }
 
