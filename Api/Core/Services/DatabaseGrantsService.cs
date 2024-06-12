@@ -35,7 +35,7 @@ namespace Api.Core.Services
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("key", key);
-            var query = $@"SELECT `key`, `type`, `client_id`, `data`, `subject_id`, `description`, `creation_time`, `expiration`, `session_id` FROM {WiserTableNames.WiserGrantStore} WHERE `key` = ?key";
+            var query = $"SELECT `key`, `type`, `client_id`, `data`, `subject_id`, `description`, `creation_time`, `expiration`, `session_id` FROM {WiserTableNames.WiserGrantStore} WHERE `key` = ?key";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -64,8 +64,8 @@ namespace Api.Core.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             clientDatabaseConnection.ClearParameters();
-            
-            var query = $@"SELECT `key`, `type`, `client_id`, `data`, `subject_id`, `description`, `creation_time`, `expiration`, `session_id` FROM {WiserTableNames.WiserGrantStore} {CreateFiltersForQuery(filter)}";
+
+            var query = $"SELECT `key`, `type`, `client_id`, `data`, `subject_id`, `description`, `creation_time`, `expiration`, `session_id` FROM {WiserTableNames.WiserGrantStore} {CreateFiltersForQuery(filter)}";
             var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             return dataTable.Rows.Cast<DataRow>()
@@ -147,7 +147,7 @@ namespace Api.Core.Services
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
             clientDatabaseConnection.ClearParameters();
-            
+
             var query = $@"DELETE FROM {WiserTableNames.WiserGrantStore} {CreateFiltersForQuery(filter)}";
             await clientDatabaseConnection.ExecuteAsync(query);
         }

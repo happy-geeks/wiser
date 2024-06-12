@@ -23,6 +23,7 @@ export default class UsersService extends BaseService {
             loginData.append("client_id", this.base.appSettings.apiClientId);
             loginData.append("client_secret", this.base.appSettings.apiClientSecret);
             loginData.append("isTestEnvironment", this.base.appSettings.isTestEnvironment);
+            loginData.append("isWiserFrontEndLogin", this.base.appSettings.isWiserFrontEndLogin);
             loginData.append("totpPin", totpPin);
             loginData.append("totpBackupCode", totpBackupCode);
             if (selectedUser) {

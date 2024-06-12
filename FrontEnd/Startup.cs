@@ -7,6 +7,7 @@ using FrontEnd.Modules.ImportExport.Interfaces;
 using FrontEnd.Modules.ImportExport.Services;
 using FrontEnd.Modules.Templates.Interfaces;
 using FrontEnd.Modules.Templates.Services;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Services;
 using JetBrains.Annotations;
@@ -82,6 +83,7 @@ namespace FrontEnd
             });
 
             // Use the options pattern for all settings in appSettings.json.
+            services.Configure<GclSettings>(Configuration.GetSection("GCL"));
             services.Configure<FrontEndSettings>(Configuration.GetSection("FrontEnd"));
 
             // Set Newtonsoft as the default JSON serializer and configure it to use camel case.
@@ -97,7 +99,6 @@ namespace FrontEnd
                 options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
                 options.SerializerSettings.Converters.Add(new StringEnumConverter());
             });
-
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();

@@ -178,13 +178,23 @@ namespace Api.Core.Helpers
         }
 
         /// <summary>
-        /// Get the sub domain from a <see cref="ClaimsIdentity">ClaimsIdentity</see>.
+        /// Get from a <see cref="ClaimsIdentity">ClaimsIdentity</see> whether the user was logged in on the test environment.
         /// </summary>
         /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <returns></returns>
         public static bool IsTestEnvironment(ClaimsIdentity claimsIdentity)
         {
             return String.Equals("true", claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == HttpContextConstants.IsTestEnvironmentKey)?.Value, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Get from a <see cref="ClaimsIdentity">ClaimsIdentity</see> whether the user was logged in via our own Wiser front-end.
+        /// </summary>
+        /// <param name="claimsIdentity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <returns></returns>
+        public static bool IsWiserFrontEndLogin(ClaimsIdentity claimsIdentity)
+        {
+            return String.Equals("true", claimsIdentity?.Claims.FirstOrDefault(claim => claim.Type == HttpContextConstants.IsWiserFrontEndLoginKey)?.Value, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

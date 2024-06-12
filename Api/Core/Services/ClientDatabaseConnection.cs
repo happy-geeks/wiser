@@ -11,7 +11,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
-using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Exceptions;
 using GeeksCoreLibrary.Core.Extensions;
@@ -372,14 +371,14 @@ namespace Api.Core.Services
                 query.Append($"{String.Join(",", parameters.Where(p => p.Key != "InsertOrUpdateRecord_Id").Select(p => $"`{p.Key}` = ?{p.Key}"))} WHERE `{idColumnName}` = ?InsertOrUpdateRecord_Id");
             }
 
-            await ExecuteAsync(query.ToString(), useWritingConnectionIfAvailable, false);
-
             if (!idIsDefaultValue)
             {
+                await ExecuteAsync(query.ToString(), useWritingConnectionIfAvailable, false);
                 return id;
             }
 
-            var result = await GetAsync("SELECT LAST_INSERT_ID()", useWritingConnectionIfAvailable: useWritingConnectionIfAvailable);
+            query.Append("; SELECT LAST_INSERT_ID()");
+            var result = await GetAsync(query.ToString(), useWritingConnectionIfAvailable: useWritingConnectionIfAvailable);
             return (T)Convert.ChangeType(result.Rows[0][0], typeof(T));
         }
 
