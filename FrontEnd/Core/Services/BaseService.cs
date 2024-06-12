@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
+using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -17,12 +19,14 @@ namespace FrontEnd.Core.Services
 
         private readonly IHttpContextAccessor httpContextAccessor;
         private readonly IWebHostEnvironment webHostEnvironment;
+        private readonly GclSettings gclSettings;
         private readonly FrontEndSettings frontEndSettings;
 
-        public BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvironment webHostEnvironment, IOptions<FrontEndSettings> frontEndSettings)
+        public BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvironment webHostEnvironment, IOptions<FrontEndSettings> frontEndSettings, IOptions<GclSettings> gclSettings)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.webHostEnvironment = webHostEnvironment;
+            this.gclSettings = gclSettings.Value;
             this.frontEndSettings = frontEndSettings.Value;
         }
 
@@ -93,6 +97,7 @@ namespace FrontEnd.Core.Services
             viewModel.Wiser1BaseUrl = GetWiser1Url();
             viewModel.ApiAuthenticationUrl = $"{frontEndSettings.ApiBaseUrl}connect/token";
             viewModel.ApiRoot = $"{frontEndSettings.ApiBaseUrl}api/v3/";
+            viewModel.IsWiserFrontEndLogin = "true".EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true, true);
 
             if (httpContextAccessor.HttpContext != null)
             {
@@ -100,12 +105,12 @@ namespace FrontEnd.Core.Services
                 viewModel.CurrentDomain = viewModel.CurrentDomain.Replace($"{viewModel.SubDomain}.", "");
             }
 
-            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
+            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, "Core/Css/partner"));
             if (partnerStylesDirectory.Exists)
             {
                 viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
             }
-            
+
             return viewModel;
         }
 
