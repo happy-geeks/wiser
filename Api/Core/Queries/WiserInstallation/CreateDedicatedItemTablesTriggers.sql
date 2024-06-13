@@ -132,7 +132,7 @@ CREATE TRIGGER `{tablePrefix}DetailInsert` AFTER INSERT ON `{tablePrefix}wiser_i
         VALUES ('UPDATE_ITEM','{tablePrefix}wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
     END IF;
 
-    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+    IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
         IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
             INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
             VALUES (
@@ -163,7 +163,7 @@ CREATE TRIGGER `{tablePrefix}DetailUpdate` AFTER UPDATE ON `{tablePrefix}wiser_i
             END IF;
         END IF;
 
-        IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+        IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
             IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
                 INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
                 VALUES (
@@ -186,7 +186,7 @@ CREATE TRIGGER `{tablePrefix}DetailDelete` AFTER DELETE ON `{tablePrefix}wiser_i
         VALUES ('UPDATE_ITEM', '{tablePrefix}wiser_itemdetail', OLD.item_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
     END IF;
 
-    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+    IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
         IF (OLD.`item_id` IS NOT NULL AND OLD.`item_id` <> IFNULL(@previousItemId, 0)) THEN
             INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
             VALUES (
@@ -271,7 +271,7 @@ CREATE TRIGGER `{tablePrefix}FileInsert` AFTER INSERT ON `{tablePrefix}wiser_ite
         END IF;
     END IF;
 
-    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+    IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
         IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
             INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
             VALUES (
@@ -378,7 +378,7 @@ CREATE TRIGGER `{tablePrefix}FileUpdate` AFTER UPDATE ON `{tablePrefix}wiser_ite
         END IF;
     END IF;
 
-    IF IFNULL(@performParentUpdate, TRUE) = TRUE AND updateChangeDate = TRUE  THEN
+    IF IFNULL(@performParentUpdate, FALSE) = TRUE AND updateChangeDate = TRUE  THEN
         IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
             INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
             VALUES (
@@ -400,7 +400,7 @@ CREATE TRIGGER `{tablePrefix}FileDelete` AFTER DELETE ON `{tablePrefix}wiser_ite
         VALUES ('DELETE_FILE', '{tablePrefix}wiser_itemfile', OLD.id, IFNULL(@_username, USER()), IFNULL(OLD.property_name, ''), IF(IFNULL(OLD.item_id, 0) > 0, 'item_id', 'itemlink_id'), IF(IFNULL(OLD.item_id, 0) > 0, OLD.item_id, OLD.itemlink_id));
     END IF;
 
-    IF IFNULL(@performParentUpdate, TRUE) = TRUE THEN
+    IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
         IF (OLD.`item_id` IS NOT NULL AND OLD.`item_id` <> IFNULL(@previousItemId, 0)) THEN
             INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
             VALUES (
