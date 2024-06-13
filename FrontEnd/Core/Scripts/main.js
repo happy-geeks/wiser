@@ -125,16 +125,6 @@ class Main {
             });
         });
 
-        if (this.appSettings.markerIoToken) {
-            try {
-                const markerSdk = await import("@marker.io/browser");
-                this.markerWidget = await markerSdk.default.loadWidget({ destination: this.appSettings.markerIoToken });
-                this.markerWidget.hide();
-            } catch(exception) {
-                console.error("Error loading marker IO widget", exception);
-            }
-        }
-
         this.initVue();
     }
 
@@ -188,10 +178,6 @@ class Main {
                 this.vueApp.openWiserBranchesPrompt();
                 break;
             }
-            case "OpenMarkerIoScreen": {
-                this.vueApp.openMarkerIoScreen();
-                break;
-            }
             case "OpenWiserIdPrompt": {
                 this.vueApp.openWiserIdPrompt();
                 break;
@@ -231,7 +217,6 @@ class Main {
                     appSettings: this.appSettings,
                     wiserIdPromptValue: null,
                     wiserEntityTypePromptValue: null,
-                    markerWidget: this.markerWidget,
                     changePasswordPromptOldPasswordValue: null,
                     changePasswordPromptNewPasswordValue: null,
                     changePasswordPromptNewPasswordRepeatValue: null,
@@ -414,9 +399,6 @@ class Main {
                 listOfEntityTypes() {
                     return this.$store.state.items.listOfEntityTypes;
                 },
-                markerIoEnabled() {
-                    return !!this.appSettings.markerIoToken;
-                },
                 tenantTitle() {
                     return this.$store.state.tenants.title;
                 },
@@ -591,11 +573,6 @@ class Main {
                     if (event.ctrlKey && event.key === "o") {
                         event.preventDefault();
                         this.openWiserIdPrompt();
-                    }
-                    // Open MarkerToScreen (Bug reporting) prompt when the user presses CTRL+B.
-                    if (event.ctrlKey && event.key === "b") {
-                        event.preventDefault();
-                        this.openMarkerIoScreen();
                     }
                 },
 
@@ -825,10 +802,6 @@ class Main {
                     }
 
                     return true;
-                },
-
-                openMarkerIoScreen() {
-                    this.markerWidget.capture("fullscreen");
                 },
 
                 async changePassword() {
