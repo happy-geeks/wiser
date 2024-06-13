@@ -300,6 +300,8 @@ namespace Api
                 app.ConfigureExceptionHandler(logger);
             }
 
+            app.UseMiddleware<ApiRequestLoggingMiddleware>();
+
             // Setup React and babel for the /api/v3/babel endpoint (for converting ES6 javascript to ES5).
             app.UseReact(config =>
             {
@@ -340,8 +342,6 @@ namespace Api
             app.UseCors(CorsPolicyName);
 
             app.UseAuthorization();
-
-            app.UseMiddleware<ApiRequestLoggingMiddleware>();
 
             app.UseEndpoints(endpoints =>
             {
