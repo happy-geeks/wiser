@@ -57,7 +57,6 @@
                     </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" @@click="openMarkerIoScreen"><ins class="icon-line-bug"></ins><span>Bug melden! (CTRL+B)</span></a></li>
                     <li><a href="#" @@click="openConfigurationModule"><ins class="icon-config"></ins><span>Wiser configuratie</span></a></li>
                     <li><a href="#" @@click="logout"><ins class="icon-line-log-out"></ins><span>Uitloggen</span></a></li>
                 </ul>
@@ -1016,8 +1015,7 @@
     "loadPartnerStyle": @Model.LoadPartnerStyle.ToString().ToLowerInvariant(),
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
-    "trackJsToken": "@Model.Settings.TrackJsToken",
-    "markerIoToken": "@Model.Settings.MarkerIoToken"
+    "trackJsToken": "@Model.Settings.TrackJsToken"
 }
 </script>
 

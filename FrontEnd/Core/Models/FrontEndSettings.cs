@@ -48,11 +48,6 @@ namespace FrontEnd.Core.Models
         public string TrackJsToken { get; set; }
 
         /// <summary>
-        /// Gets or sets the token for Marker.io. If you don't want to use Marker.io, you can leave this empty and the script will not be loaded.
-        /// </summary>
-        public string MarkerIoToken { get; set; }
-
-        /// <summary>
         /// Gets or sets the host names that are used for the Wiser front-end. This should not include the sub domain.
         /// This will be used to figure out the sub domain, which is needed to find out which tenant is being loaded.
         /// </summary>
