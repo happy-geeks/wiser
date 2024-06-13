@@ -602,8 +602,6 @@ END;
 DROP TRIGGER IF EXISTS `ItemDelete`;
 CREATE TRIGGER `ItemDelete` AFTER DELETE ON `wiser_item` FOR EACH ROW
 BEGIN
-    DELETE d.* FROM wiser_itemlink l JOIN wiser_itemlinkdetail AS d ON d.itemlink_id = l.id WHERE l.item_id = OLD.id OR l.destination_item_id = OLD.id;
-    DELETE FROM wiser_itemlink WHERE (item_id = OLD.id OR destination_item_id = OLD.id) AND OLD.id > 0;
     DELETE FROM wiser_itemdetail WHERE item_id = OLD.id;
     DELETE FROM wiser_itemfile WHERE item_id = OLD.id;
 
