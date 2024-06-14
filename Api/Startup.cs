@@ -8,8 +8,6 @@ using Api.Core.Filters;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
-using Api.Modules.Tenants.Services;
 using Api.Modules.DigitalOcean.Models;
 using Api.Modules.Files.Models;
 using Api.Modules.Google.Models;
@@ -17,9 +15,8 @@ using Api.Modules.Languages.Interfaces;
 using Api.Modules.Languages.Services;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Services;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Services;
+using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Services;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
@@ -265,6 +262,9 @@ namespace Api
             });
 
             // Configure dependency injection.
+            services.AddScoped<MySqlDatabaseConnection>();
+            services.AddScoped<IDatabaseConnection>(provider => provider.GetRequiredService<MySqlDatabaseConnection>());
+
             services.Decorate<IDatabaseConnection, ClientDatabaseConnection>();
             services.Decorate<ITemplatesService, CachedTemplatesService>();
             services.Decorate<IUsersService, CachedUsersService>();
