@@ -1435,7 +1435,7 @@ export class Wiser {
             let field = fields[i];
             let oldValue = field.querySelector("span.oldValue")?.getAttribute("value");
             let newValue = field.querySelector("span.newValue")?.getAttribute("value");
-            const fieldName = field.getAttribute("field-name");
+            let fieldName = field.getAttribute("field-name");
             const dataType = field.getAttribute("data-type");
             switch (dataType) { // TemplateTypes enum
                 case "Html": // Html is saved without whitespace in the database, so we need to make it readable first
@@ -1446,6 +1446,9 @@ export class Wiser {
                     oldValue = !oldValue ? "" : oldValue;
                     newValue = !newValue ? "" : newValue;
             }
+            if (fieldName === "editorValue") {
+                fieldName = "Template";
+            }
 
             const diff = Diff.createTwoFilesPatch(fieldName, fieldName, oldValue, newValue);
             field.innerHTML = Diff2Html.html(diff, {
@@ -1453,8 +1456,31 @@ export class Wiser {
                 matching: "words",
                 outputFormat: "side-by-side"
             });
-
             field.classList.remove("diffField");
+
+            let header = field.querySelector("div.d2h-file-header");
+            let viewButton = document.createElement('button');
+            viewButton.setAttribute('style', "width:100px;");
+            viewButton.textContent = "Toon alles";
+            $(viewButton).kendoButton({
+                click: function() {
+                    const html = Diff2Html.html(Diff.createTwoFilesPatch(fieldName, fieldName, oldValue, newValue, undefined, undefined, {context: Number.MAX_SAFE_INTEGER}), {
+                        drawFileList: false,
+                        matching: "words",
+                        outputFormat: "side-by-side"
+                    });
+
+                    let fullViewWindow = $(`<div style="padding:10px;">${html}</div>`).kendoWindow({
+                        title: `"${fieldName}" field version difference`,
+                        iframe: true,
+                        actions: ["close"]
+                    }).data("kendoWindow");
+
+                    fullViewWindow.maximize().open();
+                }
+            });
+
+            header.appendChild(viewButton);
         }
     }
 }
