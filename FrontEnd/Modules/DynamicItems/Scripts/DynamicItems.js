@@ -1223,7 +1223,7 @@ const moduleSettings = {
                 };
 
                 const gridDataResult = await Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/history?mode=3&moduleId=${this.base.settings.moduleId}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${this.settings.entityType}?mode=3&moduleId=${this.base.settings.moduleId}`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(options)
@@ -1267,7 +1267,7 @@ const moduleSettings = {
                                     previousFilters = currentFilters;
 
                                     const newGridDataResult = await Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/history?mode=3&moduleId=${this.base.settings.moduleId}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${this.settings.entityType}?mode=3&moduleId=${this.base.settings.moduleId}`,
                                         method: "POST",
                                         contentType: "application/json",
                                         data: JSON.stringify(transportOptions.data)
