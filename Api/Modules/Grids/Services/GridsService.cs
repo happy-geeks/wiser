@@ -293,9 +293,7 @@ namespace Api.Modules.Grids.Services
                                     FROM {WiserTableNames.WiserHistory} current
 	                                
                                     WHERE current.item_id=?itemid
-                                    # Item link IDs will also be saved in the column 'item_id'.
-                                    # To prevent showing the history of an item link with the same id as the currently opened item, don't get history with action = 'UPDATE_ITEMLINK'.
-                                    AND current.action <> 'UPDATE_ITEMLINK'
+                                    AND (tablename = '{tablePrefix}{WiserTableNames.WiserItem}' OR tablename = '{tablePrefix}{WiserTableNames.WiserItemDetail}')
                                     [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
                                     [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
                                     [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
