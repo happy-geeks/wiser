@@ -1155,10 +1155,10 @@ LIMIT 1";
 
             // Save the database settings for the WTS.
             settings.DatabaseName = selectedBranchTenant.Database.DatabaseName;
-            settings.DatabaseHost = selectedBranchTenant.Database.Host.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabaseHost = selectedBranchTenant.Database.Host.EncryptWithAesWithSalt(productionTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
             settings.DatabasePort = selectedBranchTenant.Database.PortNumber;
-            settings.DatabaseUsername = selectedBranchTenant.Database.Username.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
-            settings.DatabasePassword = selectedBranchTenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey).EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabaseUsername = selectedBranchTenant.Database.Username.EncryptWithAesWithSalt(productionTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePassword = selectedBranchTenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey).EncryptWithAesWithSalt(productionTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
 
             DateTime? lastMergeDate = null;
 
@@ -1189,7 +1189,7 @@ LIMIT 1";
                 if (!lastMergeDate.HasValue)
                 {
                     await using var branchCommand = branchConnection.CreateCommand();
-                    branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
+                    branchCommand.CommandText = $"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
                     var dataTable = new DataTable();
                     using var branchAdapter = new MySqlDataAdapter(branchCommand);
                     branchAdapter.Fill(dataTable);
