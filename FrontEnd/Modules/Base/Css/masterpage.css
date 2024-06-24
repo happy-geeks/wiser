@@ -779,10 +779,10 @@ dd {
 	position: relative;
 	width: 100%;
 	z-index: 10;
+	margin-top: 5px;
 }
 .item[data-label-style="float"] h4 + * {
 	width: 100%;
-	margin-top: 5px;
 }
 .item[data-label-style="float"] h4 .property-name {
 	left: 10px;
