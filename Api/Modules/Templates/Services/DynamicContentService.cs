@@ -16,6 +16,10 @@ using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Components.Account;
+using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Enums;
+using MySqlConnector;
 
 namespace Api.Modules.Templates.Services
 {

@@ -12,6 +12,9 @@ using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Templates.Models.Template.WtsModels;
 using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Modules.Templates.Enums;
+using GeeksCoreLibrary.Modules.Templates.Models;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 

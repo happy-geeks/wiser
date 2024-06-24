@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Interfaces.DataLayer
 {

@@ -7,6 +7,7 @@ using Api.Core.Services;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Interfaces
 {

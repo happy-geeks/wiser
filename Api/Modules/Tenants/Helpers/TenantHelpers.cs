@@ -1,4 +1,6 @@
 ﻿using Api.Modules.Tenants.Models;
+using GeeksCoreLibrary.Core.Extensions;
+using MySqlConnector;
 
 namespace Api.Modules.Tenants.Helpers;
 
