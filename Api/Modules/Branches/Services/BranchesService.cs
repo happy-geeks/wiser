@@ -165,6 +165,26 @@ namespace Api.Modules.Branches.Services
                 }
             };
 
+            if (!String.IsNullOrWhiteSpace(settings.DatabaseHost))
+            {
+                newTenant.Database.Host = settings.DatabaseHost;
+                settings.DatabaseHost = settings.DatabaseHost.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            if (settings.DatabasePort is > 0)
+            {
+                newTenant.Database.PortNumber = settings.DatabasePort.Value;
+            }
+            if (!String.IsNullOrWhiteSpace(settings.DatabaseUsername))
+            {
+                newTenant.Database.Username = settings.DatabaseUsername;
+                settings.DatabaseUsername = settings.DatabaseUsername.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            if (!String.IsNullOrWhiteSpace(settings.DatabasePassword))
+            {
+                newTenant.Database.Password = settings.DatabasePassword.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
+                settings.DatabasePassword = settings.DatabasePassword.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+
             await wiserTenantsService.CreateOrUpdateTenantAsync(newTenant);
 
             // Clear some data that we don't want to return to client.
@@ -1133,7 +1153,12 @@ LIMIT 1";
                 };
             }
 
+            // Save the database settings for the WTS.
             settings.DatabaseName = selectedBranchTenant.Database.DatabaseName;
+            settings.DatabaseHost = selectedBranchTenant.Database.Host.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePort = selectedBranchTenant.Database.PortNumber;
+            settings.DatabaseUsername = selectedBranchTenant.Database.Username.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePassword = selectedBranchTenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey).EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
 
             DateTime? lastMergeDate = null;
 

@@ -28,40 +28,17 @@ using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Templates.Models.Template.WtsModels;
+using Api.Modules.Tenants.Helpers;
 using Api.Modules.Tenants.Interfaces;
-using GeeksCoreLibrary.Components.Account;
-using GeeksCoreLibrary.Components.DataSelectorParser;
-using GeeksCoreLibrary.Components.Filter;
-using GeeksCoreLibrary.Components.Pagination;
-using GeeksCoreLibrary.Components.Pagination.Models;
-using GeeksCoreLibrary.Components.Repeater;
-using GeeksCoreLibrary.Components.Repeater.Models;
-using GeeksCoreLibrary.Components.ShoppingBasket;
-using GeeksCoreLibrary.Components.ShoppingBasket.Models;
-using GeeksCoreLibrary.Components.WebForm;
-using GeeksCoreLibrary.Components.WebForm.Models;
-using GeeksCoreLibrary.Components.WebPage;
-using GeeksCoreLibrary.Components.WebPage.Models;
-using GeeksCoreLibrary.Core.Cms;
-using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Interfaces;
-using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
-using GeeksCoreLibrary.Modules.Objects.Interfaces;
-using GeeksCoreLibrary.Modules.Templates.Enums;
-using GeeksCoreLibrary.Modules.Templates.Interfaces;
-using GeeksCoreLibrary.Modules.Templates.Models;
+using Api.Modules.Tenants.Models;
 using LibSassHost;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify;
@@ -99,6 +76,7 @@ namespace Api.Modules.Templates.Services
         private readonly IMeasurementsDataService measurementsDataService;
         private readonly IDynamicContentDataService dynamicContentDataService;
         private readonly IWtsConfigurationService wtsConfigurationService;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// Creates a new instance of TemplatesService.
@@ -124,7 +102,8 @@ namespace Api.Modules.Templates.Services
             IBranchesService branchesService,
             IMeasurementsDataService measurementsDataService,
             IDynamicContentDataService dynamicContentDataService,
-            IWtsConfigurationService wtsConfigurationService)
+            IWtsConfigurationService wtsConfigurationService,
+            IServiceProvider serviceProvider)
         {
             this.httpContextAccessor = httpContextAccessor;
             this.wiserTenantsService = wiserTenantsService;
@@ -148,6 +127,7 @@ namespace Api.Modules.Templates.Services
             this.measurementsDataService = measurementsDataService;
             this.dynamicContentDataService = dynamicContentDataService;
             this.wtsConfigurationService = wtsConfigurationService;
+            this.serviceProvider = serviceProvider;
 
             if (clientDatabaseConnection is ClientDatabaseConnection connection)
             {
@@ -1295,14 +1275,14 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName = null)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, TenantModel branch = null)
         {
             if (templateId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId, branchDatabaseName);
+            var versionsAndPublished = await templateDataService.GetPublishedEnvironmentsAsync(templateId, branch);
 
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
@@ -1434,7 +1414,7 @@ LIMIT 1";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, TenantModel branch = null)
         {
             if (templateId <= 0)
             {
@@ -1449,7 +1429,6 @@ LIMIT 1";
             // When deploying a template to live environment that is a view, routine or trigger, then also update the actual view/routine/trigger in the database.
             if (environment == Environments.Live)
             {
-                var databaseName = branchDatabaseName ?? clientDatabaseConnection.ConnectedDatabase;
                 var template = await templateDataService.GetDataAsync(templateId, version: version);
 
                 switch (template.Type)
@@ -1457,7 +1436,7 @@ LIMIT 1";
                     case TemplateTypes.View:
                     {
                         // Create or replace view.
-                        var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue, databaseName);
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseViewAsync(template.Name, template.EditorValue, branch);
                         if (!successful)
                         {
                             throw new Exception($"The template saved successfully, but the view could not be created due to a syntax error. Error:\n{errorMessage}");
@@ -1468,7 +1447,7 @@ LIMIT 1";
                     case TemplateTypes.Routine:
                     {
                         // Also (re-)create the actual routine.
-                        var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue, databaseName);
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseRoutineAsync(template.Name, template.RoutineType, template.RoutineParameters, template.RoutineReturnType, template.EditorValue, branch);
                         if (!successful)
                         {
                             throw new Exception($"The template saved successfully, but the routine could not be created due to a syntax error. Error:\n{errorMessage}");
@@ -1479,7 +1458,7 @@ LIMIT 1";
                     case TemplateTypes.Trigger:
                     {
                         // Also (re-)create the actual trigger.
-                        var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue, databaseName);
+                        var (successful, errorMessage) = await CreateOrReplaceDatabaseTriggerAsync(template.Name, template.TriggerTiming, template.TriggerEvent, template.TriggerTableName, template.EditorValue, branch);
                         if (!successful)
                         {
                             throw new Exception($"The template saved successfully, but the trigger could not be created due to a syntax error. Error:\n{errorMessage}");
@@ -1492,7 +1471,7 @@ LIMIT 1";
 
             // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
             // Does not apply if the template was published to live within a branch.
-            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            if (branch == null)
             {
                 await CreateNewVersionAsync(templateId, version);
             }
@@ -1501,7 +1480,7 @@ LIMIT 1";
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(templateId, currentPublished, newPublished);
 
-            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName));
+            return new ServiceResult<int>(await templateDataService.UpdatePublishedEnvironmentAsync(templateId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branch));
         }
 
         /// <inheritdoc />
@@ -1829,13 +1808,13 @@ LIMIT 1";
             switch (templateDataResponse.ModelObject.Type)
             {
                 case TemplateTypes.View:
-                    await CreateOrReplaceDatabaseViewAsync(newName, templateDataResponse.ModelObject.EditorValue, oldName, clientDatabaseConnection.ConnectedDatabase);
+                    await CreateOrReplaceDatabaseViewAsync(newName, templateDataResponse.ModelObject.EditorValue, oldViewName: oldName);
                     break;
                 case TemplateTypes.Routine:
-                    await CreateOrReplaceDatabaseRoutineAsync(newName, templateDataResponse.ModelObject.RoutineType, templateDataResponse.ModelObject.RoutineParameters, templateDataResponse.ModelObject.RoutineReturnType, templateDataResponse.ModelObject.EditorValue, oldName, clientDatabaseConnection.ConnectedDatabase);
+                    await CreateOrReplaceDatabaseRoutineAsync(newName, templateDataResponse.ModelObject.RoutineType, templateDataResponse.ModelObject.RoutineParameters, templateDataResponse.ModelObject.RoutineReturnType, templateDataResponse.ModelObject.EditorValue, oldRoutineName: oldName);
                     break;
                 case TemplateTypes.Trigger:
-                    await CreateOrReplaceDatabaseTriggerAsync(newName, templateDataResponse.ModelObject.TriggerTiming, templateDataResponse.ModelObject.TriggerEvent, templateDataResponse.ModelObject.TriggerTableName, templateDataResponse.ModelObject.EditorValue, oldName, clientDatabaseConnection.ConnectedDatabase);
+                    await CreateOrReplaceDatabaseTriggerAsync(newName, templateDataResponse.ModelObject.TriggerTiming, templateDataResponse.ModelObject.TriggerEvent, templateDataResponse.ModelObject.TriggerTableName, templateDataResponse.ModelObject.EditorValue, oldTriggerName: oldName);
                     break;
             }
 
@@ -2397,7 +2376,7 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
             // Now we can deploy the template to the branch.
             try
             {
-                await templateDataService.DeployToBranchAsync(templateIds, branchToDeploy.Database.DatabaseName);
+                await templateDataService.DeployToBranchAsync(templateIds, branchToDeploy);
             }
             catch (MySqlException mySqlException)
             {
@@ -2424,9 +2403,9 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
             foreach (var templateId in templateIds)
             {
                 var templateMetaData = await templateDataService.GetMetaDataAsync(templateId);
-                var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy.Database.DatabaseName)).ModelObject;
+                var currentPublished = (await GetTemplateEnvironmentsAsync(templateId, branchToDeploy)).ModelObject;
 
-                await PublishToEnvironmentAsync(identity, templateId, templateMetaData.Version, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
+                await PublishToEnvironmentAsync(identity, templateId, templateMetaData.Version, Environments.Live, currentPublished, branchToDeploy);
             }
 
             return new ServiceResult<bool>(true)
@@ -3140,21 +3119,31 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
         /// </summary>
         /// <param name="viewName">The name of the template, which will server as the name of the view.</param>
         /// <param name="viewDefinition">The select statement of the view.</param>
-        /// <param name="databaseSchema">The database schema in which to create/replace the view.</param>
+        /// <param name="branch">Optional: If creating the view needs to be done in a branch, enter the information for that branch here.</param>
         /// <param name="oldViewName">Optional: The old name of the view when the view is being renamed.</param>
         /// <returns><see langword="true"/> if the view was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool successful, string ErrorMessage)> CreateOrReplaceDatabaseViewAsync(string viewName, string viewDefinition, string databaseSchema, string oldViewName = null)
+        private async Task<(bool successful, string ErrorMessage)> CreateOrReplaceDatabaseViewAsync(string viewName, string viewDefinition, TenantModel branch = null, string oldViewName = null)
         {
+            using var scope = serviceProvider.CreateScope();
+            var connection = clientDatabaseConnection;
+            if (branch != null)
+            {
+                // Create new connection for branch database.
+                var connectionStringBuilder = TenantHelpers.GetConnectionString(branch.Database, apiSettings.DatabasePasswordEncryptionKey);
+                connection = scope.ServiceProvider.GetRequiredService<MySqlDatabaseConnection>();
+                await connection.ChangeConnectionStringsAsync(connectionStringBuilder.ConnectionString);
+            }
+
             // If the view is being renamed, the oldViewName parameter will contain the current name of the view.
             // It should be dropped, otherwise the view will exist with both the new and the old name.
             if (!String.IsNullOrWhiteSpace(oldViewName))
             {
-                await clientDatabaseConnection.ExecuteAsync($"DROP VIEW IF EXISTS `{databaseSchema}`.`{oldViewName}`;");
+                await connection.ExecuteAsync($"DROP VIEW IF EXISTS `{oldViewName}`;");
             }
 
-            // Build the query that will created the view.
+            // Build the query that will create the view.
             var viewQueryBuilder = new StringBuilder();
-            viewQueryBuilder.AppendLine($"CREATE OR REPLACE SQL SECURITY INVOKER VIEW `{databaseSchema}`.`{viewName}` AS");
+            viewQueryBuilder.AppendLine($"CREATE OR REPLACE SQL SECURITY INVOKER VIEW `{viewName}` AS");
             viewQueryBuilder.AppendLine(viewDefinition);
 
             var viewQuery = viewQueryBuilder.ToString();
@@ -3162,7 +3151,7 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
             try
             {
                 // Execute the query. No need to drop old view first, the "CREATE OR REPLACE" part takes care of that.
-                await clientDatabaseConnection.ExecuteAsync(viewQuery);
+                await connection.ExecuteAsync(viewQuery);
                 return (true, String.Empty);
             }
             catch (MySqlException mySqlException)
@@ -3185,14 +3174,24 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
         /// <param name="parameters">A string that represent the input parameters. For procedures, OUT and INOUT parameters can also be defined.</param>
         /// <param name="returnType">The data type that is expected. This is only if <paramref name="routineType"/> is set to <see cref="RoutineTypes.Function"/>.</param>
         /// <param name="routineDefinition">The body of the routine.</param>
-        /// <param name="databaseSchema">The database schema in which to create/replace the routine.</param>
+        /// <param name="branch">Optional: If creating the view needs to be done in a branch, enter the information for that branch here.</param>
         /// <param name="oldRoutineName">Optional: The old name of the routine when the routing is being renamed.</param>
         /// <returns><see langword="true"/> if the routine was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseRoutineAsync(string routineName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition, string databaseSchema, string oldRoutineName = null)
+        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseRoutineAsync(string routineName, RoutineTypes routineType, string parameters, string returnType, string routineDefinition, TenantModel branch = null, string oldRoutineName = null)
         {
             if (routineType == RoutineTypes.Unknown)
             {
                 return (false, "Routine type 'Unknown' is not a valid routine type.");
+            }
+
+            using var scope = serviceProvider.CreateScope();
+            var connection = clientDatabaseConnection;
+            if (branch != null)
+            {
+                // Create new connection for branch database.
+                var connectionStringBuilder = TenantHelpers.GetConnectionString(branch.Database, apiSettings.DatabasePasswordEncryptionKey);
+                connection = scope.ServiceProvider.GetRequiredService<MySqlDatabaseConnection>();
+                await connection.ChangeConnectionStringsAsync(connectionStringBuilder.ConnectionString);
             }
 
             // If the routine is being renamed, the oldRoutineName parameter will contain the current name of the routine.
@@ -3200,18 +3199,19 @@ VALUES (?content_id, ?destination_template_id, ?added_on, ?added_by)");
             if (!String.IsNullOrWhiteSpace(oldRoutineName))
             {
                 // Drop the old routine if it exists.
-                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{oldRoutineName}`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{oldRoutineName}`;");
+                await connection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{oldRoutineName}`; DROP PROCEDURE IF EXISTS `{oldRoutineName}`;");
             }
 
             // Check if routine exists.
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("routineName", routineName);
-            clientDatabaseConnection.AddParameter("databaseSchema", databaseSchema);
-            var getRoutineData = await clientDatabaseConnection.GetAsync(@"
-SELECT COUNT(*) > 0 AS routine_exists
-FROM information_schema.ROUTINES
-WHERE ROUTINE_SCHEMA = ?databaseSchema
-AND ROUTINE_NAME = ?routineName");
+            connection.ClearParameters();
+            connection.AddParameter("routineName", routineName);
+            connection.AddParameter("databaseSchema", connection.ConnectedDatabase);
+            var getRoutineData = await connection.GetAsync("""
+                                                           SELECT COUNT(*) > 0 AS routine_exists
+                                                           FROM information_schema.ROUTINES
+                                                           WHERE ROUTINE_SCHEMA = ?databaseSchema
+                                                           AND ROUTINE_NAME = ?routineName
+                                                           """);
 
             var routineExists = getRoutineData.Rows.Count > 0 && Convert.ToBoolean(getRoutineData.Rows[0]["routine_exists"]);
 
@@ -3227,7 +3227,7 @@ AND ROUTINE_NAME = ?routineName");
             string CreateQuery(string routineNameInQuery)
             {
                 var routineQueryBuilder = new StringBuilder();
-                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{databaseSchema}`.`{routineNameInQuery}` ({parameters}){returnsPart}");
+                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER {routineType.ToString("G").ToUpper()} `{routineNameInQuery}` ({parameters}){returnsPart}");
                 routineQueryBuilder.AppendLine("    SQL SECURITY INVOKER");
                 routineQueryBuilder.AppendLine("BEGIN");
                 routineQueryBuilder.AppendLine("##############################################################################");
@@ -3249,20 +3249,20 @@ AND ROUTINE_NAME = ?routineName");
                     var tempRoutineName = $"{routineName}_temp";
                     var tempRoutineQuery = CreateQuery(tempRoutineName);
 
-                    await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{tempRoutineName}`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{tempRoutineName}`;");
-                    await clientDatabaseConnection.ExecuteAsync(tempRoutineQuery);
+                    await connection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{tempRoutineName}`; DROP PROCEDURE IF EXISTS `{tempRoutineName}`;");
+                    await connection.ExecuteAsync(tempRoutineQuery);
                 }
 
                 // Temp routine creation succeeded. Drop temp routine and current routine, and create the new routine.
-                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{routineName}_temp`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{routineName}_temp`; DROP FUNCTION IF EXISTS `{databaseSchema}`.`{routineName}`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{routineName}`;");
-                await clientDatabaseConnection.ExecuteAsync(routineQuery);
+                await connection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`; DROP FUNCTION IF EXISTS `{routineName}`; DROP PROCEDURE IF EXISTS `{routineName}`;");
+                await connection.ExecuteAsync(routineQuery);
 
                 return (true, String.Empty);
             }
             catch (MySqlException mySqlException)
             {
                 // Remove temporary routine if it was created (it has no use anymore).
-                await clientDatabaseConnection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{databaseSchema}`.`{routineName}_temp`; DROP PROCEDURE IF EXISTS `{databaseSchema}`.`{routineName}_temp`;");
+                await connection.ExecuteAsync($"DROP FUNCTION IF EXISTS `{routineName}_temp`; DROP PROCEDURE IF EXISTS `{routineName}_temp`;");
                 // Only the message of the MySQL exception should be enough to determine what went wrong.
                 return (false, mySqlException.Message);
             }
@@ -3281,10 +3281,10 @@ AND ROUTINE_NAME = ?routineName");
         /// <param name="triggerEvent">The event of the trigger, which should be either <see cref="TriggerEvents.Insert"/>, <see cref="TriggerEvents.Update"/>, or  <see cref="TriggerEvents.Delete"/>.</param>
         /// <param name="tableName">The name of the table that the trigger is for.</param>
         /// <param name="triggerDefinition">The body of the trigger.</param>
-        /// <param name="databaseSchema">The database schema in which to create/replace the trigger.</param>
+        /// <param name="branch">Optional: If creating the view needs to be done in a branch, enter the information for that branch here.</param>
         /// <param name="oldTriggerName">Optional: The old name of the trigger when the trigger is being renamed.</param>
         /// <returns><see langword="true"/> if the trigger was successfully created; otherwise, <see langword="false"/>.</returns>
-        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseTriggerAsync(string triggerName, TriggerTimings triggerTiming, TriggerEvents triggerEvent, string tableName, string triggerDefinition, string databaseSchema, string oldTriggerName = null)
+        private async Task<(bool Successful, string ErrorMessage)> CreateOrReplaceDatabaseTriggerAsync(string triggerName, TriggerTimings triggerTiming, TriggerEvents triggerEvent, string tableName, string triggerDefinition, TenantModel branch = null, string oldTriggerName = null)
         {
             if (triggerTiming == TriggerTimings.Unknown)
             {
@@ -3299,22 +3299,34 @@ AND ROUTINE_NAME = ?routineName");
                 return (false, "The table name cannot be null or empty.");
             }
 
+            using var scope = serviceProvider.CreateScope();
+            var connection = clientDatabaseConnection;
+            if (branch != null)
+            {
+                // Create new connection for branch database.
+                var connectionStringBuilder = TenantHelpers.GetConnectionString(branch.Database, apiSettings.DatabasePasswordEncryptionKey);
+                connection = scope.ServiceProvider.GetRequiredService<MySqlDatabaseConnection>();
+                await connection.ChangeConnectionStringsAsync(connectionStringBuilder.ConnectionString);
+            }
+
             // If the trigger is being renamed, the oldTriggerName parameter will contain the current name of the trigger.
             // It should be dropped, otherwise the trigger will exist with both the new and the old name.
             if (!String.IsNullOrWhiteSpace(oldTriggerName))
             {
                 // Drop the old trigger if it exists.
-                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}`.`{oldTriggerName}`;");
+                await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{oldTriggerName}`;");
             }
 
             // Check if trigger exists.
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("triggerName", triggerName);
-            clientDatabaseConnection.AddParameter("databaseSchema", databaseSchema);
-            var getTriggerData = await clientDatabaseConnection.GetAsync(@"SELECT COUNT(*) > 0 AS trigger_exists
-FROM information_schema.TRIGGERS
-WHERE TRIGGER_SCHEMA = ?databaseSchema
-AND TRIGGER_NAME = ?triggerName");
+            connection.ClearParameters();
+            connection.AddParameter("triggerName", triggerName);
+            connection.AddParameter("databaseSchema", connection.ConnectedDatabase);
+            var getTriggerData = await connection.GetAsync("""
+                                                           SELECT COUNT(*) > 0 AS trigger_exists
+                                                           FROM information_schema.TRIGGERS
+                                                           WHERE TRIGGER_SCHEMA = ?databaseSchema
+                                                           AND TRIGGER_NAME = ?triggerName
+                                                           """);
 
             var triggerExists = getTriggerData.Rows.Count > 0 && Convert.ToBoolean(getTriggerData.Rows[0]["trigger_exists"]);
 
@@ -3329,7 +3341,7 @@ AND TRIGGER_NAME = ?triggerName");
                 var timingAndEvent = $"{triggerTiming.ToString("G").ToUpperInvariant()} {triggerEvent.ToString("G").ToUpperInvariant()}";
 
                 var routineQueryBuilder = new StringBuilder();
-                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER TRIGGER `{databaseSchema}`.`{triggerNameInQuery}` {timingAndEvent} ON `{databaseSchema}`.`{tableName}` FOR EACH ROW BEGIN");
+                routineQueryBuilder.AppendLine($"CREATE DEFINER=CURRENT_USER TRIGGER `{triggerNameInQuery}` {timingAndEvent} ON `{tableName}` FOR EACH ROW BEGIN");
                 routineQueryBuilder.AppendLine("##############################################################################");
                 routineQueryBuilder.AppendLine("# NOTE: This trigger was created in Wiser! Do not edit directly in database! #");
                 routineQueryBuilder.AppendLine("##############################################################################");
@@ -3349,20 +3361,20 @@ AND TRIGGER_NAME = ?triggerName");
                     var tempTriggerName = $"{triggerName}_temp";
                     var tempRoutineQuery = CreateQuery(tempTriggerName);
 
-                    await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}`.`{tempTriggerName}`;");
-                    await clientDatabaseConnection.ExecuteAsync(tempRoutineQuery);
+                    await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{tempTriggerName}`;");
+                    await connection.ExecuteAsync(tempRoutineQuery);
                 }
 
                 // Temp trigger creation succeeded. Drop temp trigger and current trigger, and create the new trigger.
-                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}`.`{triggerName}_temp`; DROP TRIGGER IF EXISTS `{databaseSchema}`.`{triggerName}`;");
-                await clientDatabaseConnection.ExecuteAsync(routineQuery);
+                await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{triggerName}_temp`; DROP TRIGGER IF EXISTS `{triggerName}`;");
+                await connection.ExecuteAsync(routineQuery);
 
                 return (true, String.Empty);
             }
             catch (MySqlException mySqlException)
             {
                 // Remove temporary trigger if it was created (it has no use anymore).
-                await clientDatabaseConnection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{databaseSchema}.`{triggerName}_temp`;");
+                await connection.ExecuteAsync($"DROP TRIGGER IF EXISTS `{triggerName}_temp`;");
                 // Only the message of the MySQL exception should be enough to determine what went wrong.
                 return (false, mySqlException.Message);
             }

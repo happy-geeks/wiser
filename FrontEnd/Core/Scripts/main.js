@@ -226,6 +226,10 @@ class Main {
                         name: null,
                         startMode: "direct",
                         startOn: null,
+                        databaseHost: null,
+                        databasePort: null,
+                        databaseUsername: null,
+                        databasePassword: null,
                         entities: {
                             all: {
                                 mode: 0

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.IO;
@@ -11,19 +12,12 @@ using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Modules.Tenants.Models;
-using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Helpers;
-using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Modules.Databases.Helpers;
-using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MySqlConnector;
 using Newtonsoft.Json;
+using ConnectionInfo = Renci.SshNet.ConnectionInfo;
 
 namespace Api.Core.Services
 {
@@ -33,6 +27,8 @@ namespace Api.Core.Services
     /// </summary>
     public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
     {
+        private const string Localhost = "127.0.0.1";
+
         /// <summary>
         /// A connection object to the Wiser Database.
         /// </summary>
@@ -42,11 +38,15 @@ namespace Api.Core.Services
         private readonly ILogger<ClientDatabaseConnection> logger;
         private readonly IWebHostEnvironment webHostEnvironment;
 
-        private string connectionStringForReading;
-        private string connectionStringForWriting;
+        private MySqlConnectionStringBuilder connectionStringForReading;
+
+        private SshSettings sshSettingsForReading;
 
         private MySqlConnection ConnectionForReading { get; set; }
-        private MySqlConnection ConnectionForWriting { get; set; }
+
+        private SshClient SshClientForReading { get; set; }
+
+        private ForwardedPortLocal ForwardedPortLocalForReading { get; set; }
 
         private readonly GclSettings gclSettings;
 
@@ -84,17 +84,20 @@ namespace Api.Core.Services
             return transaction != null;
         }
 
+        /// <inheritdoc />
         public DbConnection GetConnectionForReading()
         {
-            throw new NotImplementedException();
+            return ConnectionForReading;
         }
 
+        /// <inheritdoc />
         public DbConnection GetConnectionForWriting()
         {
-            throw new NotImplementedException();
+            return ConnectionForReading;
         }
 
-        public async Task<int> BulkInsertAsync(DataTable dataTable, string tableName, bool useWritingConnectionIfAvailable = true, bool useInsertIgnore = false)
+        /// <inheritdoc />
+        public Task<int> BulkInsertAsync(DataTable dataTable, string tableName, bool useWritingConnectionIfAvailable = true, bool useInsertIgnore = false)
         {
             throw new NotImplementedException();
         }
@@ -118,12 +121,12 @@ namespace Api.Core.Services
         /// </summary>
         /// <param name="subDomain">The Wiser sub domain for the client/tenant. You can leave this empty or set the value to "main", to get the connection string for the Wiser database.</param>
         /// <returns>The connection string for the tenant/client database.</returns>
-        public async Task<string> GetClientConnectionStringAsync(string subDomain)
+        public async Task<MySqlConnectionStringBuilder> GetClientConnectionStringAsync(string subDomain)
         {
             this.subDomain = subDomain;
             if (IsMainDatabase())
             {
-                return gclSettings.ConnectionString;
+                return new MySqlConnectionStringBuilder(gclSettings.ConnectionString);
             }
 
             WiserDatabaseConnection.ClearParameters();
@@ -150,7 +153,18 @@ namespace Api.Core.Services
                 port = "3306";
             }
 
-            return $"server={server};port={port};uid={username};pwd={decryptedPassword};database={database};AllowUserVariables=True;ConvertZeroDateTime=true;CharSet=utf8;IgnoreCommandTransaction=true";
+            return new MySqlConnectionStringBuilder
+            {
+                Server = server,
+                Port = Convert.ToUInt32(port),
+                UserID = username,
+                Password = decryptedPassword,
+                Database = database,
+                CharacterSet = "utf8",
+                AllowUserVariables = true,
+                ConvertZeroDateTime = true,
+                IgnoreCommandTransaction = true
+            };
         }
 
         /// <inheritdoc />
@@ -175,16 +189,8 @@ namespace Api.Core.Services
             MySqlCommand commandToUse = null;
             try
             {
-                if ((useWritingConnectionIfAvailable || QueryHelpers.IsWriteQuery(query)) && !String.IsNullOrWhiteSpace(connectionStringForWriting))
-                {
-                    await EnsureOpenConnectionForWritingAsync();
-                    commandToUse = new MySqlCommand(query, ConnectionForWriting);
-                }
-                else
-                {
-                    await EnsureOpenConnectionForReadingAsync();
-                    commandToUse = new MySqlCommand(query, ConnectionForReading);
-                }
+                await EnsureOpenConnectionForReadingAsync();
+                commandToUse = new MySqlCommand(query, ConnectionForReading);
 
                 SetupMySqlCommand(commandToUse);
 
@@ -192,28 +198,43 @@ namespace Api.Core.Services
                 commandToUse.CommandText = query;
                 using var dataAdapter = new MySqlDataAdapter(commandToUse);
                 dataAdapter.Fill(result);
+
+                logger.LogDebug("Query: {query}", query);
+
                 return result;
+            }
+            catch (InvalidOperationException invalidOperationException)
+            {
+                if (retryCount >= gclSettings.MaximumRetryCountForQueries || !invalidOperationException.Message.Contains("This MySqlConnection is already in use", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.LogError(invalidOperationException, "Error trying to run this query: {query}", query);
+                    throw new GclQueryException("Error trying to run query", query, invalidOperationException);
+                }
+
+                Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
+                return await GetAsync(query, retryCount + 1, cleanUp, useWritingConnectionIfAvailable);
             }
             catch (MySqlException mySqlException)
             {
-                if (retryCount >= gclSettings.MaximumRetryCountForQueries)
+                // Never retry single queries if we're in a transaction, because transactions will get rolled back when a deadlock occurs,
+                // so retrying a single query in a transaction is not very useful on most/all cases.
+                // Also, if we've reached the maximum number of retries, don't retry anymore.
+                if (HasActiveTransaction() || retryCount >= gclSettings.MaximumRetryCountForQueries)
                 {
-                    throw;
+                    logger.LogError(mySqlException, "Error trying to run this query: {query}", query);
+                    throw new GclQueryException("Error trying to run query", query, mySqlException);
                 }
 
-                switch (mySqlException.Number)
+                // If we're not in a transaction, retry the query if it's a deadlock.
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(mySqlException.Number))
                 {
-                    case (int)MySqlErrorCode.LockDeadlock:
-                    case (int)MySqlErrorCode.LockWaitTimeout:
-                        return await GetAsync(query, retryCount + 1);
-                    case (int)MySqlErrorCode.UnableToConnectToHost:
-                    case (int)MySqlErrorCode.TooManyUserConnections:
-                    case (int)MySqlErrorCode.ConnectionCountError:
-                        Thread.Sleep(1000);
-                        return await GetAsync(query, retryCount + 1);
-                    default:
-                        throw;
+                    Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
+                    return await GetAsync(query, retryCount + 1, cleanUp, useWritingConnectionIfAvailable);
                 }
+
+                // For any other errors, just throw the exception.
+                logger.LogError(mySqlException, "Error trying to run this query: {query}", query);
+                throw new GclQueryException("Error trying to run query", query, mySqlException);
             }
             finally
             {
@@ -222,8 +243,8 @@ namespace Api.Core.Services
                     await commandToUse.DisposeAsync();
                 }
 
-                // If we're not using transactions, dispose everything here. Otherwise we will dispose it when the transaction gets comitted or rollbacked.
-                if (transaction == null && cleanUp)
+                // If we're not using transactions, dispose everything here. Otherwise we will dispose it when the transaction gets committed or roll backed.
+                if (!HasActiveTransaction() && cleanUp)
                 {
                     await CleanUpAsync();
                 }
@@ -255,42 +276,47 @@ namespace Api.Core.Services
             MySqlCommand commandToUse = null;
             try
             {
-                if ((useWritingConnectionIfAvailable || QueryHelpers.IsWriteQuery(query)) && !String.IsNullOrWhiteSpace(connectionStringForWriting))
-                {
-                    await EnsureOpenConnectionForWritingAsync();
-                    commandToUse = new MySqlCommand(query, ConnectionForWriting);
-                }
-                else
-                {
-                    await EnsureOpenConnectionForReadingAsync();
-                    commandToUse = new MySqlCommand(query, ConnectionForReading);
-                }
+                await EnsureOpenConnectionForReadingAsync();
+                commandToUse = new MySqlCommand(query, ConnectionForReading);
 
                 SetupMySqlCommand(commandToUse);
 
                 commandToUse.CommandText = query;
+                logger.LogDebug("Query: {query}", query);
                 return await commandToUse.ExecuteNonQueryAsync();
+            }
+            catch (InvalidOperationException invalidOperationException)
+            {
+                if (retryCount >= gclSettings.MaximumRetryCountForQueries || !invalidOperationException.Message.Contains("This MySqlConnection is already in use", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.LogError(invalidOperationException, "Error trying to run this query: {query}", query);
+                    throw new GclQueryException("Error trying to run query", query, invalidOperationException);
+                }
+
+                Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
+                return await ExecuteAsync(query, retryCount + 1, useWritingConnectionIfAvailable, cleanUp);
             }
             catch (MySqlException mySqlException)
             {
-                if (retryCount >= gclSettings.MaximumRetryCountForQueries)
+                // Never retry single queries if we're in a transaction, because transactions will get rolled back when a deadlock occurs,
+                // so retrying a single query in a transaction is not very useful on most/all cases.
+                // Also, if we've reached the maximum number of retries, don't retry anymore.
+                if (HasActiveTransaction() || retryCount >= gclSettings.MaximumRetryCountForQueries)
                 {
-                    throw;
+                    logger.LogError(mySqlException, "Error trying to run this query: {query}", query);
+                    throw new GclQueryException("Error trying to run query", query, mySqlException);
                 }
 
-                switch (mySqlException.Number)
+                // If we're not in a transaction, retry the query if it's a deadlock.
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(mySqlException.Number))
                 {
-                    case (int)MySqlErrorCode.LockDeadlock:
-                    case (int)MySqlErrorCode.LockWaitTimeout:
-                        return await ExecuteAsync(query, retryCount + 1);
-                    case (int)MySqlErrorCode.UnableToConnectToHost:
-                    case (int)MySqlErrorCode.TooManyUserConnections:
-                    case (int)MySqlErrorCode.ConnectionCountError:
-                        Thread.Sleep(1000);
-                        return await ExecuteAsync(query, retryCount + 1);
-                    default:
-                        throw;
+                    Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
+                    return await ExecuteAsync(query, retryCount + 1, useWritingConnectionIfAvailable, cleanUp);
                 }
+
+                // For any other errors, just throw the exception.
+                logger.LogError(mySqlException, "Error trying to run this query: {query}", query);
+                throw new GclQueryException("Error trying to run query", query, mySqlException);
             }
             finally
             {
@@ -357,7 +383,6 @@ namespace Api.Core.Services
         {
             if (String.IsNullOrWhiteSpace(query))
             {
-                logger.LogWarning("Null or empty string was passed to InsertRecordAsync function.");
                 return 0L;
             }
 
@@ -373,23 +398,10 @@ namespace Api.Core.Services
                 // Add the query to retrieve the last inserted ID to the query that was passed to the function.
                 finalQuery.Append("SELECT LAST_INSERT_ID();");
 
-                if ((useWritingConnectionIfAvailable || QueryHelpers.IsWriteQuery(query)) && !String.IsNullOrWhiteSpace(connectionStringForWriting))
-                {
-                    await EnsureOpenConnectionForWritingAsync();
-                    commandToUse = new MySqlCommand(finalQuery.ToString(), ConnectionForWriting);
-                }
-                else
-                {
-                    await EnsureOpenConnectionForReadingAsync();
-                    commandToUse = new MySqlCommand(finalQuery.ToString(), ConnectionForReading);
-                }
+                await EnsureOpenConnectionForReadingAsync();
+                commandToUse = new MySqlCommand(finalQuery.ToString(), ConnectionForReading);
 
                 SetupMySqlCommand(commandToUse);
-
-                // Add the query to retrieve the last inserted ID to the query that was passed to the function.
-                finalQuery.Append("SELECT LAST_INSERT_ID();");
-
-                commandToUse.CommandText = finalQuery.ToString();
 
                 await using var reader = await commandToUse.ExecuteReaderAsync();
                 if (!await reader.ReadAsync())
@@ -399,26 +411,38 @@ namespace Api.Core.Services
 
                 return Int64.TryParse(Convert.ToString(reader.GetValue(0)), out var tempId) ? tempId : 0L;
             }
-            catch (MySqlException mySqlException)
+            catch (InvalidOperationException invalidOperationException)
             {
-                if (retryCount >= gclSettings.MaximumRetryCountForQueries)
+                if (retryCount >= gclSettings.MaximumRetryCountForQueries || !invalidOperationException.Message.Contains("This MySqlConnection is already in use", StringComparison.OrdinalIgnoreCase))
                 {
-                    throw;
+                    logger.LogError(invalidOperationException, "Error trying to run this query: {query}", query);
+                    throw new GclQueryException("Error trying to run query", query, invalidOperationException);
                 }
 
-                switch (mySqlException.Number)
+                Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
+                return await InsertRecordAsync(query, retryCount + 1, useWritingConnectionIfAvailable);
+            }
+            catch (MySqlException mySqlException)
+            {
+                // Never retry single queries if we're in a transaction, because transactions will get rolled back when a deadlock occurs,
+                // so retrying a single query in a transaction is not very useful on most/all cases.
+                // Also, if we've reached the maximum number of retries, don't retry anymore.
+                if (HasActiveTransaction() || retryCount >= gclSettings.MaximumRetryCountForQueries)
                 {
-                    case (int)MySqlErrorCode.LockDeadlock:
-                    case (int)MySqlErrorCode.LockWaitTimeout:
-                        return await InsertRecordAsync(query, retryCount + 1);
-                    case (int)MySqlErrorCode.UnableToConnectToHost:
-                    case (int)MySqlErrorCode.TooManyUserConnections:
-                    case (int)MySqlErrorCode.ConnectionCountError:
-                        Thread.Sleep(1000);
-                        return await InsertRecordAsync(query, retryCount + 1);
-                    default:
-                        throw;
+                    logger.LogError(mySqlException, "Error trying to run this query: {query}", query);
+                    throw new GclQueryException("Error trying to run query", query, mySqlException);
                 }
+
+                // If we're not in a transaction, retry the query if it's a deadlock.
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(mySqlException.Number))
+                {
+                    Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
+                    return await InsertRecordAsync(query, retryCount + 1, useWritingConnectionIfAvailable);
+                }
+
+                // For any other errors, just throw the exception.
+                logger.LogError(mySqlException, "Error trying to run this query: {query}", query);
+                throw new GclQueryException("Error trying to run query", query, mySqlException);
             }
             finally
             {
@@ -443,20 +467,15 @@ namespace Api.Core.Services
                 throw new InvalidOperationException("Called BeginTransaction, but there already is an active transaction.");
             }
 
-            transaction?.Rollback();
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
 
             // If we're using transactions, make sure to use it on the write connection, if we have one.
             MySqlConnection connectionToUse;
-            if (!String.IsNullOrWhiteSpace(connectionStringForWriting))
-            {
-                await EnsureOpenConnectionForWritingAsync();
-                connectionToUse = ConnectionForWriting;
-            }
-            else
-            {
-                await EnsureOpenConnectionForReadingAsync();
-                connectionToUse = ConnectionForReading;
-            }
+            await EnsureOpenConnectionForReadingAsync();
+            connectionToUse = ConnectionForReading;
 
             transaction = await connectionToUse.BeginTransactionAsync();
 
@@ -476,11 +495,12 @@ namespace Api.Core.Services
                 return;
             }
 
-            transaction.Commit();
+            await transaction.CommitAsync();
 
             // Dispose and set to null, so that we know there is no more active transaction.
-            transaction.Dispose();
+            await transaction.DisposeAsync();
             transaction = null;
+
             await CleanUpAsync();
         }
 
@@ -497,11 +517,12 @@ namespace Api.Core.Services
                 return;
             }
 
-            transaction.Rollback();
+            await transaction.RollbackAsync();
 
             // Dispose and set to null, so that we know there is no more active transaction.
-            transaction.Dispose();
+            await transaction.DisposeAsync();
             transaction = null;
+
             await CleanUpAsync();
         }
 
@@ -535,11 +556,6 @@ namespace Api.Core.Services
                 await AddConnectionCloseLogAsync(false, true);
             }
 
-            if (ConnectionForWriting != null)
-            {
-                await AddConnectionCloseLogAsync(true, true);
-            }
-
             if (WiserDatabaseConnection != null)
             {
                 await WiserDatabaseConnection.DisposeAsync();
@@ -565,7 +581,7 @@ namespace Api.Core.Services
             var createdNewConnection = false;
 
             // If we don't have a connection string yet, get the connection string from the Wiser database.
-            if (String.IsNullOrWhiteSpace(connectionStringForReading))
+            if (String.IsNullOrWhiteSpace(connectionStringForReading?.ConnectionString))
             {
                 if (httpContextAccessor.HttpContext == null)
                 {
@@ -588,23 +604,36 @@ namespace Api.Core.Services
                 }
 
                 connectionStringForReading = await GetClientConnectionStringAsync(subDomain);
-                if (String.IsNullOrWhiteSpace(connectionStringForReading))
+                if (String.IsNullOrWhiteSpace(connectionStringForReading?.ConnectionString))
                 {
                     throw new Exception("No connection string found!");
                 }
 
-                if (String.IsNullOrWhiteSpace(connectionStringForWriting))
+                var (sshClient, localPort, forwardedPortLocal) = ConnectToSsh(sshSettingsForReading, connectionStringForReading.Server, connectionStringForReading.Port);
+                SshClientForReading = sshClient;
+                ForwardedPortLocalForReading = forwardedPortLocal;
+                if (sshClient != null)
                 {
-                    connectionStringForWriting = connectionStringForReading;
+                    connectionStringForReading.Server = Localhost;
+                    connectionStringForReading.Port = localPort;
                 }
 
-                ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading };
+                ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading.ConnectionString };
                 createdNewConnection = true;
             }
 
             if (ConnectionForReading == null)
             {
-                ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading };
+                var (sshClient, localPort, forwardedPortLocal) = ConnectToSsh(sshSettingsForReading, connectionStringForReading.Server, connectionStringForReading.Port);
+                SshClientForReading = sshClient;
+                ForwardedPortLocalForReading = forwardedPortLocal;
+                if (sshClient != null)
+                {
+                    connectionStringForReading.Server = Localhost;
+                    connectionStringForReading.Port = localPort;
+                }
+
+                ConnectionForReading = new MySqlConnection { ConnectionString = connectionStringForReading.ConnectionString };
                 createdNewConnection = true;
             }
 
@@ -634,57 +663,44 @@ namespace Api.Core.Services
         /// <returns></returns>
         public async Task EnsureOpenConnectionForWritingAsync()
         {
-            if (String.IsNullOrWhiteSpace(connectionStringForWriting))
-            {
-                ConnectedDatabaseForWriting = null;
-                return;
-            }
-
-            var createdNewConnection = false;
-            if (ConnectionForWriting == null)
-            {
-                ConnectionForWriting = new MySqlConnection { ConnectionString = connectionStringForWriting };
-                createdNewConnection = true;
-            }
-
-            // Remember the database name that was connected to.
-            ConnectedDatabaseForWriting = ConnectionForWriting.Database;
-
-            if (ConnectionForWriting.State != ConnectionState.Closed)
-            {
-                return;
-            }
-
-            await ConnectionForWriting.OpenAsync();
-
-            await SetTimezone(ConnectionForWriting);
-            await SetCharacterSetAndCollationAsync(ConnectionForWriting);
-
-            if (createdNewConnection)
-            {
-                // Log the opening of the connection.
-                await AddConnectionOpenLogAsync(true);
-            }
+            await EnsureOpenConnectionForReadingAsync();
         }
 
         /// <inheritdoc />
         public async Task ChangeConnectionStringsAsync(string newConnectionStringForReading, string newConnectionStringForWriting, SshSettings sshSettingsForReading = null, SshSettings sshSettingsForWriting = null)
         {
-            connectionStringForReading = newConnectionStringForReading;
-            connectionStringForWriting = newConnectionStringForReading;
+            connectionStringForReading ??= new MySqlConnectionStringBuilder();
+
+            connectionStringForReading.ConnectionString = newConnectionStringForReading;
+            connectionStringForReading.IgnoreCommandTransaction = true;
+            this.sshSettingsForReading = sshSettingsForReading;
+
             await CleanUpAsync();
+            if (ConnectionForReading != null)
+            {
+                await AddConnectionCloseLogAsync(false);
+                await ConnectionForReading.DisposeAsync();
+            }
+
+            if (SshClientForReading != null)
+            {
+                SshClientForReading.Dispose();
+                SshClientForReading = null;
+            }
+
+            if (ForwardedPortLocalForReading != null)
+            {
+                ForwardedPortLocalForReading.Dispose();
+                ForwardedPortLocalForReading = null;
+            }
+
+            ConnectionForReading = null;
         }
 
         /// <inheritdoc />
         public string GetDatabaseNameForCaching(bool writeDatabase = false)
         {
-            if (connectionStringForReading == null)
-            {
-                throw new Exception("connectionStringForReading is null, please call EnsureOpenConnectionForReadingAsync first");
-            }
-
-            var connectionStringBuilder = new DbConnectionStringBuilder { ConnectionString = writeDatabase && !String.IsNullOrWhiteSpace(connectionStringForWriting) ? connectionStringForWriting : connectionStringForReading };
-            return $"{connectionStringBuilder["server"]}_{connectionStringBuilder["database"]}";
+            return $"{connectionStringForReading["server"]}_{connectionStringForReading["database"]}";
         }
 
         /// <inheritdoc />
@@ -712,7 +728,7 @@ namespace Api.Core.Services
                     return;
                 }
 
-                await using var commandToUse = new MySqlCommand("", !String.IsNullOrWhiteSpace(connectionStringForWriting) ? ConnectionForWriting : ConnectionForReading);
+                await using var commandToUse = new MySqlCommand("", ConnectionForReading);
 
                 logTableExists ??= await LogTableExistsAsync(commandToUse);
 
@@ -784,7 +800,7 @@ SELECT LAST_INSERT_ID();";
                     return;
                 }
 
-                await using var commandToUse = new MySqlCommand("", !String.IsNullOrWhiteSpace(connectionStringForWriting) ? ConnectionForWriting : ConnectionForReading);
+                await using var commandToUse = new MySqlCommand("", ConnectionForReading);
 
                 if (commandToUse.Connection is { State: ConnectionState.Closed })
                 {
@@ -806,7 +822,7 @@ SELECT LAST_INSERT_ID();";
             {
                 if (disposeConnection)
                 {
-                    var connection = (isWriteConnection ? ConnectionForWriting : ConnectionForReading);
+                    var connection = ConnectionForReading;
                     if (connection != null)
                     {
                         await connection.DisposeAsync();
@@ -824,15 +840,27 @@ SELECT LAST_INSERT_ID();";
         {
             // Simple text file that indicates whether or not the log table exists, so that we don't have to execute an extra query every time.
             var cacheDirectory = FileSystemHelpers.GetContentCacheFolderPath(webHostEnvironment);
-            // TODO: Use Constants.LogTableExistsCacheFileName instead of hardcoding the file name, once the GCL pull request has been approved.
-            var filePath = cacheDirectory == null ? null : Path.Combine(cacheDirectory, String.Format("MySqlDatabaseConnection-LogTableExistsAsync-{0}.txt", (ConnectionForWriting ?? ConnectionForReading).Database));
+            var filePath = cacheDirectory == null ? null : Path.Combine(cacheDirectory, String.Format(Constants.LogTableExistsCacheFileName, ConnectionForReading.Database));
             if (filePath != null && File.Exists(filePath))
             {
                 return true;
             }
 
+            if (webHostEnvironment == null && cacheDirectory != null && !Directory.Exists(cacheDirectory))
+            {
+                try
+                {
+                    Directory.CreateDirectory(cacheDirectory);
+                }
+                catch (Exception exception)
+                {
+                    logger.LogWarning(exception, $"An error occurred while trying to create the directory '{cacheDirectory}'.");
+                    filePath = null;
+                }
+            }
+
             var dataTable = new DataTable();
-            command.CommandText = $"SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_NAME = '{Constants.DatabaseConnectionLogTableName}' AND TABLE_SCHEMA = '{(ConnectionForWriting ?? ConnectionForReading).Database.ToMySqlSafeValue(false)}'";
+            command.CommandText = $"SELECT TABLE_NAME FROM information_schema.`TABLES` WHERE TABLE_NAME = '{Constants.DatabaseConnectionLogTableName}' AND TABLE_SCHEMA = '{ConnectionForReading.Database.ToMySqlSafeValue(false)}'";
             using var dataAdapter = new MySqlDataAdapter(command);
             dataAdapter.Fill(dataTable);
 
@@ -957,6 +985,64 @@ SELECT LAST_INSERT_ID();";
                 Thread.Sleep(10);
                 counter++;
             }
+        }
+
+        /// <summary>
+        /// Connect to an SSH tunnel/server and forward the MySQL port through this tunnel.
+        /// If no SSH settings are given, then this method will return null and will not setup an SSH tunnel.
+        /// </summary>
+        /// <param name="sshSettings">The SSH settings to use.</param>
+        /// <param name="databaseServer">The host of the database that requires an SSH tunnel.</param>
+        /// <param name="databasePort">The database port to use.</param>
+        /// <returns>The <see cref="SshClient"/> and the port of the SSH tunnel.</returns>
+        /// <exception cref="ArgumentException">When not all required settings have been set.</exception>
+        private (SshClient sshClient, uint BoundPort, ForwardedPortLocal ForwardedPortLocal) ConnectToSsh(SshSettings sshSettings, string databaseServer, uint databasePort)
+        {
+            // Return null if we have no SSH settings.
+            if (String.IsNullOrEmpty(sshSettings?.Host) || String.IsNullOrEmpty(sshSettings?.Username))
+            {
+                return (null, 0, null);
+            }
+
+            // Make sure that the settings are fully set.
+            if (String.IsNullOrEmpty(sshSettings.Password) && String.IsNullOrEmpty(sshSettings.PrivateKeyPath))
+            {
+                throw new ArgumentException($"One of {nameof(sshSettings.Password)} and {nameof(sshSettings.PrivateKeyPath)} must be specified.");
+            }
+
+            // Define the authentication methods to use (in order).
+            var authenticationMethods = new List<AuthenticationMethod>();
+            if (!String.IsNullOrEmpty(sshSettings.PrivateKeyPath))
+            {
+                authenticationMethods.Add(new PrivateKeyAuthenticationMethod(sshSettings.Username, new PrivateKeyFile(sshSettings.PrivateKeyPath, String.IsNullOrEmpty(sshSettings.PrivateKeyPassphrase) ? null : sshSettings.PrivateKeyPassphrase)));
+            }
+
+            if (!String.IsNullOrEmpty(sshSettings.Password))
+            {
+                authenticationMethods.Add(new PasswordAuthenticationMethod(sshSettings.Username, sshSettings.Password));
+            }
+
+            // Connect to the SSH server.
+            var sshClient = new SshClient(new ConnectionInfo(sshSettings.Host, sshSettings.Port, sshSettings.Username, authenticationMethods.ToArray()));
+
+            // Validate the finger print, if we know which finger print the host is supposed to have.
+            if (!String.IsNullOrWhiteSpace(sshSettings.ExpectedFingerPrint))
+            {
+                sshClient.HostKeyReceived += (sender, hostKeyEventArgs) => { hostKeyEventArgs.CanTrust = sshSettings.ExpectedFingerPrint.Equals(hostKeyEventArgs.FingerPrintSHA256); };
+            }
+            else
+            {
+                logger.LogWarning("No expected finger print is set for the SSH connection. This means that the connection will not be validated and man-in-the-middle attacks might be possible.");
+            }
+
+            sshClient.Connect();
+
+            // Forward a local port to the database server and port, using the SSH server.
+            var forwardedPort = new ForwardedPortLocal(Localhost, databaseServer, databasePort);
+            sshClient.AddForwardedPort(forwardedPort);
+            forwardedPort.Start();
+
+            return (sshClient, forwardedPort.BoundPort, forwardedPort);
         }
     }
 }
