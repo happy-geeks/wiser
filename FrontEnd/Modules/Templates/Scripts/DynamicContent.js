@@ -253,6 +253,8 @@ const moduleSettings = {
                 autoClose: false
             });
 
+            container.find(".select").kendoDropDownList();
+
             container.find(".add-subgroup-button").off("click").click(this.onAddSubGroupButtonClick.bind(this));
             container.find(".remove-subgroup-button").off("click").click(this.onRemoveSubGroupButtonClick.bind(this));
         }
