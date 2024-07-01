@@ -132,9 +132,9 @@ namespace Api.Modules.Queries.Services
         /// <param name="resultsPerPage">The amount of results per page, will be capped at 500.</param>
 		/// <param name="page">The page number used in pagination-supported styled outputs.</param>
 		/// <param name="inUseStyleIds">Used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null.</param>
-        /// <param name="callingParent">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
+        /// <param name="callingParentId">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
 		/// <returns>Returns the updated string with replacements applied.</returns>
-		private async Task<ServiceResult<string>> GetStyledOutputResultAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null, int callingParent = -1)
+		private async Task<ServiceResult<string>> GetStyledOutputResultAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null, int callingParentId = -1)
 		{
             var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
 
@@ -267,7 +267,7 @@ namespace Api.Modules.Queries.Services
 
             if (performanceLogging)
             {
-                if (callingParent < 0)
+                if (callingParentId < 0)
                 {
                     timings.Clear();
                 }
@@ -335,7 +335,7 @@ namespace Api.Modules.Queries.Services
             {
                 timings[id].Last().Stop();
 
-                if (callingParent < 0)
+                if (callingParentId < 0)
                 {
                     for (int i = 0; i < timings.Keys.Count; ++i)
                     {
@@ -375,7 +375,7 @@ namespace Api.Modules.Queries.Services
         /// <param name="resultsPerPage">The amount of results per page, will be capped at 500.</param>
         /// <param name="page">The page number used in pagination-supported styled outputs.</param>
         /// <param name="inUseStyleIds">Used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null.</param>
-        /// <param name="callingParent">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
+        /// <param name="callingParentId">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
         /// <returns>Returns the updated string with replacements applied.</returns>
         private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null, int callingParentId = -1)
         {
