@@ -1384,7 +1384,7 @@ const moduleSettings = {
                     }
                 });
                 externalFilesGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
-                
+
                 const externalFilesGrid = $(externalFilesGridElement).getKendoGrid();
                 externalFilesGrid.table.kendoSortable({
                     autoScroll: true,
@@ -1530,10 +1530,6 @@ const moduleSettings = {
 
             // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
             this.initialTemplateSettings = this.getCurrentTemplateSettings();
-        }
-
-        grid_edit(e) {
-            console.log(e);
         }
 
         //Initialize display variable for the fields containing objects and dates within the grid.
