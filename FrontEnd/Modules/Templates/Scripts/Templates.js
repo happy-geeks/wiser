@@ -1376,13 +1376,15 @@ const moduleSettings = {
                     ],
                     dataSource: dataSource,
                     edit: (event) => {
+                        event.model.hash = "";
+                        
                         if (event.model.ordering >= 0) return;
                         const orderings = event.sender.dataSource.data().filter(i => i.hasOwnProperty("ordering")).map(i => i.ordering);
                         event.model.ordering = orderings.length > 0 ? orderings[orderings.length - 1] + 1 : 1;
                     }
                 });
                 externalFilesGridElement.kendoTooltip({ filter: ".k-grid-delete", content: "Verwijderen" });
-
+                
                 const externalFilesGrid = $(externalFilesGridElement).getKendoGrid();
                 externalFilesGrid.table.kendoSortable({
                     autoScroll: true,
@@ -1528,6 +1530,10 @@ const moduleSettings = {
 
             // Save the current settings so that we can keep track of any changes and warn the user if they're about to leave without saving.
             this.initialTemplateSettings = this.getCurrentTemplateSettings();
+        }
+
+        grid_edit(e) {
+            console.log(e);
         }
 
         //Initialize display variable for the fields containing objects and dates within the grid.
