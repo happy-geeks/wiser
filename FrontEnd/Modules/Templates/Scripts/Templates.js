@@ -1376,6 +1376,8 @@ const moduleSettings = {
                     ],
                     dataSource: dataSource,
                     edit: (event) => {
+                        event.model.hash = "";
+                        
                         if (event.model.ordering >= 0) return;
                         const orderings = event.sender.dataSource.data().filter(i => i.hasOwnProperty("ordering")).map(i => i.ordering);
                         event.model.ordering = orderings.length > 0 ? orderings[orderings.length - 1] + 1 : 1;
