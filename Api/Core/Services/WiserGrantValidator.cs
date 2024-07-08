@@ -8,11 +8,13 @@ using Api.Core.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Models;
 using IdentityModel;
 using IdentityServer4.Models;
 using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace Api.Core.Services
@@ -25,18 +27,17 @@ namespace Api.Core.Services
         private readonly ILogger<WiserGrantValidator> logger;
         private readonly IUsersService usersService;
         private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of <see cref="WiserGrantValidator"/>.
         /// </summary>
-        /// <param name="logger"></param>
-        /// <param name="usersService"></param>
-        /// <param name="httpContextAccessor"></param>
-        public WiserGrantValidator(ILogger<WiserGrantValidator> logger, IUsersService usersService, IHttpContextAccessor httpContextAccessor)
+        public WiserGrantValidator(ILogger<WiserGrantValidator> logger, IUsersService usersService, IHttpContextAccessor httpContextAccessor, IOptions<GclSettings> gclSettings)
         {
             this.logger = logger;
             this.usersService = usersService;
             this.httpContextAccessor = httpContextAccessor;
+            this.gclSettings = gclSettings.Value;
         }
 
         /// <inheritdoc />
@@ -63,6 +64,14 @@ namespace Api.Core.Services
             if (String.IsNullOrWhiteSpace(isTestEnvironment))
             {
                 isTestEnvironment = "false";
+            }
+
+            var isWiserFrontEndLoginEncrypted = context.Request.Raw[HttpContextConstants.IsWiserFrontEndLoginKey];
+            var isWiserFrontEndLogin = false;
+            if (!String.IsNullOrWhiteSpace(isWiserFrontEndLoginEncrypted))
+            {
+                isWiserFrontEndLoginEncrypted = WebUtility.HtmlDecode(isWiserFrontEndLoginEncrypted);
+                isWiserFrontEndLogin = isWiserFrontEndLoginEncrypted.DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true, 10, true).Equals("true", StringComparison.OrdinalIgnoreCase);
             }
 
             // First try to login as a regular user.
@@ -96,7 +105,7 @@ namespace Api.Core.Services
                         { "access_token", null },
                         { "refresh_token", null }
                     };
-                    context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment), customResponse: customResponse);
+                    context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment, isWiserFrontEndLogin), customResponse: customResponse);
                     return;
                 }
 
@@ -126,7 +135,7 @@ namespace Api.Core.Services
                             { "refresh_token", null }
                         };
 
-                        context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment), customResponse: customResponse);
+                        context.Result = new GrantValidationResult(adminAccountLoginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(adminAccountLoginResult.ModelObject, subDomain, isTestEnvironment, isWiserFrontEndLogin), customResponse: customResponse);
                         return;
                     }
                 }
@@ -177,10 +186,10 @@ namespace Api.Core.Services
                 customResponse.Add("adminAccountName", adminAccountName);
             }
 
-            context.Result = new GrantValidationResult(loginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment), customResponse: customResponse);
+            context.Result = new GrantValidationResult(loginResult.ModelObject.Id.ToString(), OidcConstants.AuthenticationMethods.Password, CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin), customResponse: customResponse);
         }
 
-        private static IEnumerable<Claim> CreateClaimsList(AdminAccountModel adminAccount, string subDomain, string isTestEnvironment)
+        private static IEnumerable<Claim> CreateClaimsList(AdminAccountModel adminAccount, string subDomain, string isTestEnvironment, bool isWiserFrontEndLogin)
         {
             return new List<Claim>
             {
@@ -189,11 +198,12 @@ namespace Api.Core.Services
                 new(ClaimTypes.Email, adminAccount.Login),
                 new(ClaimTypes.Role, IdentityConstants.AdminAccountRole),
                 new(ClaimTypes.GroupSid, subDomain),
-                new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment)
+                new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment),
+                new(HttpContextConstants.IsWiserFrontEndLoginKey, isWiserFrontEndLogin.ToString())
             };
         }
 
-        private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment)
+        private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
         {
             var claimsIdentity = new List<Claim>
             {
@@ -203,7 +213,8 @@ namespace Api.Core.Services
                 new(ClaimTypes.GroupSid, subDomain),
                 new(ClaimTypes.Sid, adminAccountId.ToString()),
                 new(IdentityConstants.AdminAccountName, adminAccountName ?? ""),
-                new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment)
+                new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment),
+                new(HttpContextConstants.IsWiserFrontEndLoginKey, isWiserFrontEndLogin.ToString())
             };
 
             if (!String.IsNullOrWhiteSpace(user.EmailAddress))

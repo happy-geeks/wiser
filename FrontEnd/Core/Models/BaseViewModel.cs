@@ -14,7 +14,7 @@ namespace FrontEnd.Core.Models
         public bool IsTestEnvironment { get; set; }
 
         public string Wiser1BaseUrl { get; set; }
-        
+
         public bool LoadPartnerStyle { get; set; }
 
         public string ApiAuthenticationUrl { get; set; }
@@ -22,5 +22,7 @@ namespace FrontEnd.Core.Models
         public string ApiRoot { get; set; }
 
         public string CurrentDomain { get; set; }
+
+        public string IsWiserFrontEndLogin { get; set; }
     }
 }

@@ -29,5 +29,10 @@
         /// The key for the TOTP backup code that the user needs to enter when 2FA is enabled and they lost access to their authenticator app.
         /// </summary>
         public const string TotpBackupCodeKey = "totpBackupCode";
+
+        /// <summary>
+        /// The key that contains an encrypted true/false value that indicates whether or not the user is logging in from the front end.
+        /// </summary>
+        public const string IsWiserFrontEndLoginKey = "isWiserFrontEndLogin";
     }
 }
