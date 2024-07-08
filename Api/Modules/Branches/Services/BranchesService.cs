@@ -613,7 +613,7 @@ LIMIT 1";
 
                 var originalItemId = Convert.ToUInt64(dataRow["item_id"]);
                 var action = dataRow.Field<string>("action").ToUpperInvariant();
-                BranchesHelpers.TrackObjectAction(objectsCreatedInBranch, action, originalItemId, tableName);
+                BranchesHelpers.TrackObjectAction(objectsCreatedInBranch, action, originalItemId.ToString(), tableName);
             }
 
             times.Add("trackObjects", (1, actionStopwatch.Elapsed));
@@ -629,7 +629,8 @@ LIMIT 1";
                 var field = dataRow.Field<string>("field") ?? "";
                 var oldValue = dataRow.Field<string>("oldvalue");
                 var newValue = dataRow.Field<string>("newvalue");
-                var objectCreatedInBranch = objectsCreatedInBranch.FirstOrDefault(i => i.ObjectId == itemId && String.Equals(i.TableName, tableName, StringComparison.OrdinalIgnoreCase));
+                var itemIdString = itemId.ToString();
+                var objectCreatedInBranch = objectsCreatedInBranch.FirstOrDefault(i => i.ObjectId == itemIdString && String.Equals(i.TableName, tableName, StringComparison.OrdinalIgnoreCase));
 
                 if (objectCreatedInBranch is not {AlsoDeleted: true} || objectCreatedInBranch.AlsoUndeleted)
                 {
