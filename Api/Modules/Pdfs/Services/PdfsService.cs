@@ -6,9 +6,9 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Pdfs.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using EvoPdf;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -19,7 +19,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Serialization;
 
 namespace Api.Modules.Pdfs.Services
 {
@@ -90,7 +89,7 @@ namespace Api.Modules.Pdfs.Services
 
             return new ServiceResult<string>(fileLocation);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string[] propertyNames, string entityType)
         {
@@ -121,14 +120,14 @@ namespace Api.Modules.Pdfs.Services
                     }
                     else if (!pdfFile.ModelObject.Data.IsNullOrEmpty())
                     {
-                        pdfStream = new MemoryStream(pdfFile.ModelObject.Data);                        
+                        pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
                     }
 
                     // If the pdf file is empty (no file at the URL and no file in the blob field) then skip to next file
                     if (pdfStream.Length == 0)
                     {
                         continue;
-                    } 
+                    }
                     if (mergeResultPdfDocument == null)
                     {
                         mergeResultPdfDocument = new Document(pdfStream);
@@ -136,11 +135,11 @@ namespace Api.Modules.Pdfs.Services
                     }
                     else
                     {
-                        mergeResultPdfDocument.AppendDocument(new Document(pdfStream));                    
+                        mergeResultPdfDocument.AppendDocument(new Document(pdfStream));
                     }
                 }
             }
-            
+
             using var saveStream = new MemoryStream();
             mergeResultPdfDocument.Save(saveStream);
             return new ServiceResult<byte[]>(saveStream.ToArray());
