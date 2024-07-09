@@ -10,7 +10,7 @@ namespace Api.Modules.Items.Models
         /// <summary>
         /// Gets or sets the list of tabs for this item.
         /// </summary>
-        public List<ItemTabOrGroupModel> Tabs { get; set; } = new List<ItemTabOrGroupModel>();
+        public List<ItemTabModel> Tabs { get; set; } = new List<ItemTabModel>();
 
         /// <summary>
         /// Gets or sets whether the user is allowed to read this item.

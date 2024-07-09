@@ -1233,7 +1233,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 var tab = results.Tabs.FirstOrDefault(r => r.Name.Equals(tabName, StringComparison.OrdinalIgnoreCase));
                 if (tab == null)
                 {
-                    tab = new ItemTabOrGroupModel { Name = tabName };
+                    tab = new ItemTabModel { Name = tabName };
                     results.Tabs.Add(tab);
                 }
 
@@ -1241,7 +1241,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 var group = tab.Groups.FirstOrDefault(g => g.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
                 if (group == null)
                 {
-                    group = new ItemTabOrGroupModel { Name = groupName };
+                    group = new ItemGroupModel { Name = groupName };
                     tab.Groups.Add(group);
                 }
 
@@ -1693,13 +1693,20 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 {
                     foreach (var group in tab.Groups)
                     {
+                        string width = "width: " + group.Width + "%;";
+                        string minWidth = "min-width: " + group.MinimumWidth + "px;";
+                        string display = "display: " + (group.Orientation == "Vertical" ? "grid;" : "block;");
+                        string margin = group.Width < 100 ? "margin: 5px; " : "";
+                        string border = group.Width < 100 ? "border-bottom: 0px; " : "";
+                        string groupStyle = $"style=\"{width}{minWidth}{display}{margin}{border} background: var(--item-bg-color);\"";
+
                         if (String.IsNullOrEmpty(group.Name))
                         {
-                            tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\">");
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\" {groupStyle}>");
                         }
                         else
                         {
-                            tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\"><h3>{group.Name.HtmlEncode()}</h3>");
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\" {groupStyle}><h3>{group.Name.HtmlEncode()}</h3>");
                         }
 
                         tab.HtmlTemplateBuilder.Append(group.HtmlTemplateBuilder);
