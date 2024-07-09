@@ -7,7 +7,7 @@ namespace Api.Modules.Items.Models;
 /// <summary>
 /// A model for a tab on an item in Wiser.
 /// </summary>
-public class ItemTabOrGroupModel
+public class ItemTabModel
 {
     /// <summary>
     /// Gets or sets the name of the tab.
@@ -28,7 +28,7 @@ public class ItemTabOrGroupModel
     /// Gets or sets the groups on this tab.
     /// </summary>
     [JsonIgnore]
-    public List<ItemTabOrGroupModel> Groups { get; set; } = [];
+    public List<ItemGroupModel> Groups { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the <see cref="StringBuilder"/> for generating the HTML for this tab.
