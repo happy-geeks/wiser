@@ -365,15 +365,17 @@ namespace Api
             var applicationLifetime = builder.ApplicationServices.GetService<IHostApplicationLifetime>();
             applicationLifetime.ApplicationStarted.Register(async () =>
             {
+                using var scope = builder.ApplicationServices.CreateScope();
+
                 // Make sure all important tables exist and are up-to-date, while starting the application.
                 try
                 {
-                    var databaseHelpersService = builder.ApplicationServices.GetService<IWiserDatabaseHelpersService>();
+                    var databaseHelpersService = scope.ServiceProvider.GetService<IWiserDatabaseHelpersService>();
                     await databaseHelpersService.DoDatabaseMigrationsForMainDatabaseAsync();
                 }
                 catch (Exception exception)
                 {
-                    builder.ApplicationServices.GetService<ILogger>().LogError(exception, "Error while updating tables.");
+                    scope.ServiceProvider.GetService<ILogger>().LogError(exception, "Error while updating tables.");
                 }
             });
 

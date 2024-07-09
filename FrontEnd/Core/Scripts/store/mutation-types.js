@@ -73,3 +73,6 @@ export const GET_DATA_SELECTORS_FOR_BRANCHES = "getDataSelectorsForBranches";
 export const CLEAR_CACHE = "clearCache";
 export const CLEAR_CACHE_SUCCESS = "clearCacheSuccess";
 export const CLEAR_CACHE_ERROR = "clearCacheError";
+
+// Database modules.
+export const DO_TENANT_MIGRATIONS = "doTenantMigrations";

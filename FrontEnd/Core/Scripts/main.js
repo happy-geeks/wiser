@@ -9,6 +9,8 @@ import ModulesService from "./shared/modules.service";
 import TenantsService from "./shared/tenants.service";
 import ItemsService from "./shared/items.service";
 import BranchesService from "./shared/branches.service";
+import CacheService from "./shared/cache.service";
+import DatabasesService from "./shared/databases.service";
 
 import store from "./store/index";
 import login from "./components/login";
@@ -51,7 +53,6 @@ import {
     UPDATE_ACTIVE_TIME,
     USER_BACKUP_CODES_GENERATED
 } from "./store/mutation-types";
-import CacheService from "./shared/cache.service";
 
 class Main {
     constructor(settings) {
@@ -64,6 +65,7 @@ class Main {
         this.itemsService = new ItemsService(this);
         this.branchesService = new BranchesService(this);
         this.cacheService = new CacheService(this);
+        this.databasesService = new DatabasesService(this);
 
         // Fire event on page ready for direct actions
         document.addEventListener("DOMContentLoaded", () => {
