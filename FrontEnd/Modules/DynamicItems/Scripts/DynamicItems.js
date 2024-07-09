@@ -1206,8 +1206,10 @@ const moduleSettings = {
         /**
          * Initializes the grid that shows the history of an item.
          * @param {any} itemId The ID of the item.
+         * @param {any} entityType The entity type of the item.
+         * @param {any} moduleId The module ID of the item.
          */
-        async loadHistoryGrid(itemId) {
+        async loadHistoryGrid(itemId, entityType, moduleId) {
             const kendoHistoryGridWindow = this.windows.historyGridWindow;
             const historyGridElement = $("#historyWindowGrid");
             kendoHistoryGridWindow.maximize().open();
@@ -1223,7 +1225,7 @@ const moduleSettings = {
                 };
 
                 const gridDataResult = await Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${this.settings.entityType}?mode=3&moduleId=${this.base.settings.moduleId}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${entityType}?mode=3&moduleId=${moduleId}`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(options)
@@ -1965,7 +1967,7 @@ const moduleSettings = {
 
                     metaDataListElement.find(".changedon-footer").off("click");
                     metaDataListElement.find(".changedon-footer").on("click", () => {
-                        this.base.loadHistoryGrid(itemId);
+                        this.base.loadHistoryGrid(itemId, entityType, itemMetaData.moduleId || this.settings.moduleId);
                     });
                 } else {
                     metaDataListElement.find(".changed-on").html("").closest("li").addClass("hidden");
