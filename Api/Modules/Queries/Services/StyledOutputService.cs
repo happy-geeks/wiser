@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -46,11 +47,14 @@ namespace Api.Modules.Queries.Services
         // even if the user selects a higher value the results will always be capped to this ( filled in by settings file )
         private int maxResultsPerPage;
 
+        private bool performanceLogging = false;
         private const string ItemSeparatorString = ", ";
         
 		private static readonly string[] AllowedFormats = { "JSON" };
 		private static readonly string[] AllowedSubFormats = { "JSON", "RAW" };
 		
+        private Dictionary<int, List<Stopwatch>> timings = new Dictionary<int, List<Stopwatch>>();
+        
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
@@ -125,11 +129,12 @@ namespace Api.Modules.Queries.Services
 		/// <param name="id">The ID of the starting point of the requested styled output.</param>
 		/// <param name="parameters">The parameters send along to the database connection.</param>
 		/// <param name="stripNewlinesAndTabs">If true fetched format strings will have their newlines and tabs removed.</param>
+        /// <param name="resultsPerPage">The amount of results per page, will be capped at 500.</param>
 		/// <param name="page">The page number used in pagination-supported styled outputs.</param>
-		/// <param name="resultsPerPage">The amount of results per page, will be capped at 500.</param>
 		/// <param name="inUseStyleIds">Used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null.</param>
+        /// <param name="callingParentId">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
 		/// <returns>Returns the updated string with replacements applied.</returns>
-		private async Task<ServiceResult<string>> GetStyledOutputResultAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
+		private async Task<ServiceResult<string>> GetStyledOutputResultAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null, int callingParentId = -1)
 		{
             var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
 
@@ -234,6 +239,8 @@ namespace Api.Modules.Queries.Services
                 {
                     maxResultsPerPage = optionsObject.MaxResultsPerPage;
                 }
+
+                performanceLogging = optionsObject.LogTiming;
             }
 
             var query = await queriesService.GetAsync(identity, formatQueryId);
@@ -257,6 +264,22 @@ namespace Api.Modules.Queries.Services
             }
 
             var combinedResult = new StringBuilder("");
+
+            if (performanceLogging)
+            {
+                if (callingParentId < 0)
+                {
+                    timings.Clear();
+                }
+                
+                if (!timings.ContainsKey(id))
+                {
+                    timings.Add(id, new List<Stopwatch>());
+                }
+                
+                timings[id].Add(new Stopwatch());
+                timings[id].Last().Start();
+            }
 
             dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
 
@@ -282,7 +305,7 @@ namespace Api.Modules.Queries.Services
                     itemValue = replacementsMediator.EvaluateTemplate(itemValue);
 
                     // Replace recursive inline styles.
-                    var inlineResult =  await HandleInlineStyleElementsAsync(identity, itemValue, parameters, stripNewlinesAndTabs, resultsPerPage, page, usedIds);
+                    var inlineResult =  await HandleInlineStyleElementsAsync(identity, itemValue, parameters, stripNewlinesAndTabs, resultsPerPage, page, usedIds, id);
                     
                     if (inlineResult.StatusCode == HttpStatusCode.OK)
                     {
@@ -307,6 +330,33 @@ namespace Api.Modules.Queries.Services
                     combinedResult.Append(formatEndValue);
                 }
             }
+            
+            if (performanceLogging)
+            {
+                timings[id].Last().Stop();
+
+                if (callingParentId < 0)
+                {
+                    for (int i = 0; i < timings.Keys.Count; ++i)
+                    {
+                        var key = timings.Keys.ElementAt(i);
+                        var runCount = timings[key].Count;
+                        var totalTime = 0.0;
+
+                        foreach (var entry in timings[key])
+                        {
+                            totalTime += entry.ElapsedMilliseconds / 1000.0;
+                        }
+
+                        var avarageTime = totalTime / runCount;
+
+                        var timingStoryQuery =
+                            $@"UPDATE wiser_styled_output SET log_average_runtime = ""{ avarageTime.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture) }"", log_run_count = ""{ runCount }"" WHERE id=""{key}"";";
+                        
+                        await clientDatabaseConnection.ExecuteAsync(timingStoryQuery);
+                    }
+                }
+            }
 
             return new ServiceResult<string>
             {
@@ -322,11 +372,12 @@ namespace Api.Modules.Queries.Services
         /// <param name="itemValue">The item format value that will get its inline element replaced if present.</param>
         /// <param name="parameters">The parameters send along to the database connection.</param>
         /// <param name="stripNewlinesAndTabs">If true fetched format strings will have their newlines and tabs removed.</param>
-        /// <param name="page">The page number used in pagination-supported styled outputs.</param>
         /// <param name="resultsPerPage">The amount of results per page, will be capped at 500.</param>
+        /// <param name="page">The page number used in pagination-supported styled outputs.</param>
         /// <param name="inUseStyleIds">Used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null.</param>
+        /// <param name="callingParentId">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
         /// <returns>Returns the updated string with replacements applied.</returns>
-        private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null)
+        private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null, int callingParentId = -1)
         {
             var index = 0;
             
@@ -367,7 +418,7 @@ namespace Api.Modules.Queries.Services
                     subParameters.Add(new KeyValuePair<string, object>(sections[i], sections[i + 1]));
                 }
                         
-                var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
+                var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
                     
                 if (subResult.StatusCode == HttpStatusCode.OK)
                 {
