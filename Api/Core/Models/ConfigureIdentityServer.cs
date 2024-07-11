@@ -52,16 +52,17 @@ namespace Api.Core.Models
         {
             return new List<ApiScope>
             {
-                new()
+                /*new()
                 {
                     Name = "wiser-api",
                     DisplayName = "Scope for the Wiser API",
                     UserClaims = { "role", "admin", "user" }
-                }
+                }*/
+                new ApiScope("api1", "My API")
             };
         }
 
-        
+
         /// <summary>
         /// Gets the needed clients
         /// </summary>
@@ -71,7 +72,7 @@ namespace Api.Core.Models
         {
             return new List<Client>
             {
-                new()
+                /*new()
                 {
                     ClientId = "wiser",
 
@@ -92,6 +93,23 @@ namespace Api.Core.Models
                         IdentityServerConstants.StandardScopes.Profile,
                         IdentityServerConstants.StandardScopes.Email,
                         IdentityServerConstants.StandardScopes.OfflineAccess
+                    }
+                }*/
+
+                new Client
+                {
+                    ClientId = "js_client",
+                    ClientName = "JavaScript Client",
+                    AllowedGrantTypes = GrantTypes.Implicit,
+                    AllowAccessTokensViaBrowser = true,
+                    RedirectUris = { "https://localhost:44377/?loginCallback=true" },
+                    PostLogoutRedirectUris = { "https://localhost:44377/" },
+                    AllowedCorsOrigins = { "https://localhost:44377" },
+                    AllowedScopes =
+                    {
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Profile,
+                        "api1"
                     }
                 }
             };
