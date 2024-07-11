@@ -63,7 +63,8 @@
                 </ul>
             </li>
             <li class="logo">
-                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 266" style="enable-background:new 0 0 512 266;" xml:space="preserve">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 512 266"
+                     style="enable-background:new 0 0 512 266;" xml:space="preserve">
                 <circle class="logo1" cx="183.1" cy="97.1" r="24.3" />
                 <circle class="logo1" cx="328.9" cy="97.1" r="24.3" />
                 <path class="logo1" d="M256,179.6c-9.6,10.8-21.5,19.5-35,25.2l35,60.8l35-60.8C277.5,199.1,265.6,190.4,256,179.6z" />
@@ -726,7 +727,8 @@
 
             <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && loginStatus !== 'totp' && loginStatus !== 'totp_loading' && loginStatus !== 'totp_error' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
-                    <a id="GoogleSignInButton" href="https://localhost:44349/api/v3/users/external-login?provider=Google">Inloggen met Google</a>
+                    @* <a id="GoogleSignInButton" href="https://localhost:44349/api/v3/users/external-login?provider=Google">Inloggen met Google</a> *@
+                    <a id="GoogleSignInButton" v-on:click="googleSignInButtonClick()">Inloggen met Google</a>
                 </div>
 
                 <div class="form-row">
