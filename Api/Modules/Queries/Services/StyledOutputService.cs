@@ -48,11 +48,15 @@ namespace Api.Modules.Queries.Services
         private int maxResultsPerPage;
 
         private bool performanceLogging = false;
-        private const string ItemSeparatorString = ", ";
+        private const string itemSeparatorString = ", ";
         
-		private static readonly string[] AllowedFormats = { "JSON" };
-		private static readonly string[] AllowedSubFormats = { "JSON", "RAW" };
-		
+		private static readonly string[] allowedFormats = { "JSON" };
+		private static readonly string[] allowedSubFormats = { "JSON", "RAW" };
+
+        private Dictionary<int, StyledOutputModel> cachedStyles = new Dictionary<int, StyledOutputModel>();
+        private Dictionary<int, string> cachedQueries = new Dictionary<int, string>();
+        private List<int> cachedQueryPermission = new List<int>();
+       
         private Dictionary<int, List<Stopwatch>> timings = new Dictionary<int, List<Stopwatch>>();
         
         /// <summary>
@@ -76,8 +80,12 @@ namespace Api.Modules.Queries.Services
         {
             // Fetch max results per page ( can be overwritten by the user ).
             maxResultsPerPage = apiSettings.MaxResultsPerPage;
+            
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
+            
+            ClearCachedStyles();
 
-            var response = await GetStyledOutputResultAsync(identity, AllowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
+            var response = await GetStyledOutputResultAsync(identity, allowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -153,45 +161,30 @@ namespace Api.Modules.Queries.Services
             
             usedIds.Add(id);
             
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
+            StyledOutputModel style;
             
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("id", id); 
-            
-            var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, format_empty, return_type, options FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
-            
-            var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
-            if (dataTable.Rows.Count == 0)
+            try
             {
-                var errorMsg = $"Wiser Styled Output with ID '{id}' does not exist.";
-                
-                logger.LogError(errorMsg);
-                
+                style = await GetCachedStyle(id);
+            }
+            catch (Exception e)
+            {
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = errorMsg
+                    ErrorMessage = e.Message
                 };
             }
             
-            var formatBeginValue = dataTable.Rows[0].Field<string>("format_begin");
-            var formatItemValue = dataTable.Rows[0].Field<string>("format_item");
-            var formatEndValue = dataTable.Rows[0].Field<string>("format_end");
-            var formatEmptyValue = dataTable.Rows[0].Field<string>("format_empty");
-            var formatExpectedReturnJson = dataTable.Rows[0].Field<string>("return_type");
-            var formatQueryId = dataTable.Rows[0].Field<int>("query_id");
-            var options = dataTable.Rows[0].Field<string>("options");
-
             if (stripNewlinesAndTabs)
             {
-                formatBeginValue = formatBeginValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
-                formatItemValue = formatItemValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
-                formatEndValue = formatEndValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
-                formatEmptyValue = formatEmptyValue.Replace("\r\n","").Replace("\n","").Replace("\t","");
+                style.FormatBegin = style.FormatBegin.Replace("\r\n","").Replace("\n","").Replace("\t","");
+                style.FormatItem = style.FormatItem.Replace("\r\n","").Replace("\n","").Replace("\t","");
+                style.FormatEnd = style.FormatEnd.Replace("\r\n","").Replace("\n","").Replace("\t","");
+                style.FormatEmpty = style.FormatEmpty.Replace("\r\n","").Replace("\n","").Replace("\t","");
             }
             
-            if (formatQueryId < 0)
+            if (style.QueryId < 0)
             {
                 var errorMsg = $"Wiser Styled Output with ID '{id}' does not have a valid query setup.";
                 
@@ -204,7 +197,7 @@ namespace Api.Modules.Queries.Services
                 };
             }
 
-            if (!allowedFormats.Contains(formatExpectedReturnJson))
+            if (!allowedFormats.Contains(style.ReturnType))
             {
                 var errorMsg = $"Wiser Styled Output with ID '{id}' is not setup for JSON response";
                 
@@ -216,24 +209,34 @@ namespace Api.Modules.Queries.Services
                     ErrorMessage = errorMsg
                 };             
             }
-
-            if ((await wiserItemsService.GetUserQueryPermissionsAsync(formatQueryId, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
+            
+            try
             {
-                var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{formatQueryId}' for styled output '{id}' .";
-                
-                logger.LogError(errorMsg);
-                
+                if (!QueryIsAllowed(style.QueryId, identity).Result)
+                {
+                    var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
+                    logger.LogError(errorMsg);
+
+                    return new ServiceResult<string>
+                    {
+                        StatusCode = HttpStatusCode.Unauthorized,
+                        ErrorMessage = errorMsg
+                    };
+                }
+            }
+            catch (Exception e)
+            {
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
-                    ErrorMessage = errorMsg
+                    ErrorMessage = e.Message
                 };
             }
-
+        
             // This styled output has settings to parse.
-            if (!String.IsNullOrWhiteSpace(options))
+            if (!String.IsNullOrWhiteSpace(style.Options))
             {
-                var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(options);
+                var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(style.Options);
                 
                 if (optionsObject.MaxResultsPerPage > 0)
                 {
@@ -243,7 +246,7 @@ namespace Api.Modules.Queries.Services
                 performanceLogging = optionsObject.LogTiming;
             }
 
-            var query = await queriesService.GetAsync(identity, formatQueryId);
+            var query = GetCachedQuery(style.QueryId, identity).Result;
             
             clientDatabaseConnection.ClearParameters();
 
@@ -281,25 +284,25 @@ namespace Api.Modules.Queries.Services
                 timings[id].Last().Start();
             }
 
-            dataTable = await clientDatabaseConnection.GetAsync(query.ModelObject.Query);
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
             {
-                combinedResult.Append(formatEmptyValue);
+                combinedResult.Append(style.FormatEmpty);
             }
             else
             {
                 var result = dataTable.ToJsonArray(skipNullValues: true);
 
-                if (!formatBeginValue.IsNullOrEmpty())
+                if (!style.FormatBegin.IsNullOrEmpty())
                 {
-                    combinedResult.Append(formatBeginValue);
+                    combinedResult.Append(style.FormatBegin);
                 }
 
                 foreach (var parsedObject in result.Children<JObject>())
                 {
                     // replace simple string info
-                    var itemValue = stringReplacementsService.DoReplacements(formatItemValue, parsedObject);
+                    var itemValue = stringReplacementsService.DoReplacements(style.FormatItem, parsedObject);
 
                     // Replace if then else logic.
                     itemValue = replacementsMediator.EvaluateTemplate(itemValue);
@@ -321,13 +324,13 @@ namespace Api.Modules.Queries.Services
 
                     if (parsedObject != result.Children<JObject>().Last())
                     {
-                        combinedResult.Append(ItemSeparatorString);
+                        combinedResult.Append(itemSeparatorString);
                     }
                 }
 
-                if (!formatEndValue.IsNullOrEmpty())
+                if (!style.FormatEnd.IsNullOrEmpty())
                 {
-                    combinedResult.Append(formatEndValue);
+                    combinedResult.Append(style.FormatEnd);
                 }
             }
             
@@ -418,7 +421,7 @@ namespace Api.Modules.Queries.Services
                     subParameters.Add(new KeyValuePair<string, object>(sections[i], sections[i + 1]));
                 }
                         
-                var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
+                var subResult = await GetStyledOutputResultAsync(identity, allowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
                     
                 if (subResult.StatusCode == HttpStatusCode.OK)
                 {
@@ -436,6 +439,128 @@ namespace Api.Modules.Queries.Services
                 StatusCode = HttpStatusCode.OK,
                 ModelObject = itemValue
             };          
+        }
+
+        /// <summary>
+        /// Private function for clearing the various caches.
+        /// </summary>
+        private void ClearCachedStyles()
+        {
+            cachedStyles.Clear();
+            cachedQueries.Clear();
+            cachedQueryPermission.Clear();
+        }
+
+        /// <summary>
+        /// Private function for fetching a styled output from the cache or when not cached adding it to the cache.
+        /// </summary>
+        /// <param name="id">The ID of the styled sheet in question.</param>
+        /// <returns>Returns <see cref="stlyedoutputmodel"/> of the requested id.</returns>
+        private async Task<StyledOutputModel> GetCachedStyle(int id)
+        {
+            if (cachedStyles.TryGetValue(id, out var style))
+            {
+                return style;
+            }
+
+            return await AddCachedStyle(id);
+        }
+        
+        /// <summary>
+        /// Private function adding a styled output to the cache.
+        /// </summary>
+        /// <param name="id">The ID of the styled sheet in question.</param>
+        /// <returns>Returns <see cref="stlyedoutputmodel"/> of the added id.</returns>
+        private async Task<StyledOutputModel> AddCachedStyle(int id)
+        {
+            cachedStyles.Remove(id);
+            
+            StyledOutputModel style = new StyledOutputModel();
+            
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("id", id); 
+            
+            var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, format_empty, return_type, options FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
+            
+            var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
+            if (dataTable.Rows.Count == 0)
+            {
+                var errorMsg = $"Wiser Styled Output with ID '{id}' does not exist.";
+                logger.LogError(errorMsg);
+                throw new KeyNotFoundException(errorMsg);
+            }
+            
+            style.FormatBegin = dataTable.Rows[0].Field<string>("format_begin");
+            style.FormatItem =  dataTable.Rows[0].Field<string>("format_item");
+            style.FormatEnd = dataTable.Rows[0].Field<string>("format_end");
+            style.FormatEmpty = dataTable.Rows[0].Field<string>("format_empty");
+            style.ReturnType = dataTable.Rows[0].Field<string>("return_type");
+            style.QueryId = dataTable.Rows[0].Field<int>("query_id");
+            style.Options = dataTable.Rows[0].Field<string>("options");
+            
+            cachedStyles.Add(id,style);
+            
+            return style;
+        }
+
+        /// <summary>
+        /// Private function to check fi a query is allowed to be run, uses a cache to optimize requests.
+        /// </summary>
+        /// <param name="queryId">The ID of the query.</param>
+        /// <param name="identity">The identity for the connection.</param>
+        /// <returns>Returns true or throws an exception when not allowed.</returns>
+        private async Task<bool> QueryIsAllowed(int queryId, ClaimsIdentity identity)
+        {
+            if (cachedQueryPermission.Contains(queryId))
+            {
+                return true;
+            }
+            
+            if ((await wiserItemsService.GetUserQueryPermissionsAsync(queryId, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
+            {
+                
+                var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{queryId}'";
+                
+                logger.LogError(errorMsg);
+                throw new UnauthorizedAccessException(errorMsg);
+            }
+            
+            cachedQueryPermission.Add(queryId);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Private function for fetching a cached query or add it when missing.
+        /// </summary>
+        /// <param name="queryId">The ID of the query.</param>
+        /// <param name="identity">The identity for the connection.</param>
+        /// <returns>Returns the query string.</returns>
+        private async Task<string> GetCachedQuery(int queryId, ClaimsIdentity identity)
+        {
+            if (cachedQueries.TryGetValue(queryId, out var query))
+            {
+                return query;
+            }
+
+            return await AddCachedQuery(queryId, identity);            
+        }
+        
+        /// <summary>
+        /// Private function for addin a query to the cache.
+        /// </summary>
+        /// <param name="queryId">The ID of the query.</param>
+        /// <param name="identity">The identity for the connection.</param>
+        /// <returns>Returns the added query string.</returns>
+        private async Task<string> AddCachedQuery(int queryId, ClaimsIdentity identity)
+        {
+            cachedQueries.Remove(queryId);
+            
+            var query = await queriesService.GetAsync(identity, queryId);
+            cachedQueries.Add(queryId, query.ModelObject.Query);
+            
+            return query.ModelObject.Query;
         }
     }
 }
