@@ -98,6 +98,8 @@ namespace FrontEnd.Core.Services
             viewModel.ApiAuthenticationUrl = $"{frontEndSettings.ApiBaseUrl}connect/token";
             viewModel.ApiRoot = $"{frontEndSettings.ApiBaseUrl}api/v3/";
             viewModel.IsWiserFrontEndLogin = "true".EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true, true);
+            viewModel.CodeVerifier = PkceHelper.GenerateCodeVerifier();
+            viewModel.CodeChallenge = PkceHelper.GenerateCodeChallenge(viewModel.CodeVerifier);
 
             if (httpContextAccessor.HttpContext != null)
             {

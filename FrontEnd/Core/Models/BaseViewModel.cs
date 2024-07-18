@@ -24,5 +24,9 @@ namespace FrontEnd.Core.Models
         public string CurrentDomain { get; set; }
 
         public string IsWiserFrontEndLogin { get; set; }
+
+        public string CodeVerifier { get; set; }
+
+        public string CodeChallenge { get; set; }
     }
 }

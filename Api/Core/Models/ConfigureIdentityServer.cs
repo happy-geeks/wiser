@@ -61,7 +61,7 @@ namespace Api.Core.Models
             };
         }
 
-        
+
         /// <summary>
         /// Gets the needed clients
         /// </summary>
@@ -71,7 +71,7 @@ namespace Api.Core.Models
         {
             return new List<Client>
             {
-                new()
+                /*new()
                 {
                     ClientId = "wiser",
 
@@ -93,7 +93,36 @@ namespace Api.Core.Models
                         IdentityServerConstants.StandardScopes.Email,
                         IdentityServerConstants.StandardScopes.OfflineAccess
                     }
+                }*/
+                new Client
+                {
+                    ClientId = "js_client",
+                    ClientName = "JavaScript Client",
+                    AllowedGrantTypes = GrantTypes.Implicit,
+                    AllowAccessTokensViaBrowser = true,
+                    RedirectUris = { "https://localhost:44377/?loginCallback=true" },
+                    PostLogoutRedirectUris = { "https://localhost:44377/" },
+                    AllowedCorsOrigins = { "https://localhost:44377" },
+                    AllowedScopes =
+                    {
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Profile,
+                        "api1"
+                    }
                 }
+                /*new()
+                {
+                    ClientId = "google-test",
+                    ClientName = "google-test",
+                    AllowedGrantTypes = GrantTypes.Code,
+                    RequireClientSecret = false,
+                    RedirectUris = { "https://localhost:44377/signin-oidc" },
+                    PostLogoutRedirectUris = { "https://localhost:44377/signout-callback-oidc" },
+                    AllowedScopes = { "openid", "profile", "wiser-api" },
+                    AllowAccessTokensViaBrowser = true,
+                    RequirePkce = true,
+                    ClientSecrets = new List<Secret> { new("test".Sha256()) }
+                }*/
             };
         }
     }

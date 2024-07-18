@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -7,6 +8,9 @@ using Api.Core.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Models;
+using IdentityModel;
+using IdentityServer4;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -127,7 +131,7 @@ namespace Api.Modules.Tenants.Controllers
         {
             return (await usersService.GetGridSettingsAsync((ClaimsIdentity)User.Identity, key)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Saves settings for a grid for the authenticated user, so that the next time the grid is loaded, the user keeps those settings.
         /// </summary>
@@ -140,7 +144,7 @@ namespace Api.Modules.Tenants.Controllers
         {
             return (await usersService.SaveGridSettingsAsync((ClaimsIdentity)User.Identity, key, settings)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Gets the pinned modules for the authenticated user, so that users can keep their state of the pinned modules in Wiser.
         /// </summary>
@@ -151,7 +155,7 @@ namespace Api.Modules.Tenants.Controllers
         {
             return (await usersService.GetPinnedModulesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Save the list of pinned modules to the user details, so that next time the user will see the same pinned modules.
         /// </summary>
@@ -163,7 +167,7 @@ namespace Api.Modules.Tenants.Controllers
         {
             return (await usersService.SavePinnedModulesAsync((ClaimsIdentity)User.Identity, moduleIds)).GetHttpResponseMessage();
         }
-        
+
         /// <summary>
         /// Save the list of modules that should be automatically started when the user logs in, to the user details.
         /// </summary>
@@ -250,6 +254,133 @@ namespace Api.Modules.Tenants.Controllers
         public async Task<IActionResult> SaveDashboardSettingsAsync([FromBody] JToken layoutData)
         {
             return (await usersService.SaveDashboardSettingsAsync((ClaimsIdentity) User.Identity, layoutData)).GetHttpResponseMessage();
+        }
+
+        [HttpGet]
+        [Route("external-login")]
+        [AllowAnonymous]
+        public IActionResult ExternalLogin(string provider)
+        {
+            var redirectUrl = Url.Action("ExternalLoginCallback", "Users", new { ReturnUrl = HttpContext.Request.Headers["Referer"] });
+            var properties = new AuthenticationProperties()
+            {
+                RedirectUri = redirectUrl,
+                AllowRefresh = true,
+                IsPersistent = true
+            };
+
+            return new ChallengeResult(provider, properties);
+        }
+
+        [HttpGet]
+        [Route("external-login-3")]
+        [AllowAnonymous]
+        public IActionResult ExternalLogin3(string returnUrl)
+        {
+            //var redirectUrl = Url.Action("ExternalLoginCallback", "Users", new { ReturnUrl = returnUrl });
+            var properties = new AuthenticationProperties()
+            {
+                RedirectUri = returnUrl,
+                AllowRefresh = true,
+                IsPersistent = true
+            };
+
+            return new ChallengeResult("Google", properties);
+        }
+
+        [HttpGet]
+        [Route("external-login-callback")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ExternalLoginCallbackAsync(string returnUrl = null, string remoteError = null)
+        {
+            if (String.IsNullOrWhiteSpace(returnUrl))
+            {
+                throw new Exception("No return URL provided");
+            }
+
+            var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+            if (result.Succeeded != true)
+            {
+                throw new Exception("External authentication error");
+            }
+
+            var externalUser = result.Principal;
+            if (externalUser == null)
+            {
+                throw new Exception("External authentication error");
+            }
+
+            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
+                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+                              throw new Exception("Unknown userid");
+
+            var externalUserId = userIdClaim.Value;
+            var externalProvider = userIdClaim.Issuer;
+
+            await HttpContext.SignInAsync(new IdentityServerUser(externalUserId)
+            {
+                DisplayName = externalUser.FindFirstValue(ClaimTypes.Name),
+                IdentityProvider = externalProvider,
+                AdditionalClaims = externalUser.Claims.ToList()
+            });
+
+            await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+
+            var token = "affa";
+
+            return Redirect($"https://localhost:44377/?code={token}");
+        }
+
+        // if the external login is OIDC-based, there are certain things we need to preserve to make logout work
+        // this will be different for WS-Fed, SAML2p or other protocols
+        private void CaptureExternalLoginContext(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
+        {
+            // if the external system sent a session id claim, copy it over
+            // so we can use it for single sign-out
+            var sid = externalResult.Principal.Claims.FirstOrDefault(x => x.Type == JwtClaimTypes.SessionId);
+            if (sid != null)
+            {
+                localClaims.Add(new Claim(JwtClaimTypes.SessionId, sid.Value));
+            }
+
+            // if the external provider issued an id_token, we'll keep it for signout
+            var idToken = externalResult.Properties.GetTokenValue("id_token");
+            if (idToken != null)
+            {
+                localSignInProps.StoreTokens(new[] { new AuthenticationToken { Name = "id_token", Value = idToken } });
+            }
+        }
+    }
+
+    public class EnsureSubClaimTransformation : IClaimsTransformation
+    {
+        public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
+        {
+            var identity = principal.Identity as ClaimsIdentity;
+            if (identity != null && !identity.HasClaim(c => c.Type == "sub"))
+            {
+                // Add a 'sub' claim based on another unique claim, like email or id
+                var emailClaim = identity.FindFirst(ClaimTypes.Email);
+                if (emailClaim != null)
+                {
+                    identity.AddClaim(new Claim("sub", emailClaim.Value));
+                }
+                else
+                {
+                    var nameIdentifierClaim = identity.FindFirst(ClaimTypes.NameIdentifier);
+                    if (nameIdentifierClaim != null)
+                    {
+                        identity.AddClaim(new Claim("sub", nameIdentifierClaim.Value));
+                    }
+                }
+            }
+
+            if (identity != null && !identity.HasClaim(c => c.Type == JwtClaimTypes.IdentityProvider))
+            {
+                identity.AddClaim(new Claim(JwtClaimTypes.IdentityProvider, "Google"));
+            }
+
+            return Task.FromResult(principal);
         }
     }
 }

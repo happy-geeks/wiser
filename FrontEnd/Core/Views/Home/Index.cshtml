@@ -767,6 +767,9 @@
 
             <div v-if="validSubDomain && loginStatus !== 'list' && loginStatus !== 'list_loading' && loginStatus !== 'totp' && loginStatus !== 'totp_loading' && loginStatus !== 'totp_error' && !showForgotPasswordScreen && !requirePasswordChange">
                 <div class="form-row">
+                    <a id="GoogleSignInButton" v-on:click="googleSignInButtonClick()">Inloggen met Google</a>
+                </div>
+                <div class="form-row">
                     <input type="text" id="username" placeholder="Gebruikersnaam" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="loginForm.username" required>
                 </div>
 
@@ -1041,7 +1044,9 @@
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
     "trackJsToken": "@Model.Settings.TrackJsToken",
-    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin"
+    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin",
+    "codeVerifier": "@Model.CodeVerifier",
+    "codeChallenge": "@Model.CodeChallenge"
 }
 </script>
 

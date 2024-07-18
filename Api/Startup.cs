@@ -25,6 +25,7 @@ using GeeksCoreLibrary.Modules.Databases.Helpers;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.Databases.Services;
+using IdentityServer4;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
@@ -201,9 +202,12 @@ namespace Api
             // Configure OAuth2
             var identityServerBuilder = services.AddIdentityServer(options =>
                 {
-                    options.Events.RaiseSuccessEvents = true;
-                    options.Events.RaiseFailureEvents = true;
+                    options.UserInteraction.LoginUrl = "/api/v3/users/external-login";
+                    options.UserInteraction.LoginReturnUrlParameter = "returnUrl";
                     options.Events.RaiseErrorEvents = true;
+                    options.Events.RaiseInformationEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseSuccessEvents = true;
                 })
                 .AddInMemoryIdentityResources(ConfigureIdentityServer.GetIdentityResources())
                 .AddInMemoryApiResources(ConfigureIdentityServer.GetApiResources(clientSecret))
@@ -239,7 +243,8 @@ namespace Api
                 identityServerBuilder.AddSigningCredential(certificateCollection.First());
             }
 
-            services.AddAuthentication("Bearer")
+            //services.AddTransient<IClaimsTransformation, EnsureSubClaimTransformation>();
+            services.AddAuthentication("Google")
                 .AddJwtBearer("Bearer",
                     options =>
                     {
@@ -249,6 +254,13 @@ namespace Api
                             ValidateAudience = false,
                             ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
                         };
+                    })
+                    // Configure Google authentication
+                    .AddGoogle("Google", options =>
+                    {
+                        options.ClientId = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientId");
+                        options.ClientSecret = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientSecret");
+                        options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     });
 
             services.AddAuthorization(options =>

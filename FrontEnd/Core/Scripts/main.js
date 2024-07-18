@@ -79,6 +79,39 @@ class Main {
         const configElement = document.getElementById("vue-config");
         this.appSettings = JSON.parse(configElement.innerHTML);
 
+        // Handle the redirect in your front-end
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        if (code) {
+            // Exchange the authorization code for tokens
+            fetch('https://localhost:44349/connect/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    'grant_type': 'authorization_code',
+                    'code': code,
+                    'redirect_uri': 'https://localhost:44377/',
+                    'client_id': 'google-test',
+                    'client_secret': 'test'
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Save the tokens in local storage
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('id_token', data.id_token);
+                    // Redirect to the home page or another page
+                    window.location.href = '/';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+
+
+
+
         if (this.appSettings.trackJsToken) {
             try {
                 TrackJS.install({

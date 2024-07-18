@@ -1,5 +1,6 @@
-﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN, USE_TOTP_BACKUP_CODE } from "../store/mutation-types";
-import { ComboBox } from "@progress/kendo-vue-dropdowns";
+﻿import {AUTH_LOGOUT, AUTH_REQUEST, CHANGE_PASSWORD_LOGIN, FORGOT_PASSWORD} from "../store/mutation-types";
+import {ComboBox} from "@progress/kendo-vue-dropdowns";
+import {UserManager, WebStorageStateStore} from 'oidc-client';
 
 export default {
     name: "login",
@@ -26,11 +27,34 @@ export default {
                 newPassword: "",
                 newPasswordRepeat: ""
             },
-            showTotpBackupCodeScreen: false
+            showTotpBackupCodeScreen: false,
+            config: {
+                authority: 'https://localhost:44349',
+                client_id: 'js_client',
+                redirect_uri: 'https://localhost:44377/?loginCallback=true',
+                response_type: 'id_token token',
+                scope: 'openid profile api1',
+                post_logout_redirect_uri: 'https://localhost:44377/',
+                userStore: new WebStorageStateStore({ store: window.localStorage })
+            },
+            userManager: null
         };
     },
     async created() {
         await this.$store.dispatch(AUTH_REQUEST);
+        this.userManager = new UserManager(this.config);
+
+
+        const params = new URLSearchParams(window.location.search);
+        const isCallback = params.get("loginCallback") === "true";
+        if (isCallback) {
+            console.log("isCallback", params);
+            this.userManager.signinRedirectCallback().then(function () {
+                window.location = "index.html";
+            }).catch(function (e) {
+                console.error(e);
+            });
+        }
     },
     computed: {
         loginStatus() {
@@ -107,11 +131,11 @@ export default {
                 return;
             }
 
-            await this.$store.dispatch(AUTH_REQUEST, { 
+            await this.$store.dispatch(AUTH_REQUEST, {
                 user: Object.assign({}, this.loginForm),
                 loginStatus: this.loginStatus
             });
-            
+
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
@@ -161,6 +185,41 @@ export default {
 
         checkCapslock(e) {
             this.loginForm.capslock = e.getModifierState('CapsLock');
+        },
+
+        googleSignInButtonClick() {
+            debugger;
+            //https://localhost:5001/connect/authorize?client_id=your-client-id&response_type=code&scope=openid profile api1&redirect_uri=https://localhost:5002/signin-oidc&state={state}&nonce={nonce}&code_challenge={codeChallenge}&code_challenge_method=S256&acr_values=idp:Google
+            /*const authUrl = "https://localhost:44349/connect/authorize" +
+                "?client_id=google-test" +
+                "&response_type=code" +
+                "&scope=openid profile wiser-api" +
+                "&redirect_uri=" + encodeURIComponent("https://localhost:44377/signin-oidc") +
+                "&state=" + encodeURIComponent(Math.random().toString(36).substring(7)) +
+                "&nonce=" + encodeURIComponent(Math.random().toString(36).substring(7)) +
+                "&code_challenge=" + encodeURIComponent(window.main.appSettings.codeChallenge) +
+                "&code_challenge_method=S256" +
+                "&acr_values=idp:Google";
+
+            //window.location.href = authUrl;
+            window.location.href = `https://localhost:44349/api/v3/users/external-login?provider=Google`;*/
+            const loginResult = this.login2();
+        },
+
+        login2() {
+            return this.userManager.signinRedirect();
+        },
+
+        logout2() {
+            return this.userManager.signoutRedirect();
+        },
+
+        getUser2() {
+            return this.userManager.getUser();
+        },
+
+        renewToken2() {
+            return this.userManager.signinSilent();
         }
     }
 };
