@@ -86,7 +86,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Actions
         )]
-        public List<QueryModel> Queries { get; set; }
+        public List<WtsQueryModel> Queries { get; set; }
 
         /// <summary>
         /// Gets or sets the http api's in the configuration.
