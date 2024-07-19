@@ -1906,5 +1906,20 @@ WHERE changed_on >= ?lastChange";
                 conflict.ChangedByInMain = dataRow.Field<string>("changed_by");
             }
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<ulong?>> GetMappedIdAsync(ulong id, bool idIsFromBranch = true)
+        {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
+            
+            clientDatabaseConnection.AddParameter("id", id);
+            var dataTable = await clientDatabaseConnection.GetAsync($"""
+                SELECT {(idIsFromBranch ? "production_id" : "our_id")} AS mappedId
+                FROM {WiserTableNames.WiserIdMappings}
+                WHERE {(idIsFromBranch ? "our_id" : "production_id")} = ?id
+""");
+            
+            return dataTable.Rows.Count > 0 ? new ServiceResult<ulong?>(dataTable.Rows[0].Field<ulong>("mappedId")) : new ServiceResult<ulong?>(null);
+        }
     }
 }

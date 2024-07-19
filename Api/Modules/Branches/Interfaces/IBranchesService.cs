@@ -83,5 +83,14 @@ namespace Api.Modules.Branches.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <param name="id">The ID of the branch that should be deleted.</param>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
+        
+        /// <summary>
+        /// Get the ID of a branch that is mapped to the main branch.
+        /// If <paramref name="idIsFromBranch"/> equals <see langword="false"/> then the ID is from the main branch and the ID of the branch will be returned.
+        /// </summary>
+        /// <param name="id">The ID to get the mapped value for.</param>
+        /// <param name="idIsFromBranch">Optional: If the ID being given is from the branch.</param>
+        /// <returns></returns>
+        Task<ServiceResult<ulong?>> GetMappedIdAsync(ulong id, bool idIsFromBranch = true);
     }
 }

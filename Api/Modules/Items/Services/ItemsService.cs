@@ -14,6 +14,7 @@ using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityTypes.Models;
@@ -21,6 +22,7 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using Api.Modules.Tenants.Helpers;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
@@ -36,6 +38,7 @@ using GeeksCoreLibrary.Modules.Languages.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Newtonsoft.Json;
@@ -63,6 +66,8 @@ namespace Api.Modules.Items.Services
         private readonly IEntityPropertiesService entityPropertiesService;
         private readonly IGoogleTranslateService googleTranslateService;
         private readonly IObjectsService objectsService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
@@ -81,7 +86,9 @@ namespace Api.Modules.Items.Services
                             ILanguagesService languagesService,
                             IEntityPropertiesService entityPropertiesService,
                             IGoogleTranslateService googleTranslateService,
-                            IObjectsService objectsService)
+                            IObjectsService objectsService,
+                            IServiceProvider serviceProvider,
+                            IBranchesService branchesService)
         {
             this.templatesService = templatesService;
             this.wiserTenantsService = wiserTenantsService;
@@ -98,6 +105,8 @@ namespace Api.Modules.Items.Services
             this.entityPropertiesService = entityPropertiesService;
             this.googleTranslateService = googleTranslateService;
             this.objectsService = objectsService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
@@ -663,7 +672,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
+        public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1, bool alsoCreateInMainBranch = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
@@ -681,9 +690,41 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             try
             {
                 await clientDatabaseConnection.BeginTransactionAsync();
+                WiserItemModel newItem = null;
 
-                //Create the new item (with the link)
-                var newItem = await wiserItemsService.CreateAsync(item, parentId ,userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber:linkType);
+                if (alsoCreateInMainBranch && !branchesService.IsMainBranch(tenant.ModelObject).ModelObject)
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+                    var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+                    var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                    await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+                    var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
+
+                    item.PublishedEnvironment = Environments.Hidden;
+                    
+                    // Check if parent ID is in the mappings. If true use ID for main database, if false throw exception.
+                    var parentIdMainBranch = await branchesService.GetMappedIdAsync(parentId);
+
+                    if (parentIdMainBranch.ModelObject == null)
+                    {
+                        return new ServiceResult<CreateItemResultModel>
+                        {
+                            ErrorMessage = $"Failed to create item in main branch. Parent item with ID {parentId} does not exist in main branch and can therefore not (safely) be mapped.",
+                            StatusCode = HttpStatusCode.Forbidden
+                        };
+                    }
+                    
+                    var newItemMainBranch = await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+
+                    item.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
+                }
+                else
+                {
+                    //Create the new item (with the link)
+                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                }
 
                 result.NewItemId = newItem.EncryptedId;
                 result.NewItemIdPlain = newItem.Id;
