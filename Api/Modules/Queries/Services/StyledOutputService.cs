@@ -169,6 +169,8 @@ namespace Api.Modules.Queries.Services
             }
             catch (Exception e)
             {
+                logger.LogError(e.Message);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
@@ -227,6 +229,8 @@ namespace Api.Modules.Queries.Services
             }
             catch (Exception e)
             {
+                logger.LogError(e.Message);
+                
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
