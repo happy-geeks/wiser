@@ -48,16 +48,16 @@ namespace Api.Modules.Queries.Services
         private int maxResultsPerPage;
 
         private bool performanceLogging = false;
-        private const string itemSeparatorString = ", ";
+        private const string ItemSeparatorString = ", ";
         
-		private static readonly string[] allowedFormats = { "JSON" };
-		private static readonly string[] allowedSubFormats = { "JSON", "RAW" };
+		private static readonly string[] AllowedFormats = { "JSON" };
+		private static readonly string[] AllowedSubFormats = { "JSON", "RAW" };
 
-        private Dictionary<int, StyledOutputModel> cachedStyles = new Dictionary<int, StyledOutputModel>();
-        private Dictionary<int, string> cachedQueries = new Dictionary<int, string>();
-        private List<int> cachedQueryPermission = new List<int>();
+        private readonly Dictionary<int, StyledOutputModel> cachedStyles = new Dictionary<int, StyledOutputModel>();
+        private readonly Dictionary<int, string> cachedQueries = new Dictionary<int, string>();
+        private readonly List<int> cachedQueryPermission = [];
        
-        private Dictionary<int, List<Stopwatch>> timings = new Dictionary<int, List<Stopwatch>>();
+        private readonly Dictionary<int, List<Stopwatch>> timings = new Dictionary<int, List<Stopwatch>>();
         
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
@@ -85,7 +85,7 @@ namespace Api.Modules.Queries.Services
             
             ClearCachedStyles();
 
-            var response = await GetStyledOutputResultAsync(identity, allowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
+            var response = await GetStyledOutputResultAsync(identity, AllowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
@@ -165,7 +165,7 @@ namespace Api.Modules.Queries.Services
             
             try
             {
-                style = await GetCachedStyle(id);
+                style = await GetCachedStyleAsync(id);
             }
             catch (Exception e)
             {
@@ -212,7 +212,8 @@ namespace Api.Modules.Queries.Services
             
             try
             {
-                if (!QueryIsAllowed(style.QueryId, identity).Result)
+                var isAllowed = await QueryIsAllowedAsync(style.QueryId, identity);
+                if (!isAllowed)
                 {
                     var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
                     logger.LogError(errorMsg);
@@ -246,7 +247,7 @@ namespace Api.Modules.Queries.Services
                 performanceLogging = optionsObject.LogTiming;
             }
 
-            var query = GetCachedQuery(style.QueryId, identity).Result;
+            var query = await GetCachedQueryAsync(style.QueryId, identity);
             
             clientDatabaseConnection.ClearParameters();
 
@@ -324,7 +325,7 @@ namespace Api.Modules.Queries.Services
 
                     if (parsedObject != result.Children<JObject>().Last())
                     {
-                        combinedResult.Append(itemSeparatorString);
+                        combinedResult.Append(ItemSeparatorString);
                     }
                 }
 
@@ -421,7 +422,7 @@ namespace Api.Modules.Queries.Services
                     subParameters.Add(new KeyValuePair<string, object>(sections[i], sections[i + 1]));
                 }
                         
-                var subResult = await GetStyledOutputResultAsync(identity, allowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
+                var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
                     
                 if (subResult.StatusCode == HttpStatusCode.OK)
                 {
@@ -455,23 +456,23 @@ namespace Api.Modules.Queries.Services
         /// Private function for fetching a styled output from the cache or when not cached adding it to the cache.
         /// </summary>
         /// <param name="id">The ID of the styled sheet in question.</param>
-        /// <returns>Returns <see cref="stlyedoutputmodel"/> of the requested id.</returns>
-        private async Task<StyledOutputModel> GetCachedStyle(int id)
+        /// <returns>Returns <see cref="StyledOutputModel"/> of the requested id.</returns>
+        private async Task<StyledOutputModel> GetCachedStyleAsync(int id)
         {
             if (cachedStyles.TryGetValue(id, out var style))
             {
                 return style;
             }
 
-            return await AddCachedStyle(id);
+            return await AddCachedStyleAsync(id);
         }
         
         /// <summary>
         /// Private function adding a styled output to the cache.
         /// </summary>
         /// <param name="id">The ID of the styled sheet in question.</param>
-        /// <returns>Returns <see cref="stlyedoutputmodel"/> of the added id.</returns>
-        private async Task<StyledOutputModel> AddCachedStyle(int id)
+        /// <returns>Returns <see cref="StyledOutputModel"/> of the added id.</returns>
+        private async Task<StyledOutputModel> AddCachedStyleAsync(int id)
         {
             cachedStyles.Remove(id);
             
@@ -510,7 +511,7 @@ namespace Api.Modules.Queries.Services
         /// <param name="queryId">The ID of the query.</param>
         /// <param name="identity">The identity for the connection.</param>
         /// <returns>Returns true or throws an exception when not allowed.</returns>
-        private async Task<bool> QueryIsAllowed(int queryId, ClaimsIdentity identity)
+        private async Task<bool> QueryIsAllowedAsync(int queryId, ClaimsIdentity identity)
         {
             if (cachedQueryPermission.Contains(queryId))
             {
@@ -537,14 +538,14 @@ namespace Api.Modules.Queries.Services
         /// <param name="queryId">The ID of the query.</param>
         /// <param name="identity">The identity for the connection.</param>
         /// <returns>Returns the query string.</returns>
-        private async Task<string> GetCachedQuery(int queryId, ClaimsIdentity identity)
+        private async Task<string> GetCachedQueryAsync(int queryId, ClaimsIdentity identity)
         {
             if (cachedQueries.TryGetValue(queryId, out var query))
             {
                 return query;
             }
 
-            return await AddCachedQuery(queryId, identity);            
+            return await AddCachedQueryAsync(queryId, identity);            
         }
         
         /// <summary>
@@ -553,7 +554,7 @@ namespace Api.Modules.Queries.Services
         /// <param name="queryId">The ID of the query.</param>
         /// <param name="identity">The identity for the connection.</param>
         /// <returns>Returns the added query string.</returns>
-        private async Task<string> AddCachedQuery(int queryId, ClaimsIdentity identity)
+        private async Task<string> AddCachedQueryAsync(int queryId, ClaimsIdentity identity)
         {
             cachedQueries.Remove(queryId);
             
