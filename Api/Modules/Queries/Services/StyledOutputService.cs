@@ -169,7 +169,7 @@ namespace Api.Modules.Queries.Services
             }
             catch (Exception e)
             {
-                logger.LogError(e.Message);
+                logger.LogError(e, "An error occurred while getting a cached style.");
                 
                 return new ServiceResult<string>
                 {
@@ -229,7 +229,7 @@ namespace Api.Modules.Queries.Services
             }
             catch (Exception e)
             {
-                logger.LogError(e.Message);
+                logger.LogError(e, "An error occurred while checking if a query is allowed to be executed.");
                 
                 return new ServiceResult<string>
                 {
