@@ -43,22 +43,22 @@ namespace Api.Modules.Queries.Services
         private readonly ILogger<StyledOutputService> logger;
         private readonly StyledOutputSettings apiSettings;
         private readonly IBranchesService branchesService;
-        
+
         // even if the user selects a higher value the results will always be capped to this ( filled in by settings file )
         private int maxResultsPerPage;
 
         private bool performanceLogging = false;
         private const string ItemSeparatorString = ", ";
-        
+
 		private static readonly string[] AllowedFormats = { "JSON" };
 		private static readonly string[] AllowedSubFormats = { "JSON", "RAW" };
 
         private readonly Dictionary<int, StyledOutputModel> cachedStyles = new Dictionary<int, StyledOutputModel>();
         private readonly Dictionary<int, string> cachedQueries = new Dictionary<int, string>();
-        private readonly List<int> cachedQueryPermission = [];
-       
+        private readonly List<int> cachedQueryPermission = new List<int>();
+
         private readonly Dictionary<int, List<Stopwatch>> timings = new Dictionary<int, List<Stopwatch>>();
-        
+
         /// <summary>
         /// Creates a new instance of <see cref="StyledOutputService"/>.
         /// </summary>
@@ -80,9 +80,9 @@ namespace Api.Modules.Queries.Services
         {
             // Fetch max results per page ( can be overwritten by the user ).
             maxResultsPerPage = apiSettings.MaxResultsPerPage;
-            
+
             await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserStyledOutput });
-            
+
             ClearCachedStyles();
 
             var response = await GetStyledOutputResultAsync(identity, AllowedFormats, id, parameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds);
@@ -90,7 +90,7 @@ namespace Api.Modules.Queries.Services
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 logger.LogError($"Non-OK response in GetStyledOutputResultJsonAsync: {response.ErrorMessage}");
-                
+
                 return new ServiceResult<JToken>
                 {
                     StatusCode = response.StatusCode,
@@ -118,7 +118,7 @@ namespace Api.Modules.Queries.Services
             catch (Exception e)
             {
                 var errorMsg = $"Wiser styled output with ID '{id}' could not convert to Json with exception: '{e}'";
-                
+
                 logger.LogError(errorMsg);
 
                 return new ServiceResult<JToken>
@@ -128,7 +128,7 @@ namespace Api.Modules.Queries.Services
                 };
             }
         }
-		
+
 		/// <summary>
 		/// Private function for handling styled output elements.
 		/// </summary>
@@ -149,20 +149,20 @@ namespace Api.Modules.Queries.Services
             if (usedIds.Contains(id))
             {
                 var errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}";
-                
+
                 logger.LogError(errorMsg);
-                
+
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.LoopDetected,
                     ErrorMessage = errorMsg
-                };  
+                };
             }
-            
+
             usedIds.Add(id);
-            
+
             StyledOutputModel style;
-            
+
             try
             {
                 style = await GetCachedStyleAsync(id);
@@ -170,14 +170,14 @@ namespace Api.Modules.Queries.Services
             catch (Exception e)
             {
                 logger.LogError(e, "An error occurred while getting a cached style.");
-                
+
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
                     ErrorMessage = e.Message
                 };
             }
-            
+
             if (stripNewlinesAndTabs)
             {
                 style.FormatBegin = style.FormatBegin.Replace("\r\n","").Replace("\n","").Replace("\t","");
@@ -185,13 +185,13 @@ namespace Api.Modules.Queries.Services
                 style.FormatEnd = style.FormatEnd.Replace("\r\n","").Replace("\n","").Replace("\t","");
                 style.FormatEmpty = style.FormatEmpty.Replace("\r\n","").Replace("\n","").Replace("\t","");
             }
-            
+
             if (style.QueryId < 0)
             {
                 var errorMsg = $"Wiser Styled Output with ID '{id}' does not have a valid query setup.";
-                
+
                 logger.LogError(errorMsg);
-                
+
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotFound,
@@ -202,16 +202,16 @@ namespace Api.Modules.Queries.Services
             if (!allowedFormats.Contains(style.ReturnType))
             {
                 var errorMsg = $"Wiser Styled Output with ID '{id}' is not setup for JSON response";
-                
+
                 logger.LogError(errorMsg);
-                
+
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.NotImplemented,
                     ErrorMessage = errorMsg
-                };             
+                };
             }
-            
+
             try
             {
                 var isAllowed = await QueryIsAllowedAsync(style.QueryId, identity);
@@ -230,19 +230,19 @@ namespace Api.Modules.Queries.Services
             catch (Exception e)
             {
                 logger.LogError(e, "An error occurred while checking if a query is allowed to be executed.");
-                
+
                 return new ServiceResult<string>
                 {
                     StatusCode = HttpStatusCode.Unauthorized,
                     ErrorMessage = e.Message
                 };
             }
-        
+
             // This styled output has settings to parse.
             if (!String.IsNullOrWhiteSpace(style.Options))
             {
                 var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(style.Options);
-                
+
                 if (optionsObject.MaxResultsPerPage > 0)
                 {
                     maxResultsPerPage = optionsObject.MaxResultsPerPage;
@@ -252,20 +252,20 @@ namespace Api.Modules.Queries.Services
             }
 
             var query = await GetCachedQueryAsync(style.QueryId, identity);
-            
+
             clientDatabaseConnection.ClearParameters();
 
             var pageResultCount = Math.Min(maxResultsPerPage, resultsPerPage);
 
             var isMainBranch = await branchesService.IsMainBranchAsync(identity);
-            
+
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * pageResultCount);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), pageResultCount);
             clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"), isMainBranch.ModelObject);
-            
+
             parameters ??= new List<KeyValuePair<string, object>>();
-         
+
             foreach (var parameter in parameters)
             {
                 clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key), parameter.Value);
@@ -279,12 +279,12 @@ namespace Api.Modules.Queries.Services
                 {
                     timings.Clear();
                 }
-                
+
                 if (!timings.ContainsKey(id))
                 {
                     timings.Add(id, new List<Stopwatch>());
                 }
-                
+
                 timings[id].Add(new Stopwatch());
                 timings[id].Last().Start();
             }
@@ -314,7 +314,7 @@ namespace Api.Modules.Queries.Services
 
                     // Replace recursive inline styles.
                     var inlineResult =  await HandleInlineStyleElementsAsync(identity, itemValue, parameters, stripNewlinesAndTabs, resultsPerPage, page, usedIds, id);
-                    
+
                     if (inlineResult.StatusCode == HttpStatusCode.OK)
                     {
                         itemValue = inlineResult.ModelObject;
@@ -338,7 +338,7 @@ namespace Api.Modules.Queries.Services
                     combinedResult.Append(style.FormatEnd);
                 }
             }
-            
+
             if (performanceLogging)
             {
                 timings[id].Last().Stop();
@@ -360,7 +360,7 @@ namespace Api.Modules.Queries.Services
 
                         var timingStoryQuery =
                             $@"UPDATE wiser_styled_output SET log_average_runtime = ""{ avarageTime.ToString("0.00000", System.Globalization.CultureInfo.InvariantCulture) }"", log_run_count = ""{ runCount }"" WHERE id=""{key}"";";
-                        
+
                         await clientDatabaseConnection.ExecuteAsync(timingStoryQuery);
                     }
                 }
@@ -372,7 +372,7 @@ namespace Api.Modules.Queries.Services
                 ModelObject = combinedResult.ToString()
             };
          }
-        
+
         /// <summary>
         /// Private function for handling inline style element replacements.
         /// </summary>
@@ -388,26 +388,26 @@ namespace Api.Modules.Queries.Services
         private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null, int callingParentId = -1)
         {
             var index = 0;
-            
+
             while (index < itemValue.Length)
             {
                 var startIndex = itemValue.IndexOf("{StyledOutput", index, StringComparison.OrdinalIgnoreCase);
                 index = startIndex + 1;
-                    
+
                 if (index <= 0)
                 {
                     // No further replacements needed.
                     break;
                 }
-                    
+
                 var endIndex = itemValue.IndexOf("}", startIndex, StringComparison.OrdinalIgnoreCase) + 1;
-                    
+
                 if (endIndex <= 0)
                 {
                     // Error, can't find end of styled object.
                     break;
                 }
-                    
+
                 var styleString = itemValue.Substring(startIndex, endIndex - startIndex);
                 var sections = styleString.Substring(1,styleString.Length - 2).Split('~');
                 var subStyleId = sections.Length > 1 ? Int32.Parse(sections[1]) : - 1;
@@ -416,7 +416,7 @@ namespace Api.Modules.Queries.Services
                 {
                     continue;
                 }
-                
+
                 var subParameters = new List<KeyValuePair<string, object>>();
                 subParameters.AddRange(parameters);
 
@@ -425,9 +425,9 @@ namespace Api.Modules.Queries.Services
                 {
                     subParameters.Add(new KeyValuePair<string, object>(sections[i], sections[i + 1]));
                 }
-                        
+
                 var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
-                    
+
                 if (subResult.StatusCode == HttpStatusCode.OK)
                 {
                     itemValue = itemValue.Replace(styleString, subResult.ModelObject);
@@ -438,12 +438,12 @@ namespace Api.Modules.Queries.Services
                     return subResult;
                 }
             }
-            
+
             return new ServiceResult<string>
             {
                 StatusCode = HttpStatusCode.OK,
                 ModelObject = itemValue
-            };          
+            };
         }
 
         /// <summary>
@@ -470,7 +470,7 @@ namespace Api.Modules.Queries.Services
 
             return await AddCachedStyleAsync(id);
         }
-        
+
         /// <summary>
         /// Private function adding a styled output to the cache.
         /// </summary>
@@ -479,15 +479,15 @@ namespace Api.Modules.Queries.Services
         private async Task<StyledOutputModel> AddCachedStyleAsync(int id)
         {
             cachedStyles.Remove(id);
-            
+
             StyledOutputModel style = new StyledOutputModel();
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("id", id); 
-            
+            clientDatabaseConnection.AddParameter("id", id);
+
             var formatQuery =  $"SELECT query_Id, format_begin, format_item, format_end, format_empty, return_type, options FROM {WiserTableNames.WiserStyledOutput} WHERE id = ?id";
-            
+
             var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
             if (dataTable.Rows.Count == 0)
             {
@@ -495,7 +495,7 @@ namespace Api.Modules.Queries.Services
                 logger.LogError(errorMsg);
                 throw new KeyNotFoundException(errorMsg);
             }
-            
+
             style.FormatBegin = dataTable.Rows[0].Field<string>("format_begin");
             style.FormatItem =  dataTable.Rows[0].Field<string>("format_item");
             style.FormatEnd = dataTable.Rows[0].Field<string>("format_end");
@@ -503,9 +503,9 @@ namespace Api.Modules.Queries.Services
             style.ReturnType = dataTable.Rows[0].Field<string>("return_type");
             style.QueryId = dataTable.Rows[0].Field<int>("query_id");
             style.Options = dataTable.Rows[0].Field<string>("options");
-            
+
             cachedStyles.Add(id,style);
-            
+
             return style;
         }
 
@@ -521,16 +521,16 @@ namespace Api.Modules.Queries.Services
             {
                 return true;
             }
-            
+
             if ((await wiserItemsService.GetUserQueryPermissionsAsync(queryId, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
             {
-                
+
                 var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{queryId}'";
-                
+
                 logger.LogError(errorMsg);
                 throw new UnauthorizedAccessException(errorMsg);
             }
-            
+
             cachedQueryPermission.Add(queryId);
 
             return true;
@@ -549,9 +549,9 @@ namespace Api.Modules.Queries.Services
                 return query;
             }
 
-            return await AddCachedQueryAsync(queryId, identity);            
+            return await AddCachedQueryAsync(queryId, identity);
         }
-        
+
         /// <summary>
         /// Private function for addin a query to the cache.
         /// </summary>
@@ -561,10 +561,10 @@ namespace Api.Modules.Queries.Services
         private async Task<string> AddCachedQueryAsync(int queryId, ClaimsIdentity identity)
         {
             cachedQueries.Remove(queryId);
-            
+
             var query = await queriesService.GetAsync(identity, queryId);
             cachedQueries.Add(queryId, query.ModelObject.Query);
-            
+
             return query.ModelObject.Query;
         }
     }
