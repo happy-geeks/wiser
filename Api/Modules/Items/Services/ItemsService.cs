@@ -286,6 +286,11 @@ namespace Api.Modules.Items.Services
                 var fields = String.IsNullOrWhiteSpace(fieldsJson) ? new List<DisplayItemDetailModel>() : JsonConvert.DeserializeObject<List<DisplayItemDetailModel>>(fieldsJson);
                 foreach (var field in fields)
                 {
+                    if (String.IsNullOrWhiteSpace(field.Key))
+                    {
+                        continue;
+                    }
+                
                     var name = field.DisplayName;
                     if (String.IsNullOrWhiteSpace(name) || !useFriendlyPropertyNames)
                     {
