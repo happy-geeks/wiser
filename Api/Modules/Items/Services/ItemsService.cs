@@ -700,8 +700,6 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
                     await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
                     var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
-
-                    item.PublishedEnvironment = Environments.Hidden;
                     
                     // Check if parent ID is in the mappings. If true use ID for main database, if false throw exception.
                     var parentIdMainBranch = await branchesService.GetMappedIdAsync(parentId);
@@ -714,6 +712,12 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                             StatusCode = HttpStatusCode.Forbidden
                         };
                     }
+
+                    item.PublishedEnvironment = Environments.Hidden;
+                    
+                    var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(item.EntityType);
+                    var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
+                    item.Id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserItem}", mainDatabaseConnection, clientDatabaseConnection);
                     
                     var newItemMainBranch = await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
                     newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
@@ -760,6 +764,27 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             return new ServiceResult<CreateItemResultModel>(result);
+        }
+
+        /// <summary>
+        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
+        /// This is to make sure that the new ID can be created in both databases to match.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
+        /// <param name="branchDatabase">The connection to the branch database.</param>
+        /// <returns>The new ID that should be used for the item in both databases.</returns>
+        private async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        {
+            var query = $"SELECT MAX(id) AS id FROM {tableName}";
+            
+            var dataTable = await mainDatabaseConnection.GetAsync(query);
+            var maxMainId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+            
+            dataTable = await branchDatabase.GetAsync(query);
+            var maxBranchId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+
+            return Math.Max(maxMainId, maxBranchId) + 1;
         }
 
         /// <inheritdoc />
