@@ -194,6 +194,8 @@ CREATE TABLE IF NOT EXISTS `wiser_item_archive`  (
   `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `json` json,
+  `json_last_processed_date` datetime,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_moduleid`(`moduleid`, `published_environment`) USING BTREE,
   INDEX `idx_entity_type`(`entity_type`, `unique_uuid`) USING BTREE,
