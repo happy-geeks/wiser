@@ -1,8 +1,10 @@
 // noinspection JSFileReferences
 
-import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../Css/FileManager.css";
+
 window.JSZip = require("jszip");
 
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -18,8 +20,6 @@ require("@progress/kendo-ui/js/kendo.tabstrip.js");
 require("@progress/kendo-ui/js/filemanager/contextmenu.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../Css/FileManager.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -402,7 +402,7 @@ const moduleSettings = {
 
             const fileUploader = event.sender.element.find("#newImageUpload");
             fileUploader.change((fileChangeEvent) => {
-                const allowedExtensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg", ".webp"];
+                const allowedExtensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg", ".webp", ".tif", ".tiff"];
                 const selectedFiles = [...fileChangeEvent.currentTarget.files];
                 if (selectedFiles.length === 0) {
                     // No files selected, don't do anything.

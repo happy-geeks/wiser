@@ -3946,7 +3946,7 @@ this.dataSourceDataSelector.value(dataSelectorId);
                     document.getElementById("allowedExtensions").value = validation.allowedExtensions.join(",");
                 }
                 else if (resultSet.inputType === inputTypes.IMAGEUPLOAD) {
-                    document.getElementById("allowedExtensions").value = ".jpg,.jpeg,.png,.bmp,.gif,.svg,.webp";
+                    document.getElementById("allowedExtensions").value = ".jpg,.jpeg,.png,.bmp,.gif,.svg,.webp,.tif,.tiff";
                 }
                 else {
                     document.getElementById("allowedExtensions").value = "";
