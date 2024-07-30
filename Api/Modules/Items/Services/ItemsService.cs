@@ -691,8 +691,9 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             {
                 await clientDatabaseConnection.BeginTransactionAsync();
                 WiserItemModel newItem = null;
+                var createInMainBranch = alsoCreateInMainBranch && !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
 
-                if (alsoCreateInMainBranch && !branchesService.IsMainBranch(tenant.ModelObject).ModelObject)
+                if (createInMainBranch)
                 {
                     using var scope = serviceProvider.CreateScope();
                     var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
@@ -719,10 +720,11 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
                     item.Id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserItem}", mainDatabaseConnection, clientDatabaseConnection);
                     
-                    var newItemMainBranch = await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
-                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                    await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, saveHistory: false);
 
-                    item.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
+                    newItem.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
+                    await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
                 }
                 else
                 {
@@ -740,7 +742,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     result.Icon = dataTable.Rows[0].Field<string>("icon");
                 }
 
-                if (newItem.Details != null && newItem.Details.Any())
+                if (newItem.Details != null && newItem.Details.Any() && !createInMainBranch)
                 {
                     // Note: skipPermissionsCheck is set to true here, because otherwise the update permissions will be checked,
                     // but this is for creating an item and those permissions are already checked in the CreateAsync method that we call above.
