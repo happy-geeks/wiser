@@ -1,9 +1,9 @@
 ﻿(function() {
-var field = $("#scheduler{propertyIdWithSuffix}");
-var loader = field.closest(".item").find(".field-loader");
-var optionsFromProperty = {options};
+let field = $("#scheduler{propertyIdWithSuffix}");
+let loader = field.closest(".item").find(".field-loader");
+let optionsFromProperty = {options};
 
-var options = $.extend(true, {
+let options = $.extend(true, {
     views: [
         "day",
         { type: "week", selected: true },
@@ -15,7 +15,7 @@ var options = $.extend(true, {
     editable: false,
     dataSource: {
         transport: {
-            read: function(transportOptions) {
+            read: (transportOptions) => {
                 Wiser.api({
                     method: "POST",
                     url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
@@ -26,8 +26,8 @@ var options = $.extend(true, {
                         return;
                     }
                     
-                    for (var dataIndex = 0; dataIndex < queryResults.otherData.length; dataIndex++) {
-                        var dataItem = queryResults.otherData[dataIndex];
+                    for (let dataIndex = 0; dataIndex < queryResults.otherData.length; dataIndex++) {
+                        let dataItem = queryResults.otherData[dataIndex];
                         
                         if (typeof dataItem.resources !== "string") {
                             continue;
@@ -62,7 +62,7 @@ var options = $.extend(true, {
         resources: ["resources"],
         orientation: "vertical"
     },
-    dataBound: function(event) {
+    dataBound: (event) => {
         loader.removeClass("loading");
     }
 }, optionsFromProperty);
