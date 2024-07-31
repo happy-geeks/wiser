@@ -1,24 +1,30 @@
-﻿(function() {
-var field = $("#overviewGrid{propertyIdWithSuffix}");
-var loader = field.closest(".item").find(".grid-loader");
-var options = {options};
-var customQueryGrid = options.customQuery === true;
-var kendoComponent;
-var isFirstLoad = true;
-var height = "{height}" || undefined;
-var linkTypeParameter = "";
+(function() {
+let field = $("#overviewGrid{propertyIdWithSuffix}");
+const loader = field.closest(".item").find(".grid-loader");
+
+let options = {options};
+
+const customQueryGrid = options.customQuery === true;
+
+let kendoComponent;
+let isFirstLoad = true;
+let height = "{height}" || undefined;
+
+let linkTypeParameter = "";
 if (options.linkTypeNumber) {
     linkTypeParameter = "?linkTypeNumber=" + encodeURIComponent(options.linkTypeNumber || "0");
 }
 
-var readonly = {readonly};
-var rowIndex = null;
-var cellIndex = null;
-var editCount = 0;
-var hideCheckboxColumn = !options.checkboxes || options.checkboxes === "false" || options.checkboxes <= 0;
-var usingDataSelector = !!options.dataSelectorId;
+let readonly = {readonly};
+let rowIndex = null;
+let cellIndex = null;
+let editCount = 0;
+let hideCheckboxColumn = !options.checkboxes || options.checkboxes === "false" || options.checkboxes <= 0;
+
+let usingDataSelector = !!options.dataSelectorId;
 options.usingDataSelector = usingDataSelector;
-var gridMode = 0;
+
+let gridMode = 0;
 if (options.fieldGroupName) {
 	gridMode = 6;
 }
@@ -57,7 +63,7 @@ if (customQueryGrid) {
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
                     title: "Item openen",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
+                    click: (event)=> { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, false); }
                 });
                 
                 if (options.allowOpeningOfItemsInNewTab) {
@@ -68,7 +74,7 @@ if (customQueryGrid) {
                         iconClass: "k-icon k-i-window",
                         text: "",
                         title: "Item openen in nieuwe tab",
-                        click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, true); }
                     });
                 }
             }
@@ -80,7 +86,7 @@ if (customQueryGrid) {
                     name: "remove",
                     text: "",
                     iconClass: "k-icon k-i-delete",
-                    click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, this.options.deletionOfItems, this.options); }
                 });
             } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
                 commandColumnWidth += 120;
@@ -100,7 +106,7 @@ if (customQueryGrid) {
         generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
     });
 } else {
-    var done = function(gridSettings) {
+    let done = (gridSettings) => {
         if (usingDataSelector) {
             gridSettings = {
                 data: gridSettings,
@@ -114,8 +120,8 @@ if (customQueryGrid) {
         
         // Add most columns here.
         if (gridSettings.columns && gridSettings.columns.length) {
-            for (var i = 0; i < gridSettings.columns.length; i++) {
-                var column = gridSettings.columns[i];
+            for (let i = 0; i < gridSettings.columns.length; i++) {
+                let column = gridSettings.columns[i];
                 
                 switch ((column.field || "").toLowerCase()) {
                     case "":
@@ -177,7 +183,7 @@ if (customQueryGrid) {
                     name: "openDetails",
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
+                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, false); }
                 });
 
                 if (options.allowOpeningOfItemsInNewTab) {
@@ -187,7 +193,7 @@ if (customQueryGrid) {
                         name: "openDetailsInNewTab",
                         iconClass: "k-icon k-i-window",
                         text: "",
-                        click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, true); }
                     });
                 }
             }
@@ -199,7 +205,7 @@ if (customQueryGrid) {
                     name: "remove",
                     text: "",
                     iconClass: "k-icon k-i-delete",
-                    click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
                 });
             }
             
@@ -229,7 +235,7 @@ if (customQueryGrid) {
     }
 }    
 async function generateGrid(data, model, columns) {
-    var toolbar = [];
+    let toolbar = [];
     if (!options.toolbar || !options.toolbar.hideExportButton) {
         toolbar.push({
             name: "excel"
@@ -291,10 +297,10 @@ async function generateGrid(data, model, columns) {
     }
 
     if (columns && columns.length) {
-        for (var i = 0; i < columns.length; i++) {
+        for (let i = 0; i < columns.length; i++) {
             (function () {
-                var column = columns[i];
-                var editable = column.editable;
+                let column = columns[i];
+                let editable = column.editable;
                 if (column.field && customQueryGrid) {
                     column.field = column.field.toLowerCase();
                 }
@@ -322,7 +328,7 @@ async function generateGrid(data, model, columns) {
         field.empty();
     }
 
-    var editable;
+    let editable;
     if (readonly === true) {
         editable = false;
     } else if (options.editable) {
@@ -337,9 +343,9 @@ async function generateGrid(data, model, columns) {
         };
     }
 
-    var dataBindingType;
+    let dataBindingType;
     let filtersChanged = false;
-    var kendoGridOptions = $.extend(true, {
+    let kendoGridOptions = $.extend(true, {
         dataSource: {
             autoSync: true,
             serverFiltering: !!options.serverFiltering,
@@ -364,8 +370,8 @@ async function generateGrid(data, model, columns) {
                                 data: JSON.stringify(transportOptions.data)
                             }).then(function (customQueryResults) {
                                 if (customQueryResults.data) {
-                                    for (var i = 0; i < customQueryResults.data.length; i++) {
-                                        var row = customQueryResults.data[i];
+                                    for (let i = 0; i < customQueryResults.data.length; i++) {
+                                        let row = customQueryResults.data[i];
                                         if (!row.property_) {
                                             row.property_ = {};
                                         }
@@ -436,7 +442,7 @@ async function generateGrid(data, model, columns) {
                             entityType: "{entityType}"
                         };
 
-                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
+                        let encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
@@ -446,7 +452,7 @@ async function generateGrid(data, model, columns) {
                             }
                             itemModel.details.push(transportOptions.data);
                         } else {
-                            var nonFieldProperties = [
+                            const nonFieldProperties = [
                                 "id",
                                 "published_environment",
                                 "publishedenvironment",
@@ -468,7 +474,7 @@ async function generateGrid(data, model, columns) {
                                 "changed_by",
                                 "changedby"
                             ];
-                            for (var key in transportOptions.data) {
+                            for (let key in transportOptions.data) {
                                 if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key.toLowerCase()) > -1) {
                                     continue;
                                 }
@@ -490,14 +496,16 @@ async function generateGrid(data, model, columns) {
                                 }
 
                                 if (kendoComponent && kendoComponent.columns) {
-                                    for (var i = 0; i < kendoComponent.columns.length; i++) {
-                                        var column = kendoComponent.columns[i];
+                                    for (let i = 0; i < kendoComponent.columns.length; i++) {
+                                        let column = kendoComponent.columns[i];
+                                        
                                         if ((column.field + "_input") !== key || !column.values || !column.values.length) {
                                             continue;
                                         }
 
-                                        for (var i2 = 0; i2 < column.values.length; i2++) {
-                                            var columnDataItem = column.values[i2];
+                                        for (let i2 = 0; i2 < column.values.length; i2++) {
+                                            let columnDataItem = column.values[i2];
+                                            
                                             if (transportOptions.data[key.replace("_input", "")] !== columnDataItem.value) {
                                                 continue;
                                             }
@@ -507,9 +515,10 @@ async function generateGrid(data, model, columns) {
                                     }
                                 }
 
-                                var isLinkProperty = false;
+                                let isLinkProperty = false;
+                                
                                 if (columns && columns.length) {
-                                    for (var i = 0; i < columns.length; i++) {
+                                    for (let i = 0; i < columns.length; i++) {
                                         if (columns[i].field !== key) {
                                             continue;
                                         }
@@ -535,10 +544,11 @@ async function generateGrid(data, model, columns) {
                             contentType: "application/json",
                             dataType: "json",
                             data: JSON.stringify(itemModel)
-                        }).then(function (result) {
+                        }).then((result) => {
                             if (transportOptions.data && transportOptions.data.details) {
-                                for (var i = 0; i < transportOptions.data.details.length; i++) {
-                                    var currentField = transportOptions.data.details[i];
+                                for (let i = 0; i < transportOptions.data.details.length; i++) {
+                                    let currentField = transportOptions.data.details[i];
+                                    
                                     if (currentField.key !== "__ordering") {
                                         continue;
                                     }
@@ -549,14 +559,17 @@ async function generateGrid(data, model, columns) {
 
                             // notify the data source that the request succeeded
                             transportOptions.success(transportOptions.data);
+                            
                             if (options.fieldGroupName) {
                                 // Reload the grid, so that we have the IDs of all the items.
                                 kendoComponent.dataSource.read();
                             }
+                            
                             loader.removeClass("loading");
-                        }).catch(function (jqXHR, textStatus, errorThrown) {
+                        }).catch((jqXHR, textStatus, errorThrown) => {
                             console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                             loader.removeClass("loading");
+                            
                             // notify the data source that the request failed
                             kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
                             transportOptions.error(jqXHR);
@@ -564,6 +577,7 @@ async function generateGrid(data, model, columns) {
                     } catch (exception) {
                         console.error(exception);
                         loader.removeClass("loading");
+                        
                         kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'. Probeer het a.u.b. nogmaals, of neem contact op met ons.");
                         transportOptions.error(exception);
                     }
@@ -594,10 +608,10 @@ async function generateGrid(data, model, columns) {
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(itemModel)
-                            }).then(function (result) {
+                            }).then((result) => {
                                 if (transportOptions.data && transportOptions.data.details) {
-                                    for (var i = 0; i < transportOptions.data.details.length; i++) {
-                                        var currentField = transportOptions.data.details[i];
+                                    for (let i = 0; i < transportOptions.data.details.length; i++) {
+                                        let currentField = transportOptions.data.details[i];
                                         if (currentField.key !== "__ordering") {
                                             continue;
                                         }
@@ -609,7 +623,7 @@ async function generateGrid(data, model, columns) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(transportOptions.data);
                                 loader.removeClass("loading");
-                            }).catch(function (jqXHR, textStatus, errorThrown) {
+                            }).catch((jqXHR, textStatus, errorThrown) => {
                                 console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                                 loader.removeClass("loading");
                                 // notify the data source that the request failed
@@ -625,11 +639,11 @@ async function generateGrid(data, model, columns) {
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function (result) {
+                            }).then((result) => {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).catch(function (jqXHR, textStatus, errorThrown) {
+                            }).catch((jqXHR, textStatus, errorThrown) => {
                                 // notify the data source that the request failed
                                 transportOptions.error(jqXHR);
                                 loader.removeClass("loading");
@@ -654,12 +668,15 @@ async function generateGrid(data, model, columns) {
                                 details: [],
                                 entityType: "{entityType}"
                             };
-                            var encryptedId = "{itemIdEncrypted}";
+                            
+                            let encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            
                             // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
                             if (options.languageCode) {
                                 transportOptions.data.languageCode = options.languageCode;
                             }
+                            
                             transportOptions.data.value = null;
                             transportOptions.data.key = "";
                             itemModel.details.push(transportOptions.data);
@@ -670,10 +687,10 @@ async function generateGrid(data, model, columns) {
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(itemModel)
-                            }).then(function (result) {
+                            }).then((result) => {
                                 if (transportOptions.data && transportOptions.data.details) {
-                                    for (var i = 0; i < transportOptions.data.details.length; i++) {
-                                        var currentField = transportOptions.data.details[i];
+                                    for (let i = 0; i < transportOptions.data.details.length; i++) {
+                                        let currentField = transportOptions.data.details[i];
                                         if (currentField.key !== "__ordering") {
                                             continue;
                                         }
@@ -685,7 +702,7 @@ async function generateGrid(data, model, columns) {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(transportOptions.data);
                                 loader.removeClass("loading");
-                            }).catch(function (jqXHR, textStatus, errorThrown) {
+                            }).catch((jqXHR, textStatus, errorThrown)=> {
                                 console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
                                 loader.removeClass("loading");
                                 // notify the data source that the request failed
@@ -701,11 +718,11 @@ async function generateGrid(data, model, columns) {
                                 contentType: "application/json",
                                 dataType: "json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function (result) {
+                            }).then((result) => {
                                 // notify the data source that the request succeeded
                                 transportOptions.success(result);
                                 loader.removeClass("loading");
-                            }).catch(function (jqXHR, textStatus, errorThrown) {
+                            }).catch( (jqXHR, textStatus, errorThrown) => {
                                 // notify the data source that the request failed
                                 transportOptions.error(jqXHR);
                                 loader.removeClass("loading");
@@ -761,14 +778,14 @@ async function generateGrid(data, model, columns) {
         filterMenuOpen: window.dynamicItems.grids.onFilterMenuOpen,
         columnHide: (event) => window.dynamicItems.grids.saveGridViewColumnsState("sub_entities_grid_columns_{propertyId}", event.sender),
         columnShow: (event) => window.dynamicItems.grids.saveGridViewColumnsState("sub_entities_grid_columns_{propertyId}", event.sender),
-        excelExport: function (e) {
+        excelExport: (e) => {
             loader.removeClass("loading");
         },
-        dataBinding: function (e) {
+        dataBinding: (e) => {
             dataBindingType = e.action;
 
             // Remember the current selected cell, because the focus will be lost after the data has been bound.
-            var current = e.sender.current() || [];
+            let current = e.sender.current() || [];
             if (current[0]) {
                 cellIndex = current.index();
                 rowIndex = current.parent().index();
@@ -784,20 +801,22 @@ async function generateGrid(data, model, columns) {
             }
 
             // Setup any progress bars.
-            event.sender.tbody.find(".progress").each(function (e) {
-                var row = $(this).closest("tr");
-                var columnIndex = $(this).closest("td").index();
+            event.sender.tbody.find(".progress").each((e) => {
+                let row = $(this).closest("tr");
+                
+                let columnIndex = $(this).closest("td").index();
                 if (columnIndex < 0 || columnIndex >= columns.length) {
                     console.warn("Found progress bar in column " + columnIndex.toString() + " but couldn't find the corresponding column in grid.options.columns.");
                     return;
                 }
 
-                var column = columns[columnIndex];
-                var model = event.sender.dataItem(row);
-                var value = parseInt(model[column.field]) || 0;
+                let column = columns[columnIndex];
+                let model = event.sender.dataItem(row);
+                let value = parseInt(model[column.field]) || 0;
+                
                 column.progressBarSettings = column.progressBarSettings || {};
 
-                var progressBar = $(this).kendoProgressBar({
+                const progressBar = $(this).kendoProgressBar({
                     max: column.progressBarSettings.maxProgress || 100,
                     value: value
                 }).data("kendoProgressBar");
@@ -806,12 +825,12 @@ async function generateGrid(data, model, columns) {
                     return;
                 }
 
-                var progressColors = column.progressBarSettings.progressColors.sort(function (a, b) {
+                let progressColors = column.progressBarSettings.progressColors.sort(function (a, b) {
                     return b.max - a.max;
                 });
 
-                for (var i = 0; i < progressColors.length; i++) {
-                    var progressColor = progressColors[i];
+                for (let i = 0; i < progressColors.length; i++) {
+                    let progressColor = progressColors[i];
                     if (value <= progressColor.max) {
                         progressBar.progressWrapper.css({
                             "background-color": progressColor.background,
@@ -834,19 +853,20 @@ async function generateGrid(data, model, columns) {
             }
 
             // Re-focus en edit the cell that was previously selected.
-            var cellToFocus = event.sender.tbody.children().eq(rowIndex).children().eq(cellIndex);
+            let cellToFocus = event.sender.tbody.children().eq(rowIndex).children().eq(cellIndex);
             event.sender.current(cellToFocus);
             event.sender.editCell(cellToFocus);
 
             if (dataBindingType === "sync") {
                 return;
             }
+            
             rowIndex = cellIndex = null;
 
             // Reset the edit count back to 0.
             editCount = 0;
         },
-        edit: function (e) {
+        edit: (e) => {
             // If the model is dirty, it means there is a change in the current data row.
             // If that is the case while this edit event is called, it means that the user changed a value and then started editting again.
             // Therefor we update the editCount, so that the dataBound event re-focusses this cell so that the user can keep editting.
@@ -857,13 +877,14 @@ async function generateGrid(data, model, columns) {
             // This will remove the min and max attributes from a kendo numeric text box.
             // For some reason, these numeric textboxes often get a min and max of 0, meaning that you can't enter any value other than 0.
             // I was not able to figure out the cause of this, so I made this work around.
-            var kendoNumericTextBox = e.container.find("input[data-type=number]").data("kendoNumericTextBox");
+            let  kendoNumericTextBox = e.container.find("input[data-type=number]").data("kendoNumericTextBox");
+            
             if (kendoNumericTextBox) {
                 kendoNumericTextBox.min(null);
                 kendoNumericTextBox.max(null);
             }
         },
-        save: function (e) {
+        save: (e) => {
             if (options.refreshGridAfterInlineEdit) {
                 e.sender.one("dataBound", function () {
                     e.sender.dataSource.read();
@@ -888,15 +909,15 @@ async function generateGrid(data, model, columns) {
 
     kendoComponent.thead.kendoTooltip({
         filter: "th",
-        content: function (event) {
-            var target = event.target; // element for which the tooltip is shown
+        content: (event) => {
+            const target = event.target; // element for which the tooltip is shown
             return $(target).text();
         }
     });
 
     if (!options.disableOpeningOfItems) {
-        field.on("dblclick", "tbody tr[data-uid] td", function (event) {
-            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false);
+        field.on("dblclick", "tbody tr[data-uid] td", (event) => {
+            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, false);
         });
     }
 
@@ -910,44 +931,41 @@ async function generateGrid(data, model, columns) {
         kendoComponent.table.kendoSortable({
             autoScroll: true,
             hint: function (element) {
-                var table = kendoComponent.table.clone(); // Clone the Grid table.
-                var wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
-                var wrapper = $("<div class='k-grid k-widget'></div>").width(wrapperWidth);
-                var hint;
-
+                const table = kendoComponent.table.clone(); // Clone the Grid table.
+                const wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
+                const wrapper = $("<div class='k-grid k-widget'></div>").width(wrapperWidth);
+                
                 table.find("thead").remove(); // Remove the Grid header from the hint.
                 table.find("tbody").empty(); // Remove the existing rows from the hint.
                 table.wrap(wrapper); // Wrap the table
                 table.append(element.clone().removeAttr("uid")); // Append the dragged element.
-
-                hint = table.parent(); // Get the wrapper.
-
-                return hint; // Return the hint element.
+                
+                return table.parent(); // Return the hint element.
             },
             cursor: "move",
-            placeholder: function (element) {
+            placeholder: (element) => {
                 return element.clone().addClass("k-state-hover").css("opacity", 0.65);
             },
             container: "#overviewGrid{propertyIdWithSuffix}",
             filter: ">tbody >tr",
             change: function (e) {
                 // Kendo starts ordering with 0, but wiser starts with 1.
-                var oldIndex = e.oldIndex + 1; // The old position.
-                var newIndex = e.newIndex + 1; // The new position.
-                var view = kendoComponent.dataSource.view();
-                var dataItem = kendoComponent.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
+                const oldIndex = e.oldIndex + 1; // The old position.
+                const newIndex = e.newIndex + 1; // The new position.
+                const view = kendoComponent.dataSource.view();
+                const dataItem = kendoComponent.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
 
                 dataItem.__ordering = newIndex; // Update the order
                 dataItem.dirty = true;
 
                 // Shift the order of the records.
                 if (oldIndex < newIndex) {
-                    for (var i = oldIndex + 1; i <= newIndex; i++) {
+                    for (let i = oldIndex + 1; i <= newIndex; i++) {
                         view[i - 1].__ordering--;
                         view[i - 1].dirty = true;
                     }
                 } else {
-                    for (var i = oldIndex - 1; i >= newIndex; i--) {
+                    for (let i = oldIndex - 1; i >= newIndex; i--) {
                         view[i - 1].__ordering++;
                         view[i - 1].dirty = true;
                     }

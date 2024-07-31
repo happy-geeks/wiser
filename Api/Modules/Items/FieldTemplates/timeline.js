@@ -1,15 +1,16 @@
 ﻿(function () {
-    var field = $("#timeline{propertyIdWithSuffix}");
-    var loader = field.closest(".item").find(".field-loader");
-    var optionsFromProperty = {options};
-    var disableOpeningOfItems = optionsFromProperty.disableOpeningOfItems;
-    var html = $("#eventTemplate_{propertyIdWithSuffix}").html();
+    const field = $("#timeline{propertyIdWithSuffix}");
+    const loader = field.closest(".item").find(".field-loader");
+    const optionsFromProperty = {options};
+    const disableOpeningOfItems = optionsFromProperty.disableOpeningOfItems;
+    
+    let html = $("#eventTemplate_{propertyIdWithSuffix}").html();
 
     if (disableOpeningOfItems) {
         html = html.replace("openDetails", "openDetails hidden");
     }
 
-    var options = $.extend(true, {
+    const options = $.extend(true, {
         orientation: "horizontal",
         editable: false,
         eventTemplate: kendo.template(html),
@@ -52,19 +53,19 @@
             loader.removeClass("loading");
 
             // Default select last item
-            var lastEvent = event.sender.element.find(".k-timeline-track-item:last");
+            const lastEvent = event.sender.element.find(".k-timeline-track-item:last");
             event.sender.open(lastEvent);
 
             // Bind action to "open item" buttons
             if (!disableOpeningOfItems) {
-                field.on("click", ".openDetails", function (event) {
-                    var itemId = $(this).closest(".timelineEvent").data("itemid");
+                field.on("click", ".openDetails", (event) => {
+                    let itemId = $(this).closest(".timelineEvent").data("itemid");
                     window.dynamicItems.windows.loadItemInWindow(false, 0, itemId, options.entityType, "", false, null, options, 0);
                 });
             }
         }
     }, optionsFromProperty);
 
-    var kendoComponent = field.kendoTimeline(options).data("kendoTimeline");
+    const kendoComponent = field.kendoTimeline(options).data("kendoTimeline");
     {customScript}
 })();
