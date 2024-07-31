@@ -691,9 +691,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             {
                 await clientDatabaseConnection.BeginTransactionAsync();
                 WiserItemModel newItem = null;
-                var createInMainBranch = alsoCreateInMainBranch && !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
+                var createInBothDatabases = alsoCreateInMainBranch && !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
 
-                if (createInMainBranch)
+                // Create a new item in both the branch as the main database using the same ID.
+                if (createInBothDatabases)
                 {
                     using var scope = serviceProvider.CreateScope();
                     var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
@@ -714,15 +715,40 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         };
                     }
 
+                    // Hide the item by default to prevent it from being used in production.
                     item.PublishedEnvironment = Environments.Hidden;
                     
                     var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(item.EntityType);
                     var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
-                    item.Id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserItem}", mainDatabaseConnection, clientDatabaseConnection);
                     
-                    await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
-                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, saveHistory: false);
+                    // Check which Wiser item link table needs to be locked.
+                    clientDatabaseConnection.AddParameter("parentId", parentId);
+                    var queryResult = await clientDatabaseConnection.GetAsync($@"SELECT entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
+                    var destinationEntityType = "";
+                    if (queryResult.Rows.Count > 0)
+                    {
+                        destinationEntityType = queryResult.Rows[0].Field<string>("entity_type");
+                    }
+                    var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(0, item.EntityType, destinationEntityType);
+                    var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
 
+                    try
+                    {
+                        // Lock the tables in both databases to prevent a race condition when creating an item in both databases with the same ID.
+                        await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {tablePrefix}{WiserTableNames.WiserItem} WRITE, {tablePrefix}{WiserTableNames.WiserItem} item READ, {WiserTableNames.WiserUserRoles} user_role READ, {WiserTableNames.WiserPermission} permission READ, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ, {WiserTableNames.WiserLink} READ, {linkTablePrefix}{WiserTableNames.WiserItemLink} WRITE");
+                        await clientDatabaseConnection.ExecuteAsync($"LOCK TABLES {tablePrefix}{WiserTableNames.WiserItem} WRITE, {tablePrefix}{WiserTableNames.WiserItem} item READ, {WiserTableNames.WiserUserRoles} user_role READ, {WiserTableNames.WiserPermission} permission READ, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ, {WiserTableNames.WiserLink} READ, {linkTablePrefix}{WiserTableNames.WiserItemLink} WRITE");
+                        item.Id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserItem}", mainDatabaseConnection, clientDatabaseConnection);
+
+                        await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                        newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, saveHistory: false);
+                    }
+                    finally
+                    {
+                        await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+                        await clientDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+                    }
+                    
+                    // Set the environment on the branch. This will add an entry to the history to activate the item on production after a merge has been performed.
                     newItem.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
                     await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
                 }
@@ -742,7 +768,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     result.Icon = dataTable.Rows[0].Field<string>("icon");
                 }
 
-                if (newItem.Details != null && newItem.Details.Any() && !createInMainBranch)
+                if (newItem.Details != null && newItem.Details.Any() && !createInBothDatabases)
                 {
                     // Note: skipPermissionsCheck is set to true here, because otherwise the update permissions will be checked,
                     // but this is for creating an item and those permissions are already checked in the CreateAsync method that we call above.
