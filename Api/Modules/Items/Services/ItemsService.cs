@@ -751,6 +751,12 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     // Set the environment on the branch. This will add an entry to the history to activate the item on production after a merge has been performed.
                     newItem.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
                     await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
+                    
+                    // Add the mapping to the mappings table.
+                    await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
+                    clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
+                    clientDatabaseConnection.AddParameter("id", newItem.Id);
+                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {WiserTableNames.WiserIdMappings} (table_name, our_id, production_id) VALUES (?tableName, ?id, ?id)");
                 }
                 else
                 {
