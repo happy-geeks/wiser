@@ -1058,8 +1058,9 @@ export class Wiser {
      * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save).
      * @param {number} moduleId Optional: The id of the module in which the item should be created.
      * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
+     * @param {bool} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
      */
-    static async createItem(moduleSettings, entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
+    static async createItem(moduleSettings, entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null, alsoCreateInMainBranch = false) {
         try {
             const newItem = {
                 entityType: entityType,
@@ -1068,8 +1069,9 @@ export class Wiser {
             };
 
             const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
+            const alsoCreateInMainBranchPart = alsoCreateInMainBranch ? "&alsoCreateInMainBranch=true" : ""; // Only add parameter if it has been set.
             const createItemResult = await Wiser.api({
-                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true`,
+                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true${alsoCreateInMainBranchPart}`,
                 method: "POST",
                 contentType: "application/json",
                 dataType: "JSON",

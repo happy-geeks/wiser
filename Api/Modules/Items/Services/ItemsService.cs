@@ -14,6 +14,7 @@ using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.EntityProperties.Enums;
 using Api.Modules.EntityProperties.Interfaces;
 using Api.Modules.EntityTypes.Models;
@@ -21,6 +22,7 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
+using Api.Modules.Tenants.Helpers;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
@@ -36,6 +38,7 @@ using GeeksCoreLibrary.Modules.Languages.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Newtonsoft.Json;
@@ -63,6 +66,8 @@ namespace Api.Modules.Items.Services
         private readonly IEntityPropertiesService entityPropertiesService;
         private readonly IGoogleTranslateService googleTranslateService;
         private readonly IObjectsService objectsService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
@@ -81,7 +86,9 @@ namespace Api.Modules.Items.Services
                             ILanguagesService languagesService,
                             IEntityPropertiesService entityPropertiesService,
                             IGoogleTranslateService googleTranslateService,
-                            IObjectsService objectsService)
+                            IObjectsService objectsService,
+                            IServiceProvider serviceProvider,
+                            IBranchesService branchesService)
         {
             this.templatesService = templatesService;
             this.wiserTenantsService = wiserTenantsService;
@@ -98,6 +105,8 @@ namespace Api.Modules.Items.Services
             this.entityPropertiesService = entityPropertiesService;
             this.googleTranslateService = googleTranslateService;
             this.objectsService = objectsService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
@@ -663,7 +672,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1)
+        public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1, bool alsoCreateInMainBranch = false)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
@@ -681,9 +690,79 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             try
             {
                 await clientDatabaseConnection.BeginTransactionAsync();
+                WiserItemModel newItem = null;
+                var createInBothDatabases = alsoCreateInMainBranch && !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
 
-                //Create the new item (with the link)
-                var newItem = await wiserItemsService.CreateAsync(item, parentId ,userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber:linkType);
+                // Create a new item in both the branch as the main database using the same ID.
+                if (createInBothDatabases)
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+                    var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+                    var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                    await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+                    var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
+                    
+                    // Check if parent ID is in the mappings. If true use ID for main database, if false throw exception.
+                    var parentIdMainBranch = await branchesService.GetMappedIdAsync(parentId);
+
+                    if (parentIdMainBranch.ModelObject == null)
+                    {
+                        return new ServiceResult<CreateItemResultModel>
+                        {
+                            ErrorMessage = $"Failed to create item in main branch. Parent item with ID {parentId} does not exist in main branch and can therefore not (safely) be mapped.",
+                            StatusCode = HttpStatusCode.Forbidden
+                        };
+                    }
+
+                    // Hide the item by default to prevent it from being used in production.
+                    item.PublishedEnvironment = Environments.Hidden;
+                    
+                    var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(item.EntityType);
+                    var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
+                    
+                    // Check which Wiser item link table needs to be locked.
+                    clientDatabaseConnection.AddParameter("parentId", parentId);
+                    var queryResult = await clientDatabaseConnection.GetAsync($@"SELECT entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
+                    var destinationEntityType = "";
+                    if (queryResult.Rows.Count > 0)
+                    {
+                        destinationEntityType = queryResult.Rows[0].Field<string>("entity_type");
+                    }
+                    var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(0, item.EntityType, destinationEntityType);
+                    var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
+
+                    try
+                    {
+                        // Lock the tables in both databases to prevent a race condition when creating an item in both databases with the same ID.
+                        await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {tablePrefix}{WiserTableNames.WiserItem} WRITE, {tablePrefix}{WiserTableNames.WiserItem} item READ, {WiserTableNames.WiserUserRoles} user_role READ, {WiserTableNames.WiserPermission} permission READ, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ, {WiserTableNames.WiserLink} READ, {linkTablePrefix}{WiserTableNames.WiserItemLink} WRITE");
+                        await clientDatabaseConnection.ExecuteAsync($"LOCK TABLES {tablePrefix}{WiserTableNames.WiserItem} WRITE, {tablePrefix}{WiserTableNames.WiserItem} item READ, {WiserTableNames.WiserUserRoles} user_role READ, {WiserTableNames.WiserPermission} permission READ, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ, {WiserTableNames.WiserLink} READ, {linkTablePrefix}{WiserTableNames.WiserItemLink} WRITE");
+                        item.Id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserItem}", mainDatabaseConnection, clientDatabaseConnection);
+
+                        await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                        newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, saveHistory: false);
+                    }
+                    finally
+                    {
+                        await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+                        await clientDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+                    }
+                    
+                    // Set the environment on the branch. This will add an entry to the history to activate the item on production after a merge has been performed.
+                    newItem.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
+                    await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
+                    
+                    // Add the mapping to the mappings table.
+                    await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
+                    clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
+                    clientDatabaseConnection.AddParameter("id", newItem.Id);
+                    await clientDatabaseConnection.ExecuteAsync($"INSERT INTO {WiserTableNames.WiserIdMappings} (table_name, our_id, production_id) VALUES (?tableName, ?id, ?id)");
+                }
+                else
+                {
+                    //Create the new item (with the link)
+                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                }
 
                 result.NewItemId = newItem.EncryptedId;
                 result.NewItemIdPlain = newItem.Id;
@@ -695,7 +774,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     result.Icon = dataTable.Rows[0].Field<string>("icon");
                 }
 
-                if (newItem.Details != null && newItem.Details.Any())
+                if (newItem.Details != null && newItem.Details.Any() && !createInBothDatabases)
                 {
                     // Note: skipPermissionsCheck is set to true here, because otherwise the update permissions will be checked,
                     // but this is for creating an item and those permissions are already checked in the CreateAsync method that we call above.
@@ -719,6 +798,27 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
             }
 
             return new ServiceResult<CreateItemResultModel>(result);
+        }
+
+        /// <summary>
+        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
+        /// This is to make sure that the new ID can be created in both databases to match.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
+        /// <param name="branchDatabase">The connection to the branch database.</param>
+        /// <returns>The new ID that should be used for the item in both databases.</returns>
+        private async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        {
+            var query = $"SELECT MAX(id) AS id FROM {tableName}";
+            
+            var dataTable = await mainDatabaseConnection.GetAsync(query);
+            var maxMainId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+            
+            dataTable = await branchDatabase.GetAsync(query);
+            var maxBranchId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+
+            return Math.Max(maxMainId, maxBranchId) + 1;
         }
 
         /// <inheritdoc />

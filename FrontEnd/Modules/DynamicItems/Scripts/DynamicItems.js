@@ -2040,9 +2040,10 @@ const moduleSettings = {
          * @param {any} data Optional: The data to save with the new item.
          * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
          * @param {number} moduleId Optional: The id of the module in which the item should be created.
+         * @param {bool} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
          */
-        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
-            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId);
+        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null, alsoCreateInMainBranch = false) {
+            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId, alsoCreateInMainBranch);
         }
 
         /**

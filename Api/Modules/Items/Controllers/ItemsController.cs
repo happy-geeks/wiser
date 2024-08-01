@@ -153,9 +153,9 @@ namespace Api.Modules.Items.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1)
+        public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
         {
-            return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId, linkType)).GetHttpResponseMessage();
+            return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
         }
 
         /// <summary>
