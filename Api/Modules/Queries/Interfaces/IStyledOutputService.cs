@@ -12,6 +12,14 @@ namespace Api.Modules.Queries.Interfaces
     public interface IStyledOutputService
     {
         /// <summary>
+        /// Find a styled output id based on its name.
+        /// </summary>
+        /// <param name="name">The name from wiser_styled_output.</param>
+        /// <returns>The results the id of the found styled output or instead returns -1 when not found .</returns>
+        /// 
+        Task<int> GetStyledOutputIdFromNameAsync(string name);
+        
+        /// <summary>
         /// Find a styled output in the wiser_styled_output table and returns the result
         /// </summary>
         /// <param name="id">The ID from wiser_styled_output.</param>

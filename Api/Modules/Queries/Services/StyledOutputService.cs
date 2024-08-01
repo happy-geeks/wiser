@@ -74,6 +74,21 @@ namespace Api.Modules.Queries.Services
             this.logger = logger;
             this.branchesService = branchesService;
         }
+        
+        /// <inheritdoc />
+        public async Task<int> GetStyledOutputIdFromNameAsync(string name)
+        {
+            var formatQuery = $"SELECT id FROM `wiser_styled_output` WHERE `name` = {name.ToMySqlSafeValue(true)} LIMIT 1";
+            
+            var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
+            
+            if (dataTable.Rows.Count == 0)
+            {
+                return -1;
+            }
+n
+            return dataTable.Rows[0].Field<int>("id");
+        }
 
         /// <inheritdoc />
         public async Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null)
