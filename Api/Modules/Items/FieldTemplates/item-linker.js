@@ -36,15 +36,15 @@ field.find(".filterText").keyup((event) => {
 
     if (filterText !== "") {
         checkTreeElement.find(".k-group > li").hide();
-        checkTreeElement.find(".k-in:contains(" + filterText + ")").each(() => {
-            $(this).parents("ul, li").each( () => {
+        checkTreeElement.find(`.k-in:contains(${filterText})`).each((checkboxIndex, checkboxElement) => {
+            $(checkboxElement).parents("ul, li").each((listIndex, listElement) => {
                 const treeView = checkTreeElement.data("kendoTreeView");
-                treeView.expand($(this).parents("li"));
-                $(this).show();
+                treeView.expand($(listElement).parents("li"));
+                $(listElement).show();
             });
         });
 
-        checkTreeElement.find(".k-group .k-in:contains(" + filterText + ")").each( () => {
+        checkTreeElement.find(`.k-group .k-in:contains(${filterText})`).each( () => {
             $(this).parents("ul, li").each(() => {
                 $(this).show();
             });
