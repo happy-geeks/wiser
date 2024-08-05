@@ -7,6 +7,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
+using Api.Modules.Items.Models;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using Api.Modules.Tenants.Interfaces;
@@ -17,6 +19,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using Newtonsoft.Json.Linq;
 
@@ -31,17 +34,22 @@ namespace Api.Modules.Queries.Services
         private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         /// <summary>
         /// Creates a new instance of <see cref="QueriesService"/>.
         /// </summary>
-        public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
+        public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IServiceProvider serviceProvider, IBranchesService branchesService, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
+            this.databaseHelpersService = databaseHelpersService;
         }
-
 
         /// <inheritdoc />
         public async Task<ServiceResult<List<QueryModel>>> GetForExportModuleAsync(ClaimsIdentity identity)
@@ -159,7 +167,67 @@ WHERE query.id = ?id";
                 ShowInCommunicationModule = false,
                 RolesWithPermissions = ""
             };
+            
+            await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
+            
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
 
+            // for now we always create a query on both branch and main dbs
+            var createInBothDatabases = true;
+            
+            // Create a new item in both the branch as the main database using the same ID.
+            if (createInBothDatabases)
+            {
+                using var scope = serviceProvider.CreateScope();
+                var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+                var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+                var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+                var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
+                
+                var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
+                var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
+                
+                try
+                {
+                    var lockQuery = $"""
+                                     LOCK TABLES
+                                     ${tablePrefix}{WiserTableNames.WiserQuery} WRITE,
+                                     ${tablePrefix}{WiserTableNames.WiserQuery} item READ,
+                                     ${WiserTableNames.WiserUserRoles} user_role READ,
+                                     ${WiserTableNames.WiserPermission} permission READ,
+                                     """;
+
+                    // Lock the tables in both databases to prevent a race condition when creating an item in both databases with the same ID.
+                    await mainDatabaseConnection.ExecuteAsync(lockQuery);
+                    await clientDatabaseConnection.ExecuteAsync(lockQuery);
+
+                    ulong id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",
+                        mainDatabaseConnection, clientDatabaseConnection);
+                    queryModel.Id = Convert.ToInt32(id);
+
+                    mainDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
+                    clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
+
+                    mainDatabaseConnection.AddParameter("id", queryModel.Id);
+                    clientDatabaseConnection.AddParameter("id", queryModel.Id);
+
+                    var insertQuery = $"INSERT INTO {WiserTableNames.WiserIdMappings} (table_name, our_id, production_id) VALUES (?tableName, ?id, ?id)";
+                    await mainDatabaseConnection.ExecuteAsync(insertQuery);
+                    await clientDatabaseConnection.ExecuteAsync(insertQuery);
+                }
+                finally
+                {
+                    var unlockQuery = "UNLOCK TABLES";
+                    await mainDatabaseConnection.ExecuteAsync(unlockQuery);
+                    await clientDatabaseConnection.ExecuteAsync(unlockQuery);
+                }
+            }
+            else
+            {
+                newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+            }
+            
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("description", queryModel.Description);
@@ -357,6 +425,27 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
             }
 
             return new ServiceResult<JToken>(combinedResult);
+        }
+        
+        /// <summary>
+        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
+        /// This is to make sure that the new ID can be created in both databases to match.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
+        /// <param name="branchDatabase">The connection to the branch database.</param>
+        /// <returns>The new ID that should be used for the item in both databases.</returns>
+        private async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        {
+            var query = $"SELECT MAX(id) AS id FROM {tableName}";
+            
+            var dataTable = await mainDatabaseConnection.GetAsync(query);
+            var maxMainId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+            
+            dataTable = await branchDatabase.GetAsync(query);
+            var maxBranchId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+
+            return Math.Max(maxMainId, maxBranchId) + 1;
         }
 
         /// <summary>
