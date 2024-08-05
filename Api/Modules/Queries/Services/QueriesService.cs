@@ -167,52 +167,89 @@ WHERE query.id = ?id";
                 ShowInCommunicationModule = false,
                 RolesWithPermissions = ""
             };
-            
-            await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
-            
-            var tenant = await wiserTenantsService.GetSingleAsync(identity);
 
-            // for now we always create a query on both branch and main dbs
-            var createInBothDatabases = true;
+            await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
+
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var onBranch = !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
             
+            // for now we always create a query on both branch and main dbs if we are on a branch
+            var createInBothDatabases = onBranch;
+
             // Create a new item in both the branch as the main database using the same ID.
             if (createInBothDatabases)
             {
                 using var scope = serviceProvider.CreateScope();
                 var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
                 var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
-                var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                var mainBranchConnectionString =
+                    wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
                 await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
-                var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
-                
+
                 var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
                 var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
-                
+
                 try
                 {
                     var lockQuery = $"""
                                      LOCK TABLES
-                                     ${tablePrefix}{WiserTableNames.WiserQuery} WRITE,
-                                     ${tablePrefix}{WiserTableNames.WiserQuery} item READ,
-                                     ${WiserTableNames.WiserUserRoles} user_role READ,
-                                     ${WiserTableNames.WiserPermission} permission READ,
+                                     {tablePrefix}{WiserTableNames.WiserQuery} WRITE,
+                                     {tablePrefix}{WiserTableNames.WiserQuery} item READ,
+                                     {WiserTableNames.WiserUserRoles} user_role READ,
+                                     {WiserTableNames.WiserPermission} permission READ,
+                                     {tablePrefix}{WiserTableNames.WiserIdMappings} WRITE
                                      """;
 
                     // Lock the tables in both databases to prevent a race condition when creating an item in both databases with the same ID.
                     await mainDatabaseConnection.ExecuteAsync(lockQuery);
                     await clientDatabaseConnection.ExecuteAsync(lockQuery);
 
-                    ulong id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",
-                        mainDatabaseConnection, clientDatabaseConnection);
-                    queryModel.Id = Convert.ToInt32(id);
+                    int id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}", mainDatabaseConnection, clientDatabaseConnection);
+                    queryModel.Id = id;
+                    
+                    var itemInsertQuery = $@"INSERT INTO {WiserTableNames.WiserQuery}
+                    (
+                        id,
+                        description,
+                        query,
+                        show_in_export_module,
+                        show_in_communication_module
+                    )
+                    VALUES
+                    (
+                        ?id,
+                        ?description,
+                        ?query,
+                        ?show_in_export_module,
+                        ?show_in_communication_module
+                    );";
+                    
+                    await mainDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+                    mainDatabaseConnection.ClearParameters();
+                    mainDatabaseConnection.AddParameter("id", queryModel.Id);
+                    mainDatabaseConnection.AddParameter("description", queryModel.Description);
+                    mainDatabaseConnection.AddParameter("query", queryModel.Query);
+                    mainDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
+                    mainDatabaseConnection.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
+                    await mainDatabaseConnection.ExecuteAsync(itemInsertQuery);
+                    
+                    await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+                    clientDatabaseConnection.ClearParameters();
+                    clientDatabaseConnection.AddParameter("id", queryModel.Id);
+                    clientDatabaseConnection.AddParameter("description", queryModel.Description);
+                    clientDatabaseConnection.AddParameter("query", queryModel.Query);
+                    clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
+                    clientDatabaseConnection.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
+                    await clientDatabaseConnection.ExecuteAsync(itemInsertQuery);
 
-                    mainDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
-                    clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
+                    mainDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserQuery}");
+                    clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserQuery}");
 
                     mainDatabaseConnection.AddParameter("id", queryModel.Id);
                     clientDatabaseConnection.AddParameter("id", queryModel.Id);
-
-                    var insertQuery = $"INSERT INTO {WiserTableNames.WiserIdMappings} (table_name, our_id, production_id) VALUES (?tableName, ?id, ?id)";
+               
+                    var insertQuery =
+                        $"INSERT INTO {WiserTableNames.WiserIdMappings} (table_name, our_id, production_id) VALUES (?tableName, ?id, ?id)";
                     await mainDatabaseConnection.ExecuteAsync(insertQuery);
                     await clientDatabaseConnection.ExecuteAsync(insertQuery);
                 }
@@ -225,51 +262,51 @@ WHERE query.id = ?id";
             }
             else
             {
-                newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+                clientDatabaseConnection.ClearParameters();
+                clientDatabaseConnection.AddParameter("description", queryModel.Description);
+                clientDatabaseConnection.AddParameter("query", queryModel.Query);
+                clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
+                clientDatabaseConnection.AddParameter("show_in_communication_module",
+                queryModel.ShowInCommunicationModule);
+
+                var query = $@"INSERT INTO {WiserTableNames.WiserQuery}
+                    (
+                        description,
+                        query,
+                        show_in_export_module,
+                        show_in_communication_module
+                    )
+                    VALUES
+                    (
+                        ?description,
+                        ?query,
+                        ?show_in_export_module,
+                        ?show_in_communication_module
+                    );
+                    SELECT LAST_INSERT_ID();";
+                
+                try
+                {
+                    var dataTable = await clientDatabaseConnection.GetAsync(query);
+                    queryModel.Id = Convert.ToInt32(dataTable.Rows[0][0]);
+                }
+                catch (MySqlException mySqlException)
+                {
+                    if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                    {
+                        return new ServiceResult<QueryModel>
+                        {
+                            StatusCode = HttpStatusCode.Conflict,
+                            ErrorMessage =
+                                $"An entry already exists with {nameof(queryModel.Description)} = '{queryModel.Description}'"
+                        };
+                    }
+
+                    throw;
+                }
             }
             
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("description", queryModel.Description);
-            clientDatabaseConnection.AddParameter("query", queryModel.Query);
-            clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
-            clientDatabaseConnection.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
-
-            var query = $@"INSERT INTO {WiserTableNames.WiserQuery}
-(
-    description,
-    query,
-    show_in_export_module,
-    show_in_communication_module
-)
-VALUES
-(
-    ?description,
-    ?query,
-    ?show_in_export_module,
-    ?show_in_communication_module
-);
-SELECT LAST_INSERT_ID();";
-
-            try
-            {
-                var dataTable = await clientDatabaseConnection.GetAsync(query);
-                queryModel.Id = Convert.ToInt32(dataTable.Rows[0][0]);
-            }
-            catch (MySqlException mySqlException)
-            {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
-                {
-                    return new ServiceResult<QueryModel>
-                    {
-                        StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(queryModel.Description)} = '{queryModel.Description}'"
-                    };
-                }
-
-                throw;
-            }
-
             return new ServiceResult<QueryModel>(queryModel);
         }
 
@@ -435,15 +472,17 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
         /// <param name="mainDatabaseConnection">The connection to the main database.</param>
         /// <param name="branchDatabase">The connection to the branch database.</param>
         /// <returns>The new ID that should be used for the item in both databases.</returns>
-        private async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        private async Task<int> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
         {
             var query = $"SELECT MAX(id) AS id FROM {tableName}";
             
             var dataTable = await mainDatabaseConnection.GetAsync(query);
-            var maxMainId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+            var value = dataTable.Rows[0].Field<int>("id");
+            var maxMainId = dataTable.Rows.Count > 0 ? value : 0;
             
             dataTable = await branchDatabase.GetAsync(query);
-            var maxBranchId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("id") : 0UL;
+            value = dataTable.Rows[0].Field<int>("id");
+            var maxBranchId = dataTable.Rows.Count > 0 ? value : 0;
 
             return Math.Max(maxMainId, maxBranchId) + 1;
         }
