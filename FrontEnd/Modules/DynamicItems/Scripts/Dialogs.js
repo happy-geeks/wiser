@@ -38,7 +38,7 @@ export class Dialogs {
             ]
         }).data("kendoDialog");
         
-        if ((await window.parent.main.branchesService.isMainBranch()).data && this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row").length > 0) {
+        if ((await window.main.branchesService.isMainBranch()).data && this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row").length > 0) {
             this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row")[0].classList.add("hidden");
         }
 
