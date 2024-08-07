@@ -30,9 +30,11 @@ if (options.fieldGroupName) {
 }
 
 if (customQueryGrid) {
-    Wiser.api({ 
-        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}` 
-    }).then(function(customQueryResults) {
+    try
+    {
+        let result = Wiser.api({ 
+            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}` 
+        }).then(function(customQueryResults) {
         if (customQueryResults.extraJavascript) {
             jQuery.globalEval(customQueryResults.extraJavascript);
         }
@@ -63,7 +65,7 @@ if (customQueryGrid) {
                     iconClass: "k-icon k-i-hyperlink-open",
                     text: "",
                     title: "Item openen",
-                    click: (event)=> { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, false); }
+                    click: (event)=> { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
                 });
                 
                 if (options.allowOpeningOfItemsInNewTab) {
@@ -74,7 +76,7 @@ if (customQueryGrid) {
                         iconClass: "k-icon k-i-window",
                         text: "",
                         title: "Item openen in nieuwe tab",
-                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, this.options, true); }
+                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
                     });
                 }
             }
@@ -86,7 +88,7 @@ if (customQueryGrid) {
                     name: "remove",
                     text: "",
                     iconClass: "k-icon k-i-delete",
-                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, this.options.deletionOfItems, this.options); }
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, this.options); }
                 });
             } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
                 commandColumnWidth += 120;
@@ -368,7 +370,7 @@ async function generateGrid(data, model, columns) {
                                 method: "POST",
                                 contentType: "application/json",
                                 data: JSON.stringify(transportOptions.data)
-                            }).then(function (customQueryResults) {
+                            }).then((customQueryResults) => {
                                 if (customQueryResults.data) {
                                     for (let i = 0; i < customQueryResults.data.length; i++) {
                                         let row = customQueryResults.data[i];

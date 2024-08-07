@@ -18,7 +18,7 @@ let options = $.extend(true, {
             read: (transportOptions) => {
                 Wiser.api({
                     method: "POST",
-                    url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
+                    url: `${dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/action-button/{propertyId}?queryId=${encodeURIComponent(optionsFromProperty.queryId || 0)}&&itemLinkId={itemLinkId}`,
                     contentType: "application/json"
                 }).then(function(queryResults) {
                     if (!queryResults || !queryResults.otherData) {
