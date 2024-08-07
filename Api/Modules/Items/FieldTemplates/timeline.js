@@ -1,4 +1,4 @@
-﻿(function () {
+﻿(() => {
     const field = $("#timeline{propertyIdWithSuffix}");
     const loader = field.closest(".item").find(".field-loader");
     const optionsFromProperty = {options};
@@ -59,7 +59,7 @@
             // Bind action to "open item" buttons
             if (!disableOpeningOfItems) {
                 field.on("click", ".openDetails", (event) => {
-                    let itemId = $(this).closest(".timelineEvent").data("itemid");
+                    let itemId = $(event.currentTarget).closest(".timelineEvent").data("itemid");
                     window.dynamicItems.windows.loadItemInWindow(false, 0, itemId, options.entityType, "", false, null, options, 0);
                 });
             }
