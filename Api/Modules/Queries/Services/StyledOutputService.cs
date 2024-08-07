@@ -86,7 +86,7 @@ namespace Api.Modules.Queries.Services
             {
                 return -1;
             }
-n
+
             return dataTable.Rows[0].Field<int>("id");
         }
 

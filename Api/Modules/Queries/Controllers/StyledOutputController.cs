@@ -42,7 +42,7 @@ namespace Api.Modules.Queries.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetStyledOutputResultJson(int id, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
+        public async Task<IActionResult> GetStyledOutputResultJsonAsync(int id, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
         {
             return (await styledOutputService.GetStyledOutputResultJsonAsync((ClaimsIdentity) User.Identity, id, parameters, stripNewlinesAndTabs, resultsPerPage, page)).GetHttpResponseMessage();
         }
@@ -56,7 +56,7 @@ namespace Api.Modules.Queries.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetStyledOutputResultJson(string name, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
+        public async Task<IActionResult> GetStyledOutputResultJsonAsync(string name, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
         {
             var id = await styledOutputService.GetStyledOutputIdFromNameAsync(name);
             

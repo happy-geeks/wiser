@@ -16,7 +16,6 @@ namespace Api.Modules.Queries.Interfaces
         /// </summary>
         /// <param name="name">The name from wiser_styled_output.</param>
         /// <returns>The results the id of the found styled output or instead returns -1 when not found .</returns>
-        /// 
         Task<int> GetStyledOutputIdFromNameAsync(string name);
         
         /// <summary>
@@ -29,7 +28,6 @@ namespace Api.Modules.Queries.Interfaces
         /// <param name="page">the page number used in pagination-supported styled outputs.</param>
         /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null</param>
         /// <returns>The results of the query .</returns>
-        /// 
         Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null);
     }
 }
