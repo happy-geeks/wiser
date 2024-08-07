@@ -1037,7 +1037,7 @@ const moduleSettings = {
             try {
                 kendo.prompt("Vul een naam in").then((name) => {
                     // Using then instead of async/await, because kendo can't handle async events.
-                    Wiser.createItem(this.settings, "filedirectory", parentId, name, null, [], true).then((createItemResult) => {
+                    Wiser.createItem(this.settings, "filedirectory", parentId, name, null, [], true, null, true).then((createItemResult) => {
                         if (!createItemResult) {
                             kendo.alert("Er iets iets fout gegaan tijdens het aanmaken van de map. Probeer het a.u.b. opnieuw of neem contact op met ons.");
                         } else {
@@ -1049,7 +1049,7 @@ const moduleSettings = {
                 });
             } catch (exception) {
                 console.error(exception);
-                kendo.alert("Er iets iets fout gegaan tijdens het aanmaken van de map. Probeer het a.u.b. opnieuw of neem contact op met ons.");
+                kendo.alert("Er is iets fout gegaan tijdens het aanmaken van de map. Probeer het a.u.b. opnieuw of neem contact op met ons.");
             }
         }
 

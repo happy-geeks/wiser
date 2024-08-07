@@ -326,21 +326,68 @@ namespace Api.Modules.Files.Services
                 return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
             }
             
+            // Check if directory ID is in the mappings. If true use ID for main database, if false throw exception.
+            var directoryIdMainBranch = await branchesService.GetMappedIdAsync(itemId);
+
+            if (directoryIdMainBranch == null)
+            {
+                return new ServiceResult<FileModel>
+                {
+                    ErrorMessage = $"Failed to upload file in main branch. Directory with ID {itemId} does not exist in main branch and can therefore not (safely) be mapped.",
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
             using var scope = serviceProvider.CreateScope();
             var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
             var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
             var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
             await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
-            
-            await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
-            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false);
+
+            try
+            {
+                await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
+                await databaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
+                
+                var fileId = await branchesService.GenerateNewIdAsync(WiserTableNames.WiserItemFile, mainDatabaseConnection, databaseConnection);
+
+                await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId);
+                return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false, fileId);
+            }
+            finally
+            {
+                await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+                await databaseConnection.ExecuteAsync("UNLOCK TABLES");
+            }
         }
 
-        private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true)
+        /// <summary>
+        /// Save the Wiser item file to the provided database.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="dbConnection">The <see cref="IDatabaseConnection"/> to use when saving the file to the database.</param>
+        /// <param name="username">The name of the user saving the file.</param>
+        /// <param name="itemId">The ID of the item the file should be linked to.</param>
+        /// <param name="itemLinkId">If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <param name="entityType">When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
+        /// <param name="linkType">When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+        /// <param name="title">The title/description of the file.</param>
+        /// <param name="fileBytes">The file contents.</param>
+        /// <param name="content">The content to save if the file itself needs to be saved in the database.</param>
+        /// <param name="contentUrl">The URL to the file if the file itself does not need to be saved in the database.</param>
+        /// <param name="fileExtension">The extension of the file.</param>
+        /// <param name="contentType">The content type of the file.</param>
+        /// <param name="fileName">The name of the file.</param>
+        /// <param name="propertyName">The name of the property that contains the file upload.</param>
+        /// <param name="saveHistory">Optional: If the history of the file needs to be saved.</param>
+        /// <param name="fileId">Optional: If an ID is provided the file will be inserted on that ID instead of using the auto increment.</param>
+        /// <returns>An object of <see cref="FileModel"/> with file data.</returns>
+        private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true, ulong fileId = 0)
         {
             dbConnection.ClearParameters();
             var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
             var tablePrefix = "";
+            
             if (itemLinkId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
@@ -365,6 +412,12 @@ namespace Api.Modules.Files.Services
             {
                 dbConnection.AddParameter("content", content);
                 columnsForInsertQuery.Add("content");
+            }
+
+            if (fileId > 0)
+            {
+                dbConnection.AddParameter("id", fileId);
+                columnsForInsertQuery.Insert(0, "id");
             }
 
             dbConnection.AddParameter("content_url", contentUrl);
@@ -394,7 +447,7 @@ AND property_name = ?property_name";
 SET @_username = ?added_by;
 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
-SELECT LAST_INSERT_ID() AS newId;";
+SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             var newItem = await dbConnection.GetAsync(query);
 
             var result = new FileModel
