@@ -16,6 +16,9 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Databases.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MySqlConnector;
 
 namespace Api.Modules.EntityTypes.Services
@@ -27,21 +30,50 @@ namespace Api.Modules.EntityTypes.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesService"/>.
         /// </summary>
-        public EntityTypesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService)
+        public EntityTypesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService, IServiceProvider serviceProvider)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.databaseHelpersService = databaseHelpersService;
+            this.serviceProvider = serviceProvider;
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0)
+        public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0, int branchId = 0)
         {
+            using var scope = serviceProvider.CreateScope();
+            var databaseConnectionToUse = clientDatabaseConnection;
+            var databaseHelpersServiceToUse = this.databaseHelpersService;
+
+            if (branchId > 0)
+            {
+                var currentTenant = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
+                var selectedEnvironmentTenant = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
+
+                // Only allow users to get the entities of their own branches.
+                if (currentTenant.TenantId != selectedEnvironmentTenant.TenantId)
+                {
+                    return new ServiceResult<List<EntityTypeModel>>
+                    {
+                        StatusCode = HttpStatusCode.Forbidden
+                    };
+                }
+
+                var connectionString = wiserTenantsService.GenerateConnectionStringFromTenant(selectedEnvironmentTenant);
+                var branchDatabaseConnection = scope.ServiceProvider.GetService<MySqlDatabaseConnection>();
+                await branchDatabaseConnection.ChangeConnectionStringsAsync(connectionString);
+                databaseConnectionToUse = branchDatabaseConnection;
+
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<MySqlDatabaseHelpersService>>();
+                databaseHelpersServiceToUse = new MySqlDatabaseHelpersService(databaseConnectionToUse, logger);
+            }
+
             var result = new List<EntityTypeModel>();
             var query = $@"SELECT 
 	entity.name, 
@@ -57,9 +89,9 @@ WHERE entity.`name` <> ''
 GROUP BY entity.`name`
 ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', entity.name, entity.friendly_name), IF(module.`name` IS NULL, '', CONCAT(' (', module.`name`, ')'))) ASC";
 
-            clientDatabaseConnection.AddParameter("moduleId", moduleId);
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            databaseConnectionToUse.AddParameter("moduleId", moduleId);
+            await databaseConnectionToUse.EnsureOpenConnectionForReadingAsync();
+            var dataTable = await databaseConnectionToUse.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
                 return new ServiceResult<List<EntityTypeModel>>(result);
@@ -83,18 +115,20 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                 foreach (var group in result.GroupBy(entity => entity.DedicatedTablePrefix))
                 {
                     var tableName = $"{group.Key}{WiserTableNames.WiserItem}";
-                    if (!await databaseHelpersService.TableExistsAsync(tableName))
+                    if (!await databaseHelpersServiceToUse.TableExistsAsync(tableName))
                     {
                         continue;
                     }
 
                     //  Count the amount of entity types per type per table.
-                    query = $@"SELECT entity_type, COUNT(*) AS totalItems 
-FROM {tableName}
-WHERE entity_type IN ({String.Join(", ", group.Select(entity => entity.Id.ToMySqlSafeValue(true)))})
-GROUP BY entity_type";
+                    query = $"""
+                             SELECT entity_type, COUNT(*) AS totalItems 
+                             FROM {tableName}
+                             WHERE entity_type IN ({String.Join(", ", group.Select(entity => entity.Id.ToMySqlSafeValue(true)))})
+                             GROUP BY entity_type
+                             """;
 
-                    var countDataTable = await clientDatabaseConnection.GetAsync(query);
+                    var countDataTable = await databaseConnectionToUse.GetAsync(query);
                     foreach (DataRow dataRow in countDataTable.Rows)
                     {
                         var entityType = dataRow.Field<String>("entity_type");

@@ -1080,8 +1080,24 @@ class Main {
                     }
                 },
 
+                async getEntitiesForBranches(branchId = 0) {
+                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES, branchId);
+                    for (let entity of this.entitiesForBranches) {
+                        if (this.branchMergeSettings.entities[entity.id]) {
+                            continue;
+                        }
+
+                        this.branchMergeSettings.entities[entity.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+                },
+
                 async onWiserMergeBranchPromptOpen(sender) {
-                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                    await this.getEntitiesForBranches();
 
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
@@ -1125,6 +1141,8 @@ class Main {
                     else if (selectedBranchId.target) {
                         selectedBranchId = event.target.value.id;
                     }
+
+                    await this.getEntitiesForBranches(selectedBranchId);
 
                     for (let entity of this.entitiesForBranches) {
                         this.branchMergeSettings.entities[entity.id] = {
