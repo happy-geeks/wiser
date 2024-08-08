@@ -1,9 +1,9 @@
 ﻿(function() {
-var field = $("#field_{propertyIdWithSuffix}");
-var options = {options};
+const field = $("#field_{propertyIdWithSuffix}");
+let options = {options};
 options.type = options.type || "text";
 
-var codeMirrorSettings = {
+const codeMirrorSettings = {
     lineNumbers: true,
     indentUnit: 4,
     lineWrapping: true,
@@ -47,9 +47,10 @@ switch (options.type.toLowerCase()) {
 
 if (codeMirrorSettings.mode) {
 	// Only load code mirror when we actually need it.
-	Misc.ensureCodeMirror().then(function() {
+	Misc.ensureCodeMirror().then(() => {
         field.parent().removeAttr("class");
-		var codeMirrorInstance = CodeMirror.fromTextArea(field[0], codeMirrorSettings);
+        
+		let codeMirrorInstance = CodeMirror.fromTextArea(field[0], codeMirrorSettings);
 		field.data("CodeMirrorInstance", codeMirrorInstance);
 	});
 }
