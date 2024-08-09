@@ -198,11 +198,11 @@ export default class BranchesService extends BaseService {
      * Gets all entities that can be copied to a new branch.
      * @returns {any} An array with all entities.
      */
-    async getEntities() {
+    async getEntities(branchId = 0) {
         const result = {};
 
         try {
-            const response = await this.base.api.get(`/api/v3/entity-types?includeCount=true&skipEntitiesWithoutItems=true`);
+            const response = await this.base.api.get(`/api/v3/entity-types?includeCount=true&skipEntitiesWithoutItems=true&branchId=${branchId || 0}`);
             result.success = true;
             result.statusCode = 200;
             result.data = response.data;
