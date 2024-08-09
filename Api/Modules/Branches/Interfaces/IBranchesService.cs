@@ -5,6 +5,7 @@ using Api.Core.Services;
 using Api.Modules.Branches.Models;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Modules.Branches.Models;
+using GeeksCoreLibrary.Modules.Databases.Interfaces;
 
 namespace Api.Modules.Branches.Interfaces
 {
@@ -91,6 +92,16 @@ namespace Api.Modules.Branches.Interfaces
         /// <param name="id">The ID to get the mapped value for.</param>
         /// <param name="idIsFromBranch">Optional: If the ID being given is from the branch.</param>
         /// <returns></returns>
-        Task<ServiceResult<ulong?>> GetMappedIdAsync(ulong id, bool idIsFromBranch = true);
+        Task<ulong?> GetMappedIdAsync(ulong id, bool idIsFromBranch = true);
+
+        /// <summary>
+        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
+        /// This is to make sure that the new ID can be created in both databases to match.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
+        /// <param name="branchDatabase">The connection to the branch database.</param>
+        /// <returns>The new ID that should be used for the item in both databases.</returns>
+        Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase);
     }
 }
