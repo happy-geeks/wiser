@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
@@ -21,6 +22,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using GclDataSelectors = GeeksCoreLibrary.Modules.DataSelector.Interfaces;
  
@@ -39,13 +41,15 @@ namespace Api.Modules.DataSelectors.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IWiserItemsService wiserItemsService;
         private readonly ICsvService csvService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
 
         private const string DataSelectorTemplateEntityType = "dataselector-template";
 
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsService"/>
         /// </summary>
-        public DataSelectorsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService, ICsvService csvService)
+        public DataSelectorsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService, ICsvService csvService, IServiceProvider serviceProvider, IBranchesService branchesService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -55,6 +59,8 @@ namespace Api.Modules.DataSelectors.Services
             this.databaseHelpersService = databaseHelpersService;
             this.wiserItemsService = wiserItemsService;
             this.csvService = csvService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
@@ -301,8 +307,52 @@ ORDER BY name ASC");
             var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
             if (dataTable.Rows.Count == 0)
             {
-                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
+                var tenant = await wiserTenantsService.GetSingleAsync(identity);
+
+                var onBranch = !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
+                
+                // for now we always create a query on both branch and main dbs if we are on a branch
+                var createOnBranchAndMain = onBranch;
+                
+                if (createOnBranchAndMain)
+                {
+                    using var scope = serviceProvider.CreateScope();
+                    var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+                    var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+                    var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                    await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+                    mainDatabaseConnection.EnsureOpenConnectionForWritingAsync();
+
+                    await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
+                    
+                    mainDatabaseConnection.AddParameter("name", data.Name);
+                    mainDatabaseConnection.AddParameter("availableForRendering", data.AvailableForRendering);
+                    mainDatabaseConnection.AddParameter("defaultTemplate", data.DefaultTemplate);
+                    mainDatabaseConnection.AddParameter("requestJson", data.RequestJson);
+                    mainDatabaseConnection.AddParameter("savedJson", data.SavedJson);
+                    mainDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
+                    mainDatabaseConnection.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
+                    mainDatabaseConnection.AddParameter("showInDashboard", data.ShowInDashboard);
+                    mainDatabaseConnection.AddParameter("availableForBranches", data.AvailableForBranches);
+                    
+                    var newId = await GenerateNewIdAsync(WiserTableNames.WiserDataSelector, mainDatabaseConnection,
+                        clientDatabaseConnection);
+
+                    var insertQuery =
+                        $@"INSERT INTO {WiserTableNames.WiserDataSelector} ( id, name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
+                                                                                    VALUES ({newId}, ?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)"; 
+                    
+                    await mainDatabaseConnection.InsertRecordAsync(insertQuery);
+                    await clientDatabaseConnection.InsertRecordAsync(insertQuery);
+                    result = newId;
+
+                }
+                else
+                {
+                    result = (int)await clientDatabaseConnection.InsertRecordAsync(
+                        $@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
                                                                                     VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)");
+                }
             }
             else
             {
@@ -729,6 +779,27 @@ VALUES(?roleId, ?id, 15)";
             clientDatabaseConnection.AddParameter("name", name);
             var getDataSelectorResult = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name LIMIT 1");
             return new ServiceResult<int>(getDataSelectorResult.Rows.Count == 0 ? 0 : getDataSelectorResult.Rows[0].Field<int>("id"));
+        }
+        
+        /// <summary>
+        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
+        /// This is to make sure that the new ID can be created in both databases to match.
+        /// </summary>
+        /// <param name="tableName">The name of the table.</param>
+        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
+        /// <param name="branchDatabase">The connection to the branch database.</param>
+        /// <returns>The new ID that should be used for the item in both databases.</returns>
+        private async Task<int> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        {
+            var query = $"SELECT MAX(id) AS id FROM {tableName}";
+
+            var dataTable = await mainDatabaseConnection.GetAsync(query);
+            var maxMainId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<int>("id") : 0;
+
+            dataTable = await branchDatabase.GetAsync(query);
+            var maxBranchId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<int>("id") : 0;
+
+            return Math.Max(maxMainId, maxBranchId) + 1;
         }
     }
 }
