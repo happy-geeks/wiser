@@ -12,7 +12,6 @@ namespace Api.Modules.Queries.Controllers
     /// <summary>
     /// Controller for all CRUD functions for wiser query.
     /// </summary>
-    [Route("api/v3/[controller]")]
     [ApiController]
     [Authorize]
     [Consumes(MediaTypeNames.Application.Json)]
@@ -39,13 +38,35 @@ namespace Api.Modules.Queries.Controllers
         /// <param name="resultsPerPage"> the amount of results per page, will be capped at 500 </param>
         /// <returns>The results of the styled output request .</returns>
         [HttpPost]
-        [Route("{id:int}")]
+        [Route("api/v3/[controller]/{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetStyledOutputResultJson(int id, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
+        public async Task<IActionResult> GetStyledOutputResultJsonAsync(int id, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
         {
             return (await styledOutputService.GetStyledOutputResultJsonAsync((ClaimsIdentity) User.Identity, id, parameters, stripNewlinesAndTabs, resultsPerPage, page)).GetHttpResponseMessage();
+        }
+        
+        /// <summary>
+        /// Gets the queries that can be used for an export in the export module by name instead of id.
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("api/v3/[controller]-named/{name:required}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetStyledOutputResultJsonAsync(string name, [FromBody] List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs = false,[FromQuery] int resultsPerPage = 500, [FromQuery] int page = 0)
+        {
+            var id = await styledOutputService.GetStyledOutputIdFromNameAsync(name);
+            
+            if (id >= 0)
+            {
+                return (await styledOutputService.GetStyledOutputResultJsonAsync((ClaimsIdentity)User.Identity, id,
+                    parameters, stripNewlinesAndTabs, resultsPerPage, page)).GetHttpResponseMessage();
+            }
+
+            return StatusCode(StatusCodes.Status404NotFound);
         }
     }
 }
