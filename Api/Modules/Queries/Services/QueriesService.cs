@@ -182,12 +182,14 @@ WHERE query.id = ?id";
 
             if (isOnBranch)
             {
+                // When we are on a branch always create the id on both branch and main database.
+                
                 using var scope = serviceProvider.CreateScope();
                 var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
                 var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
                 await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
                 
-                queryModel.Id = await GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}", mainDatabaseConnection, clientDatabaseConnection);
+                queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",mainDatabaseConnection,clientDatabaseConnection);
 
                 await CreateAsyncOnDataBase(mainDatabaseConnection, queryModel, identity, description);
                 await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
@@ -195,8 +197,7 @@ WHERE query.id = ?id";
             else
             {
                 await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
-
-                id = -1; // todo get id when not both
+                queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",clientDatabaseConnection);
                 await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
             }
             
@@ -206,21 +207,18 @@ WHERE query.id = ?id";
         private async Task<ServiceResult<QueryModel>> CreateAsyncOnDataBase(IDatabaseConnection targetDatabase, QueryModel queryModel, ClaimsIdentity identity, string description)
         {
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
-            var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
-
+           
             using var scope = serviceProvider.CreateScope();
-            var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
             
             try
             {
                 var lockQuery = $"""
                                  LOCK TABLES
-                                 {tablePrefix}{WiserTableNames.WiserQuery} WRITE,
-                                 {tablePrefix}{WiserTableNames.WiserQuery} item READ,
+                                 {WiserTableNames.WiserQuery} WRITE,
+                                 {WiserTableNames.WiserQuery} item READ,
                                  {WiserTableNames.WiserUserRoles} user_role READ,
                                  {WiserTableNames.WiserPermission} permission READ,
-                                 {tablePrefix}{WiserTableNames.WiserIdMappings} WRITE
+                                 {WiserTableNames.WiserIdMappings} WRITE
                                  """;
 
                 await targetDatabase.ExecuteAsync(lockQuery);
@@ -252,7 +250,7 @@ WHERE query.id = ?id";
                 targetDatabase.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
                 await targetDatabase.ExecuteAsync(itemInsertQuery);
 
-                targetDatabase.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserQuery}");
+                targetDatabase.AddParameter("tableName", $"{WiserTableNames.WiserQuery}");
                 targetDatabase.AddParameter("id", queryModel.Id);
            
                 var insertQuery =
@@ -422,29 +420,6 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
             return new ServiceResult<JToken>(combinedResult);
         }
         
-        /// <summary>
-        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
-        /// This is to make sure that the new ID can be created in both databases to match.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
-        /// <param name="branchDatabase">The connection to the branch database.</param>
-        /// <returns>The new ID that should be used for the item in both databases.</returns>
-        private async Task<int> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
-        {
-            var query = $"SELECT MAX(id) AS id FROM {tableName}";
-            
-            var dataTable = await mainDatabaseConnection.GetAsync(query);
-            var value = dataTable.Rows[0].Field<int>("id");
-            var maxMainId = dataTable.Rows.Count > 0 ? value : 0;
-            
-            dataTable = await branchDatabase.GetAsync(query);
-            value = dataTable.Rows[0].Field<int>("id");
-            var maxBranchId = dataTable.Rows.Count > 0 ? value : 0;
-
-            return Math.Max(maxMainId, maxBranchId) + 1;
-        }
-
         /// <summary>
         /// Get queries for a specific module.
         /// </summary>
