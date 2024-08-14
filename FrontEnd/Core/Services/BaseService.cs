@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Api.Core.Helpers;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using GeeksCoreLibrary.Core.Extensions;
@@ -39,28 +40,7 @@ namespace FrontEnd.Core.Services
             }
 
             var requestUrl = new Uri(httpContextAccessor.HttpContext.Request.GetDisplayUrl());
-            var result = "";
-            if (requestUrl.Host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase))
-            {
-                // E.g.: tenantname.localhost
-                var lastDotIndex = requestUrl.Host.LastIndexOf('.');
-                result = requestUrl.Host[..lastDotIndex];
-            }
-            else if (requestUrl.Host.Contains('.'))
-            {
-                result = frontEndSettings.WiserHostNames.Where(host => !String.IsNullOrWhiteSpace(host)).Aggregate(requestUrl.Host, (current, host) => current.Replace(host, ""));
-            }
-            else if (requestUrl.Port != 443 && requestUrl.Port != 80 && !requestUrl.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
-            {
-                result = requestUrl.Host;
-            }
-
-            if (String.IsNullOrWhiteSpace(result))
-            {
-                result = frontEndSettings.MainSubDomain;
-            }
-
-            return result;
+            return HttpContextHelpers.GetSubdomainFromUrl(requestUrl, frontEndSettings.WiserHostNames, frontEndSettings.MainSubDomain);
         }
 
         /// <inheritdoc />

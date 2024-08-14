@@ -22,13 +22,11 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
-using Api.Modules.Tenants.Helpers;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Exceptions;
 using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Core.Services;
@@ -43,6 +41,7 @@ using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using HttpContextHelpers = GeeksCoreLibrary.Core.Helpers.HttpContextHelpers;
 
 namespace Api.Modules.Items.Services
 {
@@ -299,7 +298,7 @@ namespace Api.Modules.Items.Services
                     {
                         continue;
                     }
-                
+
                     var name = field.DisplayName;
                     if (String.IsNullOrWhiteSpace(name) || !useFriendlyPropertyNames)
                     {
@@ -702,7 +701,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
                     await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
                     var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
-                    
+
                     // Check if parent ID is in the mappings. If true use ID for main database, if false throw exception.
                     var parentIdMainBranch = await branchesService.GetMappedIdAsync(parentId);
 
@@ -717,10 +716,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                     // Hide the item by default to prevent it from being used in production.
                     item.PublishedEnvironment = Environments.Hidden;
-                    
+
                     var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(item.EntityType);
                     var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
-                    
+
                     // Check which Wiser item link table needs to be locked.
                     clientDatabaseConnection.AddParameter("parentId", parentId);
                     var queryResult = await clientDatabaseConnection.GetAsync($@"SELECT entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
@@ -747,11 +746,11 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
                         await clientDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
                     }
-                    
+
                     // Set the environment on the branch. This will add an entry to the history to activate the item on production after a merge has been performed.
                     newItem.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
                     await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
-                    
+
                     // Add the mapping to the mappings table.
                     await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
                     clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");

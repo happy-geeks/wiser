@@ -4,10 +4,11 @@ using System.Linq;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
+using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using IdentityModel;
 using IdentityServer4;
@@ -15,11 +16,12 @@ using IdentityServer4.Events;
 using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Test;
-using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Tenants.Controllers
@@ -29,7 +31,7 @@ namespace Api.Modules.Tenants.Controllers
     /// </summary>
     [Route("api/v3/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize("ApiScope")]
     [Consumes(MediaTypeNames.Application.Json)]
     [Produces(MediaTypeNames.Application.Json)]
     public class UsersController : ControllerBase
@@ -37,17 +39,21 @@ namespace Api.Modules.Tenants.Controllers
         private readonly IUsersService usersService;
         private readonly IIdentityServerInteractionService interaction;
         private readonly IEventService events;
-        private readonly ITokenValidator tokenValidator;
+        private readonly IWebHostEnvironment webHostEnvironment;
+        private readonly IHttpContextAccessor httpContextAccessor;
+        private readonly ApiSettings apiSettings;
 
         /// <summary>
         /// Creates a new instance of UsersController.
         /// </summary>
-        public UsersController(IUsersService usersService, IIdentityServerInteractionService interaction, IEventService events, ITokenValidator tokenValidator)
+        public UsersController(IUsersService usersService, IIdentityServerInteractionService interaction, IEventService events, IOptions<ApiSettings> apiSettings, IWebHostEnvironment webHostEnvironment, IHttpContextAccessor httpContextAccessor)
         {
             this.usersService = usersService;
             this.interaction = interaction;
             this.events = events;
-            this.tokenValidator = tokenValidator;
+            this.webHostEnvironment = webHostEnvironment;
+            this.httpContextAccessor = httpContextAccessor;
+            this.apiSettings = apiSettings.Value;
         }
 
         /// <summary>
@@ -271,17 +277,17 @@ namespace Api.Modules.Tenants.Controllers
         [HttpGet]
         [Route("external-login")]
         [AllowAnonymous]
-        public IActionResult ExternalLogin(string provider)
+        public IActionResult ExternalLogin(string returnUrl)
         {
-            var redirectUrl = Url.Action("ExternalLoginCallback", "Users", new { ReturnUrl = HttpContext.Request.Headers["Referer"] });
+            var redirectUrl = Url.Action("ExternalLoginCallback", "Users", new { ReturnUrl = returnUrl });
             var properties = new AuthenticationProperties()
             {
                 RedirectUri = redirectUrl,
                 AllowRefresh = true,
                 IsPersistent = true
             };
-            
-            return new ChallengeResult(provider, properties);
+
+            return new ChallengeResult("Google", properties);
         }
 
         [HttpGet]
@@ -293,38 +299,67 @@ namespace Api.Modules.Tenants.Controllers
             {
                 throw new Exception("No return URL provided");
             }
-            
+
             var result = await HttpContext.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
             if (result.Succeeded != true)
             {
                 throw new Exception("External authentication error");
             }
-            
+
             var externalUser = result.Principal;
-            if (externalUser == null)
+            if (externalUser?.Identity == null)
             {
                 throw new Exception("External authentication error");
             }
-            
-            var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
-                              externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
-                              throw new Exception("Unknown userid");
 
-            var externalUserId = userIdClaim.Value;
-            var externalProvider = userIdClaim.Issuer;
-            
-            await HttpContext.SignInAsync(new IdentityServerUser(externalUserId)
+            var subjectClaim = externalUser.FindFirst(JwtClaimTypes.Subject);
+            var nameIdentifierClaim = externalUser.FindFirst(ClaimTypes.NameIdentifier);
+            var emailClaim = externalUser.FindFirst(ClaimTypes.Email);
+
+            if (nameIdentifierClaim == null)
             {
-                DisplayName = externalUser.FindFirstValue(ClaimTypes.Name),
-                IdentityProvider = externalProvider,
-                AdditionalClaims = externalUser.Claims.ToList()
-            });
-            
+                throw new Exception($"Claim '{ClaimTypes.NameIdentifier}' not found!");
+            }
+
+            subjectClaim ??= new Claim("sub", Guid.NewGuid().ToString());
+
+            var currentApiDomain = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}";
+            var returnUri = new Uri($"{currentApiDomain}/{returnUrl}");
+            var queryString = HttpUtility.ParseQueryString(returnUri.Query);
+            var frontEndUrl = queryString.Get("redirect_uri");
+            if (String.IsNullOrWhiteSpace(frontEndUrl))
+            {
+                throw new Exception("redirect_uri not found in query string");
+            }
+
+            // Sign in the user using IdentityServer's signin method
+            var name = externalUser.Identity.Name ?? "Unknown";
+            var userClaims = new List<Claim>
+            {
+                new (ClaimTypes.NameIdentifier, nameIdentifierClaim.Value),
+                new (JwtClaimTypes.Subject, subjectClaim.Value),
+                new (ClaimTypes.Name, name),
+                new(ClaimTypes.GivenName, name),
+                new(ClaimTypes.Role, "Admin"),
+                new(ClaimTypes.GroupSid, HttpContextHelpers.GetSubdomainFromUrl(new Uri(frontEndUrl), apiSettings.WiserHostNames, apiSettings.MainSubDomain)),
+                new(ClaimTypes.Sid, "0"),
+                new(IdentityConstants.AdminAccountName, ""),
+                new(HttpContextConstants.IsTestEnvironmentKey, webHostEnvironment.EnvironmentName is "test" or "development" ? "true" : "false"),
+                new(HttpContextConstants.IsWiserFrontEndLoginKey, "true"),
+                new (ClaimTypes.Email, emailClaim?.Value ?? ""),
+                new (JwtClaimTypes.Audience, currentApiDomain)
+                //TODO: new Claim(IdentityConstants.TokenIdentifierKey, user.CookieValue)
+            };
+
+            var userIdentity = new ClaimsIdentity(userClaims, IdentityServerConstants.ExternalCookieAuthenticationScheme);
+            var userPrincipal = new ClaimsPrincipal(userIdentity);
+
+            await HttpContext.SignInAsync(userPrincipal);
+
+            // Clear the temporary cookie used during external authentication
             await HttpContext.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
 
-            var token = "affa";
-            
-            return Redirect($"{returnUrl}login?token={token.EncryptWithAesWithSalt(withDateTime: true)}");
+            return Redirect(returnUrl);
         }
 
         /// <summary>

@@ -60,6 +60,12 @@ namespace Api.Core.Models
         public string PusherSalt { get; set; }
 
         /// <summary>
+        /// Gets or sets the host names that are used for the Wiser front-end. This should not include the sub domain.
+        /// This will be used to figure out the sub domain, which is needed to find out which tenant is being loaded.
+        /// </summary>
+        public List<string> WiserHostNames { get; set; } = new();
+
+        /// <summary>
         /// The sub domain that should be used to login to the main wiser database (the one that contains the table "easy_customers"), when using multi tenancy.
         /// This value is not used when not using multi tenancy.
         /// </summary>

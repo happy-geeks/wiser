@@ -209,21 +209,6 @@ export default {
         },
 
         async googleSignInButtonClick() {
-            //https://localhost:5001/connect/authorize?client_id=your-client-id&response_type=code&scope=openid profile api1&redirect_uri=https://localhost:5002/signin-oidc&state={state}&nonce={nonce}&code_challenge={codeChallenge}&code_challenge_method=S256&acr_values=idp:Google
-            /*const authUrl = "https://localhost:44349/connect/authorize" +
-                "?client_id=google-test" +
-                "&response_type=code" +
-                "&scope=openid profile wiser-api" +
-                "&redirect_uri=" + encodeURIComponent("https://localhost:44377/signin-oidc") +
-                "&state=" + encodeURIComponent(Math.random().toString(36).substring(7)) +
-                "&nonce=" + encodeURIComponent(Math.random().toString(36).substring(7)) +
-                "&code_challenge=" + encodeURIComponent(window.main.appSettings.codeChallenge) +
-                "&code_challenge_method=S256" +
-                "&acr_values=idp:Google";
-
-            //window.location.href = authUrl;
-            window.location.href = `https://localhost:44349/api/v3/users/external-login?provider=Google`;*/
-            debugger;
             const loginResult = await this.login2();
             console.log("loginResult", loginResult);
         },

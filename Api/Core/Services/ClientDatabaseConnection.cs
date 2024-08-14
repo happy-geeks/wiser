@@ -27,6 +27,7 @@ using MySqlConnector;
 using Newtonsoft.Json;
 using Renci.SshNet;
 using ConnectionInfo = Renci.SshNet.ConnectionInfo;
+using HttpContextHelpers = GeeksCoreLibrary.Core.Helpers.HttpContextHelpers;
 
 namespace Api.Core.Services
 {

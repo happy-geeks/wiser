@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Api.Core.Filters;
 using Api.Core.Interfaces;
 using Api.Core.Middlewares;
@@ -29,6 +30,7 @@ using IdentityServer4;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -182,29 +184,68 @@ namespace Api
                     });
             });
 
-            services.AddAuthentication("Google")
-                .AddJwtBearer("Bearer",
-                              options =>
-                              {
-                                  options.Authority = apiBaseUrl;
-                                  options.TokenValidationParameters = new TokenValidationParameters
-                                  {
-                                      ValidateAudience = false,
-                                      ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
-                                  };
-                              })
+            //services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                })
+                //.AddCookie(IdentityServerConstants.DefaultCookieAuthenticationScheme)
+                .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme,
+                    options =>
+                    {
+                        options.Authority = apiBaseUrl;
+                        options.Audience = "api1";
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ValidateAudience = false,
+                            ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
+                        };
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
+                            {
+                                return Task.CompletedTask;
+                            },
+                            OnTokenValidated = context =>
+                            {
+                                return Task.CompletedTask;
+                            },
+                            OnAuthenticationFailed = context =>
+                            {
+                                // Log exceptions that occur with authentication.
+                                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Startup>>();
+                                logger.LogError(context.Exception, "Authentication failed.");
+                                return Task.CompletedTask;
+                                /*if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                                {
+                                    context.Response.Headers.Add("Token-Expired", "true");
+                                }
+
+                                return Task.CompletedTask;*/
+                            },
+                            OnChallenge = context =>
+                            {
+                                // Override the default behavior to prevent the default 302 redirect
+                                context.HandleResponse();
+                                context.Response.StatusCode = 401;
+                                context.Response.ContentType = "application/json";
+                                return context.Response.WriteAsync("Test");
+                            },
+                            OnForbidden = context =>
+                            {
+                                context.Response.StatusCode = 403;
+                                context.Response.ContentType = "application/json";
+                                return context.Response.WriteAsync("Test");
+                            }
+                        };
+                    })
                 // Configure Google authentication
                 .AddGoogle("Google", options =>
                 {
-                    //options.ClaimActions.MapUniqueJsonKey(JwtClaimTypes.Subject, ClaimTypes.NameIdentifier);
                     options.ClientId = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientId");
                     options.ClientSecret = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientSecret");
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-
-                    /*options.Scope.Clear();
-                    options.Scope.Add(OidcConstants.StandardScopes.OpenId);
-                    options.Scope.Add(OidcConstants.StandardScopes.Profile);
-                    options.Scope.Add(OidcConstants.StandardScopes.Email);*/
                 });
 
             services.AddAuthorization(options =>
@@ -213,7 +254,7 @@ namespace Api
                                   policy =>
                                   {
                                       policy.RequireAuthenticatedUser();
-                                      policy.RequireClaim("scope", "wiser-api");
+                                      policy.RequireClaim("scope", "api1");
                                   });
             });
 
@@ -223,6 +264,7 @@ namespace Api
                     options.Events.RaiseSuccessEvents = true;
                     options.Events.RaiseFailureEvents = true;
                     options.Events.RaiseErrorEvents = true;
+                    options.UserInteraction.LoginUrl = "/api/v3/users/external-login";
                 })
                 .AddInMemoryIdentityResources(ConfigureIdentityServer.GetIdentityResources())
                 .AddInMemoryApiResources(ConfigureIdentityServer.GetApiResources(clientSecret))
