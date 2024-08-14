@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FrontEnd", "FrontEnd\FrontE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wiser.Tests", "Wiser.Tests\Wiser.Tests.csproj", "{93504FCB-A4D9-4540-812D-868222B43D23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer4", "..\..\Test Projecten & playgrounds\IdentityServer4-main\src\IdentityServer4\src\IdentityServer4.csproj", "{62D2EC77-652E-40A8-8F40-8C006151D772}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{93504FCB-A4D9-4540-812D-868222B43D23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93504FCB-A4D9-4540-812D-868222B43D23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93504FCB-A4D9-4540-812D-868222B43D23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62D2EC77-652E-40A8-8F40-8C006151D772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62D2EC77-652E-40A8-8F40-8C006151D772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62D2EC77-652E-40A8-8F40-8C006151D772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62D2EC77-652E-40A8-8F40-8C006151D772}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
