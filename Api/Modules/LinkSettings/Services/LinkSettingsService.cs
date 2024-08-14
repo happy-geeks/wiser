@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.LinkSettings.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
