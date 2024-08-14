@@ -156,7 +156,7 @@ namespace Api.Modules.LinkSettings.Services
             // First try to create the tables, if we have a dedicated table prefix.
             if (linkSettings.UseDedicatedTable)
             {
-                var tablePrefix = $"{linkSettings.Id}_";
+                var tablePrefix = $"{linkSettings.Type}_";
 
                 if (!await databaseHelpersService.TableExistsAsync($"{tablePrefix}{WiserTableNames.WiserItemLink}"))
                 {
