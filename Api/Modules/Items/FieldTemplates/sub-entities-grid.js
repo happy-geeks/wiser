@@ -1,4 +1,4 @@
-(function() {
+(() => {
 let field = $("#overviewGrid{propertyIdWithSuffix}");
 const loader = field.closest(".item").find(".grid-loader");
 

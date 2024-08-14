@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
 let field = $("#scheduler{propertyIdWithSuffix}");
 let loader = field.closest(".item").find(".field-loader");
 let optionsFromProperty = {options};

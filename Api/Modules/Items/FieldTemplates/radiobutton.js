@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
     Wiser.api({
         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}",
         method: "POST"

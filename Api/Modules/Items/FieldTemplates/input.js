@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
     const options = {options};
     const container = $("#container_{propertyIdWithSuffix}");
     const  field = $("#field_{propertyIdWithSuffix}").change(window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields));
