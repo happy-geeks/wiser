@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
 const field = $("#field_{propertyIdWithSuffix}");
 let options = {options};
 options.type = options.type || "text";
