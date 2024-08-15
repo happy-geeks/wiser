@@ -488,20 +488,20 @@ export class Fields {
                     container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggleClass("dependency-hidden", !showElement);
 
                     for (let tab of tabStrip.items()) {
-                        if (tab.classList.contains('overview-tab')) {
+                        if (tab.classList.contains("overview-tab")) {
                             continue;
                         }
                         
-                        const contentContainerId = tab.attributes['aria-controls'].value;
+                        const contentContainerId = tab.attributes["aria-controls"].value;
                         const contentContainer = document.getElementById(contentContainerId);
                         let visibleItems = contentContainer.querySelectorAll('.item:not(.dependency-hidden)');
                         
                         // if there are no items the tab can be hidden and we don't have to check the group within the content pane 
                         if (visibleItems.length === 0) {
-                            tab.classList.add('hidden');
+                            tab.classList.add("hidden");
                             continue;
                         } else {
-                            tab.classList.remove('hidden');
+                            tab.classList.remove("hidden");
                         }
                         
                         // Check if there are empty groups that should be hidden
@@ -509,9 +509,9 @@ export class Fields {
                         for (let group of groups) {
                             visibleItems = group.querySelectorAll('.item:not(.dependency-hidden)');
                             if (visibleItems.length > 0) {
-                                group.classList.remove('dependency-hidden');
+                                group.classList.remove("dependency-hidden");
                             } else {
-                                group.classList.add('dependency-hidden');
+                                group.classList.add("dependency-hidden");
                             }
                         }
                     }
