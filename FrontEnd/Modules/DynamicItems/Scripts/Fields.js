@@ -485,13 +485,33 @@ export class Fields {
                             break;
                     }
 
-                    const fieldContainer = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggleClass("dependency-hidden", !showElement);
-                    const tabContainer = fieldContainer.closest(".k-content");
-                    const allFields = tabContainer.find(".item");
-                    const visibleFields = allFields.filter(index => allFields[index].style.display !== "none");
-                    const tabIndex = tabContainer.index() - 1; // -1 because the first item in the DOM is always the tab strip (<ul>), we shouldn't count that one.
-                    tabStrip.tabGroup.children().eq(tabIndex).toggle(visibleFields.length > 0);
+                    container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggleClass("dependency-hidden", !showElement);
 
+                    for (let tab of tabStrip.items()) {
+                        if (tab.classList.contains('overview-tab')) {
+                            continue;
+                        }
+
+                        const contentContainerId = tab.attributes['aria-controls'].value;
+
+                        const contentContainer = document.getElementById(contentContainerId);
+                        const groups = contentContainer.querySelectorAll(".item-group");
+                        
+                        let visibleItemFound = false;
+                        for (let group of groups) {
+                            let visibleItems = group.querySelectorAll('.item:not(.dependency-hidden)');
+                            
+                            if (visibleItems.length > 0) {
+                                visibleItemFound = true;
+                                group.classList.remove('dependency-hidden');
+                            } else {
+                                group.classList.add('dependency-hidden');
+                            }
+                        }
+
+                        tab.classList.toggle('hidden', !visibleItemFound);
+                    }
+                    
                     break;
                 }
                 default:
