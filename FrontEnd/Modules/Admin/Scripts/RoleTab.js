@@ -1,4 +1,4 @@
-﻿import {Utils} from "../../Base/Scripts/Utils";
+﻿import {Utils, Wiser} from "../../Base/Scripts/Utils";
 
 export class RoleTab {
     constructor(base) {
@@ -64,9 +64,9 @@ export class RoleTab {
      * @param {any} subject The subject of which the rights get updates, for example modules
      * @param {any} role The id of the role
      * @param {any} subjectId The id of the permission subject
-     * @param {any} permissionCode The code of the permission to add or delete
+     * @param {any} permission The code of the permission to add or delete
      */
-    async addRemoveSubjectRightAssignment(subject, role, subjectId, permissionCode) {
+    async addRemoveSubjectRightAssignment(subject, role, subjectId, permission) {
         try {
             await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}permissions/`,
@@ -75,7 +75,7 @@ export class RoleTab {
                     subject: subject,
                     subjectId: subjectId,
                     roleId: role,
-                    permissionCode: permissionCode
+                    permission: permission
                 }),
                 method: "POST"
             });
@@ -314,12 +314,12 @@ export class RoleTab {
     }
 
     initializeOrRefreshEndpointsGrid(roleId) {
-        if (!this.endpointsGrid) {
-            const queryStringForEndpointsGrid = {
-                roleId: roleId,
-                subject: "Endpoints"
-            };
+        const queryStringForEndpointsGrid = {
+            roleId: roleId,
+            subject: "Endpoints"
+        };
 
+        if (!this.endpointsGrid) {
             this.endpointsGrid = $("#EndpointsGrid").kendoGrid({
                 editable: "inline",
                 filterable: true,
@@ -335,80 +335,60 @@ export class RoleTab {
                     },
                     {
                         title: "Toegestaan",
-                        field: "permission"/*,
-                        headerTemplate: () => {
-                            return `<div class="checkAll"><span>Toegestaan</span><input type="checkbox" id="role-check-all" class="k-checkbox endpoints"><label class="k-checkbox-label" for="role-check-all"></label></div>`;
-                        },
-                        template: (dataItem) => {
-                            return `<input type="checkbox" id="role-endpoints-all-${dataItem.objectId}" data-type="all" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="0" ${dataItem.permission === 15 ? "checked" : ""} class="k-checkbox endpoint"><label class="k-checkbox-label" for="role-endpoint-all-${dataItem.objectId}"></label>`;
-                        }*/
+                        field: "permission"
                     },
                     {
                         command: ["edit", "destroy"],
                         title: "&nbsp;",
                         width: "250px"
                     }
-                ],
-                schema: {
-                    model: {
-                        id: "id",
-                        fields: {
-                            id: { type: "number" },
-                            objectId: { type: "number" },
-                            objectName: { type: "string" },
-                            roleId: { type: "number" },
-                            roleName: { type: "string" },
-                            endpointUrl: { type: "string" },
-                            endpointHttpMethod: { type: "string" },
-                            permission: { type: "number" }
-                        }
-                    }
-                },
-                dataSource: {
-                    transport: {
-                        read: {
-                            url: `${this.base.settings.wiserApiRoot}permissions/${Utils.toQueryString(queryStringForEndpointsGrid, true)}`
-                        },
-                        create: (options) => {
-                            console.log("create", options);
-                            options.success(options.data);
-                        },
-                        update: (options) => {
-                            console.log("update", options);
-                            options.success(options.data);
-                        },
-                        delete: (options) => {
-                            console.log("delete", options);
-                            options.success(options.data);
-                        },
-                        /*create: {
-                            url: `${this.base.settings.wiserApiRoot}permissions`,
-                            contentType: "application/json",
-                            method: "POST"
-                        },
-                        update: {
-                            url: `${this.base.settings.wiserApiRoot}permissions`,
-                            contentType: "application/json",
-                            method: "POST"
-                        },
-                        destroy: {
-                            url: `${this.base.settings.wiserApiRoot}permissions`,
-                            contentType: "application/json",
-                            method: "DELETE"
-                        },*/
-                        parameterMap: (data, operation) => {
-                            console.log("parameterMap", data, operation);
-                            if (operation !== "read") {
-                                return kendo.stringify($.extend({ "subject": "endpoints" }, data));
-                            }
-                        }
-                    }
-                }
+                ]
             }).data("kendoGrid");
         }
-        else {
-            this.endpointsGrid.dataSource.read();
-        }
+
+        this.endpointsGrid.setDataSource({
+            transport: {
+                read: {
+                    url: `${this.base.settings.wiserApiRoot}permissions/${Utils.toQueryString(queryStringForEndpointsGrid, true)}`
+                },
+                create: {
+                    url: `${this.base.settings.wiserApiRoot}permissions`,
+                    contentType: "application/json",
+                    method: "POST"
+                },
+                update: {
+                    url: `${this.base.settings.wiserApiRoot}permissions`,
+                    contentType: "application/json",
+                    method: "POST"
+                },
+                destroy: {
+                    url: `${this.base.settings.wiserApiRoot}permissions`,
+                    contentType: "application/json",
+                    method: "DELETE"
+                },
+                parameterMap: (data, operation) => {
+                    console.log("parameterMap", data, operation);
+                    if (operation !== "read") {
+                        return kendo.stringify($.extend({"subject": "endpoints"}, data));
+                    }
+                }
+            },
+            schema: {
+                model: {
+                    id: "id",
+                    fields: {
+                        id: { type: "number" },
+                        objectId: { type: "number" },
+                        objectName: { type: "string" },
+                        roleId: { type: "number" },
+                        roleName: { type: "string" },
+                        endpointUrl: { type: "string" },
+                        endpointHttpMethod: { type: "string" },
+                        permission: { type: "number" }
+                    }
+                }
+            }
+        });
     }
 
     /**

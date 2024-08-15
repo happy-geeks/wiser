@@ -28,7 +28,7 @@ public class PermissionsService : IPermissionsService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<bool>> SetPermissionAsync(PermissionUpdateModel permissionUpdateModel)
+    public async Task<ServiceResult<bool>> SetAsync(PermissionUpdateModel permissionUpdateModel)
     {
         var subjectIdColumn = permissionUpdateModel.Subject switch
         {
@@ -38,29 +38,43 @@ public class PermissionsService : IPermissionsService, IScopedService
             _ => throw new ArgumentOutOfRangeException($"Used {nameof(PermissionSubjects)} value has not yet been implemented")
         };
 
-        var query = $@"INSERT INTO `{WiserTableNames.WiserPermission}` (
-     `role_id`,
-     `entity_name`,
-     `item_id`,
-     `entity_property_id`,
-     `permissions`,
-     `{subjectIdColumn}`
-     {(permissionUpdateModel.Subject == PermissionSubjects.Endpoints ? ", endpoint_http_method" : "")}
- ) 
- VALUES (
-     ?roleId, 
-     '',
-     0,
-     0,
-     ?permissionCode,
-     ?subjectId
-     {(permissionUpdateModel.Subject == PermissionSubjects.Endpoints ? ", ?endpointHttpMethod" : "")}
- )
-ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
+        var query = $"""
+                     INSERT INTO `{WiserTableNames.WiserPermission}` (
+                          `role_id`,
+                          `entity_name`,
+                          `item_id`,
+                          `entity_property_id`,
+                          `permissions`,
+                          `{subjectIdColumn}`
+                          {(permissionUpdateModel.Subject == PermissionSubjects.Endpoints ? ", endpoint_http_method" : "")}
+                      ) 
+                      VALUES (
+                          ?roleId, 
+                          '',
+                          0,
+                          0,
+                          ?permissionCode,
+                          ?subjectId
+                          {(permissionUpdateModel.Subject == PermissionSubjects.Endpoints ? ", ?endpointHttpMethod" : "")}
+                      )
+                     ON DUPLICATE KEY UPDATE permissions = ?permissionCode;
+                     """;
+
+        if (permissionUpdateModel.Id > 0)
+        {
+            query = $"""
+                     UPDATE `{WiserTableNames.WiserPermission}`
+                     SET permissions = ?permissionCode,
+                     `{subjectIdColumn}` = ?subjectId
+                     {(permissionUpdateModel.Subject == PermissionSubjects.Endpoints ? ", endpoint_http_method = ?endpointHttpMethod" : "")}
+                     WHERE id = ?id;
+                     """;
+        }
 
         databaseConnection.ClearParameters();
+        databaseConnection.AddParameter("id", permissionUpdateModel.Id);
         databaseConnection.AddParameter("roleId", permissionUpdateModel.RoleId);
-        databaseConnection.AddParameter("permissionCode", (int)permissionUpdateModel.PermissionCode);
+        databaseConnection.AddParameter("permissionCode", (int)permissionUpdateModel.Permission);
 
         if (permissionUpdateModel.Subject == PermissionSubjects.Endpoints)
         {
@@ -78,7 +92,16 @@ ON DUPLICATE KEY UPDATE permissions = ?permissionCode;";
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<IList<PermissionData>>> GetPermissionsAsync(int roleId, PermissionSubjects subject)
+    public async Task<ServiceResult<bool>> DeleteAsync(int id)
+    {
+        var query = $"DELETE FROM {WiserTableNames.WiserPermission} WHERE id = ?id";
+        databaseConnection.AddParameter("id", id);
+        var affectedRows = await databaseConnection.ExecuteAsync(query);
+        return new ServiceResult<bool>(affectedRows > 0);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<IList<PermissionData>>> GetAsync(int roleId, PermissionSubjects subject)
     {
         var result = subject switch
         {
