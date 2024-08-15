@@ -492,10 +492,11 @@ export class Fields {
                             continue;
                         }
                         
-                        let visibleItemFound = false;
                         const contentContainerId = tab.attributes['aria-controls'].value;
                         const contentContainer = document.getElementById(contentContainerId);
                         let visibleItems = contentContainer.querySelectorAll('.item:not(.dependency-hidden)');
+                        
+                        // if there are no items the tab can be hidden and we don't have to check the group within the content pane 
                         if (visibleItems.length === 0) {
                             tab.classList.add('hidden');
                             continue;
@@ -503,12 +504,11 @@ export class Fields {
                             tab.classList.remove('hidden');
                         }
                         
+                        // Check if there are empty groups that should be hidden
                         const groups = contentContainer.querySelectorAll(".item-group");
                         for (let group of groups) {
                             visibleItems = group.querySelectorAll('.item:not(.dependency-hidden)');
-                            
                             if (visibleItems.length > 0) {
-                                visibleItemFound = true;
                                 group.classList.remove('dependency-hidden');
                             } else {
                                 group.classList.add('dependency-hidden');
