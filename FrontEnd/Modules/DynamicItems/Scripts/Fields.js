@@ -491,15 +491,21 @@ export class Fields {
                         if (tab.classList.contains('overview-tab')) {
                             continue;
                         }
-
-                        const contentContainerId = tab.attributes['aria-controls'].value;
-
-                        const contentContainer = document.getElementById(contentContainerId);
-                        const groups = contentContainer.querySelectorAll(".item-group");
                         
                         let visibleItemFound = false;
+                        const contentContainerId = tab.attributes['aria-controls'].value;
+                        const contentContainer = document.getElementById(contentContainerId);
+                        let visibleItems = contentContainer.querySelectorAll('.item:not(.dependency-hidden)');
+                        if (visibleItems.length === 0) {
+                            tab.classList.add('hidden');
+                            continue;
+                        } else {
+                            tab.classList.remove('hidden');
+                        }
+                        
+                        const groups = contentContainer.querySelectorAll(".item-group");
                         for (let group of groups) {
-                            let visibleItems = group.querySelectorAll('.item:not(.dependency-hidden)');
+                            visibleItems = group.querySelectorAll('.item:not(.dependency-hidden)');
                             
                             if (visibleItems.length > 0) {
                                 visibleItemFound = true;
@@ -508,8 +514,6 @@ export class Fields {
                                 group.classList.add('dependency-hidden');
                             }
                         }
-
-                        tab.classList.toggle('hidden', !visibleItemFound);
                     }
                     
                     break;
