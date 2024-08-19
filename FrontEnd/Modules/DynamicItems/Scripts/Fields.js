@@ -485,13 +485,37 @@ export class Fields {
                             break;
                     }
 
-                    const fieldContainer = container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggleClass("dependency-hidden", !showElement);
-                    const tabContainer = fieldContainer.closest(".k-content");
-                    const allFields = tabContainer.find(".item");
-                    const visibleFields = allFields.filter(index => allFields[index].style.display !== "none");
-                    const tabIndex = tabContainer.index() - 1; // -1 because the first item in the DOM is always the tab strip (<ul>), we shouldn't count that one.
-                    tabStrip.tabGroup.children().eq(tabIndex).toggle(visibleFields.length > 0);
+                    container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggleClass("dependency-hidden", !showElement);
 
+                    for (let tab of tabStrip.items()) {
+                        if (tab.classList.contains("overview-tab")) {
+                            continue;
+                        }
+                        
+                        const contentContainerId = tab.attributes["aria-controls"].value;
+                        const contentContainer = document.getElementById(contentContainerId);
+                        let visibleItems = contentContainer.querySelectorAll(".item:not(.dependency-hidden)");
+                        
+                        // if there are no items the tab can be hidden and we don't have to check the group within the content pane 
+                        if (visibleItems.length === 0) {
+                            tab.classList.add("hidden");
+                            continue;
+                        } else {
+                            tab.classList.remove("hidden");
+                        }
+                        
+                        // Check if there are empty groups that should be hidden
+                        const groups = contentContainer.querySelectorAll(".item-group");
+                        for (let group of groups) {
+                            visibleItems = group.querySelectorAll(".item:not(.dependency-hidden)");
+                            if (visibleItems.length > 0) {
+                                group.classList.remove("dependency-hidden");
+                            } else {
+                                group.classList.add("dependency-hidden");
+                            }
+                        }
+                    }
+                    
                     break;
                 }
                 default:
