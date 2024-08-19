@@ -91,6 +91,10 @@
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedLinkTableTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
     <EmbeddedResource Include="Modules\Babel\Scripts\Polyfills.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.js" />
@@ -146,12 +150,6 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
-    <None Remove="Core\Queries\WiserInstallation\StoredProcedures.sql" />
-    <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
-    <None Remove="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
-    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
-    <None Remove="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
-    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
   </ItemGroup>
 
   <ItemGroup>
