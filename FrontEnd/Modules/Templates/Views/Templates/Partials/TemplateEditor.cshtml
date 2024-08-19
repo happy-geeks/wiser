@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
+﻿@inject Api.Modules.Translations.Interfaces.ISharedViewLocalizer Localizer
 @model FrontEnd.Modules.Templates.Models.DevelopmentTabViewModel
 <div class="item editor-container" style="width: 100%;">
     <h4><label for="editor">@Localizer["Template"] (@Model.TemplateSettings.Type.ToString())</label></h4>

@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FrontEnd.Modules.Translations.Resources {
+namespace Api.Modules.Translations.Resources {
     using System;
     
     
@@ -38,7 +38,7 @@ namespace FrontEnd.Modules.Translations.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FrontEnd.Modules.Translations.Resources.Core.Views.Home.Index.nl", typeof(Index_nl).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Api.Modules.Translations.Resources.Index.nl", typeof(Index_nl).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

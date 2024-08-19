@@ -1,8 +1,9 @@
 using System.Globalization;
-using Api.Modules.Translations.Services;
 using System.Threading.Tasks;
 using Api.Core.Interfaces;
 using Api.Core.Services;
+using Api.Modules.Translations.Interfaces;
+using Api.Modules.Translations.Services;
 using FrontEnd.Core.Interfaces;
 using FrontEnd.Core.Models;
 using FrontEnd.Core.Services;
@@ -121,7 +122,7 @@ namespace FrontEnd
             
             // Setup localization.
             services.AddLocalization(options => options.ResourcesPath = "Modules/Translations/Resources");
-
+            services.AddSingleton<ISharedViewLocalizer, SharedViewLocalizer>();
 
             // Setup dependency injection.
             services.AddHttpContextAccessor();

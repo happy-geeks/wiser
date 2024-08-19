@@ -118,8 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   
+  <data name="STR_Advanced" xml:space="preserve">
+    <value>Geavanceerd</value>
+  </data>
+  <data name="STR_at" xml:space="preserve">
+    <value>op</value>
+  </data>
   <data name="STR_Cancel" xml:space="preserve">
     <value>Annuleren</value>
+  </data>
+  <data name="STR_Completed" xml:space="preserve">
+    <value>Afgerond</value>
   </data>
   <data name="STR_Continue" xml:space="preserve">
     <value>Verder</value>
@@ -139,17 +148,38 @@
   <data name="STR_Logout" xml:space="preserve">
     <value>Uitloggen</value>
   </data>
+  <data name="STR_None" xml:space="preserve">
+    <value>Geen</value>
+  </data>
+  <data name="STR_Others" xml:space="preserve">
+    <value>Overig</value>
+  </data>
   <data name="STR_Password" xml:space="preserve">
     <value>Wachtwoord</value>
+  </data>
+  <data name="STR_Pinned" xml:space="preserve">
+    <value>Vastgepind</value>
+  </data>
+  <data name="STR_Save" xml:space="preserve">
+    <value>Opslaan</value>
   </data>
   <data name="STR_Send" xml:space="preserve">
     <value>Verzenden</value>
   </data>
+  <data name="STR_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
   <data name="STR_Submit" xml:space="preserve">
     <value>Indienen</value>
   </data>
+  <data name="STR_User" xml:space="preserve">
+    <value>Gebruiker</value>
+  </data>
   <data name="STR_Username" xml:space="preserve">
     <value>Gebruikersnaam</value>
+  </data>
+  <data name="STR_Version" xml:space="preserve">
+    <value>Versie</value>
   </data>
   
   <data name="Login_ForgotPassword" xml:space="preserve">
@@ -190,6 +220,43 @@
   </data>
   <data name="Login_EnterAuthenticatorCode" xml:space="preserve">
     <value>Vul de code in van uw authenticator app.</value>
+  </data>
+
+  <data name="TA_TaskAlerts" xml:space="preserve">
+    <value>Taak Meldingen</value>
+  </data>
+  <data name="TA_SchedulingHistory" xml:space="preserve">
+    <value>Planning Geschiedenis</value>
+  </data>
+  <data name="TA_AddTask" xml:space="preserve">
+    <value>Taak toevoegen</value>
+  </data>
+  <data name="TA_AddUsers" xml:space="preserve">
+    <value>Gebruikers toevoegen</value>
+  </data>
+  <data name="TA_AddUsersPH" xml:space="preserve">
+    <value>Kies gebruikers...</value>
+  </data>
+  <data name="TA_TaskDescription" xml:space="preserve">
+    <value>Taakomschrijving</value>
+  </data>
+  <data name="TA_TasDescriptionPH" xml:space="preserve">
+    <value>Omschrijving van de taak...</value>
+  </data>
+  <data name="TA_EditTask" xml:space="preserve">
+    <value>Taak aanpassen</value>
+  </data>
+  <data name="TA_StatusPH" xml:space="preserve">
+    <value>Kies een status...</value>
+  </data>
+  <data name="TA_NoStatus" xml:space="preserve">
+    <value>Geen status</value>
+  </data>
+  <data name="TA_InProgress" xml:space="preserve">
+    <value>In behandeling</value>
+  </data>
+  <data name="TA_WaitingForResponse" xml:space="preserve">
+    <value>Wachtend op reactie</value>
   </data>
   
   <data name="Menu_WiserConfiguration" xml:space="preserve">
@@ -258,6 +325,9 @@
   <data name="Menu_ContentBoxTemplates" xml:space="preserve">
     <value>Contentbox templates</value>
   </data>
+  <data name="Menu_Settings" xml:space="preserve">
+    <value>Instellingen</value>
+  </data>
   <data name="Menu_GCLSettings" xml:space="preserve">
     <value>Instellingen GCL</value>
   </data>
@@ -299,6 +369,34 @@
   </data>
   <data name="Menu_Dashboard" xml:space="preserve">
     <value>Dashboard</value>
+  </data>
+  <data name="Menu_ContentManagement" xml:space="preserve">
+    <value>Contentbeheer</value>
+  </data>
+  <data name="Menu_WebPages" xml:space="preserve">
+    <value>Webpagina's</value>
+  </data>
+  <data name="Menu_System" xml:space="preserve">
+    <value>Systeem</value>
+  </data>
+  
+  <data name="Template_LastModifiedBy" xml:space="preserve">
+    <value>Laatst gewijzigd door</value>
+  </data>
+  <data name="Template_DeployToTest" xml:space="preserve">
+    <value>Deploy naar test</value>
+  </data>  
+  <data name="Template_DeployToAcceptance" xml:space="preserve">
+    <value>Deploy naar acceptatie</value>
+  </data>  
+  <data name="Template_DeployToLive" xml:space="preserve">
+    <value>Deploy naar live</value>
+  </data>  
+  <data name="Template_LinkedCSS" xml:space="preserve">
+    <value>Gekoppelde (S)CSS templates</value>
+  </data>
+  <data name="Template_LinkedJS" xml:space="preserve">
+    <value>Gekoppelde JS templates</value>
   </data>
   
   <data name="Warning_CapsOn" xml:space="preserve">
@@ -418,9 +516,6 @@
   </data>
   <data name="Adjust widths" xml:space="preserve">
     <value>Breedtes aanpassen</value>
-  </data>
-  <data name="Advanced" xml:space="preserve">
-    <value>Geavanceerd</value>
   </data>
   <data name="Aggregation" xml:space="preserve">
     <value>Aggregatie</value>

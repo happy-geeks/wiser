@@ -105,7 +105,7 @@ namespace Api
             
             services.Configure<RequestLocalizationOptions>(options =>
             {
-                string[] supportedCultures = { "en-US", "nl-NL", "es" };
+                string[] supportedCultures = { "en-US", "nl-NL" };
                 options.AddSupportedCultures(supportedCultures);
                 options.AddSupportedUICultures(supportedCultures);
                 options.SetDefaultCulture(supportedCultures[0]);

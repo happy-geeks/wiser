@@ -1,7 +1,6 @@
 ﻿@model FrontEnd.Core.Models.BaseViewModel
 @addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
-@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
+@inject Api.Modules.Translations.Interfaces.ISharedViewLocalizer Localizer
 
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">

@@ -15,6 +15,7 @@ using Api.Modules.Grids.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
+using Api.Modules.Translations.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
@@ -48,9 +49,13 @@ namespace Api.Modules.Modules.Services
         private readonly ILogger<ModulesService> logger;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ICsvService csvService;
+        private readonly ISharedViewLocalizer localizer;
         
-        private const string DefaultModulesGroupName = "Overig";
-        private const string PinnedModulesGroupName = "Vastgepind";
+        private string DefaultModulesGroupName = "Overig";
+        private string PinnedModulesGroupName = "Vastgepind";
+        private string SettingsGroupName = "Instellingen";
+        private string ContentGroupName = "Contentbeheer";
+        private string SystemGroupName = "Systeem";
 
         /// <summary>
         /// Creates a new instance of <see cref="ModulesService"/>.
@@ -60,7 +65,7 @@ namespace Api.Modules.Modules.Services
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
             ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
-            ICsvService csvService)
+            ICsvService csvService, ISharedViewLocalizer localizer)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.gridsService = gridsService;
@@ -74,6 +79,13 @@ namespace Api.Modules.Modules.Services
             this.databaseHelpersService = databaseHelpersService;
             this.csvService = csvService;
             this.clientDatabaseConnection = clientDatabaseConnection;
+            this.localizer = localizer;
+
+            DefaultModulesGroupName = localizer.GetLocalizedString("STR_Others");
+            PinnedModulesGroupName = localizer.GetLocalizedString("STR_Pinned");
+            SettingsGroupName = localizer.GetLocalizedString("Menu_Settings");
+            ContentGroupName = localizer.GetLocalizedString("Menu_ContentManagement");
+            SystemGroupName = localizer.GetLocalizedString("Menu_System");
         }
 
         /// <inheritdoc />
@@ -348,7 +360,7 @@ UNION
                     switch (moduleId)
                     {
                         case Constants.DefaultMasterDataModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
+                            groupName = isPinned ? PinnedModulesGroupName : SettingsGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -356,21 +368,21 @@ UNION
 
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Instellingen",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "line-sliders",
                                 ModuleId = moduleId,
-                                Name = "Stamgegevens",
+                                Name = localizer.GetLocalizedString("Menu_MasterData"),
                                 Type = "MasterData",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultDataSelectorModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            groupName = isPinned ? PinnedModulesGroupName : ContentGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -378,21 +390,21 @@ UNION
 
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Contentbeheer",
+                                Group = ContentGroupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "settings",
                                 ModuleId = moduleId,
-                                Name = "Data selector",
+                                Name = localizer.GetLocalizedString("Menu_DataSelector"),
                                 Type = "DataSelector",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultSearchModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            groupName = isPinned ? PinnedModulesGroupName : ContentGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -400,21 +412,21 @@ UNION
 
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Contentbeheer",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "search",
                                 ModuleId = moduleId,
-                                Name = "Zoeken",
+                                Name = localizer.GetLocalizedString("Menu_Search"),
                                 Type = "Search",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultAdminModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
+                            groupName = isPinned ? PinnedModulesGroupName : SettingsGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -429,14 +441,14 @@ UNION
                                 CanWrite = true,
                                 Icon = "line-settings",
                                 ModuleId = moduleId,
-                                Name = "Wiser beheer",
+                                Name = localizer.GetLocalizedString("Menu_WiserManagement"),
                                 Type = "Admin",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultImportExportModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            groupName = isPinned ? PinnedModulesGroupName : ContentGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -444,21 +456,21 @@ UNION
 
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Contentbeheer",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "im-ex",
                                 ModuleId = moduleId,
-                                Name = "Import/export",
+                                Name = localizer.GetLocalizedString("Menu_ImportExport"),
                                 Type = "ImportExport",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultWiserUsersModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Instellingen";
+                            groupName = isPinned ? PinnedModulesGroupName : SettingsGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -466,21 +478,21 @@ UNION
 
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Gebruikers - Wiser",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "users",
                                 ModuleId = moduleId,
-                                Name = "Wiser beheer",
+                                Name = localizer.GetLocalizedString("Menu_Users"),
                                 Type = "Users",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultWebpagesModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Contentbeheer";
+                            groupName = isPinned ? PinnedModulesGroupName : ContentGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
@@ -488,56 +500,56 @@ UNION
 
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Contentbeheer",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "document-web",
                                 ModuleId = moduleId,
-                                Name = "Webpagina's 2.0",
+                                Name = localizer.GetLocalizedString("Menu_WebPages"),
                                 Type = "DynamicItems",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultVersionControlModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            groupName = isPinned ? PinnedModulesGroupName : SystemGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Systeem",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "git",
                                 ModuleId = moduleId,
-                                Name = "Versiebeheer",
+                                Name = localizer.GetLocalizedString("Menu_VersionControl"),
                                 Type = "VersionControl",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
                             });
                             break;
                         case Constants.DefaultTemplatesModuleId:
-                            groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                            groupName = isPinned ? PinnedModulesGroupName : SystemGroupName;
                             if (!results.ContainsKey(groupName))
                             {
                                 results.Add(groupName, new List<ModuleAccessRightsModel>());
                             }
                             results[groupName].Add(new ModuleAccessRightsModel
                             {
-                                Group = "Systeem",
+                                Group = groupName,
                                 CanCreate = true,
                                 CanDelete = true,
                                 CanRead = true,
                                 CanWrite = true,
                                 Icon = "document-fold",
                                 ModuleId = moduleId,
-                                Name = "Templates",
+                                Name = localizer.GetLocalizedString("Menu_Templates"),
                                 Type = "Templates",
                                 Pinned = isPinned,
                                 PinnedGroup = PinnedModulesGroupName
@@ -553,21 +565,21 @@ UNION
             if (results.All(g => g.Value.All(m => m.Type != "Configuration")))
             {
                 var isPinned = pinnedModules.Contains(0);
-                var groupName = isPinned ? PinnedModulesGroupName : "Systeem";
+                var groupName = isPinned ? PinnedModulesGroupName : SystemGroupName;
                 if (!results.ContainsKey(groupName))
                 {
                     results.Add(groupName, new List<ModuleAccessRightsModel>());
                 }
                 results[groupName].Add(new ModuleAccessRightsModel
                 {
-                    Group = "Systeem",
+                    Group = groupName,
                     CanCreate = true,
                     CanDelete = true,
                     CanRead = true,
                     CanWrite = true,
                     Icon = "config",
                     ModuleId = 0,
-                    Name = "Wiser Configuratie",
+                    Name = localizer.GetLocalizedString("Menu_WiserConfiguration"),
                     Type = "Configuration",
                     Pinned = isPinned,
                     PinnedGroup = PinnedModulesGroupName

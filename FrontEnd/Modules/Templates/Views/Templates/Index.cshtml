@@ -1,7 +1,6 @@
 ﻿@model FrontEnd.Modules.Templates.Models.TemplateViewModel
 @addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
-@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
+@inject Api.Modules.Translations.Interfaces.ISharedViewLocalizer Localizer
 @{
     Layout = "";
 }

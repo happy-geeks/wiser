@@ -118,8 +118,17 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   
+  <data name="STR_Advanced" xml:space="preserve">
+    <value>Advanced</value>
+  </data>
+  <data name="STR_at" xml:space="preserve">
+    <value>at</value>
+  </data>
   <data name="STR_Cancel" xml:space="preserve">
     <value>Cancel</value>
+  </data>
+  <data name="STR_Completed" xml:space="preserve">
+    <value>Completed</value>
   </data>
   <data name="STR_Continue" xml:space="preserve">
     <value>Continue</value>
@@ -139,17 +148,38 @@
   <data name="STR_Logout" xml:space="preserve">
     <value>Logout</value>
   </data>
+  <data name="STR_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="STR_Others" xml:space="preserve">
+    <value>Others</value>
+  </data>
   <data name="STR_Password" xml:space="preserve">
     <value>Password</value>
+  </data>
+  <data name="STR_Pinned" xml:space="preserve">
+    <value>Pinned</value>
+  </data>
+  <data name="STR_Save" xml:space="preserve">
+    <value>Save</value>
   </data>
   <data name="STR_Send" xml:space="preserve">
     <value>Send</value>
   </data>
+  <data name="STR_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
   <data name="STR_Submit" xml:space="preserve">
     <value>Submit</value>
   </data>
+  <data name="STR_User" xml:space="preserve">
+    <value>User</value>
+  </data>
   <data name="STR_Username" xml:space="preserve">
     <value>Username</value>
+  </data>
+  <data name="STR_Version" xml:space="preserve">
+    <value>Version</value>
   </data>
   
   <data name="Login_ForgotPassword" xml:space="preserve">
@@ -192,6 +222,43 @@
     <value>Enter the code from your authenticator app.</value>
   </data>
   
+  <data name="TA_TaskAlerts" xml:space="preserve">
+    <value>Task Alerts</value>
+  </data>
+  <data name="TA_SchedulingHistory" xml:space="preserve">
+    <value>Scheduling History</value>
+  </data>
+  <data name="TA_AddTask" xml:space="preserve">
+    <value>Add a task</value>
+  </data>
+  <data name="TA_AddUsers" xml:space="preserve">
+    <value>Add users</value>
+  </data>
+  <data name="TA_AddUsersPH" xml:space="preserve">
+    <value>Choose users...</value>
+  </data>
+  <data name="TA_TaskDescription" xml:space="preserve">
+    <value>Task description</value>
+  </data>
+  <data name="TA_TaskDescriptionPH" xml:space="preserve">
+    <value>Description of the task...</value>
+  </data>
+  <data name="TA_EditTask" xml:space="preserve">
+    <value>Edit Task</value>
+  </data>
+  <data name="TA_StatusPH" xml:space="preserve">
+    <value>Choose a status...</value>
+  </data>
+  <data name="TA_NoStatus" xml:space="preserve">
+    <value>No status</value>
+  </data>
+  <data name="TA_InProgress" xml:space="preserve">
+    <value>In progress</value>
+  </data>
+  <data name="TA_WaitingForResponse" xml:space="preserve">
+    <value>Waiting for response</value>
+  </data>
+
   <data name="Menu_WiserConfiguration" xml:space="preserve">
     <value>Wiser Configuration</value>
   </data>
@@ -258,6 +325,9 @@
   <data name="Menu_ContentBoxTemplates" xml:space="preserve">
     <value>Contentbox Templates</value>
   </data>
+  <data name="Menu_Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="Menu_GCLSettings" xml:space="preserve">
     <value>GCL Settings</value>
   </data>
@@ -300,11 +370,33 @@
   <data name="Menu_Dashboard" xml:space="preserve">
     <value>Dashboard</value>
   </data>
-  <data name="Menu_" xml:space="preserve">
-    <value></value>
+  <data name="Menu_ContentManagement" xml:space="preserve">
+    <value>Content Management</value>
   </data>
-  <data name="Menu_" xml:space="preserve">
-    <value></value>
+  <data name="Menu_WebPages" xml:space="preserve">
+    <value>Web pages</value>
+  </data>
+  <data name="Menu_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  
+  <data name="Template_LastModifiedBy" xml:space="preserve">
+    <value>Last modified by</value>
+  </data>
+  <data name="Template_DeployToTest" xml:space="preserve">
+    <value>Deploy to test</value>
+  </data>  
+  <data name="Template_DeployToAcceptance" xml:space="preserve">
+    <value>Deploy to acceptance</value>
+  </data>  
+  <data name="Template_DeployToLive" xml:space="preserve">
+    <value>Deploy to live</value>
+  </data>  
+  <data name="Template_LinkedCSS" xml:space="preserve">
+    <value>Linked (S)CSS templates</value>
+  </data>
+  <data name="Template_LinkedJS" xml:space="preserve">
+    <value>Linked JS templates</value>
   </data>
   
   <data name="Warning_CapsOn" xml:space="preserve">

@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
+﻿@inject Api.Modules.Translations.Interfaces.ISharedViewLocalizer Localizer
 <div class="item connected-users" style="width: 100%">
     <h4><label>@Localizer["Users who have opened this template"]</label></h4>
     <div class="item connected-users-list"></div>

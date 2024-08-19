@@ -2,7 +2,8 @@
 @using GeeksCoreLibrary.Core.Enums
 @model FrontEnd.Core.Models.BaseViewModel
 @using Microsoft.AspNetCore.Mvc.Localization
-@inject IViewLocalizer Localizer
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+@inject Api.Modules.Translations.Interfaces.ISharedViewLocalizer Localizer
 <style>
     [v-cloak] {
         display: none;
@@ -59,7 +60,6 @@
                     </span>
 
                 <ul class="sub-menu">
-                    <li><a href="#" @@click="openMarkerIoScreen"><ins class="icon-line-bug"></ins><span>@Localizer["Menu_ReportBug"]! (CTRL+B)</span></a></li>
                     <li><a href="#" @@click="openConfigurationModule"><ins class="icon-config"></ins><span>@Localizer["Menu_WiserConfiguration"]</span></a></li>
                     <li><a href="#" @@click="logout"><ins class="icon-line-log-out"></ins><span>@Localizer["STR_Logout"]</span></a></li>
                 </ul>
@@ -767,7 +767,10 @@
                     <a href="#" @@click="togglePasswordForgottenScreen(true)" id="forgotten-password">@Localizer["Login_ForgotPassword"]</a>
                 </div>
             </div>
-            <partial name="/Modules/Translations/Views/Partials/SelectLanguage"/>
+            
+            @{
+                await Html.RenderPartialAsync("~/Modules/Translations/Views/Partials/SelectLanguage.cshtml");
+            }
             <div v-if="(loginStatus === 'totp' || loginStatus === 'totp_loading' || loginStatus === 'totp_error') && !showForgotPasswordScreen" class="totp">
                 <p v-if="totpQrImageUrl">@Localizer["Login_ScanQR"]</p>
                 <p v-else-if="showTotpBackupCodeScreen">@Localizer["Login_EnterBackupCode"]</p>
