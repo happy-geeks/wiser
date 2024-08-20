@@ -12,5 +12,9 @@ public enum PermissionSubjects
     /// <summary>
     /// Represents the permission options for wiser queries.
     /// </summary>
-    Queries
+    Queries,
+    /// <summary>
+    /// Represents the permission options for endpoints.
+    /// </summary>
+    Endpoints
 }

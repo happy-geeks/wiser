@@ -1,4 +1,4 @@
-﻿import {Utils} from "../../Base/Scripts/Utils";
+﻿import {Utils, Wiser} from "../../Base/Scripts/Utils";
 
 export class RoleTab {
     constructor(base) {
@@ -64,9 +64,9 @@ export class RoleTab {
      * @param {any} subject The subject of which the rights get updates, for example modules
      * @param {any} role The id of the role
      * @param {any} subjectId The id of the permission subject
-     * @param {any} permissionCode The code of the permission to add or delete
+     * @param {any} permission The code of the permission to add or delete
      */
-    async addRemoveSubjectRightAssignment(subject, role, subjectId, permissionCode) {
+    async addRemoveSubjectRightAssignment(subject, role, subjectId, permission) {
         try {
             await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}permissions/`,
@@ -75,7 +75,7 @@ export class RoleTab {
                     subject: subject,
                     subjectId: subjectId,
                     roleId: role,
-                    permissionCode: permissionCode
+                    permission: permission
                 }),
                 method: "POST"
             });
@@ -274,16 +274,16 @@ export class RoleTab {
         });
     }
 
-    initializeOrRefreshRolesModulesGrid(item) {
+    initializeOrRefreshRolesModulesGrid(roleId) {
         const subject = 'Modules';
         if (!this.modulesGrid) {
-            this.modulesGrid = this.initializeOrRefreshRolesOnGrid(item, '#ModulesGrid', subject);
+            this.modulesGrid = this.initializeOrRefreshRolesOnGrid(roleId, '#ModulesGrid', subject);
         }
         const queryStringForModulesGrid = {
-            roleId: item,
+            roleId: roleId,
             subject: subject
         };
-        
+
         this.modulesGrid.setDataSource({
             transport: {
                 read: {
@@ -291,17 +291,16 @@ export class RoleTab {
                 }
             }
         });
-
     }
 
-    initializeOrRefreshRolesQueriesGrid(item) {
+    initializeOrRefreshRolesQueriesGrid(roleId) {
         const subject = 'Queries';
         if (!this.queriesGrid) {
-            this.queriesGrid = this.initializeOrRefreshRolesOnGrid(item, '#QueriesGrid', subject);
+            this.queriesGrid = this.initializeOrRefreshRolesOnGrid(roleId, '#QueriesGrid', subject);
         }
 
         const queryStringForQueriesGrid = {
-            roleId: item,
+            roleId: roleId,
             subject: subject
         };
 
@@ -312,9 +311,86 @@ export class RoleTab {
                 }
             }
         });
-
     }
-    
+
+    initializeOrRefreshEndpointsGrid(roleId) {
+        const queryStringForEndpointsGrid = {
+            roleId: roleId,
+            subject: "Endpoints"
+        };
+
+        if (!this.endpointsGrid) {
+            this.endpointsGrid = $("#EndpointsGrid").kendoGrid({
+                editable: "inline",
+                filterable: true,
+                toolbar: ["create"],
+                columns: [
+                    {
+                        title: "URL",
+                        field: "endpointUrl"
+                    },
+                    {
+                        title: "HTTP Method",
+                        field: "endpointHttpMethod"
+                    },
+                    {
+                        title: "Toegestaan",
+                        field: "permission"
+                    },
+                    {
+                        command: ["edit", "destroy"],
+                        title: "&nbsp;",
+                        width: "250px"
+                    }
+                ]
+            }).data("kendoGrid");
+        }
+
+        this.endpointsGrid.setDataSource({
+            transport: {
+                read: {
+                    url: `${this.base.settings.wiserApiRoot}permissions/${Utils.toQueryString(queryStringForEndpointsGrid, true)}`
+                },
+                create: {
+                    url: `${this.base.settings.wiserApiRoot}permissions`,
+                    contentType: "application/json",
+                    method: "POST"
+                },
+                update: {
+                    url: `${this.base.settings.wiserApiRoot}permissions`,
+                    contentType: "application/json",
+                    method: "POST"
+                },
+                destroy: {
+                    url: `${this.base.settings.wiserApiRoot}permissions`,
+                    contentType: "application/json",
+                    method: "DELETE"
+                },
+                parameterMap: (data, operation) => {
+                    console.log("parameterMap", data, operation);
+                    if (operation !== "read") {
+                        return kendo.stringify($.extend({"subject": "endpoints"}, data));
+                    }
+                }
+            },
+            schema: {
+                model: {
+                    id: "id",
+                    fields: {
+                        id: { type: "number" },
+                        objectId: { type: "number" },
+                        objectName: { type: "string" },
+                        roleId: { type: "number" },
+                        roleName: { type: "string" },
+                        endpointUrl: { type: "string" },
+                        endpointHttpMethod: { type: "string" },
+                        permission: { type: "number" }
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Init Kendo grid component
      * @param {any} item The item id of the selected role
@@ -473,6 +549,9 @@ export class RoleTab {
                     case "query's":
                         this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
                         break;
+                    case "endpoints":
+                        this.initializeOrRefreshEndpointsGrid(dataItem.id);
+                        break;
                 }
             }
         }).data("kendoTabStrip");
@@ -503,6 +582,9 @@ export class RoleTab {
                         break;
                     case "query's":
                         this.initializeOrRefreshRolesQueriesGrid(dataItem.id);
+                        break;
+                    case "endpoints":
+                        this.initializeOrRefreshEndpointsGrid(dataItem.id);
                         break;
                 }
             }
