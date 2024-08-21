@@ -183,16 +183,25 @@ WHERE query.id = ?id";
             if (isOnBranch)
             {
                 // When we are on a branch always create the id on both branch and main database.
-                
                 using var scope = serviceProvider.CreateScope();
                 var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
                 var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
                 await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
                 
                 queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",mainDatabaseConnection,clientDatabaseConnection);
-
-                await CreateAsyncOnDataBase(mainDatabaseConnection, queryModel, identity, description);
-                await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
+                
+                try
+                {
+                    await LockTables(mainDatabaseConnection);
+                    await LockTables(clientDatabaseConnection);
+                    await CreateAsyncOnDataBase(mainDatabaseConnection, queryModel, identity, description);
+                    await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
+                }
+                finally
+                {
+                    await UnlockTables(mainDatabaseConnection);
+                    await UnlockTables(clientDatabaseConnection);
+                }
             }
             else
             {
@@ -203,7 +212,44 @@ WHERE query.id = ?id";
             
             return new ServiceResult<QueryModel>(queryModel);
         }
-        
+
+        private async Task<bool> LockTables(IDatabaseConnection targetDatabase)
+        {
+            try
+            {
+                var lockQuery = $"""
+                                 LOCK TABLES
+                                 {WiserTableNames.WiserQuery} WRITE,
+                                 {WiserTableNames.WiserQuery} item READ,
+                                 {WiserTableNames.WiserUserRoles} user_role READ,
+                                 {WiserTableNames.WiserPermission} permission READ,
+                                 {WiserTableNames.WiserIdMappings} WRITE
+                                 """;
+
+                await targetDatabase.ExecuteAsync(lockQuery);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        private async Task<bool> UnlockTables(IDatabaseConnection targetDatabase)
+        {
+            try
+            {
+                var unlockQuery = "UNLOCK TABLES";
+                await targetDatabase.ExecuteAsync(unlockQuery);
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+            
+            
         private async Task<ServiceResult<QueryModel>> CreateAsyncOnDataBase(IDatabaseConnection targetDatabase, QueryModel queryModel, ClaimsIdentity identity, string description)
         {
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
@@ -222,7 +268,6 @@ WHERE query.id = ?id";
                                  """;
 
                 await targetDatabase.ExecuteAsync(lockQuery);
-                
                 
                 var itemInsertQuery = $@"INSERT INTO {WiserTableNames.WiserQuery}
                 (
