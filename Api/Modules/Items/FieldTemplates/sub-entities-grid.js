@@ -34,17 +34,17 @@ if (customQueryGrid) {
     {
         let result = Wiser.api({ 
             url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}` 
-        }).then(function(customQueryResults) {
-        if (customQueryResults.extraJavascript) {
-            jQuery.globalEval(customQueryResults.extraJavascript);
-        }
+        }).then((customQueryResults) => {
+            if (customQueryResults.extraJavascript) {
+                jQuery.globalEval(customQueryResults.extraJavascript);
+            }
         
-        if (!hideCheckboxColumn) {
-            customQueryResults.columns.splice(0, 0, {
-                selectable: true,
-                width: "30px"
-            });
-        }
+            if (!hideCheckboxColumn) {
+                customQueryResults.columns.splice(0, 0, {
+                    selectable: true,
+                    width: "30px"
+                });
+            }
 
         if (!options.disableOpeningOfItems) {
             if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
@@ -106,7 +106,13 @@ if (customQueryGrid) {
         }
         
         generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
-    });
+    }
+    catch()
+        {
+            
+        }
+    );
+        
 } else {
     let done = (gridSettings) => {
         if (usingDataSelector) {
@@ -932,7 +938,7 @@ async function generateGrid(data, model, columns) {
     if (!customQueryGrid && dynamicItems.fieldTemplateFlags.enableSubEntitiesGridsOrdering && !options.fieldGroupName) {
         kendoComponent.table.kendoSortable({
             autoScroll: true,
-            hint: function (element) {
+            hint: (element) => {
                 const table = kendoComponent.table.clone(); // Clone the Grid table.
                 const wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
                 const wrapper = $("<div class='k-grid k-widget'></div>").width(wrapperWidth);
@@ -950,7 +956,7 @@ async function generateGrid(data, model, columns) {
             },
             container: "#overviewGrid{propertyIdWithSuffix}",
             filter: ">tbody >tr",
-            change: function (e) {
+            change: (e) => {
                 // Kendo starts ordering with 0, but wiser starts with 1.
                 const oldIndex = e.oldIndex + 1; // The old position.
                 const newIndex = e.newIndex + 1; // The new position.
