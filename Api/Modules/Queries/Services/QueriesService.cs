@@ -168,7 +168,7 @@ WHERE query.id = ?id";
                 RolesWithPermissions = ""
             };
             
-            await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
             
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
             var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
@@ -205,7 +205,7 @@ WHERE query.id = ?id";
             }
             else
             {
-                await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
+                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
                 queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",clientDatabaseConnection);
                 await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
             }
