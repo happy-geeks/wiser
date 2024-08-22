@@ -97,11 +97,13 @@ namespace Api.Modules.Branches.Interfaces
         /// <summary>
         /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
         /// This is to make sure that the new ID can be created in both databases to match.
+        /// If a null is supplied for a branchDatabase we only find the new id on the main database. 
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
         /// <param name="mainDatabaseConnection">The connection to the main database.</param>
         /// <param name="branchDatabase">The connection to the branch database.</param>
         /// <returns>The new ID that should be used for the item in both databases.</returns>
-        Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase);
+        Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase = null);
+        
     }
 }

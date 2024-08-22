@@ -1929,11 +1929,15 @@ WHERE changed_on >= ?lastChange";
             
             var dataTable = await mainDatabaseConnection.GetAsync(query);
             var maxMainId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
-            
-            dataTable = await branchDatabase.GetAsync(query);
-            var maxBranchId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
 
-            return Math.Max(maxMainId, maxBranchId) + 1;
+            if (branchDatabase != null)
+            {
+                dataTable = await branchDatabase.GetAsync(query);
+                var maxBranchId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+                return Math.Max(maxMainId, maxBranchId) + 1;
+            }
+
+            return maxMainId + 1;
         }
     }
 }
