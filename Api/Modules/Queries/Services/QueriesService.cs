@@ -284,6 +284,9 @@ WHERE query.id = ?id";
                     ?query,
                     ?show_in_export_module,
                     ?show_in_communication_module
+                    ?mike is cool
+                    ? adra nog cooler
+                    ? en bashar ook
                 );";
                 
                 await targetDatabase.EnsureOpenConnectionForReadingAsync();
