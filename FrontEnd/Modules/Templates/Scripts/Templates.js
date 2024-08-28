@@ -2366,7 +2366,7 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
                 this.lastLoadedHistoryPartNumber = 0;
 
-                const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                const version = parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0;
                 await this.deployEnvironment(alsoDeployToTest === true ? "test" : "development", templateId, version);
 
                 if (reloadTemplateAfterSave) {
