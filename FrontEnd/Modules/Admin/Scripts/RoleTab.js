@@ -167,7 +167,7 @@ export class RoleTab {
                             style: "text-align: center;"
                         },
                         headerTemplate: () => {
-                            return `<div class="checkAll"><span>Alle rechten</span><input type="checkbox" id="role-check-all" class="k-checkbox role"><label class="k-checkbox-label" for="role-check-all"></label></div>`;
+                            return `<div class="checkAll"><span>Alle rechten</span><input type="checkbox" id="role-entity-property-check-all" class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-check-all"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" ${dataItem.permission === 15 ? "checked" : ""} id="role-entity-property-all-${dataItem.propertyId}" data-type="all" data-role-id="${dataItem.roleId}" data-entity="${dataItem.propertyId}" data-permission="15" class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-all-${dataItem.propertyId}"></label>`;
@@ -180,7 +180,7 @@ export class RoleTab {
                             style: "text-align: center;"
                         },
                         headerTemplate: () => {
-                            return `<div class="checkAll"><span>Geen rechten</span><input type="checkbox" id="role-check-disable" class="k-checkbox role"><label class="k-checkbox-label" for="role-check-disable"></label></div>`;
+                            return `<div class="checkAll"><span>Geen rechten</span><input type="checkbox" id="role-entity-property-check-disable" class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-check-disable"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" id="role-entity-property-disable-${dataItem.propertyId}" data-role-id="${dataItem.roleId}" data-type="nothing" data-entity="${dataItem.propertyId}" data-permission="0" ${dataItem.permission === 0 ? "checked" : ""} class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-disable-${dataItem.propertyId}"></label>`;
@@ -193,7 +193,7 @@ export class RoleTab {
                             style: "text-align: center;"
                         },
                         headerTemplate: () => {
-                            return `<div class="checkAll"><span>Lezen</span><input type="checkbox" id="role-check-read" class="k-checkbox role"><label class="k-checkbox-label" for="role-check-read"></label></div>`;
+                            return `<div class="checkAll"><span>Lezen</span><input type="checkbox" id="role-entity-property-check-read" class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-check-read"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" id="role-entity-property-read-${dataItem.propertyId}" data-role-id="${dataItem.roleId}" data-type="read" data-entity="${dataItem.propertyId}" data-permission="1" ${(1 << 0 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-read-${dataItem.propertyId}"></label>`;
@@ -206,7 +206,7 @@ export class RoleTab {
                             style: "text-align: center;"
                         },
                         headerTemplate: () => {
-                            return `<div class="checkAll"><span>Aanmaken</span><input type="checkbox" id="role-check-edit" class="k-checkbox"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                            return `<div class="checkAll"><span>Aanmaken</span><input type="checkbox" id="role-entity-property-check-create" class="k-checkbox"><label class="k-checkbox-label" for="role-entity-property-check-create"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" id="role-entity-property-create-${dataItem.propertyId}" data-role-id="${dataItem.roleId}" data-type="create" data-entity="${dataItem.propertyId}" data-permission="2" ${(1 << 1 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-create-${dataItem.propertyId}"></label>`;
@@ -219,7 +219,7 @@ export class RoleTab {
                             style: "text-align: center;"
                         },
                         headerTemplate: () => {
-                            return `<div class="checkAll"><span>Wijzigen</span><input type="checkbox" id="role-check-edit" class="k-checkbox"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                            return `<div class="checkAll"><span>Wijzigen</span><input type="checkbox" id="role-entity-property-check-edit" class="k-checkbox"><label class="k-checkbox-label" for="role-entity-property-check-edit"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" id="role-entity-property-edit-${dataItem.propertyId}" data-role-id="${dataItem.roleId}" data-type="edit" data-entity="${dataItem.propertyId}" data-permission="4" ${(1 << 2 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-edit-${dataItem.propertyId}"></label>`;
@@ -232,7 +232,7 @@ export class RoleTab {
                             style: "text-align: center;"
                         },
                         headerTemplate: () => {
-                            return `<div class="checkAll"><span>Verwijderen</span><input type="checkbox" id="role-check-edit" class="k-checkbox"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                            return `<div class="checkAll"><span>Verwijderen</span><input type="checkbox" id="role-entity-property-check-delete" class="k-checkbox"><label class="k-checkbox-label" for="role-entity-property-check-delete"></label></div>`;
                         },
                         template: (dataItem) => {
                             return `<input type="checkbox" id="role-entity-property-delete-${dataItem.propertyId}" data-role-id="${dataItem.roleId}" data-type="remove" data-entity="${dataItem.propertyId}" data-permission="8" ${(1 << 3 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox role"><label class="k-checkbox-label" for="role-entity-property-delete-${dataItem.propertyId}"></label>`;
@@ -273,7 +273,7 @@ export class RoleTab {
             }
         });
     }
-
+    
     initializeOrRefreshRolesModulesGrid(roleId) {
         const subject = 'Modules';
         if (!this.modulesGrid) {
@@ -413,7 +413,7 @@ export class RoleTab {
                         style: "text-align: center;"
                     },
                     headerTemplate: () => {
-                        return `<div class="checkAll"><span>Alle rechten</span><input type="checkbox" id="role-check-all" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-check-all"></label></div>`;
+                        return `<div class="checkAll"><span>Alle rechten</span><input type="checkbox" id="role-${subject}-check-all" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-check-all"></label></div>`;
                     },
                     template: (dataItem) => {
                         return `<input type="checkbox" id="role-${subject}-all-${dataItem.objectId}" data-type="all" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="0" ${dataItem.permission === 15 ? "checked" : ""} class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-all-${dataItem.objectId}"></label>`;
@@ -426,7 +426,7 @@ export class RoleTab {
                         style: "text-align: center;"
                     },
                     headerTemplate: () => {
-                        return `<div class="checkAll"><span>Geen rechten</span><input type="checkbox" id="role-check-disable" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-check-disable"></label></div>`;
+                        return `<div class="checkAll"><span>Geen rechten</span><input type="checkbox" id="role-${subject}-check-disable" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-check-disable"></label></div>`;
                     },
                     template: (dataItem) => {
                         return `<input type="checkbox" id="role-${subject}-disable-${dataItem.objectId}" data-type="nothing" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="0" ${dataItem.permission === 0 ? "checked" : ""} class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-disable-${dataItem.objectId}"></label>`;
@@ -439,7 +439,7 @@ export class RoleTab {
                         style: "text-align: center;"
                     },
                     headerTemplate: () => {
-                        return `<div class="checkAll"><span>Lezen</span><input type="checkbox" id="role-check-read" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-check-read"></label></div>`;
+                        return `<div class="checkAll"><span>Lezen</span><input type="checkbox" id="role-${subject}-check-read" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-check-read"></label></div>`;
                     },
                     template: (dataItem) => {
                         return `<input type="checkbox" id="role-${subject}-read-${dataItem.objectId}" data-type="read" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="1" ${(1 << 0 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-${subject}-read-${dataItem.objectId}"></label>`;
@@ -452,7 +452,7 @@ export class RoleTab {
                         style: "text-align: center;"
                     },
                     headerTemplate: () => {
-                        return `<div class="checkAll"><span>Aanmaken</span><input type="checkbox" id="role-check-edit" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                        return `<div class="checkAll"><span>Aanmaken</span><input type="checkbox" id="role-${subject}-check-create" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-check-create"></label></div>`;
                     },
                     template: (dataItem) => {
                         return `<input type="checkbox" id="role-${subject}-create-${dataItem.objectId}" data-type="create" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="2" ${(1 << 1 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-${subject}-create-${dataItem.objectId}"></label>`;
@@ -465,7 +465,7 @@ export class RoleTab {
                         style: "text-align: center;"
                     },
                     headerTemplate: () => {
-                        return `<div class="checkAll"><span>Wijzigen</span><input type="checkbox" id="role-check-edit" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                        return `<div class="checkAll"><span>Wijzigen</span><input type="checkbox" id="role-${subject}-check-edit" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-check-edit"></label></div>`;
                     },
                     template: (dataItem) => {
                         return `<input type="checkbox" id="role-${subject}-edit-${dataItem.objectId}" data-type="edit" data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="4" ${(1 << 2 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-${subject}-edit-${dataItem.objectId}"></label>`;
@@ -478,7 +478,7 @@ export class RoleTab {
                         style: "text-align: center;"
                     },
                     headerTemplate: () => {
-                        return `<div class="checkAll"><span>Verwijderen</span><input type="checkbox" id="role-check-edit" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-check-edit"></label></div>`;
+                        return `<div class="checkAll"><span>Verwijderen</span><input type="checkbox" id="role-${subject}-check-delete" class="k-checkbox ${subject}"><label class="k-checkbox-label" for="role-${subject}-check-delete"></label></div>`;
                     },
                     template: (dataItem) => {
                         return `<input type="checkbox" id="role-${subject}-delete-${dataItem.objectId}" data-type="remove"  data-role-id="${dataItem.roleId}" data-id="${dataItem.objectId}" data-permission="8" ${(1 << 3 & dataItem.permission) > 0 ? "checked" : ""} class="k-checkbox"><label class="k-checkbox-label" for="role-${subject}-delete-${dataItem.objectId}"></label>`;
