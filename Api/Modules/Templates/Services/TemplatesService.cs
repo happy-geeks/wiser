@@ -1497,8 +1497,8 @@ LIMIT 1";
             }
 
             // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
-            // Does not apply if the template was published to live within a branch.
-            if (branch == null)
+            // Does not apply if the template was published to live within a branch or if it was only deployed to the development environment.
+            if (branch == null && (environment & Environments.Development) != Environments.Development)
             {
                 await CreateNewVersionAsync(templateId, version);
             }
