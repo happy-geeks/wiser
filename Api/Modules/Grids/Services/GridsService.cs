@@ -251,8 +251,8 @@ namespace Api.Modules.Grids.Services
                     results.Columns.Add(new GridColumn {Field = "changedon", Title = "Datum", Format = "{0:dd MMMM yyyy - HH:mm:ss}"});
                     results.Columns.Add(new GridColumn {Field = "field", Title = "Veldnaam"});
                     results.Columns.Add(new GridColumn {Field = "action", Title = "Actie type"});
-                    results.Columns.Add(new GridColumn {Field = "oldvalue", Title = "Oude waarde"});
-                    results.Columns.Add(new GridColumn {Field = "newvalue", Title = "Nieuwe waarde"});
+                    results.Columns.Add(new GridColumn {Field = "oldvalue", Title = "Oude waarde", Attributes = new AttributesModel {Class = "folded-message"}});
+                    results.Columns.Add(new GridColumn {Field = "newvalue", Title = "Nieuwe waarde", Attributes = new AttributesModel {Class = "folded-message"}});
                     results.Columns.Add(new GridColumn {Field = "changedby", Title = "Gewijzigd door"});
 
                     hasPredefinedSchema = true;
