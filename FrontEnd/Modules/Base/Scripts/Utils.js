@@ -1058,8 +1058,9 @@ export class Wiser {
      * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save).
      * @param {number} moduleId Optional: The id of the module in which the item should be created.
      * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
+     * @param {bool} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
      */
-    static async createItem(moduleSettings, entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
+    static async createItem(moduleSettings, entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null, alsoCreateInMainBranch = false) {
         try {
             const newItem = {
                 entityType: entityType,
@@ -1068,8 +1069,9 @@ export class Wiser {
             };
 
             const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
+            const alsoCreateInMainBranchPart = alsoCreateInMainBranch ? "&alsoCreateInMainBranch=true" : ""; // Only add parameter if it has been set.
             const createItemResult = await Wiser.api({
-                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true`,
+                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true${alsoCreateInMainBranchPart}`,
                 method: "POST",
                 contentType: "application/json",
                 dataType: "JSON",
@@ -1435,7 +1437,7 @@ export class Wiser {
             let field = fields[i];
             let oldValue = field.querySelector("span.oldValue")?.getAttribute("value");
             let newValue = field.querySelector("span.newValue")?.getAttribute("value");
-            const fieldName = field.getAttribute("field-name");
+            let fieldName = field.getAttribute("field-name");
             const dataType = field.getAttribute("data-type");
             switch (dataType) { // TemplateTypes enum
                 case "Html": // Html is saved without whitespace in the database, so we need to make it readable first
@@ -1446,6 +1448,9 @@ export class Wiser {
                     oldValue = !oldValue ? "" : oldValue;
                     newValue = !newValue ? "" : newValue;
             }
+            if (fieldName === "editorValue") {
+                fieldName = "Template";
+            }
 
             const diff = Diff.createTwoFilesPatch(fieldName, fieldName, oldValue, newValue);
             field.innerHTML = Diff2Html.html(diff, {
@@ -1453,8 +1458,31 @@ export class Wiser {
                 matching: "words",
                 outputFormat: "side-by-side"
             });
-
             field.classList.remove("diffField");
+
+            let header = field.querySelector("div.d2h-file-header");
+            let viewButton = document.createElement('button');
+            viewButton.setAttribute('style', "width:100px;");
+            viewButton.textContent = "Toon alles";
+            $(viewButton).kendoButton({
+                click: function() {
+                    const html = Diff2Html.html(Diff.createTwoFilesPatch(fieldName, fieldName, oldValue, newValue, undefined, undefined, {context: Number.MAX_SAFE_INTEGER}), {
+                        drawFileList: false,
+                        matching: "words",
+                        outputFormat: "side-by-side"
+                    });
+
+                    let fullViewWindow = $(`<div style="padding:10px;">${html}</div>`).kendoWindow({
+                        title: `"${fieldName}" field version difference`,
+                        iframe: true,
+                        actions: ["close"]
+                    }).data("kendoWindow");
+
+                    fullViewWindow.maximize().open();
+                }
+            });
+
+            header.appendChild(viewButton);
         }
     }
 }

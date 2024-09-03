@@ -37,6 +37,10 @@ export class Dialogs {
                 { text: "Opslaan", primary: true, action: (event) => this.createItem() }
             ]
         }).data("kendoDialog");
+        
+        if (window.parent?.main?.branchesService !== undefined && (await window.parent.main.branchesService.isMainBranch()).data && this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row").length > 0) {
+            this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row")[0].classList.add("hidden");
+        }
 
         this.newItemDialog.element.find("#newItemNameField").keyup((event) => {
             if (!event.key || event.key.toLowerCase() !== "enter") {
@@ -164,6 +168,7 @@ export class Dialogs {
 
         await this.loadAvailableEntityTypesInDropDown(parentId);
 
+        this.newItemDialog.element.find("#alsoCreateInMainBranch").prop("checked", false);
         const newItemNameField = this.newItemDialog.element.find("#newItemNameField").val("");
 
         this.newItemDialog.element.data("parentId", parentId);
@@ -207,6 +212,7 @@ export class Dialogs {
         const parentId = options.parentId;
         let node = options.treeNode;
         const newName = $("#newItemNameField").val() || "";
+        const alsoCreateInMainBranch = this.newItemDialog.element.find("#alsoCreateInMainBranch").prop("checked") || false;
 
         if (!entityType) {
             kendo.alert("Kies eerst een entiteit-type.");
@@ -219,7 +225,7 @@ export class Dialogs {
         }
 
         // Create the item in database.
-        const createItemResult = await this.base.createItem(entityType, parentId, newName, options.linkTypeNumber, [], false, options.moduleId);
+        const createItemResult = await this.base.createItem(entityType, parentId, newName, options.linkTypeNumber, [], false, options.moduleId, alsoCreateInMainBranch);
         if (!createItemResult) {
             return;
         }

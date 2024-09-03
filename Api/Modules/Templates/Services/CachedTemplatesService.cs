@@ -12,6 +12,7 @@ using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Templates.Models.Template.WtsModels;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -93,7 +94,7 @@ namespace Api.Modules.Templates.Services
         {
             return await templatesService.GetTemplateSettingsAsync(identity, templateId, environment);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<TemplateWtsConfigurationModel>> GetTemplateWtsConfigurationAsync(ClaimsIdentity identity, int templateId, Environments? environment = null)
         {
@@ -101,9 +102,9 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, TenantModel branch = null)
         {
-            return await templatesService.GetTemplateEnvironmentsAsync(templateId, branchDatabaseName);
+            return await templatesService.GetTemplateEnvironmentsAsync(templateId, branch);
         }
 
         /// <inheritdoc />
@@ -119,11 +120,11 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, TenantModel branchDatabaseName)
         {
             return await templatesService.PublishToEnvironmentAsync(identity, templateId, version, environment, currentPublished, branchDatabaseName);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
         {

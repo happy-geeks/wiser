@@ -44,5 +44,10 @@
         /// Gets or sets the expected return type, for now only JSON is supported but in the future this can be extended
         /// </summary>
         public string ReturnType { get; set; }
+        
+        /// <summary>
+        /// Gets or Sets the option field, this is a JSON style option string field that gets parsed for every run
+        /// </summary>
+        public string Options { get; set; }
     }
 }

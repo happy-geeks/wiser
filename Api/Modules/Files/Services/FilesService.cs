@@ -10,6 +10,7 @@ using Api.Core.Enums;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.CloudFlare.Interfaces;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Interfaces.Repository;
@@ -23,6 +24,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
@@ -40,11 +42,13 @@ namespace Api.Modules.Files.Services
         private readonly IWiserItemsService wiserItemsService;
         private readonly ICloudFlareService cloudFlareService;
         private readonly IFilesRepository filesRepository;
+        private readonly IBranchesService branchesService;
+        private readonly IServiceProvider serviceProvider;
 
         /// <summary>
         /// Creates a new instance of <see cref="FilesService"/>.
         /// </summary>
-        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings)
+        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.logger = logger;
@@ -52,6 +56,8 @@ namespace Api.Modules.Files.Services
             this.wiserItemsService = wiserItemsService;
             this.cloudFlareService = cloudFlareService;
             this.filesRepository = filesRepository;
+            this.branchesService = branchesService;
+            this.serviceProvider = serviceProvider;
 
             Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
         }
@@ -313,42 +319,114 @@ namespace Api.Modules.Files.Services
             }
 
             var username = IdentityHelpers.GetUserName(identity, true);
-            databaseConnection.ClearParameters();
+            
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            if (branchesService.IsMainBranch(tenant.ModelObject).ModelObject || !propertyName.Equals("global_file"))
+            {
+                return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
+            }
+            
+            // Check if directory ID is in the mappings. If true use ID for main database, if false throw exception.
+            var directoryIdMainBranch = await branchesService.GetMappedIdAsync(itemId);
+
+            if (directoryIdMainBranch == null)
+            {
+                return new ServiceResult<FileModel>
+                {
+                    ErrorMessage = $"Failed to upload file in main branch. Directory with ID {itemId} does not exist in main branch and can therefore not (safely) be mapped.",
+                    StatusCode = HttpStatusCode.Forbidden
+                };
+            }
+            
+            using var scope = serviceProvider.CreateScope();
+            var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+            var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+            var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+            await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+
+            try
+            {
+                await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
+                await databaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
+                
+                var fileId = await branchesService.GenerateNewIdAsync(WiserTableNames.WiserItemFile, mainDatabaseConnection, databaseConnection);
+
+                await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId);
+                return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false, fileId);
+            }
+            finally
+            {
+                await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+                await databaseConnection.ExecuteAsync("UNLOCK TABLES");
+            }
+        }
+
+        /// <summary>
+        /// Save the Wiser item file to the provided database.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="dbConnection">The <see cref="IDatabaseConnection"/> to use when saving the file to the database.</param>
+        /// <param name="username">The name of the user saving the file.</param>
+        /// <param name="itemId">The ID of the item the file should be linked to.</param>
+        /// <param name="itemLinkId">If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+        /// <param name="entityType">When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
+        /// <param name="linkType">When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+        /// <param name="title">The title/description of the file.</param>
+        /// <param name="fileBytes">The file contents.</param>
+        /// <param name="content">The content to save if the file itself needs to be saved in the database.</param>
+        /// <param name="contentUrl">The URL to the file if the file itself does not need to be saved in the database.</param>
+        /// <param name="fileExtension">The extension of the file.</param>
+        /// <param name="contentType">The content type of the file.</param>
+        /// <param name="fileName">The name of the file.</param>
+        /// <param name="propertyName">The name of the property that contains the file upload.</param>
+        /// <param name="saveHistory">Optional: If the history of the file needs to be saved.</param>
+        /// <param name="fileId">Optional: If an ID is provided the file will be inserted on that ID instead of using the auto increment.</param>
+        /// <returns>An object of <see cref="FileModel"/> with file data.</returns>
+        private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true, ulong fileId = 0)
+        {
+            dbConnection.ClearParameters();
             var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
             var tablePrefix = "";
+            
             if (itemLinkId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
-                databaseConnection.ClearParameters();
-                databaseConnection.AddParameter("itemlink_id", itemLinkId);
+                dbConnection.ClearParameters();
+                dbConnection.AddParameter("itemlink_id", itemLinkId);
                 columnsForInsertQuery.Add("itemlink_id");
             }
             else if (itemId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-                databaseConnection.ClearParameters();
-                databaseConnection.AddParameter("item_id", itemId);
+                dbConnection.ClearParameters();
+                dbConnection.AddParameter("item_id", itemId);
                 columnsForInsertQuery.Add("item_id");
             }
             else
             {
-                databaseConnection.AddParameter("itemlink_id", 0);
-                databaseConnection.AddParameter("item_id", 0);
+                dbConnection.AddParameter("itemlink_id", 0);
+                dbConnection.AddParameter("item_id", 0);
             }
 
             if (content?.Length > 0)
             {
-                databaseConnection.AddParameter("content", content);
+                dbConnection.AddParameter("content", content);
                 columnsForInsertQuery.Add("content");
             }
 
-            databaseConnection.AddParameter("content_url", contentUrl);
-            databaseConnection.AddParameter("content_type", contentType);
-            databaseConnection.AddParameter("file_name", fileName);
-            databaseConnection.AddParameter("extension", Path.GetExtension(fileName));
-            databaseConnection.AddParameter("added_by", username ?? "");
-            databaseConnection.AddParameter("title", title ?? "");
-            databaseConnection.AddParameter("property_name", propertyName);
+            if (fileId > 0)
+            {
+                dbConnection.AddParameter("id", fileId);
+                columnsForInsertQuery.Insert(0, "id");
+            }
+
+            dbConnection.AddParameter("content_url", contentUrl);
+            dbConnection.AddParameter("content_type", contentType);
+            dbConnection.AddParameter("file_name", fileName);
+            dbConnection.AddParameter("extension", Path.GetExtension(fileName));
+            dbConnection.AddParameter("added_by", username ?? "");
+            dbConnection.AddParameter("title", title ?? "");
+            dbConnection.AddParameter("property_name", propertyName);
 
             var ordering = 1;
             var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
@@ -356,18 +434,21 @@ namespace Api.Modules.Files.Services
 FROM {tablePrefix}{WiserTableNames.WiserItemFile}
 WHERE {whereClause}
 AND property_name = ?property_name";
-            var dataTable = await databaseConnection.GetAsync(query);
+            var dataTable = await dbConnection.GetAsync(query);
             if (dataTable.Rows.Count > 0)
             {
                 ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
             }
-            databaseConnection.AddParameter("ordering", ordering);
+            dbConnection.AddParameter("ordering", ordering);
+            
+            dbConnection.AddParameter("saveHistoryGcl", saveHistory); // This is used in triggers.
 
-            query = $@"SET @_username = ?added_by;
+            query = $@"SET @saveHistory = ?saveHistoryGcl;
+SET @_username = ?added_by;
 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
-SELECT LAST_INSERT_ID() AS newId;";
-            var newItem = await databaseConnection.GetAsync(query);
+SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
+            var newItem = await dbConnection.GetAsync(query);
 
             var result = new FileModel
             {

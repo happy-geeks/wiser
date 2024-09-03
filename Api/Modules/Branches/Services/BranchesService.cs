@@ -165,6 +165,26 @@ namespace Api.Modules.Branches.Services
                 }
             };
 
+            if (!String.IsNullOrWhiteSpace(settings.DatabaseHost))
+            {
+                newTenant.Database.Host = settings.DatabaseHost;
+                settings.DatabaseHost = settings.DatabaseHost.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            if (settings.DatabasePort is > 0)
+            {
+                newTenant.Database.PortNumber = settings.DatabasePort.Value;
+            }
+            if (!String.IsNullOrWhiteSpace(settings.DatabaseUsername))
+            {
+                newTenant.Database.Username = settings.DatabaseUsername;
+                settings.DatabaseUsername = settings.DatabaseUsername.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+            if (!String.IsNullOrWhiteSpace(settings.DatabasePassword))
+            {
+                newTenant.Database.Password = settings.DatabasePassword.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
+                settings.DatabasePassword = settings.DatabasePassword.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            }
+
             await wiserTenantsService.CreateOrUpdateTenantAsync(newTenant);
 
             // Clear some data that we don't want to return to client.
@@ -593,7 +613,7 @@ LIMIT 1";
 
                 var originalItemId = Convert.ToUInt64(dataRow["item_id"]);
                 var action = dataRow.Field<string>("action").ToUpperInvariant();
-                BranchesHelpers.TrackObjectAction(objectsCreatedInBranch, action, originalItemId, tableName);
+                BranchesHelpers.TrackObjectAction(objectsCreatedInBranch, action, originalItemId.ToString(), tableName);
             }
 
             times.Add("trackObjects", (1, actionStopwatch.Elapsed));
@@ -609,7 +629,8 @@ LIMIT 1";
                 var field = dataRow.Field<string>("field") ?? "";
                 var oldValue = dataRow.Field<string>("oldvalue");
                 var newValue = dataRow.Field<string>("newvalue");
-                var objectCreatedInBranch = objectsCreatedInBranch.FirstOrDefault(i => i.ObjectId == itemId && String.Equals(i.TableName, tableName, StringComparison.OrdinalIgnoreCase));
+                var itemIdString = itemId.ToString();
+                var objectCreatedInBranch = objectsCreatedInBranch.FirstOrDefault(i => i.ObjectId == itemIdString && String.Equals(i.TableName, tableName, StringComparison.OrdinalIgnoreCase));
 
                 if (objectCreatedInBranch is not {AlsoDeleted: true} || objectCreatedInBranch.AlsoUndeleted)
                 {
@@ -1133,7 +1154,12 @@ LIMIT 1";
                 };
             }
 
+            // Save the database settings for the WTS.
             settings.DatabaseName = selectedBranchTenant.Database.DatabaseName;
+            settings.DatabaseHost = selectedBranchTenant.Database.Host.EncryptWithAesWithSalt(productionTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePort = selectedBranchTenant.Database.PortNumber;
+            settings.DatabaseUsername = selectedBranchTenant.Database.Username.EncryptWithAesWithSalt(productionTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
+            settings.DatabasePassword = selectedBranchTenant.Database.Password.DecryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey).EncryptWithAesWithSalt(productionTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
 
             DateTime? lastMergeDate = null;
 
@@ -1164,7 +1190,7 @@ LIMIT 1";
                 if (!lastMergeDate.HasValue)
                 {
                     await using var branchCommand = branchConnection.CreateCommand();
-                    branchCommand.CommandText = $@"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
+                    branchCommand.CommandText = $"SELECT MIN(changed_on) AS firstChangeDate FROM {WiserTableNames.WiserHistory}";
                     var dataTable = new DataTable();
                     using var branchAdapter = new MySqlDataAdapter(branchCommand);
                     branchAdapter.Fill(dataTable);
@@ -1879,6 +1905,39 @@ WHERE changed_on >= ?lastChange";
                 conflict.ChangeDateInMain = dataRow.Field<DateTime>("changed_on");
                 conflict.ChangedByInMain = dataRow.Field<string>("changed_by");
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<ulong?> GetMappedIdAsync(ulong id, bool idIsFromBranch = true)
+        {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
+            
+            clientDatabaseConnection.AddParameter("id", id);
+            var dataTable = await clientDatabaseConnection.GetAsync($"""
+                SELECT {(idIsFromBranch ? "production_id" : "our_id")} AS mappedId
+                FROM {WiserTableNames.WiserIdMappings}
+                WHERE {(idIsFromBranch ? "our_id" : "production_id")} = ?id
+""");
+            
+            return dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("mappedId") : null;
+        }
+        
+        /// <inheritdoc />
+        public async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        {
+            var query = $"SELECT MAX(id) AS id FROM {tableName}";
+            
+            var dataTable = await mainDatabaseConnection.GetAsync(query);
+            var maxMainId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+
+            if (branchDatabase != null)
+            {
+                dataTable = await branchDatabase.GetAsync(query);
+                var maxBranchId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+                return Math.Max(maxMainId, maxBranchId) + 1;
+            }
+
+            return maxMainId + 1;
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Template;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Interfaces.DataLayer
@@ -37,9 +38,8 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Get the ID, version number and published environment of the latest version of a component.
         /// </summary>
         /// <param name="contentId">The template ID.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
         /// <returns>The ID, version number, published environment of the template and if it is removed.</returns>
-        Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int contentId, string branchDatabaseName = null);
+        Task<(int Id, int Version, Environments Environment, bool Removed)> GetLatestVersionAsync(int contentId);
 
         /// <summary>
         /// Updates the latest version of a template with new data. This method will overwrite this version, unless this version has been published to the live environment,
@@ -85,9 +85,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// Get published environments from a dynamic component.
         /// </summary>
         /// <param name="contentId">The id of the dynamic component for which the environment should be retrieved.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <param name="branch">When publishing in a different branch, enter the information for that branch here.</param>
         /// <returns>A list of all version and their published environment.</returns>
-        Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId, string branchDatabaseName = null);
+        Task<Dictionary<int, int>> GetPublishedEnvironmentsAsync(int contentId, TenantModel branch = null);
 
         /// <summary>
         /// Publish the dynamic component to an environment. This method will execute the publishmodel instructions it recieves, logic for publishing linked environments should be handled in the servicelayer.
@@ -97,9 +97,9 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         /// <param name="environment">The environment to publish the version of the template to.</param>
         /// <param name="publishLog">Information for the history of the template, to log the version change there.</param>
         /// <param name="username">The name of the authenticated user.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <param name="branch">When publishing in a different branch, enter the information for that branch here.</param>
         /// <returns>An int confirming the rows altered by the query.</returns>
-        Task<int> UpdatePublishedEnvironmentAsync(int contentId, int version, Environments environment, PublishLogModel publishLog, string username, string branchDatabaseName = null);
+        Task<int> UpdatePublishedEnvironmentAsync(int contentId, int version, Environments environment, PublishLogModel publishLog, string username, TenantModel branch = null);
 
         /// <summary>
         /// Duplicates a dynamic component (only the latest version).
@@ -117,11 +117,11 @@ namespace Api.Modules.Templates.Interfaces.DataLayer
         Task DeleteAsync(string username, int contentId);
 
         /// <summary>
-        /// Deploys one or more templates from the main branch to a sub branch.
+        /// Deploys one or more components from the main branch to a sub-branch.
         /// </summary>
         /// <param name="dynamicContentIds">The IDs of the templates to deploy.</param>
-        /// <param name="branchDatabaseName">The name of the database that contains the sub branch.</param>
-        Task DeployToBranchAsync(List<int> dynamicContentIds, string branchDatabaseName);
+        /// <param name="branch">The information about the tenant to deploy to.</param>
+        Task DeployToBranchAsync(List<int> dynamicContentIds, TenantModel branch);
 
         /// <summary>
         /// Function that makes sure that the database tables needed for components are up to date with the latest changes.

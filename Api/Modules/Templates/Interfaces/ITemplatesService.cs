@@ -11,6 +11,7 @@ using Api.Modules.Templates.Models.Measurements;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Templates.Models.Template.WtsModels;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Modules.Templates.Enums;
 using GeeksCoreLibrary.Modules.Templates.Models;
@@ -79,7 +80,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="environment">The environment the template needs to be active on.</param>
         /// <returns>A <see cref="TemplateSettingsModel"/> containing the template data of the latest version.</returns>
         Task<ServiceResult<TemplateSettingsModel>> GetTemplateSettingsAsync(ClaimsIdentity identity, int templateId, Environments? environment = null);
-        
+
         /// <summary>
         /// Get the latest version of the editor value parsed as an object for a given template.
         /// </summary>
@@ -94,9 +95,9 @@ namespace Api.Modules.Templates.Interfaces
         /// containing the Live, accept and test versions and the list of other versions that are present in the data.
         /// </summary>
         /// <param name="templateId">The id of the template to retrieve the environments of.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <param name="branch">When publishing in a different branch, enter the information for that branch here.</param>
         /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
-        Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, string branchDatabaseName = null);
+        Task<ServiceResult<PublishedEnvironmentModel>> GetTemplateEnvironmentsAsync(int templateId, TenantModel branch = null);
 
         /// <summary>
         /// Get the templates linked to the current template. The templates that are retrieved will be converted into a LinkedTemplatesModel using the LinkedTemplatesEnum to determine its link type.
@@ -121,9 +122,9 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="version">The version of the template to publish.</param>
         /// <param name="environment">The environment to publish the template to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <param name="branch">When publishing in a different branch, enter the information for that branch here.</param>
         /// <returns>A int of the rows affected.</returns>
-        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null);
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int templateId, int version, Environments environment, PublishedEnvironmentModel currentPublished, TenantModel branch = null);
 
         /// <summary>
         /// Updates the latest version of a template with a new wts configuration. This method will grab the latest version and apply the new wts configuration.
@@ -132,7 +133,7 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="templateId">The id of the give template.</param>
         /// <param name="configuration">A <see cref="TemplateWtsConfigurationModel"/> containing the data of the configuration that is to be saved as a new version</param>
         Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration);
-        
+
         /// <summary>
         /// Updates the latest version of a template with new data. This method will overwrite this version, unless this version has been published to the live environment,
         /// then it will create a new version as to not overwrite the live version.

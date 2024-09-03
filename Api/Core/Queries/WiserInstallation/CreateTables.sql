@@ -142,8 +142,11 @@ CREATE TABLE IF NOT EXISTS `wiser_history`  (
   `newvalue` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `language_code` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `groupname` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `target_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_item_id`(`item_id`, `field`) USING BTREE,
+  INDEX `idx_item_id_table`(`item_id`, `tablename`) USING BTREE,
+  INDEX `idx_table_action`(`tablename`, `action`) USING BTREE,
   INDEX `idx_changed_on`(`changed_on`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
@@ -194,6 +197,8 @@ CREATE TABLE IF NOT EXISTS `wiser_item_archive`  (
   `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `changed_on` datetime(0) NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(0),
   `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `json` json,
+  `json_last_processed_date` datetime,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_moduleid`(`moduleid`, `published_environment`) USING BTREE,
   INDEX `idx_entity_type`(`entity_type`, `unique_uuid`) USING BTREE,
@@ -431,14 +436,16 @@ CREATE TABLE IF NOT EXISTS `wiser_permission`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `role_id` int NOT NULL DEFAULT 0,
   `entity_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `item_id` int NOT NULL DEFAULT 0,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `entity_property_id` int NOT NULL DEFAULT 0,
   `permissions` int NOT NULL DEFAULT 0 COMMENT '0 = Nothing\r\n1 = Read\r\n2 = Create\r\n4 = Update\r\n8 = Delete',
   `module_id` int NOT NULL DEFAULT 0,
   `query_id` int NOT NULL DEFAULT 0,
   `data_selector_id` int NOT NULL DEFAULT 0,
+  `endpoint_url` varchar(500) NOT NULL DEFAULT '',
+  `endpoint_http_method` enum('GET','HEAD','POST','PUT','DELETE','CONNECT','OPTIONS','TRACE','PATCH') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'GET',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`) USING BTREE
+  UNIQUE INDEX `role_id`(`role_id`, `entity_name`, `item_id`, `entity_property_id`, `module_id`, `query_id`, `data_selector_id`, `endpoint_url`, `endpoint_http_method`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
@@ -467,6 +474,7 @@ CREATE TABLE IF NOT EXISTS `wiser_styled_output`  (
     `format_empty` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `query_id` int NULL DEFAULT NULL,
     `return_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+    `options` json,
     PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 

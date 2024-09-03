@@ -1206,8 +1206,10 @@ const moduleSettings = {
         /**
          * Initializes the grid that shows the history of an item.
          * @param {any} itemId The ID of the item.
+         * @param {any} entityType The entity type of the item.
+         * @param {any} moduleId The module ID of the item.
          */
-        async loadHistoryGrid(itemId) {
+        async loadHistoryGrid(itemId, entityType, moduleId) {
             const kendoHistoryGridWindow = this.windows.historyGridWindow;
             const historyGridElement = $("#historyWindowGrid");
             kendoHistoryGridWindow.maximize().open();
@@ -1223,7 +1225,7 @@ const moduleSettings = {
                 };
 
                 const gridDataResult = await Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/history?mode=3&moduleId=${this.base.settings.moduleId}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${entityType}?mode=3&moduleId=${moduleId}`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(options)
@@ -1267,7 +1269,7 @@ const moduleSettings = {
                                     previousFilters = currentFilters;
 
                                     const newGridDataResult = await Wiser.api({
-                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/history?mode=3&moduleId=${this.base.settings.moduleId}`,
+                                        url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${this.settings.entityType}?mode=3&moduleId=${this.base.settings.moduleId}`,
                                         method: "POST",
                                         contentType: "application/json",
                                         data: JSON.stringify(transportOptions.data)
@@ -1965,7 +1967,7 @@ const moduleSettings = {
 
                     metaDataListElement.find(".changedon-footer").off("click");
                     metaDataListElement.find(".changedon-footer").on("click", () => {
-                        this.base.loadHistoryGrid(itemId);
+                        this.base.loadHistoryGrid(itemId, entityType, itemMetaData.moduleId || this.settings.moduleId);
                     });
                 } else {
                     metaDataListElement.find(".changed-on").html("").closest("li").addClass("hidden");
@@ -2038,9 +2040,10 @@ const moduleSettings = {
          * @param {any} data Optional: The data to save with the new item.
          * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
          * @param {number} moduleId Optional: The id of the module in which the item should be created.
+         * @param {bool} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
          */
-        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
-            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId);
+        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null, alsoCreateInMainBranch = false) {
+            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId, alsoCreateInMainBranch);
         }
 
         /**

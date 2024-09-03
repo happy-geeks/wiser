@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.Templates.Interfaces
@@ -86,9 +87,9 @@ namespace Api.Modules.Templates.Interfaces
         /// containing the Live, accept and test versions and the list of other versions that are present in the data.
         /// </summary>
         /// <param name="contentId">The id of the dynamic component to retrieve the environments of.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
+        /// <param name="branch">When publishing in a different branch, enter the information for that branch here.</param>
         /// <returns>A model containing the versions that are currently set for the live, accept and test environment.</returns>
-        Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId, string branchDatabaseName = null);
+        Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId, TenantModel branch = null);
 
         /// <summary>
         /// Publish a dynamic component version to a new environment using a content/component id. This requires you to provide a model with the current published state.
@@ -99,8 +100,8 @@ namespace Api.Modules.Templates.Interfaces
         /// <param name="version">The version of the component to publish.</param>
         /// <param name="environment">The environment to publish the component to.</param>
         /// <param name="currentPublished">A PublishedEnvironmentModel containing the current published templates.</param>
-        /// <param name="branchDatabaseName">When publishing in a different branch, enter the database name for that branch here.</param>
-        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null);
+        /// <param name="branch">When publishing in a different branch, enter the information for that branch here.</param>
+        Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished, TenantModel branch = null);
 
         /// <summary>
         /// Duplicate a dynamic component (only the latest version).

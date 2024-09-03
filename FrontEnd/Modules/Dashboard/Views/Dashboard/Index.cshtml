@@ -133,23 +133,115 @@
                         <a class="k-button k-button-flat-base k-button-flat k-button-md k-rounded-md k-icon-button k-close-button"><span class="k-button-icon k-icon k-i-close"></span></a>
                         <div class="tile-content" data-tile="updateLog">
                             <div class="log-item">
+                                <h4>Versie 3.4.29 - 02 September 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Rechten/Rollen: Probleem met het aanvinken van checkboxes opgelost.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: opgeslagen templates worden direct aan een omgeving toegewezen (develop) </span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: code aanpassingen zodat oudere .net versies ondersteund blijven</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Verschillende bugfixes voor het opslaan en lading van grid-filters</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: optie toegevoegd om een query toe te voegen die op de main en branche hetzelfde wiser id hebben.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Rechten/Rollen: Functionaliteit toegevoegd waardoor je permissies per api endpoint in kunt stellen</span></li>
+                                </ul>
+                            </div>                        
+                            <div class="log-item">
+                                <h4>Versie 3.4.28 - 19 augustus 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Branches: Bestanden die geüpload worden op een branch worden nu voortaan ook opgeslagen in de hoofd database.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Branches: Entiteiten lijst wordt vanaf nu opgehaald vanaf de branche database in plaats van de hoofd database zodat nieuwe entiteiten geselecteerd kunnen worden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Het verslepen van "virtuele" templates is nu niet meer mogelijk.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Adminmodule: Bij het maken van nieuwe entiteiten die een dedicated table krijgen worden nu voortaan ook automatisch de juiste link tables aangemaakt, inclusief triggers.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Vertaalmodule: Vertaalmodule kan weer geopend worden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Styled output: Nieuwe endpoint voor het ophalen van styled output regels op basis van naam.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Triggers voor item details bijgewerkt zodat er meer velden gelogd worden in de historie.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Lege groepen en tabs in item vensters worden nu verborgen.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Diverse libraries zijn bijgewerkt naar een nieuwere versie.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.27 - 5 augustus 2024</h4>
+                                <ul>
+									<li><ins class="icon-check"></ins><span>Branches: verbetering id mapping .</span></li>
+									<li><ins class="icon-check"></ins><span>Branches: items kunnen nu ook main aangemaakt worden vanaf branch .</span></li>
+									<li><ins class="icon-check"></ins><span>Branches: items kunnen nu ook main aangemaakt worden vanaf branch .</span></li>
+									<li><ins class="icon-check"></ins><span>Branches: locking toegeveogd voor wiser tabellen .</span></li>
+									<li><ins class="icon-check"></ins><span>Algemeen: logging voor request en response bodies uitegezet ivm groote logs.</span></li>
+									<li><ins class="icon-check"></ins><span>Algemeen: tif en tiff ondersteuning.</span></li>
+									<li><ins class="icon-check"></ins><span>Algemeen: tif en tiff ondersteuning.</span></li>
+									<li><ins class="icon-check"></ins><span>Algemeen: bugfix voor endpoints zonder properties maken.</span></li>
+									<li><ins class="icon-check"></ins><span>Algemeen: compile issue opgelost ivm .net 8.</span></li>
+									<li><ins class="icon-check"></ins><span>StyledOutput: caching toeveogd aan styled out service.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.26 - 22 juli 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Foutmelding bij Swagger opgelost</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.25 - 9 juli 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Probleem opgelost dat er veel lege regels werden toegevoegd aan de nieuwe logtabel.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Probleem opgelost dat de historie van items soms niet geopend kon worden.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.24 - 8 juli 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Voortaan worden alle verzoeken naar de Wiser API gelogd in de database.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatemodule: Probleem opgelost dat dropdowns van sommige opties in componenten niet goed meer werkten.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Branches: Wat algemene verbeteringen aan branches gedaan.</span></li>
+                                </ul>
+                            </div>
+							<div class="log-item">
+                                <h4>Versie 3.4.23 - 24 juni 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost dat HTML-editors altijd alle knoppen hadden van alle tools, ook al waren ze uitgeschakeld.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Knop toegevoegd om alle content van een template te zien in de historie-tab.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.22 - 10 juni 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Fout bij opslaan SCSS templates opgelost.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Fout dat sommige opties in Dynamische Content onterecht grijs blijven opgelost.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.21 - 28 mei 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Verbeteringen doorgevoerd in styled output API.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.20 - 27 mei 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost dat geschiedenis van verwijderde items een foutmelding gaf.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemene verbeteringen.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
+                                <h4>Versie 3.4.19 - 14 mei 2024</h4>
+                                <ul>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Knop toegevoegd waarmee een template gesloten kan worden, zodat er daarna makkelijker een nieuwe template gemaakt kan worden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Probleem opgelost dat instellingen voor widgets niet onthouden werden.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Probleem opgelost dat deployen van MySQL routines niet (goed) werkte.</span></li>
+                                </ul>
+                            </div>
+                            <div class="log-item">
                                 <h4>Versie 3.4.18 - 30 april 2024</h4>
                                 <ul>
-									<li><ins class="icon-check"></ins><span>Updated various scripts
-									<li><ins class="icon-check"></ins><span>Api call actie kunnen uitvoeren per geselecteerde regel in een grid
-									<li><ins class="icon-check"></ins><span>Extra data kunnen toevoegen wanneer je een post query uitvoerd
-                                    <li><ins class="icon-check"></ins><span>Url openen met een id van de query
+									<li><ins class="icon-check"></ins><span>Grids: Een actieknop die een verzoek doet naar een API kan nu ook uitgevoerd worden voor meerdere regels tegelijk.</span></li>
+									<li><ins class="icon-check"></ins><span>Grids: Het is voortaan mogelijk om extra data mee te geven aan query's die uitgevoerd worden d.m.v. een actieknop.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Grids: Het is voortaan mogelijk om extra data op te halen d.m.v. een query, voor het openen van een dynamische URL via een actieknop.</span></li>
                                 </ul>
                             </div>
                             <div class="log-item">
                                 <h4>Versie 3.4.17 - 16 april 2024</h4>
                                 <ul>
-                                    <li><ins class="icon-check"></ins><span>GCL geüpdate naar versie 4.2.4</span></li>
-                                    <li><ins class="icon-check"></ins><span>Bug verholpen bij het creëren van nieuwe tenants</span></li>
-                                    <li><ins class="icon-check"></ins><span>Javascript is leesbaarder gemaakt.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Breedte en positie van kollommen in rasters worden ook opgeslagen</span></li>
-                                    <li><ins class="icon-check"></ins><span>Functionaliteit toegevoegd om een externe URL in een module te openen met versleutelde gebruikersinformatie</span></li>
-                                    <li><ins class="icon-check"></ins><span>linkType is toegevoegd aan field data voor API</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost dat maken van nieuwe tenants fout ging.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Grids: Breedte en positie van kolommen worden voortaan ook onthouden per gebruiker.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Functionaliteit toegevoegd om een externe URL in een module te openen met versleutelde gebruikersinformatie.</span></li>
                                 </ul>
                             </div>
                             <div class="log-item">
@@ -157,7 +249,7 @@
                                 <ul>
                                     <li><ins class="icon-check"></ins><span>De variable "{isMainBranch}" is toegevoegd voor query's van de styled output API.</span></li>
                                     <li><ins class="icon-check"></ins><span>De "depends-on" functionaliteit is hersteld voor multiselects.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Een issue is opgelost met validatie voor verplichte velden die verborgen zijn.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Een probleem opgelost met validatie voor verplichte velden die verborgen zijn.</span></li>
                                     <li><ins class="icon-check"></ins><span>Fullscreen layout voor HTML editors is verbeterd.</span></li>
                                     <li><ins class="icon-check"></ins><span>Ondersteuning voor styled output is toegevoegd aan branches.</span></li>
                                     <li><ins class="icon-check"></ins><span>Functionaliteit is toegevoegd voor het samenvoegen van PDF bestanden.</span></li>
@@ -166,37 +258,32 @@
                                 </ul>
                             </div>
                             <div class="log-item">
-                                <h4>Versie 3.4.15 - 18 march 2024</h4>
+                                <h4>Versie 3.4.15 - 18 maart 2024</h4>
                                 <ul>
                                     <li><ins class="icon-check"></ins><span>Fout opgelost in dynamic components.</span></li>
                                     <li><ins class="icon-check"></ins><span>Fout opgelost met in warning die gebuikt maakt van een niet bekende variable.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Problemen opgelost met het aanmaken van nieuwe klanten.</span></li>
                                     <li><ins class="icon-check"></ins><span>Problemen opgelost met het aanmaken van nieuwe tenants. </span></li>
                                     <li><ins class="icon-check"></ins><span>Probleem opgelost met template model loading.</span></li>
                                     <li><ins class="icon-check"></ins><span>CreateTablesConfigurator script fouten opgelost.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Probleem opgelost waar de isadmin value overschreven werd met false als een token was verlopen.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost waar de isadmin waarde overschreven werd met false als een token was verlopen.</span></li>
                                     <li><ins class="icon-check"></ins><span>Extra info toegevoegd aan het wiser1/2 export window.</span></li>
                                     <li><ins class="icon-check"></ins><span>Verbeteringen aan de version control module.</span></li>
                                     <li><ins class="icon-check"></ins><span>MySQL command timeouts verlengd.</span></li>
                                     <li><ins class="icon-check"></ins><span>Probleem met shortcuts in HTML-editors opgelost.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Updated GCL to 4.1.13.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Parent update logic toegeveogd.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Probleem opgelost met het downloaden via unecrypted ids.</span></li>
-                                    <li><ins class="icon-check"></ins><span>Laat error zien als er een column ontbreekt.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Parent update logic toegevoegd.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Probleem opgelost met het downloaden van bestanden via niet-versleutelde ids.</span></li>
                                 </ul>
                             </div>
                             <div class="log-item">
                                 <h4>Versie 3.4.14 - 26 februari 2024</h4>
                                 <ul>
-                                    <li><ins class="icon-check"></ins><span>Foutmelding opgelost wanneer een PDF wordt gedownload of gemailed, wanneer de bestandsnaam een cijfer bevat</span></li>
-                                    <li><ins class="icon-check"></ins><span>Probleem opgelost dat bij het importeren er altijd vanuit werd gegaan dat een destination en source item altijd bestond in de tabel</span></li>
-									<li><ins class="icon-check"></ins><span>Ondersteuning voor DBField component</span></li>
-									<li><ins class="icon-check"></ins><span>Diverse aanpassingen m.b.t. het importeren van Wiser 1 omgevingen</span></li>
-									<li><ins class="icon-check"></ins><span>HTML editor tools kunnen worden toegevoegd door deze toe te voegen aan de custom options JSON</span></li>
-									<li><ins class="icon-check"></ins><span>Mysql.Data vervangen voor MysqlConnector</span></li>
-									<li><ins class="icon-check"></ins><span>Templates kunnen nu per gebruiker worden gecached</span></li>
-									<li><ins class="icon-check"></ins><span>Diverse backend code verbeteringen</span></li>
-									<li><ins class="icon-check"></ins><span>Preview functionalteit verwijderd uit Wiser</span></li>
+                                    <li><ins class="icon-check"></ins><span>Algemeen: Probleem opgelost dat downloaden of versturen van PDF's fout ging wanneer de bestandsnaam een cijfer bevat.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Import/Export: Probleem opgelost dat bij het importeren er altijd vanuit werd gegaan dat een destination en source item altijd bestond in de tabel.</span></li>
+									<li><ins class="icon-check"></ins><span>Templatesmodule: Mogelijkheid toegevoegd voor het importeren van Wiser 1 templates naar Wiser 3.</span></li>
+									<li><ins class="icon-check"></ins><span>Algemeen: Het is voortaan mogelijk om bij HTML-editors specifiek aan te geven welke tools/knoppen zichtbaar moeten zijn, naast de voorgedefiniëerde sets van tools.</span></li>
+									<li><ins class="icon-check"></ins><span>Templatesmodule: Templates kunnen nu per gebruiker worden gecached.</span></li>
+                                    <li><ins class="icon-check"></ins><span>Templatesmodule: Preview functionaliteit verwijderd uit Wiser om wat meer ruimte te maken in de gebruikersinterface. Deze functionaliteit werd nooit gebruikt en nam veel ruimte in beslag.</span></li>
+									<li><ins class="icon-check"></ins><span>Diverse algemene verbeteringen en bugfixes.</span></li>
                                 </ul>
                             </div>
                             <div class="log-item">

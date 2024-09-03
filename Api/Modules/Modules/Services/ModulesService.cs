@@ -10,15 +10,14 @@ using System.Web;
 using Api.Core.Helpers;
 using Api.Core.Interfaces;
 using Api.Core.Services;
-using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Grids.Interfaces;
 using Api.Modules.Kendo.Models;
 using Api.Modules.Modules.Interfaces;
 using Api.Modules.Modules.Models;
 using Api.Modules.Translations.Interfaces;
+using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
-using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
@@ -149,11 +148,12 @@ namespace Api.Modules.Modules.Services
                 WiserTableNames.WiserCommunication,
                 WiserTableNames.WiserStyledOutput,
                 WiserTableNames.WiserParentUpdates,
+                WiserTableNames.WiserHistory,
                 GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
             });
 
             // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2024, 2, 2))
+            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2024, 8, 5))
             {
                 var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
                 await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
@@ -762,7 +762,7 @@ SELECT @newID;";
             var result = excelService.JsonArrayToExcel(newData);
             return new ServiceResult<byte[]>(result);
         }
-        
+
         /// <inheritdoc />
         public async Task<ServiceResult<byte[]>> ExportToCsvAsync(int id, ClaimsIdentity identity, char separator)
         {
@@ -775,7 +775,7 @@ SELECT @newID;";
                     StatusCode = gridResult.StatusCode
                 };
             }
-            
+
             var newData = new JArray();
             var data = gridResult.ModelObject.Data;
             var columns = gridResult.ModelObject.Columns;

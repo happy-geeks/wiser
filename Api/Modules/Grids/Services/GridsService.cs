@@ -268,45 +268,49 @@ namespace Api.Modules.Grids.Services
 
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("itemId", itemId);
+                    clientDatabaseConnection.AddParameter("itemTableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
+                    clientDatabaseConnection.AddParameter("detailTableName", $"{tablePrefix}{WiserTableNames.WiserItemDetail}");
+                    clientDatabaseConnection.AddParameter("itemArchiveTableName", $"{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}");
+                    clientDatabaseConnection.AddParameter("detailArchiveTableName", $"{tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix}");
 
-                    countQuery = $@"SELECT COUNT(*)
-                                    FROM {WiserTableNames.WiserHistory}
+                    countQuery = $$"""
+                                   SELECT COUNT(*) AS `count`
+                                   FROM {{WiserTableNames.WiserHistory}}
+                                   WHERE item_id = ?itemid
+                                   AND tablename IN (?itemTableName, ?detailTableName, ?itemArchiveTableName, ?detailArchiveTableName)
+                                   [if({changedby_has_filter}=1)]AND changed_by {changedby_filter}[endif]
+                                   [if({changedon_has_filter}=1)]AND DATE(changed_on) {changedon_filter}[endif]
+                                   [if({field_has_filter}=1)]AND field {field_filter}[endif]
+                                   [if({action_has_filter}=1)]AND `action` {action_filter}[endif]
+                                   [if({oldvalue_has_filter}=1)]AND oldvalue {oldvalue_filter}[endif]
+                                   [if({newvalue_has_filter}=1)]AND newvalue {newvalue_filter}[endif]
+                                   """;
+
+                    selectQuery = $$"""
+                                    SELECT 
+                                    	id AS id,
+                                    	changed_on AS changedon,
+                                    	tablename AS tablename,
+                                    	item_id AS itemid,
+                                    	action AS action,
+                                    	changed_by AS changedby,
+                                    	field AS field,
+                                    	oldvalue AS oldvalue,
+                                    	newvalue AS newvalue
+                                    FROM {{WiserTableNames.WiserHistory}}
+                                    
                                     WHERE item_id = ?itemid
-                                    AND action <> 'UPDATE_ITEMLINK'
-                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
-                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
-                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
-                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
-                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
-                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]";
-
-                    selectQuery = $@"SELECT 
-	                                    current.id AS id,
-	                                    current.changed_on AS changedon,
-	                                    current.tablename AS tablename,
-	                                    current.item_id AS itemid,
-	                                    current.action AS action,
-	                                    current.changed_by AS changedby,
-	                                    current.field AS field,
-	                                    current.oldvalue AS oldvalue,
-	                                    current.newvalue AS newvalue
-                                    FROM {WiserTableNames.WiserHistory} current
-	                                
-                                    WHERE current.item_id=?itemid
-                                    # Item link IDs will also be saved in the column 'item_id'.
-                                    # To prevent showing the history of an item link with the same id as the currently opened item, don't get history with action = 'UPDATE_ITEMLINK'.
-                                    AND current.action <> 'UPDATE_ITEMLINK'
-                                    [if({{changedby_has_filter}}=1)]AND changed_by {{changedby_filter}}[endif]
-                                    [if({{changedon_has_filter}}=1)]AND DATE(changed_on) {{changedon_filter}}[endif]
-                                    [if({{field_has_filter}}=1)]AND field {{field_filter}}[endif]
-                                    [if({{action_has_filter}}=1)]AND `action` {{action_filter}}[endif]
-                                    [if({{oldvalue_has_filter}}=1)]AND oldvalue {{oldvalue_filter}}[endif]
-                                    [if({{newvalue_has_filter}}=1)]AND newvalue {{newvalue_filter}}[endif]
-                                    
-                                    GROUP BY current.id
-                                    
-                                    ORDER BY current.changed_on DESC, current.id DESC
-                                    {{limit}}";
+                                    AND tablename IN (?itemTableName, ?detailTableName, ?itemArchiveTableName, ?detailArchiveTableName)
+                                    [if({changedby_has_filter}=1)]AND changed_by {changedby_filter}[endif]
+                                    [if({changedon_has_filter}=1)]AND DATE(changed_on) {changedon_filter}[endif]
+                                    [if({field_has_filter}=1)]AND field {field_filter}[endif]
+                                    [if({action_has_filter}=1)]AND `action` {action_filter}[endif]
+                                    [if({oldvalue_has_filter}=1)]AND oldvalue {oldvalue_filter}[endif]
+                                    [if({newvalue_has_filter}=1)]AND newvalue {newvalue_filter}[endif]
+                                    GROUP BY id
+                                    ORDER BY changedon DESC, id DESC
+                                    {limit}
+                                    """;
 
                     (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY current.changed_on DESC, current.id DESC", tablePrefix: tablePrefix);
 

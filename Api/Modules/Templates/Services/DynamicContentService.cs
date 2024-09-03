@@ -15,6 +15,7 @@ using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
 using Api.Modules.Templates.Models.Other;
 using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Components.Account;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
@@ -234,20 +235,20 @@ namespace Api.Modules.Templates.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId, string branchDatabaseName = null)
+        public async Task<ServiceResult<PublishedEnvironmentModel>> GetEnvironmentsAsync(int contentId, TenantModel branch = null)
         {
             if (contentId <= 0)
             {
                 throw new ArgumentException("The Id cannot be zero.");
             }
 
-            var versionsAndPublished = await dataService.GetPublishedEnvironmentsAsync(contentId, branchDatabaseName);
+            var versionsAndPublished = await dataService.GetPublishedEnvironmentsAsync(contentId, branch);
 
             return new ServiceResult<PublishedEnvironmentModel>(PublishedEnvironmentHelper.CreatePublishedEnvironmentsFromVersionDictionary(versionsAndPublished));
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished, string branchDatabaseName = null)
+        public async Task<ServiceResult<int>> PublishToEnvironmentAsync(ClaimsIdentity identity, int contentId, int version, Environments environment, PublishedEnvironmentModel currentPublished, TenantModel branch = null)
         {
             if (contentId <= 0)
             {
@@ -258,10 +259,10 @@ namespace Api.Modules.Templates.Services
             {
                 throw new ArgumentException("The version is invalid");
             }
-            
+
             // Create a new version of the dynamic content, so that any changes made after this will be done in the new version instead of the published one.
             // Does not apply if the dynamic content was published to live within a branch.
-            if (String.IsNullOrWhiteSpace(branchDatabaseName))
+            if (branch == null)
             {
                 await CreateNewVersionAsync(contentId, version);
             }
@@ -269,7 +270,7 @@ namespace Api.Modules.Templates.Services
             var newPublished = PublishedEnvironmentHelper.CalculateEnvironmentsToPublish(currentPublished, version, environment);
 
             var publishLog = PublishedEnvironmentHelper.GeneratePublishLog(contentId, currentPublished, newPublished);
-            await dataService.UpdatePublishedEnvironmentAsync(contentId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branchDatabaseName);
+            await dataService.UpdatePublishedEnvironmentAsync(contentId, version, environment, publishLog, IdentityHelpers.GetUserName(identity, true), branch);
             return new ServiceResult<int>
             {
                 StatusCode = HttpStatusCode.NoContent
@@ -346,7 +347,7 @@ namespace Api.Modules.Templates.Services
             // Now we can deploy the template to the branch.
             try
             {
-                await dataService.DeployToBranchAsync(dynamicContentIds, branchToDeploy.Database.DatabaseName);
+                await dataService.DeployToBranchAsync(dynamicContentIds, branchToDeploy);
             }
             catch (MySqlException mySqlException)
             {
@@ -372,9 +373,9 @@ namespace Api.Modules.Templates.Services
             foreach (var dynamicContentId in dynamicContentIds)
             {
                 var contentData = await dataService.GetMetaDataAsync(dynamicContentId);
-                var currentPublished = (await GetEnvironmentsAsync(dynamicContentId, branchToDeploy.Database.DatabaseName)).ModelObject;
+                var currentPublished = (await GetEnvironmentsAsync(dynamicContentId, branchToDeploy)).ModelObject;
 
-                await PublishToEnvironmentAsync(identity, dynamicContentId, contentData.LatestVersion ?? 1, Environments.Live, currentPublished, branchToDeploy.Database.DatabaseName);
+                await PublishToEnvironmentAsync(identity, dynamicContentId, contentData.LatestVersion ?? 1, Environments.Live, currentPublished, branchToDeploy);
             }
 
             return new ServiceResult<bool>(true)

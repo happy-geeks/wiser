@@ -1042,9 +1042,9 @@ const branchesModule = {
             commit(MERGE_BRANCH_ERROR, error);
         },
 
-        async [GET_ENTITIES_FOR_BRANCHES]({ commit }) {
+        async [GET_ENTITIES_FOR_BRANCHES]({ commit }, branchId) {
             commit(START_REQUEST);
-            const entitiesResponse = await main.branchesService.getEntities();
+            const entitiesResponse = await main.branchesService.getEntities(branchId);
             commit(GET_ENTITIES_FOR_BRANCHES, entitiesResponse.data);
             commit(END_REQUEST);
         },

@@ -65,7 +65,8 @@
                 </ul>
             </li>
             <li class="logo">
-                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 266" style="enable-background:new 0 0 512 266;" xml:space="preserve">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 512 266"
+                     style="enable-background:new 0 0 512 266;" xml:space="preserve">
                 <circle class="logo1" cx="183.1" cy="97.1" r="24.3" />
                 <circle class="logo1" cx="328.9" cy="97.1" r="24.3" />
                 <path class="logo1" d="M256,179.6c-9.6,10.8-21.5,19.5-35,25.2l35,60.8l35-60.8C277.5,199.1,265.6,190.4,256,179.6z" />
@@ -172,8 +173,32 @@
                         </section>
                         <input type="text" id="newBranchName" maxlength="25" autocomplete="off" autofocus="autofocus" autocapitalize="none" v-model="createBranchSettings.name" required>
                     </div>
+                    <div class="col col-12 form-row">
+                        <h2>Branch database instellingen</h2>
+                        <p>
+                            Hier kunnen de database instellingen voor de nieuwe branch opgegeven worden. Deze instellingen worden gebruikt om de nieuwe branch aan te maken.
+                            Indien de branch database op dezelfde server mag staan als de live database, dan mogen deze instellingen leeg gelaten worden.
+                            Alle velden zijn verder ook optioneel, dus als bijvoorbeeld alleen de host anders is en de rest hetzelfde, dan hoeft alleen de host ingevuld te worden.
+                        </p>
+                    </div>
+                    <div class="col col-6">
+                        <label for="newBranchDatabaseHost">Host</label>
+                        <input type="text" id="newBranchDatabaseHost" autocomplete="off" autocapitalize="none" v-model="createBranchSettings.databaseHost">
+                    </div>
+                    <div class="col col-6">
+                        <label for="newBranchDatabasePort">Poort</label>
+                        <input type="number" id="newBranchDatabasePort" autocomplete="off" autocapitalize="none" v-model="createBranchSettings.databasePort">
+                    </div>
+                    <div class="col col-6">
+                        <label for="newBranchDatabaseUsername">Gebruikersnaam</label>
+                        <input type="text" id="newBranchDatabaseUsername" autocomplete="off" autocapitalize="none" v-model="createBranchSettings.databaseUsername">
+                    </div>
+                    <div class="col col-6">
+                        <label for="newBranchDatabasePassword">Wachtwoord</label>
+                        <input type="password" id="newBranchDatabasePassword" autocomplete="off" autocapitalize="none" v-model="createBranchSettings.databasePassword">
+                    </div>
                     <div class="col col-12 form-row no-bottom-margin">
-                        <label for="branche-data">Welke data wil je naar de branche overzetten?
+                        <label>Welke data wil je naar de branche overzetten?
                             <span class="label-info">Let op: bij items worden ook altijd <strong>alle</strong> gekoppelde items meegenomen!</span>
                         </label>
                     </div>
@@ -1023,7 +1048,7 @@
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
     "trackJsToken": "@Model.Settings.TrackJsToken",
-    "markerIoToken": "@Model.Settings.MarkerIoToken"
+    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin"
 }
 </script>
 

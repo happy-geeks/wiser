@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.Api</PackageId>
-    <Version>3.4.18</Version>
+    <Version>3.4.29</Version>
     <Authors>Happy Geeks B.V.</Authors>
     <Company>Happy Geeks B.V.</Company>
     <Product>Wiser API</Product>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-	<AssemblyVersion>3.4.18.0</AssemblyVersion>
+	<AssemblyVersion>3.4.29.0</AssemblyVersion>
 	<LangVersion>default</LangVersion>
 	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
@@ -82,6 +82,9 @@
     <None Remove="Modules\Items\FieldTemplates\textbox.js" />
     <None Remove="Modules\Items\FieldTemplates\timeline.html" />
     <None Remove="Modules\Items\FieldTemplates\timeline.js" />
+    <None Remove="Core\Queries\WiserInstallation\StoredProcedures.sql" />
+    <None Remove="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
+    <None Remove="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
   </ItemGroup>
 
   <ItemGroup>
@@ -91,6 +94,10 @@
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedLinkTableTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
     <EmbeddedResource Include="Modules\Babel\Scripts\Polyfills.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\action-button.js" />
@@ -146,11 +153,8 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
-    <None Remove="Core\Queries\WiserInstallation\StoredProcedures.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
-    <None Remove="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
-    <None Remove="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
     <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
     <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.en.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -171,25 +175,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.2.6" />
+    <PackageReference Include="GeeksCoreLibrary" Version="4.2.18" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.26.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.26.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
-    <PackageReference Include="LibSassHost" Version="1.4.0" />
-    <PackageReference Include="LibSassHost.Native.win-x64" Version="1.4.0" />
+    <PackageReference Include="LibSassHost" Version="1.5.0" />
+    <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.18" />
-    <PackageReference Include="NUglify" Version="1.21.4" />
+    <PackageReference Include="NUglify" Version="1.21.9" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
-    <PackageReference Include="QRCoder" Version="1.4.3" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="React.AspNet" Version="5.2.12" />
     <PackageReference Include="React.Core" Version="5.2.12" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.5.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.7.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.7.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Tinify" Version="1.6.0" />
   </ItemGroup>
