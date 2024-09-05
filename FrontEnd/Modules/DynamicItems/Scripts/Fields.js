@@ -427,8 +427,12 @@ export class Fields {
                             continue;
                         }
 
+                        // Get the new data of the property which initiates the refresh
+                        var currentData = {};
+                        currentData[container.data("propertyName")] = event.sender.value();
+
                         // Reload the data source.
-                        kendoControl.dataSource.read();
+                        kendoControl.dataSource.read({extraValuesForQuery: currentData});
                     }
 
                     break;
