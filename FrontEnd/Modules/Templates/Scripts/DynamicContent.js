@@ -410,7 +410,11 @@ const moduleSettings = {
 
             $("#saveAndCloseButton").click(async (event) => {
                 event.preventDefault();
-                await this.save();
+                
+                let succeeded = await this.save();
+                if (!succeeded)
+                    return;
+                
                 if (!window.parent || !window.parent.Templates) {
                     console.warn("No parent window found, or parent window has no Templates class.");
                 } else {
@@ -436,30 +440,27 @@ const moduleSettings = {
                     kendo.alert("Naam is verplicht! Vul een naam in om verder te gaan");
                     this.saving = false;
                     window.processing.removeProcess(process);
-                    return;
+                    return false;
                 }
-                    const contentId = await Wiser.api({
-                        url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
-                        dataType: "json",
-                        method: "POST",
-                        contentType: "application/json",
-                        data: JSON.stringify({
-                            component: document.getElementById("componentTypeDropDown").value,
-                            componentModeId: document.getElementById("componentMode").value,
-                            title: title,
-                            data: this.getNewSettings()
-                        })
-                    });
-
-                    if (!this.settings.selectedId) {
-                        this.settings.selectedId = contentId;
-                        this.settings.selectedTitle = title;
-                        await this.addLinkToTemplate(this.settings.templateId);
-                    }
-
-
-                    window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
-
+                
+                const contentId = await Wiser.api({
+                    url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
+                    dataType: "json",
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify({
+                        component: document.getElementById("componentTypeDropDown").value,
+                        componentModeId: document.getElementById("componentMode").value,
+                        title: title,
+                        data: this.getNewSettings()
+                    })
+                });
+                if (!this.settings.selectedId) {
+                    this.settings.selectedId = contentId;
+                    this.settings.selectedTitle = title;
+                    await this.addLinkToTemplate(this.settings.templateId);
+                }
+                window.popupNotification.show(`Dynamisch component '${document.querySelector('input[name="visibleDescription"]').value}' is succesvol opgeslagen.`, "info");
 
                 if (alsoDeployToTest) {
                     const version = (parseInt($(".historyContainer .historyLine:first").data("historyVersion")) || 1);
@@ -478,10 +479,12 @@ const moduleSettings = {
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met opslaan. Probeer het a.u.b. opnieuw");
+                return false;
+            } finally {
+                this.saving = false;
+                window.processing.removeProcess(process);
             }
-
-            this.saving = false;
-            window.processing.removeProcess(process);
+            return true;
         }
 
         async addLinkToTemplate(templateId) {
