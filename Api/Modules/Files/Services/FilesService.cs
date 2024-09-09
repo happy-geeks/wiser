@@ -615,7 +615,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             databaseConnection.ClearParameters();
             databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("fileId", fileId);
-            var query = $"SELECT property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+            var query = $"SELECT property_name, content_url FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
             var dataTable = await databaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
@@ -623,34 +623,27 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             }
 
             var propertyName = dataTable.Rows[0].Field<string>("property_name");
-
+            var fileUrl = dataTable.Rows[0].Field<string>("content_url");
+           
             // Delete the files from the FTP(s), if this file-input uses FTP upload
             // else delete them from CloudFlare if url matches
-            query = $"SELECT content_url FROM {WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-            dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
+            if (!string.IsNullOrWhiteSpace(fileUrl))
             {
-                return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
-            }
-
-            var fileUrl = dataTable.Rows[0].Field<string>("content_url");
-            var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-            if (ftpSettings.Any())
-            {
-                if (!String.IsNullOrWhiteSpace(fileUrl))
+                var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
+                if (ftpSettings.Any())
                 {
                     foreach (var ftp in ftpSettings)
                     {
                         await DeleteFileFromFtp(ftp, fileUrl);
                     }
                 }
-            }
-            else if(!String.IsNullOrWhiteSpace(fileUrl))
-            {
-                // CLoudFlare file?
-                if (fileUrl.StartsWith("https://imagedelivery.net"))
+                else
                 {
-                    await cloudFlareService.DeleteImageAsync(fileUrl);
+                    // CloudFlare file?
+                    if (fileUrl.StartsWith("https://imagedelivery.net"))
+                    {
+                        await cloudFlareService.DeleteImageAsync(fileUrl);
+                    }
                 }
             }
 
