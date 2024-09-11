@@ -248,8 +248,7 @@ WHERE query.id = ?id";
                 return false;
             }
         }
-            
-            
+
         private async Task<ServiceResult<QueryModel>> CreateAsyncOnDataBase(IDatabaseConnection targetDatabase, QueryModel queryModel, ClaimsIdentity identity, string description)
         {
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
