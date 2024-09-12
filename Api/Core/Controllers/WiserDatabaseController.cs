@@ -1,4 +1,5 @@
 ﻿using System.Net.Mime;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,7 @@ public class WiserDatabaseController : Controller
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DoDatabaseMigrationsForTenantAsync()
     {
-        await wiserDatabaseHelpersService.DoDatabaseMigrationsForTenantAsync();
+        await wiserDatabaseHelpersService.DoDatabaseMigrationsForTenantAsync((ClaimsIdentity)User.Identity);
         return NoContent();
     }
 }

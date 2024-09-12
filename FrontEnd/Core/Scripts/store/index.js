@@ -293,6 +293,7 @@ const loginModule = {
             commit(AUTH_SUCCESS, loginResult.data);
 
             if (!rootState.modules.allModules || !rootState.modules.allModules.length) {
+                await this.dispatch(DO_TENANT_MIGRATIONS);
                 await this.dispatch(MODULES_REQUEST);
             }
 
