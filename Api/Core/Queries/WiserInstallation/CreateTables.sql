@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entityproperty`  (
   `language_code` varchar(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `custom_script` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `also_save_seo_value` tinyint NOT NULL DEFAULT 0,
-  `depends_on_action` enum('toggle-visibility','refresh') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `depends_on_action` enum('toggle-visibility','toggle-mandatory','refresh') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `save_on_change` tinyint NOT NULL DEFAULT 0,
   `extended_explanation` tinyint NOT NULL DEFAULT 0,
   `label_style` enum('normal','inline', 'float') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,

@@ -1,6 +1,6 @@
-﻿import {Dates, Misc, Utils, Wiser} from "../../Base/Scripts/Utils.js";
+﻿import { Dates, Misc, Utils, Wiser } from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import {DateTime} from "luxon";
+import { DateTime } from "luxon";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.dialog.js");
@@ -65,8 +65,8 @@ export class Fields {
 
             const data = {
                 key: fieldName,
-                itemLinkId: parseInt(fieldData.itemLinkId) || 0,
-                linkType: parseInt(fieldData.linkType) || 0,
+                itemLinkId: Number.parseInt(fieldData.itemLinkId) || 0,
+                linkType: Number.parseInt(fieldData.linkType) || 0,
                 languageCode: fieldData.languageCode || ""
             };
 
@@ -364,6 +364,43 @@ export class Fields {
             return;
         }
 
+        // This function is used within the loop below to check if a dependency is met.
+        const checkIfDependencyIsMet = (dependency, parsedValues) => {
+            switch (dependency.dependsOnOperator || this.base.comparisonOperatorsEnum.equals) {
+                case this.base.comparisonOperatorsEnum.equals:
+                    return parsedValues.filter(dependsOnValue => dependsOnValue === valueOfElement).length > 0;
+                case this.base.comparisonOperatorsEnum.doesNotEqual:
+                    return parsedValues.filter(dependsOnValue => dependsOnValue === valueOfElement).length === 0;
+                case this.base.comparisonOperatorsEnum.contains:
+                    return parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) > -1).length > 0;
+                case this.base.comparisonOperatorsEnum.doesNotContain:
+                    return parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) > -1).length === 0;
+                case this.base.comparisonOperatorsEnum.startsWith:
+                    return parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === 0).length > 0;
+                case this.base.comparisonOperatorsEnum.doesNotStartWith:
+                    return parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === 0).length === 0;
+                case this.base.comparisonOperatorsEnum.endsWith:
+                    return parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === valueOfElement.length - dependsOnValue.length - 1).length > 0;
+                case this.base.comparisonOperatorsEnum.doesNotEndWith:
+                    return parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === valueOfElement.length - dependsOnValue.length - 1).length === 0;
+                case this.base.comparisonOperatorsEnum.isEmpty:
+                    return valueOfElement === "";
+                case this.base.comparisonOperatorsEnum.isNotEmpty:
+                    return valueOfElement !== "";
+                case this.base.comparisonOperatorsEnum.isGreaterThanOrEquals:
+                    return parsedValues.filter(dependsOnValue => valueOfElement >= dependsOnValue).length > 0;
+                case this.base.comparisonOperatorsEnum.isGreaterThan:
+                    return parsedValues.filter(dependsOnValue => valueOfElement > dependsOnValue).length > 0;
+                case this.base.comparisonOperatorsEnum.isLessThanOrEquals:
+                    return parsedValues.filter(dependsOnValue => valueOfElement <= dependsOnValue).length > 0;
+                case this.base.comparisonOperatorsEnum.isLessThan:
+                    return parsedValues.filter(dependsOnValue => valueOfElement < dependsOnValue).length > 0;
+                default:
+                    console.error("Unknown dependsOnOperator found!", dependency.dependsOnOperator);
+                    return false;
+            }
+        };
+
         valueOfElement = typeof valueOfElement === "undefined" || valueOfElement === null ? "" : valueOfElement;
         currentDependencies.forEach((dependency) => {
             const values = (typeof dependency.dependsOnValue === "undefined" || dependency.dependsOnValue === null ? "" : dependency.dependsOnValue.toString()).split(",");
@@ -374,7 +411,7 @@ export class Fields {
                         dependsOnValue = new Date(dependsOnValue);
                         break;
                     case "[object Number]":
-                        dependsOnValue = parseFloat(dependsOnValue);
+                        dependsOnValue = Number.parseFloat(dependsOnValue);
                         break;
                     case "[object String]":
                         dependsOnValue = dependsOnValue.toString().toLowerCase();
@@ -382,7 +419,7 @@ export class Fields {
                         break;
                     case "[object Boolean]":
                         if (typeof dependsOnValue === "string") {
-                            dependsOnValue = dependsOnValue.toLowerCase() === "true" || parseInt(dependsOnValue) > 0;
+                            dependsOnValue = dependsOnValue.toLowerCase() === "true" || Number.parseInt(dependsOnValue) > 0;
                         } else if (typeof dependsOnValue === "number") {
                             dependsOnValue = dependsOnValue > 0;
                         }
@@ -439,55 +476,7 @@ export class Fields {
                 }
 
                 case this.base.dependencyActionsEnum.toggleVisibility: {
-                    let showElement = false;
-
-                    switch (dependency.dependsOnOperator || this.base.comparisonOperatorsEnum.equals) {
-                        case this.base.comparisonOperatorsEnum.equals:
-                            showElement = parsedValues.filter(dependsOnValue => dependsOnValue === valueOfElement).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.doesNotEqual:
-                            showElement = parsedValues.filter(dependsOnValue => dependsOnValue === valueOfElement).length === 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.contains:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) > -1).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.doesNotContain:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) > -1).length === 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.startsWith:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === 0).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.doesNotStartWith:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === 0).length === 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.endsWith:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === valueOfElement.length - dependsOnValue.length - 1).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.doesNotEndWith:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement.indexOf(dependsOnValue) === valueOfElement.length - dependsOnValue.length - 1).length === 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.isEmpty:
-                            showElement = valueOfElement === "";
-                            break;
-                        case this.base.comparisonOperatorsEnum.isNotEmpty:
-                            showElement = valueOfElement !== "";
-                            break;
-                        case this.base.comparisonOperatorsEnum.isGreaterThanOrEquals:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement >= dependsOnValue).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.isGreaterThan:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement > dependsOnValue).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.isLessThanOrEquals:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement <= dependsOnValue).length > 0;
-                            break;
-                        case this.base.comparisonOperatorsEnum.isLessThan:
-                            showElement = parsedValues.filter(dependsOnValue => valueOfElement < dependsOnValue).length > 0;
-                            break;
-                        default:
-                            console.error("Unknown dependsOnOperator found!", dependency.dependsOnOperator);
-                            break;
-                    }
+                    let showElement = checkIfDependencyIsMet(dependency, parsedValues);
 
                     container.closest(".k-tabstrip").find(`[data-property-id='${dependency.propertyId}'].item`).toggleClass("dependency-hidden", !showElement);
 
@@ -522,6 +511,16 @@ export class Fields {
                     
                     break;
                 }
+
+                case this.base.dependencyActionsEnum.toggleMandatory: {
+                    const fieldToUpdate = document.getElementById(`field_${dependency.propertyId}`);
+                    if (fieldToUpdate) {
+                        fieldToUpdate.required = checkIfDependencyIsMet(dependency, parsedValues);
+                    }
+
+                    break;
+                }
+
                 default:
                     {
                         console.warn(`Unknown dependency action '${dependency.dependsOnAction}'!`);
@@ -1399,7 +1398,7 @@ export class Fields {
 
                             let width;
                             let height;
-                            let gridHeight = parseInt(parameter.gridHeight) || 600;
+                            let gridHeight = Number.parseInt(parameter.gridHeight) || 600;
                             const extraDialogSize = 200;
 
                             // Make sure that the dialog and grid fit in the user's window.
@@ -2790,7 +2789,7 @@ export class Fields {
                                                     const wiserFileAttachments = uploadedFiles.map(file => file.fileId) || [];
 
                                                     for (let fileId of results) {
-                                                        wiserFileAttachments.push(parseInt(fileId.replace(/\"/g, "")));
+                                                        wiserFileAttachments.push(Number.parseInt(fileId.replace(/\"/g, "")));
                                                     }
 
                                                     const success = () => {
@@ -3469,10 +3468,10 @@ export class Fields {
             return;
         }
 
-        const contentId = parseInt(clickedElement.data("contentid")) || parseInt(clickedElement.attr("contentid"));
+        const contentId = Number.parseInt(clickedElement.data("contentid")) || Number.parseInt(clickedElement.attr("contentid"));
 
         if (!contentId) {
-            if (parseInt(clickedElement.attr("pageid"))) {
+            if (Number.parseInt(clickedElement.attr("pageid"))) {
                 kendo.alert("Het wijzigen van dynamische content type webpagina wordt nog niet ondersteund.");
             }
             else if (clickedElement.is("img")) {
