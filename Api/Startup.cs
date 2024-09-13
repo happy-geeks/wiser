@@ -25,9 +25,9 @@ using GeeksCoreLibrary.Modules.Databases.Helpers;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.Databases.Services;
-using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -38,7 +38,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
@@ -46,6 +45,7 @@ using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using OpenIddict.Server;
 using React;
 using React.AspNet;
 using Serilog;
@@ -199,23 +199,50 @@ namespace Api
             services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
             // Configure OAuth2
-            var identityServerBuilder = services.AddIdentityServer(options =>
+            // Configure OpenIddict
+            services.AddOpenIddict()
+                .AddCore(options =>
                 {
-                    options.Events.RaiseSuccessEvents = true;
-                    options.Events.RaiseFailureEvents = true;
-                    options.Events.RaiseErrorEvents = true;
+                    // No need to configure EF Core since you're using a custom storage solution.
                 })
-                .AddInMemoryIdentityResources(ConfigureIdentityServer.GetIdentityResources())
-                .AddInMemoryApiResources(ConfigureIdentityServer.GetApiResources(clientSecret))
-                .AddInMemoryApiScopes(ConfigureIdentityServer.GetApiScopes())
-                .AddInMemoryClients(ConfigureIdentityServer.GetClients(clientSecret))
-                .AddProfileService<WiserProfileService>()
-                .AddResourceOwnerValidator<WiserGrantValidator>();
+                .AddServer(options =>
+                {
+                    options.SetTokenEndpointUris("/connect/token");
+
+                    options.AllowPasswordFlow()
+                        .AllowRefreshTokenFlow();
+
+                    if (webHostEnvironment.IsDevelopment())
+                    {
+                        options.AddDevelopmentEncryptionCertificate()
+                            .AddDevelopmentSigningCertificate();
+                    }
+
+                    options.UseAspNetCore()
+                        .EnableTokenEndpointPassthrough()
+                        .DisableTransportSecurityRequirement();
+
+                    // Register your custom password validator.
+                    options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(builder =>
+                    {
+                        builder.UseScopedHandler<OpenIddictPasswordValidator>();
+                    });
+                })
+                .AddValidation(options =>
+                {
+                    //options.Use
+                });
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    // Configure JWT Bearer options if needed.
+                });
 
             if (webHostEnvironment.IsDevelopment())
             {
                 System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                identityServerBuilder.AddDeveloperSigningCredential();
+                //identityServerBuilder.AddDeveloperSigningCredential();
             }
             else
             {
@@ -236,40 +263,8 @@ namespace Api
                     }
                 }
 
-                identityServerBuilder.AddSigningCredential(certificateCollection.First());
+                //identityServerBuilder.AddSigningCredential(certificateCollection.First());
             }
-
-            services.AddAuthentication("Bearer")
-                .AddJwtBearer("Bearer",
-                    options =>
-                    {
-                        options.Authority = apiBaseUrl;
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateAudience = false,
-                            ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
-                        };
-                    });
-
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy("ApiScope",
-                    policy =>
-                    {
-                        policy.RequireAuthenticatedUser();
-                        policy.RequireClaim("scope", "wiser-api");
-                    });
-            });
-
-            // Enable CORS for Identityserver 4.
-            services.AddSingleton<ICorsPolicyService>((container) =>
-            {
-                var logger = container.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
-                return new DefaultCorsPolicyService(logger)
-                {
-                    AllowAll = true
-                };
-            });
 
             // Configure dependency injection.
             services.AddScoped<MySqlDatabaseConnection>();
@@ -337,8 +332,8 @@ namespace Api
 
             app.UseRouting();
 
-            app.UseIdentityServer();
-
+            //app.UseIdentityServer();
+            
             app.UseCors(CorsPolicyName);
 
             app.UseAuthorization();

@@ -21,7 +21,6 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
-using IdentityServer4.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -314,7 +313,7 @@ namespace Api.Modules.Queries.Services
             {
                 var result = dataTable.ToJsonArray(skipNullValues: true);
 
-                if (!style.FormatBegin.IsNullOrEmpty())
+                if (!String.IsNullOrEmpty(style.FormatBegin))
                 {
                     combinedResult.Append(style.FormatBegin);
                 }
@@ -348,7 +347,7 @@ namespace Api.Modules.Queries.Services
                     }
                 }
 
-                if (!style.FormatEnd.IsNullOrEmpty())
+                if (!String.IsNullOrWhiteSpace(style.FormatEnd))
                 {
                     combinedResult.Append(style.FormatEnd);
                 }
