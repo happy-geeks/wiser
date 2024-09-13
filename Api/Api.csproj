@@ -156,14 +156,15 @@
     <PackageReference Include="GeeksCoreLibrary" Version="4.2.28" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
-    <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.26.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.26.0" />
+    <PackageReference Include="OpenIddict" Version="5.8.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.18" />
     <PackageReference Include="NUglify" Version="1.21.9" />
+    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="5.8.0" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="React.AspNet" Version="5.2.12" />
@@ -172,6 +173,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.8.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.8.0" />
+    <PackageReference Include="OpenIddict" Version="5.8.0" />
+    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="5.8.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Tinify" Version="1.6.0" />
   </ItemGroup>

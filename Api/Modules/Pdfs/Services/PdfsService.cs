@@ -19,7 +19,6 @@ using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Api.Modules.Pdfs.Services
 {
@@ -113,7 +112,7 @@ namespace Api.Modules.Pdfs.Services
                         await using var downloadStream = await response.Content.ReadAsStreamAsync();
                         await downloadStream.CopyToAsync(pdfStream);
                     }
-                    else if (!pdfFile.ModelObject.Data.IsNullOrEmpty())
+                    else if (pdfFile.ModelObject.Data.Length != 0)
                     {
                         pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
                     }
