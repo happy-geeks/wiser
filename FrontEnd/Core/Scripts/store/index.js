@@ -25,6 +25,7 @@ import {
     DELETE_BRANCH,
     DELETE_BRANCH_ERROR,
     DELETE_BRANCH_SUCCESS,
+    DO_TENANT_MIGRATIONS,
     END_REQUEST,
     FORGOT_PASSWORD,
     GENERATE_TOTP_BACKUP_CODES,
@@ -242,6 +243,7 @@ const loginModule = {
                 commit(AUTH_SUCCESS, user);
 
                 if (!rootState.modules.allModules || !rootState.modules.allModules.length) {
+                    await this.dispatch(DO_TENANT_MIGRATIONS);
                     await this.dispatch(MODULES_REQUEST);
                 }
 
@@ -291,6 +293,7 @@ const loginModule = {
             commit(AUTH_SUCCESS, loginResult.data);
 
             if (!rootState.modules.allModules || !rootState.modules.allModules.length) {
+                await this.dispatch(DO_TENANT_MIGRATIONS);
                 await this.dispatch(MODULES_REQUEST);
             }
 
@@ -1138,6 +1141,16 @@ const cacheModule = {
     getters: {}
 };
 
+const databaseModule = {
+    actions: {
+        async [DO_TENANT_MIGRATIONS]({ commit }) {
+            commit(START_REQUEST);
+            await main.databasesService.doTenantMigrations();
+            commit(END_REQUEST);
+        }
+    }
+};
+
 export default createStore({
     // Do not enable strict mode when deploying for production!
     // Strict mode runs a synchronous deep watcher on the state tree for detecting inappropriate mutations, and it can be quite expensive when you make large amount of mutations to the state.
@@ -1152,6 +1165,7 @@ export default createStore({
         users: usersModule,
         items: itemsModule,
         branches: branchesModule,
-        cache: cacheModule
+        cache: cacheModule,
+        database: databaseModule
     }
 });

@@ -45,7 +45,6 @@ namespace Api.Modules.Modules.Services
         private readonly IUsersService usersService;
         private readonly IStringReplacementsService stringReplacementsService;
         private readonly ILogger<ModulesService> logger;
-        private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly ICsvService csvService;
 
         private const string DefaultModulesGroupName = "Overig";
@@ -58,8 +57,7 @@ namespace Api.Modules.Modules.Services
             IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
             IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
             IUsersService usersService, IStringReplacementsService stringReplacementsService,
-            ILogger<ModulesService> logger, IDatabaseHelpersService databaseHelpersService,
-            ICsvService csvService)
+            ILogger<ModulesService> logger, ICsvService csvService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.gridsService = gridsService;
@@ -70,7 +68,6 @@ namespace Api.Modules.Modules.Services
             this.usersService = usersService;
             this.stringReplacementsService = stringReplacementsService;
             this.logger = logger;
-            this.databaseHelpersService = databaseHelpersService;
             this.csvService = csvService;
             this.clientDatabaseConnection = clientDatabaseConnection;
         }
@@ -96,88 +93,6 @@ namespace Api.Modules.Modules.Services
             var autoLoadModules = (await usersService.GetAutoLoadModulesAsync(identity)).ModelObject;
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(clientDatabaseConnection.ConnectedDatabase);
-
-            // If the table changes don't contain wiser_itemdetail, it means this is an older database.
-            // We can assume that this database already has the able, otherwise nothing would work.
-            // We add that table to the list of last table updates, so that the GCL doesn't try to add any indexes that might be missing,
-            // because that takes a very long time for old databases with lots of data.
-            if (!lastTableUpdates.ContainsKey(WiserTableNames.WiserItemDetail))
-            {
-                await clientDatabaseConnection.ExecuteAsync($"INSERT IGNORE INTO {WiserTableNames.WiserTableChanges} (name, last_update) VALUES ('{WiserTableNames.WiserItemDetail}', '{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
-                lastTableUpdates.TryAdd(WiserTableNames.WiserItemDetail, DateTime.Now);
-            }
-
-            // Make sure that Wiser tables are up-to-date.
-            const string TriggersName = "wiser_triggers";
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
-                WiserTableNames.WiserEntity,
-                WiserTableNames.WiserEntityProperty,
-                WiserTableNames.WiserLink
-            });
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {
-                WiserTableNames.WiserItem,
-                WiserTableNames.WiserItemDetail,
-                WiserTableNames.WiserModule ,
-                WiserTableNames.WiserItemFile,
-                WiserTableNames.WiserItemLink,
-                WiserTableNames.WiserItemLinkDetail,
-                WiserTableNames.WiserDataSelector,
-                WiserTableNames.WiserTemplate,
-                WiserTableNames.WiserTemplateExternalFiles,
-                WiserTableNames.WiserDynamicContent,
-                WiserTableNames.WiserTemplateDynamicContent,
-                WiserTableNames.WiserTemplatePublishLog,
-                WiserTableNames.WiserPreviewProfiles,
-                WiserTableNames.WiserDynamicContentPublishLog,
-                WiserTableNames.WiserQuery,
-                WiserTableNames.WiserPermission,
-                WiserTableNames.WiserCommunication,
-                WiserTableNames.WiserStyledOutput,
-                WiserTableNames.WiserParentUpdates,
-                WiserTableNames.WiserHistory,
-                GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName
-            });
-
-            // Make sure that all triggers for Wiser tables are up-to-date.
-            if (!lastTableUpdates.ContainsKey(TriggersName) || lastTableUpdates[TriggersName] < new DateTime(2024, 8, 5))
-            {
-                var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
-                await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
-
-                // Update wiser_table_changes.
-                clientDatabaseConnection.AddParameter("tableName", TriggersName);
-                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-                await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-VALUES (?tableName, ?lastUpdate) 
-ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
-                clientDatabaseConnection.ClearParameters();
-            }
-
-            const string TemplateCachingName = "wiser_template_caching";
-            if (!lastTableUpdates.TryGetValue(TemplateCachingName, out var updateDate) || updateDate < new DateTime(2023, 6, 2))
-            {
-                if (await databaseHelpersService.ColumnExistsAsync(WiserTableNames.WiserTemplate, "use_cache"))
-                {
-                    const string CacheUpdateQuery = @$"UPDATE {WiserTableNames.WiserTemplate}
-SET cache_per_url = IF(use_cache >= 3, 1, 0),
-    cache_per_querystring = IF(use_cache >= 4, 1, 0),
-    cache_per_hostname = IF(use_cache = 5, 1, 0),
-    cache_using_regex = IF(use_cache = 6, 1, 0),
-    cache_minutes = IF(use_cache = 0 AND cache_minutes <= 0, -1, cache_minutes)";
-                    await clientDatabaseConnection.ExecuteAsync(CacheUpdateQuery);
-                }
-
-                // Update wiser_table_changes.
-                clientDatabaseConnection.AddParameter("tableName", TemplateCachingName);
-                clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-                await clientDatabaseConnection.ExecuteAsync($@"INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-VALUES (?tableName, ?lastUpdate) 
-ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)");
-                clientDatabaseConnection.ClearParameters();
-            }
-
             clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
 
             var query = $@"(
