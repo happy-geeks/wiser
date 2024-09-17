@@ -125,6 +125,7 @@ const moduleSettings = {
 
             this.dependencyActionsEnum = Object.freeze({
                 toggleVisibility: "toggle-visibility",
+                toggleMandatory: "toggle-mandatory",
                 refresh: "refresh"
             });
 
