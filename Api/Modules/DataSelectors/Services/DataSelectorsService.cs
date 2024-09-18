@@ -322,7 +322,6 @@ ORDER BY name ASC");
             }
             else
             {
-                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
                 data.Id = (int)await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, clientDatabaseConnection);
                 await SaveAsyncOnDataBase(clientDatabaseConnection, data, identity);
             }
@@ -353,6 +352,7 @@ ORDER BY name ASC");
 
             return new ServiceResult<DataSelectorSignatureResultModel>(result);
         }
+        
         private async Task<ServiceResult<int>> SaveAsyncOnDataBase(IDatabaseConnection targetDatabase, DataSelectorModel data, ClaimsIdentity identity)
         {
             await targetDatabase.EnsureOpenConnectionForReadingAsync();
@@ -374,14 +374,12 @@ ORDER BY name ASC");
             {
                 var tenant = await wiserTenantsService.GetSingleAsync(identity);
                 using var scope = serviceProvider.CreateScope();
-                var newId = (int)await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector,
-                    targetDatabase, clientDatabaseConnection);
-
+                
                 var insertQuery =
                     $@"INSERT INTO {WiserTableNames.WiserDataSelector} ( id, name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
-                                                                                    VALUES ({newId}, ?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)";
+                                                                                    VALUES ({data.Id}, ?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)";
                 await targetDatabase.InsertRecordAsync(insertQuery);
-                result = newId;
+                result = data.Id;
             }
             else
             {
@@ -822,27 +820,6 @@ ORDER BY name ASC");
             clientDatabaseConnection.AddParameter("name", name);
             var getDataSelectorResult = await clientDatabaseConnection.GetAsync($"SELECT id FROM {WiserTableNames.WiserDataSelector} WHERE name = ?name LIMIT 1");
             return new ServiceResult<int>(getDataSelectorResult.Rows.Count == 0 ? 0 : getDataSelectorResult.Rows[0].Field<int>("id"));
-        }
-        
-        /// <summary>
-        /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
-        /// This is to make sure that the new ID can be created in both databases to match.
-        /// </summary>
-        /// <param name="tableName">The name of the table.</param>
-        /// <param name="mainDatabaseConnection">The connection to the main database.</param>
-        /// <param name="branchDatabase">The connection to the branch database.</param>
-        /// <returns>The new ID that should be used for the item in both databases.</returns>
-        private async Task<int> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
-        {
-            var query = $"SELECT MAX(id) AS id FROM {tableName}";
-
-            var dataTable = await mainDatabaseConnection.GetAsync(query);
-            var maxMainId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<int>("id") : 0;
-
-            dataTable = await branchDatabase.GetAsync(query);
-            var maxBranchId = dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<int>("id") : 0;
-
-            return Math.Max(maxMainId, maxBranchId) + 1;
         }
     }
 }
