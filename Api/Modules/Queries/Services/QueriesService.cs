@@ -205,7 +205,6 @@ WHERE query.id = ?id";
             }
             else
             {
-                await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
                 queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",clientDatabaseConnection);
                 await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
             }
@@ -248,8 +247,7 @@ WHERE query.id = ?id";
                 return false;
             }
         }
-            
-            
+
         private async Task<ServiceResult<QueryModel>> CreateAsyncOnDataBase(IDatabaseConnection targetDatabase, QueryModel queryModel, ClaimsIdentity identity, string description)
         {
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
