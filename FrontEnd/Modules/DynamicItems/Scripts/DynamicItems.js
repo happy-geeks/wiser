@@ -125,6 +125,7 @@ const moduleSettings = {
 
             this.dependencyActionsEnum = Object.freeze({
                 toggleVisibility: "toggle-visibility",
+                toggleMandatory: "toggle-mandatory",
                 refresh: "refresh"
             });
 
@@ -1314,13 +1315,38 @@ const moduleSettings = {
                         }
                     },
                     filterMenuInit: this.base.grids.onFilterMenuInit.bind(this),
-                    filterMenuOpen: this.base.grids.onFilterMenuOpen.bind(this)
+                    filterMenuOpen: this.base.grids.onFilterMenuOpen.bind(this),
+                    dataBound: this.changeHistoryDataBound.bind(this)
                 }).data("kendoGrid");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het initialiseren van de historie. Probeer het a.u.b. nogmaals of neem contact op met ons.");
             }
+        }
 
+        /**
+         * Bind (un)fold event when changes are added to the grid.
+         * @param event The data bound event from Kendo.
+         */
+        changeHistoryDataBound(event) {
+            event.sender.element.find(".folded-message").on("dblclick", clickEvent => {
+                const column = clickEvent.currentTarget;
+                const matchingColumn = column.parentElement.querySelector(`td[data-field=${column.dataset.field === "oldvalue" ? "newvalue" : "oldvalue"}]`);
+                
+                if (column.classList.contains("folded-message")) {
+                    column.classList.remove("folded-message");
+                    column.classList.add("unfolded-message");
+                    
+                    matchingColumn.classList.remove("folded-message");
+                    matchingColumn.classList.add("unfolded-message");
+                } else {
+                    column.classList.add("folded-message");
+                    column.classList.remove("unfolded-message");
+
+                    matchingColumn.classList.add("folded-message");
+                    matchingColumn.classList.remove("unfolded-message");
+                }
+            });
         }
 
         /**

@@ -326,7 +326,7 @@ namespace Api.Modules.Templates.Controllers
         [ProducesResponseType(typeof(List<TemplateTreeViewModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetEntireTreeViewStructureAsync(string startFrom = "", Environments? environment = null)
         {
-            return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity)User.Identity, 0, startFrom, environment)).GetHttpResponseMessage();
+            return (await templatesService.GetEntireTreeViewStructureAsync((ClaimsIdentity) User.Identity, 0, startFrom, environment)).GetHttpResponseMessage();
         }
 
         /// <summary>

@@ -327,6 +327,14 @@ body.iframe .editMenu {
         padding-right: 6px;
     }
 
+.k-grid .folded-message {
+    white-space: nowrap;
+}
+
+.k-grid .unfolded-message {
+    white-space: normal;
+}
+
 .emptyItem {
     border: 0;
 }
