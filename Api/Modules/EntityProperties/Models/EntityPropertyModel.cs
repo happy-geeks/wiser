@@ -17,6 +17,11 @@ namespace Api.Modules.EntityProperties.Models
         /// Gets or sets the ID of the module. This can be 0 if the property should be available for all modules.
         /// </summary>
         public int ModuleId { get; set; }
+        
+        /// <summary>
+        /// This just indicates that the current item is a property. This makes it easier for our javascript code to check what it is working with.
+        /// </summary>
+        public EntityPropertyModelTypes Type { get; set; } = EntityPropertyModelTypes.Property;
 
         /// <summary>
         /// Gets or sets the name of the entity.
