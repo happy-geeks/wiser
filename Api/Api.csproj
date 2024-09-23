@@ -153,9 +153,6 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
-    <EmbeddedResource Include="Core\Queries\WiserInstallation\StoredProcedures.sql" />
-    <EmbeddedResource Include="Core\Queries\WiserInstallation\CreateDedicatedItemTablesTriggers.sql" />
-    <EmbeddedResource Include="Core\Queries\WiserInstallation\InsertInitialDataMultiLanguage.sql" />
     <EmbeddedResource Update="Modules\Translations\Resources\Core\Views\Home\Resources\Index.en.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Index.en.Designer.cs</LastGenOutput>

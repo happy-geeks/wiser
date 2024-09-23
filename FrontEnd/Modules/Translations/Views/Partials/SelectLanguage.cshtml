@@ -15,7 +15,7 @@
     var returnUrl = string.IsNullOrEmpty(Context.Request.Path) ? "~/" : $"~{Context.Request.Path.Value}";
 }
 
-<div title="@Localizer["Request culture provider:"] @requestCulture?.Provider?.GetType().Name">
+<div title="@Localizer["Request culture provider:"] @requestCulture?.Provider?.GetType().Name" class="hidden">
     <form id="selectLanguage" asp-controller="Home" 
           asp-action="SetLanguage" asp-route-returnUrl="@returnUrl" 
           method="post" class="form-horizontal" role="form">
