@@ -126,11 +126,17 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             };
         }
 
-        var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
-        {
-            Id = x.Key,
-            Name = x.Key,
-            Properties = x.ToList()
+            var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
+            {
+                 Id = x.Key,
+                 Name = x.Key,
+                 Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
+                 {
+                     Id = y.Key,
+                     Name = y.Key,
+                     TabName = x.Key,
+                     Properties = y.ToList()
+                 }).ToList()
         }).ToList();
 
         return new ServiceResult<List<EntityPropertyTabModel>>(tabs);
