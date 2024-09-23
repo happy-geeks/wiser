@@ -66,7 +66,7 @@ export class EntityTab {
 
                 if (addType === "entityProperty") {
                     const dataItem = this.selectedTabOrProperty;
-                    if (!dataItem || dataItem.isTab) {
+                    if (!dataItem || dataItem.Type === "Tab" || dataItem.Type === "Group") {
                         this.base.showNotification("notification", "Kies a.u.b. eerst een veld om te verwijderen", "error");
                         return;
                     }
@@ -120,7 +120,7 @@ export class EntityTab {
         $(".duplicateEntityPropertyButton").kendoButton({
             click: () => {
                 const dataItem = this.selectedTabOrProperty;
-                if (!dataItem || dataItem.isTab) {
+                if (!dataItem || dataItem.Type === "Tab" || dataItem.Type === "Group") {
                     return;
                 }
 
@@ -300,7 +300,7 @@ export class EntityTab {
 
             let tabName = "";
             if (this.selectedTabOrProperty) {
-                tabName = this.selectedTabOrProperty.isTab ? this.selectedTabOrProperty.name : this.selectedTabOrProperty.tabName;
+                tabName = this.selectedTabOrProperty.Type === "Tab" ? this.selectedTabOrProperty.name : this.selectedTabOrProperty.tabName;
             }
 
             const promises = [];
@@ -2330,6 +2330,7 @@ export class EntityTab {
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
             method: "GET"
         });
+        console.log(`KOEKJE: ${JSON.stringify(tabsAndFields)}`);
         this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
             data: tabsAndFields,
             schema: {
@@ -2357,7 +2358,8 @@ export class EntityTab {
         const index = selectedElement.index();
         const dataItem = event.sender.dataItem(selectedElement);
         this.selectedTabOrProperty = dataItem;
-        if (dataItem.isTab) {
+        // TODO: show group pane if dataItem is a group!
+        if (dataItem.type !== "Property") {
             $("#EntityTabStrip-2 .right-pane").hide();
             return;
         }
@@ -2377,7 +2379,7 @@ export class EntityTab {
             await this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabName);
         }
 
-        // Refresh code mirror isntances, otherwise they won't work properly because they were initialized while they were invisible.
+        // Refresh code mirror instances, otherwise they won't work properly because they were initialized while they were invisible.
         this.scriptField.refresh();
         this.optionsJsonField.refresh();
         this.queryField.refresh();
