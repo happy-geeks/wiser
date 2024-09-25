@@ -19,11 +19,7 @@ using Api.Modules.Templates.Services;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Services;
 using GeeksCoreLibrary.Core.Extensions;
-using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Modules.Databases.Enums;
-using GeeksCoreLibrary.Modules.Databases.Helpers;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.Databases.Services;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
@@ -42,7 +38,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
-using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -370,35 +365,17 @@ namespace Api
             var applicationLifetime = builder.ApplicationServices.GetService<IHostApplicationLifetime>();
             applicationLifetime.ApplicationStarted.Register(async () =>
             {
+                using var scope = builder.ApplicationServices.CreateScope();
+
                 // Make sure all important tables exist and are up-to-date, while starting the application.
                 try
                 {
-                    using var scope = builder.ApplicationServices.CreateScope();
-
-                    // Get the MySqlDatabaseConnection instead of ClientDatabaseConnection, because we want to create these tables in the main tenant.
-                    var originalConnection = scope.ServiceProvider.GetRequiredService<MySqlDatabaseConnection>();
-                    var logger = scope.ServiceProvider.GetRequiredService<ILogger<MySqlDatabaseHelpersService>>();
-                    var databaseHelpersService = new MySqlDatabaseHelpersService(originalConnection, logger);
-
-                    var tablesToUpdate = new List<string>
-                    {
-                        ApiTableNames.ApiRequestLogs
-                    };
-
-                    // Copy the original GCL log table, we want the same columns for our log table, with some extras.
-                    var logTable = WiserTableDefinitions.TablesToUpdate.Single(table => table.Name == WiserTableNames.GclRequestLog);
-                    logTable.Name = ApiTableNames.ApiRequestLogs;
-                    logTable.Indexes.ForEach(index => index.TableName = ApiTableNames.ApiRequestLogs);
-                    logTable.Columns.Add(new ColumnSettingsModel("sub_domain", MySqlDbType.VarChar, 255, notNull: true));
-                    logTable.Columns.Add(new ColumnSettingsModel("is_from_wiser_front_end", MySqlDbType.Int16, 1, notNull: true));
-                    logTable.Indexes.Add(new IndexSettingsModel(ApiTableNames.ApiRequestLogs, "idx_sub_domain", IndexTypes.Normal, new List<string> { "sub_domain", "is_from_wiser_front_end" }));
-                    databaseHelpersService.ExtraWiserTableDefinitions = new List<WiserTableDefinitionModel> { logTable };
-
-                    await databaseHelpersService.CheckAndUpdateTablesAsync(tablesToUpdate);
+                    var databaseHelpersService = scope.ServiceProvider.GetService<IWiserDatabaseHelpersService>();
+                    await databaseHelpersService.DoDatabaseMigrationsForMainDatabaseAsync();
                 }
                 catch (Exception exception)
                 {
-                    builder.ApplicationServices.GetService<ILogger>().LogError(exception, "Error while updating tables.");
+                    scope.ServiceProvider.GetService<ILogger>().LogError(exception, "Error while updating tables.");
                 }
             });
 

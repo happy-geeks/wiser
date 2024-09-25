@@ -431,7 +431,6 @@ export class Grids {
                                 }
 
                                 transportOptions.data.firstLoad = this.mainGridForceRecount || currentFilters !== previousFilters;
-                                filtersChanged = currentFilters !== previousFilters;
                                 transportOptions.data.pageSize = transportOptions.data.page_size || transportOptions.data.pageSize;
                                 previousFilters = currentFilters;
                                 this.mainGridForceRecount = false;
@@ -482,6 +481,7 @@ export class Grids {
                     filterable: true,
                     allPages: true
                 },
+                filter: (event) => {filtersChanged = true;},
                 columnResize: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 columnReorder: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),
                 columnHide: (event) => this.saveGridViewColumnsState(`main_grid_columns_${this.base.settings.moduleId}`, event.sender),

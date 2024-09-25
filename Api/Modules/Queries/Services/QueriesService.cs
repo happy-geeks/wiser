@@ -7,6 +7,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
+using Api.Modules.Items.Models;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using Api.Modules.Tenants.Interfaces;
@@ -17,6 +19,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 using Newtonsoft.Json.Linq;
 
@@ -31,17 +34,22 @@ namespace Api.Modules.Queries.Services
         private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         /// <summary>
         /// Creates a new instance of <see cref="QueriesService"/>.
         /// </summary>
-        public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
+        public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IServiceProvider serviceProvider, IBranchesService branchesService, IDatabaseHelpersService databaseHelpersService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
+            this.databaseHelpersService = databaseHelpersService;
         }
-
 
         /// <inheritdoc />
         public async Task<ServiceResult<List<QueryModel>>> GetForExportModuleAsync(ClaimsIdentity identity)
@@ -159,49 +167,145 @@ WHERE query.id = ?id";
                 ShowInCommunicationModule = false,
                 RolesWithPermissions = ""
             };
+            
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
+            
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
+            var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
+            
+            var isOnBranch = !branchesService.IsMainBranch(tenant.ModelObject).ModelObject; 
+            
+            var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+            
+            var id = -1;
 
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("description", queryModel.Description);
-            clientDatabaseConnection.AddParameter("query", queryModel.Query);
-            clientDatabaseConnection.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
-            clientDatabaseConnection.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
+            if (isOnBranch)
+            {
+                // When we are on a branch always create the id on both branch and main database.
+                using var scope = serviceProvider.CreateScope();
+                var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+                var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+                
+                queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",mainDatabaseConnection,clientDatabaseConnection);
+                
+                try
+                {
+                    await LockTables(mainDatabaseConnection);
+                    await LockTables(clientDatabaseConnection);
+                    await CreateAsyncOnDataBase(mainDatabaseConnection, queryModel, identity, description);
+                    await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
+                }
+                finally
+                {
+                    await UnlockTables(mainDatabaseConnection);
+                    await UnlockTables(clientDatabaseConnection);
+                }
+            }
+            else
+            {
+                queryModel.Id = (int)await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserQuery}",clientDatabaseConnection);
+                await CreateAsyncOnDataBase(clientDatabaseConnection, queryModel, identity, description);
+            }
+            
+            return new ServiceResult<QueryModel>(queryModel);
+        }
 
-            var query = $@"INSERT INTO {WiserTableNames.WiserQuery}
-(
-    description,
-    query,
-    show_in_export_module,
-    show_in_communication_module
-)
-VALUES
-(
-    ?description,
-    ?query,
-    ?show_in_export_module,
-    ?show_in_communication_module
-);
-SELECT LAST_INSERT_ID();";
-
+        private async Task<bool> LockTables(IDatabaseConnection targetDatabase)
+        {
             try
             {
-                var dataTable = await clientDatabaseConnection.GetAsync(query);
-                queryModel.Id = Convert.ToInt32(dataTable.Rows[0][0]);
+                var lockQuery = $"""
+                                 LOCK TABLES
+                                 {WiserTableNames.WiserQuery} WRITE,
+                                 {WiserTableNames.WiserQuery} item READ,
+                                 {WiserTableNames.WiserUserRoles} user_role READ,
+                                 {WiserTableNames.WiserPermission} permission READ,
+                                 {WiserTableNames.WiserIdMappings} WRITE
+                                 """;
+
+                await targetDatabase.ExecuteAsync(lockQuery);
+                return true;
             }
-            catch (MySqlException mySqlException)
+            catch (Exception ex)
             {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
-                {
-                    return new ServiceResult<QueryModel>
-                    {
-                        StatusCode = HttpStatusCode.Conflict,
-                        ErrorMessage = $"An entry already exists with {nameof(queryModel.Description)} = '{queryModel.Description}'"
-                    };
-                }
-
-                throw;
+                return false;
             }
+        }
 
+        private async Task<bool> UnlockTables(IDatabaseConnection targetDatabase)
+        {
+            try
+            {
+                var unlockQuery = "UNLOCK TABLES";
+                await targetDatabase.ExecuteAsync(unlockQuery);
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+
+        private async Task<ServiceResult<QueryModel>> CreateAsyncOnDataBase(IDatabaseConnection targetDatabase, QueryModel queryModel, ClaimsIdentity identity, string description)
+        {
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+           
+            using var scope = serviceProvider.CreateScope();
+            
+            try
+            {
+                var lockQuery = $"""
+                                 LOCK TABLES
+                                 {WiserTableNames.WiserQuery} WRITE,
+                                 {WiserTableNames.WiserQuery} item READ,
+                                 {WiserTableNames.WiserUserRoles} user_role READ,
+                                 {WiserTableNames.WiserPermission} permission READ,
+                                 {WiserTableNames.WiserIdMappings} WRITE
+                                 """;
+
+                await targetDatabase.ExecuteAsync(lockQuery);
+                
+                var itemInsertQuery = $@"INSERT INTO {WiserTableNames.WiserQuery}
+                (
+                    id,
+                    description,
+                    query,
+                    show_in_export_module,
+                    show_in_communication_module
+                )
+                VALUES
+                (
+                    ?id,
+                    ?description,
+                    ?query,
+                    ?show_in_export_module,
+                    ?show_in_communication_module
+                );";
+                
+                await targetDatabase.EnsureOpenConnectionForReadingAsync();
+                targetDatabase.ClearParameters();
+                targetDatabase.AddParameter("id", queryModel.Id);
+                targetDatabase.AddParameter("description", queryModel.Description);
+                targetDatabase.AddParameter("query", queryModel.Query);
+                targetDatabase.AddParameter("show_in_export_module", queryModel.ShowInExportModule);
+                targetDatabase.AddParameter("show_in_communication_module", queryModel.ShowInCommunicationModule);
+                await targetDatabase.ExecuteAsync(itemInsertQuery);
+
+                targetDatabase.AddParameter("tableName", $"{WiserTableNames.WiserQuery}");
+                targetDatabase.AddParameter("id", queryModel.Id);
+           
+                var insertQuery =
+                    $"INSERT INTO {WiserTableNames.WiserIdMappings} (table_name, our_id, production_id) VALUES (?tableName, ?id, ?id)";
+                await targetDatabase.ExecuteAsync(insertQuery);
+            }
+            finally
+            {
+                var unlockQuery = "UNLOCK TABLES";
+                await targetDatabase.ExecuteAsync(unlockQuery);
+            }
+            
             return new ServiceResult<QueryModel>(queryModel);
         }
 
@@ -358,7 +462,7 @@ DELETE FROM {WiserTableNames.WiserPermission} WHERE query_id = ?id AND query_id 
 
             return new ServiceResult<JToken>(combinedResult);
         }
-
+        
         /// <summary>
         /// Get queries for a specific module.
         /// </summary>

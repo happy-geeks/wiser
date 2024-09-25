@@ -125,6 +125,7 @@ const moduleSettings = {
 
             this.dependencyActionsEnum = Object.freeze({
                 toggleVisibility: "toggle-visibility",
+                toggleMandatory: "toggle-mandatory",
                 refresh: "refresh"
             });
 
@@ -1206,8 +1207,10 @@ const moduleSettings = {
         /**
          * Initializes the grid that shows the history of an item.
          * @param {any} itemId The ID of the item.
+         * @param {any} entityType The entity type of the item.
+         * @param {any} moduleId The module ID of the item.
          */
-        async loadHistoryGrid(itemId) {
+        async loadHistoryGrid(itemId, entityType, moduleId) {
             const kendoHistoryGridWindow = this.windows.historyGridWindow;
             const historyGridElement = $("#historyWindowGrid");
             kendoHistoryGridWindow.maximize().open();
@@ -1223,7 +1226,7 @@ const moduleSettings = {
                 };
 
                 const gridDataResult = await Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${this.settings.entityType}?mode=3&moduleId=${this.base.settings.moduleId}`,
+                    url: `${this.base.settings.wiserApiRoot}items/${encodeURIComponent(itemId)}/entity-grids/${entityType}?mode=3&moduleId=${moduleId}`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(options)
@@ -1312,13 +1315,38 @@ const moduleSettings = {
                         }
                     },
                     filterMenuInit: this.base.grids.onFilterMenuInit.bind(this),
-                    filterMenuOpen: this.base.grids.onFilterMenuOpen.bind(this)
+                    filterMenuOpen: this.base.grids.onFilterMenuOpen.bind(this),
+                    dataBound: this.changeHistoryDataBound.bind(this)
                 }).data("kendoGrid");
             } catch (exception) {
                 console.error(exception);
                 kendo.alert("Er is iets fout gegaan met het initialiseren van de historie. Probeer het a.u.b. nogmaals of neem contact op met ons.");
             }
+        }
 
+        /**
+         * Bind (un)fold event when changes are added to the grid.
+         * @param event The data bound event from Kendo.
+         */
+        changeHistoryDataBound(event) {
+            event.sender.element.find(".folded-message").on("dblclick", clickEvent => {
+                const column = clickEvent.currentTarget;
+                const matchingColumn = column.parentElement.querySelector(`td[data-field=${column.dataset.field === "oldvalue" ? "newvalue" : "oldvalue"}]`);
+                
+                if (column.classList.contains("folded-message")) {
+                    column.classList.remove("folded-message");
+                    column.classList.add("unfolded-message");
+                    
+                    matchingColumn.classList.remove("folded-message");
+                    matchingColumn.classList.add("unfolded-message");
+                } else {
+                    column.classList.add("folded-message");
+                    column.classList.remove("unfolded-message");
+
+                    matchingColumn.classList.add("folded-message");
+                    matchingColumn.classList.remove("unfolded-message");
+                }
+            });
         }
 
         /**
@@ -1965,7 +1993,7 @@ const moduleSettings = {
 
                     metaDataListElement.find(".changedon-footer").off("click");
                     metaDataListElement.find(".changedon-footer").on("click", () => {
-                        this.base.loadHistoryGrid(itemId);
+                        this.base.loadHistoryGrid(itemId, entityType, itemMetaData.moduleId || this.settings.moduleId);
                     });
                 } else {
                     metaDataListElement.find(".changed-on").html("").closest("li").addClass("hidden");
@@ -2038,9 +2066,10 @@ const moduleSettings = {
          * @param {any} data Optional: The data to save with the new item.
          * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
          * @param {number} moduleId Optional: The id of the module in which the item should be created.
+         * @param {bool} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
          */
-        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null) {
-            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId);
+        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null, alsoCreateInMainBranch = false) {
+            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId, alsoCreateInMainBranch);
         }
 
         /**

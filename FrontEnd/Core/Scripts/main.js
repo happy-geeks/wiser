@@ -9,6 +9,8 @@ import ModulesService from "./shared/modules.service";
 import TenantsService from "./shared/tenants.service";
 import ItemsService from "./shared/items.service";
 import BranchesService from "./shared/branches.service";
+import CacheService from "./shared/cache.service";
+import DatabasesService from "./shared/databases.service";
 
 import store from "./store/index";
 import login from "./components/login";
@@ -51,7 +53,6 @@ import {
     UPDATE_ACTIVE_TIME,
     USER_BACKUP_CODES_GENERATED
 } from "./store/mutation-types";
-import CacheService from "./shared/cache.service";
 
 class Main {
     constructor(settings) {
@@ -64,6 +65,7 @@ class Main {
         this.itemsService = new ItemsService(this);
         this.branchesService = new BranchesService(this);
         this.cacheService = new CacheService(this);
+        this.databasesService = new DatabasesService(this);
 
         // Fire event on page ready for direct actions
         document.addEventListener("DOMContentLoaded", () => {
@@ -1080,8 +1082,24 @@ class Main {
                     }
                 },
 
+                async getEntitiesForBranches(branchId = 0) {
+                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES, branchId);
+                    for (let entity of this.entitiesForBranches) {
+                        if (this.branchMergeSettings.entities[entity.id]) {
+                            continue;
+                        }
+
+                        this.branchMergeSettings.entities[entity.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+                },
+
                 async onWiserMergeBranchPromptOpen(sender) {
-                    await this.$store.dispatch(GET_ENTITIES_FOR_BRANCHES);
+                    await this.getEntitiesForBranches();
 
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
@@ -1125,6 +1143,8 @@ class Main {
                     else if (selectedBranchId.target) {
                         selectedBranchId = event.target.value.id;
                     }
+
+                    await this.getEntitiesForBranches(selectedBranchId);
 
                     for (let entity of this.entitiesForBranches) {
                         this.branchMergeSettings.entities[entity.id] = {

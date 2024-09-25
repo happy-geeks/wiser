@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.DataSelectors.Interfaces;
 using Api.Modules.DataSelectors.Models;
@@ -21,6 +22,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using GclDataSelectors = GeeksCoreLibrary.Modules.DataSelector.Interfaces;
  
@@ -39,13 +41,15 @@ namespace Api.Modules.DataSelectors.Services
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IWiserItemsService wiserItemsService;
         private readonly ICsvService csvService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
 
         private const string DataSelectorTemplateEntityType = "dataselector-template";
 
         /// <summary>
         /// Creates a new instance of <see cref="DataSelectorsService"/>
         /// </summary>
-        public DataSelectorsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService, ICsvService csvService)
+        public DataSelectorsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IHttpContextAccessor httpContextAccessor, GclDataSelectors.IDataSelectorsService gclDataSelectorsService, IExcelService excelService, IDatabaseHelpersService databaseHelpersService, IWiserItemsService wiserItemsService, ICsvService csvService, IServiceProvider serviceProvider, IBranchesService branchesService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -55,6 +59,8 @@ namespace Api.Modules.DataSelectors.Services
             this.databaseHelpersService = databaseHelpersService;
             this.wiserItemsService = wiserItemsService;
             this.csvService = csvService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
@@ -284,56 +290,43 @@ ORDER BY name ASC");
         /// <inheritdoc />
         public async Task<ServiceResult<int>> SaveAsync(ClaimsIdentity identity, DataSelectorModel data)
         {
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
-
-            clientDatabaseConnection.AddParameter("name", data.Name);
-            clientDatabaseConnection.AddParameter("availableForRendering", data.AvailableForRendering);
-            clientDatabaseConnection.AddParameter("defaultTemplate", data.DefaultTemplate);
-            clientDatabaseConnection.AddParameter("requestJson", data.RequestJson);
-            clientDatabaseConnection.AddParameter("savedJson", data.SavedJson);
-            clientDatabaseConnection.AddParameter("showInExportModule", data.ShowInExportModule);
-            clientDatabaseConnection.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
-            clientDatabaseConnection.AddParameter("showInDashboard", data.ShowInDashboard);
-            clientDatabaseConnection.AddParameter("availableForBranches", data.AvailableForBranches);
-
-            int result;
-            var dataTable = await clientDatabaseConnection.GetAsync($@"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
-            if (dataTable.Rows.Count == 0)
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
+            var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
+            
+            var isOnBranch = !branchesService.IsMainBranch(tenant.ModelObject).ModelObject; 
+            var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+            
+            if (isOnBranch)
             {
-                result = (int)await clientDatabaseConnection.InsertRecordAsync($@"INSERT INTO {WiserTableNames.WiserDataSelector} (name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
-                                                                                    VALUES (?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)");
+                // When we are on a branch always create the id on both branch and main database.
+                using var scope = serviceProvider.CreateScope();
+                var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+                var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+                await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+                
+                data.Id  = (int)await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, mainDatabaseConnection, clientDatabaseConnection);
+                
+                try
+                {
+                    await LockTables(mainDatabaseConnection);
+                    await LockTables(clientDatabaseConnection);
+                    await SaveAsyncOnDataBase(mainDatabaseConnection, data, identity);
+                    await SaveAsyncOnDataBase(clientDatabaseConnection, data, identity);
+                }
+                finally
+                {
+                    await UnlockTables(mainDatabaseConnection);
+                    await UnlockTables(clientDatabaseConnection);
+                }
             }
             else
             {
-                result = dataTable.Rows[0].Field<int>("id");
-                await clientDatabaseConnection.ExecuteAsync($@"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard, available_for_branches = ?availableForBranches WHERE name = ?name");
+                data.Id = (int)await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, clientDatabaseConnection);
+                await SaveAsyncOnDataBase(clientDatabaseConnection, data, identity);
             }
-
-            clientDatabaseConnection.AddParameter("id", result);
-
-            // Set "show_in_dashboard" to 0 for all other data selector if this data selector has "show_in_dashboard" enabled.
-            if (data.ShowInDashboard)
-            {
-                await clientDatabaseConnection.ExecuteAsync($"UPDATE `{WiserTableNames.WiserDataSelector}` SET show_in_dashboard = 0 WHERE id <> ?id");
-            }
-
-            // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
-            var query = $@"INSERT IGNORE INTO `{WiserTableNames.WiserPermission}` (role_id, data_selector_id, permissions)
-VALUES(?roleId, ?id, 15)";
-
-            foreach (var role in data.AllowedRoles.Split(","))
-            {
-                clientDatabaseConnection.AddParameter("roleId", role);
-                await clientDatabaseConnection.ExecuteAsync(query);
-            }
-
-            // Delete permissions for the roles that are missing in the allowed roles.
-            clientDatabaseConnection.AddParameter("roles_with_permissions", data.AllowedRoles);
-            query = $"DELETE FROM `{WiserTableNames.WiserPermission}` WHERE data_selector_id = ?id AND data_selector_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
-            await clientDatabaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<int>(result);
+            
+            return new ServiceResult<int>(data.Id);
         }
 
         /// <inheritdoc />
@@ -359,6 +352,66 @@ VALUES(?roleId, ?id, 15)";
 
             return new ServiceResult<DataSelectorSignatureResultModel>(result);
         }
+        
+        private async Task<ServiceResult<int>> SaveAsyncOnDataBase(IDatabaseConnection targetDatabase, DataSelectorModel data, ClaimsIdentity identity)
+        {
+            await targetDatabase.EnsureOpenConnectionForReadingAsync();
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { WiserTableNames.WiserDataSelector });
+
+            targetDatabase.AddParameter("name", data.Name);
+            targetDatabase.AddParameter("availableForRendering", data.AvailableForRendering);
+            targetDatabase.AddParameter("defaultTemplate", data.DefaultTemplate);
+            targetDatabase.AddParameter("requestJson", data.RequestJson);
+            targetDatabase.AddParameter("savedJson", data.SavedJson);
+            targetDatabase.AddParameter("showInExportModule", data.ShowInExportModule);
+            targetDatabase.AddParameter("showInCommunicationModule", data.ShowInCommunicationModule);
+            targetDatabase.AddParameter("showInDashboard", data.ShowInDashboard);
+            targetDatabase.AddParameter("availableForBranches", data.AvailableForBranches);
+
+            int result;
+            var dataTable = await targetDatabase.GetAsync($@"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
+            if (dataTable.Rows.Count == 0)
+            {
+                var tenant = await wiserTenantsService.GetSingleAsync(identity);
+                using var scope = serviceProvider.CreateScope();
+                
+                var insertQuery =
+                    $@"INSERT INTO {WiserTableNames.WiserDataSelector} ( id, name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
+                                                                                    VALUES ({data.Id}, ?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)";
+                await targetDatabase.InsertRecordAsync(insertQuery);
+                result = data.Id;
+            }
+            else
+            {
+                result = dataTable.Rows[0].Field<int>("id");
+                await targetDatabase.ExecuteAsync($@"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard, available_for_branches = ?availableForBranches WHERE name = ?name");
+            }
+
+            targetDatabase.AddParameter("id", result);
+
+            // Set "show_in_dashboard" to 0 for all other data selector if this data selector has "show_in_dashboard" enabled.
+            if (data.ShowInDashboard)
+            {
+                await targetDatabase.ExecuteAsync($"UPDATE `{WiserTableNames.WiserDataSelector}` SET show_in_dashboard = 0 WHERE id <> ?id");
+            }
+
+            // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
+            var query = $@"INSERT IGNORE INTO `{WiserTableNames.WiserPermission}` (role_id, data_selector_id, permissions)
+            VALUES(?roleId, ?id, 15)";
+
+            foreach (var role in data.AllowedRoles.Split(","))
+            {
+                targetDatabase.AddParameter("roleId", role);
+                await targetDatabase.ExecuteAsync(query);
+            }
+
+            // Delete permissions for the roles that are missing in the allowed roles.
+            targetDatabase.AddParameter("roles_with_permissions", data.AllowedRoles);
+            query = $"DELETE FROM `{WiserTableNames.WiserPermission}` WHERE data_selector_id = ?id AND data_selector_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
+            await targetDatabase.ExecuteAsync(query);
+
+            return new ServiceResult<int>(result);
+        }
 
         /// <inheritdoc />
         public async Task<ServiceResult<JArray>> GetResultsAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity)
@@ -374,6 +427,44 @@ VALUES(?roleId, ?id, 15)";
             }
 
             return new ServiceResult<JArray>(jsonResult);
+        }
+        
+        private async Task<bool> LockTables(IDatabaseConnection targetDatabase)
+        {
+            try
+            {
+                var lockQuery = $"""
+                                  LOCK TABLES
+                                  {WiserTableNames.WiserTableChanges} WRITE,
+                                  {WiserTableNames.WiserDataSelector} WRITE,
+                                  {WiserTableNames.WiserDataSelector} item READ,
+                                  {WiserTableNames.WiserUserRoles} user_role READ,
+                                  {WiserTableNames.WiserPermission} permission READ,
+                                  {WiserTableNames.WiserPermission} WRITE,
+                                  {WiserTableNames.WiserIdMappings} WRITE
+                                  """;
+
+                await targetDatabase.ExecuteAsync(lockQuery);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        private async Task<bool> UnlockTables(IDatabaseConnection targetDatabase)
+        {
+            try
+            {
+                var unlockQuery = "UNLOCK TABLES";
+                await targetDatabase.ExecuteAsync(unlockQuery);
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
         }
 
         /// <inheritdoc />

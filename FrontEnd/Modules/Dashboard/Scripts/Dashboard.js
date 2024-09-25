@@ -1103,10 +1103,12 @@ const moduleSettings = {
          */
         onServiceLogsGridDataBound(event) {
             event.sender.element.find(".folded-message").on("dblclick", clickEvent => {
-                if(clickEvent.currentTarget.classList.contains("folded-message")) {
+                if (clickEvent.currentTarget.classList.contains("folded-message")) {
                     clickEvent.currentTarget.classList.remove("folded-message");
+                    clickEvent.currentTarget.classList.add("unfolded-message");
                 } else {
                     clickEvent.currentTarget.classList.add("folded-message");
+                    clickEvent.currentTarget.classList.remove("unfolded-message");
                 }
             });
         }

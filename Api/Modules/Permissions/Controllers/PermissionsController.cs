@@ -21,7 +21,7 @@ namespace Api.Modules.Permissions.Controllers;
 public class PermissionsController : ControllerBase
 {
     private readonly IPermissionsService permissionsService;
-    
+
     /// <summary>
     /// Creates a new instance of PermissionController.
     /// </summary>
@@ -29,18 +29,30 @@ public class PermissionsController : ControllerBase
     {
         this.permissionsService = permissionsService;
     }
-    
+
     /// <summary>
     /// Set the role permissions for the given role and subject.
     /// </summary>
-    /// <param name="permissionUpdateModel">Model containing the data used to set the permissions</param>
+    /// <param name="permissionUpdateModel">Model containing the data used to set the permissions.</param>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> SetPermissionAsync([FromBody] PermissionUpdateModel permissionUpdateModel)
+    public async Task<IActionResult> SetAsync([FromBody] PermissionUpdateModel permissionUpdateModel)
     {
-        return (await permissionsService.SetPermissionAsync(permissionUpdateModel)).GetHttpResponseMessage();
+        return (await permissionsService.SetAsync(permissionUpdateModel)).GetHttpResponseMessage();
     }
-    
+
+    /// <summary>
+    /// Delete a permission by id.
+    /// </summary>
+    /// <param name="permissionUpdateModel">The permissions to delete.</param>
+    /// <returns>Boolean whether the delete action was successful.</returns>
+    [HttpDelete]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> DeleteAsync([FromBody] PermissionUpdateModel permissionUpdateModel)
+    {
+        return (await permissionsService.DeleteAsync(permissionUpdateModel.Id)).GetHttpResponseMessage();
+    }
+
     /// <summary>
     /// Get the role permissions of the given role and subject.
     /// </summary>
@@ -49,8 +61,8 @@ public class PermissionsController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(List<PermissionData>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetPermissionsAsync(int roleId, PermissionSubjects subject)
+    public async Task<IActionResult> GetAsync(int roleId, PermissionSubjects subject)
     {
-        return (await permissionsService.GetPermissionsAsync(roleId, subject)).GetHttpResponseMessage();
+        return (await permissionsService.GetAsync(roleId, subject)).GetHttpResponseMessage();
     }
 }

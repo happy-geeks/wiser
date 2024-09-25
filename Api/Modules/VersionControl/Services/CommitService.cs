@@ -297,7 +297,10 @@ public class CommitService : ICommitService, IScopedService
             await LogDeploymentOfCommitAsync(commit.Id, data.Environment, identity);
         }
 
-        return new ServiceResult<bool>(true);
+        return new ServiceResult<bool>(true)
+        {
+            StatusCode = HttpStatusCode.NoContent
+        };
     }
 
     /// <inheritdoc />

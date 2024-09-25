@@ -403,7 +403,7 @@ WHERE il1.id = @_linkId;
 UPDATE wiser_itemlink
 SET destination_item_id = @destinationId, ordering = @newOrderNumber
 WHERE id = @_linkId;");
-                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = """", ""Gegevens"", tab_name) as tabName, CONCAT(IF(tab_name = """", ""Gegevens"", tab_name), "" --> "", display_name) AS displayName, property_name AS propertyName FROM wiser_entityproperty
+                TemplateQueryStrings.Add("GET_OPTIONS_FOR_DEPENDENCY", @"SELECT DISTINCT entity_name AS entityName, IF(tab_name = '', 'Gegevens', tab_name) as tabName, CONCAT(IF(tab_name = '', 'Gegevens', tab_name), ' --> ', display_name) AS displayName, property_name AS propertyName FROM wiser_entityproperty
 WHERE entity_name = '{entityName}'
 ORDER BY displayName");
 
@@ -1497,8 +1497,8 @@ LIMIT 1";
             }
 
             // Create a new version of the template, so that any changes made after this will be done in the new version instead of the published one.
-            // Does not apply if the template was published to live within a branch.
-            if (branch == null)
+            // Does not apply if the template was published to live within a branch or if it was only deployed to the development environment.
+            if (branch == null && (environment & Environments.Development) != Environments.Development)
             {
                 await CreateNewVersionAsync(templateId, version);
             }
@@ -1870,35 +1870,43 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<List<TemplateTreeViewModel>>> GetEntireTreeViewStructureAsync(ClaimsIdentity identity, int parentId, string startFrom, Environments? environment = null)
         {
-            var templates = new List<TemplateTreeViewModel>();
-            var path = startFrom.Split(',');
-            var remainingStartFrom = startFrom[(path[0].Length + (path.Length > 1 ? 1 : 0))..];
-
-            var templateTrees = (await GetTreeViewSectionAsync(identity, parentId)).ModelObject;
-            foreach (var templateTree in templateTrees)
+            try
             {
-                if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+                var templates = new List<TemplateTreeViewModel>();
+                var path = startFrom.Split(',');
+                var remainingStartFrom = startFrom[(path[0].Length + (path.Length > 1 ? 1 : 0))..];
 
-                if (templateTree.HasChildren)
+                var templateTrees = (await GetTreeViewSectionAsync(identity, parentId)).ModelObject;
+                foreach (var templateTree in templateTrees)
                 {
-                    templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject;
-                }
-                else
-                {
-                    templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId, environment)).ModelObject;
+                    if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+
+                    if (templateTree.HasChildren)
+                    {
+                        templateTree.ChildNodes = (await GetEntireTreeViewStructureAsync(identity, templateTree.TemplateId, remainingStartFrom, environment)).ModelObject;
+                    }
+                    else
+                    {
+                        templateTree.TemplateSettings = (await GetTemplateSettingsAsync(identity, templateTree.TemplateId, environment)).ModelObject;
+                    }
+
+                    if (String.IsNullOrWhiteSpace(startFrom))
+                    {
+                        templates.Add(templateTree);
+                    }
+                    else
+                    {
+                        templates = templateTree.ChildNodes;
+                    }
                 }
 
-                if (String.IsNullOrWhiteSpace(startFrom))
-                {
-                    templates.Add(templateTree);
-                }
-                else
-                {
-                    templates = templateTree.ChildNodes;
-                }
+                return new ServiceResult<List<TemplateTreeViewModel>>(templates);
             }
-
-            return new ServiceResult<List<TemplateTreeViewModel>>(templates);
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "An error occurred while trying to get the entire tree view structure.");
+                return new ServiceResult<List<TemplateTreeViewModel>> { ErrorMessage = exception.ToString(), StatusCode = HttpStatusCode.InternalServerError };
+            }
         }
 
         /// <inheritdoc />

@@ -274,6 +274,11 @@ main, div, section {
  *  Main menu
  **/
 .main-menu {
+    display: flex;
+    flex-wrap: wrap;
+    height: 54px;
+    width: 100%;
+
     @include xl {
         flex-wrap: nowrap;
     }
@@ -285,11 +290,6 @@ main, div, section {
     @include lg-down {
         flex-wrap: nowrap;
     }
-
-    display: flex;
-    flex-wrap: wrap;
-    height: 54px;
-    width: 100%;
 
     > li {
         max-height: 70px;
@@ -306,14 +306,6 @@ main, div, section {
         }
 
         &.tabs {
-            @include lg-down {
-                position: absolute;
-                top: 70px;
-                left: 0;
-                right: 0;
-                height: 35px;
-            }
-
             background-color: $white-color;
 
             border-top: {
@@ -329,6 +321,14 @@ main, div, section {
             -webkit-overflow-scrolling: touch;
             scroll-snap-type: x mandatory;
             overflow-y: hidden;
+
+            @include lg-down {
+                position: absolute;
+                top: 70px;
+                left: 0;
+                right: 0;
+                height: 35px;
+            }
 
             @include xl {
                 align-items: flex-end;
@@ -481,6 +481,11 @@ main, div, section {
         }
 
         &.icons {
+            display: flex;
+            margin-left: auto;
+            padding: 0;
+            z-index: 60 !important;
+
             @include xl {
                 margin-left: 0;
             }
@@ -488,11 +493,6 @@ main, div, section {
             @include md-down {
                 margin-left: -1px;
             }
-
-            display: flex;
-            margin-left: auto;
-            padding: 0;
-            z-index: 60 !important;
 
             .ico-item {
                 cursor: pointer;
@@ -507,10 +507,6 @@ main, div, section {
                 }
 
                 &:first-child {
-                    @include lg-down {
-                        padding-left: 0;
-                    }
-
                     border-left: {
                         color: $line-color;
                         width: 1px;
@@ -518,6 +514,10 @@ main, div, section {
                     }
 
                     padding-left: 2px;
+
+                    @include lg-down {
+                        padding-left: 0;
+                    }
                 }
 
                 &:last-child {
@@ -527,10 +527,6 @@ main, div, section {
         }
 
         &.login {
-            @include lg-down {
-                flex-shrink: 1;
-            }
-
             cursor: pointer;
 
             border-left: {
@@ -539,15 +535,20 @@ main, div, section {
                 style: solid;
             }
 
+            @include lg-down {
+                flex-shrink: 1;
+            }
+
             > span {
+                display: block;
+                padding: 14px 50px 0 30px;
+                text-align: right;
+                font-size: 12px;
+
                 @include lg-down {
                     padding: 14px 35px 0 20px;
                     max-width: 100%;
                 }
-
-                display: block;
-                padding: 14px 50px 0 30px;
-                text-align: right;
 
                 * {
                     display: block;
@@ -562,26 +563,25 @@ main, div, section {
                 }
 
                 ins {
-                    @include lg-down {
-                        right: 10px;
-                    }
-
-                    font-size: 12px;
                     position: absolute;
                     right: 20px;
                     bottom: 15px;
+
+                    @include lg-down {
+                        right: 10px;
+                    }
                 }
             }
         }
 
         &.logo {
+            padding: 15px 10px;
+            width: 100px;
+
             @include lg-down {
                 padding: 25px 10px;
                 width: 80px;
             }
-
-            padding: 15px 10px;
-            width: 100px;
 
             .logo1 {
                 fill: $logo-color-1;
@@ -728,17 +728,17 @@ main, div, section {
         }
 
         span {
-            @include lg {
-                font-size: 16px;
-                max-width: 220px;
-            }
-
             display: inline-block;
             font-size: 14px;
             max-width: 120px;
             overflow: hidden;
             text-overflow: ellipsis;
             vertical-align: middle;
+
+            @include lg {
+                font-size: 16px;
+                max-width: 220px;
+            }
         }
 
         button {
@@ -793,29 +793,29 @@ main, div, section {
                     }
 
                     > span {
-                        @include lg {
-                            max-width: 220px;
-                        }
-
                         display: inline-block;
                         max-width: 120px;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         vertical-align: middle;
+
+                        @include lg {
+                            max-width: 220px;
+                        }
                     }
                 }
             }
         }
 
         .menu-scroller {
-            @include lg {
-                width: 300px;
-            }
-
             position: absolute;
             overflow-y: auto;
             width: 200px;
             height: 100%;
+
+            @include lg {
+                width: 300px;
+            }
 
             > ul {
                 padding: 10px 0;
@@ -1024,11 +1024,11 @@ main {
 body {
     &.menu-active {
         nav {
+            width: 200px;
+
             @include lg {
                 width: 300px;
             }
-
-            width: 200px;
 
             strong {
                 max-height: 40px;
@@ -1041,11 +1041,11 @@ body {
         }
 
         #side-btn {
+            left: 200px;
+
             @include lg {
                 left: 300px;
             }
-
-            left: 200px;
 
             > ins {
                 transform: rotate(180deg);
@@ -1053,11 +1053,11 @@ body {
         }
 
         main {
+            left: 200px;
+
             @include lg {
                 left: 300px;
             }
-
-            left: 200px;
 
             &.login {
                 left: 0;

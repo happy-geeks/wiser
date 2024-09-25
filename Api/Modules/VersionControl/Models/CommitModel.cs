@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Api.Modules.Items.Models;
+using Api.Modules.VersionControl.Enums;
 using GeeksCoreLibrary.Core.Enums;
 
 namespace Api.Modules.VersionControl.Models;
@@ -111,6 +112,11 @@ public class CommitModel
     /// Gets whether this commit has been fully deployed to test.
     /// </summary>
     public bool IsLive => (!Templates.Any() || Templates.All(t => t.IsLive)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsLive));
+
+    /// <summary>
+    /// 0 if commit is not submitted for review, 1 if review is pending, 2 if review is accepted, 3 if review is denied.
+    /// </summary>
+    public int IsReviewed => ((Review == null || Review.Status == ReviewStatuses.None) ? 0 : (Review.Status == ReviewStatuses.Pending) ? 1 : (Review.Status == ReviewStatuses.Approved) ? 2 : 3);
 
     /// <summary>
     /// Gets or sets the users that have been requested to do a code review for this commit.

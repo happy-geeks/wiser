@@ -1,7 +1,7 @@
 // Variables
 @import 'variables';
 
-//// MIXINS 
+//// MIXINS
 @import 'mixin/mixin';
 
 /**
@@ -10,16 +10,16 @@
 .k-window {
     @include drop-shadow($black-color, 10px, 0.2);
     border-radius: 6px;
-    
+
     height: 100% !important;
     max-height: calc(100% - 30px) !important;
     max-width: 100% !important;
     width: 100% !important;
-    
+
     &.k-window.k-window-maximized {
         border-radius: 6px;
     }
-    
+
     .k-header {
         @include header-shadow($black-color, 0.05);
         background-color: $white-color;
@@ -28,11 +28,11 @@
         height: 75px;
         z-index: 10;
     }
-    
+
     .k-content {
         background-color: $body-color;
     }
-    
+
     .window-content {
         overflow: auto;
         padding: 16px;
@@ -42,12 +42,8 @@
         right: 0;
         bottom: 75px;
     }
-    
+
     .window-footer {
-        @include lg {
-            flex-wrap: nowrap;
-            height: 75px;
-        }
         @include header-shadow($black-color, 0.05);
         background-color: $white-color;
         border-radius: 0 0 6px 6px;
@@ -62,14 +58,19 @@
         left: 0;
         right: 0;
         bottom: 0;
+
+        @include lg {
+            flex-wrap: nowrap;
+            height: 75px;
+        }
     }
 }
 .k-window-titlebar {
     padding: 16px;
-    
+
     .k-window-title {
         font: 30px/43px $font-book;
-        
+
         strong {
             font: 30px/43px $font-bold;
         }
@@ -77,7 +78,7 @@
             background-color: transparent;
             color: $text-color;
             vertical-align: top;
-            
+
             >ins {
                 font-size: 24px;
                 vertical-align: text-bottom;
@@ -86,40 +87,40 @@
                 display: none;
                 padding-left: 5px;
             }
-            
+
             &:hover {
                 background-color: $color-1;
                 color: $white-color;
-                
+
                 > span {
                     display: inline-block;
                 }
             }
         }
     }
-    
+
     .k-window-action {
         opacity: 1;
     }
-    
+
     .k-window-actions {
         height: 43px;
         line-height: 43px;
         right: 16px;
         top: 16px;
-        
+
         .k-button {
             @include transition(200ms);
             border-radius: 3px;
             height: 43px;
             line-height: 43px;
             padding: 0 10px;
-            
+
             &:not(:last-child) {
                 &:hover {
                     background-color: $color-1 !important;
                     width: auto;
-                    
+
                     > span {
                         color: $white-color;
                     }
@@ -182,15 +183,15 @@
         background: none;
         border: none;
         width: calc(100% - 48px);
-        
+
         &:focus {
             box-shadow: none;
         }
     }
-    
+
     span.k-input-inner {
         display: inline-block;
-        
+
         .k-input-value-text {
             display: block;
             line-height: 42px;
@@ -199,7 +200,7 @@
             text-overflow: ellipsis;
         }
     }
-    
+
     .k-input-button {
         height: 40px;
         line-height: normal;
@@ -225,7 +226,7 @@
         -webkit-font-smoothing: antialiased;
         vertical-align: middle;
         width: 16px;
-        
+
         &.k-i-arrow-s:before {
             content: "\e986";
         }
@@ -431,11 +432,11 @@
     font: 18px/32px $font-bold;
     padding: 5px 15px;
     white-space: nowrap;
-    
+
     &.btn-primary {
         background-color: $primary-color;
         color: $white-color;
-        
+
         &:hover {
             background-color: darken($primary-color, 8%);
         }
@@ -443,7 +444,7 @@
     &.btn-secundary {
         background-color: $line-color;
         color: $text-color;
-        
+
         &:hover {
             background-color: darken($line-color, 8%);
         }
@@ -460,28 +461,30 @@
  *  Kendo meta-data styling
  **/
 .metaData {
+    order: -1;
+    padding-bottom: 10px;
+    width: 100%;
+
     @include lg {
         flex-grow: 1;
         order: 0;
         padding-bottom: 0;
         width: auto;
     }
-    order: -1;
-    padding-bottom: 10px;
-    width: 100%;
-    
+
     + .btn-right {
+        margin-left: auto;
+
         @include lg {
             margin-left: 16px;
         }
-        margin-left: auto;
     }
 }
 
 .meta-data {
     font-size: 11px;
     line-height: normal;
-    
+
     > li {
         display: inline-block;
         padding-right: 10px;

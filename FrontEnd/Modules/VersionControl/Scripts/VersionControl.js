@@ -902,6 +902,12 @@ const moduleSettings = {
                             "title": "Omschrijving"
                         },
                         {
+                            "field": "isReviewed",
+                            "title": "Review",
+                            "width": "65px",
+                            "template": '<span class=\'k-icon k-i-#:(isReviewed == 0 ? "none" : isReviewed == 1 ? "eye k-syntax-ref" : isReviewed == 2 ? "check k-syntax-str" : "cancel k-syntax-error")#\' title=\'#:(isReviewed == 1 ? "Pending" : isReviewed == 2 ? "Accepted" : isReviewed == 3 ? "Denied" : "")#\'></span>'
+                        },
+                        {
                             "field": "isTest",
                             "title": "Test",
                             "width": "50px",

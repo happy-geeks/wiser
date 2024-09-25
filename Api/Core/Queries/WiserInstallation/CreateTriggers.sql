@@ -1,6 +1,6 @@
 SET NAMES utf8mb4 COLLATE utf8mb4_general_ci;
 
-# Drop old triggers with old names, originally we had trigger names that weren't very consistent and sometimes not logical either, so we changed them.
+-- Drop old triggers with old names, originally we had trigger names that weren't very consistent and sometimes not logical either, so we changed them.
 DROP TRIGGER IF EXISTS `CreateItem`;
 DROP TRIGGER IF EXISTS `UpdateItem`;
 DROP TRIGGER IF EXISTS `DeleteItem`;
@@ -15,6 +15,7 @@ DROP TRIGGER IF EXISTS `updatehistory`;
 DROP TRIGGER IF EXISTS `removehistory`;
 DROP TRIGGER IF EXISTS `On_insert_file`;
 DROP TRIGGER IF EXISTS `On_change_file`;
+DROP TRIGGER IF EXISTS `On_remove_file`;
 DROP TRIGGER IF EXISTS `On_remove_file`;
 
 -- ----------------------------
@@ -617,8 +618,8 @@ END;
 DROP TRIGGER IF EXISTS `DetailInsert`;
 CREATE TRIGGER `DetailInsert` AFTER INSERT ON `wiser_itemdetail` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
-        VALUES ('UPDATE_ITEM','wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
+        INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+        VALUES ('UPDATE_ITEM', 'wiser_itemdetail', NEW.id, NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
     END IF;
 
     IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
@@ -640,21 +641,41 @@ DROP TRIGGER IF EXISTS `DetailUpdate`;
 CREATE TRIGGER `DetailUpdate` AFTER UPDATE ON `wiser_itemdetail` FOR EACH ROW BEGIN
     DECLARE oldValue MEDIUMTEXT;
     DECLARE newValue MEDIUMTEXT;
-    
+
     SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
     SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
 
-    IF oldValue <> newValue THEN
+    IF OLD.`key` <> NEW.`key` THEN
         IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
-            VALUES ('UPDATE_ITEM', 'wiser_itemdetail', NEW.item_id, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.language_code, NEW.groupname);
+            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'key', OLD.`key`, NEW.`key`);
+        END IF;
+    END IF;
+
+    IF OLD.`language_code` <> NEW.`language_code` THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
+        END IF;
+    END IF;
+
+    IF OLD.`groupname` <> NEW.`groupname` THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
+        END IF;
+    END IF;
+
+    IF oldvalue <> newValue THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+            VALUES ('UPDATE_ITEM', 'wiser_itemdetail', NEW.`id`, NEW.`item_id`, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.`language_code`, NEW.`groupname`);
         END IF;
 
         IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
             IF (NEW.`item_id` IS NOT NULL AND NEW.`item_id` <> IFNULL(@previousItemId, 0)) THEN
                 INSERT `wiser_parent_updates`(`target_id`, `target_table`, `changed_on`, `changed_by`)
-                VALUES (
-                    NEW.`item_id`,
+                VALUES (NEW.`item_id`,
                     'wiser_item',
                     NOW(),
                     IFNULL(@_username, USER())
@@ -669,8 +690,8 @@ END;
 DROP TRIGGER IF EXISTS `DetailDelete`;
 CREATE TRIGGER `DetailDelete` AFTER DELETE ON `wiser_itemdetail` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
-        VALUES ('UPDATE_ITEM', 'wiser_itemdetail', OLD.item_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
+        INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+        VALUES ('UPDATE_ITEM', 'wiser_itemdetail', OLD.id, OLD.item_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
     END IF;
 
     IF IFNULL(@performParentUpdate, FALSE) = TRUE THEN
@@ -716,9 +737,9 @@ END;
 DROP TRIGGER IF EXISTS `LinkUpdate`;
 CREATE TRIGGER `LinkUpdate` AFTER UPDATE ON `wiser_itemlink` FOR EACH ROW BEGIN
     DECLARE updateChangeDate BOOL;
-    
+
     SET updateChangeDate = FALSE;
-    
+
 
     IF IFNULL(@saveHistory, TRUE) = TRUE AND NEW.`destination_item_id` <> OLD.`destination_item_id` THEN
         SET updateChangeDate = TRUE;

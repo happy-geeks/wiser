@@ -43,13 +43,17 @@ public class ApiRequestLoggingMiddleware : RequestLoggingMiddleware
         // Call base class method to save generic information from the request.
         var logId = await base.LogRequestAsync(context, wiserDatabaseConnection, serviceProvider);
 
-
         return logId;
     }
 
     /// <inheritdoc />
     protected override async Task LogResponseAsync(ulong logId, HttpContext context, string responseBody, IDatabaseConnection databaseConnection, IServiceProvider serviceProvider)
     {
+        if (!GclSettings.RequestLoggingOptions.Enabled || logId == 0)
+        {
+            return;
+        }
+
         // Get the Wiser database connection from the client database connection,
         // so that the logs will be saved in the main Wiser database instead of the tenant database.
         var wiserDatabaseConnection = ((ClientDatabaseConnection)databaseConnection).WiserDatabaseConnection;

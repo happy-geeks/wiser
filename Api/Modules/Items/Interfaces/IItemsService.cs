@@ -62,8 +62,9 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="encryptedParentId">Optional: The encrypted ID of the parent to create this item under.</param>
         /// <param name="linkType">Optional: The link type of the link to the parent.</param>
+        /// <param name="alsoCreateInMainBranch">Optional: Whether to also create the item in the main branch. Default is <see langword="false"/>.</param>
         /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
-        Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1);
+        Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1, bool alsoCreateInMainBranch = false);
 
         /// <summary>
         /// Updates an item.

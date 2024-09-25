@@ -108,5 +108,10 @@ namespace Api.Modules.Kendo.Models
         /// Gets or sets whether the field of this grid column is a property from wiser_itemlinkdetail, instead of wiser_itemdetail.
         /// </summary>
         public bool IsLinkProperty { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the attributes of the column.
+        /// </summary>
+        public AttributesModel Attributes { get; set; }
     }
 }

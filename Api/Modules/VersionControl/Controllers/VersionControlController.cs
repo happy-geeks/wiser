@@ -77,6 +77,9 @@ public class VersionControlController : Controller
     [HttpPut]
     [Route("deploy")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeployCommitsAsync(DeployCommitsRequestModel data)
     {
         return (await commitService.DeployCommitsAsync(data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();

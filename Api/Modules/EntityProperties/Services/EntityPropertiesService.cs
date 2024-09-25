@@ -1036,6 +1036,8 @@ AND ordering < ?newOrderingStart";
                     return null;
                 case "toggle-visibility":
                     return DependencyActions.ToggleVisibility;
+                case "toggle-mandatory":
+                    return DependencyActions.ToggleMandatory;
                 case "refresh":
                     return DependencyActions.Refresh;
                 default:
@@ -1051,6 +1053,8 @@ AND ordering < ?newOrderingStart";
                     return null;
                 case DependencyActions.ToggleVisibility:
                     return "toggle-visibility";
+                case DependencyActions.ToggleMandatory:
+                    return "toggle-mandatory";
                 case DependencyActions.Refresh:
                     return "refresh";
                 default:

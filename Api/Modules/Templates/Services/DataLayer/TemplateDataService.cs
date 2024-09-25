@@ -1478,6 +1478,17 @@ AND otherVersion.id IS NULL";
                          AND otherVersion.id IS NULL;
                          """;
             var templateData = await clientDatabaseConnection.GetAsync(query);
+            
+            // Second get the external files of templates that need to be deployed.
+            query = $"""
+                         SELECT externalFiles.*
+                         FROM {WiserTableNames.WiserTemplate} AS template
+                         JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
+                         LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                         WHERE template.template_id IN ({String.Join(", ", templateIds)})
+                         AND otherVersion.id IS NULL;
+                         """;
+            var externalFileTemplateData = await clientDatabaseConnection.GetAsync(query);
 
             // Create new connection for branch database.
             var connectionStringBuilder = TenantHelpers.GetConnectionString(branch.Database, apiSettings.DatabasePasswordEncryptionKey);
@@ -1486,17 +1497,22 @@ AND otherVersion.id IS NULL";
             await branchDatabaseConnection.ChangeConnectionStringsAsync(connectionStringBuilder.ConnectionString);
 
             // Create temporary table for the templates.
-            var temporaryTableName = $"temp_templates_{Guid.NewGuid():N}";
-            query = $"CREATE TABLE `{temporaryTableName}` LIKE {WiserTableNames.WiserTemplate};";
+            var temporaryTemplateTableName = $"temp_templates_{Guid.NewGuid():N}";
+            var temporaryTemplateExternalFilesTableName = $"temp_templates_external_files_{Guid.NewGuid():N}";
+            query = $"""
+                     CREATE TABLE `{temporaryTemplateTableName}` LIKE {WiserTableNames.WiserTemplate};
+                     CREATE TABLE `{temporaryTemplateExternalFilesTableName}` LIKE {WiserTableNames.WiserTemplateExternalFiles};
+                     """;
             await branchDatabaseConnection.ExecuteAsync(query);
 
             // Insert the templates into the temporary table.
-            await branchDatabaseConnection.BulkInsertAsync(templateData, temporaryTableName);
+            await branchDatabaseConnection.BulkInsertAsync(templateData, temporaryTemplateTableName);
+            await branchDatabaseConnection.BulkInsertAsync(externalFileTemplateData, temporaryTemplateExternalFilesTableName);
 
             // Update the templates in wiser_template and then drop the temporary table.
             query = $"""
                      UPDATE {WiserTableNames.WiserTemplate} AS template
-                     JOIN `{temporaryTableName}` AS temp ON temp.template_id = template.template_id AND temp.version = template.version
+                     JOIN `{temporaryTemplateTableName}` AS temp ON temp.template_id = template.template_id AND temp.version = template.version
                      SET template.parent_id = temp.parent_id,
                          template.template_name = temp.template_name,
                          template.template_data = temp.template_data,
@@ -1660,7 +1676,7 @@ AND otherVersion.id IS NULL";
                          cache_per_user,
                          cache_using_regex,
                          is_dirty
-                     FROM `{temporaryTableName}` AS temp
+                     FROM `{temporaryTemplateTableName}` AS temp
                      WHERE NOT EXISTS (
                          SELECT 1
                          FROM {WiserTableNames.WiserTemplate} AS template
@@ -1668,18 +1684,24 @@ AND otherVersion.id IS NULL";
                          AND template.version = temp.version
                      );
 
-                     DELETE FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE template_id IN (SELECT id FROM `{temporaryTableName}`);
+                     DELETE FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE template_id IN (
+                        SELECT branchTemplate.id
+                        FROM `{temporaryTemplateTableName}` AS template
+                        JOIN {WiserTableNames.WiserTemplate} AS branchTemplate ON branchTemplate.template_id = template.template_id AND branchTemplate.version = template.version
+                     );
+                     
                      INSERT INTO {WiserTableNames.WiserTemplateExternalFiles} (template_id, external_file, hash, ordering)
                      SELECT 
                          branchTemplate.id, 
                          file.external_file,
                          file.hash,
                          file.ordering 
-                     FROM `{temporaryTableName}` AS template
-                     JOIN {WiserTableNames.WiserTemplateExternalFiles} AS file ON file.template_id = template.id
+                     FROM `{temporaryTemplateTableName}` AS template
+                     JOIN {temporaryTemplateExternalFilesTableName} AS file ON file.template_id = template.id
                      JOIN {WiserTableNames.WiserTemplate} AS branchTemplate ON branchTemplate.template_id = template.template_id AND branchTemplate.version = template.version;
 
-                     DROP TABLE IF EXISTS `{temporaryTableName}`
+                     DROP TABLE IF EXISTS `{temporaryTemplateTableName}`;
+                     DROP TABLE IF EXISTS `{temporaryTemplateExternalFilesTableName}`;
                      """;
             await branchDatabaseConnection.ExecuteAsync(query);
         }

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -8,6 +7,7 @@ using Api.Modules.EntityTypes.Models;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.EntityTypes.Controllers
 {
@@ -40,12 +40,13 @@ namespace Api.Modules.EntityTypes.Controllers
         /// <param name="includeCount">Optional: Whether to count how many items of each entity type exist in the database.</param>
         /// <param name="skipEntitiesWithoutItems">Optional: Whether to skip entities that have no items. Only works when includeCount is set to true.</param>
         /// <param name="moduleId">Optional: If you only want entity types from a specific module, enter the ID of that module here.</param>
+        /// <param name="branchId">Optional: If getting entity types for a branch, enter the ID of that branch here.</param>
         /// <returns>A list of all available entity types.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0)
+        public async Task<IActionResult> GetAsync(bool onlyEntityTypesWithDisplayName = false, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0, int branchId = 0)
         {
-            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems, moduleId)).GetHttpResponseMessage();
+            return (await entityTypesService.GetAsync((ClaimsIdentity)User.Identity, onlyEntityTypesWithDisplayName, includeCount, skipEntitiesWithoutItems, moduleId, branchId)).GetHttpResponseMessage();
         }
 
         /// <summary>

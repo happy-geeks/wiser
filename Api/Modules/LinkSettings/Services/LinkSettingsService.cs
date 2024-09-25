@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.LinkSettings.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -22,14 +23,16 @@ namespace Api.Modules.LinkSettings.Services
     {
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
+        private readonly IDatabaseHelpersService databaseHelpersService;
 
         /// <summary>
         /// Creates a new instance of <see cref="LinkSettingsService"/>.
         /// </summary>
-        public LinkSettingsService(IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService)
+        public LinkSettingsService(IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
+            this.databaseHelpersService = databaseHelpersService;
         }
 
         /// <inheritdoc />
@@ -149,6 +152,26 @@ namespace Api.Modules.LinkSettings.Services
             }
 
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+            // First try to create the tables, if we have a dedicated table prefix.
+            if (linkSettings.UseDedicatedTable)
+            {
+                var tablePrefix = $"{linkSettings.Type}_";
+
+                if (!await databaseHelpersService.TableExistsAsync($"{tablePrefix}{WiserTableNames.WiserItemLink}"))
+                {
+                    await clientDatabaseConnection.ExecuteAsync($@"CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemLink}` LIKE `{WiserTableNames.WiserItemLink}`;
+CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemLink}{WiserTableNames.ArchiveSuffix}` LIKE `{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}`;
+CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemLinkDetail}` LIKE `{WiserTableNames.WiserItemLinkDetail}`;
+CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemLinkDetail}{WiserTableNames.ArchiveSuffix}` LIKE `{WiserTableNames.WiserItemLinkDetail}{WiserTableNames.ArchiveSuffix}`;
+CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}` LIKE `{WiserTableNames.WiserItemFile}`;
+CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}{WiserTableNames.ArchiveSuffix}` LIKE `{WiserTableNames.WiserItemFile}{WiserTableNames.ArchiveSuffix}`;");
+
+                    var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateDedicatedLinkTableTriggers.sql");
+                    createTriggersQuery = createTriggersQuery.Replace("{LinkType}", linkSettings.Type.ToString());
+                    await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
+                }
+            }
 
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", id);

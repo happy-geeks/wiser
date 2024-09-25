@@ -1906,5 +1906,38 @@ WHERE changed_on >= ?lastChange";
                 conflict.ChangedByInMain = dataRow.Field<string>("changed_by");
             }
         }
+
+        /// <inheritdoc />
+        public async Task<ulong?> GetMappedIdAsync(ulong id, bool idIsFromBranch = true)
+        {
+            await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
+            
+            clientDatabaseConnection.AddParameter("id", id);
+            var dataTable = await clientDatabaseConnection.GetAsync($"""
+                SELECT {(idIsFromBranch ? "production_id" : "our_id")} AS mappedId
+                FROM {WiserTableNames.WiserIdMappings}
+                WHERE {(idIsFromBranch ? "our_id" : "production_id")} = ?id
+""");
+            
+            return dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("mappedId") : null;
+        }
+        
+        /// <inheritdoc />
+        public async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+        {
+            var query = $"SELECT MAX(id) AS id FROM {tableName}";
+            
+            var dataTable = await mainDatabaseConnection.GetAsync(query);
+            var maxMainId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+
+            if (branchDatabase != null)
+            {
+                dataTable = await branchDatabase.GetAsync(query);
+                var maxBranchId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+                return Math.Max(maxMainId, maxBranchId) + 1;
+            }
+
+            return maxMainId + 1;
+        }
     }
 }

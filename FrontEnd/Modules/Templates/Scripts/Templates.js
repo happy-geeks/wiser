@@ -577,7 +577,13 @@ const moduleSettings = {
          */
         async onTreeViewDragStart(event) {
             // Virtual items cannot be dragged.
-            if (event.sourceNode.isVirtualItem) event.preventDefault();
+            const treeView = $(event.sourceNode).closest(".k-treeview-group").getKendoTreeView();
+            if (!treeView) {
+                return;
+            }
+            const dataItem = treeView.dataItem(event.sourceNode);
+
+            if (dataItem && dataItem.isVirtualItem) event.preventDefault();
         }
 
         /**
@@ -1060,7 +1066,6 @@ const moduleSettings = {
 
                 // Open dynamic content by double clicking on a row.
                 dynamicGridDiv.on("dblclick", "tr.k-state-selected", this.onDynamicContentOpenClick.bind(this));
-
             } catch (exception) {
                 console.error(exception);
                 kendo.alert(`Er is iets fout gegaan. Probeer het a.u.b. opnieuw of neem contact op met ons.<br>${exception.responseText || exception}`);
@@ -2361,7 +2366,7 @@ const moduleSettings = {
                 window.popupNotification.show(`Template '${this.templateSettings.name}' is succesvol opgeslagen`, "info");
                 this.lastLoadedHistoryPartNumber = 0;
 
-                const version = (parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0) + 1;
+                const version = parseInt(document.querySelector(`#published-environments .version-test select.combo-select option:last-child`).value) || 0;
                 await this.deployEnvironment(alsoDeployToTest === true ? "test" : "development", templateId, version);
 
                 if (reloadTemplateAfterSave) {

@@ -227,37 +227,7 @@ if (customQueryGrid) {
             contentType: "application/json"
         }).then(done);
     }
-}
-    
-function mergeFilterData(data, newData){
-    // if grid had no filter data yet, the newData is all we have!
-    if (data === undefined) {
-        return newData;
-    }
-    
-    // newData.filters is usually length 1, but it doesn't hurt to support >1
-    newData.filters.forEach(newFilter => {
-        let i = data.filters.findIndex((f) => f.field === newFilter.field);
-        
-        // if the existing data already has a filter configured for this field, we are either removing it or changing it
-        if (i >= 0) {
-            // we are removing this filter
-            if (newFilter.operator == null) {
-                data.filters.splice(i, 1);
-            }
-            // it exists and need to be changed
-            else {
-                data.filters[i].operator = newFilter.operator;
-                data.filters[i].value = newFilter.value;
-            }
-        }
-        // existing data does not have this filter, add it (if it's not a removal somehow)
-        else if (newFilter.operator != null) {
-            data.filters.push(newFilter);
-        }
-    });
-    return data;
-}
+}    
 async function generateGrid(data, model, columns) {
     var toolbar = [];
     if (!options.toolbar || !options.toolbar.hideExportButton) {
@@ -368,6 +338,7 @@ async function generateGrid(data, model, columns) {
     }
 
     var dataBindingType;
+    let filtersChanged = false;
     var kendoGridOptions = $.extend(true, {
         dataSource: {
             autoSync: true,
@@ -803,9 +774,14 @@ async function generateGrid(data, model, columns) {
                 rowIndex = current.parent().index();
             }
         },
-        dataBound: function (event) {
+        dataBound: async (event) => {
             // To hide toolbar buttons that require a row to be selected.
             dynamicItems.grids.onGridSelectionChange(event);
+
+            // Save the filters
+            if (kendoGridOptions.keepFiltersState !== false && filtersChanged) {
+                dynamicItems.grids.saveGridViewFiltersState("sub_entities_grid_filters_{propertyId}", event.sender)
+            }
 
             // Setup any progress bars.
             event.sender.tbody.find(".progress").each(function (e) {
@@ -894,24 +870,7 @@ async function generateGrid(data, model, columns) {
                 });
             }
         },
-        filter: function (event) {            
-            if (options.keepFiltersState !== false) {
-                try {
-                    if (event.field == null) { // manual event trigger, all filters were removed
-                        dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", "{}");
-                    }
-                    else {
-                        let mergedData = event.filter != null ?
-                            mergeFilterData(event.sender.dataSource.filter(), event.filter) : // filter was added
-                            mergeFilterData(event.sender.dataSource.filter(), { "filters": [{ "field": event.field, "operator": null }]}); // filter was removed
-                        dynamicItems.grids.saveGridViewState("sub_entities_grid_filters_{propertyId}", kendo.stringify(mergedData));
-                    }
-                } catch (exception) {
-                    kendo.alert("Er is iets fout gegaan tijdens het opslaan van de filter instellingen voor dit grid. Probeer het nogmaals, of neem contact op met ons.");
-                    console.error(exception);
-                }
-            }
-        },
+        filter: (event) => {filtersChanged = true;},
         change: dynamicItems.grids.onGridSelectionChange.bind(dynamicItems.grids)
     }, options);
 
@@ -921,7 +880,9 @@ async function generateGrid(data, model, columns) {
     kendoGridOptions.columns = columns;
 
     await window.dynamicItems.grids.loadGridViewColumnsState("sub_entities_grid_columns_{propertyId}", kendoGridOptions);
-    await window.dynamicItems.grids.loadGridViewFiltersState("sub_entities_grid_filters_{propertyId}", kendoGridOptions);
+    if (kendoGridOptions.keepFiltersState !== false) {
+        await window.dynamicItems.grids.loadGridViewFiltersState("sub_entities_grid_filters_{propertyId}", kendoGridOptions);
+    }
 
     kendoComponent = field.kendoGrid(kendoGridOptions).data("kendoGrid");
 
