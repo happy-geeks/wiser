@@ -124,6 +124,9 @@
   <data name="STR_at" xml:space="preserve">
     <value>op</value>
   </data>
+  <data name="STR_Attention" xml:space="preserve">
+    <value>Opgelet</value>
+  </data>
   <data name="STR_Cancel" xml:space="preserve">
     <value>Annuleren</value>
   </data>
@@ -379,7 +382,10 @@
   <data name="Menu_System" xml:space="preserve">
     <value>Systeem</value>
   </data>
-  
+
+  <data name="Template_UsersEditing" xml:space="preserve">
+    <value>Gebruikers die deze template geopend hebben</value>
+  </data>  
   <data name="Template_LastModifiedBy" xml:space="preserve">
     <value>Laatst gewijzigd door</value>
   </data>
@@ -398,12 +404,63 @@
   <data name="Template_LinkedJS" xml:space="preserve">
     <value>Gekoppelde JS templates</value>
   </data>
+  <data name="Template_URLRegExLongDesc" xml:space="preserve">
+    <value>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld:</value>
+  </data>
+  <data name="Template_CacheOnURL" xml:space="preserve">
+    <value>Cache op URL</value>
+  </data>
+  <data name="Template_CacheOnQueryString" xml:space="preserve">
+    <value>Cache op query string</value>
+  </data>
+  <data name="Template_CacheOnDomain" xml:space="preserve">
+    <value>Cache op domein</value>
+  </data>
+  <data name="Template_CachePerUser" xml:space="preserve">
+    <value>Cache apart per gebruiker</value>
+  </data>
+  <data name="Template_CacheWithRegex" xml:space="preserve">
+    <value>Cache met RegEx</value>
+  </data>
+  <data name="Template_CacheOnQueryString" xml:space="preserve">
+    <value>Cache op query string</value>
+  </data>
+  <data name="Template_CacheLongExp1" xml:space="preserve">
+    <value>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</value>
+  </data>
+  <data name="Template_CacheLongExp2" xml:space="preserve">
+    <value>Indien de optie "Cache met RegEx" is geselecteerd, moet hieronder het veld "Cache regex" ook ingevuld worden. De template wordt dan gecached per unieke combinatie van alle genaamde groepen in de regex.</value>
+  </data>
+  <data name="Template_CacheLongExp3" xml:space="preserve">
+    <value>Voorbeeld 1: Als je de regex "\/products\/(?&lt;category&gt;.*)\/(?&lt;subCategory&gt;.*)\/(?&lt;product&gt;.*)\/" gebruikt, daar staan 3 groepen in met een naam (category, subCategory en product). Als je dan de URL "/products/drinks/soda/coca-cola/" zou openen, dan krijg je de volgende naam voor de cache: "Template_123_drinks_soda_coca-cola". Dit zorgt er dan dus voor dat deze template per product apart wordt gecacht.</value>
+  </data>
+  <data name="Template_CacheLongExp4" xml:space="preserve">
+    <value>Voorbeeld 2: Als je de regex "\/(?&lt;page&gt;[^\/]*)?(\/.*)?" gebruikt, dan wordt deze template alleen apart gecacht voor elke hoofdpagina en juist niet apart per product.</value>
+  </data>
+  <data name="Template_CacheLongExp5" xml:space="preserve">
+    <value>Wanneer caching met regex is geselecteerd geven de andere checkboxes aan welke delen van de url gematcht worden met de regex.</value>
+  </data>
+  <data name="Template_CacheLocation" xml:space="preserve">
+    <value>Cache locatie</value>
+  </data>
+  <data name="Template_CacheLocationMemory" xml:space="preserve">
+    <value>In geheugen</value>
+  </data>
+  <data name="Template_CacheLocationDisk" xml:space="preserve">
+    <value>Op harde schijf</value>
+  </data>
+  <data name="Template_CacheLocationDesc" xml:space="preserve">
+    <value>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</value>
+  </data>
   
   <data name="Warning_CapsOn" xml:space="preserve">
     <value>Caps lock staat aan</value>
-  </data>  
-  
-  
+  </data>
+  <data name="Warning_NoModules" xml:space="preserve">
+    <value>Voor deze gebruiker zijn geen modules beschikbaar</value>
+  </data>
+
+
   <data name="'." xml:space="preserve">
     <value>' gekregen.</value>
   </data>
@@ -592,12 +649,6 @@
   <data name="Attachments" xml:space="preserve">
     <value>Extra bijlagen</value>
   </data>
-  <data name="Attention!" xml:space="preserve">
-    <value>Let op!</value>
-  </data>
-  <data name="Attention:" xml:space="preserve">
-    <value>Let op:</value>
-  </data>
   <data name="ATTENTION: not all conflicts have have been approved or denied yet!" xml:space="preserve">
     <value>LET OP: nog niet alle conflicten hebben een akkoord of deny toegekend gekregen!</value>
   </data>
@@ -654,9 +705,6 @@
   </data>
   <data name="Cache" xml:space="preserve">
     <value>Cache</value>
-  </data>
-  <data name="Cache location" xml:space="preserve">
-    <value>Cache locatie</value>
   </data>
   <data name="Cache number of minutes" xml:space="preserve">
     <value>Cache aantal minuten</value>
@@ -1304,9 +1352,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   <data name="From" xml:space="preserve">
     <value>Van</value>
   </data>
-  <data name="From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:" xml:space="preserve">
-    <value>Vanaf welke URL moet deze template bereikbaar zijn? Hier kan een regular expression opgegeven worden voor dynamische waardes en parameters. Indien je de regular expression opdeelt in groepen en die groepen namen geeft, dan kunnen die namen gebruikt worden als variabelen in deze template. Voorbeeld:</value>
-  </data>
   <data name="from_" xml:space="preserve">
     <value>van</value>
   </data>
@@ -1501,9 +1546,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   </data>
   <data name="In addition, the following database users have been created:" xml:space="preserve">
     <value>Verder zijn nog de volgende databasegebruikers aangemaakt:</value>
-  </data>
-  <data name="In memory" xml:space="preserve">
-    <value>In geheugen</value>
   </data>
   <data name="In progress" xml:space="preserve">
     <value>In behandeling</value>
@@ -1840,9 +1882,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   </data>
   <data name="On" xml:space="preserve">
     <value>Op</value>
-  </data>
-  <data name="On hard disk" xml:space="preserve">
-    <value>Op harde schijf</value>
   </data>
   <data name="One or more fixed receivers" xml:space="preserve">
     <value>Een of meerdere vaste ontvangers (e-mailadres of GSM-nummer). Vul meerdere waardes in (deze mogen gescheiden worden door komma's, puntkomma's en/of enters).</value>
@@ -2255,9 +2294,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   <data name="Shopping baskets" xml:space="preserve">
     <value>Winkelmandjes</value>
   </data>
-  <data name="Should caching be enabled for this template? If yes, what kind of caching. For example, caching can be the same for all URLs, or separate cache per URL/querystring." xml:space="preserve">
-    <value>Moet caching ingeschakeld worden voor deze template? Zo ja, wat voor caching. Caching kan bijvoorbeeld hetzelfde zijn voor alle URL's, of per URL/querystring aparte cache.</value>
-  </data>
   <data name="Show added by column" xml:space="preserve">
     <value>Toon toegevoegd door kolom</value>
   </data>
@@ -2650,9 +2686,6 @@ Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gek
   </data>
   <data name="Where do you want to open the branch?" xml:space="preserve">
     <value>Waar wilt u de branch openen?</value>
-  </data>
-  <data name="Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted." xml:space="preserve">
-    <value>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</value>
   </data>
   <data name="Which data do you want to transfer to the branche?" xml:space="preserve">
     <value>Welke data wil je naar de branche overzetten?</value>

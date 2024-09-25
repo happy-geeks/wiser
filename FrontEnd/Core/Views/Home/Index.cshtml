@@ -1,8 +1,6 @@
 ﻿@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @using GeeksCoreLibrary.Core.Enums
 @model FrontEnd.Core.Models.BaseViewModel
-@using Microsoft.AspNetCore.Mvc.Localization
-@using Microsoft.AspNetCore.Mvc.TagHelpers
 @inject Api.Modules.Translations.Interfaces.ISharedViewLocalizer Localizer
 <style>
     [v-cloak] {
@@ -77,7 +75,7 @@
         </header>
 
         <main :class="{ login: !user.loggedIn || requirePasswordChange, 'scrollable': tenantManagementIsOpened }">
-            <p v-if="user.loggedIn && !mainLoader && !hasModules">Voor deze gebruiker zijn geen modules beschikbaar.</p>
+            <p v-if="user.loggedIn && !mainLoader && !hasModules">@Localizer["Warning_NoModules"]</p>
             <login v-bind:sub-domain="appSettings.subDomain" v-if="!user.loggedIn || requirePasswordChange" ref="login"></login>
             <section class="iframe-container">
                 <iframe v-for="module in openedModulesWithBackend" :key="module.id" :src="module.iframeUrl || `/Modules/${module.iframeType || module.type}${module.fileName}${module.queryString}`" :id="module.id" :class="{ active: module.id === activeModule }" frameborder="0" scrolling="auto"></iframe>
@@ -152,7 +150,7 @@
                             Het is niet mogelijk om verschillende branches samen te voegen. Het samenvoegen gaat altijd van een branch naar de productie-omgeving.
                         </p>
                         <p>
-                            <strong>Let op:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden.
+                            <strong>@Localizer["STR_Attention"]:</strong> Tijdens het terugzetten van een branch wordt de database geblokkeerd zodat er geen andere wijziging tussendoor gedaan kunnen worden.
                             Dit betekent dat Wiser en eventuele andere producten (zoals een website) die gekoppeld zijn aan dezelfde database, ook niet bereikbaar zullen zijn.
                             Zorg daarom dat u het samenvoegen start op een moment waarbij dit het minste impact heeft (zoals 's nachts).
                         </p>
@@ -540,7 +538,7 @@
 								<input type="checkbox" v-model="branchMergeSettings.deleteAfterSuccessfulMerge" />
 								<span>Verwijder deze branche na succesvol mergen</span>
 							</label>
-							<p><strong>Let op!</strong> Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan.</p>
+							<p><strong>@Localizer["STR_Attention"]!</strong> Deze actie kan niet meer ongedaan gemaakt worden. Als u hierboven niet alle opties aanvinkt, kunnen er wijzigingen verloren gaan.</p>
 						</div>
 					</div>
 				</div>

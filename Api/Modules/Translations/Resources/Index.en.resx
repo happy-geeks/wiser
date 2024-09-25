@@ -124,6 +124,9 @@
   <data name="STR_at" xml:space="preserve">
     <value>at</value>
   </data>
+  <data name="STR_Attention" xml:space="preserve">
+    <value>Attention</value>
+  </data>
   <data name="STR_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -379,7 +382,10 @@
   <data name="Menu_System" xml:space="preserve">
     <value>System</value>
   </data>
-  
+
+  <data name="Template_UsersEditing" xml:space="preserve">
+    <value>Users who are currently editing this template</value>
+  </data>  
   <data name="Template_LastModifiedBy" xml:space="preserve">
     <value>Last modified by</value>
   </data>
@@ -398,9 +404,57 @@
   <data name="Template_LinkedJS" xml:space="preserve">
     <value>Linked JS templates</value>
   </data>
+  <data name="Template_URLRegExLongDesc" xml:space="preserve">
+    <value>From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:</value>
+  </data>
+  <data name="Template_CacheOnURL" xml:space="preserve">
+    <value>Cache on URL</value>
+  </data>
+  <data name="Template_CacheOnQueryString" xml:space="preserve">
+    <value>Cache on query string</value>
+  </data>
+  <data name="Template_CacheOnDomain" xml:space="preserve">
+    <value>Cache on domain</value>
+  </data>
+  <data name="Template_CachePerUser" xml:space="preserve">
+    <value>Cache per user</value>
+  </data>
+  <data name="Template_CacheWithRegex" xml:space="preserve">
+    <value>Cache with RegEx</value>
+  </data>
+  <data name="Template_CacheLongExp1" xml:space="preserve">
+    <value>Should caching be enabled for this template? If yes, what kind of caching. For example, caching can be the same for all URLs, or separate cache per URL/querystring.</value>
+  </data>
+  <data name="Template_CacheLongExp2" xml:space="preserve">
+    <value>If the option "Cache with RegEx" is enabled, the field "Cache regex" below needs to be filled. The template will be cached per unique combination of all resulting groups in the regex.</value>
+  </data>
+  <data name="Template_CacheLongExp3" xml:space="preserve">
+    <value>Example 1: If you use the regex "\/products\/(?&lt;category&gt;.*)\/(?&lt;subCategory&gt;.*)\/(?&lt;product&gt;.*)\/", it has three named groups (category, subCategory and product). The URL "/products/drinks/soda/coca-cola/" would result in the following cache name: "Template_123_drinks_soda_coca-cola", effectively caching every unique combination of those three groups.</value>
+  </data>
+  <data name="Template_CacheLongExp4" xml:space="preserve">
+    <value>Example 2: If you use the regex "\/(?&lt;page&gt;[^\/]*)?(\/.*)?", this template is only cached for every main page and NOT for every unique product.</value>
+  </data>
+  <data name="Template_CacheLongExp5" xml:space="preserve">
+    <value>If the option "Cache with RegEx" is enabled, the other cache checkboxes determine which part of the URL is matched with the RegEx.</value>
+  </data>
+  <data name="Template_CacheLocation" xml:space="preserve">
+    <value>Cache location</value>
+  </data>
+  <data name="Template_CacheLocationMemory" xml:space="preserve">
+    <value>In memory</value>
+  </data>
+  <data name="Template_CacheLocationDisk" xml:space="preserve">
+    <value>On disk</value>
+  </data>
+  <data name="Template_CacheLocationDesc" xml:space="preserve">
+    <value>Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted.</value>
+  </data>
   
   <data name="Warning_CapsOn" xml:space="preserve">
     <value>Caps lock is on</value>
+  </data>
+  <data name="Warning_NoModules" xml:space="preserve">
+    <value>This user has no available modules</value>
   </data>
   
   <data name="'." xml:space="preserve">
@@ -1303,9 +1357,7 @@
   <data name="From" xml:space="preserve">
     <value>From</value>
   </data>
-  <data name="From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:" xml:space="preserve">
-    <value>From which URL should this template be accessible? Here a regular expression can be specified for dynamic values and parameters. If you divide the regular expression into groups and give those groups names, then those names can be used as variables in this template. Example:</value>
-  </data>
+
   <data name="from_" xml:space="preserve">
     <value>from_</value>
   </data>
@@ -1500,9 +1552,6 @@
   </data>
   <data name="In addition, the following database users have been created:" xml:space="preserve">
     <value>In addition, the following database users have been created:</value>
-  </data>
-  <data name="In memory" xml:space="preserve">
-    <value>In memory</value>
   </data>
   <data name="In progress" xml:space="preserve">
     <value>In progress</value>
@@ -1839,9 +1888,6 @@
   </data>
   <data name="On" xml:space="preserve">
     <value>On</value>
-  </data>
-  <data name="On hard disk" xml:space="preserve">
-    <value>On hard disk</value>
   </data>
   <data name="One or more fixed receivers" xml:space="preserve">
     <value>One or more fixed receivers (e-mail address or mobile phone number). Enter multiple values ​​(these may be separated by commas, semicolons and/or enters).</value>
@@ -2646,9 +2692,6 @@
   </data>
   <data name="Where do you want to open the branch?" xml:space="preserve">
     <value>Where do you want to open the branch?</value>
-  </data>
-  <data name="Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted." xml:space="preserve">
-    <value>Where should the cache be stored? In memory is the fastest, but this cache is lost when the application pool is restarted.</value>
   </data>
   <data name="Which data do you want to transfer to the branche?" xml:space="preserve">
     <value>Which data do you want to transfer to the branche?</value>
