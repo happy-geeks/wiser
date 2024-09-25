@@ -9,17 +9,16 @@ using Api.Core.Services;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Pdfs.Interfaces;
 using Api.Modules.Tenants.Interfaces;
-using EvoPdf;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Interfaces;
-using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 
 namespace Api.Modules.Pdfs.Services
 {
@@ -32,12 +31,11 @@ namespace Api.Modules.Pdfs.Services
         private readonly IFilesService filesService;
         private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IHttpClientService httpClientService;
-        private readonly GclSettings gclSettings;
 
         /// <summary>
         /// Creates a new instance of <see cref="PdfsService"/>.
         /// </summary>
-        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment, IOptions<GclSettings> gclSettings, IHttpClientService httpClientService)
+        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment, IHttpClientService httpClientService)
         {
             this.htmlToPdfConverterService = htmlToPdfConverterService;
             this.clientDatabaseConnection = clientDatabaseConnection;
@@ -45,7 +43,6 @@ namespace Api.Modules.Pdfs.Services
             this.filesService = filesService;
             this.webHostEnvironment = webHostEnvironment;
             this.httpClientService = httpClientService;
-            this.gclSettings = gclSettings.Value;
         }
 
         /// <inheritdoc />
@@ -96,26 +93,27 @@ namespace Api.Modules.Pdfs.Services
         /// <inheritdoc />
         public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string[] propertyNames, string entityType)
         {
-            Document mergeResultPdfDocument = null;
+            using var mergeResultPdfDocument = new PdfDocument();
 
             // Load the documents and add them to the merged file.
             foreach (var encryptedId in encryptedItemIdsList)
             {
                 foreach (var propertyName in propertyNames)
                 {
-                    var pdfFile = await filesService.GetAsync(encryptedId, 0, identity, 0, entityType, propertyName:propertyName);
-                    var pdfStream = new MemoryStream();
-                    // Check if the PDF must be downloaded first
-                    if (!String.IsNullOrWhiteSpace(pdfFile.ModelObject.Url))
+                    var pdfFile = (await filesService.GetAsync(encryptedId, 0, identity, 0, entityType, propertyName:propertyName)).ModelObject;
+                    using var pdfStream = new MemoryStream();
+
+                    // Check if the PDF must be downloaded first.
+                    if (!String.IsNullOrWhiteSpace(pdfFile.Url))
                     {
-                        using var response = await httpClientService.Client.GetAsync(pdfFile.ModelObject.Url, HttpCompletionOption.ResponseHeadersRead);
+                        using var response = await httpClientService.Client.GetAsync(pdfFile.Url, HttpCompletionOption.ResponseHeadersRead);
                         response.EnsureSuccessStatusCode();
                         await using var downloadStream = await response.Content.ReadAsStreamAsync();
                         await downloadStream.CopyToAsync(pdfStream);
                     }
-                    else if (!pdfFile.ModelObject.Data.IsNullOrEmpty())
+                    else if (!pdfFile.Data.IsNullOrEmpty())
                     {
-                        pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
+                        await pdfStream.WriteAsync(pdfFile.Data.AsMemory(0, pdfFile.Data.Length));
                     }
 
                     // If the pdf file is empty (no file at the URL and no file in the blob field) then skip to next file
@@ -123,14 +121,13 @@ namespace Api.Modules.Pdfs.Services
                     {
                         continue;
                     }
-                    if (mergeResultPdfDocument == null)
+
+                    using var inputDocument = PdfReader.Open(pdfStream, PdfDocumentOpenMode.Import);
+
+                    // Copy all pages from the input document to the output document.
+                    for (var i = inputDocument.PageCount - 1; i >= 0; i--)
                     {
-                        mergeResultPdfDocument = new Document(pdfStream);
-                        mergeResultPdfDocument.LicenseKey = gclSettings.EvoPdfLicenseKey;
-                    }
-                    else
-                    {
-                        mergeResultPdfDocument.AppendDocument(new Document(pdfStream));
+                        mergeResultPdfDocument.AddPage(inputDocument.Pages[i]);
                     }
                 }
             }
