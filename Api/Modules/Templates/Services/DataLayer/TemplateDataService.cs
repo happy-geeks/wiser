@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Api.Core.Models;
@@ -18,6 +17,7 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
+using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
@@ -35,16 +35,18 @@ namespace Api.Modules.Templates.Services.DataLayer
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IServiceProvider serviceProvider;
+        private readonly IHttpClientService httpClientService;
         private readonly ApiSettings apiSettings;
 
         /// <summary>
         /// Creates a new instance of <see cref="TemplateDataService"/>.
         /// </summary>
-        public TemplateDataService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IServiceProvider serviceProvider, IOptions<ApiSettings> apiSettings)
+        public TemplateDataService(IDatabaseConnection clientDatabaseConnection, IDatabaseHelpersService databaseHelpersService, IServiceProvider serviceProvider, IOptions<ApiSettings> apiSettings, IHttpClientService httpClientService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.databaseHelpersService = databaseHelpersService;
             this.serviceProvider = serviceProvider;
+            this.httpClientService = httpClientService;
             this.apiSettings = apiSettings.Value;
         }
 
@@ -616,8 +618,6 @@ WHERE id = ?id";
             }
 
             // Save the new list of external templates and generate hashes for them if we can.
-            using var client = new HttpClient();
-
             var orderedExternalFiles = templateSettings.ExternalFiles.OrderBy(x => x.Ordering).ToList();
             for (var i = 0; i < orderedExternalFiles.Count; i++)
             {
@@ -626,7 +626,7 @@ WHERE id = ?id";
 
                 if (dataForDatabase.Uri.IsAbsoluteUri && String.IsNullOrWhiteSpace(dataForDatabase.Hash))
                 {
-                    var contents = await client.GetStringAsync(externalFile.Uri);
+                    var contents = await httpClientService.Client.GetStringAsync(externalFile.Uri);
                     dataForDatabase.Hash = $"sha512-{StringHelpers.HashValue(contents, new HashSettingsModel {Algorithm = HashAlgorithms.SHA512, Representation = HashRepresentations.Base64})}";
                 }
 
@@ -1478,7 +1478,7 @@ AND otherVersion.id IS NULL";
                          AND otherVersion.id IS NULL;
                          """;
             var templateData = await clientDatabaseConnection.GetAsync(query);
-            
+
             // Second get the external files of templates that need to be deployed.
             query = $"""
                          SELECT externalFiles.*
