@@ -167,6 +167,7 @@
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.7.1" />
     <PackageReference Include="NUglify" Version="1.21.9" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
+    <PackageReference Include="PDFsharp" Version="6.1.1" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="React.AspNet" Version="5.2.12" />
@@ -177,6 +178,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.8.0" />
     <PackageReference Include="OpenIddict" Version="5.8.0" />
     <PackageReference Include="OpenIddict.Server.AspNetCore" Version="5.8.0" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Tinify" Version="1.6.0" />
   </ItemGroup>
