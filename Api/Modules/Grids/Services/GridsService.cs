@@ -25,7 +25,6 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -33,6 +32,7 @@ using Microsoft.Extensions.Options;
 using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using GclCoreConstants = GeeksCoreLibrary.Core.Models.Constants;
 
 namespace Api.Modules.Grids.Services
 {
@@ -894,7 +894,7 @@ namespace Api.Modules.Grids.Services
                     results.SchemaModel.Fields.Add("addedby", new FieldModel {Type = "string", Editable = false});
                     results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date", Editable = false});
                     results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string", Editable = false});
-                    results.SchemaModel.Fields.Add(WiserItemsService.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
+                    results.SchemaModel.Fields.Add(GclCoreConstants.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
 
                     await itemsService.FixTreeViewOrderingAsync(moduleId, identity, encryptedId, linkTypeNumber);
 
@@ -1257,7 +1257,7 @@ namespace Api.Modules.Grids.Services
                                                     i.added_by AS addedBy,
                                                     i.changed_on AS changedOn,
                                                     i.changed_by AS changedBy,
-                                                    i.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
+                                                    i.ordering AS `{GclCoreConstants.LinkOrderingFieldName}`
                                                 FROM {tablePrefix}{WiserTableNames.WiserItem} i
 
                                                 {{filters}}
@@ -1321,7 +1321,7 @@ namespace Api.Modules.Grids.Services
                                                     i.added_by AS addedBy,
                                                     i.changed_on AS changedOn,
                                                     i.changed_by AS changedBy,
-                                                    il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
+                                                    il.ordering AS `{GclCoreConstants.LinkOrderingFieldName}`
                                                 FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
 
@@ -1366,7 +1366,7 @@ namespace Api.Modules.Grids.Services
                                                     i.added_by AS addedBy,
                                                     i.changed_on AS changedOn,
                                                     i.changed_by AS changedBy,
-                                                    il.ordering AS `{WiserItemsService.LinkOrderingFieldName}`
+                                                    il.ordering AS `{GclCoreConstants.LinkOrderingFieldName}`
                                                 FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} il
                                                 JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = il.{(currentItemIsSourceId ? "destination_item_id" : "item_id")} {(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")} {(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}
 
@@ -1398,7 +1398,7 @@ namespace Api.Modules.Grids.Services
                         }
                     }
 
-                    var defaultSorting = mode == EntityGridModes.LinkOverview ? "ORDER BY i.title ASC" : $"ORDER BY {WiserItemsService.LinkOrderingFieldName} ASC, title ASC";
+                    var defaultSorting = mode == EntityGridModes.LinkOverview ? "ORDER BY i.title ASC" : $"ORDER BY {GclCoreConstants.LinkOrderingFieldName} ASC, title ASC";
                     (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, defaultSorting, tablePrefix: tablePrefix);
 
                     // Get the count, but only if this is not the first load.
@@ -1440,17 +1440,17 @@ namespace Api.Modules.Grids.Services
 
                             var securityMethod = "JCL_SHA512";
 
-                            if (field.Options.ContainsKey(WiserItemsService.SecurityMethodKey))
+                            if (field.Options.ContainsKey(GclCoreConstants.SecurityMethodKey))
                             {
-                                securityMethod = field.Options[WiserItemsService.SecurityMethodKey]?.ToString()?.ToUpperInvariant();
+                                securityMethod = field.Options[GclCoreConstants.SecurityMethodKey]?.ToString()?.ToUpperInvariant();
                             }
 
                             var securityKey = "";
                             if (securityMethod.InList("JCL_AES", "AES"))
                             {
-                                if (field.Options.ContainsKey(WiserItemsService.SecurityKeyKey))
+                                if (field.Options.ContainsKey(GclCoreConstants.SecurityKeyKey))
                                 {
-                                    securityKey = field.Options[WiserItemsService.SecurityKeyKey]?.ToString();
+                                    securityKey = field.Options[GclCoreConstants.SecurityKeyKey]?.ToString();
                                 }
 
                                 if (String.IsNullOrEmpty(securityKey))

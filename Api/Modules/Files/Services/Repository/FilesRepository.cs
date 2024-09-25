@@ -8,6 +8,7 @@ using Api.Modules.Files.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Constants = Api.Modules.Files.Models.Constants;
 
 namespace Api.Modules.Files.Services.Repository;
 

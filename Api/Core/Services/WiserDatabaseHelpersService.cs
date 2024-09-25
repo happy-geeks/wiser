@@ -18,6 +18,7 @@ using GeeksCoreLibrary.Modules.Databases.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
+using Constants = GeeksCoreLibrary.Modules.Databases.Models.Constants;
 
 namespace Api.Core.Services;
 

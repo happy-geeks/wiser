@@ -21,15 +21,17 @@ using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TinifyAPI;
+using Constants = Api.Modules.Files.Models.Constants;
+using GclCoreConstants = GeeksCoreLibrary.Core.Models.Constants;
 
 namespace Api.Modules.Files.Services
 {
@@ -319,13 +321,13 @@ namespace Api.Modules.Files.Services
             }
 
             var username = IdentityHelpers.GetUserName(identity, true);
-            
+
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
             if (branchesService.IsMainBranch(tenant.ModelObject).ModelObject || !propertyName.Equals("global_file"))
             {
                 return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
             }
-            
+
             // Check if directory ID is in the mappings. If true use ID for main database, if false throw exception.
             var directoryIdMainBranch = await branchesService.GetMappedIdAsync(itemId);
 
@@ -337,7 +339,7 @@ namespace Api.Modules.Files.Services
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
-            
+
             using var scope = serviceProvider.CreateScope();
             var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
             var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
@@ -348,7 +350,7 @@ namespace Api.Modules.Files.Services
             {
                 await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
                 await databaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
-                
+
                 var fileId = await branchesService.GenerateNewIdAsync(WiserTableNames.WiserItemFile, mainDatabaseConnection, databaseConnection);
 
                 await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId);
@@ -387,7 +389,7 @@ namespace Api.Modules.Files.Services
             dbConnection.ClearParameters();
             var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
             var tablePrefix = "";
-            
+
             if (itemLinkId > 0)
             {
                 tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
@@ -440,7 +442,7 @@ AND property_name = ?property_name";
                 ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
             }
             dbConnection.AddParameter("ordering", ordering);
-            
+
             dbConnection.AddParameter("saveHistoryGcl", saveHistory); // This is used in triggers.
 
             query = $@"SET @saveHistory = ?saveHistoryGcl;
@@ -501,13 +503,13 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             else if (itemLinkId > 0)
             {
                 query = query.Replace("[wherePart]", "itemlink_id = ?itemLinkId AND property_name = ?propertyName");
-                databaseConnection.AddParameter("itemLinkId", itemLinkId);    
+                databaseConnection.AddParameter("itemLinkId", itemLinkId);
                 databaseConnection.AddParameter("propertyName", propertyName);
             }
             else
             {
                 query = query.Replace("[wherePart]", "item_id = ?itemId AND property_name = ?propertyName");
-                databaseConnection.AddParameter("itemId", itemId);    
+                databaseConnection.AddParameter("itemId", itemId);
                 databaseConnection.AddParameter("propertyName", propertyName);
             }
 
@@ -624,7 +626,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
 
             var propertyName = dataTable.Rows[0].Field<string>("property_name");
             var fileUrl = dataTable.Rows[0].Field<string>("content_url");
-           
+
             // Delete the files from the FTP(s), if this file-input uses FTP upload
             // else delete them from CloudFlare if url matches
             if (!string.IsNullOrWhiteSpace(fileUrl))
@@ -808,7 +810,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             databaseConnection.ClearParameters();
             databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
             databaseConnection.AddParameter("fileId", fileId);
-            databaseConnection.AddParameter("extraData", extraData == null ? null : Newtonsoft.Json.JsonConvert.SerializeObject(extraData));
+            databaseConnection.AddParameter("extraData", extraData == null ? null : JsonConvert.SerializeObject(extraData));
             await databaseConnection.ExecuteAsync(query);
 
             return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
@@ -1069,7 +1071,7 @@ AND property_name = ?propertyName";
             }
 
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            var encryptionKey = parsedOptions.Value<string>(WiserItemsService.SecurityKeyKey);
+            var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
             if (String.IsNullOrWhiteSpace(encryptionKey))
             {
                 encryptionKey = tenant.ModelObject.EncryptionKey;

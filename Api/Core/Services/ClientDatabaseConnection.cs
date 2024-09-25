@@ -17,7 +17,6 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.Databases.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -27,6 +26,7 @@ using MySqlConnector;
 using Newtonsoft.Json;
 using Renci.SshNet;
 using ConnectionInfo = Renci.SshNet.ConnectionInfo;
+using Constants = GeeksCoreLibrary.Modules.Databases.Models.Constants;
 
 namespace Api.Core.Services
 {

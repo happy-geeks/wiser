@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Modules.Templates.Interfaces.DataLayer;
 using Api.Modules.Templates.Models.DynamicContent;
-using Api.Modules.Templates.Models.Other;
 using Api.Modules.Templates.Models.Template;
 using Api.Modules.Tenants.Helpers;
 using Api.Modules.Tenants.Models;
@@ -19,6 +18,7 @@ using GeeksCoreLibrary.Modules.Templates.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Constants = Api.Modules.Templates.Models.Other.Constants;
 
 namespace Api.Modules.Templates.Services.DataLayer
 {

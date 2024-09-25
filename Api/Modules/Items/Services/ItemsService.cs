@@ -22,7 +22,7 @@ using Api.Modules.Files.Interfaces;
 using Api.Modules.Google.Interfaces;
 using Api.Modules.Items.Interfaces;
 using Api.Modules.Items.Models;
-using Api.Modules.Tenants.Helpers;
+using Api.Modules.Templates.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
@@ -31,7 +31,6 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
-using GeeksCoreLibrary.Core.Services;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using GeeksCoreLibrary.Modules.Languages.Interfaces;
@@ -43,6 +42,7 @@ using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using GclCoreConstants = GeeksCoreLibrary.Core.Models.Constants;
 
 namespace Api.Modules.Items.Services
 {
@@ -51,7 +51,7 @@ namespace Api.Modules.Items.Services
     /// </summary>
     public class ItemsService : IItemsService, IScopedService
     {
-        private readonly Templates.Interfaces.ITemplatesService templatesService;
+        private readonly ITemplatesService templatesService;
         private readonly IWiserTenantsService wiserTenantsService;
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IHttpContextAccessor httpContextAccessor;
@@ -72,7 +72,7 @@ namespace Api.Modules.Items.Services
         /// <summary>
         /// Creates a new instance of <see cref="ItemsService"/>.
         /// </summary>
-        public ItemsService(Templates.Interfaces.ITemplatesService templatesService,
+        public ItemsService(ITemplatesService templatesService,
                             IWiserTenantsService wiserTenantsService,
                             IDatabaseConnection clientDatabaseConnection,
                             IHttpContextAccessor httpContextAccessor,
@@ -299,7 +299,7 @@ namespace Api.Modules.Items.Services
                     {
                         continue;
                     }
-                
+
                     var name = field.DisplayName;
                     if (String.IsNullOrWhiteSpace(name) || !useFriendlyPropertyNames)
                     {
@@ -702,7 +702,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
                     await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
                     var wiserItemsServiceMainBranch = scope.ServiceProvider.GetRequiredService<IWiserItemsService>();
-                    
+
                     // Check if parent ID is in the mappings. If true use ID for main database, if false throw exception.
                     var parentIdMainBranch = await branchesService.GetMappedIdAsync(parentId);
 
@@ -717,10 +717,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                     // Hide the item by default to prevent it from being used in production.
                     item.PublishedEnvironment = Environments.Hidden;
-                    
+
                     var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(item.EntityType);
                     var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
-                    
+
                     // Check which Wiser item link table needs to be locked.
                     clientDatabaseConnection.AddParameter("parentId", parentId);
                     var queryResult = await clientDatabaseConnection.GetAsync($@"SELECT entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
@@ -747,11 +747,11 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
                         await clientDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
                     }
-                    
+
                     // Set the environment on the branch. This will add an entry to the history to activate the item on production after a merge has been performed.
                     newItem.PublishedEnvironment = Environments.Development | Environments.Test | Environments.Acceptance | Environments.Live;
                     await wiserItemsService.UpdateAsync(newItem.Id, newItem, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, skipPermissionsCheck: true);
-                    
+
                     // Add the mapping to the mappings table.
                     await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> {WiserTableNames.WiserIdMappings});
                     clientDatabaseConnection.AddParameter("tableName", $"{tablePrefix}{WiserTableNames.WiserItem}");
@@ -1467,7 +1467,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 var extraAttributes = "";
                 var containerCss = dataRow.Field<string>("css") ?? "";
                 var elementCss = "";
-                var inputType = WiserItemsService.DefaultInputType;
+                var inputType = GclCoreConstants.DefaultInputType;
 
                 // Setup any extra attributes.
                 switch (fieldType.ToLowerInvariant())
@@ -1486,17 +1486,17 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
 
                         var securityMethod = "JCL_SHA512";
 
-                        if (optionsObject.ContainsKey(WiserItemsService.SecurityMethodKey))
+                        if (optionsObject.ContainsKey(GclCoreConstants.SecurityMethodKey))
                         {
-                            securityMethod = optionsObject[WiserItemsService.SecurityMethodKey]?.ToString()?.ToUpperInvariant();
+                            securityMethod = optionsObject[GclCoreConstants.SecurityMethodKey]?.ToString()?.ToUpperInvariant();
                         }
 
                         var securityKey = "";
                         if (securityMethod.InList("JCL_AES", "AES"))
                         {
-                            if (optionsObject.ContainsKey(WiserItemsService.SecurityKeyKey))
+                            if (optionsObject.ContainsKey(GclCoreConstants.SecurityKeyKey))
                             {
-                                securityKey = optionsObject[WiserItemsService.SecurityKeyKey]?.ToString();
+                                securityKey = optionsObject[GclCoreConstants.SecurityKeyKey]?.ToString();
                             }
 
                             if (String.IsNullOrEmpty(securityKey))
@@ -1538,7 +1538,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                         }
 
                         // Make sure that the decimal is in the correct culture that is set in the field. The default culture is nl-NL.
-                        var culture = optionsObject[WiserItemsService.CultureKey]?.ToString();
+                        var culture = optionsObject[GclCoreConstants.CultureKey]?.ToString();
                         if (String.IsNullOrWhiteSpace(culture))
                         {
                             culture = "nl-NL";
@@ -1556,9 +1556,9 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                             if (!String.IsNullOrWhiteSpace(property?.Name))
                             {
                                 var size = 0;
-                                if (optionsObject.ContainsKey(WiserItemsService.SizeKey))
+                                if (optionsObject.ContainsKey(GclCoreConstants.SizeKey))
                                 {
-                                    size = optionsObject[WiserItemsService.SizeKey].Value<int>();
+                                    size = optionsObject[GclCoreConstants.SizeKey].Value<int>();
                                 }
 
                                 if (size <= 0)
@@ -1657,7 +1657,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                     inputType = optionsObject.Value<string>("type");
                     if (String.IsNullOrWhiteSpace(inputType))
                     {
-                        inputType = WiserItemsService.DefaultInputType;
+                        inputType = GclCoreConstants.DefaultInputType;
                     }
                 }
 
