@@ -196,16 +196,11 @@ namespace Api
             // Configure OAuth2
             // Configure OpenIddict
             services.AddOpenIddict()
-                .AddCore(options =>
-                {
-                    // No need to configure EF Core since you're using a custom storage solution.
-                })
                 .AddServer(options =>
                 {
                     options.SetTokenEndpointUris("/connect/token");
-
-                    options.AllowPasswordFlow()
-                        .AllowRefreshTokenFlow();
+                    options.EnableDegradedMode();
+                    options.AllowPasswordFlow();
 
                     if (webHostEnvironment.IsDevelopment())
                     {
@@ -216,16 +211,34 @@ namespace Api
                     options.UseAspNetCore()
                         .EnableTokenEndpointPassthrough()
                         .DisableTransportSecurityRequirement();
+                    
+                    // Define static scopes here.
+                    options.RegisterScopes(
+                        "profile",     // Access to basic profile information
+                        "email",       // Access to the user's email address
+                        "api.read",    // Read access to the API
+                        "api.write"    // Write access to the API
+                    );
 
                     // Register your custom password validator.
                     options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(builder =>
                     {
                         builder.UseScopedHandler<OpenIddictPasswordValidator>();
                     });
+
+                    options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(builder =>
+                    {
+                        builder.UseScopedHandler<TokenValidator>();
+                    });
+
                 })
                 .AddValidation(options =>
                 {
-                    //options.Use
+                    // Import the configuration from the local OpenIddict server instance.
+                    options.UseLocalServer();
+
+                    // Register the ASP.NET Core host.
+                    options.UseAspNetCore();
                 });
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -331,6 +344,7 @@ namespace Api
             
             app.UseCors(CorsPolicyName);
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
