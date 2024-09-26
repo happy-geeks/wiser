@@ -988,11 +988,22 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                 allItems.Add(result);
             }
 
+            // if there are few items in the search result expand all items in the treeview
+            if (allItems.Count < 10)
+            {
+                allItems.ForEach(result => result.Expanded = true);
+            }
+
             void AddChildren(List<SearchResultModel> currentLevel)
             {
                 foreach (var result in currentLevel)
                 {
                     result.ChildNodes = allItems.Where(i => i.ParentId == result.TemplateId).Cast<TemplateTreeViewModel>().ToList();
+                    
+                    if (result.ChildNodes.Count == 1)
+                    {
+                        result.Expanded = true;
+                    }
                     AddChildren(result.ChildNodes.Cast<SearchResultModel>().ToList());
                 }
             }
@@ -1021,7 +1032,7 @@ AND otherVersion.id IS NULL";
             {
                 foreach (var result in currentLevel)
                 {
-                    if (!allItems.Any(i => i.TemplateId == result.TemplateId))
+                    if (allItems.All(i => i.TemplateId != result.TemplateId))
                     {
                         allItems.Add(result);
                     }
@@ -1048,6 +1059,7 @@ AND otherVersion.id IS NULL";
                 encryptedTemplatesAdded = true;
             }
 
+            
 
             if (!encryptedTemplatesAdded)
             {

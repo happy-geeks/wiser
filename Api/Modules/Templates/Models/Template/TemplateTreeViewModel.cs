@@ -78,5 +78,10 @@ namespace Api.Modules.Templates.Models.Template
         /// This is typically meant for views, routines, and triggers that were retrieved from the database.
         /// </remarks>
         public bool IsVirtualItem { get; set; }
+        
+        /// <summary>
+        /// Whether the item should start as expanded in the treeview
+        /// </summary>
+        public bool Expanded { get; set; }
     }
 }
