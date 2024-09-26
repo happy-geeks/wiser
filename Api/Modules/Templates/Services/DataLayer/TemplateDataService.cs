@@ -1059,8 +1059,6 @@ AND otherVersion.id IS NULL";
                 encryptedTemplatesAdded = true;
             }
 
-            
-
             if (!encryptedTemplatesAdded)
             {
                 return results;
