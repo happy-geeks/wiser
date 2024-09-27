@@ -49,6 +49,7 @@
             <select id="cache-location" class="combo-select" data-kendo-control="kendoDropDownList" name="cacheLocation">
                 <!option value="@((int)TemplateCachingLocations.InMemory)" @(Model.CacheLocation == TemplateCachingLocations.InMemory ? "selected" : "")>In geheugen</!option>
                 <!option value="@((int)TemplateCachingLocations.OnDisk)" @(Model.CacheLocation == TemplateCachingLocations.OnDisk ? "selected" : "")>Op harde schijf</!option>
+                <!option value="@((int)TemplateCachingLocations.Distributed)" @(Model.CacheLocation == TemplateCachingLocations.Distributed ? "selected" : "")>Distributed Cache</!option>
             </select>
         </div>
         <div class="form-hint"><span>Waar moet de cache opgeslagen worden? In geheugen is het snelste, maar deze cache gaat verloren bij herstart van de application pool.</span></div>
