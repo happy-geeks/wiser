@@ -1075,8 +1075,8 @@ AND otherVersion.id IS NULL";
             clientDatabaseConnection.AddParameter("editorValue", editorValue);
 
             var dataTable = await clientDatabaseConnection.GetAsync(@$"SET @id = (SELECT MAX(template_id)+1 FROM {WiserTableNames.WiserTemplate});
-INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, added_on, added_by, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes)
-VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, ?now, ?username, 1, ?ordering, ?editorValue, -1);
+INSERT INTO {WiserTableNames.WiserTemplate} (parent_id, template_name, template_type, version, template_id, added_on, added_by, changed_on, changed_by, published_environment, ordering, template_data, cache_minutes, is_dirty)
+VALUES (?parent, ?name, ?type, 1, @id, ?now, ?username, ?now, ?username, 1, ?ordering, ?editorValue, -1, TRUE);
 SELECT @id;");
 
             return Convert.ToInt32(dataTable.Rows[0]["@id"]);
