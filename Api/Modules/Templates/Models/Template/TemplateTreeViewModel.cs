@@ -10,12 +10,12 @@ namespace Api.Modules.Templates.Models.Template
         private bool isFolder;
         
         /// <summary>
-        /// Gets or sets the ID of the Template
+        /// Gets or sets the ID of the Template.
         /// </summary>
         public int TemplateId { get; set; }
 
         /// <summary>
-        /// Gets or sets the name of the Template
+        /// Gets or sets the name of the Template.
         /// </summary>
         public string TemplateName { get; set; }
 
@@ -41,32 +41,32 @@ namespace Api.Modules.Templates.Models.Template
         public bool HasChildren { get; set; }
         
         /// <summary>
-        /// Gets or sets the CSS class (for example the folder) which is collapsed
+        /// Gets or sets the CSS class (for example the folder) which is collapsed.
         /// </summary>
         public string CollapsedSpriteCssClass { get; set; }
         
         /// <summary>
-        /// Gets or sets the CSS class (for example the folder) which is expanded
+        /// Gets or sets the CSS class (for example the folder) which is expanded.
         /// </summary>
         public string ExpandedSpriteCssClass { get; set; }
         
         /// <summary>
-        /// Gets or sets the base CSS class (for example the folder) 
+        /// Gets or sets the base CSS class (for example the folder).
         /// </summary>
         public string SpriteCssClass { get; set; }
 
         /// <summary>
-        /// Gets or sets the settings for the Template
+        /// Gets or sets the settings for the Template.
         /// </summary>
         public TemplateSettingsModel TemplateSettings { get; set; }
 
         /// <summary>
-        /// Gets or sets a list of all child nodes this template contains
+        /// Gets or sets a list of all child nodes this template contains.
         /// </summary>
         public List<TemplateTreeViewModel> ChildNodes { get; set; }
         
         /// <summary>
-        /// Gets or sets the type of the template
+        /// Gets or sets the type of the template.
         /// </summary>
         public int TemplateType { get; set; }
 
@@ -78,5 +78,10 @@ namespace Api.Modules.Templates.Models.Template
         /// This is typically meant for views, routines, and triggers that were retrieved from the database.
         /// </remarks>
         public bool IsVirtualItem { get; set; }
+        
+        /// <summary>
+        /// Whether the item should start as expanded in the treeview.
+        /// </summary>
+        public bool Expanded { get; set; }
     }
 }
