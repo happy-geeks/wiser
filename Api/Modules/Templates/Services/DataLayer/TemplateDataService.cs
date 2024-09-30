@@ -988,7 +988,7 @@ LEFT JOIN {WiserTableNames.WiserTemplate} AS parent8 ON parent8.template_id = pa
                 allItems.Add(result);
             }
 
-            // if there are few items in the search result expand all items in the treeview
+            // if there are few items in the search result expand all items in the treeview.
             if (allItems.Count < 10)
             {
                 allItems.ForEach(result => result.Expanded = true);
