@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -206,7 +207,7 @@ namespace Api
                     // Degraded mode is needed because we handle authentication, user rights etc. ourselves
                     // Without Degraded mode openiddict would try find users, scopes and such using Entity Framework
                     options.EnableDegradedMode();
-                    
+
                     options.UseAspNetCore();
                     options.AllowPasswordFlow();
                     options.AllowRefreshTokenFlow();
@@ -226,7 +227,7 @@ namespace Api
                         var signingCertificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
                         var signingCertificate = GetCertificateByName(signingCertificateName);
                         options.AddSigningCertificate(signingCertificate);
-                        
+
                         // Add certificate to encrypt the JWT token
                         // A JWT token shouldn't contain sensitive information so this is a bit of extra security
                         var encryptionCertificateName = Configuration.GetValue<string>("Api:EncryptionCredentialCertificate");
@@ -239,7 +240,7 @@ namespace Api
                             options.DisableAccessTokenEncryption();
                         }
                     }
-                    
+
                     // Define static scopes here.
                     options.RegisterScopes(
                         OpenIddictConstants.Scopes.OpenId,
@@ -300,7 +301,7 @@ namespace Api
                         return scopes is not null && scopes.Split(" ").Contains("api.write");
                     })
                     .Build();
-                
+
                 options.AddPolicy("ApiUsersList",
                     policy =>
                     {
@@ -311,7 +312,7 @@ namespace Api
                                 return scopes is not null && scopes.Split(" ").Contains("api.users_list");
                             });
                     });
-                
+
                 options.AddPolicy("ApiWrite",
                     policy =>
                     {
@@ -322,7 +323,7 @@ namespace Api
                                 return scopes is not null && scopes.Split(" ").Contains("api.write");
                             });
                     });
-                
+
                 options.AddPolicy("ApiRead",
                     policy =>
                     {
@@ -399,8 +400,10 @@ namespace Api
 
             app.UseHttpsRedirection();
 
+            app.UseStaticFiles();
+
             app.UseRouting();
-            
+
             app.UseCors(CorsPolicyName);
 
             app.UseAuthentication();
@@ -451,7 +454,7 @@ namespace Api
         public IApplicationBuilder HandleStartupFunctions(IApplicationBuilder builder)
         {
             var applicationLifetime = builder.ApplicationServices.GetService<IHostApplicationLifetime>();
-            
+
             applicationLifetime.ApplicationStarted.Register(async () =>
             {
                 using var scope = builder.ApplicationServices.CreateScope();
