@@ -32,7 +32,12 @@ public class FileManagerController : Controller
         {
             viewModel.BodyCssClass = "iframe";
         }
-            
+
+        if (viewModel.HideFields)
+        {
+            viewModel.BodyCssClass += " hide-fields";
+        }
+
         return View(viewModel);
     }
 }
