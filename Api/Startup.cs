@@ -21,6 +21,7 @@ using Api.Modules.Tenants.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
+using HealthChecks.UI.Client;
 using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
@@ -346,6 +347,18 @@ namespace Api
                 {
                     Predicate = _ => true
                 });
+                
+                endpoints.MapHealthChecks("/health/wts", new HealthCheckOptions()
+                {
+                    Predicate = healthCheck => healthCheck.Tags.Contains("WTS"),
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                });
+                
+                endpoints.MapHealthChecks("/health/database", new HealthCheckOptions()
+                {
+                    Predicate = healthCheck => healthCheck.Tags.Contains("database"),
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                }); 
             });
 
             // Load plugins for GCL and Wiser.
@@ -362,6 +375,7 @@ namespace Api
         /// <returns></returns>
         public IApplicationBuilder HandleStartupFunctions(IApplicationBuilder builder)
         {
+            
             var applicationLifetime = builder.ApplicationServices.GetService<IHostApplicationLifetime>();
             applicationLifetime.ApplicationStarted.Register(async () =>
             {
@@ -375,7 +389,11 @@ namespace Api
                 }
                 catch (Exception exception)
                 {
-                    scope.ServiceProvider.GetService<ILogger>().LogError(exception, "Error while updating tables.");
+                    var logger = scope.ServiceProvider.GetService<ILogger>();
+                    if (logger != null)
+                    {
+                        logger.LogError(exception, "Error while updating tables.");
+                    }
                 }
             });
 

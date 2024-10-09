@@ -609,7 +609,12 @@ namespace Api.Core.Services
 
                 if (String.IsNullOrWhiteSpace(subDomain))
                 {
-                    throw new Exception("No sub domain found!");
+                    if (!httpContextAccessor.HttpContext.Request.Path.ToString().StartsWith("/health/"))
+                    {
+                        throw new Exception("No sub domain found!");
+                    }
+                    
+                    subDomain = apiSettings.MainSubDomain;
                 }
 
                 connectionStringForReading = await GetClientConnectionStringAsync(subDomain);

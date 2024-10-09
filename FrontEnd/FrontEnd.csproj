@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\geeks-core-library\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
     <ProjectReference Include="..\Api\Api.csproj" />
   </ItemGroup>
 
