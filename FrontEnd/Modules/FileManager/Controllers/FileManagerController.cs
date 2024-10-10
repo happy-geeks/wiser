@@ -1,4 +1,5 @@
-﻿using FrontEnd.Core.Interfaces;
+﻿using System.Text;
+using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.FileManager.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,7 +36,11 @@ public class FileManagerController : Controller
 
         if (viewModel.HideFields)
         {
-            viewModel.BodyCssClass += " hide-fields";
+            var stringBuilder = new StringBuilder();
+
+            stringBuilder.Append(viewModel.BodyCssClass);
+            stringBuilder.Append(" hide-fields");
+            viewModel.BodyCssClass = stringBuilder.ToString();
         }
 
         return View(viewModel);
