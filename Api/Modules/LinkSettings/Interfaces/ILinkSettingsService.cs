@@ -12,14 +12,15 @@ namespace Api.Modules.LinkSettings.Interfaces
     public interface ILinkSettingsService
     {
         /// <summary>
-        /// Get all link settings. 
+        /// Get all link settings.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="branchId">Optional: If getting entity types for a branch, enter the ID of that branch here.</param>
         /// <returns>A List of <see cref="LinkSettingsModel"/> with all settings.</returns>
-        Task<ServiceResult<List<LinkSettingsModel>>> GetAsync(ClaimsIdentity identity);
+        Task<ServiceResult<List<LinkSettingsModel>>> GetAllAsync(ClaimsIdentity identity, int branchId = 0);
 
         /// <summary>
-        /// Get link settings based on ID. 
+        /// Get link settings based on ID.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="id">The ID of the settings from wiser_link.</param>

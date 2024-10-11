@@ -66,6 +66,7 @@ export const HANDLE_MULTIPLE_CONFLICTS = "handleMultipleConflicts";
 export const DELETE_BRANCH = "deleteBranch";
 export const DELETE_BRANCH_SUCCESS = "deleteBranchSuccess";
 export const DELETE_BRANCH_ERROR = "deleteBranchError";
+export const GET_LINK_TYPES = "getLinkTypes";
 
 export const GET_DATA_SELECTORS_FOR_BRANCHES = "getDataSelectorsForBranches";
 

@@ -40,6 +40,7 @@ import {
     GET_BRANCHES,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_LINK_TYPES,
     GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
@@ -254,6 +255,14 @@ class Main {
                                 delete: false
                             }
                         },
+                        linkTypes: {
+                            all: {
+                                everything: false,
+                                create: false,
+                                update: false,
+                                delete: false
+                            }
+                        },
                         settings: {
                             all: {
                                 everything: true,
@@ -437,6 +446,9 @@ class Main {
                 },
                 entitiesForBranches() {
                     return this.$store.state.branches.entities;
+                },
+                linkTypesForBranches() {
+                    return this.$store.state.branches.linkTypes;
                 },
                 settingsForBranches() {
                     return this.$store.state.branches.settings;
@@ -1098,8 +1110,25 @@ class Main {
                     }
                 },
 
+                async getLinkTypesForBranches(branchId = 0) {
+                    await this.$store.dispatch(GET_LINK_TYPES, branchId);
+                    for (let linkType of this.linkTypesForBranches) {
+                        if (this.branchMergeSettings.linkTypes[linkType.id]) {
+                            continue;
+                        }
+
+                        this.branchMergeSettings.linkTypes[linkType.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+                },
+
                 async onWiserMergeBranchPromptOpen(sender) {
                     await this.getEntitiesForBranches();
+                    await this.getLinkTypesForBranches();
 
                     if (this.branches && this.branches.length > 0) {
                         this.branchMergeSettings.selectedBranch = this.branches[0];
@@ -1155,11 +1184,24 @@ class Main {
                         };
                     }
 
+                    await this.getLinkTypesForBranches(selectedBranchId);
+
+                    for (let entity of this.linkTypesForBranches) {
+                        this.branchMergeSettings.linkTypes[entity.id] = {
+                            everything: false,
+                            create: false,
+                            update: false,
+                            delete: false
+                        };
+                    }
+
                     this.$store.dispatch(RESET_BRANCH_CHANGES);
 
                     // Clear all checkboxes.
                     this.branchMergeSettings.entities.all.everything = false;
+                    this.branchMergeSettings.linkTypes.all.everything = false;
                     this.updateBranchChangeList(false, "entities", "all", "everything");
+                    this.updateBranchChangeList(false, "linkTypes", "all", "everything");
                 },
 
                 async countBranchChanges() {

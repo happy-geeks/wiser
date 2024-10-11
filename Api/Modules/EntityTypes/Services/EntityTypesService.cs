@@ -15,11 +15,10 @@ using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.Databases.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using IEntityTypesService = Api.Modules.EntityTypes.Interfaces.IEntityTypesService;
+using IBranchesService = Api.Modules.Branches.Interfaces.IBranchesService;
 
 namespace Api.Modules.EntityTypes.Services
 {
@@ -31,47 +30,41 @@ namespace Api.Modules.EntityTypes.Services
         private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
         private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
 
         /// <summary>
         /// Creates a new instance of <see cref="EntityTypesService"/>.
         /// </summary>
-        public EntityTypesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService, IServiceProvider serviceProvider)
+        public EntityTypesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService, IServiceProvider serviceProvider, IBranchesService branchesService)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.databaseHelpersService = databaseHelpersService;
             this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
         public async Task<ServiceResult<List<EntityTypeModel>>> GetAsync(ClaimsIdentity identity, bool onlyEntityTypesWithDisplayName = true, bool includeCount = false, bool skipEntitiesWithoutItems = false, int moduleId = 0, int branchId = 0)
         {
             using var scope = serviceProvider.CreateScope();
-            var databaseConnectionToUse = clientDatabaseConnection;
+            var databaseConnectionResult = await branchesService.GetBranchDatabaseConnectionAsync(scope, identity, branchId);
+            if (databaseConnectionResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<List<EntityTypeModel>>
+                {
+                    ErrorMessage = databaseConnectionResult.ErrorMessage,
+                    StatusCode = databaseConnectionResult.StatusCode
+                };
+            }
+
+            var databaseConnectionToUse = databaseConnectionResult.ModelObject;
             var databaseHelpersServiceToUse = this.databaseHelpersService;
 
             if (branchId > 0)
             {
-                var currentTenant = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
-                var selectedEnvironmentTenant = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
-
-                // Only allow users to get the entities of their own branches.
-                if (currentTenant.TenantId != selectedEnvironmentTenant.TenantId)
-                {
-                    return new ServiceResult<List<EntityTypeModel>>
-                    {
-                        StatusCode = HttpStatusCode.Forbidden
-                    };
-                }
-
-                var connectionString = wiserTenantsService.GenerateConnectionStringFromTenant(selectedEnvironmentTenant);
-                var branchDatabaseConnection = scope.ServiceProvider.GetService<MySqlDatabaseConnection>();
-                await branchDatabaseConnection.ChangeConnectionStringsAsync(connectionString);
-                databaseConnectionToUse = branchDatabaseConnection;
-
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<MySqlDatabaseHelpersService>>();
-                databaseHelpersServiceToUse = new MySqlDatabaseHelpersService(databaseConnectionToUse, logger);
+                databaseHelpersServiceToUse = scope.ServiceProvider.GetRequiredService<IDatabaseHelpersService>();
             }
 
             var result = new List<EntityTypeModel>();
