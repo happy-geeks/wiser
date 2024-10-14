@@ -1276,6 +1276,7 @@ export class Grids {
      * The user can use checkboxes in that grid to link items.
      * @param {any} encryptedParentId The encrypted item ID of the parent to link the items to.
      * @param {any} plainParentId The plain item ID of the parent to link the items to.
+     * @param {any} currentEntityType The entity type of the current item, needed when current item is source.
      * @param {any} entityType The entity type of items to show in the search window.
      * @param {any} senderGridSelector A selector to find the sender grid.
      * @param {any} linkTypeNumber The link type number.
@@ -1287,7 +1288,7 @@ export class Grids {
      * @param {number} propertyId The ID of the current property.
      * @param {any} gridOptions The options of the grid.
      */
-    onLinkSubEntityClick(encryptedParentId, plainParentId, entityType, senderGridSelector, linkTypeNumber, hideIdColumn, hideLinkIdColumn, hideTypeColumn, hideEnvironmentColumn, hideTitleColumn, propertyId, gridOptions) {
+    onLinkSubEntityClick(encryptedParentId, plainParentId, currentEntityType, entityType, senderGridSelector, linkTypeNumber, hideIdColumn, hideLinkIdColumn, hideTypeColumn, hideEnvironmentColumn, hideTitleColumn, propertyId, gridOptions) {
         linkTypeNumber = linkTypeNumber || "";
         if (typeof gridOptions === "string") {
             gridOptions = JSON.parse(gridOptions);
@@ -1303,7 +1304,8 @@ export class Grids {
             entityType: entityType,
             linkTypeNumber: linkTypeNumber,
             propertyId: propertyId,
-            currentItemIsSourceId: gridOptions.currentItemIsSourceId
+            currentItemIsSourceId: gridOptions.currentItemIsSourceId,
+            currentEntityType: currentEntityType
         });
         $.extend(this.base.windows.searchGridSettings, {
             hideIdColumn: hideIdColumn,
