@@ -577,8 +577,18 @@ const moduleSettings = {
                 dataSource: {
                     transport: {
                         read: (options) => {
+                            let urlPart = '';
+                            if (options.data.encryptedItemId) {
+                                let item = this.mainTreeView.dataSource.get(options.data.encryptedItemId)
+                                let entityType = item.entityType;
+
+                                if (entityType) {
+                                    urlPart = `&parentEntityType=${entityType}`;
+                                }
+                            }
+
                             Wiser.api({
-                                url: `${this.base.settings.wiserApiRoot}items/tree-view?moduleId=${this.base.settings.moduleId}`,
+                                url: `${this.base.settings.wiserApiRoot}items/tree-view?moduleId=${this.base.settings.moduleId}${urlPart}`,
                                 dataType: "json",
                                 method: "GET",
                                 data: options.data
@@ -602,7 +612,6 @@ const moduleSettings = {
                 expand: this.onTreeViewExpandItem.bind(this),
                 drop: this.onTreeViewDropItem.bind(this),
                 drag: this.onTreeViewDragItem.bind(this),
-                dataValueField: "encryptedItemId",
                 dataTextField: "title",
                 dataSpriteCssClassField: "spriteCssClass"
             }).data("kendoTreeView");
