@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
     const readonly = {readonly};
     let kendoComponent = null;
 
