@@ -639,8 +639,9 @@ namespace Api.Modules.Items.Controllers
         /// This method does not work with dedicated tables for entity types or link types, because we can't know beforehand what entity types and link types a tree view will contain, so we have no way to know which dedicated tables to use.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <param name="encryptedItemId">Optional: The encrypted ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
+        /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a prefix table.</param>
+        /// <param name="encryptedItemId">Optional: Item id of the item to get the child items of. If no value has been given, the root will be used as parent.</param>
+        /// <param name="childEntityTypes">Optional: </param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
         /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
@@ -648,7 +649,7 @@ namespace Api.Modules.Items.Controllers
         [HttpGet]
         [Route("tree-view")]
         [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null, [FromQuery] int linkType = 0)
+        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string parentEntityType = "", [FromQuery] string childEntityTypes = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null, [FromQuery] int linkType = 0)
         {
             var identity = (ClaimsIdentity)User.Identity;
             var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
@@ -672,7 +673,7 @@ namespace Api.Modules.Items.Controllers
         [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] ulong? itemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] ulong? checkId = null, [FromQuery] int linkType = 0)
         {
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, entityType, itemId ?? 0, orderBy, checkId ?? 0, linkType)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, parentEntityType, itemId ?? 0,orderBy, checkId ?? 0, linkType, childEntityTypes)).GetHttpResponseMessage();
         }
 
         /// <summary>

@@ -2142,7 +2142,9 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, ulong? parentId = null, string orderBy = null, ulong? checkId = null, int linkType = 0)
+        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId,
+            ClaimsIdentity identity, string entityType = null, ulong? parentId = null, string orderBy = null,
+            ulong? checkId = null, int linkType = 0, string childEntityTypes = null)
         {
             if (moduleId <= 0)
             {
@@ -2159,6 +2161,18 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var results = new List<TreeViewItemModel>();
 
+            var parentEntitySettings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType ?? String.Empty, moduleId);
+            var parentTablePrefix = wiserItemsService.GetTablePrefixForEntity(parentEntitySettings);
+            
+            var firstChild = parentEntitySettings.AcceptedChildTypes.FirstOrDefault();
+            if (firstChild is null)
+            {
+                return new ServiceResult<List<TreeViewItemModel>>();
+            }
+
+            var childEntitySettings = await wiserItemsService.GetEntityTypeSettingsAsync(firstChild, moduleId);
+            var tablePrefix = wiserItemsService.GetTablePrefixForEntity(childEntitySettings);
+
             var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
             var linkTypesToHideFromTreeView = allLinkTypeSettings.Where(x => !x.ShowInTreeView).Select(x => x.Type).ToList();
             if (!linkTypesToHideFromTreeView.Any())
@@ -2168,42 +2182,13 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             }
 
             var linkTypesToHideFromTreeViewList = String.Join(",", linkTypesToHideFromTreeView);
-
-            // Inline function to convert a DataRow to a TreeViewItemModel and add it to the results list.
-            void AddItem(DataRow dataRow)
-            {
-                var itemId = dataRow.Field<ulong>("id");
-                var originalItemId = dataRow.Field<ulong>("original_item_id");
-
-                if (results.Any(item => item.PlainItemId == itemId))
-                {
-                    return;
-                }
-
-                results.Add(new TreeViewItemModel
-                {
-                    EntityType = dataRow.Field<string>("entity_type"),
-                    Title = dataRow.Field<string>("name"),
-                    AcceptedChildTypes = dataRow.Field<string>("accepted_childtypes"),
-                    CollapsedSpriteCssClass = dataRow.Field<string>("icon"),
-                    EncryptedItemId = wiserTenantsService.EncryptValue(itemId, tenant),
-                    EncryptedOriginalItemId = wiserTenantsService.EncryptValue(originalItemId, tenant),
-                    ExpandedSpriteCssClass = dataRow.Field<string>("icon_expanded"),
-                    NodeCssClass = dataRow.Field<string>("nodeCssClass"),
-                    PlainItemId = itemId,
-                    PlainOriginalItemId = originalItemId,
-                    OriginalParentId = parentId ?? 0,
-                    DestinationItemId = wiserTenantsService.EncryptValue(parentId, tenant),
-                    Checked = Convert.ToInt32(dataRow["checked"]) > 0
-                });
-            }
-
+            
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
             clientDatabaseConnection.AddParameter("userId", userId);
             clientDatabaseConnection.AddParameter("parentId", parentId);
-            clientDatabaseConnection.AddParameter("entityType", entityType ?? "");
+            clientDatabaseConnection.AddParameter("childEntityTypes", childEntityTypes ?? "");
             clientDatabaseConnection.AddParameter("checkId", checkId ?? 0);
 
             var orderByClause = "IF(item.title IS NULL OR item.title = '', item.id, item.title) ASC";
@@ -2241,7 +2226,7 @@ LEFT JOIN {WiserTableNames.WiserItemLink} AS checked ON checked.item_id = item.i
     {(checkId > 0 ? "IF(checked.id IS NULL, 0, 1)" : "0")} AS checked
 
 # Get the items linked to the parent.
-FROM {WiserTableNames.WiserItem} AS item
+FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
 JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
 LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
 JOIN {WiserTableNames.WiserItemLink} AS link_parent ON link_parent.item_id = item.id AND link_parent.destination_item_id = ?parentId AND link_parent.type NOT IN ({linkTypesToHideFromTreeViewList})
@@ -2251,12 +2236,12 @@ LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?
 LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
 # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
+LEFT JOIN {parentTablePrefix}{WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
 JOIN {WiserTableNames.WiserEntity} AS parent_entity ON ((link_parent.destination_item_id = 0 AND parent_entity.`name` = '') OR parent_entity.`name` = parent_item.entity_type) AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
 {checkIdJoin}
 
-WHERE {(String.IsNullOrWhiteSpace(entityType) ? "TRUE" : $"item.entity_type IN({String.Join(",", entityType.Split(',').Select(x => x.ToMySqlSafeValue(true)))})")}
+WHERE TRUE
 AND item.moduleid = ?moduleId
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 GROUP BY IF(item.original_item_id > 0, item.original_item_id, item.id)
@@ -2276,7 +2261,7 @@ ORDER BY {orderByClause}";
             if (parentId > 0)
             {
                 query = $@"SELECT COUNT(*) AS total
-                        FROM {WiserTableNames.WiserItem} AS item
+                        FROM {parentTablePrefix}{WiserTableNames.WiserItem} AS item
                         JOIN {WiserTableNames.WiserLink} AS link ON link.destination_entity_type = item.entity_type AND link.use_item_parent_id = 1
                         WHERE item.id = ?parentId";
             }
@@ -2315,7 +2300,7 @@ ORDER BY {orderByClause}";
     IF(item.parent_item_id > 0 AND item.parent_item_id = ?checkId, 1, 0) AS checked
 
 # Get the items linked to the parent.
-FROM {WiserTableNames.WiserItem} AS item
+FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
 JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
 LEFT JOIN {WiserTableNames.WiserEntity} AS entityModule ON entityModule.name = item.entity_type AND entityModule.show_in_tree_view = 1 AND entityModule.module_id = item.moduleid
 
@@ -2324,14 +2309,14 @@ LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?
 LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
 
 # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
-LEFT JOIN {WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
+LEFT JOIN {parentTablePrefix}{WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
 JOIN {WiserTableNames.WiserEntity} AS parent_entity ON {(parentId == 0 ? "parent_entity.module_id = ?moduleId AND parent_entity.`name` = ''" : "parent_entity.`name` = parent_item.entity_type")} AND (parent_entity.accepted_childtypes = '' OR FIND_IN_SET(item.entity_type, parent_entity.accepted_childtypes))
 
 # Link settings to check if these links should be shown.
 LEFT JOIN {WiserTableNames.WiserLink} AS link_settings ON link_settings.destination_entity_type = parent_item.entity_type AND link_settings.connected_entity_type = item.entity_type
 
 WHERE item.parent_item_id = ?parentId
-AND (?entityType = '' OR FIND_IN_SET(item.entity_type, ?entityType))
+AND (?childEntityTypes = '' OR FIND_IN_SET(item.entity_type, ?childEntityTypes))
 AND item.moduleid = ?moduleId
 AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
 AND IFNULL(link_settings.show_in_tree_view, 1) = 1
@@ -2359,17 +2344,27 @@ ORDER BY {orderByClause}";
             // We used to do this in the original queries above, but with the new option of linking items via parent_item_id from wiser_item, instead of via wiser_itemlink,
             // this got a lot more complicated and the original queries got too slow when adding all that to them.
             // So now we have a separate query just to check which items have children.
+
+            var firstSubChild = childEntitySettings.AcceptedChildTypes.FirstOrDefault();
+
+            if (firstSubChild is null)
+            {
+                return new ServiceResult<List<TreeViewItemModel>>(results);
+            }
+
+            var childPrefix = await wiserItemsService.GetTablePrefixForEntityAsync(firstSubChild);
+            
             query = $@"SELECT 
 	                    item.id,
 	                    item.original_item_id,
 	                    IF(COUNT(child.id) > 0 AND COUNT(child_entity.id) > 0 AND SUM(IF(child_entity.id IS NOT NULL, 1, 0)) > 0, 1, 0) AS has_children
 
                     # Get the items linked to the parent.
-                    FROM {WiserTableNames.WiserItem} AS item
+                    FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
                     JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
 
                     JOIN {WiserTableNames.WiserItemLink} link_child ON link_child.destination_item_id = item.id AND link_child.type NOT IN ({linkTypesToHideFromTreeViewList})
-                    JOIN {WiserTableNames.WiserItem} AS child ON child.id = link_child.item_id AND child.moduleid = ?moduleId AND (?entityType = '' OR FIND_IN_SET(child.entity_type, ?entityType))
+                    JOIN {childPrefix}{WiserTableNames.WiserItem} AS child ON child.id = link_child.item_id AND child.moduleid = ?moduleId AND (?childEntityTypes = '' OR FIND_IN_SET(child.entity_type, ?childEntityTypes))
                     JOIN {WiserTableNames.WiserEntity} AS child_entity ON child_entity.name = child.entity_type AND child_entity.show_in_tree_view = 1 AND (entity.accepted_childtypes = '' OR FIND_IN_SET(child.entity_type, entity.accepted_childtypes))
 
                     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
@@ -2389,11 +2384,11 @@ ORDER BY {orderByClause}";
 	                    IF(COUNT(child.id) > 0 AND COUNT(child_entity.id) > 0 AND SUM(IF(child_entity.id IS NOT NULL AND child_link_settings.show_in_tree_view IS NULL, 1, IFNULL(child_link_settings.show_in_tree_view, 0))) > 0, 1, 0) AS has_children
 
                     # Get the items linked to the parent.
-                    FROM {WiserTableNames.WiserItem} AS item
+                    FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
                     JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
 
                     # Note: The entity_type <> '' is to force the use of the correct index, otherwise the query will be a lot slower.
-                    JOIN {WiserTableNames.WiserItem} AS child ON child.parent_item_id = item.id AND child.entity_type <> '' AND child.moduleid = ?moduleId AND (?entityType = '' OR FIND_IN_SET(child.entity_type, ?entityType))
+                    JOIN {childPrefix}{WiserTableNames.WiserItem} AS child ON child.parent_item_id = item.id AND child.entity_type <> '' AND child.moduleid = ?moduleId AND (?childEntityTypes = '' OR FIND_IN_SET(child.entity_type, ?childEntityTypes))
                     JOIN {WiserTableNames.WiserEntity} AS child_entity ON child_entity.name = child.entity_type AND child_entity.show_in_tree_view = 1 AND (entity.accepted_childtypes = '' OR FIND_IN_SET(child.entity_type, entity.accepted_childtypes))
                     # Link settings to check if these links should be shown.
                     LEFT JOIN {WiserTableNames.WiserLink} AS child_link_settings ON child_link_settings.destination_entity_type = item.entity_type AND child_link_settings.connected_entity_type = child.entity_type
@@ -2434,6 +2429,35 @@ ORDER BY {orderByClause}";
             }
 
             return new ServiceResult<List<TreeViewItemModel>>(results);
+            
+            // Inline function to convert a DataRow to a TreeViewItemModel and add it to the results list.
+            void AddItem(DataRow dataRow)
+            {
+                var itemId = dataRow.Field<ulong>("id");
+                var originalItemId = dataRow.Field<ulong>("original_item_id");
+
+                if (results.Any(item => item.PlainItemId == itemId))
+                {
+                    return;
+                }
+
+                results.Add(new TreeViewItemModel
+                {
+                    EntityType = dataRow.Field<string>("entity_type"),
+                    Title = dataRow.Field<string>("name"),
+                    AcceptedChildTypes = dataRow.Field<string>("accepted_childtypes"),
+                    CollapsedSpriteCssClass = dataRow.Field<string>("icon"),
+                    EncryptedItemId = wiserTenantsService.EncryptValue(itemId, tenant),
+                    EncryptedOriginalItemId = wiserTenantsService.EncryptValue(originalItemId, tenant),
+                    ExpandedSpriteCssClass = dataRow.Field<string>("icon_expanded"),
+                    NodeCssClass = dataRow.Field<string>("nodeCssClass"),
+                    PlainItemId = itemId,
+                    PlainOriginalItemId = originalItemId,
+                    OriginalParentId = parentId ?? 0,
+                    DestinationItemId = wiserTenantsService.EncryptValue(parentId, tenant),
+                    Checked = Convert.ToInt32(dataRow["checked"]) > 0
+                });
+            }
         }
 
         /// <inheritdoc />
@@ -2928,7 +2952,7 @@ LEFT JOIN {WiserTableNames.WiserUserRoles} AS userRole ON userRole.user_id = ?us
 LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = userRole.role_id AND permission.item_id = item.id
 
 WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
-AND item.entity_type = ?entityType
+AND item.entity_type = ?childEntityTypes
 AND (?searchEverywhere = TRUE OR link.id IS NOT NULL)
 {searchQueryPart}
 

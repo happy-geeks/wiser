@@ -221,8 +221,11 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the ID for the item that should currently be checked.</param>
         /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
+        /// <param name="childEntityTypes"></param>
         /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
-        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, ulong? parentId = null, string orderBy = null, ulong? checkId = null, int linkType = 0);
+        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity,
+            string entityType = null, ulong? parentId = null, string orderBy = null,
+            ulong? checkId = null, int linkType = 0, string childEntityTypes = null);
 
         /// <summary>
         /// Move an item to a different position in the tree view.
