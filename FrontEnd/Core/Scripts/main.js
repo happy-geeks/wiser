@@ -949,34 +949,58 @@ class Main {
                     return false;
                 },
 
+                async enableLinkTypeBasedOnEntity(entityName)
+                {
+                    for ( let link of this.linkTypesForBranches ) {
+                        if (link.sourceEntityType === entityName || link.destinationEntityType === entityName) {
+                            this.branchMergeSettings.linkTypes[link.id].everything = true;
+                        }
+                    }
+                        /*if (!linkType.everything || 
+                            !linkType.create || 
+                            !linkType.update || 
+                            !linkType.delete ) {
+                                linkType.create = true;
+                                linkType.update = true;
+                                linkType.update = true;
+                                linkType.delete = true;
+                        }*/
+                    //}
+                },
+
                 updateBranchChangeList(isChecked, setting, type, operation) {
                     if (type === "all") {
-                        for (let entityOrSettingType of this.branchChanges[setting]) {
-                            const key = entityOrSettingType.entityType || entityOrSettingType.type;
-                            this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
-                            switch (operation) {
-                                case "everything":
-                                    this.branchMergeSettings[setting][key].everything = isChecked;
-                                    this.branchMergeSettings[setting][key].create = isChecked;
-                                    this.branchMergeSettings[setting][key].update = isChecked;
-                                    this.branchMergeSettings[setting][key].delete = isChecked;
-                                    break;
-                                default:
-                                    this.branchMergeSettings[setting][key][operation] = isChecked;
-                                    break;
+                            for (let entityOrSettingType of this.branchChanges[setting]) {
+                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
+                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
+                                switch (operation) {
+                                    case "everything":
+                                        this.branchMergeSettings[setting][key].everything = isChecked;
+                                        this.branchMergeSettings[setting][key].create = isChecked;
+                                        this.branchMergeSettings[setting][key].update = isChecked;
+                                        this.branchMergeSettings[setting][key].delete = isChecked;
+                                        break;
+                                    default:
+                                        this.branchMergeSettings[setting][key][operation] = isChecked;
+                                        break;
+                                }
                             }
-                        }
 
-                        if (operation === "everything") {
-                            this.branchMergeSettings[setting].all.create = isChecked;
-                            this.branchMergeSettings[setting].all.update = isChecked;
-                            this.branchMergeSettings[setting].all.delete = isChecked;
+                            if (operation === "everything") {
+                                this.branchMergeSettings[setting].all.create = isChecked;
+                                this.branchMergeSettings[setting].all.update = isChecked;
+                                this.branchMergeSettings[setting].all.delete = isChecked;
+                            }
+                        } else if (operation === "everything") {
+                            this.branchMergeSettings[setting][type].create = isChecked;
+                            this.branchMergeSettings[setting][type].update = isChecked;
+                            this.branchMergeSettings[setting][type].delete = isChecked;
                         }
-                    } else if (operation === "everything") {
-                        this.branchMergeSettings[setting][type].create = isChecked;
-                        this.branchMergeSettings[setting][type].update = isChecked;
-                        this.branchMergeSettings[setting][type].delete = isChecked;
-                    }
+                        
+                        // check if link types need to be updated
+                        if (isChecked && setting === "entities") {
+                            this.enableLinkTypeBasedOnEntity(type);
+                        }
                 },
 
                 addMissingBranchChanges() {

@@ -862,7 +862,8 @@ const branchesModule = {
         [RESET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = {
                 entities: [],
-                settings: []
+                settings: [],
+                linkTypes: [],
             };
             state.branchChangesLoaded = false;
         },
