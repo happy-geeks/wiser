@@ -332,6 +332,12 @@ class Main {
                                 create: true,
                                 update: true,
                                 delete: true
+                            },
+                            easyObjects: {
+                                everything: true,
+                                create: true,
+                                update: true,
+                                delete: true
                             }
                         },
                         checkForConflicts: true,
