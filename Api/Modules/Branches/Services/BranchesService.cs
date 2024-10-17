@@ -474,6 +474,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
                         WiserSettingTypes.Role => "Rollen",
                         WiserSettingTypes.UserRole => "Koppelingen tussen gebruikers en rollen",
                         WiserSettingTypes.StyledOutput => "Styled output (Wiser API query output configuraties)",
+                        //WiserSettingTypes.EasyObjects => "Objecten (easy_objects)",
                         _ => throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null)
                     }
                 };
@@ -839,6 +840,21 @@ LIMIT 1";
                         case "DELETE_STYLED_OUTPUT":
                         {
                             AddSettingToMutationList(deletedSettings, WiserSettingTypes.StyledOutput, itemId);
+                            break;
+                        }
+                        case "CREATE_OBJECT":
+                        {
+                            //ddSettingToMutationList(createdSettings, WiserSettingTypes.EasyObjects, itemId);
+                            break;
+                        }
+                        case "UPDATE_OBJECT":
+                        {
+                            //AddSettingToMutationList(updatedSettings, WiserSettingTypes.EasyObjects, itemId);
+                            break;
+                        }
+                        case "DELETE_OBJECT":
+                        {
+                            //AddSettingToMutationList(deletedSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
                         }
 
@@ -1573,6 +1589,13 @@ FROM {WiserTableNames.WiserHistory}";
                         conflict.FieldDisplayName = conflict.FieldName;
                         break;
                     }
+
+                    // Changes to easy_objects.
+                    case "UPDATE_OBJECT":
+                    {
+                        break;
+                    }
+
                     default:
                     {
                         continue;
