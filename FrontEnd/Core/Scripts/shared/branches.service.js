@@ -120,6 +120,7 @@ export default class BranchesService extends BaseService {
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
                 settings: [],
+                linkTypes: [],
                 checkForConflicts: data.checkForConflicts,
                 conflictSettings: data.conflicts.map(conflict => {
                     return {
@@ -157,6 +158,21 @@ export default class BranchesService extends BaseService {
                     create: setting.create || setting.everything,
                     update: setting.update || setting.everything,
                     delete: setting.delete || setting.everything
+                });
+            }
+
+            for (let key in data.linkTypes) {
+                if (!data.linkTypes.hasOwnProperty(key) || key === "all") {
+                    continue;
+                }
+
+                const linkType = data.linkTypes[key];
+
+                postData.linkTypes.push({
+                    type: key,
+                    create: linkType.create || linkType.everything,
+                    update: linkType.update || linkType.everything,
+                    delete: linkType.delete || linkType.everything
                 });
             }
 
