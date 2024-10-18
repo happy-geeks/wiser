@@ -352,7 +352,7 @@
                             <div class="col col-12 form-row no-bottom-margin">
                                 <label>Wiser Links:</label>
                             </div>
-                            
+
                             <div class="col col-12 table-row no-top-margin">
                                 <div v-if="!linkTypesForBranches || !linkTypesForBranches.length">
                                     <p>Geen wiser links gevonden. Neem a.u.b. contact op met ons.</p>
@@ -368,7 +368,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
 						    <div class="col col-12 form-row no-bottom-margin">
 							    <label>Alle mogelijke Wiser inrichting</label>
 						    </div>
@@ -393,7 +393,7 @@
 						</div>
 						<div v-else>
 							<div class="col col-12 form-row no-bottom-margin">
-								<label>Selecteer te synchroniseren Wiser data</label>
+								<label>Selecteer te synchroniseren items</label>
 							</div>
 							<div class="col col-12 table-row no-top-margin">
 								<div class="fixed-table">
@@ -409,7 +409,7 @@
 										</thead>
 										<tbody v-if="!branchChanges || !branchChanges.entities || !branchChanges.entities.length">
 											<tr>
-												<td colspan="5">Er zijn geen wijzigingen aan Wiser data om te synchroniseren.</td>
+												<td colspan="5">Er zijn geen wijzigingen aan Wiser items om te synchroniseren.</td>
 											</tr>
 										</tbody>
 										<tbody v-else>
@@ -471,6 +471,86 @@
 									</table>
 								</div>
 							</div>
+
+                            <div class="col col-12 form-row no-bottom-margin">
+                                <label>Selecteer te synchroniseren koppelingen</label>
+                            </div>
+                            <div class="col col-12 table-row no-top-margin">
+                                <div class="fixed-table">
+                                    <table>
+                                        <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Alles</th>
+                                            <th>Nieuw</th>
+                                            <th>Verwijderd</th>
+                                            <th>Gewijzigd</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody v-if="!branchChanges || !branchChanges.linkTypes || !branchChanges.linkTypes.length">
+                                        <tr>
+                                            <td colspan="5">Er zijn geen wijzigingen aan koppelingen om te synchroniseren.</td>
+                                        </tr>
+                                        </tbody>
+                                        <tbody v-else>
+                                        <tr>
+                                            <td>Alle onderstaande</td>
+                                            <td>
+                                                <label class="checkbox">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes.all.everything" @@change="onBranchMergeSettingChange($event, 'linkTypes', 'all', 'everything')" />
+                                                    <span>({{ totalAmountOfLinksCreated + totalAmountOfLinksUpdated + totalAmountOfLinksDeleted }})</span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="checkbox" v-if="totalAmountOfLinksCreated > 0">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes.all.create" @@change="onBranchMergeSettingChange($event, 'linkTypes', 'all', 'create')" />
+                                                    <span>({{ totalAmountOfLinksCreated }})</span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="checkbox" v-if="totalAmountOfLinksDeleted > 0">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes.all.delete" @@change="onBranchMergeSettingChange($event, 'linkTypes', 'all', 'delete')" />
+                                                    <span>({{ totalAmountOfLinksDeleted }})</span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="checkbox" v-if="totalAmountOfLinksUpdated > 0">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes.all.update" @@change="onBranchMergeSettingChange($event, 'linkTypes', 'all', 'update')" />
+                                                    <span>({{ totalAmountOfLinksUpdated }})</span>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                        <tr v-for="linkType in branchChanges.linkTypes" :key="linkType.id">
+                                            <td>{{ linkType.displayName }}</td>
+                                            <td>
+                                                <label class="checkbox" v-if="branchMergeSettings.linkTypes[linkType.id]">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes[linkType.id].everything" @@change="onBranchMergeSettingChange($event, 'linkTypes', linkType.id, 'everything')" />
+                                                    <span>({{ linkType.created + linkType.deleted + linkType.updated }})</span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="checkbox" v-if="linkType.created > 0 && branchMergeSettings.linkTypes[linkType.id]">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes[linkType.id].create" @@change="onBranchMergeSettingChange($event, 'linkTypes', linkType.id, 'create')" />
+                                                    <span>({{ linkType.created }})</span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="checkbox" v-if="linkType.deleted > 0 && branchMergeSettings.linkTypes[linkType.id]">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes[linkType.id].delete" @@change="onBranchMergeSettingChange($event, 'linkTypes', linkType.id, 'delete')" />
+                                                    <span>({{ linkType.deleted }})</span>
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="checkbox" v-if="linkType.updated > 0 && branchMergeSettings.linkTypes[linkType.id]">
+                                                    <input type="checkbox" v-model="branchMergeSettings.linkTypes[linkType.id].update" @@change="onBranchMergeSettingChange($event, 'linkTypes', linkType.id, 'update')" />
+                                                    <span>({{ linkType.updated }})</span>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
 
                             <div class="col col-12 form-row no-bottom-margin">
                                 <label>Selecteer te synchroniseren Wiser inrichting</label>

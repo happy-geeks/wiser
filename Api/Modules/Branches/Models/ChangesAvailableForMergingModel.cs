@@ -16,5 +16,10 @@ namespace Api.Modules.Branches.Models
         /// Gets or sets the Wiser settings that can be merged.
         /// </summary>
         public List<SettingsChangesModel> Settings { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the link types that can be merged.
+        /// </summary>
+        public List<LinkTypeChangesModel> LinkTypes { get; set; } = new();
     }
 }

@@ -500,6 +500,21 @@ class Main {
                         return accumulator + entity.deleted;
                     }, 0);
                 },
+                totalAmountOfLinksCreated() {
+                    return this.$store.state.branches.branchChanges.linkTypes.reduce((accumulator, linkType) => {
+                        return accumulator + linkType.created;
+                    }, 0);
+                },
+                totalAmountOfLinksUpdated() {
+                    return this.$store.state.branches.branchChanges.linkTypes.reduce((accumulator, linkType) => {
+                        return accumulator + linkType.updated;
+                    }, 0);
+                },
+                totalAmountOfLinksDeleted() {
+                    return this.$store.state.branches.branchChanges.linkTypes.reduce((accumulator, linkType) => {
+                        return accumulator + linkType.deleted;
+                    }, 0);
+                },
                 totalAmountOfMergeConflicts() {
                     if (!this.$store.state.branches.mergeBranchResult || !this.$store.state.branches.mergeBranchResult.conflicts) {
                         return 0;
@@ -949,58 +964,47 @@ class Main {
                     return false;
                 },
 
-                async enableLinkTypeBasedOnEntity(entityName)
-                {
-                    for ( let link of this.linkTypesForBranches ) {
+                async enableLinkTypeBasedOnEntity(entityName) {
+                    for (let link of this.linkTypesForBranches) {
                         if (link.sourceEntityType === entityName || link.destinationEntityType === entityName) {
                             this.branchMergeSettings.linkTypes[link.id].everything = true;
                         }
                     }
-                        /*if (!linkType.everything || 
-                            !linkType.create || 
-                            !linkType.update || 
-                            !linkType.delete ) {
-                                linkType.create = true;
-                                linkType.update = true;
-                                linkType.update = true;
-                                linkType.delete = true;
-                        }*/
-                    //}
                 },
 
                 updateBranchChangeList(isChecked, setting, type, operation) {
                     if (type === "all") {
-                            for (let entityOrSettingType of this.branchChanges[setting]) {
-                                const key = entityOrSettingType.entityType || entityOrSettingType.type;
-                                this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
-                                switch (operation) {
-                                    case "everything":
-                                        this.branchMergeSettings[setting][key].everything = isChecked;
-                                        this.branchMergeSettings[setting][key].create = isChecked;
-                                        this.branchMergeSettings[setting][key].update = isChecked;
-                                        this.branchMergeSettings[setting][key].delete = isChecked;
-                                        break;
-                                    default:
-                                        this.branchMergeSettings[setting][key][operation] = isChecked;
-                                        break;
-                                }
+                        for (let entityOrSettingType of this.branchChanges[setting]) {
+                            const key = entityOrSettingType.entityType || entityOrSettingType.id || entityOrSettingType.type;
+                            this.branchMergeSettings[setting][key] = this.branchMergeSettings[setting][key] || {};
+                            switch (operation) {
+                                case "everything":
+                                    this.branchMergeSettings[setting][key].everything = isChecked;
+                                    this.branchMergeSettings[setting][key].create = isChecked;
+                                    this.branchMergeSettings[setting][key].update = isChecked;
+                                    this.branchMergeSettings[setting][key].delete = isChecked;
+                                    break;
+                                default:
+                                    this.branchMergeSettings[setting][key][operation] = isChecked;
+                                    break;
                             }
+                        }
 
-                            if (operation === "everything") {
-                                this.branchMergeSettings[setting].all.create = isChecked;
-                                this.branchMergeSettings[setting].all.update = isChecked;
-                                this.branchMergeSettings[setting].all.delete = isChecked;
-                            }
-                        } else if (operation === "everything") {
-                            this.branchMergeSettings[setting][type].create = isChecked;
-                            this.branchMergeSettings[setting][type].update = isChecked;
-                            this.branchMergeSettings[setting][type].delete = isChecked;
+                        if (operation === "everything") {
+                            this.branchMergeSettings[setting].all.create = isChecked;
+                            this.branchMergeSettings[setting].all.update = isChecked;
+                            this.branchMergeSettings[setting].all.delete = isChecked;
                         }
-                        
-                        // check if link types need to be updated
-                        if (isChecked && setting === "entities") {
-                            this.enableLinkTypeBasedOnEntity(type);
-                        }
+                    } else if (operation === "everything") {
+                        this.branchMergeSettings[setting][type].create = isChecked;
+                        this.branchMergeSettings[setting][type].update = isChecked;
+                        this.branchMergeSettings[setting][type].delete = isChecked;
+                    }
+
+                    // check if link types need to be updated
+                    if (isChecked && setting === "entities") {
+                        this.enableLinkTypeBasedOnEntity(type);
+                    }
                 },
 
                 addMissingBranchChanges() {
@@ -1142,6 +1146,9 @@ class Main {
                         }
 
                         this.branchMergeSettings.linkTypes[linkType.id] = {
+                            type: linkType.type,
+                            sourceEntityType: linkType.sourceEntityType,
+                            destinationEntityType: linkType.destinationEntityType,
                             everything: false,
                             create: false,
                             update: false,
@@ -1210,8 +1217,11 @@ class Main {
 
                     await this.getLinkTypesForBranches(selectedBranchId);
 
-                    for (let entity of this.linkTypesForBranches) {
-                        this.branchMergeSettings.linkTypes[entity.id] = {
+                    for (let linkType of this.linkTypesForBranches) {
+                        this.branchMergeSettings.linkTypes[linkType.id] = {
+                            type: linkType.type,
+                            sourceEntityType: linkType.sourceEntityType,
+                            destinationEntityType: linkType.destinationEntityType,
                             everything: false,
                             create: false,
                             update: false,

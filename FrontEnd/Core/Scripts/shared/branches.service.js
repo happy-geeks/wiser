@@ -169,7 +169,10 @@ export default class BranchesService extends BaseService {
                 const linkType = data.linkTypes[key];
 
                 postData.linkTypes.push({
-                    type: key,
+                    id: key,
+                    type: linkType.type,
+                    sourceEntityType: linkType.sourceEntityType,
+                    destinationEntityType: linkType.destinationEntityType,
                     create: linkType.create || linkType.everything,
                     update: linkType.update || linkType.everything,
                     delete: linkType.delete || linkType.everything

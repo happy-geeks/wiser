@@ -396,6 +396,9 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
             var createdSettings = new Dictionary<WiserSettingTypes, List<ulong>>();
             var updatedSettings = new Dictionary<WiserSettingTypes, List<ulong>>();
             var deletedSettings = new Dictionary<WiserSettingTypes, List<ulong>>();
+            var createdLinks = new Dictionary<LinkSettingsModel, int>();
+            var updatedLinks = new Dictionary<LinkSettingsModel, int>();
+            var deletedLinks = new Dictionary<LinkSettingsModel, int>();
 
             // Local function that adds an item to one of the 3 lists above, to keep track of how many items have been created/updated/deleted.
             void AddItemToMutationList(ICollection<(string TablePrefix, string EntityType, ulong ItemId)> list, string tablePrefix, ulong itemId, string entityType = null)
@@ -428,6 +431,21 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
                 }
 
                 list[settingType].Add(settingId);
+            }
+
+            // Local function that adds a link type to one of the 3 lists above, to keep track of how many links have been created/updated/deleted.
+            void AddLinkTypeToMutationList(IDictionary<LinkSettingsModel, int> list, LinkSettingsModel linkSettingsModel)
+            {
+                var link = list.SingleOrDefault(x => (linkSettingsModel.Id > 0 && x.Key.Id == linkSettingsModel.Id) || (x.Key.Id == 0 && x.Key.Type == linkSettingsModel.Type && x.Key.SourceEntityType == linkSettingsModel.SourceEntityType && x.Key.DestinationEntityType == linkSettingsModel.DestinationEntityType));
+
+                if (link.Key == null)
+                {
+                    list.Add(linkSettingsModel, 1);
+                }
+                else
+                {
+                    list[link.Key]++;
+                }
             }
 
             // Local function to get a model for counting changes in Wiser settings.
@@ -493,6 +511,26 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
                 return entityChangesModel;
             }
 
+            LinkTypeChangesModel GetOrAddLinkTypeCounter(LinkSettingsModel linkSettingsModel)
+            {
+                var linkTypeCounter = result.LinkTypes.FirstOrDefault(setting => setting.Type == linkSettingsModel.Type && setting.SourceEntityType == linkSettingsModel.SourceEntityType && setting.DestinationEntityType == linkSettingsModel.DestinationEntityType);
+                if (linkTypeCounter != null)
+                {
+                    return linkTypeCounter;
+                }
+
+                result.LinkTypes.Add(new LinkTypeChangesModel
+                {
+                    Id = linkSettingsModel.Id,
+                    Type = linkSettingsModel.Type,
+                    SourceEntityType = linkSettingsModel.SourceEntityType,
+                    DestinationEntityType = linkSettingsModel.DestinationEntityType,
+                    DisplayName = String.IsNullOrWhiteSpace(linkSettingsModel.Name) ? $"{linkSettingsModel.SourceEntityType}To{linkSettingsModel.DestinationEntityType}" : linkSettingsModel.Name
+                });
+
+                return result.LinkTypes.Last();
+            }
+
             // Local function to get the entity type of an item.
             var idToEntityTypeMappings = new Dictionary<ulong, string>();
 
@@ -522,7 +560,7 @@ LIMIT 1";
             }
 
             // Get the entity types and table prefixes for both items in a link.
-            async Task<(string SourceType, string SourceTablePrefix, string DestinationType, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes)
+            async Task<(LinkSettingsModel LinkSettings, string SourceTablePrefixs, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes)
             {
                 var currentLinkTypeSettings = allLinkTypeSettings.Where(l => l.Type == linkType).ToList();
 
@@ -535,7 +573,7 @@ LIMIT 1";
                     // Check if the destination item exists in this table.
                     var destinationEntityType = await GetEntityTypeFromIdAsync(destinationId, "", mySqlConnection);
 
-                    return (sourceEntityType, "", destinationEntityType, "");
+                    return (new LinkSettingsModel { Type = linkType, SourceEntityType = sourceEntityType, DestinationEntityType = destinationEntityType }, "", "");
                 }
 
                 // It's possible that there are multiple link types that use the same number, so we have to check all of them.
@@ -568,7 +606,7 @@ LIMIT 1";
                     }
 
                     // If we reached this point, it means we found the correct link type and entity types.
-                    return (linkTypeSettings.SourceEntityType, sourceTablePrefix, linkTypeSettings.DestinationEntityType, destinationTablePrefix);
+                    return (linkTypeSettings, sourceTablePrefix, destinationTablePrefix);
                 }
 
                 return null;
@@ -836,20 +874,7 @@ LIMIT 1";
                                 break;
                             }
 
-                            if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
-                            {
-                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
-                                tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
-                            }
-
-                            if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
-                            {
-                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
-                                tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
-                            }
-
-                            AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
-                            AddItemToMutationList(updatedItems, destinationTablePrefix, destinationItemId, linkData.Value.DestinationType);
+                            AddLinkTypeToMutationList(createdLinks, linkData.Value.LinkSettings);
 
                             break;
                         }
@@ -870,47 +895,21 @@ LIMIT 1";
                                 break;
                             }
 
-                            if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
-                            {
-                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
-                                tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
-                            }
-
-                            if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
-                            {
-                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
-                                tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
-                            }
-
-                            // And finally mark these items as updated.
-                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
-                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+                            AddLinkTypeToMutationList(updatedLinks, entityData.Value.LinkSettings);
 
                             break;
                         }
                         case "REMOVE_LINK":
                         {
                             var sourceItemId = UInt64.Parse(oldValue!);
-                            var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, Int32.Parse(field), branchConnection, allLinkTypeSettings, tablePrefixes);
+                            var linkType = Int32.Parse(field);
+                            var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, linkType, branchConnection, allLinkTypeSettings, tablePrefixes);
                             if (linkData == null)
                             {
                                 break;
                             }
 
-                            if (!tablePrefixes.TryGetValue(linkData.Value.SourceType, out var sourceTablePrefix))
-                            {
-                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.SourceType);
-                                tablePrefixes.Add(linkData.Value.SourceType, sourceTablePrefix);
-                            }
-
-                            if (!tablePrefixes.TryGetValue(linkData.Value.DestinationType, out var destinationTablePrefix))
-                            {
-                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkData.Value.DestinationType);
-                                tablePrefixes.Add(linkData.Value.DestinationType, destinationTablePrefix);
-                            }
-
-                            AddItemToMutationList(updatedItems, sourceTablePrefix, sourceItemId, linkData.Value.SourceType);
-                            AddItemToMutationList(updatedItems, destinationTablePrefix, itemId, linkData.Value.DestinationType);
+                            AddLinkTypeToMutationList(deletedLinks, linkData.Value.LinkSettings);
 
                             break;
                         }
@@ -941,21 +940,21 @@ LIMIT 1";
                                 break;
                             }
 
-                            if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                            if (!tablePrefixes.TryGetValue(entityData.Value.LinkSettings.SourceEntityType, out var sourceTablePrefix))
                             {
-                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
-                                tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.LinkSettings.SourceEntityType);
+                                tablePrefixes.Add(entityData.Value.LinkSettings.SourceEntityType, sourceTablePrefix);
                             }
 
-                            if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                            if (!tablePrefixes.TryGetValue(entityData.Value.LinkSettings.DestinationEntityType, out var destinationTablePrefix))
                             {
-                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
-                                tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.LinkSettings.DestinationEntityType);
+                                tablePrefixes.Add(entityData.Value.LinkSettings.DestinationEntityType, destinationTablePrefix);
                             }
 
                             // And finally mark these items as updated.
-                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
-                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.LinkSettings.SourceEntityType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.LinkSettings.DestinationEntityType);
 
                             break;
                         }
@@ -1010,21 +1009,21 @@ LIMIT 1";
                                 break;
                             }
 
-                            if (!tablePrefixes.TryGetValue(entityData.Value.SourceType, out var sourceTablePrefix))
+                            if (!tablePrefixes.TryGetValue(entityData.Value.LinkSettings.SourceEntityType, out var sourceTablePrefix))
                             {
-                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.SourceType);
-                                tablePrefixes.Add(entityData.Value.SourceType, sourceTablePrefix);
+                                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.LinkSettings.SourceEntityType);
+                                tablePrefixes.Add(entityData.Value.LinkSettings.SourceEntityType, sourceTablePrefix);
                             }
 
-                            if (!tablePrefixes.TryGetValue(entityData.Value.DestinationType, out var destinationTablePrefix))
+                            if (!tablePrefixes.TryGetValue(entityData.Value.LinkSettings.DestinationEntityType, out var destinationTablePrefix))
                             {
-                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.DestinationType);
-                                tablePrefixes.Add(entityData.Value.DestinationType, destinationTablePrefix);
+                                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityData.Value.LinkSettings.DestinationEntityType);
+                                tablePrefixes.Add(entityData.Value.LinkSettings.DestinationEntityType, destinationTablePrefix);
                             }
 
                             // And finally mark these items as updated.
-                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.SourceType);
-                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.DestinationType);
+                            AddItemToMutationList(updatedItems, sourceTablePrefix, linkData.Value.SourceItemId, entityData.Value.LinkSettings.SourceEntityType);
+                            AddItemToMutationList(updatedItems, destinationTablePrefix, linkData.Value.DestinationItemId, entityData.Value.LinkSettings.DestinationEntityType);
 
                             break;
                         }
@@ -1110,6 +1109,31 @@ LIMIT 1";
             }
 
             times.Add("deletedSettingsCounters", (1, actionStopwatch.Elapsed));
+
+
+            actionStopwatch.Restart();
+            foreach (var link in createdLinks)
+            {
+                GetOrAddLinkTypeCounter(link.Key).Created = link.Value;
+            }
+
+            times.Add("createdLinksCounters", (1, actionStopwatch.Elapsed));
+
+            actionStopwatch.Restart();
+            foreach (var link in updatedLinks)
+            {
+                GetOrAddLinkTypeCounter(link.Key).Updated = link.Value;
+            }
+
+            times.Add("updatedLinksCounters", (1, actionStopwatch.Elapsed));
+
+            actionStopwatch.Restart();
+            foreach (var link in deletedLinks)
+            {
+                GetOrAddLinkTypeCounter(link.Key).Deleted = link.Value;
+            }
+
+            times.Add("deletedLinksCounters", (1, actionStopwatch.Elapsed));
             actionStopwatch.Stop();
             mainStopwatch.Stop();
 
