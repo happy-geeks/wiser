@@ -2188,3 +2188,97 @@ CREATE TRIGGER `StyledOutputDelete` AFTER DELETE ON `wiser_styled_output` FOR EA
         VALUES ('DELETE_STYLED_OUTPUT','wiser_styled_output', OLD.id, IFNULL(@_username, USER()), OLD.`name`, '', '');
     END IF;
 END;
+
+-- ----------------------------
+-- Triggers structure for table easy_objects
+-- ----------------------------
+DROP TRIGGER IF EXISTS `EasyObjectInsert`;
+CREATE TRIGGER `EasyObjectInsert` AFTER INSERT ON `easy_objects` FOR EACH ROW BEGIN
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('CREATE_EASY_OBJECT', 'easy_objects', NEW.id, IFNULL(@_username, USER()), '', '', '');
+
+        IF IFNULL(NEW.`typenr`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'typenr', NULL, NEW.`typenr`);
+        END IF;
+
+        IF IFNULL(NEW.`key`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'key', NULL, NEW.`key`);
+        END IF;
+
+        IF IFNULL(NEW.`value`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'value', NULL, NEW.`value`);
+        END IF;
+
+        IF IFNULL(NEW.`order`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'order', NULL, NEW.`order`);
+        END IF;
+
+        IF IFNULL(NEW.`active`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'active', NULL, NEW.`active`);
+        END IF;
+
+        IF IFNULL(NEW.`description`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'description', NULL, NEW.`description`);
+        END IF;
+
+        IF IFNULL(NEW.`visibleForCustomer`, '') <> '' THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'visibleForCustomer', NULL, NEW.`visibleForCustomer`);
+        END IF;
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `EasyObjectUpdate`;
+CREATE TRIGGER `EasyObjectUpdate` AFTER UPDATE ON `easy_objects` FOR EACH ROW BEGIN
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        IF IFNULL(NEW.`typenr`, '') <> IFNULL(OLD.`typenr`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'typenr', OLD.`typenr`, NEW.`typenr`);
+        END IF;
+
+        IF IFNULL(NEW.`key`, '') <> IFNULL(OLD.`key`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'key', OLD.`key`, NEW.`key`);
+        END IF;
+
+        IF IFNULL(NEW.`value`, '') <> IFNULL(OLD.`value`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'value', OLD.`value`, NEW.`value`);
+        END IF;
+
+        IF IFNULL(NEW.`order`, '') <> IFNULL(OLD.`order`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'order', OLD.`order`, NEW.`order`);
+        END IF;
+
+        IF IFNULL(NEW.`active`, '') <> IFNULL(OLD.`active`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'active', OLD.`active`, NEW.`active`);
+        END IF;
+
+        IF IFNULL(NEW.`description`, '') <> IFNULL(OLD.`description`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'description', OLD.`description`, NEW.`description`);
+        END IF;
+
+        IF IFNULL(NEW.`visibleForCustomer`, '') <> IFNULL(OLD.`visibleForCustomer`, '') THEN
+            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
+            VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'visibleForCustomer', OLD.`visibleForCustomer`, NEW.`visibleForCustomer`);
+        END IF;
+    END IF;
+END;
+
+DROP TRIGGER IF EXISTS `EasyObjectDelete`;
+CREATE TRIGGER `EasyObjectDelete` AFTER DELETE ON `easy_objects` FOR EACH ROW BEGIN
+    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('DELETE_EASY_OBJECT', 'easy_objects', OLD.id, IFNULL(@_username, USER()), 'key', OLD.`key`, '');
+    END IF;
+END;
