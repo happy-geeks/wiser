@@ -2193,7 +2193,7 @@ END;
 -- Triggers structure for table easy_objects
 -- ----------------------------
 DROP TRIGGER IF EXISTS `EasyObjectInsert`;
-CREATE TRIGGER `ObjectEasyInsert` AFTER INSERT ON `easy_objects` FOR EACH ROW BEGIN
+CREATE TRIGGER `EasyObjectInsert` AFTER INSERT ON `easy_objects` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('CREATE_EASY_OBJECT', 'easy_objects', NEW.id, IFNULL(@_username, USER()), '', '', '');
