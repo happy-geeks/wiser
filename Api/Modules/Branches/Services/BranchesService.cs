@@ -842,17 +842,17 @@ LIMIT 1";
                             AddSettingToMutationList(deletedSettings, WiserSettingTypes.StyledOutput, itemId);
                             break;
                         }
-                        case "CREATE_OBJECT":
+                        case "CREATE_EASY_OBJECT":
                         {
                             AddSettingToMutationList(createdSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
                         }
-                        case "UPDATE_OBJECT":
+                        case "UPDATE_EASY_OBJECT":
                         {
                             AddSettingToMutationList(updatedSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
                         }
-                        case "DELETE_OBJECT":
+                        case "DELETE_EASY_OBJECT":
                         {
                             AddSettingToMutationList(deletedSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
@@ -1591,7 +1591,7 @@ FROM {WiserTableNames.WiserHistory}";
                     }
 
                     // Changes to easy_objects.
-                    case "UPDATE_OBJECT":
+                    case "UPDATE_EASY_OBJECT":
                     {
                         break;
                     }
