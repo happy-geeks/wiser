@@ -162,10 +162,6 @@ export default class BranchesService extends BaseService {
             }
 
             for (let key in data.linkTypes) {
-                if (!data.linkTypes.hasOwnProperty(key) || key === "all") {
-                    continue;
-                }
-
                 const linkType = data.linkTypes[key];
 
                 postData.linkTypes.push({
