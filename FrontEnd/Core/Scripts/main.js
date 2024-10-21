@@ -1217,18 +1217,6 @@ class Main {
 
                     await this.getLinkTypesForBranches(selectedBranchId);
 
-                    for (let linkType of this.linkTypesForBranches) {
-                        this.branchMergeSettings.linkTypes[linkType.id] = {
-                            type: linkType.type,
-                            sourceEntityType: linkType.sourceEntityType,
-                            destinationEntityType: linkType.destinationEntityType,
-                            everything: false,
-                            create: false,
-                            update: false,
-                            delete: false
-                        };
-                    }
-
                     this.$store.dispatch(RESET_BRANCH_CHANGES);
 
                     // Clear all checkboxes.
