@@ -100,7 +100,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         });
 
         // Make sure that all triggers for Wiser tables are up-to-date.
-        if (!lastTableUpdates.TryGetValue(triggersName, out var value) || value < new DateTime(2024, 8, 5))
+        if (!lastTableUpdates.TryGetValue(triggersName, out var value) || value < new DateTime(2024, 10, 21))
         {
             var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
             await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
