@@ -560,7 +560,7 @@ LIMIT 1";
             }
 
             // Get the entity types and table prefixes for both items in a link.
-            async Task<(LinkSettingsModel LinkSettings, string SourceTablePrefixs, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes)
+            async Task<(LinkSettingsModel LinkSettings, string SourceTablePrefix, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes)
             {
                 var currentLinkTypeSettings = allLinkTypeSettings.Where(l => l.Type == linkType).ToList();
 
