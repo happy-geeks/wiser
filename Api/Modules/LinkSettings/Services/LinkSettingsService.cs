@@ -6,12 +6,14 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Services;
+using Api.Modules.Branches.Interfaces;
 using Api.Modules.LinkSettings.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using MySqlConnector;
 
 namespace Api.Modules.LinkSettings.Services
@@ -24,22 +26,40 @@ namespace Api.Modules.LinkSettings.Services
         private readonly IDatabaseConnection clientDatabaseConnection;
         private readonly IWiserItemsService wiserItemsService;
         private readonly IDatabaseHelpersService databaseHelpersService;
+        private readonly IServiceProvider serviceProvider;
+        private readonly IBranchesService branchesService;
 
         /// <summary>
         /// Creates a new instance of <see cref="LinkSettingsService"/>.
         /// </summary>
-        public LinkSettingsService(IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService)
+        public LinkSettingsService(IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IDatabaseHelpersService databaseHelpersService, IServiceProvider serviceProvider, IBranchesService branchesService)
         {
             this.clientDatabaseConnection = clientDatabaseConnection;
             this.wiserItemsService = wiserItemsService;
             this.databaseHelpersService = databaseHelpersService;
+            this.serviceProvider = serviceProvider;
+            this.branchesService = branchesService;
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<LinkSettingsModel>>> GetAsync(ClaimsIdentity identity)
+        public async Task<ServiceResult<List<LinkSettingsModel>>> GetAllAsync(ClaimsIdentity identity, int branchId = 0)
         {
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            return new ServiceResult<List<LinkSettingsModel>>(await wiserItemsService.GetAllLinkTypeSettingsAsync());
+            using var scope = serviceProvider.CreateScope();
+            var databaseConnectionResult = await branchesService.GetBranchDatabaseConnectionAsync(scope, identity, branchId);
+            if (databaseConnectionResult.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<List<LinkSettingsModel>>
+                {
+                    ErrorMessage = databaseConnectionResult.ErrorMessage,
+                    StatusCode = databaseConnectionResult.StatusCode
+                };
+            }
+
+            var databaseConnectionToUse = databaseConnectionResult.ModelObject;
+            var branchWiserItemsService = scope.ServiceProvider.GetService<IWiserItemsService>();
+
+            await databaseConnectionToUse.EnsureOpenConnectionForReadingAsync();
+            return new ServiceResult<List<LinkSettingsModel>>(await branchWiserItemsService.GetAllLinkTypeSettingsAsync());
         }
 
         /// <inheritdoc />

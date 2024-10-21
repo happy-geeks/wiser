@@ -6,6 +6,7 @@ using Api.Modules.Branches.Models;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Modules.Branches.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Api.Modules.Branches.Interfaces
 {
@@ -84,7 +85,7 @@ namespace Api.Modules.Branches.Interfaces
         /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
         /// <param name="id">The ID of the branch that should be deleted.</param>
         Task<ServiceResult<bool>> DeleteAsync(ClaimsIdentity identity, int id);
-        
+
         /// <summary>
         /// Get the ID of a branch that is mapped to the main branch.
         /// If <paramref name="idIsFromBranch"/> equals <see langword="false"/> then the ID is from the main branch and the ID of the branch will be returned.
@@ -97,13 +98,21 @@ namespace Api.Modules.Branches.Interfaces
         /// <summary>
         /// Generates a new ID for the specified table. This will get the highest number from both databases and add 1 to that number.
         /// This is to make sure that the new ID can be created in both databases to match.
-        /// If a null is supplied for a branchDatabase we only find the new id on the main database. 
+        /// If a null is supplied for a branchDatabase we only find the new id on the main database.
         /// </summary>
         /// <param name="tableName">The name of the table.</param>
         /// <param name="mainDatabaseConnection">The connection to the main database.</param>
         /// <param name="branchDatabase">The connection to the branch database.</param>
         /// <returns>The new ID that should be used for the item in both databases.</returns>
         Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase = null);
-        
+
+        /// <summary>
+        /// Get a <see cref="IDatabaseConnection"/> for a branch. If the branch ID is 0 then the main database connection will be returned.
+        /// </summary>
+        /// <param name="scope">The scope in which to create the database connection.</param>
+        /// <param name="identity">The <see cref="ClaimsIdentity">ClaimsIdentity</see> of the authenticated user.</param>
+        /// <param name="branchId">The ID of the branch.</param>
+        /// <returns>The database connection either to the branch.</returns>
+        Task<ServiceResult<IDatabaseConnection>> GetBranchDatabaseConnectionAsync(IServiceScope scope, ClaimsIdentity identity, int branchId);
     }
 }

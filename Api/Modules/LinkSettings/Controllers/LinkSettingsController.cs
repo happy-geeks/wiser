@@ -1,12 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net.Mime;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using GeeksCoreLibrary.Core.Models;
+using System.Threading.Tasks;
 using Api.Modules.LinkSettings.Interfaces;
+using GeeksCoreLibrary.Core.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.LinkSettings.Controllers
 {
@@ -32,25 +32,25 @@ namespace Api.Modules.LinkSettings.Controllers
         }
 
         /// <summary>
-        /// Get all link settings. 
+        /// Get all link settings.
         /// </summary>
         /// <returns>A List of <see cref="LinkSettingsModel"/> with all settings.</returns>
         [HttpGet]
         [ProducesResponseType(typeof(List<LinkSettingsModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> GetAllAsync([FromQuery]int branchId = 0)
         {
-            return (await linkSettingsService.GetAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+            return (await linkSettingsService.GetAllAsync((ClaimsIdentity)User.Identity, branchId)).GetHttpResponseMessage();
         }
 
         /// <summary>
-        /// Get link settings based on ID. 
+        /// Get link settings based on ID.
         /// </summary>
         /// <param name="id">The ID of the settings from wiser_link.</param>
         /// <returns>A <see cref="LinkSettingsModel"/> with all settings.</returns>
         [HttpGet]
         [Route("{id:int}")]
         [ProducesResponseType(typeof(LinkSettingsModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> GetAsync(int id)
         {
             return (await linkSettingsService.GetAsync((ClaimsIdentity)User.Identity, id)).GetHttpResponseMessage();
         }

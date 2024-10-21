@@ -151,7 +151,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
             }
 
             // Remove virtual columns from wiser_itemlinkdetail and wiser_itemlinkdetail_archive tables.
-            var allLinkTypes = (await linkSettingsService.GetAsync(identity)).ModelObject;
+            var allLinkTypes = (await linkSettingsService.GetAllAsync(identity)).ModelObject;
             tablePrefixes = allLinkTypes.Where(type => type.UseDedicatedTable).Select(type => $"{type.Type}_").Distinct().ToList();
             tablePrefixes.Add("");
             foreach (var tablePrefix in tablePrefixes)

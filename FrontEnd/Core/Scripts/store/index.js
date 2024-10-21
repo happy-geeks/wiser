@@ -35,6 +35,7 @@ import {
     GET_BRANCHES,
     GET_DATA_SELECTORS_FOR_BRANCHES,
     GET_ENTITIES_FOR_BRANCHES,
+    GET_LINK_TYPES,
     GET_TENANT_TITLE,
     HANDLE_CONFLICT,
     HANDLE_MULTIPLE_CONFLICTS,
@@ -788,6 +789,7 @@ const branchesModule = {
         createBranchResult: null,
         branches: [],
         entities: [],
+        linkTypes: [],
         settings: [
             { type: "apiConnection", displayName: "Verbindingen met API's" },
             { type: "dataSelector", displayName: "Dataselectors" },
@@ -805,6 +807,7 @@ const branchesModule = {
         isMainBranch: false,
         branchChanges: {
             entities: [],
+            linkTypes: [],
             settings: []
         },
         branchChangesLoaded: false,
@@ -843,6 +846,10 @@ const branchesModule = {
             state.entities = entities;
         },
 
+        [GET_LINK_TYPES](state, linkTypes) {
+            state.linkTypes = linkTypes;
+        },
+
         [IS_MAIN_BRANCH](state, isMainBranch) {
             state.isMainBranch = isMainBranch;
         },
@@ -855,7 +862,8 @@ const branchesModule = {
         [RESET_BRANCH_CHANGES](state, branchChanges) {
             state.branchChanges = {
                 entities: [],
-                settings: []
+                settings: [],
+                linkTypes: [],
             };
             state.branchChangesLoaded = false;
         },
@@ -1049,6 +1057,13 @@ const branchesModule = {
             commit(START_REQUEST);
             const entitiesResponse = await main.branchesService.getEntities(branchId);
             commit(GET_ENTITIES_FOR_BRANCHES, entitiesResponse.data);
+            commit(END_REQUEST);
+        },
+
+        async [GET_LINK_TYPES]({ commit }, branchId) {
+            commit(START_REQUEST);
+            const entitiesResponse = await main.branchesService.getLinkTypes(branchId);
+            commit(GET_LINK_TYPES, entitiesResponse.data);
             commit(END_REQUEST);
         },
 

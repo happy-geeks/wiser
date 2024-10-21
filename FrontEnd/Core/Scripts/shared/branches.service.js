@@ -120,6 +120,7 @@ export default class BranchesService extends BaseService {
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
                 settings: [],
+                linkTypes: [],
                 checkForConflicts: data.checkForConflicts,
                 conflictSettings: data.conflicts.map(conflict => {
                     return {
@@ -157,6 +158,20 @@ export default class BranchesService extends BaseService {
                     create: setting.create || setting.everything,
                     update: setting.update || setting.everything,
                     delete: setting.delete || setting.everything
+                });
+            }
+
+            for (let key in data.linkTypes) {
+                const linkType = data.linkTypes[key];
+
+                postData.linkTypes.push({
+                    id: key,
+                    type: linkType.type,
+                    sourceEntityType: linkType.sourceEntityType,
+                    destinationEntityType: linkType.destinationEntityType,
+                    create: linkType.create || linkType.everything,
+                    update: linkType.update || linkType.everything,
+                    delete: linkType.delete || linkType.everything
                 });
             }
 
@@ -210,6 +225,42 @@ export default class BranchesService extends BaseService {
             result.success = false;
             console.error("Error get entities", typeof(error.toJSON) === "function" ? error.toJSON() : error);
             result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de beschikbare entiteiten.";
+
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.warn(error.response);
+                result.statusCode = error.response.status;
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Gets all link types that can be copied to a new branch.
+     * @returns {any} An array with all link type.
+     */
+    async getLinkTypes(branchId = 0) {
+        const result = {};
+
+        try {
+            const response = await this.base.api.get(`/api/v3/link-settings?branchId=${branchId || 0}`);
+            result.success = true;
+            result.statusCode = 200;
+            result.data = response.data;
+        } catch (error) {
+            result.success = false;
+            console.error("Error get entities", typeof(error.toJSON) === "function" ? error.toJSON() : error);
+            result.message = "Er is een onbekende fout opgetreden tijdens het ophalen van de beschikbare link types.";
 
             if (error.response) {
                 // The request was made and the server responded with a status code
