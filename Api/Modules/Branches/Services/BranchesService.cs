@@ -474,7 +474,7 @@ SELECT id, item_id, itemlink_id FROM {tableName}{WiserTableNames.ArchiveSuffix}"
                         WiserSettingTypes.Role => "Rollen",
                         WiserSettingTypes.UserRole => "Koppelingen tussen gebruikers en rollen",
                         WiserSettingTypes.StyledOutput => "Styled output (Wiser API query output configuraties)",
-                        //WiserSettingTypes.EasyObjects => "Objecten (easy_objects)",
+                        WiserSettingTypes.EasyObjects => "Objecten (easy_objects)",
                         _ => throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null)
                     }
                 };
@@ -844,17 +844,17 @@ LIMIT 1";
                         }
                         case "CREATE_OBJECT":
                         {
-                            //ddSettingToMutationList(createdSettings, WiserSettingTypes.EasyObjects, itemId);
+                            AddSettingToMutationList(createdSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
                         }
                         case "UPDATE_OBJECT":
                         {
-                            //AddSettingToMutationList(updatedSettings, WiserSettingTypes.EasyObjects, itemId);
+                            AddSettingToMutationList(updatedSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
                         }
                         case "DELETE_OBJECT":
                         {
-                            //AddSettingToMutationList(deletedSettings, WiserSettingTypes.EasyObjects, itemId);
+                            AddSettingToMutationList(deletedSettings, WiserSettingTypes.EasyObjects, itemId);
                             break;
                         }
 
