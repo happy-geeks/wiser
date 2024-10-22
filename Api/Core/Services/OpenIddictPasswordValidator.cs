@@ -9,9 +9,11 @@ using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using OpenIddict.Server.AspNetCore;
 
@@ -19,10 +21,10 @@ namespace Api.Core.Services;
 
 public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictServerEvents.HandleTokenRequestContext>
 {
-    private ILogger<OpenIddictPasswordValidator> logger;
-    private IHttpContextAccessor httpContextAccessor;
-    private GclSettings gclSettings;
-    private IUsersService usersService;
+    private readonly ILogger<OpenIddictPasswordValidator> logger;
+    private readonly IHttpContextAccessor httpContextAccessor;
+    private readonly GclSettings gclSettings;
+    private readonly IUsersService usersService;
 
     public OpenIddictPasswordValidator(ILogger<OpenIddictPasswordValidator> logger,
         IHttpContextAccessor httpContextAccessor, IOptions<GclSettings> gclSettings, IUsersService usersService)
@@ -33,6 +35,7 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
         this.gclSettings = gclSettings.Value;
     }
 
+    /// <inheritdoc />
     public async ValueTask HandleAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
     {
         var subDomain = context.Transaction.Request?[HttpContextConstants.SubDomainKey]?.Value?.ToString();
@@ -44,10 +47,12 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
             return;
         }
 
+        // Extra parameters that get added to response
+        var parameters = new Dictionary<string, OpenIddictParameter>();
+        
         // Add sub domain to http context, to that the ClientDatabaseConnection can use it to get the correct connection string.
         httpContextAccessor.HttpContext?.Items.Add(HttpContextConstants.SubDomainKey, subDomain);
-
-        Dictionary<string, object> customResponse;
+        
         ulong adminAccountId = 0;
         var adminAccountName = "";
         var selectedUser = context.Transaction.Request?[HttpContextConstants.SelectedUserKey]?.Value?.ToString();
@@ -120,6 +125,10 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                 adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
 
         }
+        else
+        {
+            parameters.Add("adminlogin", new OpenIddictParameter(false));
+        }
 
          // If we still haven't been able to login, return a login error.
          if (loginResult.StatusCode != HttpStatusCode.OK)
@@ -127,12 +136,27 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
              context.Reject("invalid_client", loginResult.ErrorMessage);
              return;
          }
-
+         
+         parameters.Add("name", loginResult.ModelObject.Name);
+         parameters.Add("role", loginResult.ModelObject.Role);
+             
+         if (!String.IsNullOrWhiteSpace(loginResult.ModelObject.CookieValue))
+         {
+             parameters.Add("cookieValue", new OpenIddictParameter(loginResult.ModelObject.CookieValue));
+         }
+         
          var claims = CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
-         
+        
          var identity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+         identity.SetAuthorizationId(loginResult.ModelObject.Id.ToString());
          
-         context.Principal = new ClaimsPrincipal(identity);;
+         var principal = new ClaimsPrincipal(identity);
+         principal.SetScopes("profile", "email", "api.read", "api.write");
+
+         principal.SetDestinations((c) => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken]);
+         
+         context.SignIn(principal, parameters);
     }
 
     private static IEnumerable<Claim> CreateClaimsList(AdminAccountModel adminAccount, string subDomain, string isTestEnvironment, bool isWiserFrontEndLogin)
@@ -153,8 +177,10 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
     {
         var claimsIdentity = new List<Claim>
         {
-            new(ClaimTypes.GivenName, user.Name),
+            new(OpenIddictConstants.Claims.GivenName, user.Name),
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.Username),
+            new(OpenIddictConstants.Claims.Subject , user.Id.ToString()),
             new(ClaimTypes.Role, user.Role),
             new(ClaimTypes.GroupSid, subDomain),
             new(ClaimTypes.Sid, adminAccountId.ToString()),

@@ -34,6 +34,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
@@ -199,17 +200,40 @@ namespace Api
                 .AddServer(options =>
                 {
                     options.SetTokenEndpointUris("/connect/token");
+
                     options.EnableDegradedMode();
                     options.AllowPasswordFlow();
+                    options.AllowRefreshTokenFlow();
 
                     if (webHostEnvironment.IsDevelopment())
                     {
                         options.AddDevelopmentEncryptionCertificate()
                             .AddDevelopmentSigningCertificate();
                     }
+                    else
+                    {
+                        var certificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
+                        using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
+                        webHostingStore.Open(OpenFlags.ReadOnly);
+                        var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+                        if (certificateCollection.Count == 0)
+                        {
+                            using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                            personalStore.Open(OpenFlags.ReadOnly);
+                            certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+
+                            if (certificateCollection.Count == 0)
+                            {
+                                throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
+                            }
+                        }
+
+                        options.AddSigningCertificate(certificateCollection.First());
+                    }
+                    
+                    options.DisableAccessTokenEncryption();
 
                     options.UseAspNetCore()
-                        .EnableTokenEndpointPassthrough()
                         .DisableTransportSecurityRequirement();
                     
                     // Define static scopes here.
@@ -231,6 +255,11 @@ namespace Api
                         builder.UseScopedHandler<TokenValidator>();
                     });
 
+                    options.AddEventHandler<OpenIddictServerEvents.ValidateAuthorizationRequestContext>(builder =>
+                    {
+                        builder.UseScopedHandler<AuthorizationValidator>();
+                    });
+
                 })
                 .AddValidation(options =>
                 {
@@ -239,40 +268,34 @@ namespace Api
 
                     // Register the ASP.NET Core host.
                     options.UseAspNetCore();
+                    options.SetClientId("wiser");
+                    options.SetClientSecret(clientSecret);
                 });
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
                 .AddJwtBearer(options =>
                 {
-                    // Configure JWT Bearer options if needed.
+                    options.Authority = apiBaseUrl;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateAudience = false,
+                        ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0),
+                    };
                 });
 
-            if (webHostEnvironment.IsDevelopment())
+            services.AddAuthorization(options =>
             {
-                System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                //identityServerBuilder.AddDeveloperSigningCredential();
-            }
-            else
-            {
-                // Create an X509Store for the Web Hosting store and see if the certificate is there.
-                var certificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
-                using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
-                webHostingStore.Open(OpenFlags.ReadOnly);
-                var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
-                if (certificateCollection.Count == 0)
-                {
-                    using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                    personalStore.Open(OpenFlags.ReadOnly);
-                    certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
-
-                    if (certificateCollection.Count == 0)
+                options.AddPolicy("ApiScope",
+                    policy =>
                     {
-                        throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
-                    }
-                }
-
-                //identityServerBuilder.AddSigningCredential(certificateCollection.First());
-            }
+                        policy.RequireAuthenticatedUser();
+                        policy.RequireClaim("scope", "wiser-api");
+                    });
+            });
 
             // Configure dependency injection.
             services.AddScoped<MySqlDatabaseConnection>();
@@ -346,7 +369,7 @@ namespace Api
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
@@ -372,6 +395,7 @@ namespace Api
         public IApplicationBuilder HandleStartupFunctions(IApplicationBuilder builder)
         {
             var applicationLifetime = builder.ApplicationServices.GetService<IHostApplicationLifetime>();
+            
             applicationLifetime.ApplicationStarted.Register(async () =>
             {
                 using var scope = builder.ApplicationServices.CreateScope();
