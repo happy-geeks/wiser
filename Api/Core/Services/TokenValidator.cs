@@ -7,6 +7,6 @@ public class TokenValidator : IOpenIddictServerHandler<OpenIddictServerEvents.Va
 {
     public ValueTask HandleAsync(OpenIddictServerEvents.ValidateTokenRequestContext context)
     {
-        return default;
+        return ValueTask.CompletedTask;
     }
 }
