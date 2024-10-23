@@ -1164,16 +1164,13 @@ class Main {
                 },
 
                 async onWiserMergeBranchPromptOpen(sender) {
-                    await this.getEntitiesForBranches();
-                    await this.getLinkTypesForBranches();
-
                     if (this.branches && this.branches.length > 0) {
+                        await this.onSelectedBranchChange(this.branches[0].id);
                         this.branchMergeSettings.selectedBranch = this.branches[0];
-                        this.onSelectedBranchChange(this.branches[0].id);
                     }
                     else if (!this.isMainBranch) {
                         // If this is not the main branch, you can only synchronise the changes of the current branch, so get the changes immediately.
-                        this.onSelectedBranchChange();
+                        await this.onSelectedBranchChange();
                     }
                 },
 
