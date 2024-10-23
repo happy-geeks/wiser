@@ -11,6 +11,8 @@ Wiser v3. This includes the API and the front-end projects.
 1. Run `npm install`.
 1. Run `node_modules\.bin\webpack --mode=development`.
 
+( If you are developing and don't want to rerun these commands each time you can also use the WebpackWatch.bat script (on windows only) that is included in the root folder)
+
 If you get an error for not having enough rights to execute the script please execute the following in PowerShell as administrator:
 ```Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted```
 
