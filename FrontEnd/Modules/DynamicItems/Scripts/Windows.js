@@ -605,6 +605,10 @@ export class Windows {
                 linkType: this.searchItemsWindowSettings.linkTypeNumber
             };
             if (this.searchItemsWindowSettings.currentItemIsSourceId) {
+                addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.currentEntityType;
+                removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.currentEntityType;
+            }
+            else {
                 addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
                 removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
             }
