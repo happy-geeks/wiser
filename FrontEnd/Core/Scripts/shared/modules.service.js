@@ -34,6 +34,8 @@ export default class ModulesService extends BaseService {
                     if (this.dynamicItemsModules.indexOf(module.type) > -1) {
                         module.iframeType = "DynamicItems";
                         module.queryString = `?moduleId=${!module.itemId ? module.moduleId : 0}&iframe=${module.iframe || false}${(!module.itemId ? "" : `&itemId=${encodeURIComponent(module.itemId)}`)}${(!module.entityType? "" : `&entityType=${encodeURIComponent(module.entityType)}`)}`;
+                    } else if (module.type === "FileManager") {
+                        module.queryString = "?hideFields=true";
                     } else {
                         module.iframeType = module.type;
                         module.queryString = "";
