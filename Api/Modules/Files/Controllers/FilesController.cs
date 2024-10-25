@@ -82,7 +82,10 @@ namespace Api.Modules.Files.Controllers
             var form = await Request.ReadFormAsync();
 
             var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+            if (!UInt64.TryParse(encryptedId, out var itemId))
+            {
+                itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+            }
 
             var result = await filesService.UploadAsync(itemId, propertyName, title, form.Files, identity, itemLinkId, useTinyPng, useCloudFlare, entityType, linkType);
             return result.GetHttpResponseMessage();
@@ -182,6 +185,7 @@ namespace Api.Modules.Files.Controllers
         {
             // Create a ClaimsIdentity based on query parameters instead the Identity from the bearer token due to being called from an image source where no headers can be set.
             var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
+
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, userId.ToString()),
@@ -192,7 +196,10 @@ namespace Api.Modules.Files.Controllers
             // Set the sub domain for the database connection.
             HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, dummyClaimsIdentity);
+            if (!UInt64.TryParse(encryptedId, out var itemId))
+            {
+                itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, dummyClaimsIdentity);
+            }
 
             var imageResult = await filesService.GetAsync(itemId, fileId, dummyClaimsIdentity, itemLinkId, entityType, linkType, propertyName);
             var result = imageResult.GetHttpResponseMessage();
