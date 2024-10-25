@@ -19,6 +19,7 @@ using Api.Modules.Templates.Services;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Services;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
 using HealthChecks.UI.Client;
@@ -96,6 +97,7 @@ namespace Api
             // Use the options pattern for all GCL settings in appSettings.json.
             services.AddOptions();
             services.Configure<ApiSettings>(Configuration.GetSection("Api"));
+            services.Configure<HealthChecksSettings>(Configuration.GetSection("HealthChecks"));
             services.Configure<StyledOutputSettings>(Configuration.GetSection("StyledOutput"));
             services.Configure<DigitalOceanSettings>(Configuration.GetSection("DigitalOcean"));
             services.Configure<GoogleSettings>(Configuration.GetSection("Google"));
