@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Api.Modules.Items.Models
 {
@@ -8,14 +9,24 @@ namespace Api.Modules.Items.Models
     public class AddOrRemoveLinksRequestModel
     {
         /// <summary>
-        /// Gets or sets a list of encrypted item IDs, of all items that are being added or removed.
+        /// Deprecated: Gets or sets a list of encrypted item IDs, of all items that are being added or removed.
         /// </summary>
         public List<string> EncryptedSourceIds { get; set; }
 
         /// <summary>
-        /// Gets or sets a list of encrypted item IDs of the destinations of where to move the item(s) should be to or removed from.
+        /// Deprecated: Gets or sets a list of encrypted item IDs of the destinations of where to move the item(s) should be to or removed from.
         /// </summary>
         public List<string> EncryptedDestinationIds { get; set; }
+
+        /// <summary>
+        /// Gets or sets a list of item IDs, of all items that are being added or removed.
+        /// </summary>
+        public List<ulong> SourceIds { get; set; }
+
+        /// <summary>
+        /// Gets or sets a list of item IDs of the destinations of where to move the item(s) should be to or removed from.
+        /// </summary>
+        public List<ulong> DestinationIds { get; set; }
 
         /// <summary>
         /// Gets or sets the link type number.

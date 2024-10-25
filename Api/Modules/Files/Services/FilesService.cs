@@ -92,21 +92,17 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(string encryptedId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0)
         {
-            if (String.IsNullOrWhiteSpace(encryptedId))
-            {
-                throw new ArgumentNullException(nameof(encryptedId));
-            }
-
             var userId = IdentityHelpers.GetWiserUserId(identity);
-            if (!UInt64.TryParse(encryptedId, out var itemId))
-            {
-                itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            }
+
             if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException("Id must be greater than zero.");
+                return new ServiceResult<List<FileModel>>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id must be greater than zero."
+                };
             }
 
             if (files == null || files.Count == 0)
@@ -469,16 +465,15 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null)
+        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null)
         {
-            if (String.IsNullOrWhiteSpace(encryptedItemId))
+            if (itemId == 0)
             {
-                throw new ArgumentNullException(nameof(encryptedItemId));
-            }
-
-            if (!UInt64.TryParse(encryptedItemId, out var itemId))
-            {
-                itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
+                return new ServiceResult<(string ContentType, byte[] Data, string Url)>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "itemId must be greater than zero."
+                };
             }
 
             if (fileId <= 0 && String.IsNullOrEmpty(propertyName))
@@ -579,22 +574,24 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteAsync(string encryptedItemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<bool>> DeleteAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
-            if (String.IsNullOrWhiteSpace(encryptedItemId))
-            {
-                throw new ArgumentNullException(nameof(encryptedItemId));
-            }
-
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             if (itemId <= 0 && itemLinkId <= 0)
             {
-                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id or itemLinkId must be greater than zero."
+                };
             }
 
             if (fileId <= 0)
             {
-                throw new ArgumentException("File ID must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File ID must be greater than zero."
+                };
             }
 
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -676,22 +673,24 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> RenameAsync(string encryptedItemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<bool>> RenameAsync(ulong itemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
-            if (String.IsNullOrWhiteSpace(encryptedItemId))
-            {
-                throw new ArgumentNullException(nameof(encryptedItemId));
-            }
-
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             if (itemId <= 0 && itemLinkId <= 0)
             {
-                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id or itemLinkId must be greater than zero."
+                };
             }
 
             if (fileId <= 0)
             {
-                throw new ArgumentException("File ID must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File ID must be greater than zero."
+                };
             }
 
             var tablePrefix = itemLinkId > 0
@@ -723,22 +722,24 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateTitleAsync(string encryptedItemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<bool>> UpdateTitleAsync(ulong itemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
-            if (String.IsNullOrWhiteSpace(encryptedItemId))
-            {
-                throw new ArgumentNullException(nameof(encryptedItemId));
-            }
-
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             if (itemId <= 0 && itemLinkId <= 0)
             {
-                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id or itemLinkId must be greater than zero."
+                };
             }
 
             if (fileId <= 0)
             {
-                throw new ArgumentException("File ID must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File ID must be greater than zero."
+                };
             }
 
             var tablePrefix = itemLinkId > 0
@@ -770,22 +771,24 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateExtraDataAsync(string encryptedItemId, int fileId, FileExtraDataModel extraData, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<bool>> UpdateExtraDataAsync(ulong itemId, int fileId, FileExtraDataModel extraData, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
         {
-            if (String.IsNullOrWhiteSpace(encryptedItemId))
-            {
-                throw new ArgumentNullException(nameof(encryptedItemId));
-            }
-
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             if (itemId <= 0 && itemLinkId <= 0)
             {
-                throw new ArgumentException("Id or itemLinkId must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id or itemLinkId must be greater than zero."
+                };
             }
 
             if (fileId <= 0)
             {
-                throw new ArgumentException("File ID must be greater than zero.");
+                return new ServiceResult<bool>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File ID must be greater than zero."
+                };
             }
 
             var tablePrefix = itemLinkId > 0
@@ -817,17 +820,15 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> AddUrlAsync(string encryptedItemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
         {
-            if (String.IsNullOrWhiteSpace(encryptedItemId))
-            {
-                throw new ArgumentNullException(nameof(encryptedItemId));
-            }
-
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             if (itemId <= 0)
             {
-                throw new ArgumentException("Id must be greater than zero.");
+                return new ServiceResult<FileModel>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "Id must be greater than zero."
+                };
             }
 
             if (file == null || String.IsNullOrWhiteSpace(file.ContentUrl))

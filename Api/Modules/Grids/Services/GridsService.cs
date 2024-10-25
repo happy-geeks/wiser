@@ -895,8 +895,8 @@ namespace Api.Modules.Grids.Services
                     results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date", Editable = false});
                     results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string", Editable = false});
                     results.SchemaModel.Fields.Add(GclCoreConstants.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
-
-                    await itemsService.FixTreeViewOrderingAsync(moduleId, identity, encryptedId, linkTypeNumber);
+                    
+                    await itemsService.FixTreeViewOrderingAsync(moduleId, identity, itemId, linkTypeNumber);
 
                     var columnsQuery = $@"SELECT  
 	                                        IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name) AS field,
