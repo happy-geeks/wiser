@@ -605,9 +605,9 @@ export class Windows {
                 linkType: this.searchItemsWindowSettings.linkTypeNumber
             };
             if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
-                removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.entityType;
-            }
+                addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.currentEntityType;
+                removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.currentEntityType;
+            }           
             kendo.ui.progress(grid.element, true);
             for (let element of allItemsOnCurrentPage) {
                 const row = $(element);
