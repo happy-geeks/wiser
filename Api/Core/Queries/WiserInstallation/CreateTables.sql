@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS `wiser_item`  (
   `ordering` mediumint NOT NULL DEFAULT 0,
   `unique_uuid` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `entity_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
-  `moduleid` mediumint NOT NULL DEFAULT 0,
+  `moduleid` int NOT NULL DEFAULT 0,
   `published_environment` mediumint NOT NULL DEFAULT 15 COMMENT 'Bitwise, 0 = hidden, 1 = development, 2 = test, 4 = acceptance, 8 = live',
   `readonly` tinyint NOT NULL DEFAULT 0,
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
