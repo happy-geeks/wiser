@@ -38,7 +38,7 @@ if (customQueryGrid) {
             if (customQueryResults.extraJavascript) {
                 jQuery.globalEval(customQueryResults.extraJavascript);
             }
-        
+
             if (!hideCheckboxColumn) {
                 customQueryResults.columns.splice(0, 0, {
                     selectable: true,
@@ -46,72 +46,75 @@ if (customQueryGrid) {
                 });
             }
 
-        if (!options.disableOpeningOfItems) {
-            if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
-                // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
-            }
-        }
-        
-        if (!options.hideCommandColumn) {
-            let commandColumnWidth = 0;
-            let commands = [];
-            
             if (!options.disableOpeningOfItems) {
-                commandColumnWidth += 60;
-                
-                commands.push({
-                    name: "openDetails",
-                    iconClass: "k-icon k-i-hyperlink-open",
-                    text: "",
-                    title: "Item openen",
-                    click: (event)=> { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
-                });
-                
-                if (options.allowOpeningOfItemsInNewTab) {
+                if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
+                    // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
+                    options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
+                }
+            }
+
+            if (!options.hideCommandColumn) {
+                let commandColumnWidth = 0;
+                let commands = [];
+
+                if (!options.disableOpeningOfItems) {
                     commandColumnWidth += 60;
 
                     commands.push({
-                        name: "openDetailsInNewTab",
-                        iconClass: "k-icon k-i-window",
+                        name: "openDetails",
+                        iconClass: "k-icon k-i-hyperlink-open",
                         text: "",
-                        title: "Item openen in nieuwe tab",
-                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                        title: "Item openen",
+                        click: (event) => {
+                            window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false);
+                        }
+                    });
+
+                    if (options.allowOpeningOfItemsInNewTab) {
+                        commandColumnWidth += 60;
+
+                        commands.push({
+                            name: "openDetailsInNewTab",
+                            iconClass: "k-icon k-i-window",
+                            text: "",
+                            title: "Item openen in nieuwe tab",
+                            click: (event) => {
+                                window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true);
+                            }
+                        });
+                    }
+                }
+
+                if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "remove",
+                        text: "",
+                        iconClass: "k-icon k-i-delete",
+                        click: (event) => {
+                            window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, this.options);
+                        }
+                    });
+                } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
+                    commandColumnWidth += 120;
+
+                    commands.push("destroy");
+                }
+
+                if (commands.length > 0) {
+                    customQueryResults.columns.push({
+                        title: "&nbsp;",
+                        width: commandColumnWidth,
+                        command: commands
                     });
                 }
             }
 
-            if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
-                commandColumnWidth += 60;
-                
-                commands.push({
-                    name: "remove",
-                    text: "",
-                    iconClass: "k-icon k-i-delete",
-                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, this.options); }
-                });
-            } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
-                commandColumnWidth += 120;
-                
-                commands.push("destroy");
-            }
-
-            if (commands.length > 0) {
-                customQueryResults.columns.push({
-                    title: "&nbsp;",
-                    width: commandColumnWidth,
-                    command: commands
-                });
-            }
-        }
+            generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
+        });
         
-        generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
     }
-    catch()
-        {
-            
-        }
-    );
         
 } else {
     let done = (gridSettings) => {
