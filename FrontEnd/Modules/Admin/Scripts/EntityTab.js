@@ -538,7 +538,8 @@ export class EntityTab {
 
         // Hide the tabstrip initially, show it when the user selects an entity.
         this.entityTabStrip.wrapper.hide();
-        $("#EntityTabStrip-2 .right-pane").hide();
+        $("#EntityTabStrip-2 .property-pane").hide();
+        $("#EntityTabStrip-2 .group-pane").hide();
 
         //NUBERIC FIELDS
         this.widthInTable = $("#widthIfVisible").kendoNumericTextBox({
@@ -596,6 +597,16 @@ export class EntityTab {
         }).data("kendoNumericTextBox");
 
         this.multiSelectMainImageId = $("#multiSelectMainImageId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox");
+
+        this.groupWidth = $("#groupWidth").kendoNumericTextBox({
+            decimals: 0,
+            format: "# \\%"
+        }).data("kendoNumericTextBox");
+
+        this.minWidth = $("#minWidth").kendoNumericTextBox({
             decimals: 0,
             format: "#"
         }).data("kendoNumericTextBox");
@@ -1291,7 +1302,7 @@ export class EntityTab {
         }).data("kendoComboBox");
 
         //Combobox for the "Groep" combobox
-        this.groupNameComboBox = $("#groupName").kendoComboBox({
+        this.groupNameComboBox = $("#parentGroup").kendoComboBox({
             clearButton: false,
             dataTextField: "groupName",
             dataValueField: "groupName"
@@ -1686,6 +1697,15 @@ export class EntityTab {
                 { text: "30%", value: 30 },
                 { text: "40%", value: 40 },
                 { text: "50%", value: 50 }
+            ]
+        }).data("kendoDropDownList");
+
+        this.orientation = $("#orientation").kendoDropDownList({
+            dataTextField: "text",
+            dataValueField: "value",
+            dataSource: [
+                { text: "Horizontaal", value: "horizontal" },
+                { text: "Verticaal", value: "vertical" }
             ]
         }).data("kendoDropDownList");
 
@@ -2330,7 +2350,7 @@ export class EntityTab {
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
             method: "GET"
         });
-        console.log(`KOEKJE: ${JSON.stringify(tabsAndFields)}`);
+        console.log(`tabsAndFields: ${JSON.stringify(tabsAndFields)}`);
         this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
             data: tabsAndFields,
             schema: {
@@ -2358,13 +2378,16 @@ export class EntityTab {
         const index = selectedElement.index();
         const dataItem = event.sender.dataItem(selectedElement);
         this.selectedTabOrProperty = dataItem;
-        // TODO: show group pane if dataItem is a group!
-        if (dataItem.type !== "Property") {
-            $("#EntityTabStrip-2 .right-pane").hide();
-            return;
+        
+        if (dataItem.type === "Group") {
+            $("#EntityTabStrip-2 .property-pane").hide();
+            $("#EntityTabStrip-2 .group-pane").show();
         }
-
-        $("#EntityTabStrip-2 .right-pane").show();
+        else if (dataItem.type === "Property") {
+            $("#EntityTabStrip-2 .group-pane").hide();
+            $("#EntityTabStrip-2 .property-pane").show();
+        }
+            
         const selectedEntityName = dataItem.entityType;
         const selectedTabName = dataItem.tabName;
         if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabName && !this.isSaveSelect) {
@@ -2546,12 +2569,18 @@ export class EntityTab {
                 }
             }
         }));
+        
+        console.log(`SELECTED ENTITY: ${JSON.stringify(this.selectedEntityProperty)}`);
 
         // first set all properties to default;
         this.setEntityFieldPropertiesToDefault();
 
         // then set all the properties accordingly
-        this.setEntityFieldProperties(this.selectedEntityProperty);
+        if (this.selectedEntityProperty.type === "Property") {
+            this.setEntityFieldProperties(this.selectedEntityProperty);
+        } else if (this.selectedEntityProperty.type === "Group") {
+            this.setEntityGroupProperties(this.selectedEntityProperty);
+        }
     }
 
     // actions handled before save, such as checks
@@ -3456,6 +3485,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
         // set options field to default, empty object
         this.fieldOptions = {};
+        
     }
 
     setEntityProperties(resultSet) {
@@ -4044,6 +4074,16 @@ this.dataSourceDataSelector.value(dataSelectorId);
         this.optionsJsonField.refresh();
     }
 
+    // set all group properties values to the group fields accordingly
+    setEntityGroupProperties(resultSet) {
+        document.getElementById("groupName").value = resultSet.groupName || "";
+        this.groupWidth.value(resultSet.width);
+        this.minWidth.value(resultSet.properties.minWidth);
+        this.orientation.select((dataItem) => {
+            return (dataItem.value || "").toLowerCase() === (resultSet.properties.orientation || "").toLowerCase();
+        });
+        document.getElementById("collapsible").checked = resultSet.properties.collapsible || false;
+    }
     // return array of of different input types from inputtypes enum
     createDataSourceFromEnum(list, useObjects = false) {
         const returnVal = [];
