@@ -74,6 +74,10 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         var result = FromDataRow(dataTable.Rows[0]);
 
+        if (!String.IsNullOrEmpty(result.GroupName) && String.IsNullOrEmpty(result.PropertyName))
+        {
+            result.Type = EntityPropertyModelTypes.Group;
+        }
         return new ServiceResult<EntityPropertyModel>(result);
     }
 
@@ -116,7 +120,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
     {
-        var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, false, false, false);
+        var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
         if (allProperties.StatusCode != HttpStatusCode.OK)
         {
             return new ServiceResult<List<EntityPropertyTabModel>>
@@ -132,7 +136,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                  Name = x.Key,
                  Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
                  {
-                     Id = y.Key,
+                     Id = y.First().GroupID,
                      Name = y.Key,
                      TabName = x.Key,
                      Properties = y.ToList()
@@ -1165,6 +1169,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             PropertyName = dataRow.Field<string>("property_name"),
             LanguageCode = dataRow.Field<string>("language_code"),
             TabName = dataRow.Field<string>("tab_name"),
+            GroupID = dataRow.Field<int?>("group_id") ?? 0,
             GroupName = dataRow.Field<string>("group_name"),
             InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype")),
             DisplayName = dataRow.Field<string>("display_name"),

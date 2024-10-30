@@ -50,6 +50,11 @@ public class EntityPropertyModel
     public string TabName { get; set; }
 
     /// <summary>
+    /// Gets or sets the id of the group the property is in (used by new custom group feature).
+    /// </summary>
+    public int GroupID { get; set; }
+
+    /// <summary>
     /// Gets or sets the name of the group the property is in.
     /// </summary>
     public string GroupName { get; set; }
