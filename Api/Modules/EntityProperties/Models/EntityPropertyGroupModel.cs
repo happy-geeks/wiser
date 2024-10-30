@@ -9,9 +9,9 @@ namespace Api.Modules.EntityProperties.Models;
 public class EntityPropertyGroupModel
 {
     /// <summary>
-    /// Gets or sets the ID of the group. This is the same as name at the moment.
+    /// Gets or sets the ID of the group.
     /// </summary>
-    public string Id { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the group.

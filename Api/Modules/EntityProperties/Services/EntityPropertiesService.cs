@@ -73,6 +73,10 @@ namespace Api.Modules.EntityProperties.Services
 
             var result = FromDataRow(dataTable.Rows[0]);
 
+            if (!String.IsNullOrEmpty(result.GroupName) && String.IsNullOrEmpty(result.PropertyName))
+            {
+                result.Type = EntityPropertyModelTypes.Group;
+            }
             return new ServiceResult<EntityPropertyModel>(result);
         }
 
@@ -113,7 +117,7 @@ namespace Api.Modules.EntityProperties.Services
         /// <inheritdoc />
         public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
         {
-            var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, false, false, false);
+            var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
             if (allProperties.StatusCode != HttpStatusCode.OK)
             {
                 return new ServiceResult<List<EntityPropertyTabModel>>
@@ -129,7 +133,7 @@ namespace Api.Modules.EntityProperties.Services
                  Name = x.Key,
                  Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
                  {
-                     Id = y.Key,
+                     Id = y.First().GroupID,
                      Name = y.Key,
                      TabName = x.Key,
                      Properties = y.ToList()
@@ -1140,6 +1144,7 @@ AND ordering < ?newOrderingStart";
                 PropertyName = dataRow.Field<string>("property_name"),
                 LanguageCode = dataRow.Field<string>("language_code"),
                 TabName = dataRow.Field<string>("tab_name"),
+                GroupID = dataRow.Field<int?>("group_id") ?? 0,
                 GroupName = dataRow.Field<string>("group_name"),
                 InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype")),
                 DisplayName = dataRow.Field<string>("display_name"),
