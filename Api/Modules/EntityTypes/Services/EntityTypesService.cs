@@ -266,7 +266,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                             LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item ON item.entity_type = entity.name AND item.moduleid = entity.module_id
                             JOIN {WiserTableNames.WiserEntity} AS childEntity ON childEntity.module_id = ?moduleId AND childEntity.name <> '' AND FIND_IN_SET(childEntity.name, entity.accepted_childtypes)
                             WHERE entity.module_id = ?moduleId
-                            AND ((?parentId = 0 AND entity.name = '') OR (?parentId > 0 AND item.id = ?parentId AND entity.name = ?entityType))
+                            AND ((?parentId = 0 AND entity.name = '') OR (?parentId > 0 AND item.id = ?parentId AND (?entityType = '' OR entity.name = ?entityType)))
                             GROUP BY childEntity.name
                             ORDER BY childEntity.name";
 
