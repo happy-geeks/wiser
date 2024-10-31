@@ -641,7 +641,7 @@ namespace Api.Modules.Items.Controllers
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a prefix table.</param>
         /// <param name="encryptedItemId">Optional: Item id of the item to get the child items of. If no value has been given, the root will be used as parent.</param>
-        /// <param name="childEntityTypes">Optional: </param>
+        /// <param name="childEntityTypes">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
         /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
