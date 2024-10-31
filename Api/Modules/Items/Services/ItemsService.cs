@@ -2142,9 +2142,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId,
-            ClaimsIdentity identity, string entityType = null, ulong? parentId = null, string orderBy = null,
-            ulong? checkId = null, int linkType = 0, string childEntityTypes = null)
+        public async Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string parentEntityType = null, ulong? parentId = null, string orderBy = null, ulong? checkId = null, int linkType = 0, string childEntityTypes = null)
         {
             if (moduleId <= 0)
             {
@@ -2161,7 +2159,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var results = new List<TreeViewItemModel>();
 
-            var parentEntitySettings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType ?? String.Empty, moduleId);
+            var parentEntitySettings = await wiserItemsService.GetEntityTypeSettingsAsync(parentEntityType ?? String.Empty, moduleId);
             var parentTablePrefix = wiserItemsService.GetTablePrefixForEntity(parentEntitySettings);
             
             var firstChild = parentEntitySettings.AcceptedChildTypes.FirstOrDefault();
