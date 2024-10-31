@@ -237,7 +237,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null, string parentEntityType = null)
+        public async Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null, string parentEntityType = "")
         {
             ulong actualParentId;
             if (String.IsNullOrWhiteSpace(parentId))
