@@ -1082,7 +1082,7 @@ const moduleSettings = {
             });
 
             // Get available entity types, for creating new sub items.
-            await this.base.dialogs.loadAvailableEntityTypesInDropDown(itemId);
+            await this.base.dialogs.loadAvailableEntityTypesInDropDown(itemId, dataItem.entityType);
         }
 
         /**
@@ -2214,10 +2214,11 @@ const moduleSettings = {
         /**
          * Gets all available entity types that can be added as a child to the given parent.
          * @param {string} parentId The (encrypted) ID of the parent to get the available entity types of.
+         * @param {string} parentEntityType The entityType of the parent to get the available entity types of.
          * @return {any} An array with all the available entity types.
          */
-        async getAvailableEntityTypes(parentId) {
-            return await Wiser.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}` });
+        async getAvailableEntityTypes(parentId, parentEntityType) {
+            return await Wiser.api({ url: `${this.base.settings.wiserApiRoot}entity-types/${encodeURIComponent(this.settings.moduleId)}?parentId=${encodeURIComponent(parentId)}&parentEntityType=${encodeURIComponent(parentEntityType)}`});
         }
 
         /**

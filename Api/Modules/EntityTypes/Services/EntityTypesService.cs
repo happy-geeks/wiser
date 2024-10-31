@@ -237,7 +237,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null)
+        public async Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null, string parentEntityType = null)
         {
             ulong actualParentId;
             if (String.IsNullOrWhiteSpace(parentId))
@@ -249,20 +249,24 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
                 actualParentId = await wiserTenantsService.DecryptValue<ulong>(parentId, identity);
             }
 
+            var entitySettings = await wiserItemsService.GetEntityTypeSettingsAsync(parentEntityType, moduleId);
+            var tablePrefix =  wiserItemsService.GetTablePrefixForEntity(entitySettings);
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
             clientDatabaseConnection.AddParameter("parentId", actualParentId);
+            clientDatabaseConnection.AddParameter("entityType", parentEntityType);
 
             var result = new List<EntityTypeModel>();
             var query = $@"SELECT 
                                 childEntity.name, 
                                 IF(childEntity.friendly_name IS NULL OR childEntity.friendly_name = '', childEntity.name, childEntity.friendly_name) AS displayName
                             FROM {WiserTableNames.WiserEntity} AS entity
-                            LEFT JOIN {WiserTableNames.WiserItem} AS item ON item.entity_type = entity.name AND item.moduleid = entity.module_id
+                            LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item ON item.entity_type = entity.name AND item.moduleid = entity.module_id
                             JOIN {WiserTableNames.WiserEntity} AS childEntity ON childEntity.module_id = ?moduleId AND childEntity.name <> '' AND FIND_IN_SET(childEntity.name, entity.accepted_childtypes)
                             WHERE entity.module_id = ?moduleId
-                            AND ((?parentId = 0 AND entity.name = '') OR (?parentId > 0 AND item.id = ?parentId))
+                            AND ((?parentId = 0 AND entity.name = '') OR (?parentId > 0 AND item.id = ?parentId AND entity.name = ?entityType))
                             GROUP BY childEntity.name
                             ORDER BY childEntity.name";
 

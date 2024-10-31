@@ -86,14 +86,15 @@ export class Dialogs {
     /**
      * Gets all available entity types that can be added as a child to the given parent and adds those to the newItemDialogEntityTypeDropDown.
      * @param {string} parentId The (encrypted) ID of the parent to get the available entity types of.
+     * @param {string} parentEntityType The entityType of the parent to get the available entity types of.
      */
-    async loadAvailableEntityTypesInDropDown(parentId) {
+    async loadAvailableEntityTypesInDropDown(parentId, parentEntityType = "") {
         const process = `loadAvailableEntityTypesInDropDown_${Date.now()}`;
         window.processing.addProcess(process);
 
         try {
             // Get available entity types, for creating new sub items.
-            const entityTypes = await this.base.getAvailableEntityTypes(parentId);
+            const entityTypes = await this.base.getAvailableEntityTypes(parentId, parentEntityType);
             this.newItemDialogEntityTypeDropDown.setDataSource({ data: entityTypes });
             $("#addButton").toggle(entityTypes && entityTypes.length > 0);
         } catch (exception) {
@@ -156,17 +157,18 @@ export class Dialogs {
      * @param {number} moduleId Optional: The id of the module in which the item should be created.
      * @param {any} kendoComponent Optional: If this item is being created via a field with a kendo component (such as a grid or dropdown), add the instance of it here, so we can refresh the data source after.
      */
-    async openCreateItemDialog(parentId, node, entityType, skipName = false, skipInitialDialog = false, linkTypeNumber = 1, moduleId = 0, kendoComponent = null) {
+    async openCreateItemDialog(parentId, node, entityType, skipName = false, skipInitialDialog = false, linkTypeNumber = 1, moduleId = 0, kendoComponent = null, parentEntityType = "") {
         node = node || (this.base.mainTreeView ? this.base.mainTreeView.select() : null);
         if (typeof parentId !== "string") {
             if (this.base.selectedItem && this.base.selectedItem.id) {
                 parentId = this.base.selectedItem.id;
+                parentEntityType = this.base.selectedItem.entityType;
             } else {
                 parentId = this.base.settings.zeroEncrypted;
             }
         }
 
-        await this.loadAvailableEntityTypesInDropDown(parentId);
+        await this.loadAvailableEntityTypesInDropDown(parentId, parentEntityType);
 
         this.newItemDialog.element.find("#alsoCreateInMainBranch").prop("checked", false);
         const newItemNameField = this.newItemDialog.element.find("#newItemNameField").val("");
