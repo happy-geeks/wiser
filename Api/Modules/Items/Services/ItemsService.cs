@@ -37,6 +37,7 @@ using GeeksCoreLibrary.Modules.Languages.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
@@ -2973,6 +2974,98 @@ ORDER BY link.ordering ASC, item.title ASC";
             }
 
             return new ServiceResult<List<SearchResponseModel>>(result);
+        }
+
+        /// <inheritdocs />
+        public async Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity identity, string encryptedItemId, string entityType)
+        {
+            var item = (await GetItemDetailsAsync(encryptedItemId, identity, entityType)).ModelObject;
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var permissions = await wiserItemsService.GetUserItemPermissionsAsync(item.Id, userId, entityType);
+            var settings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType, moduleId);
+
+            var menuItems = new List<ContextMenuItem>();
+
+            if (item.ReadOnly ?? false)
+            {
+                return new ServiceResult<List<ContextMenuItem>>(menuItems);
+            }
+            
+            if ((permissions & AccessRights.Update) > 0)
+            {
+                menuItems.Add(new ContextMenuItem()
+                {
+                    Text = $"'{item.Title}' hernoemen (F2)",
+                    SpriteCssClass = "icon-rename",
+                    Action = "RENAME_ITEM",
+                    EntityType = item.EntityType
+                });
+            }
+
+            if ((permissions & AccessRights.Create) > 0)
+            {
+                if (settings.AcceptedChildTypes.Count == 1)
+                {
+                    var childEntity = settings.AcceptedChildTypes.First();
+                    var childSettings = await wiserItemsService.GetEntityTypeSettingsAsync(childEntity);
+
+                    menuItems.Add(new ContextMenuItem()
+                    {
+                        Text = $"Nieuw(e) '{item.Title}' aanmaken (SHIFT+N)",
+                        SpriteCssClass = childSettings.IconAdd,
+                        Action = "CREATE_ITEM",
+                        EntityType = item.EntityType
+                    });
+                }
+                
+                menuItems.Add(new ContextMenuItem()
+                {
+                    Text = $"'{item.Title}' dupliceren (SHIFT+D)",
+                    SpriteCssClass = "icon-document-duplicate",
+                    Action = "DUPLICATE_ITEM",
+                    EntityType = item.EntityType
+                });
+            }
+
+            if ((permissions & AccessRights.Update) > 0)
+            {
+                menuItems.Add(new ContextMenuItem()
+                {
+                    Text = "Publiceer naar live",
+                    SpriteCssClass = "icon-globe",
+                    Action = "PUBLISH_LIVE",
+                    EntityType = item.EntityType
+                });
+                
+                menuItems.Add(new ContextMenuItem()
+                {
+                    Text = $"{item.Title} tonen",
+                    SpriteCssClass = "item-light-on",
+                    Action = "PUBLISH_ITEM",
+                    EntityType = item.EntityType
+                });
+                
+                menuItems.Add(new ContextMenuItem()
+                {
+                    Text = $"{item.Title} verbergen",
+                    SpriteCssClass = "item-light-off",
+                    Action = "HIDE_ITEM",
+                    EntityType = item.EntityType
+                });
+            }
+
+            if ((permissions & AccessRights.Delete) > 0)
+            {
+                menuItems.Add(new ContextMenuItem()
+                {
+                    Text = $"{item.Title} verwijderen (DEL)",
+                    SpriteCssClass = "icon-delete",
+                    Action = "REMOVE_ITEM",
+                    EntityType = item.EntityType
+                });
+            }
+
+            return new ServiceResult<List<ContextMenuItem>>(menuItems);
         }
 
         /// <summary>

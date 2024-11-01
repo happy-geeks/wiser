@@ -7,6 +7,7 @@ using Api.Modules.EntityTypes.Models;
 using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Items.Interfaces
 {
@@ -276,5 +277,7 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
         /// <returns></returns>
         Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data);
+
+        Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity userIdentity, string encryptedItemId, string entityType);
     }
 }

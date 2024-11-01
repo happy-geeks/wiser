@@ -676,6 +676,14 @@ namespace Api.Modules.Items.Controllers
             return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, parentEntityType, itemId ?? 0,orderBy, checkId ?? 0, linkType, entityType)).GetHttpResponseMessage();
         }
 
+        [HttpGet]
+        [Route("context-menu")]
+        [ProducesResponseType(typeof(List<ContextMenuItem>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery]string encryptedItemId, string entityType = "")
+        {
+            return (await itemsService.GetContextMenuAsync(moduleId, (ClaimsIdentity)User.Identity, encryptedItemId, entityType)).GetHttpResponseMessage();
+        }
+
         /// <summary>
         /// Move an item to a different position in the tree view.
         /// </summary>

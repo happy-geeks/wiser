@@ -736,10 +736,10 @@ const moduleSettings = {
          */
         async onContextMenuOpen(event) {
             try {
-                const nodeId = this.mainTreeView.dataItem(event.target).id;
-                let contextMenu = await Wiser.api({ url: `${this.base.settings.serviceRoot}/GET_CONTEXT_MENU?moduleId=${encodeURIComponent(this.base.settings.moduleId)}&itemId=${encodeURIComponent(nodeId)}` });
-                //TODO: DIT MOET ANDERS MAAR KOMT ZO VERKEERD UIT WISER
-                contextMenu = JSON.parse(JSON.stringify(contextMenu).replace(/"attr":\[/g, '"attr":').replace(/\}\]\},/g, "}},").replace("}]}]", "}}]"));
+                const dataItem = this.mainTreeView.dataItem(event.target);
+                const nodeId = dataItem.id;
+                const entityType = this.mainTreeView.dataItem(event.target).entityType;
+                let contextMenu = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}items/context-menu?moduleId=${encodeURIComponent(this.base.settings.moduleId)}&encryptedItemId=${encodeURIComponent(nodeId)}&entityType=${encodeURIComponent(entityType)}` });
                 this.mainTreeViewContextMenu.setOptions({
                     dataSource: contextMenu
                 });
