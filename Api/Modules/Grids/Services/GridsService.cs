@@ -27,6 +27,7 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
+using Google.Cloud.Translation.V2;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
@@ -147,7 +148,7 @@ namespace Api.Modules.Grids.Services
             }
 
             // Find out if there are custom queries for the grid.
-            var columnsToSelect = "options";
+            var columnsToSelect = "options, language_code";
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("id", propertyId);
             if (mode == EntityGridModes.LinkOverview)
@@ -158,6 +159,8 @@ namespace Api.Modules.Grids.Services
             DataTable dataTable;
             var gridOptionsDataTable = await clientDatabaseConnection.GetAsync($"SELECT {columnsToSelect} FROM {WiserTableNames.WiserEntityProperty} WHERE id = ?id");
 
+            var results = new GridSettingsAndDataModel();
+            
             if (gridOptionsDataTable.Rows.Count > 0)
             {
                 if (gridOptionsDataTable.Columns.Contains("search_query"))
@@ -179,13 +182,14 @@ namespace Api.Modules.Grids.Services
                 }
 
                 gridOptionsValue = gridOptionsDataTable.Rows[0].Field<string>("options");
-            }
 
-            var results = new GridSettingsAndDataModel();
+            }
+            
             var fieldMappings = new List<FieldMapModel>();
             if (mode != EntityGridModes.LinkOverview)
             {
                 results = await GridSettingsAndDataModelFromFieldOptionsAsync(propertyId, gridOptionsValue, itemId);
+                results.LanguageCode = gridOptionsDataTable.Rows[0].Field<string>("language_code");
             }
             else if (!String.IsNullOrWhiteSpace(gridOptionsValue))
             {
@@ -919,6 +923,7 @@ namespace Api.Modules.Grids.Services
                     clientDatabaseConnection.ClearParameters();
                     clientDatabaseConnection.AddParameter("entityType", entityType);
                     clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
+                    
                     var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
                     var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
 
