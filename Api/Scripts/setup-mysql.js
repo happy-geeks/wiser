@@ -29,7 +29,7 @@
         return;
     }
 
-    const connection = await createConnection({
+    const connection = createConnection({
         host: arguments.host,
         user: arguments.user,
         password: arguments.password,
@@ -48,7 +48,7 @@
         console.log(notice(`Connected to database.`));
 
         console.log(notice("Creating tables..."));
-        await connection.query(`CREATE TABLE \`easy_customers\`  (
+        await connection.query(`CREATE TABLE \`easy_customers\` (
                               \`id\` int NOT NULL AUTO_INCREMENT,
                               \`customerid\` int NULL DEFAULT NULL,
                               \`name\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
@@ -62,6 +62,8 @@
                               \`encryption_key_test\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
                               \`subdomain\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
                               \`wiser_title\` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+                              \`tenant_settings\` json NULL,
+                              \`db_ssh_private_key\` blob NULL,
                               PRIMARY KEY (\`id\`) USING BTREE,
                               UNIQUE INDEX \`subdomain\`(\`subdomain\`) USING BTREE,
                               INDEX \`customerid\`(\`customerid\`) USING BTREE,
@@ -75,11 +77,11 @@
         const createTriggersQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/CreateTriggers.sql"), "utf8");
         await connection.query(createTriggersQuery);
         console.log(notice("Triggers created."));
-		
-		console.log(notice("Creating stored procedures..."));
-		const createStoredProceduresQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/StoredProcedures.sql"), "utf8");
-		await connection.query(createStoredProceduresQuery);
-		console.log(notice("Stored procedures created."));
+
+        console.log(notice("Creating stored procedures..."));
+        const createStoredProceduresQuery = fs.readFileSync(path.join(__dirname, "..", "/Core/Queries/WiserInstallation/StoredProcedures.sql"), "utf8");
+        await connection.query(createStoredProceduresQuery);
+        console.log(notice("Stored procedures created."));
 
         console.log(notice("Inserting data..."));
         await connection.query(`INSERT INTO easy_customers (id, customerid, name, subdomain, wiser_title) VALUES (1, 1, 'Main', 'main', 'Wiser')`);

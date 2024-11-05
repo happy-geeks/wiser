@@ -1,4 +1,6 @@
-﻿namespace Api.Modules.Tenants.Models
+﻿using GeeksCoreLibrary.Core.Models;
+
+namespace Api.Modules.Tenants.Models
 {
     /// <summary>
     /// A model with connection information. Can be used to store credentials to a database connection or an FTP connection or something similar.
@@ -34,5 +36,10 @@
         /// Gets or sets the root folder. Only used for FTP connections.
         /// </summary>
         public string RootFolder { get; set; }
+
+        /// <summary>
+        /// Gets or sets the SSH settings. Only needed if the connection is made over SSH.
+        /// </summary>
+        public SshSettings SshSettings { get; set; }
     }
 }

@@ -464,6 +464,7 @@ namespace Api.Modules.Tenants.Services
             wiserDatabaseConnection.AddParameter("db_passencrypted", tenant.Database.Password ?? String.Empty);
             wiserDatabaseConnection.AddParameter("db_port", tenant.Database.PortNumber);
             wiserDatabaseConnection.AddParameter("db_dbname", tenant.Database.DatabaseName);
+            wiserDatabaseConnection.AddParameter("db_ssh_settings", Newtonsoft.Json.JsonConvert.SerializeObject(tenant.Database.SshSettings));
             wiserDatabaseConnection.AddParameter("encryption_key", tenant.EncryptionKey);
             wiserDatabaseConnection.AddParameter("encryption_key_test", tenant.EncryptionKey);
             wiserDatabaseConnection.AddParameter("subdomain", tenant.SubDomain);

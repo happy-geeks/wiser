@@ -79,12 +79,13 @@ namespace Api.Core.Services
         public ClientDatabaseConnection(IDatabaseConnection wiserDatabaseConnection, IOptions<GclSettings> gclSettings, IOptions<ApiSettings> apiSettings, IHttpContextAccessor httpContextAccessor, ILogger<ClientDatabaseConnection> logger, IWebHostEnvironment webHostEnvironment)
         {
             this.gclSettings = gclSettings.Value;
-            this.WiserDatabaseConnection = wiserDatabaseConnection;
+            WiserDatabaseConnection = wiserDatabaseConnection;
             this.apiSettings = apiSettings.Value;
             this.httpContextAccessor = httpContextAccessor;
             this.logger = logger;
             this.webHostEnvironment = webHostEnvironment;
             instanceId = Guid.NewGuid();
+            sshSettingsForReading = this.gclSettings.DatabaseSshSettings;
         }
 
         /// <inheritdoc />
@@ -1024,6 +1025,11 @@ SELECT LAST_INSERT_ID();";
             if (!String.IsNullOrEmpty(sshSettings.PrivateKeyPath))
             {
                 authenticationMethods.Add(new PrivateKeyAuthenticationMethod(sshSettings.Username, new PrivateKeyFile(sshSettings.PrivateKeyPath, String.IsNullOrEmpty(sshSettings.PrivateKeyPassphrase) ? null : sshSettings.PrivateKeyPassphrase)));
+            }
+            else if (sshSettings.PrivateKeyBytes is { Length: > 0 })
+            {
+                using var privateKeyStream = new MemoryStream(sshSettings.PrivateKeyBytes);
+                authenticationMethods.Add(new PrivateKeyAuthenticationMethod(sshSettings.Username, new PrivateKeyFile(privateKeyStream, String.IsNullOrEmpty(sshSettings.PrivateKeyPassphrase) ? null : sshSettings.PrivateKeyPassphrase)));
             }
 
             if (!String.IsNullOrEmpty(sshSettings.Password))

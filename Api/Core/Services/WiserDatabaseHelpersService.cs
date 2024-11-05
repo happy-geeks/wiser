@@ -216,7 +216,41 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         logTable.Columns.Add(new ColumnSettingsModel("sub_domain", MySqlDbType.VarChar, 255, notNull: true, defaultValue: ""));
         logTable.Columns.Add(new ColumnSettingsModel("is_from_wiser_front_end", MySqlDbType.Int16, 1, notNull: true, defaultValue: "0"));
         logTable.Indexes.Add(new IndexSettingsModel(ApiTableNames.ApiRequestLogs, "idx_sub_domain", IndexTypes.Normal, new List<string> {"sub_domain", "is_from_wiser_front_end"}));
-        mainDatabaseHelpersService.ExtraWiserTableDefinitions = new List<WiserTableDefinitionModel> {logTable};
+
+        // Custom table update logic for easy_customers.
+        var wiserTenantsTable = new WiserTableDefinitionModel
+        {
+            Name = ApiTableNames.WiserTenants,
+            LastUpdate = new DateTime(2024, 11, 5),
+            CharacterSet = "utf8mb4",
+            Collation = "utf8mb4_general_ci",
+            Columns = new List<ColumnSettingsModel>
+            {
+                new("id", MySqlDbType.Int32, notNull: true, isPrimaryKey: true, autoIncrement: true),
+                new("customerid", MySqlDbType.Int32),
+                new("name", MySqlDbType.VarChar, 255),
+                new("db_host", MySqlDbType.VarChar, 255),
+                new("db_login", MySqlDbType.VarChar, 255),
+                new("db_pass", MySqlDbType.VarChar, 255),
+                new("db_passencrypted", MySqlDbType.VarChar, 255),
+                new("db_port", MySqlDbType.VarChar, 255),
+                new("db_dbname", MySqlDbType.VarChar, 255),
+                new("db_ssh_private_key", MySqlDbType.Blob),
+                new("encryption_key", MySqlDbType.VarChar, 255),
+                new("encryption_key_test", MySqlDbType.VarChar, 255),
+                new("subdomain", MySqlDbType.VarChar, 255),
+                new("wiser_title", MySqlDbType.VarChar, 255),
+                new("tenant_settings", MySqlDbType.JSON)
+            },
+            Indexes = new List<IndexSettingsModel>
+            {
+                new(ApiTableNames.WiserTenants, "subdomain", IndexTypes.Unique, new List<string> {"subdomain"}),
+                new(ApiTableNames.WiserTenants, "customerid", IndexTypes.Normal, new List<string> {"customerid"}),
+                new(ApiTableNames.WiserTenants, "name", IndexTypes.Normal, new List<string> {"name"})
+            }
+        };
+
+        mainDatabaseHelpersService.ExtraWiserTableDefinitions = new List<WiserTableDefinitionModel> {logTable, wiserTenantsTable};
 
         await mainDatabaseHelpersService.CheckAndUpdateTablesAsync(tablesToUpdate);
     }
