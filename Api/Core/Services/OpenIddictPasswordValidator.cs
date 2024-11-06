@@ -120,7 +120,7 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                     var adminIdentity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
          
                     var adminListPrincipal = new ClaimsPrincipal(adminIdentity);
-                    parameters.Add("showUsersList", new OpenIddictParameter(true));
+                    parameters.Add("showUsersList", true);
                     adminListPrincipal.SetScopes("api.users_list");
 
                     Signin(context, adminListPrincipal, parameters);
@@ -146,16 +146,26 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
          
          parameters.Add("name", loginResult.ModelObject.Name);
          parameters.Add("role", loginResult.ModelObject.Role);
+         parameters.Add("totpEnabled", loginResult.ModelObject.TotpAuthentication.Enabled);
+         parameters.Add("totpQrImageUrl", loginResult.ModelObject.TotpAuthentication.QrImageUrl);
+         parameters.Add("totpFirstTime", adminAccountId == 0 && loginResult.ModelObject.TotpAuthentication.RequiresSetup);
+         
+         var totpSuccess = totpSuccessAdmin || loginResult.ModelObject.TotpAuthentication.Enabled && (!String.IsNullOrWhiteSpace(totpPin) || !String.IsNullOrWhiteSpace(totpBackupCode));
+         parameters.Add("totpSuccess", totpSuccess);
              
          if (!String.IsNullOrWhiteSpace(loginResult.ModelObject.CookieValue))
          {
-             parameters.Add("cookieValue", new OpenIddictParameter(loginResult.ModelObject.CookieValue));
+             parameters.Add("cookieValue", loginResult.ModelObject.CookieValue);
          }
          
          var identity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
          
          var principal = new ClaimsPrincipal(identity);
-         principal.SetScopes("api.read", "api.write");
+
+         if (!loginResult.ModelObject.TotpAuthentication.Enabled || totpSuccess)
+         {
+             principal.SetScopes("api.read", "api.write");
+         }
 
          Signin(context, principal, parameters);
     }
