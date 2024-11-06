@@ -30,21 +30,30 @@ export default class UsersService extends BaseService {
                 loginData.append("selectedUser", selectedUser);
             }
 
-            const loginResult = await this.base.api.post(`/connect/token`, loginData);
+            const loginResult = await this.base.api.post("/connect/token", loginData);
             result.success = true;
             result.data = loginResult.data;
             result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in > 60 ? 60 : 0)) * 1000));
-            result.data.usersList = JSON.parse(result.data.users || "[]").map((user) => {
-                if (!user.Details || !user.Details.length) {
-                    return user;
+            
+            if (result.data.showUsersList)
+            {
+                const userListResponse = await fetch(`${this.base.appSettings.apiBase}api/v3/users/users-list`, {
+                    "headers": {
+                        "Authorization": `Bearer ${result.data.access_token}`
+                    }
+                });
+                
+                if (!userListResponse.ok)
+                {
+                    result.success = false;
+                    console.error("Error when getting users list for admin");
+                    result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                    return;
                 }
-
-                for (let detail of user.Details) {
-                    user[detail.Key] = detail.Value;
-                }
-
-                return user;
-            });
+                
+                result.data.usersList = await userListResponse.json();
+            }
+            
             result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
         } catch (error) {
             result.success = false;
@@ -54,12 +63,13 @@ export default class UsersService extends BaseService {
                 console.warn(error.response);
                 // The request was made and the server responded with a status code
                 // that falls out of the range of 2xx
-                if (error.response.status !== 400 || error.response.data.error === "server_error") {
-                    result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                
+                if (error.response.status === 401 && error.response.data.error === "invalid_client") {
+                    result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
                 } else if(error.response.data && error.response.data.error_description && error.response.data.error_description.toLowerCase().includes("blocked")) {
                     result.message = "Gebruikersnaam is geblokkeerd vanwege te veel mislukte inlogpogingen.";
                 } else {
-                    result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
+                    result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
                 }
             } else if (error.request) {
                 // The request was made but no response was received

@@ -107,7 +107,7 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                                !String.IsNullOrWhiteSpace(totpPin);
             if (String.IsNullOrWhiteSpace(selectedUser))
             {
-                // Admin account has not selected a user, so return a list of users.
+                parameters.Add("adminLogin", new OpenIddictParameter(true));
                 var usersList = await usersService.GetAsync();
                 if (usersList.ModelObject.Count == 1)
                 {
@@ -116,7 +116,14 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                 }
                 else
                 {
-                    context.Reject("select_user");
+                    // Create a token with 
+                    var adminIdentity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
+         
+                    var adminListPrincipal = new ClaimsPrincipal(adminIdentity);
+                    parameters.Add("showUsersList", new OpenIddictParameter(true));
+                    adminListPrincipal.SetScopes("api.users_list");
+
+                    Signin(context, adminListPrincipal, parameters);
                     return;
                 }
             }
@@ -145,43 +152,32 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
              parameters.Add("cookieValue", new OpenIddictParameter(loginResult.ModelObject.CookieValue));
          }
          
-         var claims = CreateClaimsList(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
-        
-         var identity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-
-         identity.SetAuthorizationId(loginResult.ModelObject.Id.ToString());
+         var identity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
          
          var principal = new ClaimsPrincipal(identity);
-         principal.SetScopes("profile", "email", "api.read", "api.write");
+         principal.SetScopes("api.read", "api.write");
 
-         principal.SetDestinations((c) => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken]);
-         
-         context.SignIn(principal, parameters);
+         Signin(context, principal, parameters);
     }
 
-    private static IEnumerable<Claim> CreateClaimsList(AdminAccountModel adminAccount, string subDomain, string isTestEnvironment, bool isWiserFrontEndLogin)
+    private void Signin(OpenIddictServerEvents.HandleTokenRequestContext context, ClaimsPrincipal principal, Dictionary<string, OpenIddictParameter> parameters)
     {
-        return new List<Claim>
-        {
-            new(ClaimTypes.GivenName, adminAccount.Name),
-            new(ClaimTypes.Name, adminAccount.Login),
-            new(ClaimTypes.Email, adminAccount.Login),
-            new(ClaimTypes.Role, IdentityConstants.AdminAccountRole),
-            new(ClaimTypes.GroupSid, subDomain),
-            new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment),
-            new(HttpContextConstants.IsWiserFrontEndLoginKey, isWiserFrontEndLogin.ToString())
-        };
+        principal.SetDestinations((c) => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken]);
+        context.SignIn(principal, parameters);
+    }
+
+    private ClaimsIdentity CreateIdentity(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
+    {
+        var claims = CreateClaimsList(user, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
+        
+        var identity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        return identity;
     }
 
     private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
     {
         var claimsIdentity = new List<Claim>
         {
-            new(OpenIddictConstants.Claims.GivenName, user.Name),
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.Username),
-            new(OpenIddictConstants.Claims.Subject , user.Id.ToString()),
-            new(ClaimTypes.Role, user.Role),
             new(ClaimTypes.GroupSid, subDomain),
             new(ClaimTypes.Sid, adminAccountId.ToString()),
             new(IdentityConstants.AdminAccountName, adminAccountName ?? ""),
@@ -189,14 +185,27 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
             new(HttpContextConstants.IsWiserFrontEndLoginKey, isWiserFrontEndLogin.ToString())
         };
 
-        if (!String.IsNullOrWhiteSpace(user.EmailAddress))
+        if (user is not null)
         {
-            claimsIdentity.Add(new Claim(ClaimTypes.Email, user.EmailAddress));
-        }
+            claimsIdentity.Add(new Claim(OpenIddictConstants.Claims.GivenName, user.Name));
+            claimsIdentity.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+            claimsIdentity.Add(new Claim(ClaimTypes.Name, user.Username));
+            claimsIdentity.Add(new Claim(OpenIddictConstants.Claims.Subject , user.Id.ToString()));
+            claimsIdentity.Add(new Claim(ClaimTypes.Role, user.Role));
+            
+            if (!String.IsNullOrWhiteSpace(user.EmailAddress))
+            {
+                claimsIdentity.Add(new Claim(ClaimTypes.Email, user.EmailAddress));
+            }
 
-        if (!String.IsNullOrWhiteSpace(user.CookieValue))
+            if (!String.IsNullOrWhiteSpace(user.CookieValue))
+            {
+                claimsIdentity.Add(new Claim(IdentityConstants.TokenIdentifierKey, user.CookieValue));
+            }
+        }
+        else
         {
-            claimsIdentity.Add(new Claim(IdentityConstants.TokenIdentifierKey, user.CookieValue));
+            claimsIdentity.Add(new Claim(OpenIddictConstants.Claims.Subject , "0"));
         }
 
         if (adminAccountId > 0)

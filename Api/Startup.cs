@@ -24,6 +24,7 @@ using GeeksCoreLibrary.Modules.Databases.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -41,6 +42,7 @@ using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using OpenIddict.Abstractions;
 using OpenIddict.Server;
 using React;
 using React.AspNet;
@@ -238,10 +240,9 @@ namespace Api
                     
                     // Define static scopes here.
                     options.RegisterScopes(
-                        "profile",     // Access to basic profile information
-                        "email",       // Access to the user's email address
                         "api.read",    // Read access to the API
-                        "api.write"    // Write access to the API
+                        "api.write",    // Write access to the API
+                        "api.users_list"
                     );
 
                     // Register your custom password validator.
@@ -289,11 +290,46 @@ namespace Api
 
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("ApiScope",
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser() // Requires the user to be authenticated
+                    .RequireAssertion(context =>
+                    {
+                        var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                        return scopes is not null && scopes.Split(" ").Contains("api.write");
+                    })
+                    .Build();
+                
+                options.AddPolicy("ApiUsersList",
                     policy =>
                     {
-                        policy.RequireAuthenticatedUser();
-                        policy.RequireClaim("scope", "wiser-api");
+                        policy.RequireAuthenticatedUser()
+                            .RequireAssertion(context =>
+                            {
+                                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                                return scopes is not null && scopes.Split(" ").Contains("api.users_list");
+                            });
+                    });
+                
+                options.AddPolicy("ApiWrite",
+                    policy =>
+                    {
+                        policy.RequireAuthenticatedUser()
+                            .RequireAssertion(context =>
+                            {
+                                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                                return scopes is not null && scopes.Split(" ").Contains("api.write");
+                            });
+                    });
+                
+                options.AddPolicy("ApiRead",
+                    policy =>
+                    {
+                        policy.RequireAuthenticatedUser()
+                            .RequireAssertion(context =>
+                            {
+                                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                                return scopes is not null && scopes.Split(" ").Contains("api.read");
+                            });
                     });
             });
 
