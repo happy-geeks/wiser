@@ -10,6 +10,7 @@ using Api.Core.Enums;
 using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
+using Api.Modules.Amazon.Interfaces;
 using Api.Modules.Branches.Interfaces;
 using Api.Modules.CloudFlare.Interfaces;
 using Api.Modules.Files.Interfaces;
@@ -19,9 +20,11 @@ using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
+using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -46,11 +49,13 @@ namespace Api.Modules.Files.Services
         private readonly IFilesRepository filesRepository;
         private readonly IBranchesService branchesService;
         private readonly IServiceProvider serviceProvider;
+        private readonly IAmazonS3Service amazonS3Service;
+        private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of <see cref="FilesService"/>.
         /// </summary>
-        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider)
+        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider, IAmazonS3Service amazonS3Service, IWebHostEnvironment webHostEnvironment)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.logger = logger;
@@ -60,6 +65,8 @@ namespace Api.Modules.Files.Services
             this.filesRepository = filesRepository;
             this.branchesService = branchesService;
             this.serviceProvider = serviceProvider;
+            this.amazonS3Service = amazonS3Service;
+            this.webHostEnvironment = webHostEnvironment;
 
             Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
         }
@@ -134,6 +141,7 @@ namespace Api.Modules.Files.Services
                 databaseConnection.ClearParameters();
 
                 var (ftpDirectory, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
+                var (useAmazonS3, amazonS3BucketName, awsAccountCredentials) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
 
                 // Fix ordering of files.
                 if (itemId > 0)
@@ -190,7 +198,7 @@ namespace Api.Modules.Files.Services
                         }
                     }
 
-                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType);
+                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType, useAmazonS3, amazonS3BucketName, awsAccountCredentials);
                     if (fileResult.StatusCode != HttpStatusCode.OK)
                     {
                         return new ServiceResult<List<FileModel>>
@@ -230,7 +238,7 @@ namespace Api.Modules.Files.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0)
+        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsAccountCredentialsModel awsAccountCredentials = null)
         {
             var content = Array.Empty<byte>();
             var contentUrl = string.Empty;
@@ -244,6 +252,11 @@ namespace Api.Modules.Files.Services
             else if (useCloudFlare)
             {
                 contentUrl = await cloudFlareService.UploadImageAsync(fileName, fileBytes);
+            }
+            else if (useAmazonS3)
+            {
+
+                contentUrl = $"s3://{amazonS3BucketName}/{fileName}";
             }
             else
             {
@@ -544,38 +557,57 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             }
 
             var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-            if (!ftpSettings.Any())
+            var (useAmazonS3, amazonS3BucketName, awsAccountCredentials) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
+            if (!ftpSettings.Any() && !useAmazonS3)
             {
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: contentUrl));
             }
 
-            var ftp = ftpSettings.First();
-            if (ftp.Mode == FtpModes.Sftp)
+            if (ftpSettings.Any())
             {
-                throw new NotImplementedException("SFTP is not yet supported");
-                /*using var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password);
+                var ftp = ftpSettings.First();
+                if (ftp.Mode == FtpModes.Sftp)
+                {
+                    throw new NotImplementedException("SFTP is not yet supported");
+                    /*using var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password);
+                    await using var memoryStream = new MemoryStream();
+                    client.Connect();
+                    client.DownloadFile(contentUrl, memoryStream);
+                    return new ServiceResult<(string ContentType, byte[] Data, string url)>((ContentType: contentType, Data: memoryStream.ToArray(), url: null));*/
+                }
+
+                // Get the object used to communicate with the server.
+                var fullFtpLocation = $"ftp://{ftp.Host}{contentUrl}";
+                var request = (FtpWebRequest) WebRequest.Create(fullFtpLocation);
+                request.Method = WebRequestMethods.Ftp.DownloadFile;
+                request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
+
+                using var response = await request.GetResponseAsync();
+                await using var responseStream = response.GetResponseStream();
+                if (responseStream == null)
+                {
+                    return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
+                }
+
                 await using var memoryStream = new MemoryStream();
-                client.Connect();
-                client.DownloadFile(contentUrl, memoryStream);
-                return new ServiceResult<(string ContentType, byte[] Data, string url)>((ContentType: contentType, Data: memoryStream.ToArray(), url: null));*/
+                await responseStream.CopyToAsync(memoryStream);
+                return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: memoryStream.ToArray(), Url: null));
             }
 
-            // Get the object used to communicate with the server.
-            var fullFtpLocation = $"ftp://{ftp.Host}{contentUrl}";
-            var request = (FtpWebRequest)WebRequest.Create(fullFtpLocation);
-            request.Method = WebRequestMethods.Ftp.DownloadFile;
-            request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
+            if (!useAmazonS3) return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
 
-            using var response = await request.GetResponseAsync();
-            await using var responseStream = response.GetResponseStream();
-            if (responseStream == null)
+            var s3Uri = new Uri(contentUrl);
+            var s3Bucket = s3Uri.Host;
+            var s3Object = s3Uri.LocalPath.TrimStart('/');
+
+            var localFolder = FileSystemHelpers.GetContentFilesFolderPath(webHostEnvironment);
+            if (!await amazonS3Service.DownloadObjectFromBucketAsync(s3Bucket, s3Object, localFolder))
             {
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
             }
 
-            await using var memoryStream = new MemoryStream();
-            await responseStream.CopyToAsync(memoryStream);
-            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: memoryStream.ToArray(), Url: null));
+            data = await File.ReadAllBytesAsync(Path.Combine(localFolder, s3Object));
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: data, Url: null));
         }
 
         /// <inheritdoc />
@@ -1087,6 +1119,85 @@ AND property_name = ?propertyName";
             }));
 
             return (ftpDirectory, ftpSettings);
+        }
+
+        private async Task<(bool UseAmazonS3, string BucketName, AwsAccountCredentialsModel awsAccountCredentials)> GetAmazonS3SettingsAsync(ClaimsIdentity identity, string propertyName, ulong itemId = 0, ulong itemLinkId = 0)
+        {
+            var awsAccountCredentials = new AwsAccountCredentialsModel();
+            string query;
+
+            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            databaseConnection.AddParameter("propertyName", propertyName);
+
+            if (itemLinkId > 0)
+            {
+                databaseConnection.AddParameter("itemLinkId", itemLinkId);
+                query = $@"SELECT options FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?itemLinkId AND property_name = ?propertyName LIMIT 1";
+            }
+            else
+            {
+                databaseConnection.AddParameter("itemId", itemId);
+                query = $@"SELECT p.options 
+                            FROM {WiserTableNames.WiserEntityProperty} AS p 
+                            JOIN wiser_item AS i ON i.id = ?itemId AND i.entity_type = p.entity_name
+                            WHERE property_name = ?propertyName
+                            LIMIT 1";
+            }
+
+            var dataTable = await databaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                return (false, null, awsAccountCredentials);
+            }
+
+            var options = dataTable.Rows[0].Field<string>("options");
+            if (String.IsNullOrWhiteSpace(options))
+            {
+                return (false, null, awsAccountCredentials);
+            }
+
+            var parsedOptions = JObject.Parse(options);
+            if (!parsedOptions.Value<bool>("useAmazonS3"))
+            {
+                return (false, null, awsAccountCredentials);
+            }
+
+            var bucketName = parsedOptions.Value<string>("amazonS3BucketName") ?? "";
+            if (String.IsNullOrWhiteSpace(bucketName))
+            {
+                logger.LogWarning("No bucket name was found in the Amazon S3 settings.");
+                return (false, null, awsAccountCredentials);
+            }
+
+            query = $@"SELECT
+                        accessKey.value AS accessKey,
+                        secretKey.value AS secretKey,
+                        region.`value` AS region
+                    FROM {WiserTableNames.WiserItem} AS item
+                    JOIN {WiserTableNames.WiserItemDetail} AS accessKey ON accessKey.item_id = item.id AND accessKey.`key` = 'access_key' AND accessKey.value <> ''
+                    JOIN {WiserTableNames.WiserItemDetail} AS secretKey ON secretKey.item_id = item.id AND secretKey.`key` = 'secret_key' AND secretKey.value <> ''
+                    JOIN {WiserTableNames.WiserItemDetail} AS region ON region.item_id = item.id AND region.`key` = 'region' AND region.value <> ''
+                    WHERE item.entity_type = 'aws_account'";
+
+            dataTable = await databaseConnection.GetAsync(query);
+            if (dataTable.Rows.Count == 0)
+            {
+                logger.LogWarning("There is no Amazon AWS account set up in Wiser.");
+                return (false, null, awsAccountCredentials);
+            }
+
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
+            if (String.IsNullOrWhiteSpace(encryptionKey))
+            {
+                encryptionKey = tenant.ModelObject.EncryptionKey;
+            }
+
+            awsAccountCredentials.AccessKey = dataTable.Rows[0].Field<string>("accessKey").DecryptWithAesWithSalt(encryptionKey);
+            awsAccountCredentials.SecretKey = dataTable.Rows[0].Field<string>("secretKey").DecryptWithAesWithSalt(encryptionKey);
+            awsAccountCredentials.Region = dataTable.Rows[0].Field<string>("region");
+
+            return (true, bucketName, awsAccountCredentials);
         }
     }
 }
