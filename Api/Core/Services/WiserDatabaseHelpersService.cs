@@ -64,6 +64,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         // Make sure that Wiser tables are up-to-date.
         const string triggersName = "wiser_triggers";
         const string removeVirtualColumnsName = "wiser_remove_virtual_columns";
+        const string addBranchSettingsModuleName = "wiser_add_branch_settings_module";
 
         // These tables need to be updated first, because others depend on them.
         await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
@@ -185,6 +186,22 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
 
             // Update wiser_table_changes.
             clientDatabaseConnection.AddParameter("tableName", removeVirtualColumnsName);
+            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+            await clientDatabaseConnection.ExecuteAsync($"""
+                                                         INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                         VALUES (?tableName, ?lastUpdate) 
+                                                         ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
+                                                         """);
+        }
+
+        // Make sure that all triggers for Wiser tables are up-to-date.
+        if (!lastTableUpdates.TryGetValue(addBranchSettingsModuleName, out value) || value < new DateTime(2024, 11, 18))
+        {
+            var addBranchSettingsModuleQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.BranchSettingsModule.sql");
+            await clientDatabaseConnection.ExecuteAsync(addBranchSettingsModuleQuery);
+
+            // Update wiser_table_changes.
+            clientDatabaseConnection.AddParameter("tableName", addBranchSettingsModuleName);
             clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
             await clientDatabaseConnection.ExecuteAsync($"""
                                                          INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 

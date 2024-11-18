@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MySqlConnector;
+using Constants = GeeksCoreLibrary.Modules.Databases.Models.Constants;
 
 namespace Api.Modules.Tenants.Services
 {
@@ -298,6 +299,7 @@ namespace Api.Modules.Tenants.Services
                     var createTablesConfiguratorQuery = !isConfigurator ? "" :await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTablesConfigurator.sql");
                     var insertInitialDataConfiguratorQuery = !isConfigurator ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataConfigurator.sql");
                     var insertInitialDataMultiLanguageQuery = !isMultiLanguage ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataMultiLanguage.sql");
+                    var addBranchSettingsModuleQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.BranchSettingsModule.sql");
 
                     if (tenant.WiserSettings != null)
                     {
@@ -338,6 +340,8 @@ namespace Api.Modules.Tenants.Services
                         command.CommandText = createdStoredProceduresQuery;
                         await command.ExecuteNonQueryAsync();
                         command.CommandText = insertInitialDataQuery;
+                        await command.ExecuteNonQueryAsync();
+                        command.CommandText = addBranchSettingsModuleQuery;
                         await command.ExecuteNonQueryAsync();
 
                         if (isMultiLanguage)
@@ -404,7 +408,7 @@ namespace Api.Modules.Tenants.Services
                 {
                     // Set sub domain to main and then make sure the database connection log table in the main database is up-to-date.
                     httpContextAccessor.HttpContext.Items[HttpContextConstants.SubDomainKey] = apiSettings.MainSubDomain;
-                    await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { GeeksCoreLibrary.Modules.Databases.Models.Constants.DatabaseConnectionLogTableName });
+                    await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string> { Constants.DatabaseConnectionLogTableName });
                 }
 
                 wiserDatabaseConnection.ClearParameters();
