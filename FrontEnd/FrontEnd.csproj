@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.2.28" />
+    <PackageReference Include="GeeksCoreLibrary" Version="4.2.33" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
   </ItemGroup>
 
