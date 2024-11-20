@@ -154,7 +154,7 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.7.405.9" />
-    <PackageReference Include="GeeksCoreLibrary" Version="4.2.33" />
+    <PackageReference Include="GeeksCoreLibrary" Version="4.2.34" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="IdentityServer4" Version="4.1.2" />

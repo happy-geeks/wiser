@@ -24,7 +24,6 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Amazon.Interfaces;
 using GeeksCoreLibrary.Modules.Amazon.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -50,12 +49,11 @@ namespace Api.Modules.Files.Services
         private readonly IBranchesService branchesService;
         private readonly IServiceProvider serviceProvider;
         private readonly IAmazonS3Service amazonS3Service;
-        private readonly IWebHostEnvironment webHostEnvironment;
 
         /// <summary>
         /// Creates a new instance of <see cref="FilesService"/>.
         /// </summary>
-        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider, IAmazonS3Service amazonS3Service, IWebHostEnvironment webHostEnvironment)
+        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider, IAmazonS3Service amazonS3Service)
         {
             this.wiserTenantsService = wiserTenantsService;
             this.logger = logger;
@@ -66,7 +64,6 @@ namespace Api.Modules.Files.Services
             this.branchesService = branchesService;
             this.serviceProvider = serviceProvider;
             this.amazonS3Service = amazonS3Service;
-            this.webHostEnvironment = webHostEnvironment;
 
             Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
         }
@@ -161,8 +158,8 @@ namespace Api.Modules.Files.Services
                         fileBytes = memoryStream.ToArray();
                     }
 
-                    var fileName = file.FileName?.Trim('"');
-                    fileName = Path.GetFileNameWithoutExtension(fileName).ConvertToSeo() + Path.GetExtension(fileName)?.ToLowerInvariant();
+                    var fileName = file.FileName.Trim('"');
+                    fileName = Path.GetFileNameWithoutExtension(fileName).ConvertToSeo() + Path.GetExtension(fileName).ToLowerInvariant();
                     var fileExtension = Path.GetExtension(fileName);
 
                     if (useTinyPng && (fileExtension.Equals(".png", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)))
@@ -257,8 +254,8 @@ namespace Api.Modules.Files.Services
             {
                 contentUrl = $"s3://{amazonS3BucketName}/{fileName}";
 
-                // TODO: Use Stream version of UploadFileAsync once it is implemented.
                 var filePath = Path.Combine(Path.GetTempPath(), fileName);
+                await File.WriteAllBytesAsync(filePath, fileBytes);
                 await amazonS3Service.UploadFileAsync(amazonS3BucketName, fileName, filePath, awsSettings);
                 File.Delete(filePath);
             }
@@ -544,7 +541,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             var contentUrl = dataTable.Rows[0].Field<string>("content_url");
             var contentType = dataTable.Rows[0].Field<string>("content_type");
             propertyName = dataTable.Rows[0].Field<string>("property_name");
-            byte[] data = null;
+            byte[] data;
             if (!dataTable.Rows[0].IsNull("content"))
             {
                 data = dataTable.Rows[0].Field<byte[]>("content");
@@ -561,7 +558,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             }
 
             var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-            var (useAmazonS3, amazonS3BucketName, awsAccountCredentials) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
+            var (useAmazonS3, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
             if (!ftpSettings.Any() && !useAmazonS3)
             {
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: contentUrl));
@@ -607,7 +604,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             var s3Object = s3Uri.LocalPath.TrimStart('/');
 
             var localFolder = Path.GetTempPath();
-            if (!await amazonS3Service.DownloadObjectFromBucketAsync(s3Bucket, s3Object, localFolder))
+            if (!await amazonS3Service.DownloadObjectFromBucketAsync(s3Bucket, s3Object, localFolder, awsSettings))
             {
                 return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
             }
@@ -668,7 +665,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
 
             // Delete the files from the FTP(s), if this file-input uses FTP upload
             // else delete them from CloudFlare if url matches
-            if (!string.IsNullOrWhiteSpace(fileUrl))
+            if (!String.IsNullOrWhiteSpace(fileUrl))
             {
                 var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
                 if (ftpSettings.Any())
@@ -678,13 +675,19 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
                         await DeleteFileFromFtp(ftp, fileUrl);
                     }
                 }
-                else
+                else if (fileUrl.StartsWith("https://imagedelivery.net"))
                 {
                     // CloudFlare file?
-                    if (fileUrl.StartsWith("https://imagedelivery.net"))
-                    {
-                        await cloudFlareService.DeleteImageAsync(fileUrl);
-                    }
+                    await cloudFlareService.DeleteImageAsync(fileUrl);
+                }
+                else if (fileUrl.StartsWith("s3://"))
+                {
+                    // Amazon S3 file.
+                    var (_, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
+                    var s3Uri = new Uri(fileUrl);
+                    var s3Bucket = s3Uri.Host;
+                    var s3Object = s3Uri.LocalPath.TrimStart('/');
+                    await amazonS3Service.DeleteObjectAsync(s3Bucket, s3Object, awsSettings);
                 }
             }
 
@@ -914,7 +917,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
 
             databaseConnection.AddParameter("content_type", file.ContentType ?? "");
             databaseConnection.AddParameter("content_url", file.ContentUrl);
-            databaseConnection.AddParameter("file_name", Path.GetFileNameWithoutExtension(file.Name).ConvertToSeo() + Path.GetExtension(file.Name)?.ToLowerInvariant());
+            databaseConnection.AddParameter("file_name", Path.GetFileNameWithoutExtension(file.Name).ConvertToSeo() + Path.GetExtension(file.Name).ToLowerInvariant());
             databaseConnection.AddParameter("extension", file.Extension);
             databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true) ?? "");
             databaseConnection.AddParameter("title", file.Title ?? "");
@@ -1138,7 +1141,6 @@ AND property_name = ?propertyName";
         /// <returns>A <c>ValueTuple</c> with three properties: <c>UseAmazonS3</c>, <c>BucketName</c> and <c>AwsSettings</c>.</returns>
         private async Task<(bool UseAmazonS3, string BucketName, AwsSettings AwsSettings)> GetAmazonS3SettingsAsync(ClaimsIdentity identity, string propertyName, ulong itemId = 0, ulong itemLinkId = 0)
         {
-            var awsSettings = new AwsSettings();
             string query;
 
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -1164,45 +1166,44 @@ AND property_name = ?propertyName";
             var dataTable = await databaseConnection.GetAsync(query);
             if (dataTable.Rows.Count == 0)
             {
-                return (false, null, awsSettings);
+                return (false, null, null);
             }
 
             var options = dataTable.Rows[0].Field<string>("options");
             if (String.IsNullOrWhiteSpace(options))
             {
-                return (false, null, awsSettings);
+                return (false, null, null);
             }
 
             var parsedOptions = JObject.Parse(options);
             if (!parsedOptions.Value<bool>("useAmazonS3"))
             {
-                return (false, null, awsSettings);
+                return (false, null, null);
             }
 
             var bucketName = parsedOptions.Value<string>("amazonS3BucketName") ?? "";
             if (String.IsNullOrWhiteSpace(bucketName))
             {
                 logger.LogWarning("No bucket name was found in the Amazon S3 settings.");
-                return (false, null, awsSettings);
+                return (false, null, null);
             }
 
-            query = $@"SELECT
-                        accessKey.value AS accessKey,
-                        secretKey.value AS secretKey,
-                        region.`value` AS region
-                    FROM {WiserTableNames.WiserItem} AS item
-                    JOIN {WiserTableNames.WiserItemDetail} AS accessKey ON accessKey.item_id = item.id AND accessKey.`key` = 'access_key' AND accessKey.value <> ''
-                    JOIN {WiserTableNames.WiserItemDetail} AS secretKey ON secretKey.item_id = item.id AND secretKey.`key` = 'secret_key' AND secretKey.value <> ''
-                    JOIN {WiserTableNames.WiserItemDetail} AS region ON region.item_id = item.id AND region.`key` = 'region' AND region.value <> ''
-                    WHERE item.entity_type = 'aws_account'";
+            query = $"""
+                SELECT
+                    accessKey.value AS accessKey,
+                    secretKey.value AS secretKey,
+                    region.`value` AS region
+                FROM {WiserTableNames.WiserItem} AS item
+                JOIN {WiserTableNames.WiserItemDetail} AS accessKey ON accessKey.item_id = item.id AND accessKey.`key` = 'access_key' AND accessKey.value <> ''
+                JOIN {WiserTableNames.WiserItemDetail} AS secretKey ON secretKey.item_id = item.id AND secretKey.`key` = 'secret_key' AND secretKey.value <> ''
+                JOIN {WiserTableNames.WiserItemDetail} AS region ON region.item_id = item.id AND region.`key` = 'region' AND region.value <> ''
+                WHERE item.entity_type = 'aws_account'
+                """;
 
             dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
-            {
-                logger.LogWarning("There is no Amazon AWS account set up in Wiser.");
-                return (false, null, awsSettings);
-            }
+            if (dataTable.Rows.Count == 0) return (true, bucketName, null);
 
+            // Get the encryption key from the tenant settings.
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
             var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
             if (String.IsNullOrWhiteSpace(encryptionKey))
@@ -1210,9 +1211,14 @@ AND property_name = ?propertyName";
                 encryptionKey = tenant.ModelObject.EncryptionKey;
             }
 
-            awsSettings.AccessKey = dataTable.Rows[0].Field<string>("accessKey").DecryptWithAesWithSalt(encryptionKey);
-            awsSettings.SecretKey = dataTable.Rows[0].Field<string>("secretKey").DecryptWithAesWithSalt(encryptionKey);
-            awsSettings.Region = dataTable.Rows[0].Field<string>("region");
+            var accessKey = dataTable.Rows[0].Field<string>("accessKey");
+            var secretKey = dataTable.Rows[0].Field<string>("secretKey");
+            var awsSettings = new AwsSettings
+            {
+                AccessKey = String.IsNullOrWhiteSpace(accessKey) ? null : accessKey.DecryptWithAesWithSalt(encryptionKey),
+                SecretKey = String.IsNullOrWhiteSpace(secretKey) ? null : secretKey.DecryptWithAesWithSalt(encryptionKey),
+                Region = dataTable.Rows[0].Field<string>("region")
+            };
 
             return (true, bucketName, awsSettings);
         }
