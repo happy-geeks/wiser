@@ -47,6 +47,7 @@ import {
     IS_MAIN_BRANCH,
     LOAD_ENTITY_TYPES_OF_ITEM_ID,
     MERGE_BRANCH,
+    MERGE_BRANCH_ERROR,
     MODULES_REQUEST,
     OPEN_MODULE,
     RESET_BRANCH_CHANGES,
@@ -241,6 +242,9 @@ class Main {
                         dataSelectors: []
                     },
                     branchMergeSettings: {
+                        mergeType: null,
+                        templateName: null,
+                        templateId: 0,
                         selectedBranch: {
                             id: 0
                         },
@@ -431,6 +435,9 @@ class Main {
                 },
                 tenantManagementIsOpened() {
                     return this.$store.state.modules.openedModules.filter(m => m.moduleId === "tenantManagement").length > 0;
+                },
+                hasSelectedBranchMergeType() {
+                    return this.branchMergeSettings.mergeType !== null && this.branchMergeSettings.mergeType !== undefined && this.branchMergeSettings.mergeType !== "";
                 },
                 createBranchError() {
                     return this.$store.state.branches.createBranchError;
@@ -881,6 +888,11 @@ class Main {
                         return false;
                     }
 
+                    if (this.branchMergeSettings.mergeType === "template" && !this.branchMergeSettings.templateName) {
+                        await this.$store.dispatch(MERGE_BRANCH_ERROR, "Vul a.u.b. een naam in voor de template");
+                        return false;
+                    }
+
                     // Copy the conflicts to the merge settings, so that the WTS will know what to do with the conflicts.
                     if (this.mergeBranchResult && this.mergeBranchResult.conflicts) {
                         this.branchMergeSettings.conflicts = this.mergeBranchResult.conflicts;
@@ -900,7 +912,9 @@ class Main {
                     if (!this.mergeBranchError) {
                         this.$refs.wiserMergeBranchPrompt.close();
                         this.$refs.wiserMergeConflictsPrompt.close();
-                        this.showGeneralMessagePrompt("De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
+                        this.showGeneralMessagePrompt(this.branchMergeSettings.mergeType === "template"
+                            ? "De merge branch template is succesvol opgeslagen."
+                            : "De branch staat klaar om samengevoegd te worden. U krijgt een bericht wanneer dit voltooid is.");
                         return true;
                     }
 
@@ -1208,16 +1222,6 @@ class Main {
                     }
 
                     await this.getEntitiesForBranches(selectedBranchId);
-
-                    for (let entity of this.entitiesForBranches) {
-                        this.branchMergeSettings.entities[entity.id] = {
-                            everything: false,
-                            create: false,
-                            update: false,
-                            delete: false
-                        };
-                    }
-
                     await this.getLinkTypesForBranches(selectedBranchId);
 
                     this.$store.dispatch(RESET_BRANCH_CHANGES);

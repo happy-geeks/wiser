@@ -319,7 +319,19 @@
                     </section>
                 </div>
                 <div class="row scroll" v-else>
-                    <div class="col col-12 form-row" v-if="isMainBranch">
+                    <div class="col col-12 inline" v-if="isMainBranch">
+                        <label>Waarvoor wilt u een merge instellen?</label>
+                        <label class="radio">
+                            <input type="radio" name="mergeType" value="direct" v-model="branchMergeSettings.mergeType" />
+                            <span>Eenmalige merge</span>
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="mergeType" value="template" v-model="branchMergeSettings.mergeType" />
+                            <span>Herbruikbare template</span>
+                        </label>
+                    </div>
+
+                    <div class="col col-12 form-row" v-if="isMainBranch && hasSelectedBranchMergeType">
                         <label for="available-branches">Selecteer eerst de branch die u wilt synchroniseren</label>
                         <dropdownlist id="available-branches" class="full-width" :data-items="branches" :text-field="'name'" :data-item-key="'id'" v-model="branchMergeSettings.selectedBranch" @@change="onSelectedBranchChange"></dropdownlist>
                     </div>
@@ -329,7 +341,7 @@
                         <span v-html="mergeBranchError"></span>
                     </section>
 
-                    <div v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
+                    <div v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id && hasSelectedBranchMergeType)">
                         <div v-if="!branchChangesLoaded">
 						    <div class="col col-12 form-row no-bottom-margin">
 							    <label>Alle mogelijke entiteiten</label>
@@ -350,21 +362,21 @@
 						    </div>
 
                             <div class="col col-12 form-row no-bottom-margin">
-                                <label>Wiser Links:</label>
+                                <label>Koppelingen:</label>
                             </div>
 
                             <div class="col col-12 table-row no-top-margin">
                                 <div v-if="!linkTypesForBranches || !linkTypesForBranches.length">
-                                    <p>Geen wiser links gevonden. Neem a.u.b. contact op met ons.</p>
+                                    <p>Geen koppelingen gevonden. Neem a.u.b. contact op met ons.</p>
                                 </div>
                                 <div class="row" v-else>
                                     <div class="col col-4" v-for="link in linkTypesForBranches" :key="link.id">
                                         <label class="checkbox" >
                                             <input type="checkbox" :name="link.id" v-model="branchMergeSettings.linkTypes[link.id].everything" @@change="onBranchMergeSettingChange($event, 'linkTypes', link.id, 'everything')"/>
-                                            <span v-if="!link.name">"unnamed"</span>
+                                            <span v-if="!link.name">{{ link.sourceEntityType }}{{ (link.relationship === "OneToOne" ? "Under" : "To") }}{{ link.destinationEntityType }}</span>
                                             <span v-else>{{ link.name }}</span>
                                         </label>
-                                        <span style="font-size:small;"> [ {{link.sourceEntityType}} - {{link.destinationEntityType}} ] ( {{ link.type }} ) </span>
+                                        <span style="font-size:small;"> [ {{ link.sourceEntityType }} - {{ link.destinationEntityType }} ] ( {{ link.type }} ) </span>
                                     </div>
                                 </div>
                             </div>
@@ -386,7 +398,7 @@
 							    </div>
 							</div>
 
-                            <div class="col col-12 form-row no-bottom-margin">
+                            <div class="col col-12 form-row no-bottom-margin" v-if="this.branchMergeSettings.mergeType === 'direct'">
 							    <button class="btn btn-primary" @@click="countBranchChanges">Aantallen tellen en verder specificeren</button>
 							    <p>Let op, dit kan lang (een kwartier of meer) duren bij branches met veel wijzigingen.</p>
 						    </div>
@@ -643,7 +655,15 @@
 				</div>
             </div>
             <footer class="container fixed no-bottom-padding" v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id)">
-                <div class="row">
+                <div class="row" v-if="this.branchMergeSettings.mergeType === 'template'">
+                    <div class="col col-12 align-right">
+                        <label>
+                            <input type="text" name="template-name" v-model="branchMergeSettings.templateName" placeholder="Naam van template" />
+                        </label>
+                        <button class="btn btn-primary" :disabled="!branchMergeSettings.templateName" @@click="mergeBranch">Template opslaan</button>
+                    </div>
+                </div>
+                <div class="row" v-if="this.branchMergeSettings.mergeType === 'direct'">
                     <div class="col col-6 inline">
                         <label class="radio">
                             <input type="radio" name="start-time" value="direct" v-model="branchMergeSettings.startMode" />
