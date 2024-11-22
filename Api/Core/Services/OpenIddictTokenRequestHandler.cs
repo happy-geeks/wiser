@@ -9,7 +9,6 @@ using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,14 +18,14 @@ using OpenIddict.Server.AspNetCore;
 
 namespace Api.Core.Services;
 
-public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictServerEvents.HandleTokenRequestContext>
+public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddictServerEvents.HandleTokenRequestContext>
 {
-    private readonly ILogger<OpenIddictPasswordValidator> logger;
+    private readonly ILogger<OpenIddictTokenRequestHandler> logger;
     private readonly IHttpContextAccessor httpContextAccessor;
     private readonly GclSettings gclSettings;
     private readonly IUsersService usersService;
 
-    public OpenIddictPasswordValidator(ILogger<OpenIddictPasswordValidator> logger,
+    public OpenIddictTokenRequestHandler(ILogger<OpenIddictTokenRequestHandler> logger,
         IHttpContextAccessor httpContextAccessor, IOptions<GclSettings> gclSettings, IUsersService usersService)
     {
         this.logger = logger;
@@ -142,7 +141,6 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                                !String.IsNullOrWhiteSpace(totpPin);
             if (String.IsNullOrWhiteSpace(selectedUser))
             {
-                parameters.Add("adminLogin", true);
                 var usersList = await usersService.GetAsync();
                 if (usersList.ModelObject.Count == 1)
                 {
@@ -151,9 +149,8 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                 }
                 else
                 {
-                    // Create a token with 
+                    // Create a token with only the api.users_list scope which can be used to get the user list
                     var adminIdentity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
-         
                     var adminListPrincipal = new ClaimsPrincipal(adminIdentity);
                     parameters.Add("showUsersList", true);
                     adminListPrincipal.SetScopes("api.users_list");
@@ -166,10 +163,6 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
             loginResult = await usersService.LoginTenantAsync(selectedUser, null,
                 adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
 
-        }
-        else
-        {
-            parameters.Add("adminlogin", false);
         }
 
          // If we still haven't been able to login, return a login error.
@@ -189,6 +182,9 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
          if (!loginResult.ModelObject.TotpAuthentication.Enabled || totpSuccess)
          {
              principal.SetScopes(
+                 OpenIddictConstants.Scopes.OpenId,
+                 OpenIddictConstants.Scopes.Email,
+                 OpenIddictConstants.Scopes.Profile,
                  OpenIddictConstants.Scopes.OfflineAccess,  // Required for refresh tokens
                  "api.read", 
                  "api.write"
@@ -205,8 +201,8 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
         parameters.Add("totpEnabled", user.TotpAuthentication.Enabled);
         parameters.Add("totpQrImageUrl", user.TotpAuthentication.QrImageUrl);
         parameters.Add("totpFirstTime", user.TotpAuthentication.RequiresSetup);
-        
         parameters.Add("totpSuccess", totpSuccess);
+        parameters.Add("adminlogin", true);
     }
 
     private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, UserModel user, bool totpSuccess, bool isAdminLogin)
@@ -218,6 +214,7 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
         parameters.Add("totpFirstTime", !isAdminLogin&& user.TotpAuthentication.RequiresSetup);
         parameters.Add("SkipRefreshTokenGeneration", !totpSuccess);
         parameters.Add("totpSuccess", totpSuccess);
+        parameters.Add("adminlogin", isAdminLogin);
              
         if (!String.IsNullOrWhiteSpace(user.CookieValue))
         {
@@ -247,7 +244,8 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
             new(ClaimTypes.Sid, adminAccountId.ToString()),
             new(IdentityConstants.AdminAccountName, adminAccountName ?? ""),
             new(HttpContextConstants.IsTestEnvironmentKey, isTestEnvironment),
-            new(HttpContextConstants.IsWiserFrontEndLoginKey, isWiserFrontEndLogin.ToString())
+            new(HttpContextConstants.IsWiserFrontEndLoginKey, isWiserFrontEndLogin.ToString()),
+            new("idp", "wiser")
         };
 
         if (user is not null)

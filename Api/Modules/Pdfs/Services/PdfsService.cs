@@ -112,9 +112,9 @@ namespace Api.Modules.Pdfs.Services
                         await using var downloadStream = await response.Content.ReadAsStreamAsync();
                         await downloadStream.CopyToAsync(pdfStream);
                     }
-                    else if (pdfFile.ModelObject.Data.Length != 0)
+                    else if (pdfFile.ModelObject.Data?.Length != 0)
                     {
-                        pdfStream = new MemoryStream(pdfFile.ModelObject.Data);
+                        pdfStream = new MemoryStream(pdfFile.ModelObject.Data ?? Array.Empty<byte>());
                     }
 
                     // If the pdf file is empty (no file at the URL and no file in the blob field) then skip to next file

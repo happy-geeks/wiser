@@ -278,13 +278,6 @@ export class Wiser {
             previousWindow = wiserMainWindow;
             wiserMainWindow = wiserMainWindow.parent;
         }
-        
-        if (settings.accessTokenOverride) {
-            $.ajaxSetup({
-                headers: {"Authorization": `Bearer ${settings.accessTokenOverride}`}
-            });
-            return;
-        }
 
         // If another process/request is already requesting a new access token, wait for that to finish first.
         // This is to prevent multiple access token requests at the same time and to prevent racing conditions.
@@ -335,7 +328,6 @@ export class Wiser {
                     });
 
                     refreshTokenResult.expiresOn = new Date(new Date().getTime() + ((refreshTokenResult.expires_in - (refreshTokenResult.expires_in > 60 ? 60 : 0)) * 1000));
-                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true || refreshTokenResult.adminAccountId > 0;
 
                     localStorage.setItem("accessToken", refreshTokenResult.access_token);
                     localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);

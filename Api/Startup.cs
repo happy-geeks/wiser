@@ -235,6 +235,9 @@ namespace Api
                     
                     // Define static scopes here.
                     options.RegisterScopes(
+                        OpenIddictConstants.Scopes.OpenId,
+                        OpenIddictConstants.Scopes.Email,
+                        OpenIddictConstants.Scopes.Profile,
                         OpenIddictConstants.Scopes.OfflineAccess,
                         "api.read",    // Read access to the API
                         "api.write",    // Write access to the API
@@ -244,7 +247,7 @@ namespace Api
                     // Register your custom password validator.
                     options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(builder =>
                     {
-                        builder.UseScopedHandler<OpenIddictPasswordValidator>();
+                        builder.UseScopedHandler<OpenIddictTokenRequestHandler>();
                     });
 
                     options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(builder =>
@@ -391,7 +394,7 @@ namespace Api
 
             app.UseAuthentication();
             app.UseAuthorization();
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

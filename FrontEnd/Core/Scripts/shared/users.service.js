@@ -53,8 +53,6 @@ export default class UsersService extends BaseService {
                 
                 result.data.usersList = await userListResponse.json();
             }
-            
-            result.data.adminLogin = result.data.adminLogin === "true" || result.data.adminLogin === true || result.data.adminAccountId > 0;
         } catch (error) {
             result.success = false;
             console.error("Error during login", error);
