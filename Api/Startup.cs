@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Api.Core.Filters;
 using Api.Core.Interfaces;
 using Api.Core.Middlewares;
@@ -23,7 +24,6 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -35,7 +35,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
@@ -44,6 +43,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using OpenIddict.Abstractions;
 using OpenIddict.Server;
+using OpenIddict.Validation.AspNetCore;
 using React;
 using React.AspNet;
 using Serilog;
@@ -204,6 +204,7 @@ namespace Api
                     options.SetTokenEndpointUris("/connect/token");
 
                     options.EnableDegradedMode();
+                    options.UseAspNetCore();
                     options.AllowPasswordFlow();
                     options.AllowRefreshTokenFlow();
 
@@ -211,32 +212,26 @@ namespace Api
                     {
                         options.AddDevelopmentEncryptionCertificate()
                             .AddDevelopmentSigningCertificate();
+
+                        options.UseAspNetCore()
+                            .DisableTransportSecurityRequirement();
                     }
                     else
                     {
-                        var certificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
-                        using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
-                        webHostingStore.Open(OpenFlags.ReadOnly);
-                        var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
-                        if (certificateCollection.Count == 0)
+                        var signingCertificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
+                        var signingCertificate = GetCertificateByName(signingCertificateName);
+                        options.AddSigningCertificate(signingCertificate);
+                        
+                        var encryptionCertificateName = Configuration.GetValue<string>("Api:EncryptionCredentialCertificate");
+                        if (!String.IsNullOrWhiteSpace(encryptionCertificateName))
                         {
-                            using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                            personalStore.Open(OpenFlags.ReadOnly);
-                            certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
-
-                            if (certificateCollection.Count == 0)
-                            {
-                                throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
-                            }
+                            options.AddEncryptionCertificate(GetCertificateByName(signingCertificateName));
                         }
-
-                        options.AddSigningCertificate(certificateCollection.First());
+                        else
+                        {
+                            options.DisableAccessTokenEncryption();
+                        }
                     }
-                    
-                    options.DisableAccessTokenEncryption();
-
-                    options.UseAspNetCore()
-                        .DisableTransportSecurityRequirement();
                     
                     // Define static scopes here.
                     options.RegisterScopes(
@@ -253,12 +248,17 @@ namespace Api
 
                     options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(builder =>
                     {
-                        builder.UseScopedHandler<TokenValidator>();
-                    });
+                        builder.UseInlineHandler(context =>
+                        {
+                            if (context.Request.ClientId != "wiser" || context.Request.ClientSecret != clientSecret)
+                            {
+                                context.Reject(
+                                    error: OpenIddictConstants.Errors.InvalidClient,
+                                    description: "The client credentials is invalid.");
+                            }
 
-                    options.AddEventHandler<OpenIddictServerEvents.ValidateAuthorizationRequestContext>(builder =>
-                    {
-                        builder.UseScopedHandler<AuthorizationValidator>();
+                            return ValueTask.CompletedTask;
+                        });
                     });
 
                 })
@@ -273,20 +273,7 @@ namespace Api
                     options.SetClientSecret(clientSecret);
                 });
 
-            services.AddAuthentication(options =>
-                {
-                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                })
-                .AddJwtBearer(options =>
-                {
-                    options.Authority = apiBaseUrl;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateAudience = false,
-                        ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0),
-                    };
-                });
+            services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
 
             services.AddAuthorization(options =>
             {
@@ -398,8 +385,6 @@ namespace Api
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
-            //app.UseIdentityServer();
             
             app.UseCors(CorsPolicyName);
 
@@ -420,6 +405,26 @@ namespace Api
             pluginService.LoadPlugins(Configuration.GetValue<string>("Api:PluginsDirectory"));
 
             HandleStartupFunctions(app);
+        }
+
+        private static X509Certificate2 GetCertificateByName(string certificateName)
+        {
+            using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
+            webHostingStore.Open(OpenFlags.ReadOnly);
+            var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+            if (certificateCollection.Count == 0)
+            {
+                using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                personalStore.Open(OpenFlags.ReadOnly);
+                certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+
+                if (certificateCollection.Count == 0)
+                {
+                    throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
+                }
+            }
+
+            return certificateCollection.First();
         }
 
         /// <summary>

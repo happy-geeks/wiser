@@ -90,7 +90,7 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                     totpPin: totpPin);
             if (adminAccountLoginResult.StatusCode != HttpStatusCode.OK)
             {
-                context.Reject("invalid_client", loginResult.ErrorMessage);
+                context.Reject(OpenIddictConstants.Errors.InvalidClient, loginResult.ErrorMessage);
                 return;
             }
 
@@ -99,7 +99,12 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
             if (adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled && String.IsNullOrWhiteSpace(totpPin) &&
                 String.IsNullOrWhiteSpace(totpBackupCode))
             {
-                context.Reject("totp_code_required", loginResult.ErrorMessage);
+                AddLoginResultParameters(parameters, adminAccountLoginResult.ModelObject, false);
+                
+                var adminIdentity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
+                var adminListPrincipal = new ClaimsPrincipal(adminIdentity);
+
+                Signin(context, adminListPrincipal, parameters);
                 return;
             }
 
@@ -107,7 +112,7 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
                                !String.IsNullOrWhiteSpace(totpPin);
             if (String.IsNullOrWhiteSpace(selectedUser))
             {
-                parameters.Add("adminLogin", new OpenIddictParameter(true));
+                parameters.Add("adminLogin", true);
                 var usersList = await usersService.GetAsync();
                 if (usersList.ModelObject.Count == 1)
                 {
@@ -134,29 +139,18 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
         }
         else
         {
-            parameters.Add("adminlogin", new OpenIddictParameter(false));
+            parameters.Add("adminlogin", false);
         }
 
          // If we still haven't been able to login, return a login error.
          if (loginResult.StatusCode != HttpStatusCode.OK)
          {
-             context.Reject("invalid_client", loginResult.ErrorMessage);
+             context.Reject(OpenIddictConstants.Errors.InvalidClient, loginResult.ErrorMessage);
              return;
          }
          
-         parameters.Add("name", loginResult.ModelObject.Name);
-         parameters.Add("role", loginResult.ModelObject.Role);
-         parameters.Add("totpEnabled", loginResult.ModelObject.TotpAuthentication.Enabled);
-         parameters.Add("totpQrImageUrl", loginResult.ModelObject.TotpAuthentication.QrImageUrl);
-         parameters.Add("totpFirstTime", adminAccountId == 0 && loginResult.ModelObject.TotpAuthentication.RequiresSetup);
-         
          var totpSuccess = totpSuccessAdmin || loginResult.ModelObject.TotpAuthentication.Enabled && (!String.IsNullOrWhiteSpace(totpPin) || !String.IsNullOrWhiteSpace(totpBackupCode));
-         parameters.Add("totpSuccess", totpSuccess);
-             
-         if (!String.IsNullOrWhiteSpace(loginResult.ModelObject.CookieValue))
-         {
-             parameters.Add("cookieValue", loginResult.ModelObject.CookieValue);
-         }
+         AddLoginResultParameters(parameters, loginResult.ModelObject, totpSuccess, adminAccountId != 0);
          
          var identity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
          
@@ -168,6 +162,33 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
          }
 
          Signin(context, principal, parameters);
+    }
+    
+    private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, AdminAccountModel user, bool totpSuccess)
+    {
+        parameters.Add("name", user.Name);
+        parameters.Add("SkipRefreshTokenGeneration", !totpSuccess);
+        parameters.Add("totpEnabled", user.TotpAuthentication.Enabled);
+        parameters.Add("totpQrImageUrl", user.TotpAuthentication.QrImageUrl);
+        parameters.Add("totpFirstTime", user.TotpAuthentication.RequiresSetup);
+        
+        parameters.Add("totpSuccess", totpSuccess);
+    }
+
+    private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, UserModel user, bool totpSuccess, bool isAdminLogin)
+    {
+        parameters.Add("name", user.Name);
+        parameters.Add("role", user.Role);
+        parameters.Add("totpEnabled", user.TotpAuthentication.Enabled);
+        parameters.Add("totpQrImageUrl", user.TotpAuthentication.QrImageUrl);
+        parameters.Add("totpFirstTime", !isAdminLogin&& user.TotpAuthentication.RequiresSetup);
+        parameters.Add("SkipRefreshTokenGeneration", !totpSuccess);
+        parameters.Add("totpSuccess", totpSuccess);
+             
+        if (!String.IsNullOrWhiteSpace(user.CookieValue))
+        {
+            parameters.Add("cookieValue", user.CookieValue);
+        }
     }
 
     private void Signin(OpenIddictServerEvents.HandleTokenRequestContext context, ClaimsPrincipal principal, Dictionary<string, OpenIddictParameter> parameters)
