@@ -235,6 +235,7 @@ namespace Api
                     
                     // Define static scopes here.
                     options.RegisterScopes(
+                        OpenIddictConstants.Scopes.OfflineAccess,
                         "api.read",    // Read access to the API
                         "api.write",    // Write access to the API
                         "api.users_list"

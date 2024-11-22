@@ -38,6 +38,36 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
     /// <inheritdoc />
     public async ValueTask HandleAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
     {
+        switch (context.Request.GrantType)
+        {
+            case OpenIddictConstants.GrantTypes.Password:
+                await HandlePasswordAsync(context);
+                break;
+            case OpenIddictConstants.GrantTypes.RefreshToken:
+                await HandleRefreshAsync(context);
+                break;
+        }
+    }
+
+    private ValueTask HandleRefreshAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
+    {
+        // Create a new ClaimsPrincipal for the refreshed token.
+        var identity = context?.Principal?.Identity as ClaimsIdentity;
+
+        if (identity is not { IsAuthenticated: true })
+        {
+            context!.Reject(OpenIddictConstants.Errors.InvalidClient, "no identity given");
+            return ValueTask.CompletedTask;
+        }
+            
+        // Sign in with the refreshed principal.
+        context.SignIn(new ClaimsPrincipal(identity));
+
+        return ValueTask.CompletedTask;
+    }
+    
+    private async ValueTask HandlePasswordAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
+    {
         var subDomain = context.Transaction.Request?[HttpContextConstants.SubDomainKey]?.Value?.ToString();
         logger.LogInformation(
             $"User '{context.Request.Username}' is trying to authenticate for sub domain '{subDomain}'.");
@@ -158,7 +188,11 @@ public class OpenIddictPasswordValidator : IOpenIddictServerHandler<OpenIddictSe
 
          if (!loginResult.ModelObject.TotpAuthentication.Enabled || totpSuccess)
          {
-             principal.SetScopes("api.read", "api.write");
+             principal.SetScopes(
+                 OpenIddictConstants.Scopes.OfflineAccess,  // Required for refresh tokens
+                 "api.read", 
+                 "api.write"
+             );
          }
 
          Signin(context, principal, parameters);
