@@ -94,8 +94,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
             isTestEnvironment = "false";
         }
 
-        var isWiserFrontEndLoginEncrypted = context.Transaction.Request?[HttpContextConstants.IsWiserFrontEndLoginKey]
-            ?.Value?.ToString();
+        var isWiserFrontEndLoginEncrypted = context.Transaction.Request?[HttpContextConstants.IsWiserFrontEndLoginKey]?.Value?.ToString();
         var isWiserFrontEndLogin = false;
         if (!String.IsNullOrWhiteSpace(isWiserFrontEndLoginEncrypted))
         {
@@ -159,10 +158,9 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
                     return;
                 }
             }
-
+            
             loginResult = await usersService.LoginTenantAsync(selectedUser, null,
                 adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
-
         }
 
          // If we still haven't been able to login, return a login error.
@@ -179,6 +177,8 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
          
          var principal = new ClaimsPrincipal(identity);
 
+         // The access_token will be without scopes and thus unusable for accessing any of the endpoints
+         // if the third party authentication still needs to be completed.
          if (!loginResult.ModelObject.TotpAuthentication.Enabled || totpSuccess)
          {
              principal.SetScopes(
@@ -194,6 +194,9 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
          Signin(context, principal, parameters);
     }
     
+    /// <summary>
+    /// Fill the list of parameters that will be passed to the frontend beside the access token
+    /// </summary>
     private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, AdminAccountModel user, bool totpSuccess)
     {
         parameters.Add("name", user.Name);
@@ -205,6 +208,9 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         parameters.Add("adminlogin", true);
     }
 
+    /// <summary>
+    /// Fill the list of parameters that will be passed to the frontend beside the access token
+    /// </summary>
     private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, UserModel user, bool totpSuccess, bool isAdminLogin)
     {
         parameters.Add("name", user.Name);
@@ -228,6 +234,10 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         context.SignIn(principal, parameters);
     }
 
+    /// <summary>
+    /// Create an ClaimsIdentity with a defined claims collection
+    /// </summary>
+    /// <returns></returns>
     private ClaimsIdentity CreateIdentity(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
     {
         var claims = CreateClaimsList(user, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
@@ -236,6 +246,10 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         return identity;
     }
 
+    /// <summary>
+    /// Create the list of claims to be added to the token
+    /// </summary>
+    /// <returns><see cref="IEnumerable{Claim}"/> of <see cref="Claim"/></returns>
     private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
     {
         var claimsIdentity = new List<Claim>

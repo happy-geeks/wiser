@@ -203,7 +203,10 @@ namespace Api
                 {
                     options.SetTokenEndpointUris("/connect/token");
 
+                    // Degraded mode is needed because we handle authentication, user rights etc. ourselves
+                    // Without Degraded mode openiddict would try find users, scopes and such using Entity Framework
                     options.EnableDegradedMode();
+                    
                     options.UseAspNetCore();
                     options.AllowPasswordFlow();
                     options.AllowRefreshTokenFlow();
@@ -218,10 +221,14 @@ namespace Api
                     }
                     else
                     {
+                        // Add signing certificate used to sign the JWT token
+                        // This is needed so we can validate the JWT token was really issues by us.
                         var signingCertificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
                         var signingCertificate = GetCertificateByName(signingCertificateName);
                         options.AddSigningCertificate(signingCertificate);
                         
+                        // Add certificate to encrypt the JWT token
+                        // A JWT token shouldn't contain sensitive information so this is a bit of extra security
                         var encryptionCertificateName = Configuration.GetValue<string>("Api:EncryptionCredentialCertificate");
                         if (!String.IsNullOrWhiteSpace(encryptionCertificateName))
                         {
@@ -244,7 +251,9 @@ namespace Api
                         "api.users_list"
                     );
 
-                    // Register your custom password validator.
+                    // Register handler for token requests
+                    // This contains all the logic of authenticating users
+                    // And passing back all the data the frontend needs.
                     options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(builder =>
                     {
                         builder.UseScopedHandler<OpenIddictTokenRequestHandler>();
@@ -277,8 +286,10 @@ namespace Api
                     options.SetClientSecret(clientSecret);
                 });
 
+            // Sets authentication to be done using OpenIddict by default
             services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
 
+            // Define policies that can be used on the Wiser endpoints
             services.AddAuthorization(options =>
             {
                 options.DefaultPolicy = new AuthorizationPolicyBuilder()
