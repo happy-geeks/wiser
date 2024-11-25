@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Files.Models;
-using Api.Modules.Items.Models;
+using GeeksCoreLibrary.Modules.Amazon.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Api.Modules.Files.Interfaces
@@ -54,8 +54,11 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="useCloudFlare">Optional: Whether to use CloudFlare to store image files.</param>
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+        /// <param name="useAmazonS3">Optional: Whether to upload the file to Amazon S3.</param>
+        /// <param name="amazonS3BucketName">Optional: The Amazon S3 bucket name when Amazon S3 is used. Becomes required if <see cref="useAmazonS3"/> is set to <c>true</c>.</param>
+        /// <param name="awsSettings">Optional: The AWS credentials required to connect to Amazon S3.</param>
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
-        Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0);
+        Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null);
 
         /// <summary>
         /// Gets a file of an item.

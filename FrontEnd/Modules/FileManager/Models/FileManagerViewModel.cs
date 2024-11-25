@@ -10,4 +10,6 @@ public class FileManagerViewModel : BaseModuleViewModel
     public bool Iframe { get; set; }
 
     public string SelectedText { get; set; } = "";
+
+    public bool HideFields { get; set; }
 }

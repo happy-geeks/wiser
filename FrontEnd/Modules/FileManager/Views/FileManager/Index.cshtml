@@ -41,9 +41,9 @@
             <li>HTML templates</li>
             <li>Overige bestanden</li>
         </ul>
-        <div id="ImagesTab"><iframe data-src="?mode=Images"></iframe></div>
-        <div id="TemplatesTab"><iframe data-src="?mode=Templates"></iframe></div>
-        <div id="FilesTab"><iframe data-src="?mode=Files"></iframe></div>
+        <div id="ImagesTab"><iframe data-src="?mode=Images&hideFields=@Model.HideFields"></iframe></div>
+        <div id="TemplatesTab"><iframe data-src="?mode=Templates&hideFields=@Model.HideFields"></iframe></div>
+        <div id="FilesTab"><iframe data-src="?mode=Files&hideFields=@Model.HideFields"></iframe></div>
     </div>
 
     <div id="imagesUploaderWindow" class="popup-container">
