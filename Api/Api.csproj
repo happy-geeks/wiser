@@ -163,7 +163,7 @@
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.18" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.20" />
     <PackageReference Include="NUglify" Version="1.21.9" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
