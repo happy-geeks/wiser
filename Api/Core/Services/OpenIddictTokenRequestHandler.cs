@@ -221,7 +221,12 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         parameters.Add("SkipRefreshTokenGeneration", !totpSuccess);
         parameters.Add("totpSuccess", totpSuccess);
         parameters.Add("adminlogin", isAdminLogin);
-             
+
+        if (user.RequirePasswordChange.HasValue)
+        {
+            parameters.Add("requirePasswordChange", user.RequirePasswordChange.Value);
+        }
+        
         if (!String.IsNullOrWhiteSpace(user.CookieValue))
         {
             parameters.Add("cookieValue", user.CookieValue);
