@@ -101,9 +101,11 @@ namespace Api.Modules.Pdfs.Services
             // Load the documents and add them to the merged file.
             foreach (var encryptedId in encryptedItemIdsList)
             {
+                var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+
                 foreach (var propertyName in propertyNames)
                 {
-                    var pdfFile = await filesService.GetAsync(encryptedId, 0, identity, 0, entityType, propertyName:propertyName);
+                    var pdfFile = await filesService.GetAsync(itemId, 0, identity, 0, entityType, propertyName:propertyName);
                     var pdfStream = new MemoryStream();
                     // Check if the PDF must be downloaded first
                     if (!String.IsNullOrWhiteSpace(pdfFile.ModelObject.Url))
