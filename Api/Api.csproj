@@ -29,6 +29,7 @@
     <None Remove="Core\Queries\WiserInstallation\InsertInitialData.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialDataConfigurator.sql" />
     <None Remove="Core\Queries\WiserInstallation\InsertInitialDataEcommerce.sql" />
+    <None Remove="Core\Queries\WiserInstallation\BranchSettingsModule.sql" />
     <None Remove="Modules\Babel\Scripts\Polyfills.js" />
     <None Remove="Modules\Items\FieldTemplates\action-button.html" />
     <None Remove="Modules\Items\FieldTemplates\action-button.js" />
@@ -150,6 +151,7 @@
     <EmbeddedResource Include="Modules\Items\FieldTemplates\textbox.js" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.html" />
     <EmbeddedResource Include="Modules\Items\FieldTemplates\timeline.js" />
+    <EmbeddedResource Include="Core\Queries\WiserInstallation\BranchSettingsModule.sql" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1260,16 +1260,18 @@ LIMIT 1";
             await using (var productionCommand = mainConnection.CreateCommand())
             {
                 productionCommand.Parameters.AddWithValue("branch_id", settings.Id);
-                productionCommand.Parameters.AddWithValue("name", selectedBranchTenant.Name);
+                productionCommand.Parameters.AddWithValue("name", settings.IsTemplate ? settings.TemplateName : selectedBranchTenant.Name);
                 productionCommand.Parameters.AddWithValue("action", "merge");
                 productionCommand.Parameters.AddWithValue("data", JsonConvert.SerializeObject(settings));
                 productionCommand.Parameters.AddWithValue("added_on", DateTime.Now);
-                productionCommand.Parameters.AddWithValue("start_on", settings.StartOn ?? DateTime.Now);
+                productionCommand.Parameters.AddWithValue("start_on", settings.IsTemplate ? DateTime.Now.AddYears(50) : settings.StartOn ?? DateTime.Now);
                 productionCommand.Parameters.AddWithValue("added_by", IdentityHelpers.GetUserName(identity, true));
                 productionCommand.Parameters.AddWithValue("user_id", IdentityHelpers.GetWiserUserId(identity));
-                productionCommand.CommandText = $@"INSERT INTO {WiserTableNames.WiserBranchesQueue} 
-(branch_id, action, data, added_on, start_on, added_by, user_id)
-VALUES (?branch_id, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id)";
+                productionCommand.Parameters.AddWithValue("is_template", settings.IsTemplate);
+                productionCommand.CommandText = $"""
+                                                 INSERT INTO {WiserTableNames.WiserBranchesQueue} (branch_id, name, action, data, added_on, start_on, added_by, user_id, is_template)
+                                                 VALUES (?branch_id, ?name, ?action, ?data, ?added_on, ?start_on, ?added_by, ?user_id, ?is_template)
+                                                 """;
 
                 await productionCommand.ExecuteNonQueryAsync();
             }

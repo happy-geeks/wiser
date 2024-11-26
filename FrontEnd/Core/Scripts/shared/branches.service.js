@@ -116,6 +116,9 @@ export default class BranchesService extends BaseService {
         try {
             const postData = {
                 id: data.selectedBranch.id,
+                isTemplate: data.mergeType === "template",
+                templateName: data.templateName,
+                templateId: data.templateId,
                 startOn: data.startOn,
                 deleteAfterSuccessfulMerge: data.deleteAfterSuccessfulMerge,
                 entities: [],
