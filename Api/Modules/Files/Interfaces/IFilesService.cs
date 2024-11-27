@@ -69,8 +69,10 @@ namespace Api.Modules.Files.Interfaces
         /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+        /// <param name="propertyName">Optional: Used together with the itemId or itemLinkId to get the file</param>
+        /// <param name="selectionOption">Optional: Used to determine which of the files will be returned if an item has multiple.</param>
         /// <returns>The content type, contents and URL of the file.</returns>
-        Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null);
+        Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null, SelectionOptions selectionOption = SelectionOptions.None);
 
         /// <summary>
         /// Deletes a file.

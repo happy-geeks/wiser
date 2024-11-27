@@ -1,3 +1,5 @@
+using Api.Modules.Files.Models;
+
 namespace Api.Modules.Pdfs.Models;
 
 /// <summary>
@@ -19,4 +21,10 @@ public class MergePdfModel
     /// Gets or sets the property name of the files to retreive, this can be a comma-separated list
     /// </summary>
     public string[] PropertyNames { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the selection options used for the merge
+    /// With this you can determine which of the file gets used if an item has multiple
+    /// </summary>
+    public SelectionOptions FileSelection { get; set; } = SelectionOptions.None;
 }

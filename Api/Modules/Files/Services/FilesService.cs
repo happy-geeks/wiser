@@ -479,7 +479,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null)
+        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null, SelectionOptions selectionOption = SelectionOptions.None)
         {
             if (itemId == 0)
             {
@@ -502,26 +502,40 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
             databaseConnection.ClearParameters();
 
-            var query = $"SELECT content_type, content, content_url, file_name, property_name FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE [wherePart]";
-
+            string wherePart;
             if (fileId > 0)
             {
-                query = query.Replace("[wherePart]", "id = ?imageId");
+                wherePart = "id = ?imageId";
                 databaseConnection.AddParameter("imageId", fileId);
             }
             else if (itemLinkId > 0)
             {
-                query = query.Replace("[wherePart]", "itemlink_id = ?itemLinkId AND property_name = ?propertyName");
+                wherePart = "itemlink_id = ?itemLinkId AND property_name = ?propertyName";
                 databaseConnection.AddParameter("itemLinkId", itemLinkId);
                 databaseConnection.AddParameter("propertyName", propertyName);
             }
             else
             {
-                query = query.Replace("[wherePart]", "item_id = ?itemId AND property_name = ?propertyName");
+                wherePart = "item_id = ?itemId AND property_name = ?propertyName";
                 databaseConnection.AddParameter("itemId", itemId);
                 databaseConnection.AddParameter("propertyName", propertyName);
             }
 
+            var sortPart = selectionOption switch
+            {
+                SelectionOptions.Earliest => "ORDER BY added_on ASC",
+                SelectionOptions.Latest => "ORDER BY added_on DESC",
+                SelectionOptions.None => String.Empty,
+                _ => throw new NotImplementedException($"selectionOptions {selectionOption.ToString()} has not yet been implemented into FileService.GetAsync")
+            };
+
+            var query = $"""
+                         SELECT content_type, content, content_url, file_name, property_name
+                         FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+                         WHERE {wherePart}
+                         {sortPart}
+                         LIMIT 1
+                         """;
             var dataTable = await databaseConnection.GetAsync(query);
 
             if (dataTable.Rows.Count == 0)
@@ -560,17 +574,11 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             }
 
             if (ftpSettings.Any())
+            {var ftp = ftpSettings.First();
+            if (ftp.Mode == FtpModes.Sftp)
             {
-                var ftp = ftpSettings.First();
-                if (ftp.Mode == FtpModes.Sftp)
-                {
-                    throw new NotImplementedException("SFTP is not yet supported");
-                    /*using var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password);
-                    await using var memoryStream = new MemoryStream();
-                    client.Connect();
-                    client.DownloadFile(contentUrl, memoryStream);
-                    return new ServiceResult<(string ContentType, byte[] Data, string url)>((ContentType: contentType, Data: memoryStream.ToArray(), url: null));*/
-                }
+                throw new NotImplementedException("SFTP is not yet supported");
+            }
 
                 // Get the object used to communicate with the server.
                 var fullFtpLocation = $"ftp://{ftp.Host}{contentUrl}";
