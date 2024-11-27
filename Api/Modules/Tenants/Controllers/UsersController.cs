@@ -4,6 +4,7 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
+using Api.Modules.Items.Models;
 using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Models;
@@ -19,7 +20,6 @@ namespace Api.Modules.Tenants.Controllers
     /// </summary>
     [Route("api/v3/[controller]")]
     [ApiController]
-    [Authorize]
     [Consumes(MediaTypeNames.Application.Json)]
     [Produces(MediaTypeNames.Application.Json)]
     public class UsersController : ControllerBase
@@ -39,6 +39,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <returns>A <see cref="List{T}"/> of <see cref="WiserItemModel"/>, but only with names and IDs.</returns>
         [HttpGet]
+        [Authorize]
         [ProducesResponseType(typeof(List<WiserItemModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get(bool includeAdminUsers = false)
         {
@@ -46,10 +47,24 @@ namespace Api.Modules.Tenants.Controllers
         }
 
         /// <summary>
+        /// Get a list of all users
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("users-list")]
+        [Authorize("ApiUsersList")]
+        [ProducesResponseType(typeof(List<FlatItemModel>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserList()
+        {
+            return (await usersService.GetAsync()).GetHttpResponseMessage();
+        }
+
+        /// <summary>
         /// Gets the data of the authenticated user.
         /// </summary>
         /// <returns>A UserModel with the data of the authenticated user.</returns>
         [HttpGet]
+        [Authorize]
         [Route("self")]
         [ProducesResponseType(typeof(UserModel), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetUserData()
@@ -63,6 +78,7 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="resetPasswordRequestModel">The information for the account to reset the password.</param>
         /// <returns>Always returns true, unless an exception occurred.</returns>
         [HttpPut]
+        [Authorize]
         [Route("reset-password")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [AllowAnonymous]
@@ -77,6 +93,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <param name="passwords">The old and new passwords of the user.</param>
         [HttpPut]
+        [Authorize]
         [Route("password")]
         [ProducesResponseType(typeof(UserModel), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
@@ -94,6 +111,7 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="key">The unique key for the settings.</param>
         /// <returns>The saved JSON object serialized as a string, or null if no setting for the given group and key were found.</returns>
         [HttpGet]
+        [Authorize]
         [Route("settings/{groupName}/{key}")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetSettingsAsync(string groupName, string key)
@@ -109,6 +127,7 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="settings">A JSON object with the settings to save.</param>
         /// <returns>A boolean whether the save action was successful.</returns>
         [HttpPost]
+        [Authorize]
         [Route("settings/{groupName}/{key}")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveSettingsAsync(string groupName, string key, JToken settings)
@@ -121,6 +140,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <param name="key">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
         [HttpGet]
+        [Authorize]
         [Route("grid-settings/{key}")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetGridSettingsAsync(string key)
@@ -134,6 +154,7 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="key">The unique key for the grid settings. This should be unique for each grid in Wiser, so that no 2 grids use the same settings.</param>
         /// <param name="settings">A JSON object with the settings to save.</param>
         [HttpPost]
+        [Authorize]
         [Route("grid-settings/{key}")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveGridSettingsAsync(string key, JToken settings)
@@ -145,6 +166,7 @@ namespace Api.Modules.Tenants.Controllers
         /// Gets the pinned modules for the authenticated user, so that users can keep their state of the pinned modules in Wiser.
         /// </summary>
         [HttpGet]
+        [Authorize]
         [Route("pinned-modules")]
         [ProducesResponseType(typeof(List<int>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetPinnedModulesAsync()
@@ -157,6 +179,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <param name="moduleIds">The list of module IDs that the user has pinned.</param>
         [HttpPost]
+        [Authorize]
         [Route("pinned-modules")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> SavePinnedModulesAsync(List<int> moduleIds)
@@ -169,6 +192,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <param name="moduleIds">The list of module IDs that the user has set as auto load.</param>
         [HttpPost]
+        [Authorize]
         [Route("auto-load-modules")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveAutoLoadModulesAsync(List<int> moduleIds)
@@ -181,6 +205,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
         [HttpPut]
+        [Authorize]
         [Route("update-active-time")]
         [ProducesResponseType(typeof(TimeSpan), StatusCodes.Status200OK)]
         public async Task<IActionResult> UpdateUserActiveTimeAsync([FromQuery]string encryptedLoginLogId)
@@ -193,6 +218,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <param name="encryptedLoginLogId">The encrypted ID of the log table.</param>
         [HttpPut]
+        [Authorize]
         [Route("reset-time-active-changed")]
         [ProducesResponseType(typeof(TimeSpan), StatusCodes.Status200OK)]
         public async Task<IActionResult> ResetTimeActiveChangedAsync([FromQuery]string encryptedLoginLogId)
@@ -206,6 +232,7 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="includePermissions">Optional: Whether to include all permissions that each role has. Default is <see langword="false"/>.</param>
         /// <returns>A list of <see cref="RoleModel"/> with all available roles that users can have.</returns>
         [HttpGet]
+        [Authorize]
         [Route("roles")]
         [ProducesResponseType(typeof(List<RoleModel>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetRolesAsync(bool includePermissions = false)
@@ -220,6 +247,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <returns>A list with the new backup codes.</returns>
         [HttpPost]
+        [Authorize]
         [Route("totp-backup-codes")]
         [ProducesResponseType(typeof(List<string>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GenerateTotpBackupCodesAsync()
@@ -232,6 +260,7 @@ namespace Api.Modules.Tenants.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize]
         [Route("dashboard-settings")]
         [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetDashboardSettingsAsync()
@@ -245,6 +274,7 @@ namespace Api.Modules.Tenants.Controllers
         /// <param name="layoutData">A JSON object containing the layout data to save.</param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize]
         [Route("dashboard-settings")]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         public async Task<IActionResult> SaveDashboardSettingsAsync([FromBody] JToken layoutData)

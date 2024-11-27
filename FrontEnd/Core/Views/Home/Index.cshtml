@@ -935,7 +935,7 @@
                 <p>Kies de gebruiker waarmee u wilt inloggen</p>
 
                 <div class="form-row">
-                    <combobox :data-items="listOfUsers" :text-field="'Title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
+                    <combobox :data-items="listOfUsers" :text-field="'title'" :data-item-key="'username'" v-model="loginForm.selectedUser" :filterable="true" @@filterchange="userFilterChange"></combobox>
                 </div>
 
                 <div class="btn-row">

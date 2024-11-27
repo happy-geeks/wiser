@@ -272,7 +272,7 @@ const loginModule = {
             }
 
             // If the user that is logging in is an admin account, show a list of users for the tenant.
-            if (loginResult.data.adminLogin && !loginResult.data.adminAccountId) {
+            if (loginResult.data.showUsersList) {
                 commit(AUTH_LIST, loginResult.data.usersList);
                 return;
             }

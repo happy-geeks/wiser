@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Api.Core.Filters;
 using Api.Core.Interfaces;
 using Api.Core.Middlewares;
@@ -21,9 +22,9 @@ using Api.Modules.Tenants.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
-using IdentityServer4.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -34,13 +35,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using OpenIddict.Abstractions;
+using OpenIddict.Server;
+using OpenIddict.Validation.AspNetCore;
 using React;
 using React.AspNet;
 using Serilog;
@@ -194,76 +197,142 @@ namespace Api
             services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
             // Configure OAuth2
-            var identityServerBuilder = services.AddIdentityServer(options =>
+            // Configure OpenIddict
+            services.AddOpenIddict()
+                .AddServer(options =>
                 {
-                    options.Events.RaiseSuccessEvents = true;
-                    options.Events.RaiseFailureEvents = true;
-                    options.Events.RaiseErrorEvents = true;
-                })
-                .AddInMemoryIdentityResources(ConfigureIdentityServer.GetIdentityResources())
-                .AddInMemoryApiResources(ConfigureIdentityServer.GetApiResources(clientSecret))
-                .AddInMemoryApiScopes(ConfigureIdentityServer.GetApiScopes())
-                .AddInMemoryClients(ConfigureIdentityServer.GetClients(clientSecret))
-                .AddProfileService<WiserProfileService>()
-                .AddResourceOwnerValidator<WiserGrantValidator>();
+                    options.SetTokenEndpointUris("/connect/token");
 
-            if (webHostEnvironment.IsDevelopment())
-            {
-                System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                identityServerBuilder.AddDeveloperSigningCredential();
-            }
-            else
-            {
-                // Create an X509Store for the Web Hosting store and see if the certificate is there.
-                var certificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
-                using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
-                webHostingStore.Open(OpenFlags.ReadOnly);
-                var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
-                if (certificateCollection.Count == 0)
-                {
-                    using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                    personalStore.Open(OpenFlags.ReadOnly);
-                    certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+                    // Degraded mode is needed because we handle authentication, user rights etc. ourselves
+                    // Without Degraded mode openiddict would try find users, scopes and such using Entity Framework
+                    options.EnableDegradedMode();
+                    
+                    options.UseAspNetCore();
+                    options.AllowPasswordFlow();
+                    options.AllowRefreshTokenFlow();
 
-                    if (certificateCollection.Count == 0)
+                    if (webHostEnvironment.IsDevelopment())
                     {
-                        throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
+                        options.AddDevelopmentEncryptionCertificate()
+                            .AddDevelopmentSigningCertificate();
+
+                        options.UseAspNetCore()
+                            .DisableTransportSecurityRequirement();
                     }
-                }
-
-                identityServerBuilder.AddSigningCredential(certificateCollection.First());
-            }
-
-            services.AddAuthentication("Bearer")
-                .AddJwtBearer("Bearer",
-                    options =>
+                    else
                     {
-                        options.Authority = apiBaseUrl;
-                        options.TokenValidationParameters = new TokenValidationParameters
+                        // Add signing certificate used to sign the JWT token
+                        // This is needed so we can validate the JWT token was really issues by us.
+                        var signingCertificateName = Configuration.GetValue<string>("Api:SigningCredentialCertificate");
+                        var signingCertificate = GetCertificateByName(signingCertificateName);
+                        options.AddSigningCertificate(signingCertificate);
+                        
+                        // Add certificate to encrypt the JWT token
+                        // A JWT token shouldn't contain sensitive information so this is a bit of extra security
+                        var encryptionCertificateName = Configuration.GetValue<string>("Api:EncryptionCredentialCertificate");
+                        if (!String.IsNullOrWhiteSpace(encryptionCertificateName))
                         {
-                            ValidateAudience = false,
-                            ClockSkew = webHostEnvironment.IsDevelopment() ? new TimeSpan(0, 0, 0, 5) : new TimeSpan(0, 0, 5, 0)
-                        };
+                            options.AddEncryptionCertificate(GetCertificateByName(signingCertificateName));
+                        }
+                        else
+                        {
+                            options.DisableAccessTokenEncryption();
+                        }
+                    }
+                    
+                    // Define static scopes here.
+                    options.RegisterScopes(
+                        OpenIddictConstants.Scopes.OpenId,
+                        OpenIddictConstants.Scopes.Email,
+                        OpenIddictConstants.Scopes.Profile,
+                        OpenIddictConstants.Scopes.OfflineAccess,
+                        "api.read",    // Read access to the API
+                        "api.write",    // Write access to the API
+                        "api.users_list"
+                    );
+
+                    // Register handler for token requests
+                    // This contains all the logic of authenticating users
+                    // And passing back all the data the frontend needs.
+                    options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(builder =>
+                    {
+                        builder.UseScopedHandler<OpenIddictTokenRequestHandler>();
                     });
 
+                    options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(builder =>
+                    {
+                        builder.UseInlineHandler(context =>
+                        {
+                            if (context.Request.ClientId != "wiser" || context.Request.ClientSecret != clientSecret)
+                            {
+                                context.Reject(
+                                    error: OpenIddictConstants.Errors.InvalidClient,
+                                    description: "The client credentials is invalid.");
+                            }
+
+                            return ValueTask.CompletedTask;
+                        });
+                    });
+
+                })
+                .AddValidation(options =>
+                {
+                    // Import the configuration from the local OpenIddict server instance.
+                    options.UseLocalServer();
+
+                    // Register the ASP.NET Core host.
+                    options.UseAspNetCore();
+                    options.SetClientId("wiser");
+                    options.SetClientSecret(clientSecret);
+                });
+
+            // Sets authentication to be done using OpenIddict by default
+            services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+
+            // Define policies that can be used on the Wiser endpoints
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("ApiScope",
+                options.DefaultPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser() // Requires the user to be authenticated
+                    .RequireAssertion(context =>
+                    {
+                        var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                        return scopes is not null && scopes.Split(" ").Contains("api.write");
+                    })
+                    .Build();
+                
+                options.AddPolicy("ApiUsersList",
                     policy =>
                     {
-                        policy.RequireAuthenticatedUser();
-                        policy.RequireClaim("scope", "wiser-api");
+                        policy.RequireAuthenticatedUser()
+                            .RequireAssertion(context =>
+                            {
+                                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                                return scopes is not null && scopes.Split(" ").Contains("api.users_list");
+                            });
                     });
-            });
-
-            // Enable CORS for Identityserver 4.
-            services.AddSingleton<ICorsPolicyService>((container) =>
-            {
-                var logger = container.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
-                return new DefaultCorsPolicyService(logger)
-                {
-                    AllowAll = true
-                };
+                
+                options.AddPolicy("ApiWrite",
+                    policy =>
+                    {
+                        policy.RequireAuthenticatedUser()
+                            .RequireAssertion(context =>
+                            {
+                                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                                return scopes is not null && scopes.Split(" ").Contains("api.write");
+                            });
+                    });
+                
+                options.AddPolicy("ApiRead",
+                    policy =>
+                    {
+                        policy.RequireAuthenticatedUser()
+                            .RequireAssertion(context =>
+                            {
+                                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                                return scopes is not null && scopes.Split(" ").Contains("api.read");
+                            });
+                    });
             });
 
             // Configure dependency injection.
@@ -331,11 +400,10 @@ namespace Api
             app.UseHttpsRedirection();
 
             app.UseRouting();
-
-            app.UseIdentityServer();
-
+            
             app.UseCors(CorsPolicyName);
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
@@ -354,6 +422,26 @@ namespace Api
             HandleStartupFunctions(app);
         }
 
+        private static X509Certificate2 GetCertificateByName(string certificateName)
+        {
+            using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
+            webHostingStore.Open(OpenFlags.ReadOnly);
+            var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+            if (certificateCollection.Count == 0)
+            {
+                using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                personalStore.Open(OpenFlags.ReadOnly);
+                certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+
+                if (certificateCollection.Count == 0)
+                {
+                    throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
+                }
+            }
+
+            return certificateCollection.First();
+        }
+
         /// <summary>
         /// Handle and execute some functions that are needed to be done during startup of the application.
         /// Don't call this method if you're already calling UseGclMiddleware, because this is called inside that.
@@ -363,6 +451,7 @@ namespace Api
         public IApplicationBuilder HandleStartupFunctions(IApplicationBuilder builder)
         {
             var applicationLifetime = builder.ApplicationServices.GetService<IHostApplicationLifetime>();
+            
             applicationLifetime.ApplicationStarted.Register(async () =>
             {
                 using var scope = builder.ApplicationServices.CreateScope();

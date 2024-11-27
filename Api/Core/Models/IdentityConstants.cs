@@ -33,6 +33,6 @@
         /// <summary>
         /// The key for saving the admin account name.
         /// </summary>
-        public const string AdminAccountName = " adminAccountName";
+        public const string AdminAccountName = "adminAccountName";
     }
 }

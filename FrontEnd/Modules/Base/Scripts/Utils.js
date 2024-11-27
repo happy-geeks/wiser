@@ -328,7 +328,6 @@ export class Wiser {
                     });
 
                     refreshTokenResult.expiresOn = new Date(new Date().getTime() + ((refreshTokenResult.expires_in - (refreshTokenResult.expires_in > 60 ? 60 : 0)) * 1000));
-                    refreshTokenResult.adminLogin = refreshTokenResult.adminLogin === "true" || refreshTokenResult.adminLogin === true || refreshTokenResult.adminAccountId > 0;
 
                     localStorage.setItem("accessToken", refreshTokenResult.access_token);
                     localStorage.setItem("accessTokenExpiresOn", refreshTokenResult.expiresOn);
