@@ -523,8 +523,8 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
 
             var sortPart = selectionOption switch
             {
-                SelectionOptions.Earliest => "ORDER BY added_on ASC",
-                SelectionOptions.Latest => "ORDER BY added_on DESC",
+                SelectionOptions.Oldest => "ORDER BY added_on ASC",
+                SelectionOptions.Newest => "ORDER BY added_on DESC",
                 SelectionOptions.None => String.Empty,
                 _ => throw new NotImplementedException($"selectionOptions {selectionOption.ToString()} has not yet been implemented into FileService.GetAsync")
             };
@@ -574,11 +574,12 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             }
 
             if (ftpSettings.Any())
-            {var ftp = ftpSettings.First();
-            if (ftp.Mode == FtpModes.Sftp)
             {
-                throw new NotImplementedException("SFTP is not yet supported");
-            }
+                var ftp = ftpSettings.First();
+                if (ftp.Mode == FtpModes.Sftp)
+                {
+                    throw new NotImplementedException("SFTP is not yet supported");
+                }
 
                 // Get the object used to communicate with the server.
                 var fullFtpLocation = $"ftp://{ftp.Host}{contentUrl}";
