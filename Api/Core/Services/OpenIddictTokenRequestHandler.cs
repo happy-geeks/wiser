@@ -68,8 +68,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     private async ValueTask HandlePasswordAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
     {
         var subDomain = context.Transaction.Request?[HttpContextConstants.SubDomainKey]?.Value?.ToString();
-        logger.LogInformation(
-            $"User '{context.Request.Username}' is trying to authenticate for sub domain '{subDomain}'.");
+        logger.LogInformation($"User '{context.Request.Username}' is trying to authenticate for sub domain '{subDomain}'.");
         if (String.IsNullOrWhiteSpace(subDomain))
         {
             context.Reject("subdomain_missing", "No sub domain given");
@@ -85,8 +84,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         ulong adminAccountId = 0;
         var adminAccountName = "";
         var selectedUser = context.Transaction.Request?[HttpContextConstants.SelectedUserKey]?.Value?.ToString();
-        var isTestEnvironment =
-            context.Transaction.Request?[HttpContextConstants.IsTestEnvironmentKey]?.Value?.ToString();
+        var isTestEnvironment = context.Transaction.Request?[HttpContextConstants.IsTestEnvironmentKey]?.Value?.ToString();
         var totpPin = context.Transaction.Request?[HttpContextConstants.TotpPinKey]?.Value?.ToString();
         var totpBackupCode = context.Transaction.Request?[HttpContextConstants.TotpBackupCodeKey]?.Value?.ToString();
         if (String.IsNullOrWhiteSpace(isTestEnvironment))
@@ -235,7 +233,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
 
     private void Signin(OpenIddictServerEvents.HandleTokenRequestContext context, ClaimsPrincipal principal, Dictionary<string, OpenIddictParameter> parameters)
     {
-        principal.SetDestinations((c) => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken]);
+        principal.SetDestinations(_ => new List<string> { OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken }.AsReadOnly());
         context.SignIn(principal, parameters);
     }
 
