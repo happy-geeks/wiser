@@ -2061,7 +2061,9 @@ export class Fields {
                                 body: JSON.stringify({
                                     encryptedItemIdsList:encryptedIds,
                                     entityType:action.entityType || "",
-                                    propertyNames:action.propertyNames})
+                                    propertyNames:action.propertyNames,
+                                    fileSelection:action.fileSelection
+                                })
                             });
                             await Misc.downloadFile(pdfResult, action.fileName || "mergedpdf.pdf");
                         }

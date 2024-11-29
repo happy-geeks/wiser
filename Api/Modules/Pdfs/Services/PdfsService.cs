@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
 using Api.Modules.Files.Interfaces;
+using Api.Modules.Files.Models;
 using Api.Modules.Pdfs.Interfaces;
 using Api.Modules.Tenants.Interfaces;
 using EvoPdf;
@@ -93,7 +94,7 @@ namespace Api.Modules.Pdfs.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string[] propertyNames, string entityType)
+        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string[] propertyNames, string entityType, SelectionOptions selectionOptions = SelectionOptions.None)
         {
             Document mergeResultPdfDocument = null;
 
@@ -104,7 +105,7 @@ namespace Api.Modules.Pdfs.Services
 
                 foreach (var propertyName in propertyNames)
                 {
-                    var pdfFile = await filesService.GetAsync(itemId, 0, identity, 0, entityType, propertyName:propertyName);
+                    var pdfFile = await filesService.GetAsync(itemId, 0, identity, 0, entityType, propertyName: propertyName, selectionOption: selectionOptions);
                     var pdfStream = new MemoryStream();
                     // Check if the PDF must be downloaded first
                     if (!String.IsNullOrWhiteSpace(pdfFile.ModelObject.Url))
