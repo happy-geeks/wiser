@@ -2,23 +2,22 @@
 using FrontEnd.Modules.Base.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FrontEnd.Modules.Dashboard.Controllers
+namespace FrontEnd.Modules.Dashboard.Controllers;
+
+[Area("Dashboard"), Route("Modules/Dashboard")]
+public class DashboardController : Controller
 {
-    [Area("Dashboard"), Route("Modules/Dashboard")]
-    public class DashboardController : Controller
+    private readonly IBaseService baseService;
+
+    public DashboardController(IBaseService baseService)
     {
-        private readonly IBaseService baseService;
+        this.baseService = baseService;
+    }
 
-        public DashboardController(IBaseService baseService)
-        {
-            this.baseService = baseService;
-        }
+    public IActionResult Index()
+    {
+        var viewModel = baseService.CreateBaseViewModel<BaseModuleViewModel>();
 
-        public IActionResult Index()
-        {
-            var viewModel = baseService.CreateBaseViewModel<BaseModuleViewModel>();
-
-            return View(viewModel);
-        }
+        return View(viewModel);
     }
 }
