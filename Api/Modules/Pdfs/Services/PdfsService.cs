@@ -103,7 +103,7 @@ namespace Api.Modules.Pdfs.Services
 
                 foreach (var propertyName in propertyNames)
                 {
-                    var pdfFile = (await filesService.GetAsync(ìtemId, 0, identity, 0, entityType, propertyName:propertyName)).ModelObject;
+                    var pdfFile = (await filesService.GetAsync(itemId, 0, identity, 0, entityType, propertyName:propertyName)).ModelObject;
                     using var pdfStream = new MemoryStream();
 
                     // Check if the PDF must be downloaded first.
