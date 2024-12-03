@@ -5,11 +5,11 @@ using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Models;
-using Api.Modules.Tenants.Models;
 using Api.Modules.Files.Interfaces;
 using Api.Modules.Files.Models;
 using Api.Modules.Items.Controllers;
 using Api.Modules.Tenants.Interfaces;
+using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -49,7 +49,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="parentId">The parent ID. Enter 0 to get items from the root directory..</param>
         /// <returns>A list of <see cref="FileTreeViewModel"/>.</returns>
         [HttpGet]
-        [Route("{parentId:int}/tree")]
+        [Route("{parentId:long}/tree")]
         [ProducesResponseType(typeof(List<FileTreeViewModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -105,7 +105,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="useCloudFlare">Optional: Whether to use CloudFlare to store image files.</param>
         /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
         [HttpPost]
-        [Route("~/api/v4/items/{itemId}/upload")]
+        [Route("~/api/v4/items/{itemId:long}/upload")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -152,7 +152,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
         [HttpPost]
-        [Route("~/api/v4/items/{itemId}/files/url")]
+        [Route("~/api/v4/items/{itemId:long}/files/url")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> AddFileUrlAsync(ulong itemId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
@@ -230,8 +230,8 @@ namespace Api.Modules.Files.Controllers
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         /// <returns>The file contents.</returns>
         [HttpGet]
-        [Route("~/api/v4/items/{itemId}/files/{fileId:int}/{filename}")]
-        [Route("~/api/v4/items/{itemId}/files/{propertyName}/{filename}")]
+        [Route("~/api/v4/items/{itemId:long}/files/{fileId:int}/{filename}")]
+        [Route("~/api/v4/items/{itemId:long}/files/{propertyName}/{filename}")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status302Found)]
@@ -296,7 +296,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         [HttpDelete]
-        [Route("~/api/v4/items/{itemId}/files/{fileId:int}")]
+        [Route("~/api/v4/items/{itemId:long}/files/{fileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> DeleteFileAsync(ulong itemId, int fileId, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
@@ -335,7 +335,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         [HttpPut]
-        [Route("~/api/v4/items/{itemId}/files/{fileId:int}/rename/{newName}")]
+        [Route("~/api/v4/items/{itemId:long}/files/{fileId:int}/rename/{newName}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> RenameFileAsync(ulong itemId, int fileId, string newName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
@@ -374,7 +374,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         [HttpPut]
-        [Route("~/api/v4/items/{itemId}/files/{fileId:int}/title/{newTitle}")]
+        [Route("~/api/v4/items/{itemId:long}/files/{fileId:int}/title/{newTitle}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateFileTitleAsync(ulong itemId, int fileId, string newTitle, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
@@ -413,7 +413,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         [HttpPut]
-        [Route("~/api/v4/items/{itemId}/files/{fileId:int}/extra-data")]
+        [Route("~/api/v4/items/{itemId:long}/files/{fileId:int}/extra-data")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateExtraDataAsync(ulong itemId, int fileId, [FromBody]FileExtraDataModel extraData, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
@@ -433,7 +433,7 @@ namespace Api.Modules.Files.Controllers
         /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
         /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
         [HttpPut]
-        [Route("~/api/v3/items/{itemId:int}/files/{fileId:int}/ordering")]
+        [Route("~/api/v3/items/{itemId:long}/files/{fileId:int}/ordering")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateOrderingAsync(ulong itemId, int fileId, [FromQuery]int previousPosition, [FromQuery]int newPosition, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
