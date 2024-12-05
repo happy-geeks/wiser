@@ -133,6 +133,8 @@ LIMIT 1");
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
+    template.robots_no_index,
+    template.robots_no_follow,
     template.login_required, 
     template.login_role, 
     template.login_redirect_url,
@@ -505,6 +507,8 @@ GROUP BY wdc.content_id");
             clientDatabaseConnection.AddParameter("cacheMinutes", templateSettings.CacheMinutes);
             clientDatabaseConnection.AddParameter("cacheLocation", templateSettings.CacheLocation);
             clientDatabaseConnection.AddParameter("cacheRegex", templateSettings.CacheRegex);
+            clientDatabaseConnection.AddParameter("robotsNoIndex", templateSettings.RobotsNoIndex);
+            clientDatabaseConnection.AddParameter("robotsNoFollow", templateSettings.RobotsNoFollow);
             clientDatabaseConnection.AddParameter("loginRequired", templateSettings.LoginRequired);
             clientDatabaseConnection.AddParameter("loginRole", templateSettings.LoginRoles == null ? "" : String.Join(",", templateSettings.LoginRoles.OrderBy(x => x)));
             clientDatabaseConnection.AddParameter("loginRedirectUrl", templateSettings.LoginRedirectUrl);
@@ -552,6 +556,8 @@ SET template_name = ?name,
     cache_minutes = ?cacheMinutes,
     cache_location = ?cacheLocation,
     cache_regex = ?cacheRegex,
+    robots_no_index = ?robotsNoIndex,
+    robots_no_follow = ?robotsNoFollow,
     login_required = ?loginRequired,
     login_role = ?loginRole,
     login_redirect_url = ?loginRedirectUrl,
@@ -582,6 +588,8 @@ SET template_name = ?name,
     widget_content = ?widgetContent,
     widget_location = ?widgetLocation,
     is_dirty = TRUE,
+    robots_no_index = ?robotsNoIndex,
+    robots_no_follow = ?robotsNoFollow,
     # Set the external_files column empty, because we have a new table for this now. This value will be moved to that table in code below.
     external_files = ''
 WHERE id = ?id";
@@ -705,7 +713,9 @@ WHERE id = ?id";
     cache_per_hostname,
     cache_per_user,
     cache_using_regex,
-    is_dirty
+    is_dirty,
+    robots_no_index,
+    robots_no_follow
 )
 SELECT
     template.parent_id,
@@ -760,7 +770,9 @@ SELECT
     template.cache_per_hostname,
     template.cache_per_user,
     template.cache_using_regex,
-    FALSE AS is_dirty
+    FALSE AS is_dirty,
+    template.robots_no_index,
+    template.robots_no_follow
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 WHERE template.template_id = ?templateId
@@ -1336,6 +1348,8 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.cache_minutes, 
     template.cache_location, 
     template.cache_regex,
+    template.robots_no_index,
+    template.robots_no_follow,
     template.login_required, 
     template.login_role, 
     template.login_redirect_url, 
@@ -1558,6 +1572,8 @@ AND otherVersion.id IS NULL";
                          template.cache_location = temp.cache_location,
                          template.return_not_found_when_pre_load_query_has_no_data = temp.return_not_found_when_pre_load_query_has_no_data,
                          template.cache_regex = temp.cache_regex,
+                         template.robots_no_index = temp.robots_no_index,
+                         template.robots_no_follow = temp.robots_no_follow,
                          template.routine_type = temp.routine_type,
                          template.routine_parameters = temp.routine_parameters,
                          template.routine_return_type = temp.routine_return_type,
@@ -1613,6 +1629,8 @@ AND otherVersion.id IS NULL";
                          cache_location,
                          return_not_found_when_pre_load_query_has_no_data,
                          cache_regex,
+                         robots_no_index,
+                         robots_no_follow,
                          routine_type,
                          routine_parameters,
                          routine_return_type,
@@ -1668,6 +1686,8 @@ AND otherVersion.id IS NULL";
                          cache_location,
                          return_not_found_when_pre_load_query_has_no_data,
                          cache_regex,
+                         robots_no_index,
+                         robots_no_follow,
                          routine_type,
                          routine_parameters,
                          routine_return_type,

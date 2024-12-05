@@ -44,6 +44,8 @@ public class TemplateHelpers
             CachePerUser = dataRow.Field<bool>("cache_per_user"),
             CacheLocation = (TemplateCachingLocations) dataRow.Field<int>("cache_location"),
             CacheRegex = dataRow.Field<string>("cache_regex"),
+            RobotsNoIndex = dataRow.Field<bool>("robots_no_index"),
+            RobotsNoFollow = dataRow.Field<bool>("robots_no_follow"),
             IsDefaultFooter = dataRow.Field<bool>("is_default_footer"),
             IsDefaultHeader = dataRow.Field<bool>("is_default_header"),
             DefaultHeaderFooterRegex = dataRow.Field<string>("default_header_footer_regex"),
