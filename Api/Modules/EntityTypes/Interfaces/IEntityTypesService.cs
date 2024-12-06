@@ -47,8 +47,9 @@ namespace Api.Modules.EntityTypes.Interfaces
         /// <param name="identity">The identity of the authenticated user.</param>
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="parentId">Optional: The ID of the parent. Set to 0 or skip to use the root.</param>
+        /// <param name="parentEntityType">Optional: The entityType of the parent. Only used if parentId is also set.</param>
         /// <returns>A list of available entity names.</returns>
-        Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null);
+        Task<ServiceResult<List<EntityTypeModel>>> GetAvailableEntityTypesAsync(ClaimsIdentity identity, int moduleId, string parentId = null, string parentEntityType = "");
 
         /// <summary>
         /// Creates a new entity type.

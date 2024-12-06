@@ -84,13 +84,14 @@ namespace Api.Modules.EntityTypes.Controllers
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="parentId">Optional: The ID of the parent. Set to 0 or skip to use the root.</param>
+        /// <param name="parentEntityType">Optional: The entityType of the parent. Defaults to the root.</param>
         /// <returns>A list of available entity names.</returns>
         [HttpGet]
         [Route("{moduleId:int}")]
         [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetAvailableEntityTypesAsync(int moduleId, string parentId = null)
+        public async Task<IActionResult> GetAvailableEntityTypesAsync(int moduleId, string parentId = null, string parentEntityType = "")
         {
-            return (await entityTypesService.GetAvailableEntityTypesAsync((ClaimsIdentity)User.Identity, moduleId, parentId)).GetHttpResponseMessage();
+            return (await entityTypesService.GetAvailableEntityTypesAsync((ClaimsIdentity)User.Identity, moduleId, parentId, parentEntityType)).GetHttpResponseMessage();
         }
 
         /// <summary>

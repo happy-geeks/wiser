@@ -7,6 +7,7 @@ using Api.Modules.EntityTypes.Models;
 using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Items.Interfaces
 {
@@ -216,13 +217,14 @@ namespace Api.Modules.Items.Interfaces
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="parentEntityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
         /// <param name="parentId">Optional: The ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the ID for the item that should currently be checked.</param>
         /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
+        /// <param name="childEntityTypes">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
         /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
-        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string entityType = null, ulong? parentId = null, string orderBy = null, ulong? checkId = null, int linkType = 0);
+        Task<ServiceResult<List<TreeViewItemModel>>> GetItemsForTreeViewAsync(int moduleId, ClaimsIdentity identity, string parentEntityType, ulong? parentId = null, string orderBy = null, ulong? checkId = null, int linkType = 0, string childEntityTypes = null);
 
         /// <summary>
         /// Move an item to a different position in the tree view.
@@ -275,5 +277,15 @@ namespace Api.Modules.Items.Interfaces
         /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
         /// <returns></returns>
         Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data);
+
+        /// <summary>
+        /// Get the contact menu items for the given item dependant on what the user is allowed to do.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="moduleId">The id of the module the item is in.</param>
+        /// <param name="itemId">The id of the item to get the menu items for.</param>
+        /// <param name="entityType">The entity type of item to get menu items for.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(ClaimsIdentity identity, int moduleId, ulong itemId, string entityType);
     }
 }
