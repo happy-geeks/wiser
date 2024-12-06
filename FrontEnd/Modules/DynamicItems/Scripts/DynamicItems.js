@@ -1201,7 +1201,7 @@ const moduleSettings = {
 
             // Load overview grid, if it exists on the current tab.
             const overviewGridElement = contentElement.find("#overViewGrid");
-            this.loadOverviewGrid(itemId, overviewGridElement);
+            await this.loadOverviewGrid(itemId, overviewGridElement);
         }
 
         /**
