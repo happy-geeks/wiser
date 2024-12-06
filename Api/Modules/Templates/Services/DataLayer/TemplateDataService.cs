@@ -166,7 +166,9 @@ LIMIT 1");
     template.default_header_footer_regex,
     template.is_partial,
     template.widget_content,
-    template.widget_location
+    template.widget_location,
+    template.robots_no_index,
+    template.robots_no_follow
 FROM {WiserTableNames.WiserTemplate} AS template
 {publishedVersionJoin}
 LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
@@ -1375,7 +1377,9 @@ ORDER BY parent8.ordering, parent7.ordering, parent6.ordering, parent5.ordering,
     template.pre_load_query,
     template.return_not_found_when_pre_load_query_has_no_data,
     template.widget_content,
-    template.widget_location
+    template.widget_location,
+    template.robots_no_index,
+    template.robots_no_follow
 FROM {WiserTableNames.WiserTemplate} AS template
 LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
 LEFT JOIN {WiserTableNames.WiserTemplate} AS parent1 ON parent1.template_id = template.parent_id AND parent1.version = (SELECT MAX(version) FROM {WiserTableNames.WiserTemplate} WHERE template_id = template.parent_id)
