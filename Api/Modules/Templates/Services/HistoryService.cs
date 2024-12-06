@@ -169,6 +169,8 @@ namespace Api.Modules.Templates.Services
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerHostName", TemplateTypes.Normal, newVersion.CachePerHostName, oldVersion.CachePerHostName, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cachePerQueryString", TemplateTypes.Normal, newVersion.CachePerQueryString, oldVersion.CachePerQueryString, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("cacheRegex", TemplateTypes.Normal, newVersion.CacheRegex, oldVersion.CacheRegex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("robotsNoIndex", TemplateTypes.Normal, newVersion.RobotsNoIndex, oldVersion.RobotsNoIndex, historyModel);
+            CheckIfValuesMatchAndSaveChangesToHistoryModel("robotsNoFollow", TemplateTypes.Normal, newVersion.RobotsNoFollow, oldVersion.RobotsNoFollow, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRequired", TemplateTypes.Normal, newVersion.LoginRequired, oldVersion.LoginRequired, historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("loginRole", TemplateTypes.Normal, newVersion.LoginRoles == null ? "" : String.Join(",", newVersion.LoginRoles), oldVersion.LoginRoles == null ? "" : String.Join(",", oldVersion.LoginRoles), historyModel);
             CheckIfValuesMatchAndSaveChangesToHistoryModel("insertMode", TemplateTypes.Normal, newVersion.InsertMode, oldVersion.InsertMode, historyModel);

@@ -142,7 +142,9 @@ WHERE content_id = ?id");
     template.default_header_footer_regex,
     template.is_partial,
     template.widget_content,
-    template.widget_location
+    template.widget_location,
+    template.robots_no_index,
+    template.robots_no_follow
 FROM {WiserTableNames.WiserTemplate} AS template 
 LEFT JOIN {WiserTableNames.WiserTemplateExternalFiles} AS externalFiles ON externalFiles.template_id = template.id
 LEFT JOIN (SELECT linkedTemplate.template_id, template_name, template_type FROM {WiserTableNames.WiserTemplate} linkedTemplate WHERE linkedTemplate.removed = 0 GROUP BY template_id) AS linkedTemplates ON FIND_IN_SET(linkedTemplates.template_id, template.linked_templates)

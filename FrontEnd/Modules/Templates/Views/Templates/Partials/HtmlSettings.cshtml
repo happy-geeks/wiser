@@ -139,6 +139,20 @@
     </div>
 </div>
 
+<div class="item">
+    <input id="robotsNoIndex" name="robotsNoIndex" type="checkbox" @(Model.RobotsNoIndex ? "checked" : "") class="hidden"/>
+    <label class="checkbox" for="robotsNoIndex">
+        <span>Robots No Index</span>
+    </label>
+</div>
+
+<div class="item">
+    <input id="robotsNoFollow" name="robotsNoFollow" type="checkbox" @(Model.RobotsNoFollow ? "checked" : "") class="hidden"/>
+    <label class="checkbox" for="robotsNoFollow">
+        <span>Robots No Follow</span>
+    </label>
+</div>
+
 <div class="item item-full">
     <h4><label for="preLoadQuery">Pre-load query</label></h4>
     <textarea rows="10" cols="30" id="preLoadQuery" data-editor-type="text/x-mysql">@Model.PreLoadQuery</textarea>
