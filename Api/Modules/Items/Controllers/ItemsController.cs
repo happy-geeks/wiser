@@ -636,10 +636,9 @@ namespace Api.Modules.Items.Controllers
 
         /// <summary>
         /// Get all items for a tree view for a specific parent.
-        /// This method does not work with dedicated tables for entity types or link types, because we can't know beforehand what entity types and link types a tree view will contain, so we have no way to know which dedicated tables to use.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
-        /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a prefix table.</param>
+        /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a dedicated table table.</param>
         /// <param name="encryptedItemId">Optional: Item id of the item to get the child items of. If no value has been given, the root will be used as parent.</param>
         /// <param name="entityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
@@ -654,15 +653,15 @@ namespace Api.Modules.Items.Controllers
             var identity = (ClaimsIdentity)User.Identity;
             var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
             var decryptedCheckId = await wiserTenantsService.DecryptValue<ulong>(checkId, identity);
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, identity, entityType, itemId, orderBy, decryptedCheckId, linkType)).GetHttpResponseMessage();
+            return (await itemsService.GetItemsForTreeViewAsync(moduleId, identity, parentEntityType, itemId, orderBy, decryptedCheckId, linkType)).GetHttpResponseMessage();
         }
 
         /// <summary>
         /// Get all items for a tree view for a specific parent.
-        /// This method does not work with dedicated tables for entity types or link types, because we can't know beforehand what entity types and link types a tree view will contain, so we have no way to know which dedicated tables to use.
         /// </summary>
         /// <param name="moduleId">The ID of the module.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+        /// <param name="entityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
+        /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a dedicated table.</param>
         /// <param name="itemId">Optional: The ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
         /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
         /// <param name="checkId">Optional: This is meant for item-linker fields. This is the ID for the item that should currently be checked.</param>
@@ -671,7 +670,7 @@ namespace Api.Modules.Items.Controllers
         [HttpGet]
         [Route("~/api/v4/[controller]/tree-view")]
         [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] ulong? itemId = null, [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] ulong? checkId = null, [FromQuery] int linkType = 0)
+        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] ulong? itemId = null, [FromQuery] string parentEntityType = "", [FromQuery] string entityType = null,  [FromQuery] string orderBy = null, [FromQuery] ulong? checkId = null, [FromQuery] int linkType = 0)
         {
             return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, parentEntityType, itemId ?? 0,orderBy, checkId ?? 0, linkType, entityType)).GetHttpResponseMessage();
         }
@@ -679,9 +678,9 @@ namespace Api.Modules.Items.Controllers
         [HttpGet]
         [Route("context-menu")]
         [ProducesResponseType(typeof(List<ContextMenuItem>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery]string encryptedItemId, string entityType = "")
+        public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery] ulong itemId, string entityType = "")
         {
-            return (await itemsService.GetContextMenuAsync(moduleId, (ClaimsIdentity)User.Identity, encryptedItemId, entityType)).GetHttpResponseMessage();
+            return (await itemsService.GetContextMenuAsync(moduleId, (ClaimsIdentity)User.Identity, itemId, entityType)).GetHttpResponseMessage();
         }
 
         /// <summary>

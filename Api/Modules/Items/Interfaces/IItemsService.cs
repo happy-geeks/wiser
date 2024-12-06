@@ -278,6 +278,6 @@ namespace Api.Modules.Items.Interfaces
         /// <returns></returns>
         Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data);
 
-        Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity userIdentity, string encryptedItemId, string entityType);
+        Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity userIdentity, ulong itemId, string entityType);
     }
 }

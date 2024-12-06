@@ -2977,9 +2977,9 @@ ORDER BY link.ordering ASC, item.title ASC";
         }
 
         /// <inheritdocs />
-        public async Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity identity, string encryptedItemId, string entityType)
+        public async Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity identity, ulong itemId, string entityType)
         {
-            var item = (await GetItemDetailsAsync(encryptedItemId, identity, entityType)).ModelObject;
+            var item = (await GetItemDetailsAsync(itemId, identity, entityType)).ModelObject;
             var userId = IdentityHelpers.GetWiserUserId(identity);
             var permissions = await wiserItemsService.GetUserItemPermissionsAsync(item.Id, userId, entityType);
             var settings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType, moduleId);
