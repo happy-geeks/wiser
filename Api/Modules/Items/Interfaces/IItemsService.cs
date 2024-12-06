@@ -278,6 +278,14 @@ namespace Api.Modules.Items.Interfaces
         /// <returns></returns>
         Task<ServiceResult<List<SearchResponseModel>>> SearchAsync(ClaimsIdentity identity, ulong parentId, SearchRequestModel data);
 
-        Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity userIdentity, ulong itemId, string entityType);
+        /// <summary>
+        /// Get the contact menu items for the given item dependant on what the user is allowed to do.
+        /// </summary>
+        /// <param name="identity">The identity of the authenticated user.</param>
+        /// <param name="moduleId">The id of the module the item is in.</param>
+        /// <param name="itemId">The id of the item to get the menu items for.</param>
+        /// <param name="entityType">The entity type of item to get menu items for.</param>
+        /// <returns></returns>
+        Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(ClaimsIdentity identity, int moduleId, ulong itemId, string entityType);
     }
 }

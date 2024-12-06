@@ -620,7 +620,8 @@ const moduleSettings = {
                 target: "#treeview",
                 filter: ".k-in",
                 open: this.onContextMenuOpen.bind(this),
-                select: this.onContextMenuClick.bind(this)
+                select: this.onContextMenuClick.bind(this),
+                close: this.onContextMenuClose.bind(this)
             }).data("kendoContextMenu");
         }
 
@@ -740,6 +741,19 @@ const moduleSettings = {
                 const nodeId = dataItem.id;
                 const entityType = this.mainTreeView.dataItem(event.target).entityType;
                 let contextMenu = await Wiser.api({ url: `${this.base.settings.wiserApiRoot}items/context-menu?moduleId=${encodeURIComponent(this.base.settings.moduleId)}&encryptedItemId=${encodeURIComponent(nodeId)}&entityType=${encodeURIComponent(entityType)}` });
+                contextMenu = contextMenu.map(item => {
+                    // Create or ensure the `attr` object exists
+                    item.attr = item.attr || {};
+
+                    // Move the `action` property into the `attr` object
+                    if ('action' in item) {
+                        item.attr.action = item.action;
+                        delete item.action; // Remove `action` from the top level
+                    }
+
+                    return item;
+                });
+                
                 this.mainTreeViewContextMenu.setOptions({
                     dataSource: contextMenu
                 });
@@ -757,6 +771,18 @@ const moduleSettings = {
             const button = $(event.item);
             const action = button.attr("action");
             await this.handleContextMenuAction($(event.target), action);
+        }
+
+        /**
+         * This event gets fired when the context menu gets closes
+         * @param {any} event The click event.
+         */
+        async onContextMenuClose(event) {
+            // Empty context menu on close to prevent old menu from 
+            // showing momentarily when getting the menu for a different item
+            this.mainTreeViewContextMenu.setOptions({
+                dataSource: []
+            });
         }
 
         async handleContextMenuAction(selectedNode, action) {

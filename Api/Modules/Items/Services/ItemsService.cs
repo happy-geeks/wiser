@@ -37,7 +37,6 @@ using GeeksCoreLibrary.Modules.Languages.Interfaces;
 using GeeksCoreLibrary.Modules.Objects.Interfaces;
 using Google.Cloud.Translation.V2;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
@@ -2977,7 +2976,7 @@ ORDER BY link.ordering ASC, item.title ASC";
         }
 
         /// <inheritdocs />
-        public async Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(int moduleId, ClaimsIdentity identity, ulong itemId, string entityType)
+        public async Task<ServiceResult<List<ContextMenuItem>>> GetContextMenuAsync(ClaimsIdentity identity, int moduleId, ulong itemId, string entityType)
         {
             var item = (await GetItemDetailsAsync(itemId, identity, entityType)).ModelObject;
             var userId = IdentityHelpers.GetWiserUserId(identity);
@@ -3011,7 +3010,7 @@ ORDER BY link.ordering ASC, item.title ASC";
 
                     menuItems.Add(new ContextMenuItem()
                     {
-                        Text = $"Nieuw(e) '{item.Title}' aanmaken (SHIFT+N)",
+                        Text = $"Nieuw(e) '{childEntity}' aanmaken (SHIFT+N)",
                         SpriteCssClass = childSettings.IconAdd,
                         Action = "CREATE_ITEM",
                         EntityType = item.EntityType
@@ -3037,21 +3036,26 @@ ORDER BY link.ordering ASC, item.title ASC";
                     EntityType = item.EntityType
                 });
                 
-                menuItems.Add(new ContextMenuItem()
+                if (item.PublishedEnvironment == 0)
                 {
-                    Text = $"{item.Title} tonen",
-                    SpriteCssClass = "item-light-on",
-                    Action = "PUBLISH_ITEM",
-                    EntityType = item.EntityType
-                });
-                
-                menuItems.Add(new ContextMenuItem()
+                    menuItems.Add(new ContextMenuItem()
+                    {
+                        Text = $"{item.Title} tonen",
+                        SpriteCssClass = "item-light-on",
+                        Action = "PUBLISH_ITEM",
+                        EntityType = item.EntityType
+                    });
+                }
+                else
                 {
-                    Text = $"{item.Title} verbergen",
-                    SpriteCssClass = "item-light-off",
-                    Action = "HIDE_ITEM",
-                    EntityType = item.EntityType
-                });
+                    menuItems.Add(new ContextMenuItem()
+                    {
+                        Text = $"{item.Title} verbergen",
+                        SpriteCssClass = "item-light-off",
+                        Action = "HIDE_ITEM",
+                        EntityType = item.EntityType
+                    });
+                }
             }
 
             if ((permissions & AccessRights.Delete) > 0)

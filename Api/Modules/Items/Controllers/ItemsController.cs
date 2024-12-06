@@ -675,12 +675,21 @@ namespace Api.Modules.Items.Controllers
             return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, parentEntityType, itemId ?? 0,orderBy, checkId ?? 0, linkType, entityType)).GetHttpResponseMessage();
         }
 
+        /// <summary>
+        /// Get the contact menu items for the given item dependant on what the user is allowed to do.
+        /// </summary>
+        /// <param name="moduleId">the module the item is in.</param>
+        /// <param name="encryptedItemId">The item of the item to get the menu items for.</param>
+        /// <param name="entityType">The entity type of the item.</param>
+        /// <returns></returns>
         [HttpGet]
         [Route("context-menu")]
         [ProducesResponseType(typeof(List<ContextMenuItem>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery] ulong itemId, string entityType = "")
+        public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId, string entityType = "")
         {
-            return (await itemsService.GetContextMenuAsync(moduleId, (ClaimsIdentity)User.Identity, itemId, entityType)).GetHttpResponseMessage();
+            var identity = (ClaimsIdentity)User.Identity;
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
+            return (await itemsService.GetContextMenuAsync((ClaimsIdentity)User.Identity, moduleId, itemId, entityType)).GetHttpResponseMessage();
         }
 
         /// <summary>
