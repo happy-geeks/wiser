@@ -1,32 +1,44 @@
-﻿(function() {
-var container = $("#container_{propertyIdWithSuffix}");
-var readonly = {readonly};
-var initialFiles = {initialFiles};
+﻿(() => {
+let container = $("#container_{propertyIdWithSuffix}");
+let readonly = {readonly};
+let initialFiles = {initialFiles};
+
 if (initialFiles && initialFiles.length > 0) {
-    for (var i = 0; i < initialFiles.length; i++) {
+    for (let i = 0; i < initialFiles.length; i++) {
         initialFiles[i].readonly = readonly;
         initialFiles[i].entityType = "{entityType}";
         initialFiles[i].linkType = "{linkType}";
     }
 }
 
-var options = {options};
+let options = {options};
 
 options = $.extend({
     async: {
-        saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/{itemIdEncrypted}/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&useTinyPng=" + (options.useTinyPng === true).toString() + "&useCloudFlare=" + (options.useCloudFlare === true).toString() + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
+        saveUrl: `${window.dynamicItems.settings.wiserApiRoot}"items/{itemIdEncrypted}/upload?propertyName="${encodeURIComponent("{propertyName}")} &itemLinkId={itemLinkId}&useTinyPng=${(options.useTinyPng === true).toString()}&useCloudFlare="${(options.useCloudFlare === true).toString()}"&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`,
         withCredentials: false,
         removeUrl: "remove"
     },
     validation: {
-        allowedExtensions: [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".svg", ".webp", ".tif", ".tiff"]
+        allowedExtensions: [
+            ".bmp",
+            ".gif",
+            ".jpg", 
+            ".jpeg", 
+            ".png",
+            ".svg",
+            ".tif",
+            ".tiff",
+            ".webp"
+        ]
     },
     files: initialFiles,
     upload: (e) => {
         let xhr = e.XMLHttpRequest;
         if (xhr) {
             xhr.addEventListener("readystatechange", (e) => {
-                if (xhr.readyState === 1 /* OPENED */) {
+                /* OPENED */
+                if (xhr.readyState === 1) {
                     xhr.setRequestHeader("authorization", `Bearer ${localStorage.getItem("accessToken")}`);
                 }
             });
@@ -44,8 +56,8 @@ if (window.dynamicItems.fields.onFileUploadError) {
     options.error = window.dynamicItems.fields.onFileUploadError.bind(window.dynamicItems.fields);
 }
 
-var field = $("#field_{propertyIdWithSuffix}");
-var kendoComponent = field.kendoUpload(options).data("kendoUpload");
+let field = $("#field_{propertyIdWithSuffix}");
+let kendoComponent = field.kendoUpload(options).data("kendoUpload");
 
 $("#images_{propertyIdWithSuffix}").html(kendo.render(kendo.template($("#uploaderTemplate").html()), initialFiles));
 
