@@ -128,7 +128,17 @@ namespace Api.Modules.Templates.Models.Template
         /// The template will be cached separately for each named group in this regex.
         /// </summary>
         public string CacheRegex { get; set; }
-
+        
+        /// <summary>
+        /// Gets or sets the robots no index tag on this template.
+        /// </summary>
+        public bool RobotsNoIndex { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the robots no follow tag on this template.
+        /// </summary>
+        public bool RobotsNoFollow { get; set; }
+        
         /// <summary>
         /// Gets or sets whether or not users should be logged in on the website to be able to open the page that contains this template.
         /// </summary>

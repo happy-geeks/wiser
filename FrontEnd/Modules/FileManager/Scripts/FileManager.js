@@ -131,7 +131,7 @@ const moduleSettings = {
                 userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot, true);
             }
             this.settings.userId = userData.encryptedId;
-            this.settings.tenantId = userData.TenantId;
+            this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.filesRootId = userData.filesRootId;
             this.settings.imagesRootId = userData.imagesRootId;
