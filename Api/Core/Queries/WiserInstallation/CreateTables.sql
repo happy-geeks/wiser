@@ -749,6 +749,8 @@ CREATE TABLE IF NOT EXISTS `wiser_template`  (
    `widget_content` mediumtext,
    `widget_location` tinyint(4) NOT NULL DEFAULT 1,
    `is_dirty` tinyint(1) NOT NULL DEFAULT 0,
+   `robots_no_index` tinyint(1) NOT NULL DEFAULT 0,
+   `robots_no_follow` tinyint(1) NOT NULL DEFAULT 0,
    PRIMARY KEY (`id`) USING BTREE,
    UNIQUE INDEX `idx_unique`(`template_id` ASC, `version` ASC) USING BTREE,
    INDEX `idx_removed`(`removed` ASC) USING BTREE,
