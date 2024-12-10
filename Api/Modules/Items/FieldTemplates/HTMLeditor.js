@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
     const readonly = {readonly};
     let kendoComponent = null;
 
@@ -142,6 +142,7 @@
         }
 
         const toolModes = allTools[toolName];
+        
         // if this tool is manually added to the options OR is supposed to be in this editor mode, do not skip it
         if (((options.tools && options.tools.indexOf(toolName) > -1) || toolModes.indexOf(options.mode) > -1) === false) {
             continue;
