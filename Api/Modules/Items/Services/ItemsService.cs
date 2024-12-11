@@ -2161,7 +2161,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
 
             var parentEntitySettings = await wiserItemsService.GetEntityTypeSettingsAsync(parentEntityType ?? String.Empty, moduleId);
             var parentTablePrefix = wiserItemsService.GetTablePrefixForEntity(parentEntitySettings);
-            
+
             var firstChild = parentEntitySettings.AcceptedChildTypes.FirstOrDefault();
             if (firstChild is null)
             {
@@ -2180,7 +2180,7 @@ SELECT entity_type FROM {tableName}_archive WHERE id = ?itemId";
             }
 
             var linkTypesToHideFromTreeViewList = String.Join(",", linkTypesToHideFromTreeView);
-            
+
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             clientDatabaseConnection.ClearParameters();
             clientDatabaseConnection.AddParameter("moduleId", moduleId);
@@ -2351,7 +2351,7 @@ ORDER BY {orderByClause}";
             }
 
             var childPrefix = await wiserItemsService.GetTablePrefixForEntityAsync(firstSubChild);
-            
+
             query = $@"SELECT 
 	                    item.id,
 	                    item.original_item_id,
@@ -2427,7 +2427,7 @@ ORDER BY {orderByClause}";
             }
 
             return new ServiceResult<List<TreeViewItemModel>>(results);
-            
+
             // Inline function to convert a DataRow to a TreeViewItemModel and add it to the results list.
             void AddItem(DataRow dataRow)
             {
@@ -2950,7 +2950,7 @@ LEFT JOIN {WiserTableNames.WiserUserRoles} AS userRole ON userRole.user_id = ?us
 LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = userRole.role_id AND permission.item_id = item.id
 
 WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
-AND item.entity_type = ?childEntityTypes
+AND item.entity_type = ?entityType
 AND (?searchEverywhere = TRUE OR link.id IS NOT NULL)
 {searchQueryPart}
 
@@ -2989,7 +2989,7 @@ ORDER BY link.ordering ASC, item.title ASC";
             {
                 return new ServiceResult<List<ContextMenuItem>>(menuItems);
             }
-            
+
             if ((permissions & AccessRights.Update) > 0)
             {
                 menuItems.Add(new ContextMenuItem()
@@ -3016,7 +3016,7 @@ ORDER BY link.ordering ASC, item.title ASC";
                         EntityType = item.EntityType
                     });
                 }
-                
+
                 menuItems.Add(new ContextMenuItem()
                 {
                     Text = $"'{item.Title}' dupliceren (SHIFT+D)",
@@ -3035,7 +3035,7 @@ ORDER BY link.ordering ASC, item.title ASC";
                     Action = "PUBLISH_LIVE",
                     EntityType = item.EntityType
                 });
-                
+
                 if (item.PublishedEnvironment == 0)
                 {
                     menuItems.Add(new ContextMenuItem()
