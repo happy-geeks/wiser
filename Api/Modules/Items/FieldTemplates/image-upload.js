@@ -70,13 +70,13 @@ container.find(".imagesContainer").kendoSortable({
     cursor: "move",
     autoScroll: true,
     container: "#container_{propertyIdWithSuffix} .imagesContainer",
-    hint: function (element) {
+    hint: (element) => {
         return element.clone().addClass("hint");
     },
-    placeholder: function (element) {
+    placeholder: (element) => {
         return element.clone().addClass("k-state-hover").css("opacity", 0.65);
     },
-    change: function (event) {
+    change: (event) => {
         // Kendo starts ordering with 0, but wiser starts with 1.
         const oldIndex = event.oldIndex + 1;
         const newIndex = event.newIndex + 1;
