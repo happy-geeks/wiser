@@ -83,16 +83,19 @@ container.find(".imagesContainer").kendoSortable({
         const fileId = event.item.data("imageId");
         const propertyName = container.data("propertyName");
 
-        Wiser.api({
-            method: "PUT",
-            contentType: "application/json",
-            dataType: "json",
-            url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/files/${fileId}/ordering?previousPosition=${oldIndex}&newPosition=${newIndex}&propertyName=${encodeURIComponent(propertyName)}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`
-        }).then(function (dataResult) {
-        }).catch(function (jqXHR, textStatus, errorThrown) {
-            console.error("Update file order error - {title}", jqXHR, textStatus, errorThrown);
+        try{
+            let apiResult = Wiser.api({
+                method: "PUT",
+                contentType: "application/json",
+                dataType: "json",
+                url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/files/${fileId}/ordering?previousPosition=${oldIndex}&newPosition=${newIndex}&propertyName=${encodeURIComponent(propertyName)}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`
+            });
+        }
+        catch (exception)
+        {
+            console.error("Update file order error - {title}", exception);
             kendo.alert("Er is iets fout gegaan tijdens het aanpassen van de volgorde. Probeer het a.u.b. nogmaals of neem contact op met ons.");
-        });
+        }
     }
 });
 
