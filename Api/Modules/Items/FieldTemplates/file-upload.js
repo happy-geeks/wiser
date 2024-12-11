@@ -123,7 +123,7 @@ const initialize = async () => {
         placeholder: (element) => {
             return element.clone().addClass("k-state-hover").css("opacity", 0.65);
         },
-        change: (event) => {
+        change: async (event) => {
             // Kendo starts ordering with 0, but wiser starts with 1.
             const oldIndex = event.oldIndex + 1;
             const newIndex = event.newIndex + 1;
@@ -131,16 +131,17 @@ const initialize = async () => {
             const fileId = fileContainer.data("fileId");
             const propertyName = container.data("propertyName");
 
-            Wiser.api({
-                method: "PUT",
-                contentType: "application/json",
-                dataType: "json",
-                url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/files/${fileId}/ordering?previousPosition=${oldIndex}&newPosition=${newIndex}&propertyName=${encodeURIComponent(propertyName)}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`
-            }).then((dataResult) => {
-            }).catch((jqXHR, textStatus, errorThrown) => {
-                console.error("Update file order error - {title}", errorThrown);
+            try {
+                let dataResult = await Wiser.api({
+                    method: "PUT",
+                    contentType: "application/json",
+                    dataType: "json",
+                    url: `${dynamicItems.settings.wiserApiRoot}items/{itemId}/files/${fileId}/ordering?previousPosition=${oldIndex}&newPosition=${newIndex}&propertyName=${encodeURIComponent(propertyName)}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`
+                });
+            } catch (exception) {
+                console.error("Update file order error - {title}", exception);
                 kendo.alert("Er is iets fout gegaan tijdens het aanpassen van de volgorde. Probeer het a.u.b. nogmaals of neem contact op met ons.");
-            });
+            }
         }
     });
 
