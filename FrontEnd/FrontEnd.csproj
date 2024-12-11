@@ -3,12 +3,12 @@
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.FrontEnd</PackageId>
-    <Version>3.5.2</Version>
+    <Version>3.5.3</Version>
     <Authors>Happy Geeks B.V.</Authors>
     <Company>Happy Geeks B.V.</Company>
     <Product>Wiser front-end</Product>
     <UserSecretsId>a69118f8-4ce1-4765-b419-31edbd568e39</UserSecretsId>
-    <AssemblyVersion>3.5.2.0</AssemblyVersion>
+    <AssemblyVersion>3.5.3.0</AssemblyVersion>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 	<LangVersion>default</LangVersion>
 	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.3.3" />
+    <PackageReference Include="GeeksCoreLibrary" Version="4.3.4" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
   </ItemGroup>
 
