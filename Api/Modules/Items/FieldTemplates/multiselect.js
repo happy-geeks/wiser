@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
 const container = $("#container_{propertyIdWithSuffix}");
 const field = $("#field_{propertyIdWithSuffix}");
 const fieldOptions = {options};
