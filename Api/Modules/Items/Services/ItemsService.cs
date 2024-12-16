@@ -110,14 +110,16 @@ namespace Api.Modules.Items.Services
         }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, WiserItemModel filters = null)
+        public async Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, GetItemsInputModel input)
         {
-            pagedRequest ??= new PagedRequest();
+            input ??= new GetItemsInputModel();
 
-            if (pagedRequest.PageSize > 500)
+            input.PageSize = input.PageSize switch
             {
-                pagedRequest.PageSize = 500;
-            }
+                > 500 => 500,
+                <= 0 => 100,
+                _ => input.PageSize
+            };
 
             var userId = IdentityHelpers.GetWiserUserId(identity);
 
@@ -127,50 +129,47 @@ namespace Api.Modules.Items.Services
 
             var whereClause = new List<string>();
             var extraJoins = new StringBuilder();
-            if (filters != null)
+            if (!String.IsNullOrWhiteSpace(input.Title))
             {
-                if (!String.IsNullOrWhiteSpace(filters.Title))
-                {
-                    whereClause.Add("item.title = ?title");
-                    clientDatabaseConnection.AddParameter("title", filters.Title);
-                }
+                whereClause.Add("item.title = ?title");
+                clientDatabaseConnection.AddParameter("title", input.Title);
+            }
 
-                if (!String.IsNullOrWhiteSpace(filters.EntityType))
-                {
-                    whereClause.Add("item.entity_type = ?entityType");
-                    clientDatabaseConnection.AddParameter("entityType", filters.EntityType);
-                }
+            if (!String.IsNullOrWhiteSpace(input.EntityType))
+            {
+                whereClause.Add("item.entity_type = ?entityType");
+                clientDatabaseConnection.AddParameter("entityType", input.EntityType);
+            }
 
-                if (filters.Details != null && filters.Details.Any())
+            if (input.Details != null && input.Details.Any())
+            {
+                for (var index = 0; index < input.Details.Count; index++)
                 {
-                    for (var index = 0; index < filters.Details.Count; index++)
+                    var detail = input.Details[index];
+                    if (String.IsNullOrWhiteSpace(detail?.Key))
                     {
-                        var detail = filters.Details[index];
-                        if (String.IsNullOrWhiteSpace(detail?.Key))
-                        {
-                            continue;
-                        }
-
-                        clientDatabaseConnection.AddParameter($"key{index}", detail.Key);
-                        extraJoins.Append($"JOIN {WiserTableNames.WiserItemDetail} AS d{index} ON d{index}.item_id = item.id AND d{index}.`key` = ?key{index}");
-                        if (!String.IsNullOrWhiteSpace(detail.LanguageCode))
-                        {
-                            clientDatabaseConnection.AddParameter($"languageCode{index}", detail.LanguageCode);
-                            extraJoins.Append($" AND d{index}.language_code = ?languageCode{index}");
-                        }
-                        if (!String.IsNullOrWhiteSpace(detail.Value?.ToString()))
-                        {
-                            clientDatabaseConnection.AddParameter($"value{index}", detail.Value);
-                            extraJoins.Append($" AND (d{index}.value = ?value{index} OR d{index}.long_value = ?value{index})");
-                        }
-                        if (!String.IsNullOrWhiteSpace(detail.GroupName))
-                        {
-                            clientDatabaseConnection.AddParameter($"groupName{index}", detail.GroupName);
-                            extraJoins.Append($" AND d{index}.groupName = ?groupName{index}");
-                        }
-
-                        extraJoins.AppendLine();
+                        continue;
                     }
+
+                    clientDatabaseConnection.AddParameter($"key{index}", detail.Key);
+                    extraJoins.Append($"JOIN {WiserTableNames.WiserItemDetail} AS d{index} ON d{index}.item_id = item.id AND d{index}.`key` = ?key{index}");
+                    if (!String.IsNullOrWhiteSpace(detail.LanguageCode))
+                    {
+                        clientDatabaseConnection.AddParameter($"languageCode{index}", detail.LanguageCode);
+                        extraJoins.Append($" AND d{index}.language_code = ?languageCode{index}");
+                    }
+                    if (!String.IsNullOrWhiteSpace(detail.Value))
+                    {
+                        clientDatabaseConnection.AddParameter($"value{index}", detail.Value);
+                        extraJoins.Append($" AND (d{index}.value = ?value{index} OR d{index}.long_value = ?value{index})");
+                    }
+                    if (!String.IsNullOrWhiteSpace(detail.GroupName))
+                    {
+                        clientDatabaseConnection.AddParameter($"groupName{index}", detail.GroupName);
+                        extraJoins.Append($" AND d{index}.groupName = ?groupName{index}");
+                    }
+
+                    extraJoins.AppendLine();
                 }
             }
 
@@ -197,19 +196,24 @@ namespace Api.Modules.Items.Services
 
             var dataTable = await clientDatabaseConnection.GetAsync(countQuery);
             pagedResult.TotalNumberOfRecords = Convert.ToInt32(dataTable.Rows[0]["totalResults"]);
-            pagedResult.TotalNumberOfPages = Convert.ToInt32(Math.Ceiling((decimal)pagedResult.TotalNumberOfRecords / pagedRequest.PageSize));
-            pagedResult.PageNumber = pagedRequest.Page;
-            pagedResult.PageSize = pagedRequest.PageSize;
+            pagedResult.TotalNumberOfPages = Convert.ToInt32(Math.Ceiling((decimal)pagedResult.TotalNumberOfRecords / input.PageSize));
+            pagedResult.PageNumber = input.Page;
+            pagedResult.PageSize = input.PageSize;
 
-            // TODO: Improve adding of query parameters.
-            var currentUrl = HttpContextHelpers.GetOriginalRequestUri(httpContextAccessor.HttpContext);
-            if (pagedResult.TotalNumberOfPages > pagedRequest.Page)
+            // Build the next and previous page URLs.
+            var uriBuilder = HttpContextHelpers.GetOriginalRequestUriBuilder(httpContextAccessor.HttpContext);
+            var queryBuilder = HttpUtility.ParseQueryString(uriBuilder.Query);
+            if (pagedResult.TotalNumberOfPages > input.Page)
             {
-                pagedResult.NextPageUrl = $"{currentUrl.Scheme}://{currentUrl.Authority}/api/v3/items?page={pagedRequest.Page + 1}&pageSize={pagedRequest.PageSize}&useFriendlyPropertyNames={useFriendlyPropertyNames}{(String.IsNullOrWhiteSpace(filters?.Title) ? "" : $"&title={filters.Title}")}{(String.IsNullOrWhiteSpace(filters?.EntityType) ? "" : $"&entityType={filters.EntityType}")}";
+                queryBuilder["page"] = (input.Page + 1).ToString();
+                uriBuilder.Query = queryBuilder.ToString() ?? String.Empty;
+                pagedResult.NextPageUrl = uriBuilder.Uri.ToString();
             }
-            if (pagedRequest.Page > 1)
+            if (input.Page > 1)
             {
-                pagedResult.PreviousPageUrl = $"{currentUrl.Scheme}://{currentUrl.Authority}/api/v3/items?page={pagedRequest.Page - 1}&pageSize={pagedRequest.PageSize}&useFriendlyPropertyNames={useFriendlyPropertyNames}{(String.IsNullOrWhiteSpace(filters?.Title) ? "" : $"&title={filters.Title}")}{(String.IsNullOrWhiteSpace(filters?.EntityType) ? "" : $"&entityType={filters.EntityType}")}";
+                queryBuilder["page"] = (input.Page - 1).ToString();
+                uriBuilder.Query = queryBuilder.ToString() ?? String.Empty;
+                pagedResult.PreviousPageUrl = uriBuilder.Uri.ToString();
             }
 
             var query = $@"
@@ -256,7 +260,7 @@ namespace Api.Modules.Items.Services
 
                     GROUP BY item.id
 					ORDER BY IFNULL(item.changed_on, item.added_on) DESC
-                    LIMIT {(pagedRequest.Page - 1) * pagedRequest.PageSize}, {pagedRequest.PageSize}
+                    LIMIT {(input.Page - 1) * input.PageSize}, {input.PageSize}
                 ) AS x
                 LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr')
                 LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name) AND field.language_code = property.language_code
@@ -301,7 +305,7 @@ namespace Api.Modules.Items.Services
                     }
 
                     var name = field.DisplayName;
-                    if (String.IsNullOrWhiteSpace(name) || !useFriendlyPropertyNames)
+                    if (String.IsNullOrWhiteSpace(name) || !input.UseFriendlyPropertyNames)
                     {
                         name = field.Key;
                     }
