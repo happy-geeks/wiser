@@ -1259,15 +1259,15 @@ footer input ~ .meta-data li.meta-toggle label span:last-child {
 	height: auto;
 }
 
-.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:last-child:nth-child(2),
-.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:last-child:nth-child(3) {
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent .gridview:nth-child(2),
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:nth-child(3) {
 	height: 100%;
 	max-height: calc(100% - 138px);
 	display: flex;
 	flex-direction: column;
 }
 
-.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:last-child:nth-child(3) .k-grid {
+.k-window-content > .pane-content .k-tabstrip .dynamicTabContent script ~ .gridview:nth-child(3) .k-grid {
 	flex-basis: 100%;
 	display: flex;
 	flex-direction: column;
