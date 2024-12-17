@@ -1,5 +1,5 @@
-﻿import { AUTH_REQUEST, AUTH_LOGOUT, FORGOT_PASSWORD, CHANGE_PASSWORD_LOGIN, USE_TOTP_BACKUP_CODE } from "../store/mutation-types";
-import { ComboBox } from "@progress/kendo-vue-dropdowns";
+﻿import {AUTH_LOGOUT, AUTH_REQUEST, CHANGE_PASSWORD_LOGIN, FORGOT_PASSWORD} from "../store/mutation-types";
+import {ComboBox} from "@progress/kendo-vue-dropdowns";
 
 export default {
     name: "login",
@@ -107,11 +107,11 @@ export default {
                 return;
             }
 
-            await this.$store.dispatch(AUTH_REQUEST, { 
+            await this.$store.dispatch(AUTH_REQUEST, {
                 user: Object.assign({}, this.loginForm),
                 loginStatus: this.loginStatus
             });
-            
+
             if (this.loginStatus === "error") {
                 this.loginForm.selectedUser = "";
                 this.loginForm.password = "";
@@ -129,7 +129,7 @@ export default {
         userFilterChange(event) {
             this.users = [];
             this.$store.state.login.listOfUsers.forEach(user => {
-                if (user.Title.toLowerCase().includes(event.filter.value.toLowerCase())) {
+                if (user.title.toLowerCase().includes(event.filter.value.toLowerCase())) {
                     this.users.push(user);
                 }
             });

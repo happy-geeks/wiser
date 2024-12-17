@@ -7,7 +7,6 @@ using Api.Modules.EntityTypes.Models;
 using Api.Modules.Items.Models;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Items.Interfaces
 {
@@ -21,11 +20,9 @@ namespace Api.Modules.Items.Interfaces
         /// The results will be returned in multiple pages, with a max of 500 items per page.
         /// </summary>
         /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="pagedRequest">Optional: Which page to get and how many items per page to get.</param>
-        /// <param name="useFriendlyPropertyNames">Optional: Whether to use friendly property names or not. Default is <see langword="true"/>.</param>
-        /// <param name="filters">Optional: Add filters if you only want specific results.</param>
+        /// <param name="input">The filters and paging settings to specify the items you're looking for.</param>
         /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
-        Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, PagedRequest pagedRequest = null, bool useFriendlyPropertyNames = true, WiserItemModel filters = null);
+        Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, GetItemsInputModel input);
 
         /// <summary>
         /// Creates a duplicate copy of an existing item.
