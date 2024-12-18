@@ -76,15 +76,15 @@ container.find(".imagesContainer").kendoSortable({
     placeholder: (element) => {
         return element.clone().addClass("k-state-hover").css("opacity", 0.65);
     },
-    change: (event) => {
+    change: async (event) => {
         // Kendo starts ordering with 0, but wiser starts with 1.
         const oldIndex = event.oldIndex + 1;
         const newIndex = event.newIndex + 1;
         const fileId = event.item.data("imageId");
         const propertyName = container.data("propertyName");
 
-        try{
-            let apiResult = Wiser.api({
+        try {
+            let apiResult = await Wiser.api({
                 method: "PUT",
                 contentType: "application/json",
                 dataType: "json",
