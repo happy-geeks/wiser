@@ -1,22 +1,23 @@
-﻿(function() {
-var field = $("#fieldSet_{propertyIdWithSuffix}");
-var loader = field.closest(".item").find(".grid-loader");
-var checkGridElement = field.find("#checkGrid_{propertyIdWithSuffix}");
-var checkTreeElement = field.find("#checkTree_{propertyIdWithSuffix}");
-var options = {options};
-var currentItemId = '{itemIdEncrypted}';
-var loadingCount = 0;
-var readonly = {readonly};
+﻿(() => {
+let field = $("#fieldSet_{propertyIdWithSuffix}");
+let loader = field.closest(".item").find(".grid-loader");
+let checkGridElement = field.find("#checkGrid_{propertyIdWithSuffix}");
+let checkTreeElement = field.find("#checkTree_{propertyIdWithSuffix}");
+let options = {options};
+let currentItemId = '{itemIdEncrypted}';
+let loadingCount = 0;
+let readonly = {readonly};
 
 options.moduleId = options.moduleId || 0;
 
-var startLoader = function() {
+let startLoader = () => {
     loadingCount++;
     loader.addClass("loading");
 };
 
-var stopLoader = function(reloadGridWhenDone) {
+let stopLoader = (reloadGridWhenDone) => {
     loadingCount--;
+    
     if (loadingCount < 0) {
         loadingCount = 0;
     }
@@ -30,22 +31,22 @@ var stopLoader = function(reloadGridWhenDone) {
     }
 };
 
-field.find(".filterText").keyup(function (event) {
-    var filterText = $(this).val();
+field.find(".filterText").keyup((event) => {
+    const filterText = $(event.target).val();
 
     if (filterText !== "") {
         checkTreeElement.find(".k-group > li").hide();
-        checkTreeElement.find(".k-in:contains(" + filterText + ")").each(function () {
-            $(this).parents("ul, li").each(function () {
-                var treeView = checkTreeElement.data("kendoTreeView");
-                treeView.expand($(this).parents("li"));
-                $(this).show();
+        checkTreeElement.find(`.k-in:contains(${filterText})`).each( (index, element) => {
+            $(element).parents("ul, li").each((checkTreeIndex, checkTreeElement) => {
+                const treeView = $(checkTreeElement).data("kendoTreeView");
+                treeView.expand($(checkTreeElement).parents("li"));
+                $(checkTreeElement).show();
             });
         });
 
-        checkTreeElement.find(".k-group .k-in:contains(" + filterText + ")").each(function () {
-            $(this).parents("ul, li").each(function () {
-                $(this).show();
+        checkTreeElement.find(`.k-group .k-in:contains(${filterText})`).each((index, element) => {
+            $(element).parents("ul, li").each((checkTreeIndex, checkTreeElement) => {
+                $(checkTreeElement).show();
             });
         });
     }
@@ -61,7 +62,7 @@ field.find(".filterText").keyup(function (event) {
     }
 });
 
-var showStructure = options.showStructure || !options.entityTypes || options.entityTypes.length !== 1;
+let showStructure = options.showStructure || !options.entityTypes || options.entityTypes.length !== 1;
 
 checkTreeElement.kendoTreeView({
     dataValueField: !showStructure ? "id" : "encryptedItemId",
@@ -95,19 +96,23 @@ checkTreeElement.kendoTreeView({
 
     dataSource: {
         transport: {
-            read: (kendoReadOptions) => {
-                Wiser.api({
-                    url: !showStructure
-                        ? `${window.dynamicItems.settings.serviceRoot}/GET_ALL_ITEMS_OF_TYPE?moduleid=${options.moduleId}&checkId=${encodeURIComponent(currentItemId)}&entityType=${encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join()))}&orderBy=${encodeURIComponent((options.orderBy || ""))}&linkType=${options.linkTypeNumber || 0}`
-                        : `${window.dynamicItems.settings.wiserApiRoot}items/tree-view?moduleId=${options.moduleId}&checkId=${encodeURIComponent(currentItemId)}${!options.entityTypes ? "" : ("&childEntityTypes=" + encodeURIComponent(options.entityTypes.join()))}${options.orderBy ? ("&orderBy=" + encodeURIComponent(options.orderBy)) : ""}&linkType=${options.linkTypeNumber || 0}`,
-                    dataType: "json",
-                    method: "GET",
-                    data: kendoReadOptions.data
-                }).then((result) => {
-                    kendoReadOptions.success(result);
-                }).catch((result) => {
-                    kendoReadOptions.error(result);
-                });
+            read: async (kendoReadOptions) => {
+                try {
+                    let apiResult = await Wiser.api({
+                        url: !showStructure
+                            ? `${window.dynamicItems.settings.serviceRoot}/GET_ALL_ITEMS_OF_TYPE?moduleid=${options.moduleId}&checkId=${encodeURIComponent(currentItemId)}&entityType=${encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join()))}&orderBy=${encodeURIComponent((options.orderBy || ""))}&linkType=${options.linkTypeNumber || 0}`
+                            : `${window.dynamicItems.settings.wiserApiRoot}items/tree-view?moduleId=${options.moduleId}&checkId=${encodeURIComponent(currentItemId)}${!options.entityTypes ? "" : ("&childEntityTypes=" + encodeURIComponent(options.entityTypes.join()))}${options.orderBy ? ("&orderBy=" + encodeURIComponent(options.orderBy)) : ""}&linkType=${options.linkTypeNumber || 0}`,
+                        dataType: "json",
+                        method: "GET",
+                        data: kendoReadOptions.data
+                    });
+                    
+                    kendoReadOptions.success(apiResult);
+                }
+                catch (exception)
+                {
+                    kendoReadOptions.error(exception);
+                }
             }
         },
         schema: {
@@ -120,11 +125,11 @@ checkTreeElement.kendoTreeView({
 });
 
 Wiser.api({
-    url: window.dynamicItems.settings.serviceRoot + "/GET_COLUMNS_FOR_LINK_TABLE?linkTypeNumber=" + (options.linkTypeNumber || "") + "&id=" + encodeURIComponent(currentItemId),
+    url: `${window.dynamicItems.settings.serviceRoot}/GET_COLUMNS_FOR_LINK_TABLE?linkTypeNumber=${(options.linkTypeNumber || "")}&id=${encodeURIComponent(currentItemId)}`,
     dataType: "json",
     method: "GET"
-}).then(function (customColumns) {
-    var model = {
+}).then((customColumns) => {
+    let model = {
         id: "id",
         fields: {
             id: {
@@ -145,7 +150,7 @@ Wiser.api({
         }
     };
 
-    var columns = [
+    let columns = [
         {
             field: "id",
             title: "Id",
@@ -158,22 +163,22 @@ Wiser.api({
     ];
 
     if (customColumns && customColumns.length > 0) {
-        for (var i = 0; i < customColumns.length; i++) {
-            var column = customColumns[i];
+        for (let i = 0; i < customColumns.length; i++) {
+            const column = customColumns[i];
             columns.push(column);
         }
     }
 
     if (!options.hideCommandColumn) {
         let commandColumnWidth = 60;
-        var commands = [];
+        let commands = [];
 
         if (!options.disableOpeningOfItems) {
             commands.push({
                 name: "openDetails",
                 iconClass: "k-icon k-i-hyperlink-open",
                 text: "&nbsp;",
-                click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, grid, options, false); }
+                click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, grid, options, false); }
             });
 
             if (options.allowOpeningOfItemsInNewTab) {
@@ -183,7 +188,7 @@ Wiser.api({
                     name: "openDetailsInNewTab",
                     iconClass: "k-icon k-i-window",
                     text: "",
-                    click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
                 });
             }
         }
@@ -195,7 +200,7 @@ Wiser.api({
                 name: "remove",
                 text: "",
                 iconClass: "k-icon k-i-delete",
-                click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
+                click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
             });
         }
 
@@ -206,7 +211,7 @@ Wiser.api({
         });
     }
 
-    var toolbar = [];
+    let toolbar = [];
 
     if (!options.toolbar || !options.toolbar.hideExportButton) {
         toolbar.push({name: "excel"});
@@ -233,24 +238,27 @@ Wiser.api({
         checkGridElement.empty();
     }
 
-    var grid = checkGridElement.kendoGrid({
+    let grid = checkGridElement.kendoGrid({
         dataSource: {
             transport: {
-                read: function(readOptions) {
+                read: async (readOptions) => {
                     startLoader();
 
-                    Wiser.api({
-                        url: window.dynamicItems.settings.serviceRoot + "/GET_DATA_FOR_FIELD_TABLE?itemId=" + encodeURIComponent("{itemIdEncrypted}") + "&linkTypeNumber=" + (options.linkTypeNumber || "") + "&moduleId=" + options.moduleId + "&entity_type=" + encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join())),
-                        dataType: "json",
-                        method: "GET"
-                    }).then(function(results) {
-                        if (!results) {
-                            readOptions.success(results);
+                    try
+                    {
+                        let apiResult = await Wiser.api({
+                            url: `${window.dynamicItems.settings.serviceRoot}/GET_DATA_FOR_FIELD_TABLE?itemId=${encodeURIComponent("{itemIdEncrypted}")}&linkTypeNumber=${(options.linkTypeNumber || "")}&moduleId=${options.moduleId}&entity_type=${encodeURIComponent((!options.entityTypes ? "" : options.entityTypes.join()))}`,
+                            dataType: "json",
+                            method: "GET"
+                        });
+                    
+                        if (!apiResult) {
+                            readOptions.success(apiResult);
                             return;
                         }
-
-                        for (var i = 0; i < results.length; i++) {
-                            var row = results[i];
+                        
+                        for (let i = 0; i < results.length; i++) {
+                            let row = results[i];
                             if (!row.property_) {
                                 row.property_ = {};
                             }
@@ -258,9 +266,13 @@ Wiser.api({
 
                         readOptions.success(results);
                         stopLoader();
-                    }).catch((error) => readOptions.error(error));
-                },
-                update: function(options) {
+                    }
+                    catch (exception)
+                    {
+                        readOptions.error(exception);
+                    }
+                    },
+                update: async (options)=> {
                     if (readonly === true) {
                         return;
                     }
@@ -279,43 +291,50 @@ Wiser.api({
                         });
                     }
 
-                    Wiser.api({
-                        url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(options.data.encryptedId),
-                        method: "PUT",
-                        contentType: "application/json",
-                        dataType: "json",
-                        data: JSON.stringify(itemModel)
-                    }).then(function(result) {
+                    try {
+                        let apiResult = await Wiser.api({
+                            url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent(options.data.encryptedId)}`,
+                            method: "PUT",
+                            contentType: "application/json",
+                            dataType: "json",
+                            data: JSON.stringify(itemModel)
+                        });
+                        
                         // notify the data source that the request succeeded
                         options.success(options.data);
                         stopLoader();
-                    }).catch(function(result) {
+                    }
+                    catch(exception) {
                         // notify the data source that the request failed
-                        options.error(result);
+                        options.error(exception);
                         stopLoader();
-                    });
+                    }
                 },
-                destroy: function(destroyOptions) {
+                destroy: async (destroyOptions) => {
                     if (readonly === true) {
                         return;
                     }
 
                     startLoader();
 
-                    Wiser.api({
-                        url: window.dynamicItems.settings.serviceRoot + "/REMOVE_LINK?source_plain=" + encodeURIComponent(options.data.id) + "&destination=" + encodeURIComponent(currentItemId) + "&linkTypeNumber=" + (options.linkTypeNumber || ""),
-                        dataType: "json",
-                        method: "GET"
-                    }).then(function(results) {
-                        destroyOptions.success(results);
+                    try {
+                        let apiResult = await Wiser.api({
+                            url: `${window.dynamicItems.settings.serviceRoot}/REMOVE_LINK?source_plain=${encodeURIComponent(options.data.id)}"&destination="${encodeURIComponent(currentItemId)}&linkTypeNumber=${(options.linkTypeNumber || "")}`,
+                            dataType: "json",
+                            method: "GET"
+                        });
+
+                        destroyOptions.success(apiResult);
                         checkTreeElement.data("kendoTreeView").dataSource.read();
                         stopLoader();
-                    }).catch(function(result) {
+                    }
+                    catch(exception) 
+                    {
                         // notify the data source that the request failed
                         destroyOptions.error(result);
                         stopLoader();
-                    });
-                }
+                    }
+                },
             },
             pageSize: options.pageSize || 10,
             schema: {
