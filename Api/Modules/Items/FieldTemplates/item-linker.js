@@ -36,16 +36,15 @@ field.find(".filterText").keyup((event) => {
 
     if (filterText !== "") {
         checkTreeElement.find(".k-group > li").hide();
-        
-        checkTreeElement.find(".k-in:contains(" + filterText + ")").each( (index, element) => {
+        checkTreeElement.find(`.k-in:contains(${filterText})`).each( (index, element) => {
             $(element).parents("ul, li").each((checkTreeIndex, checkTreeElement) => {
-                var treeView = $(checkTreeElement).data("kendoTreeView");
+                const treeView = $(checkTreeElement).data("kendoTreeView");
                 treeView.expand($(checkTreeElement).parents("li"));
                 $(checkTreeElement).show();
             });
         });
 
-        checkTreeElement.find(".k-group .k-in:contains(" + filterText + ")").each((index, element) => {
+        checkTreeElement.find(`.k-group .k-in:contains(${filterText})`).each((index, element) => {
             $(element).parents("ul, li").each((checkTreeIndex, checkTreeElement) => {
                 $(checkTreeElement).show();
             });
@@ -129,7 +128,7 @@ Wiser.api({
     url: `${window.dynamicItems.settings.serviceRoot}/GET_COLUMNS_FOR_LINK_TABLE?linkTypeNumber=${(options.linkTypeNumber || "")}&id=${encodeURIComponent(currentItemId)}`,
     dataType: "json",
     method: "GET"
-}).then(function (customColumns) {
+}).then((customColumns) => {
     let model = {
         id: "id",
         fields: {
@@ -269,9 +268,9 @@ Wiser.api({
                         stopLoader();
                     }
                     catch (exception)
-                        {
-                            readOptions.error(exception);
-                        }
+                    {
+                        readOptions.error(exception);
+                    }
                     },
                 update: async (options)=> {
                     if (readonly === true) {
