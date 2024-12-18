@@ -36,7 +36,7 @@ field.find(".filterText").keyup((event) => {
 
     if (filterText !== "") {
         checkTreeElement.find(".k-group > li").hide();
-        checkTreeElement.find(`.k-in:contains(${filterText})`).each( (index, element) => {
+        checkTreeElement.find(`.k-in:contains(${filterText})`).each((index, element) => {
             $(element).parents("ul, li").each((checkTreeIndex, checkTreeElement) => {
                 const treeView = $(checkTreeElement).data("kendoTreeView");
                 treeView.expand($(checkTreeElement).parents("li"));
