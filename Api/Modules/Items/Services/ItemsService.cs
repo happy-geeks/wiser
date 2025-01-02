@@ -337,16 +337,7 @@ namespace Api.Modules.Items.Services
                     ErrorMessage = "Id must be greater than zero."
                 };
             }
-
-            if (parentId == 0)
-            {
-                return new ServiceResult<WiserItemDuplicationResultModel>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "ParentId must be greater than zero."
-                };
-            }
-
+     
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var username = IdentityHelpers.GetUserName(identity, true);
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
