@@ -314,6 +314,8 @@ INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_t
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'vatrule', 'vatrule', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'country', 'country', 1, 0, 'one-to-one', 'none', 1);
 INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'map', 'dataselector-template', 'dataselector-template', 1, 0, 'one-to-one', 'none', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'Directory', 'webpagina', 'WebPageUnderDirectory', 1, 0, 'one-to-many', 'copy-item', 1);
+INSERT INTO `wiser_link` (`type`, `destination_entity_type`, `connected_entity_type`, `name`, `show_in_tree_view`, `show_in_data_selector`, `relationship`, `duplication`, `use_item_parent_id`) VALUES (1, 'Directory', 'Directory', 'DirectoryUnderDirectory', 1, 1, 'one-to-many', 'copy-item', 1);
 
 -- ----------------------------
 -- Records of wiser_data_selector
