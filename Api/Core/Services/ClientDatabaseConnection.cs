@@ -319,7 +319,7 @@ namespace Api.Core.Services
 
                 // If we're not in a transaction, retry the query if it's a deadlock.
                 var errorCode = (MySqlErrorCode)mySqlException.Number;
-                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains( errorCode ))
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(errorCode))
                 {
                     Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
                     return await ExecuteAsync(query, retryCount + 1, useWritingConnectionIfAvailable, cleanUp);
