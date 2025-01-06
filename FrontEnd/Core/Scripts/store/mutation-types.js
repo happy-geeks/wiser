@@ -50,6 +50,7 @@ export const GENERATE_TOTP_BACKUP_CODES_ERROR = "generateTotpBackupCodesError";
 export const CLEAR_LOCAL_TOTP_BACKUP_CODES = "clearLocalTotpBackupCodes";
 
 // Branches module.
+export const BRANCH_CHANGE_COMPLETED = "branchChangeCompleted";
 export const CREATE_BRANCH = "createBranch";
 export const CREATE_BRANCH_SUCCESS = "createBranchSuccess";
 export const CREATE_BRANCH_ERROR = "createBranchError";

@@ -8,6 +8,7 @@ import {
     AUTH_SUCCESS,
     AUTH_TOTP_PIN,
     AUTH_TOTP_SETUP,
+    BRANCH_CHANGE_COMPLETED,
     CHANGE_PASSWORD,
     CHANGE_PASSWORD_ERROR,
     CHANGE_PASSWORD_LOGIN,
@@ -785,6 +786,7 @@ const itemsModule = {
 
 const branchesModule = {
     state: () => ({
+        branchChangeCompleted: false,
         createBranchError: null,
         createBranchResult: null,
         branches: [],
@@ -819,6 +821,10 @@ const branchesModule = {
     }),
 
     mutations: {
+        [BRANCH_CHANGE_COMPLETED](state, result) {
+            state.branchChangeCompleted = result;
+        },
+        
         [CREATE_BRANCH_SUCCESS](state, result) {
             state.createBranchResult = result;
             state.createBranchError = null;
@@ -997,6 +1003,10 @@ const branchesModule = {
     },
 
     actions: {
+        async [BRANCH_CHANGE_COMPLETED]({ commit }, result) {
+            commit(BRANCH_CHANGE_COMPLETED, result);
+        },
+        
         async [CREATE_BRANCH]({ commit }, data) {
             commit(START_REQUEST);
             const result = await main.branchesService.create(data);

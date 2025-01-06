@@ -342,7 +342,7 @@
                     </section>
 
                     <div v-if="!isMainBranch || (branchMergeSettings.selectedBranch && branchMergeSettings.selectedBranch.id && hasSelectedBranchMergeType)">
-                        <div v-if="!branchChangesLoaded">
+                        <div v-if="!branchChangesLoaded && branchChangeCompleted">
 						    <div class="col col-12 form-row no-bottom-margin">
 							    <label>Alle mogelijke entiteiten</label>
 						    </div>
@@ -403,7 +403,7 @@
 							    <p>Let op, dit kan lang (een kwartier of meer) duren bij branches met veel wijzigingen.</p>
 						    </div>
 						</div>
-						<div v-else>
+						<div v-else-if="branchChangesLoaded">
 							<div class="col col-12 form-row no-bottom-margin">
 								<label>Selecteer te synchroniseren items</label>
 							</div>
