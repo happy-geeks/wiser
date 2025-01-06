@@ -235,8 +235,7 @@ namespace Api.Core.Services
                 }
 
                 // If we're not in a transaction, retry the query if it's a deadlock.
-                var errorCode = (MySqlErrorCode)mySqlException.Number;
-                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(errorCode))
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(mySqlException.Number))
                 {
                     Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
                     return await GetAsync(query, retryCount + 1, cleanUp, useWritingConnectionIfAvailable);
@@ -318,8 +317,7 @@ namespace Api.Core.Services
                 }
 
                 // If we're not in a transaction, retry the query if it's a deadlock.
-                var errorCode = (MySqlErrorCode)mySqlException.Number;
-                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(errorCode))
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(mySqlException.Number))
                 {
                     Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
                     return await ExecuteAsync(query, retryCount + 1, useWritingConnectionIfAvailable, cleanUp);
@@ -445,8 +443,7 @@ namespace Api.Core.Services
                 }
 
                 // If we're not in a transaction, retry the query if it's a deadlock.
-                var errorCode = (MySqlErrorCode)mySqlException.Number;
-                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(errorCode))
+                if (MySqlDatabaseConnection.MySqlErrorCodesToRetry.Contains(mySqlException.Number))
                 {
                     Thread.Sleep(gclSettings.TimeToWaitBeforeRetryingQueryInMilliseconds);
                     return await InsertRecordAsync(query, retryCount + 1, useWritingConnectionIfAvailable);

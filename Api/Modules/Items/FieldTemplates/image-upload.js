@@ -15,7 +15,7 @@ let options = {options};
 
 options = $.extend({
     async: {
-        saveUrl: `${window.dynamicItems.settings.wiserApiRoot}"items/{itemIdEncrypted}/upload?propertyName="${encodeURIComponent("{propertyName}")} &itemLinkId={itemLinkId}&useTinyPng=${(options.useTinyPng === true).toString()}&useCloudFlare="${(options.useCloudFlare === true).toString()}"&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`,
+        saveUrl: `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/upload?propertyName=${encodeURIComponent("{propertyName}")}&itemLinkId={itemLinkId}&useTinyPng=${(options.useTinyPng === true).toString()}&useCloudFlare=${(options.useCloudFlare === true).toString()}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`,
         withCredentials: false,
         removeUrl: "remove"
     },
