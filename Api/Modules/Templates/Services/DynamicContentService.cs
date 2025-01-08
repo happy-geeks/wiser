@@ -351,13 +351,13 @@ namespace Api.Modules.Templates.Services
             }
             catch (MySqlException mySqlException)
             {
-                switch (mySqlException.Number)
+                switch (mySqlException.ErrorCode)
                 {
-                    case (int)MySqlErrorCode.DuplicateKeyEntry:
+                    case MySqlErrorCode.DuplicateKeyEntry:
                         // We ignore duplicate key errors, because it's possible that a dynamic content already exists in a branch, but it wasn't deployed to the correct environment.
                         // So we ignore this error, so we can still deploy that dynamic content to production in the branch, see the next bit of code after this try/catch.
                         break;
-                    case (int)MySqlErrorCode.WrongValueCountOnRow:
+                    case MySqlErrorCode.WrongValueCountOnRow:
                         return new ServiceResult<bool>
                         {
                             StatusCode = HttpStatusCode.Conflict,

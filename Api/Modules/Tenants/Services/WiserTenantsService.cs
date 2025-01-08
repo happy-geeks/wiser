@@ -435,7 +435,7 @@ namespace Api.Modules.Tenants.Services
             catch (MySqlException mySqlException)
             {
                 // If easy_customers does not exist, just return null.
-                if (mySqlException.Number is (int)MySqlErrorCode.UnknownTable or (int)MySqlErrorCode.NoSuchTable)
+                if (mySqlException.ErrorCode is MySqlErrorCode.UnknownTable or MySqlErrorCode.NoSuchTable)
                 {
                     return new ServiceResult<string>(null);
                 }

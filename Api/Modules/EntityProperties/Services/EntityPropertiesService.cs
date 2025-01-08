@@ -18,6 +18,7 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySqlConnector;
+using Constants = GeeksCoreLibrary.Modules.Languages.Models.Constants;
 
 namespace Api.Modules.EntityProperties.Services
 {
@@ -296,7 +297,7 @@ VALUES
             }
             catch (MySqlException mySqlException)
             {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
                     return new ServiceResult<EntityPropertyModel>
                     {
@@ -429,7 +430,7 @@ WHERE id = ?id";
             }
             catch (MySqlException mySqlException)
             {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
                     return new ServiceResult<bool>
                     {
@@ -679,10 +680,10 @@ SELECT
 	entityProperty.aggregate_options,
 	entityProperty.access_key
 FROM {WiserTableNames.WiserItem} AS language
-JOIN {WiserTableNames.WiserItemDetail} AS languageCode ON languageCode.item_id = language.id AND languageCode.`key` = '{GeeksCoreLibrary.Modules.Languages.Models.Constants.LanguageCodeFieldName}'
+JOIN {WiserTableNames.WiserItemDetail} AS languageCode ON languageCode.item_id = language.id AND languageCode.`key` = '{Constants.LanguageCodeFieldName}'
 JOIN {WiserTableNames.WiserEntityProperty} AS entityProperty ON entityProperty.id = ?id
 LEFT JOIN {WiserTableNames.WiserEntityProperty} AS otherEntityProperty ON otherEntityProperty.entity_name = entityProperty.entity_name AND otherEntityProperty.link_type = entityProperty.link_type AND otherEntityProperty.language_code = languageCode.value AND IFNULL(otherEntityProperty.property_name, otherEntityProperty.display_name) = IFNULL(entityProperty.property_name, entityProperty.display_name)
-WHERE language.entity_type = '{GeeksCoreLibrary.Modules.Languages.Models.Constants.LanguageEntityType}'
+WHERE language.entity_type = '{Constants.LanguageEntityType}'
 AND otherEntityProperty.id IS NULL";
 
             await clientDatabaseConnection.ExecuteAsync(query);

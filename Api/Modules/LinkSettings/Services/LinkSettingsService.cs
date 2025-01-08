@@ -144,7 +144,7 @@ namespace Api.Modules.LinkSettings.Services
             }
             catch (MySqlException mySqlException)
             {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
                     return new ServiceResult<LinkSettingsModel>
                     {
@@ -227,7 +227,7 @@ CREATE TABLE `{tablePrefix}{WiserTableNames.WiserItemFile}{WiserTableNames.Archi
             }
             catch (MySqlException mySqlException)
             {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
                     return new ServiceResult<bool>
                     {

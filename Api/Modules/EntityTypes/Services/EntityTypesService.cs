@@ -298,7 +298,7 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
             }
             catch (MySqlException mySqlException)
             {
-                if (mySqlException.Number == (int)MySqlErrorCode.DuplicateKeyEntry)
+                if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
                     return new ServiceResult<long>
                     {
