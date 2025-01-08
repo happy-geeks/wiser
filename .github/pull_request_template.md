@@ -30,7 +30,7 @@ How to add a release note:
 1. Open up <yourprojectsfolder>\wiser\FrontEnd\Modules\Dashboard\Views\Dashboard\Index.cshtml.
 1. Find the id="update-log" section.
 1. If there is already a "log-item" section without a version number at the top, add new `li` like the others to it and describe your changes in a costumer friendly way (so not too technical).
-1. If there is no log-item at the top yet without a complete version number add it and add your `li` item there, (you can copy paste it from the comments a few lines above the update-log section.
+1. If there is no log-item at the top yet without a complete version number add it and add your `li` item there, (you can copy paste it from the comments a few lines above the update-log section).
 </md-block>
 
 # Related pull requests
