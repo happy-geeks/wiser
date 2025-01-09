@@ -17,7 +17,7 @@ let startLoader = () => {
 
 let stopLoader = (reloadGridWhenDone) => {
     loadingCount--;
-    
+
     if (loadingCount < 0) {
         loadingCount = 0;
     }
@@ -106,7 +106,7 @@ checkTreeElement.kendoTreeView({
                         method: "GET",
                         data: kendoReadOptions.data
                     });
-                    
+
                     kendoReadOptions.success(apiResult);
                 }
                 catch (exception)
@@ -251,27 +251,28 @@ Wiser.api({
                             dataType: "json",
                             method: "GET"
                         });
-                    
-                        if (!apiResult) {
+
+                        if (!apiResult || !apiResult.length) {
                             readOptions.success(apiResult);
                             return;
                         }
-                        
-                        for (let i = 0; i < results.length; i++) {
-                            let row = results[i];
+
+                        for (let i = 0; i < apiResult.length; i++) {
+                            let row = apiResult[i];
                             if (!row.property_) {
                                 row.property_ = {};
                             }
                         }
 
-                        readOptions.success(results);
-                        stopLoader();
+                        readOptions.success(apiResult);
                     }
-                    catch (exception)
-                    {
+                    catch (exception) {
                         readOptions.error(exception);
                     }
-                    },
+                    finally {
+                        stopLoader();
+                    }
+                },
                 update: async (options)=> {
                     if (readonly === true) {
                         return;
@@ -292,21 +293,22 @@ Wiser.api({
                     }
 
                     try {
-                        let apiResult = await Wiser.api({
+                        await Wiser.api({
                             url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent(options.data.encryptedId)}`,
                             method: "PUT",
                             contentType: "application/json",
                             dataType: "json",
                             data: JSON.stringify(itemModel)
                         });
-                        
+
                         // notify the data source that the request succeeded
                         options.success(options.data);
-                        stopLoader();
                     }
-                    catch(exception) {
+                    catch (exception) {
                         // notify the data source that the request failed
                         options.error(exception);
+                    }
+                    finally {
                         stopLoader();
                     }
                 },
@@ -325,13 +327,13 @@ Wiser.api({
                         });
 
                         destroyOptions.success(apiResult);
-                        checkTreeElement.data("kendoTreeView").dataSource.read();
-                        stopLoader();
+                        await checkTreeElement.data("kendoTreeView").dataSource.read();
                     }
-                    catch(exception) 
-                    {
+                    catch (exception) {
                         // notify the data source that the request failed
-                        destroyOptions.error(result);
+                        destroyOptions.error(exception);
+                    }
+                    finally {
                         stopLoader();
                     }
                 },
