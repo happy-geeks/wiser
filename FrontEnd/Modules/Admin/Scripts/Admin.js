@@ -127,6 +127,7 @@ const moduleSettings = {
                 EXECUTEQUERYONCE: { text: "Voer query eenmalig uit", id: "executeQueryOnce" },
                 GENERATEFILE: { text: "Genereer bestand", id: "generateFile" },
                 REFRESHCURRENTITEM: { text: "Ververs het item", id: "refreshCurrentItem" },
+                APICALL: { text: "Voer een API call uit", id: "apiCall" },
                 ACTIONCONFIRMDIALOG: { text: "Bevestigingsvenster", id: "actionConfirmDialog" },
                 CUSTOM: { text: "Custom javascript", id: "custom" }
             });

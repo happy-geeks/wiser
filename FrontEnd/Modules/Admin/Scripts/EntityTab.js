@@ -1795,6 +1795,7 @@ export class EntityTab {
         let contentItemId = popUpHtml.find("#contentItemId");
         let emailDataQueryId = popUpHtml.find("#emailDataQueryId");
         let actionButtonUrlWindowOpen = popUpHtml.find("#actionButtonUrlWindowOpen");
+        let actionButtonApiCallConnection = popUpHtml.find("#actionButtonApiCallConnection");
 
         const showFields = (fieldType) => {
             const fieldTypes = this.base.fieldTypesDropDown;
@@ -1841,6 +1842,8 @@ export class EntityTab {
             document.getElementById("pdfBackgroundPropertyName").value = "";
             document.getElementById("pdfDocumentOptionsPropertyName").value = "";
             document.getElementById("pdfFilename").value = "";
+            // api call
+            this.actionButtonApiCallConnection.value("");
             // confirm dialog
             document.getElementById("actionButtonConfirmDialogTitle").value = "";
             document.getElementById("actionButtonConfirmDialogText").value = "";
@@ -2056,6 +2059,21 @@ export class EntityTab {
                     { text: "In een popup", value: "kendoWindow " }
                 ]
             }).data("kendoDropDownList");
+
+            this.actionButtonApiCallConnection = actionButtonApiCallConnection.kendoDropDownList({
+                placeholder: "Selecteer een API connectie...",
+                clearButton: false,
+                height: 400,
+                dataTextField: "name",
+                dataValueField: "id",
+                filter: "contains",
+                optionLabel: {
+                    id: "",
+                    name: "Maak uw keuze..."
+                },
+                minLength: 1,
+                dataSource: {}
+            }).data("kendoDropDownList");
         }
         // bind and unbind to get the appropriate dataitem
         $(".actionButtonSave").unbind("click").bind("click",
@@ -2096,11 +2114,12 @@ export class EntityTab {
                     break;
                 case actionTypes.EXECUTEQUERY.id:
                 case actionTypes.EXECUTEQUERYONCE.id:
-                case actionTypes.GENERATEFILE.id: {
+                case actionTypes.GENERATEFILE.id:
+                case actionTypes.APICALL.id: {
                     this.actionButtonQueryList.select((dataItem) => {
                         return dataItem.id === gridDataItem.action.queryId;
                     });
-                    let up = gridDataItem.action.userParameters;
+                    let up = gridDataItem.action.userParameters || [];
                     let rows = [];
 
                     for (let i = 0; i < up.length; i++) {
@@ -2123,6 +2142,7 @@ export class EntityTab {
                     let userParametersGridDataSourceSettings = this.userParametersGridDataSourceSettings;
                     userParametersGridDataSourceSettings.data = rows;
                     this.userParametersGrid.setDataSource(userParametersGridDataSourceSettings);
+                    
                     if (gridDataItem.type === actionTypes.GENERATEFILE.id) {
                         this.dataSelectorId.value(gridDataItem.action.dataSelectorId);
                         this.contentItemId.value(gridDataItem.action.contentItemId);
@@ -2131,6 +2151,23 @@ export class EntityTab {
                         document.getElementById("pdfBackgroundPropertyName").value = gridDataItem.action.pdfBackgroundPropertyName;
                         document.getElementById("pdfDocumentOptionsPropertyName").value = gridDataItem.action.pdfDocumentOptionsPropertyName;
                         document.getElementById("pdfFilename").value = gridDataItem.action.pdfFilename;
+                    } else if (gridDataItem.type === actionTypes.APICALL.id) {
+                        document.querySelector(".loaderWrap").classList.add("active");
+                        document.getElementById("actionButtonApiCallIterative").checked = gridDataItem.action.iterative;
+                        
+                        Wiser.api({
+                            url: `${this.base.settings.wiserApiRoot}api-connections`,
+                            method: "GET"
+                        }).then((apiConnections) => {
+                            this.actionButtonApiCallConnection.setDataSource(apiConnections);
+                            this.actionButtonApiCallConnection.select((dataItem) => {
+                                return dataItem.id === gridDataItem.action.apiConnectionId;
+                            });
+                        }).catch(() => {
+                            this.base.showNotification("notification", "Het ophalen van de API connecties is mislukt, probeer het opnieuw", "error");
+                        }).finally(() => {
+                            document.querySelector(".loaderWrap").classList.remove("active");
+                        });
                     }
                     break;
                 }
@@ -2166,6 +2203,7 @@ export class EntityTab {
             case actionTypes.EXECUTEQUERY.id:
             case actionTypes.EXECUTEQUERYONCE.id:
             case actionTypes.GENERATEFILE.id:
+            case actionTypes.APICALL.id:
                 var upg = this.userParametersGrid.dataSource.data();
                 for (let i = 0; i < upg.length; i++) {
                     let field = upg[i].fieldType;
@@ -2225,6 +2263,7 @@ export class EntityTab {
             case actionTypes.EXECUTEQUERY.id:
             case actionTypes.EXECUTEQUERYONCE.id:
             case actionTypes.GENERATEFILE.id:
+            case actionTypes.APICALL.id:
                 // shared among execute query and generate file
                 action.queryId = this.actionButtonQueryList.dataItem() !== undefined ? this.actionButtonQueryList.dataItem().id : 0;
                 action.userParameters = [];
@@ -2257,6 +2296,11 @@ export class EntityTab {
                     action.pdfDocumentOptionsPropertyName = document.getElementById("pdfDocumentOptionsPropertyName").value;
                     action.pdfFilename = document.getElementById("pdfFilename").value;
                     action.emailDataQueryId = this.emailDataQueryId.value();
+                }
+                // api call specific
+                else if (actionTypes.APICALL.id) {
+                    action.apiConnectionId = this.actionButtonApiCallConnection.dataItem().id;
+                    action.iterative = document.getElementById("actionButtonApiCallIterative").checked;
                 }
                 break;
             case actionTypes.ACTIONCONFIRMDIALOG.id:

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -10,6 +11,13 @@ namespace Api.Modules.ApiConnections.Interfaces;
 /// </summary>
 public interface IApiConnectionsService
 {
+    /// <summary>
+    /// Gets the settings for all external API connections.
+    /// </summary>
+    /// <param name="identity">The authenticated user.</param>
+    /// <returns>A list of <see cref="ApiConnectionModel"/>s with the settings.</returns>
+    Task<ServiceResult<List<ApiConnectionModel>>> GetSettingsAsync(ClaimsIdentity identity);
+    
     /// <summary>
     /// Gets the settings for communicating with an external API.
     /// </summary>
