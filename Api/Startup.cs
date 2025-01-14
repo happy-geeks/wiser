@@ -233,10 +233,11 @@ namespace Api
                         var encryptionCertificateName = Configuration.GetValue<string>("Api:EncryptionCredentialCertificate");
                         if (!String.IsNullOrWhiteSpace(encryptionCertificateName))
                         {
-                            options.AddEncryptionCertificate(GetCertificateByName(signingCertificateName));
+                            options.AddEncryptionCertificate(GetCertificateByName(encryptionCertificateName));
                         }
                         else
                         {
+                            options.AddEncryptionCertificate(signingCertificate);
                             options.DisableAccessTokenEncryption();
                         }
                     }
