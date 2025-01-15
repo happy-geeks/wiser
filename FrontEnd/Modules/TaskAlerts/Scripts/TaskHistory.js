@@ -1,15 +1,15 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
+import "../Css/TaskHistory.css";
+import {TaskUtils} from "./TaskUtils";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 
-import "../Css/TaskHistory.css";
-import {TaskUtils} from "./TaskUtils";
-
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
-    
+
 };
 
 ((moduleSettings) => {
@@ -23,7 +23,7 @@ const moduleSettings = {
                 pageSize: 100
             };
             Object.assign(this.settings, settings);
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -48,7 +48,7 @@ const moduleSettings = {
                     token: this.settings.trackJsToken
                 });
             }
-            
+
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
@@ -56,7 +56,7 @@ const moduleSettings = {
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
-                
+
                 this.toggleMainLoader(false);
                 return;
             }
@@ -64,18 +64,18 @@ const moduleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = user.adminAccountName;
-            
+            this.settings.adminAccountLoggedIn = user.adminlogin;
+
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
-            
+
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            
+
             this.backendUsers = await Wiser.api({ url: `${this.settings.wiserApiRoot}users` });
             console.log(this.backendUsers);
 
@@ -182,7 +182,7 @@ const moduleSettings = {
                         if (dataItem.receiver !== this.settings.wiserUserId.toString() || !dataItem.checkeddate) {
                             return "";
                         }
-                        
+
                         return `<button type="button" class="k-button k-button-md k-rounded-md k-button-solid k-button-solid-base returnTaskButton"><span class="k-icon k-i-undo k-button-icon"></span><span class="k-button-text">Terugzetten</span></button>`;
                     }
                 })

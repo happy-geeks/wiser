@@ -153,7 +153,7 @@ const moduleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+            this.settings.adminAccountLoggedIn = !!user.adminlogin;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
@@ -1382,7 +1382,7 @@ const moduleSettings = {
                     dataSource: dataSource,
                     edit: (event) => {
                         event.model.hash = "";
-                        
+
                         if (event.model.ordering >= 0) return;
                         const orderings = event.sender.dataSource.data().filter(i => i.hasOwnProperty("ordering")).map(i => i.ordering);
                         event.model.ordering = orderings.length > 0 ? orderings[orderings.length - 1] + 1 : 1;
@@ -2247,7 +2247,7 @@ const moduleSettings = {
                 window.processing.removeProcess(process);
             }
         }
-        
+
         async closeTemplate() {
             // check for unsaved changes
             if (this.selectedId && !this.canUnloadTemplate()) {

@@ -1,11 +1,11 @@
-import { TrackJS } from "trackjs";
-import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
+import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../Css/Index.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../Css/Index.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const communicationModuleSettings = {
@@ -23,7 +23,7 @@ const communicationModuleSettings = {
         constructor(settings) {
             this.base = this;
             this.mainLoader = null;
-            
+
             // Components.
             this.createNewCommunicationSettingsButton = null;
             this.openCommunicationSettingsButton = null;
@@ -84,7 +84,7 @@ const communicationModuleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+            this.settings.adminAccountLoggedIn = !!user.adminlogin;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
@@ -126,11 +126,11 @@ const communicationModuleSettings = {
         async initializeComponents() {
             const process = `loadDropdowns_${Date.now()}`;
             window.processing.addProcess(process);
-            
+
             try {
                 // Dropdown with existing communication settings.
                 const communicationSettings = await Wiser.api({url: `${this.settings.wiserApiRoot}communications?namesOnly=true`});
-                
+
                 if (!communicationSettings || !communicationSettings.length) {
                     $("#OpenCommunicationSettingsContainer").hide();
                     $("#CreateNewCommunicationSettingsContainer").removeClass("col-6").addClass("col-12");
@@ -142,13 +142,13 @@ const communicationModuleSettings = {
                         dataSource: communicationSettings
                     }).data("kendoDropDownList");
                 }
-                
+
                 // Buttons.
                 this.createNewCommunicationSettingsButton = $("#CreateNewCommunicationSettingsButton").kendoButton({
                     icon: "folder-add",
                     click: this.onCreateNewCommunicationSettingsButton.bind(this)
                 });
-                
+
                 this.openCommunicationSettingsButton = $("#OpenCommunicationSettingsButton").kendoButton({
                     icon: "folder-open",
                     click: this.onOpenCommunicationSettingsButtonClick.bind(this)
@@ -171,7 +171,7 @@ const communicationModuleSettings = {
                 if (!newName) {
                     return;
                 }
-                
+
                 window.location = `/Modules/Communication/Settings?settingsName=${encodeURIComponent(newName)}`;
             });
         }

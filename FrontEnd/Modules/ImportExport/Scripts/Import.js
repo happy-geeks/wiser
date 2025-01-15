@@ -1,10 +1,10 @@
-﻿import { Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
+import "../Css/ImportExport.css";
+
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../Css/ImportExport.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const importModuleSettings = {
@@ -28,7 +28,7 @@ const importModuleSettings = {
             this.importGrid = null;
             this.importLinksGrid = null;
             this.importLinkDetailsGrid = null;
-            
+
             this.importUpload = null;
 
             this.entityNames = null;
@@ -67,7 +67,7 @@ const importModuleSettings = {
                 this.initializeKendoWindows();
                 return;
             }
-            
+
             this.settings.importRequestsUrl = "/Modules/ImportExport/Import";
 
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
@@ -90,7 +90,7 @@ const importModuleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            
+
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
@@ -98,7 +98,7 @@ const importModuleSettings = {
                     title: "Niet ingelogd",
                     content: "U bent niet (meer) ingelogd. Ververs a.u.b. de pagina en probeer het opnieuw."
                 });
-                
+
                 this.toggleMainLoader(false);
                 return;
             }
@@ -106,15 +106,15 @@ const importModuleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = user.adminAccountName;
-            
+            this.settings.adminAccountLoggedIn = user.adminlogin;
+
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.hasEmailAddress = !!userData.emailAddress;
             $("#EmailAddressContainer").toggle(!this.settings.hasEmailAddress);
-            
+
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
             this.settings.getItemsUrl = `${this.settings.wiserApiRoot}data-selectors`;
 
@@ -497,7 +497,7 @@ const importModuleSettings = {
                     content: "De import kan niet uitgevoerd worden vanwege een fout. Controleer of alles goed is ingevuld en probeer het opnieuw, of neem contact met ons op."
                 });
             }
-            
+
             button.enable(true);
             window.processing.removeProcess(process);
         }
@@ -624,7 +624,7 @@ const importModuleSettings = {
                 });
 
                 e.sender.element.data("selectedIndexes", selectedIndexes);
-                
+
                 if (e.sender.element.attr("id") === "importLinksGrid") {
                     $("#importLinkDetailsContainer").toggleClass("hidden", selectedIndexes.length === 0);
 
@@ -658,7 +658,7 @@ const importModuleSettings = {
             if (this.importGrid) {
                 return;
             }
-            
+
             this.importGrid = $("#importGrid").kendoGrid({
                 height: 350,
                 resizable: true,

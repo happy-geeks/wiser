@@ -106,7 +106,7 @@ const moduleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+            this.settings.adminAccountLoggedIn = !!user.adminlogin;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
@@ -131,7 +131,7 @@ const moduleSettings = {
             await this.loadComponentHistory();
 
             this.initBindings();
-            
+
             window.processing.removeProcess(process);
         }
 
@@ -168,7 +168,7 @@ const moduleSettings = {
                 lastScrollTop = elem.scrollTop <= 0 ? 0 : elem.scrollTop;
             }
         }
-        
+
         initBindings() {
             const removeDefaultValue = function (event) {
                 let target = event.currentTarget;
@@ -184,7 +184,7 @@ const moduleSettings = {
             document.querySelectorAll(".has-default-value button.k-spinner-decrease").forEach(input => {
                 input.addEventListener('click', removeDefaultValue)
             });
-            
+
             document.querySelectorAll(".has-default-value input").forEach(input => {
                 input.addEventListener('change', removeDefaultValue)
             });
@@ -309,7 +309,7 @@ const moduleSettings = {
 
                 codeMirrorInstance.refresh();
             });
-            
+
             if (event.item.classList.contains("history-tab")) {
                 window.Wiser.createHistoryDiffFields(document.querySelector("#left-pane div.historyContainer"));
             }
@@ -410,11 +410,11 @@ const moduleSettings = {
 
             $("#saveAndCloseButton").click(async (event) => {
                 event.preventDefault();
-                
+
                 let succeeded = await this.save();
                 if (!succeeded)
                     return;
-                
+
                 if (!window.parent || !window.parent.Templates) {
                     console.warn("No parent window found, or parent window has no Templates class.");
                 } else {
@@ -442,7 +442,7 @@ const moduleSettings = {
                     window.processing.removeProcess(process);
                     return false;
                 }
-                
+
                 const contentId = await Wiser.api({
                     url: `${this.settings.wiserApiRoot}dynamic-content/${this.settings.selectedId}`,
                     dataType: "json",
@@ -695,11 +695,11 @@ const moduleSettings = {
                 $(element).data("CodeMirrorInstance", codeMirrorInstance);
             });
         }
-        
+
         onCodeMirrorChange(codeMirrorElement) {
             const textarea = codeMirrorElement.getTextArea();
             let elemContainer = textarea.closest('.has-default-value');
-            
+
             if (elemContainer) {
                 elemContainer.classList.remove('has-default-value');
             }

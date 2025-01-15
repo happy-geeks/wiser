@@ -175,7 +175,7 @@ const moduleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+            this.settings.adminAccountLoggedIn = !!user.adminlogin;
 
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
@@ -753,7 +753,7 @@ const moduleSettings = {
 
                     return item;
                 });
-                
+
                 this.mainTreeViewContextMenu.setOptions({
                     dataSource: contextMenu
                 });
@@ -778,7 +778,7 @@ const moduleSettings = {
          * @param {any} event The click event.
          */
         async onContextMenuClose(event) {
-            // Empty context menu on close to prevent old menu from 
+            // Empty context menu on close to prevent old menu from
             // showing momentarily when getting the menu for a different item
             this.mainTreeViewContextMenu.setOptions({
                 dataSource: []
@@ -1367,11 +1367,11 @@ const moduleSettings = {
             event.sender.element.find(".folded-message").on("dblclick", clickEvent => {
                 const column = clickEvent.currentTarget;
                 const matchingColumn = column.parentElement.querySelector(`td[data-field=${column.dataset.field === "oldvalue" ? "newvalue" : "oldvalue"}]`);
-                
+
                 if (column.classList.contains("folded-message")) {
                     column.classList.remove("folded-message");
                     column.classList.add("unfolded-message");
-                    
+
                     matchingColumn.classList.remove("folded-message");
                     matchingColumn.classList.add("unfolded-message");
                 } else {

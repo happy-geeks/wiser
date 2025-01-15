@@ -1,6 +1,6 @@
-﻿import { Dates, Misc, Utils, Wiser } from "../../Base/Scripts/Utils.js";
+﻿import {Dates, Misc, Utils, Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
-import { DateTime } from "luxon";
+import {DateTime} from "luxon";
 
 require("@progress/kendo-ui/js/kendo.button.js");
 require("@progress/kendo-ui/js/kendo.dialog.js");
@@ -484,19 +484,19 @@ export class Fields {
                         if (tab.classList.contains("overview-tab")) {
                             continue;
                         }
-                        
+
                         const contentContainerId = tab.attributes["aria-controls"].value;
                         const contentContainer = document.getElementById(contentContainerId);
                         let visibleItems = contentContainer.querySelectorAll(".item:not(.dependency-hidden)");
-                        
-                        // if there are no items the tab can be hidden and we don't have to check the group within the content pane 
+
+                        // if there are no items the tab can be hidden and we don't have to check the group within the content pane
                         if (visibleItems.length === 0) {
                             tab.classList.add("hidden");
                             continue;
                         } else {
                             tab.classList.remove("hidden");
                         }
-                        
+
                         // Check if there are empty groups that should be hidden
                         const groups = contentContainer.querySelectorAll(".item-group");
                         for (let group of groups) {
@@ -508,7 +508,7 @@ export class Fields {
                             }
                         }
                     }
-                    
+
                     break;
                 }
 
@@ -639,7 +639,7 @@ export class Fields {
      * @param {any} event
      */
     onFieldLabelContextMenu(event) {
-        if (!this.base.settings.adminAccountLoggedIn) {
+        if (!this.base.settings.adminlogin) {
             return;
         }
 
@@ -2028,7 +2028,7 @@ export class Fields {
                     case "mergeFiles": {
                         let encryptedIds = [];
                         if (action.queryId) {
-                            // If a query is provided, it always takes precedence over any lines that may be selected in a grid 
+                            // If a query is provided, it always takes precedence over any lines that may be selected in a grid
                             queryActionResult = await executeQuery();
                             if (!queryActionResult.success) {
                                 kendo.alert(queryActionResult.errorMessage || `Er is iets fout gegaan met het uitvoeren van de actie '${action.type}', probeer het a.u.b. nogmaals of neem contact op met ons.`);
@@ -2047,7 +2047,7 @@ export class Fields {
                             encryptedIds = selectedItems.map(item => item.dataItem.encrypted_id);
                             if (selectedItems[0].dataItem.entity_type) action.entityType = selectedItems[0].dataItem.entity_type;
                         }
-                        
+
                         //Call Wiser API to generate the merged PDF file
                         const process = `convertHtmlToPdf_${Date.now()}`;
                         window.processing.addProcess(process);
@@ -2073,7 +2073,7 @@ export class Fields {
                             }
                         }
                         window.processing.removeProcess(process);
-                        
+
                         break;
                     }
 
@@ -2308,7 +2308,7 @@ export class Fields {
                             // Retrieve the optional attribute whether this action has to be run iteratively.
                             const isIterative = action.iterative ?? false;
                             const hasItemsSelected = selectedItems && selectedItems.length > 0;
-                            
+
                             if(isIterative && hasItemsSelected) {
                                 // Loop over all of the selected items from the grid.
                                 for(const selectedItem of selectedItems) {
@@ -2337,7 +2337,7 @@ export class Fields {
                                 // Combine all values of the selected items.
                                 if(hasItemsSelected)
                                     await combineValuesFromAllSelectedItemsAndAddToUserParameters();
-                                
+
                                 // Make an API call for all selected items.
                                 await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
                             }

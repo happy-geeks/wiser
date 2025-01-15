@@ -93,7 +93,7 @@ const exportModuleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+            this.settings.adminAccountLoggedIn = !!user.adminlogin;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
@@ -159,7 +159,7 @@ const exportModuleSettings = {
                     const dataItem = dropDownList.dataItem();
                     const dataSelectorId = dataItem.encryptedId;
                     fileName = `${dataItem.name}.${fileFormat.extension}`;
-                    
+
                     result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?encryptedDataSelectorId=${encodeURIComponent(dataSelectorId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
@@ -174,7 +174,7 @@ const exportModuleSettings = {
                     const dataItem = dropDownList.dataItem();
                     const queryId = dataItem.encryptedId;
                     fileName = `${dataItem.description}.${fileFormat.extension}`;
-                    
+
                     result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
                         method: "POST",
                         headers: {
@@ -311,7 +311,7 @@ const exportModuleSettings = {
             }
 
             window.processing.removeProcess(process);
-            
+
             let fileFormatDataSource = [
                 {
                     name: 'Excel',

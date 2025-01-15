@@ -1,18 +1,18 @@
-﻿import { TrackJS } from "trackjs";
-import { Wiser } from "../../Base/Scripts/Utils.js";
-import { TaskUtils } from "./TaskUtils.js";
+﻿import {TrackJS} from "trackjs";
+import {Wiser} from "../../Base/Scripts/Utils.js";
+import {TaskUtils} from "./TaskUtils.js";
 import "../../Base/Scripts/Processing.js";
-
-require("@progress/kendo-ui/js/kendo.all.js");
-require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
-require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
 import Pusher from "pusher-js/with-encryption";
 
 import "../Css/TaskAlerts.css";
 
+require("@progress/kendo-ui/js/kendo.all.js");
+require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
+require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
+
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
-    
+
 };
 
 ((moduleSettings) => {
@@ -23,7 +23,7 @@ const moduleSettings = {
             // Base settings.
             this.settings = {};
             Object.assign(this.settings, settings);
-            
+
             // Add logged in user access token to default authorization headers for all jQuery ajax requests.
             $.ajaxSetup({
                 headers: { "Authorization": `Bearer ${localStorage.getItem("accessToken")}` }
@@ -78,7 +78,7 @@ const moduleSettings = {
                     token: this.settings.trackJsToken
                 });
             }
-            
+
             // Show an error if the user is no longer logged in.
             const accessTokenExpires = localStorage.getItem("accessTokenExpiresOn");
             if (!accessTokenExpires || accessTokenExpires <= new Date()) {
@@ -94,18 +94,18 @@ const moduleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = user.adminAccountName;
-            
+            this.settings.adminAccountLoggedIn = user.adminlogin;
+
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
             this.settings.tenantId = userData.encryptedTenantId;
             this.settings.zeroEncrypted = userData.zeroEncrypted;
             this.settings.wiserUserId = userData.id;
-            
+
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
-            
+
             this.settings.serviceRoot = `${this.settings.wiserApiRoot}templates/get-and-execute-query`;
 
             // Some elements for easy access.
@@ -138,7 +138,7 @@ const moduleSettings = {
             this.editTaskDatePicker = $("#editTaskDate").getKendoDatePicker();
             this.editTaskUserSelect = $("#editTaskUser").getKendoDropDownList();
             this.editTaskStatusSelect = $("#editTaskStatus").getKendoDropDownList();
-            
+
             this.taskUserSelect.setDataSource({
                 transport: {
                     read: {
@@ -358,12 +358,12 @@ const moduleSettings = {
                             if (completionWasUndone) {
                                 return;
                             }
-                            
+
                             parent.classList.add("completed");
                             this.updateTaskCount();
                         }
                     }).data("kendoNotification");
-                    
+
                     notification.show(`<p>De taak is gemarkeerd als afgerond.</p><button type="button" class="k-primary" id="undoCompleteTask">Ongedaan maken</button>`);
                     $("#undoCompleteTask").kendoButton({
                         click: (event) => {
@@ -644,7 +644,7 @@ const moduleSettings = {
                     icon: element.data("icon")
                 });
             });
-            
+
             // Button for undoing the completion of a task.
             $("#undoCompleteTask").kendoButton({
                 click: (event) => {

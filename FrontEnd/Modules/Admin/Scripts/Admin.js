@@ -1,19 +1,18 @@
-﻿import { InfoText } from "../Scripts/InfoText";
-import { ModuleTab } from "../Scripts/ModuleTab.js";
-import { RoleTab } from "../Scripts/RoleTab.js";
-import { EntityTab } from "../Scripts/EntityTab.js";
-import { EntityFieldTab } from "../Scripts/EntityFieldTab.js";
-import { EntityPropertyTab } from "../Scripts/EntityPropertyTab.js";
-import { WiserQueryTab } from "../Scripts/WiserQueryTab.js";
-import { WiserLinkTab } from "../Scripts/WiserLinkTab.js";
-import { Wiser, Misc } from "../../Base/Scripts/Utils.js";
+﻿import {InfoText} from "../Scripts/InfoText";
+import {ModuleTab} from "../Scripts/ModuleTab.js";
+import {RoleTab} from "../Scripts/RoleTab.js";
+import {EntityTab} from "../Scripts/EntityTab.js";
+import {EntityFieldTab} from "../Scripts/EntityFieldTab.js";
+import {EntityPropertyTab} from "../Scripts/EntityPropertyTab.js";
+import {WiserQueryTab} from "../Scripts/WiserQueryTab.js";
+import {WiserLinkTab} from "../Scripts/WiserLinkTab.js";
+import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
+import "../Css/Admin.css";
 
 
 require("@progress/kendo-ui/js/kendo.all.js");
 require("@progress/kendo-ui/js/cultures/kendo.culture.nl-NL.js");
 require("@progress/kendo-ui/js/messages/kendo.messages.nl-NL.js");
-
-import "../Css/Admin.css";
 
 // Any custom settings can be added here. They will overwrite most default settings inside the module.
 const moduleSettings = {
@@ -168,7 +167,7 @@ const moduleSettings = {
             const user = JSON.parse(localStorage.getItem("userData"));
             this.settings.oldStyleUserId = user.oldStyleUserId;
             this.settings.username = user.adminAccountName ? `${user.adminAccountName} (Admin)` : user.name;
-            this.settings.adminAccountLoggedIn = !!user.adminAccountName;
+            this.settings.adminAccountLoggedIn = !!user.adminlogin;
 
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
             this.settings.userId = userData.encryptedId;
