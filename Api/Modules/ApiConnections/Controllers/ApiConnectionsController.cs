@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -27,6 +28,17 @@ public class ApiConnectionsController : Controller
     public ApiConnectionsController(IApiConnectionsService apiConnectionsService)
     {
         this.apiConnectionsService = apiConnectionsService;
+    }
+
+    /// <summary>
+    /// Gets the settings for all external API connections.
+    /// </summary>
+    /// <returns>A list of <see cref="ApiConnectionModel"/>s with the settings.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(List<ApiConnectionModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSettingsAsync()
+    {
+        return (await apiConnectionsService.GetSettingsAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Net;
 using System.Security.Claims;
@@ -30,6 +31,38 @@ public class ApiConnectionsService : IApiConnectionsService, IScopedService
         this.wiserTenantsService = wiserTenantsService;
         this.clientDatabaseConnection = databaseConnection;
         this.jsonService = jsonService;
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<ApiConnectionModel>>> GetSettingsAsync(ClaimsIdentity identity)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        var query = $"SELECT id, `name`, options, authentication_data FROM {WiserTableNames.WiserApiConnection}";
+        
+        var dataTable = await clientDatabaseConnection.GetAsync(query);
+        var result = new List<ApiConnectionModel>();
+        
+        foreach (DataRow row in dataTable.Rows)
+        {
+            var optionsString = row.Field<string>("options");
+            var authenticationDataString = row.Field<string>("authentication_data");
+
+            var apiConnectionModel = new ApiConnectionModel
+            {
+                Id = row.Field<int>("id"),
+                Name = row.Field<string>("name"),
+                Options = String.IsNullOrWhiteSpace(optionsString) ? new JObject() : JToken.Parse(optionsString),
+                AuthenticationData = String.IsNullOrWhiteSpace(authenticationDataString) ? new JObject() : JToken.Parse(authenticationDataString)
+            };
+            
+            var tenant = await wiserTenantsService.GetSingleAsync(identity);
+            jsonService.EncryptValuesInJson(apiConnectionModel.Options, tenant.ModelObject.EncryptionKey);
+            jsonService.EncryptValuesInJson(apiConnectionModel.AuthenticationData, tenant.ModelObject.EncryptionKey);
+
+            result.Add(apiConnectionModel);
+        }
+        
+        return new ServiceResult<List<ApiConnectionModel>>(result);
     }
 
     /// <inheritdoc />
