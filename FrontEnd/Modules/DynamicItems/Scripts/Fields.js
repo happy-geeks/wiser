@@ -639,7 +639,7 @@ export class Fields {
      * @param {any} event
      */
     onFieldLabelContextMenu(event) {
-        if (!this.base.settings.adminlogin) {
+        if (!this.base.settings.adminAccountLoggedIn) {
             return;
         }
 
