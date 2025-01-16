@@ -14,12 +14,12 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
+            @{await RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
+            @{await RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
         </div>
     </div>
 
@@ -51,21 +51,20 @@
     </div>
 </footer>
 
-
 @functions {
-    async Task RenderProperty(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
+    async Task RenderPropertyAsync(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
         // If there is any dependsonvalue, we should create a comma seperated string of the values
         var dependsOnValue = "";
         if (attributes?.DependsOnValue != null)
         {
-            dependsOnValue = string.Join(",", attributes.DependsOnValue);
+            dependsOnValue = String.Join(",", attributes.DependsOnValue);
         }
         <div class="item">
             @switch (attributes?.KendoComponent)
             {
                 case KendoComponents.TextBox:
-                    <h4><label>@attributes?.Title</label></h4>
+                    <h4><label>@attributes.Title</label></h4>
                     <span>
                         <input
                             type="text"
@@ -74,17 +73,17 @@
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.TextBox"
-                            data-kendo-options="@attributes?.KendoOptions"
-                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-kendo-options="@attributes.KendoOptions"
+                            data-depend-on-field="@attributes.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
-                            is-required="@attributes?.IsRequired.ToString().ToLower()"
-                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                            is-required="@attributes.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                         />
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
                     break;
                 case KendoComponents.NumericTextBox:
-                    <h4><label>@attributes?.Title</label></h4>
+                    <h4><label>@attributes.Title</label></h4>
                     <span>
                         <input
                             type="number"
@@ -93,17 +92,17 @@
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.NumericTextBox"
-                            data-kendo-options="@attributes?.KendoOptions"
-                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-kendo-options="@attributes.KendoOptions"
+                            data-depend-on-field="@attributes.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
-                            is-required="@attributes?.IsRequired.ToString().ToLower()"
-                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                            is-required="@attributes.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                         />
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
                     break;
                 case KendoComponents.TimePicker:
-                    <h4><label>@attributes?.Title</label></h4>
+                    <h4><label>@attributes.Title</label></h4>
                     <span>
                         <input
                             type="time"
@@ -112,11 +111,11 @@
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.TimePicker"
-                            data-kendo-options="@attributes?.KendoOptions"
-                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-kendo-options="@attributes.KendoOptions"
+                            data-depend-on-field="@attributes.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
-                            is-required="@attributes?.IsRequired.ToString().ToLower()"
-                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                            is-required="@attributes.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                         />
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
@@ -134,11 +133,11 @@
                                     data-kendo-tab="@tab"
                                     checked
                                     data-kendo-component="@KendoComponents.CheckBox"
-                                    data-kendo-options="@attributes?.KendoOptions"
-                                    data-depend-on-field="@attributes?.DependsOnField"
+                                    data-kendo-options="@attributes.KendoOptions"
+                                    data-depend-on-field="@attributes.DependsOnField"
                                     data-depend-on-value="@dependsOnValue"
-                                    is-required="@attributes?.IsRequired.ToString().ToLower()"
-                                    use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                                    is-required="@attributes.IsRequired.ToString().ToLower()"
+                                    use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                                 />
                             }
                             else
@@ -149,14 +148,14 @@
                                     trace="@trace"
                                     data-kendo-tab="@tab"
                                     data-kendo-component="@KendoComponents.CheckBox"
-                                    data-kendo-options="@attributes?.KendoOptions"
-                                    data-depend-on-field="@attributes?.DependsOnField"
+                                    data-kendo-options="@attributes.KendoOptions"
+                                    data-depend-on-field="@attributes.DependsOnField"
                                     data-depend-on-value="@dependsOnValue"
-                                    is-required="@attributes?.IsRequired.ToString().ToLower()"
-                                    use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                                    is-required="@attributes.IsRequired.ToString().ToLower()"
+                                    use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                                 />
                             }
-                            <span>@attributes?.Description</span>
+                            <span>@attributes.Description</span>
                         </label>
                     </span>
                     break;
@@ -172,7 +171,7 @@
                     else
                     {
                         // Check if the dataSource is defined in the kendoOptions attribute
-                        var kendoOptions = JObject.Parse(attributes?.KendoOptions);
+                        var kendoOptions = JObject.Parse(attributes.KendoOptions);
                         // Check if there is a dataSource
                         var success = false;
                         foreach (var opt in kendoOptions)
@@ -184,18 +183,18 @@
                         if (!success) goto default;
                     }
 
-                    <h4><label>@attributes?.Title</label></h4>
+                    <h4><label>@attributes.Title</label></h4>
                     <span>
                         <select
                             name="@property.Name"
                             trace="@trace"
                             data-kendo-tab="@tab"
                             data-kendo-component="@KendoComponents.DropDownList"
-                            data-kendo-options="@attributes?.KendoOptions"
-                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-kendo-options="@attributes.KendoOptions"
+                            data-depend-on-field="@attributes.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
-                            is-required="@attributes?.IsRequired.ToString().ToLower()"
-                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                            is-required="@attributes.IsRequired.ToString().ToLower()"
+                            use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                         >
                             @foreach (var opt in enumData)
                             {
@@ -213,24 +212,24 @@
                     </span>
                     break;
                 case KendoComponents.Grid:
-                    <h4><label>@attributes?.Title</label></h4>
+                    <h4><label>@attributes.Title</label></h4>
                     <span>
                         <table
                             name="@property.Name"
                             trace="@trace"
                             data-kendo-component="@KendoComponents.Grid"
                             data-kendo-tab="@tab"
-                            data-kendo-options="@attributes?.KendoOptions"
-                            data-depend-on-field="@attributes?.DependsOnField"
+                            data-kendo-options="@attributes.KendoOptions"
+                            data-depend-on-field="@attributes.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
-                            allow-edit="@attributes?.AllowEdit.ToString().ToLower()"
-                            is-required="@attributes?.IsRequired.ToString().ToLower()"
-                            id-property="@attributes?.IdProperty"
-                            use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                            allow-edit="@attributes.AllowEdit.ToString().ToLower()"
+                            is-required="@attributes.IsRequired.ToString().ToLower()"
+                            id-property="@attributes.IdProperty"
+                            use-datasource="@attributes.UseDataSource.ToString().ToLower()"
                         >
                         </table>
                     </span>
-                    if (attributes?.AllowEdit == true)
+                    if (attributes.AllowEdit)
                     {
                         <span>
                             <button id="@($"{property.Name}CreateButton")" for-list="@property.Name" class="k-button k-primary">Nieuwe rij maken</button>
@@ -246,7 +245,7 @@
         </div>
     }
 
-    void RenderProperties(object data, Type type, string tab, bool IsFilled, string trace)
+    async Task RenderPropertiesAsync(object data, Type type, string tab, bool isFilled, string trace)
     {
         foreach (var property in type.GetProperties())
         {
@@ -256,33 +255,33 @@
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
             if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
             {
-                if (data is IList list)
+                if (data is IList)
                 {
-                    RenderProperty(null, property, attributes, null, tab, trace);
+                    await RenderPropertyAsync(null, property, attributes, null, tab, trace);
                 }
                 else
                 {
-                    // Check if we're sending a enum, if so also send the selected value
+                    // Check if we're sending an enum, if so also send the selected value.
                     if (property.PropertyType.IsEnum)
                     {
-                        if (IsFilled)
+                        if (isFilled)
                         {
-                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab, trace);
+                            await RenderPropertyAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null)?.ToString(), tab, trace);
                         }
                         else
                         {
-                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
+                            await RenderPropertyAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                         }
                         continue;
                     }
                     // Check if we should send the data
-                    if (IsFilled)
+                    if (isFilled)
                     {
-                        RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
+                        await RenderPropertyAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                     }
                     else
                     {
-                        RenderProperty(null, property, attributes, null, tab, trace);
+                        await RenderPropertyAsync(null, property, attributes, null, tab, trace);
                     }
                 }
             }
@@ -302,19 +301,19 @@
                 var listType = genericTypes[0];
                 // Get the list from the data
                 var dataList = data?.GetType().GetProperty(property.Name)?.GetValue(data, null) as IList;
-                RenderProperties(dataList, listType, tab, false, trace + $"/{property?.Name}");
+                await RenderPropertiesAsync(dataList, listType, tab, false, trace + $"/{property.Name}");
             }
             else
             {
-                if (data is IList list)
+                if (data is IList)
                 {
                     // Since data is a list, we should let the function know that we shouldn't fill any data
-                    RenderProperties(null, property.PropertyType, tab, false, trace + $"/{property?.Name}");
+                    await RenderPropertiesAsync(null, property.PropertyType, tab, false, trace + $"/{property.Name}");
                 }
                 else
                 {
                     // Render the properties of the class
-                    RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property?.Name}");
+                    await RenderPropertiesAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property.Name}");
                 }
             }
         }

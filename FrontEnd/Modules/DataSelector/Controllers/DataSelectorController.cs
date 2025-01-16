@@ -3,29 +3,21 @@ using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.DataSelector.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FrontEnd.Modules.DataSelector.Controllers
+namespace FrontEnd.Modules.DataSelector.Controllers;
+
+[Area("DataSelector"), Route("Modules/DataSelector")]
+public class DataSelectorController(IBaseService baseService) : Controller
 {
-    [Area("DataSelector"), Route("Modules/DataSelector")]
-    public class DataSelectorController : Controller
+    public IActionResult Index(bool embedded = false, string embedoptions = null, bool exportMode = false)
     {
-        private readonly IBaseService baseService;
-
-        public DataSelectorController(IBaseService baseService)
+        var viewModel = baseService.CreateBaseViewModel<DataSelectorViewModel>();
+        if (embedded)
         {
-            this.baseService = baseService;
+            viewModel.BodyCssClass = "embedded";
+            viewModel.EmbedOptions.AddRange((embedoptions ?? "").Split([','], StringSplitOptions.RemoveEmptyEntries));
         }
-        
-        public IActionResult Index(bool embedded = false, string embedoptions = null, bool exportMode = false)
-        {
-            var viewModel = baseService.CreateBaseViewModel<DataSelectorViewModel>();
-            if (embedded)
-            {
-                viewModel.BodyCssClass = "embedded";
-                viewModel.EmbedOptions.AddRange((embedoptions ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
-            }
-            viewModel.ExportMode = exportMode;
+        viewModel.ExportMode = exportMode;
 
-            return View(viewModel);
-        }
+        return View(viewModel);
     }
 }

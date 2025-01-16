@@ -1,17 +1,16 @@
-﻿ namespace FrontEnd.Modules.ImportExport.Models
+﻿ namespace FrontEnd.Modules.ImportExport.Models;
+
+ public class ChunkMetaDataModel
  {
-     public class ChunkMetaDataModel
-     {
-         public string UploadUid { get; set; }
+     public string UploadUid { get; set; }
 
-         public string FileName { get; set; }
+     public string FileName { get; set; }
 
-         public string ContentType;
+     public string ContentType;
 
-         public long ChunkIndex;
+     public long ChunkIndex;
 
-         public long TotalChunks;
+     public long TotalChunks;
 
-         public long TotalFileSize;
-     }
+     public long TotalFileSize;
  }

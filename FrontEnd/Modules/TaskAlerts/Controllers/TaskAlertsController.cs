@@ -2,27 +2,19 @@
 using FrontEnd.Modules.Base.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FrontEnd.Modules.TaskAlerts.Controllers
-{
-    [Area("TaskAlerts"), Route("Modules/TaskAlerts")]
-    public class TaskAlertsController : Controller
-    {
-        private readonly IBaseService baseService;
+namespace FrontEnd.Modules.TaskAlerts.Controllers;
 
-        public TaskAlertsController(IBaseService baseService)
-        {
-            this.baseService = baseService;
-        }
+[Area("TaskAlerts"), Route("Modules/TaskAlerts")]
+public class TaskAlertsController(IBaseService baseService) : Controller
+{
+    public IActionResult Index()
+    {
+        return View(baseService.CreateBaseViewModel<BaseModuleViewModel>());
+    }
         
-        public IActionResult Index()
-        {
-            return View(baseService.CreateBaseViewModel<BaseModuleViewModel>());
-        }
-        
-        [Route("History")]
-        public IActionResult History()
-        {
-            return View(baseService.CreateBaseViewModel<BaseModuleViewModel>());
-        }
+    [Route("History")]
+    public IActionResult History()
+    {
+        return View(baseService.CreateBaseViewModel<BaseModuleViewModel>());
     }
 }

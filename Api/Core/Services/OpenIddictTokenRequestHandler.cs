@@ -18,6 +18,9 @@ using OpenIddict.Server.AspNetCore;
 
 namespace Api.Core.Services;
 
+/// <summary>
+/// Handles the token request for the OpenIddict server.
+/// </summary>
 public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddictServerEvents.HandleTokenRequestContext>
 {
     private readonly ILogger<OpenIddictTokenRequestHandler> logger;
@@ -25,8 +28,10 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     private readonly GclSettings gclSettings;
     private readonly IUsersService usersService;
 
-    public OpenIddictTokenRequestHandler(ILogger<OpenIddictTokenRequestHandler> logger,
-        IHttpContextAccessor httpContextAccessor, IOptions<GclSettings> gclSettings, IUsersService usersService)
+    /// <summary>
+    /// Creates a new instance of <see cref="OpenIddictTokenRequestHandler"/>.
+    /// </summary>
+    public OpenIddictTokenRequestHandler(ILogger<OpenIddictTokenRequestHandler> logger, IHttpContextAccessor httpContextAccessor, IOptions<GclSettings> gclSettings, IUsersService usersService)
     {
         this.logger = logger;
         this.httpContextAccessor = httpContextAccessor;
@@ -58,13 +63,13 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
             context!.Reject(OpenIddictConstants.Errors.InvalidClient, "no identity given");
             return ValueTask.CompletedTask;
         }
-            
+
         // Sign in with the refreshed principal.
         context.SignIn(new ClaimsPrincipal(identity));
 
         return ValueTask.CompletedTask;
     }
-    
+
     private async ValueTask HandlePasswordAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
     {
         var subDomain = context.Transaction.Request?[HttpContextConstants.SubDomainKey]?.Value?.ToString();
@@ -77,10 +82,10 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
 
         // Extra parameters that get added to response
         var parameters = new Dictionary<string, OpenIddictParameter>();
-        
+
         // Add sub domain to http context, to that the ClientDatabaseConnection can use it to get the correct connection string.
         httpContextAccessor.HttpContext?.Items.Add(HttpContextConstants.SubDomainKey, subDomain);
-        
+
         ulong adminAccountId = 0;
         var adminAccountName = "";
         var selectedUser = context.Transaction.Request?[HttpContextConstants.SelectedUserKey]?.Value?.ToString();
@@ -126,7 +131,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
                 String.IsNullOrWhiteSpace(totpBackupCode))
             {
                 AddLoginResultParameters(parameters, adminAccountLoginResult.ModelObject, false);
-                
+
                 var adminIdentity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
                 var adminListPrincipal = new ClaimsPrincipal(adminIdentity);
 
@@ -156,7 +161,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
                     return;
                 }
             }
-            
+
             loginResult = await usersService.LoginTenantAsync(selectedUser, null,
                 adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
         }
@@ -167,12 +172,12 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
              context.Reject(OpenIddictConstants.Errors.InvalidClient, loginResult.ErrorMessage);
              return;
          }
-         
+
          var totpSuccess = totpSuccessAdmin || loginResult.ModelObject.TotpAuthentication.Enabled && (!String.IsNullOrWhiteSpace(totpPin) || !String.IsNullOrWhiteSpace(totpBackupCode));
          AddLoginResultParameters(parameters, loginResult.ModelObject, totpSuccess, adminAccountId != 0);
-         
+
          var identity = CreateIdentity(loginResult.ModelObject, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
-         
+
          var principal = new ClaimsPrincipal(identity);
 
          // The access_token will be without scopes and thus unusable for accessing any of the endpoints
@@ -184,14 +189,14 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
                  OpenIddictConstants.Scopes.Email,
                  OpenIddictConstants.Scopes.Profile,
                  OpenIddictConstants.Scopes.OfflineAccess,  // Required for refresh tokens
-                 "api.read", 
+                 "api.read",
                  "api.write"
              );
          }
 
          Signin(context, principal, parameters);
     }
-    
+
     /// <summary>
     /// Fill the list of parameters that will be passed to the frontend beside the access token
     /// </summary>
@@ -224,7 +229,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         {
             parameters.Add("requirePasswordChange", user.RequirePasswordChange.Value);
         }
-        
+
         if (!String.IsNullOrWhiteSpace(user.CookieValue))
         {
             parameters.Add("cookieValue", user.CookieValue);
@@ -244,7 +249,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     private ClaimsIdentity CreateIdentity(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
     {
         var claims = CreateClaimsList(user, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
-        
+
         var identity = new ClaimsIdentity(claims, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         return identity;
     }
@@ -272,7 +277,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
             claimsIdentity.Add(new Claim(ClaimTypes.Name, user.Username));
             claimsIdentity.Add(new Claim(OpenIddictConstants.Claims.Subject , user.Id.ToString()));
             claimsIdentity.Add(new Claim(ClaimTypes.Role, user.Role));
-            
+
             if (!String.IsNullOrWhiteSpace(user.EmailAddress))
             {
                 claimsIdentity.Add(new Claim(ClaimTypes.Email, user.EmailAddress));

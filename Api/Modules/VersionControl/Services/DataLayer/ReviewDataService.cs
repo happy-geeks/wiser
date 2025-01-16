@@ -33,12 +33,11 @@ public class ReviewDataService : IReviewDataService, IScopedService
     public async Task<List<ReviewModel>> GetAsync(bool hideApprovedReviews = true, long userId = 0)
     {
         // Make sure the tables are up-to-date.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserCommitReviews,
             WiserTableNames.WiserCommitReviewRequests,
             WiserTableNames.WiserCommitReviewComments
-        });
+        ]);
 
         // Get all reviews.
         var whereClause = new List<string> { "TRUE" };
@@ -54,31 +53,33 @@ public class ReviewDataService : IReviewDataService, IScopedService
             extraJoins.Add($"JOIN {WiserTableNames.WiserCommitReviewRequests} AS requestedUserFilter ON requestedUserFilter.review_id = review.id AND requestedUserFilter.requested_user = ?userId");
         }
 
-        var query = $@"SELECT
-    review.id,
-    review.commit_id,
-    review.requested_on,
-    review.requested_by,
-    review.requested_by_name,
-    review.reviewed_on,
-    review.reviewed_by,
-    review.reviewed_by_name,
-    review.status,
-    commit.id AS commit_id,
-    commit.description AS commit_description,
-    requestedUser.requested_user,
-    comment.id AS comment_id,
-    comment.added_on AS comment_added_on,
-    comment.added_by AS comment_added_by,
-    comment.added_by_name AS comment_added_by_name,
-    comment.text AS comment_text
-FROM {WiserTableNames.WiserCommitReviews} AS review
-JOIN {WiserTableNames.WiserCommit} AS commit ON commit.id = review.commit_id
-{String.Join(Environment.NewLine, extraJoins)}
-LEFT JOIN {WiserTableNames.WiserCommitReviewRequests} AS requestedUser ON requestedUser.review_id = review.id
-LEFT JOIN {WiserTableNames.WiserCommitReviewComments} AS comment ON comment.review_id = review.id
-WHERE {String.Join(" AND ", whereClause)}
-ORDER BY review.id DESC, comment.id DESC";
+        var query = $"""
+                     SELECT
+                         review.id,
+                         review.commit_id,
+                         review.requested_on,
+                         review.requested_by,
+                         review.requested_by_name,
+                         review.reviewed_on,
+                         review.reviewed_by,
+                         review.reviewed_by_name,
+                         review.status,
+                         commit.id AS commit_id,
+                         commit.description AS commit_description,
+                         requestedUser.requested_user,
+                         comment.id AS comment_id,
+                         comment.added_on AS comment_added_on,
+                         comment.added_by AS comment_added_by,
+                         comment.added_by_name AS comment_added_by_name,
+                         comment.text AS comment_text
+                     FROM {WiserTableNames.WiserCommitReviews} AS review
+                     JOIN {WiserTableNames.WiserCommit} AS commit ON commit.id = review.commit_id
+                     {String.Join(Environment.NewLine, extraJoins)}
+                     LEFT JOIN {WiserTableNames.WiserCommitReviewRequests} AS requestedUser ON requestedUser.review_id = review.id
+                     LEFT JOIN {WiserTableNames.WiserCommitReviewComments} AS comment ON comment.review_id = review.id
+                     WHERE {String.Join(" AND ", whereClause)}
+                     ORDER BY review.id DESC, comment.id DESC
+                     """;
 
         var dataTable = await databaseConnection.GetAsync(query);
         var results = new List<ReviewModel>();
@@ -102,8 +103,8 @@ ORDER BY review.id DESC, comment.id DESC";
                     ReviewedBy = row.Field<long?>("reviewed_by") ?? 0,
                     ReviewedByName = row.Field<string>("reviewed_by_name"),
                     Status = (ReviewStatuses)Enum.Parse(typeof(ReviewStatuses), row.Field<string>("status")),
-                    RequestedUsers = new List<long>(),
-                    Comments = new List<ReviewCommentModel>()
+                    RequestedUsers = [],
+                    Comments = []
                 };
 
                 review.Commit = await commitDataService.GetCommitAsync(review.CommitId);
@@ -141,10 +142,7 @@ ORDER BY review.id DESC, comment.id DESC";
     public async Task<ReviewModel> GetAsync(int id, bool includeComments = true)
     {
         // Make sure the tables are up-to-date.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
-            WiserTableNames.WiserCommitReviews
-        });
+        await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserCommitReviews]);
 
         databaseConnection.AddParameter("id", id);
 
@@ -152,26 +150,28 @@ ORDER BY review.id DESC, comment.id DESC";
         var commentsSelect = includeComments ? ", comment.id AS comment_id, comment.added_on AS comment_added_on, comment.added_by AS comment_added_by, comment.added_by_name AS comment_added_by_name, comment.text AS comment_text" : "";
         var orderByClause = includeComments ? "ORDER BY review.id DESC, comment.id DESC" : "ORDER BY review.id DESC";
 
-        var query = $@"SELECT
-    review.id,
-    review.commit_id,
-    review.requested_on,
-    review.requested_by,
-    review.requested_by_name,
-    review.reviewed_on,
-    review.reviewed_by,
-    review.reviewed_by_name,
-    review.status,
-    commit.id AS commit_id,
-    commit.description AS commit_description,
-    requestedUser.requested_user
-    {commentsSelect}
-FROM {WiserTableNames.WiserCommitReviews} AS review
-JOIN {WiserTableNames.WiserCommit} AS commit ON commit.id = review.commit_id
-LEFT JOIN {WiserTableNames.WiserCommitReviewRequests} AS requestedUser ON requestedUser.review_id = review.id
-{commentsJoin}
-WHERE review.id = ?id
-{orderByClause}";
+        var query = $"""
+                     SELECT
+                         review.id,
+                         review.commit_id,
+                         review.requested_on,
+                         review.requested_by,
+                         review.requested_by_name,
+                         review.reviewed_on,
+                         review.reviewed_by,
+                         review.reviewed_by_name,
+                         review.status,
+                         commit.id AS commit_id,
+                         commit.description AS commit_description,
+                         requestedUser.requested_user
+                         {commentsSelect}
+                     FROM {WiserTableNames.WiserCommitReviews} AS review
+                     JOIN {WiserTableNames.WiserCommit} AS commit ON commit.id = review.commit_id
+                     LEFT JOIN {WiserTableNames.WiserCommitReviewRequests} AS requestedUser ON requestedUser.review_id = review.id
+                     {commentsJoin}
+                     WHERE review.id = ?id
+                     {orderByClause}
+                     """;
 
         var dataTable = await databaseConnection.GetAsync(query);
         var row = dataTable.Rows[0];
@@ -187,8 +187,8 @@ WHERE review.id = ?id
             ReviewedBy = row.Field<long?>("reviewed_by") ?? 0,
             ReviewedByName = row.Field<string>("reviewed_by_name"),
             Status = (ReviewStatuses)Enum.Parse(typeof(ReviewStatuses), row.Field<string>("status")),
-            RequestedUsers = new List<long>(),
-            Comments = new List<ReviewCommentModel>()
+            RequestedUsers = [],
+            Comments = []
         };
 
         review.Commit = await commitDataService.GetCommitAsync(review.CommitId);
@@ -226,12 +226,11 @@ WHERE review.id = ?id
     public async Task<ReviewModel> SaveReviewAsync(ReviewModel review)
     {
         // Make sure the tables are up-to-date.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserCommitReviews,
             WiserTableNames.WiserCommitReviewRequests,
             WiserTableNames.WiserCommitReviewComments
-        });
+        ]);
 
         // Save the review data in the database.
         databaseConnection.ClearParameters();
@@ -256,8 +255,10 @@ WHERE review.id = ?id
         }
 
         // Link requested users to the review.
-        var query = $@"INSERT IGNORE INTO {WiserTableNames.WiserCommitReviewRequests} (review_id, requested_user)
-VALUES {String.Join(", ", review.RequestedUsers.Select(userId => $"({review.Id}, {userId})"))}";
+        var query = $"""
+                     INSERT IGNORE INTO {WiserTableNames.WiserCommitReviewRequests} (review_id, requested_user)
+                     VALUES {String.Join(", ", review.RequestedUsers.Select(userId => $"({review.Id}, {userId})"))}
+                     """;
         await databaseConnection.ExecuteAsync(query);
 
         return review;
@@ -272,10 +273,7 @@ VALUES {String.Join(", ", review.RequestedUsers.Select(userId => $"({review.Id},
         }
 
         // Make sure the tables are up-to-date.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
-            WiserTableNames.WiserCommitReviewComments
-        });
+        await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserCommitReviewComments]);
 
         // Save the comment data in the database.
         databaseConnection.ClearParameters();

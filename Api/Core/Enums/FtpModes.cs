@@ -1,23 +1,22 @@
-﻿namespace Api.Core.Enums
+﻿namespace Api.Core.Enums;
+
+/// <summary>
+/// Enum for the FtpModes
+/// </summary>
+public enum FtpModes
 {
     /// <summary>
-    /// Enum for the FtpModes
+    /// Unsecure FTP mode
     /// </summary>
-    public enum FtpModes
-    {
-        /// <summary>
-        /// Unsecure FTP mode
-        /// </summary>
-        Unsecure,
+    Unsecure,
         
-        /// <summary>
-        /// FTP Mode with SSL
-        /// </summary>
-        Ssl,
+    /// <summary>
+    /// FTP Mode with SSL
+    /// </summary>
+    Ssl,
         
-        /// <summary>
-        /// FTP Mode with Sftp
-        /// </summary>
-        Sftp
-    }
+    /// <summary>
+    /// FTP Mode with Sftp
+    /// </summary>
+    Sftp
 }

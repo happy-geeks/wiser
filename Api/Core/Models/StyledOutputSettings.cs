@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using Api.Modules.Tenants.Interfaces;
+﻿namespace Api.Core.Models;
 
-namespace Api.Core.Models
+/// <summary>
+/// A model with settings for the styled output API. This is meant to be used with the IOptions pattern.
+/// </summary>
+public class StyledOutputSettings
 {
     /// <summary>
-    /// A model with settings for the styled output API. This is meant to be used with the IOptions pattern.
+    /// Gets or sets the default results per page number
     /// </summary>
-    public class StyledOutputSettings
-    {
-        /// <summary>
-        /// Gets or sets the default results per page number
-        /// </summary>
-        public int MaxResultsPerPage { get; set; } = 500;
-    }
+    public int MaxResultsPerPage { get; set; } = 500;
 }

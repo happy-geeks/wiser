@@ -1,20 +1,19 @@
 ﻿using System.Collections.Generic;
 
-namespace Api.Modules.Kendo.Models
+namespace Api.Modules.Kendo.Models;
+
+/// <summary>
+/// A model with settings for a progress bar inside a grid.
+/// </summary>
+public class GridProgressBarColumnSettings
 {
     /// <summary>
-    /// A model with settings for a progress bar inside a grid.
+    /// Gets or sets the maximum progress/value of the progress bar.
     /// </summary>
-    public class GridProgressBarColumnSettings
-    {
-        /// <summary>
-        /// Gets or sets the maximum progress/value of the progress bar.
-        /// </summary>
-        public int MaxProgress { get; set; }
+    public int MaxProgress { get; set; }
 
-        /// <summary>
-        /// Gets or sets the different colors for different progress values.
-        /// </summary>
-        public List<ProgressBarColor> ProgressColors { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets the different colors for different progress values.
+    /// </summary>
+    public List<ProgressBarColor> ProgressColors { get; set; }
 }

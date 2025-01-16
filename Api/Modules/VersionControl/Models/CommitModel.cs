@@ -40,12 +40,12 @@ public class CommitModel
     /// <summary>
     /// Gets or sets the templates that are part of this commit.
     /// </summary>
-    public List<TemplateCommitModel> Templates { get; set; } = new();
+    public List<TemplateCommitModel> Templates { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the dynamic contents that are part of this commit.
     /// </summary>
-    public List<DynamicContentCommitModel> DynamicContents { get; set; } = new();
+    public List<DynamicContentCommitModel> DynamicContents { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the environment to commit this.
@@ -122,7 +122,7 @@ public class CommitModel
     /// Gets or sets the users that have been requested to do a code review for this commit.
     /// Note: Users with a negative ID are admins from the main Wiser database, others are normal users from the tenant.
     /// </summary>
-    public List<FlatItemModel> ReviewRequestedUsers { get; set; } = new();
+    public List<FlatItemModel> ReviewRequestedUsers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the review status.

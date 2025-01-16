@@ -2,78 +2,77 @@
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Api.Modules.Pdfs.Models;
 using Api.Modules.Pdfs.Interfaces;
+using Api.Modules.Pdfs.Models;
 using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Modules.Pdfs.Controllers
+namespace Api.Modules.Pdfs.Controllers;
+
+/// <summary>
+/// Controller for PDF functions, such as converting HTML to PDF.
+/// </summary>
+[Route("api/v3/[controller]")]
+[Route("api/v3/pdf")]
+[ApiController]
+[Authorize]
+[Consumes(MediaTypeNames.Application.Json)]
+[Produces(MediaTypeNames.Application.Json)]
+public class PdfsController : ControllerBase
 {
+    private readonly IPdfService pdfsService;
+
     /// <summary>
-    /// Controller for PDF functions, such as converting HTML to PDF.
+    /// Creates a new instance of PdfsController.
     /// </summary>
-    [Route("api/v3/[controller]")]
-    [Route("api/v3/pdf")]
-    [ApiController]
-    [Authorize]
-    [Consumes(MediaTypeNames.Application.Json)]
-    [Produces(MediaTypeNames.Application.Json)]
-    public class PdfsController : ControllerBase
+    public PdfsController(IPdfService pdfsService)
     {
-        private readonly IPdfService pdfsService;
+        this.pdfsService = pdfsService;
+    }
 
-        /// <summary>
-        /// Creates a new instance of PdfsController.
-        /// </summary>
-        public PdfsController(IPdfService pdfsService)
-        {
-            this.pdfsService = pdfsService;
-        }
-        
-        /// <summary>
-        /// Convert HTML to a PDF.
-        /// </summary>
-        /// <param name="data">The HTML and PDF settings.</param>
-        /// <returns>The generated PDF.</returns>
-        [HttpPost]
-        [Route("from-html")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [Produces(MediaTypeNames.Application.Pdf)]
-        public async Task<IActionResult> ConvertHtmlToPdfAsync(HtmlToPdfRequestModel data)
-        {
-            data.Html = WebUtility.HtmlDecode(data.Html);
-            return await pdfsService.ConvertHtmlToPdfAsync((ClaimsIdentity)User.Identity, data);
-        }
-        
-        /// <summary>
-        /// Convert HTML to a PDF and then saved is to the disc on the server. It will return the location of the new file on disc.
-        /// </summary>
-        /// <param name="data">The HTML and PDF settings.</param>
-        /// <returns>The location of the HTML file on the server.</returns>
-        [HttpPost]
-        [Route("save-html-as-pdf")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> SaveHtmlAsPdfAsync(HtmlToPdfRequestModel data)
-        {
-            data.Html = WebUtility.HtmlDecode(data.Html);
-            return (await pdfsService.SaveHtmlAsPdfAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
-        }
+    /// <summary>
+    /// Convert HTML to a PDF.
+    /// </summary>
+    /// <param name="data">The HTML and PDF settings.</param>
+    /// <returns>The generated PDF.</returns>
+    [HttpPost]
+    [Route("from-html")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Produces(MediaTypeNames.Application.Pdf)]
+    public async Task<IActionResult> ConvertHtmlToPdfAsync(HtmlToPdfRequestModel data)
+    {
+        data.Html = WebUtility.HtmlDecode(data.Html);
+        return await pdfsService.ConvertHtmlToPdfAsync((ClaimsIdentity)User.Identity, data);
+    }
 
-        /// <summary>
-        /// Download and merge all pdf files
-        /// </summary>
-        /// <param name="data">all the settings for merging PDF's</param>
-        /// <returns>The location of the HTML file on the server.</returns>
-        [HttpPost]
-        [Route("merge-pdfs")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [Produces(MediaTypeNames.Application.Pdf)]
-        public async Task<IActionResult> MergePdfFilesAsync(MergePdfModel data)
-        {
-            var mergedPdfResult = await pdfsService.MergePdfFilesAsync((ClaimsIdentity)User.Identity, data.EncryptedItemIdsList, data.PropertyNames, data.EntityType, data.FileSelection);
-            return File(mergedPdfResult.ModelObject, "application/pdf");
-        }
+    /// <summary>
+    /// Convert HTML to a PDF and then saved is to the disc on the server. It will return the location of the new file on disc.
+    /// </summary>
+    /// <param name="data">The HTML and PDF settings.</param>
+    /// <returns>The location of the HTML file on the server.</returns>
+    [HttpPost]
+    [Route("save-html-as-pdf")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> SaveHtmlAsPdfAsync(HtmlToPdfRequestModel data)
+    {
+        data.Html = WebUtility.HtmlDecode(data.Html);
+        return (await pdfsService.SaveHtmlAsPdfAsync((ClaimsIdentity)User.Identity, data)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Download and merge all pdf files
+    /// </summary>
+    /// <param name="data">all the settings for merging PDF's</param>
+    /// <returns>The location of the HTML file on the server.</returns>
+    [HttpPost]
+    [Route("merge-pdfs")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Produces(MediaTypeNames.Application.Pdf)]
+    public async Task<IActionResult> MergePdfFilesAsync(MergePdfModel data)
+    {
+        var mergedPdfResult = await pdfsService.MergePdfFilesAsync((ClaimsIdentity)User.Identity, data.EncryptedItemIdsList, data.PropertyNames, data.EntityType, data.FileSelection);
+        return File(mergedPdfResult.ModelObject, "application/pdf");
     }
 }

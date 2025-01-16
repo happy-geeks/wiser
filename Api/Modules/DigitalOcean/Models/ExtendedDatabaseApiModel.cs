@@ -1,11 +1,10 @@
-﻿namespace Api.Modules.DigitalOcean.Models
+﻿namespace Api.Modules.DigitalOcean.Models;
+
+/// <inheritdoc />
+public class ExtendedDatabaseApiModel : DatabaseApiModel
 {
-    /// <inheritdoc />
-    public class ExtendedDatabaseApiModel : DatabaseApiModel
-    {
-        /// <summary>
-        /// Connection to the database
-        /// </summary>
-        public DatabaseConnectionApiModel Connection { get; set; }
-    }
+    /// <summary>
+    /// Connection to the database
+    /// </summary>
+    public DatabaseConnectionApiModel Connection { get; set; }
 }

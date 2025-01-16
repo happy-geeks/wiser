@@ -55,12 +55,12 @@ public class ReviewModel
     /// Gets or sets the users that have been requested to do the code review.
     /// Note: Users with a negative ID are admins from the main Wiser database, others are normal users from the tenant.
     /// </summary>
-    public List<long> RequestedUsers { get; set; } = new();
+    public List<long> RequestedUsers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the comments that have been placed on this review.
     /// </summary>
-    public List<ReviewCommentModel> Comments { get; set; } = new();
+    public List<ReviewCommentModel> Comments { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the ID of the commit that this review is meant for.

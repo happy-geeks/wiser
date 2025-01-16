@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 using Api.Modules.Templates.Models.History;
 
-namespace FrontEnd.Modules.Templates.Models
+namespace FrontEnd.Modules.Templates.Models;
+
+public class TemplateHistoryViewModel : TemplateHistoryModel
 {
-    public class TemplateHistoryViewModel : TemplateHistoryModel
-    {
-        public new List<HistoryVersionViewModel> DynamicContentChanges { get; set; }
-    }
+    public new List<HistoryVersionViewModel> DynamicContentChanges { get; set; }
 }

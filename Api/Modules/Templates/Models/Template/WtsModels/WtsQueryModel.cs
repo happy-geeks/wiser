@@ -1,21 +1,19 @@
 using System.Xml.Serialization;
 
-namespace Api.Modules.Templates.Models.Template.WtsModels
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
+namespace Api.Modules.Templates.Models.Template.WtsModels;
+
+[XmlType("Query")]
+public class WtsQueryModel : ActionModel
 {
-    [XmlType("Query")]
-    public class WtsQueryModel : ActionModel
-    {
-        public string Query { get; set; }
+    public string Query { get; set; }
 
-        public int? Timeout { get; set; }
+    public int? Timeout { get; set; }
 
-        public CharacterEncodingModel CharacterEncoding { get; set; }
+    public CharacterEncodingModel CharacterEncoding { get; set; }
 
-        public bool? UseTransaction { get; set; }
-        [XmlIgnore]
-        public bool UseTransactionSpecified
-        {
-            get { return UseTransaction.HasValue; }
-        }
-    }
+    public bool? UseTransaction { get; set; }
+    [XmlIgnore]
+    public bool UseTransactionSpecified => UseTransaction.HasValue;
 }

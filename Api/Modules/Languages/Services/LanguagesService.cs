@@ -43,14 +43,16 @@ public class LanguagesService : ILanguagesService, IScopedService
         var defaultLanguage = await gclLanguagesService.GetLanguageCodeAsync();
         var translationsItemId = await objectsService.FindSystemObjectByDomainNameAsync("W2LANGUAGES_TranslationsItemId");
 
-        var query = $@"SELECT 
-	`key`,
-	CONCAT_WS('', value, long_value) AS value
-FROM {WiserTableNames.WiserItemDetail}
-WHERE item_id = ?itemId
-AND language_code = ?languageCode
-GROUP BY `key`
-ORDER BY `key` ASC";
+        var query = $"""
+                     SELECT 
+                     	`key`,
+                     	CONCAT_WS('', value, long_value) AS value
+                     FROM {WiserTableNames.WiserItemDetail}
+                     WHERE item_id = ?itemId
+                     AND language_code = ?languageCode
+                     GROUP BY `key`
+                     ORDER BY `key` ASC
+                     """;
         
         databaseConnection.AddParameter("itemId", translationsItemId);
         databaseConnection.AddParameter("languageCode", defaultLanguage);

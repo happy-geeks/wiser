@@ -1,20 +1,19 @@
 ﻿using System.Collections.Generic;
 
-namespace Api.Modules.Kendo.Models
+namespace Api.Modules.Kendo.Models;
+
+/// <summary>
+/// The data item (model) configuration.
+/// </summary>
+public class DataSourceSchemaModel
 {
     /// <summary>
-    /// The data item (model) configuration.
+    /// The value of the ID of the Model. This field is available only if the id is defined in the Model configuration.
     /// </summary>
-    public class DataSourceSchemaModel
-    {
-        /// <summary>
-        /// The value of the ID of the Model. This field is available only if the id is defined in the Model configuration.
-        /// </summary>
-        public string Id { get; set; } = "id";
+    public string Id { get; set; } = "id";
 
-        /// <summary>
-        /// The fields of a data source.
-        /// </summary>
-        public Dictionary<string, FieldModel> Fields { get; set; } = new();
-    }
+    /// <summary>
+    /// The fields of a data source.
+    /// </summary>
+    public Dictionary<string, FieldModel> Fields { get; set; } = new();
 }
