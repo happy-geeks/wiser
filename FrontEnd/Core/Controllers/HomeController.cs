@@ -7,32 +7,23 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace FrontEnd.Core.Controllers
+namespace FrontEnd.Core.Controllers;
+
+public class HomeController(IOptions<FrontEndSettings> frontEndSettings, IBaseService baseService, IWebHostEnvironment webHostEnvironment)
+    : Controller
 {
-    public class HomeController : Controller
+    private readonly FrontEndSettings frontEndSettings = frontEndSettings.Value;
+
+    public IActionResult Index()
     {
-        private readonly IBaseService baseService;
-        private readonly IWebHostEnvironment webHostEnvironment;
-        private readonly FrontEndSettings frontEndSettings;
-
-        public HomeController(IOptions<FrontEndSettings> frontEndSettings, IBaseService baseService, IWebHostEnvironment webHostEnvironment)
-        {
-            this.baseService = baseService;
-            this.webHostEnvironment = webHostEnvironment;
-            this.frontEndSettings = frontEndSettings.Value;
-        }
-
-        public IActionResult Index()
-        {
-            var viewModel = baseService.CreateBaseViewModel();
+        var viewModel = baseService.CreateBaseViewModel();
             
-            var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
-            if (partnerStylesDirectory.Exists)
-            {
-                viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
-            }
-            
-            return View(viewModel);
+        var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, @"Core/Css/partner"));
+        if (partnerStylesDirectory.Exists)
+        {
+            viewModel.LoadPartnerStyle = partnerStylesDirectory.GetFiles("*.css").Any(f => Path.GetFileNameWithoutExtension(f.Name).Equals(viewModel.SubDomain, StringComparison.OrdinalIgnoreCase));
         }
+            
+        return View(viewModel);
     }
 }

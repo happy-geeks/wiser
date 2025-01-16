@@ -5,15 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace FrontEnd.Modules.ContentBox.Controllers;
 
 [Area("ContentBox"), Route("Modules/ContentBox")]
-public class ContentBoxController : Controller
+public class ContentBoxController(IBaseService baseService) : Controller
 {
-    private readonly IBaseService baseService;
-
-    public ContentBoxController(IBaseService baseService)
-    {
-        this.baseService = baseService;
-    }
-        
     public IActionResult Index([FromQuery]ContentBoxViewModel viewModel)
     {
         viewModel ??= new ContentBoxViewModel();

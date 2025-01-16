@@ -1,5 +1,8 @@
 ﻿namespace Api.Modules.Branches.Models;
 
+/// <summary>
+/// Constants for the branches service.
+/// </summary>
 public class Constants
 {
     /// <summary>

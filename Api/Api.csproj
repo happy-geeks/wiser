@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <PackageId>HappyGeeks.Wiser.Api</PackageId>
     <Version>3.5.6</Version>
     <Authors>Happy Geeks B.V.</Authors>
@@ -155,29 +155,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="4.4.1" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.26.0" />
-    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.26.0" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.27.3" />
+    <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore.Native.win-x64" Version="3.27.3" />
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.7.1" />
-    <PackageReference Include="NUglify" Version="1.21.9" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.3.0" />
+    <PackageReference Include="NUglify" Version="1.21.11" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="6.0.0" />
     <PackageReference Include="PDFsharp" Version="6.1.1" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="React.AspNet" Version="5.2.12" />
     <PackageReference Include="React.Core" Version="5.2.12" />
-    <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.8.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.8.0" />
-    <PackageReference Include="OpenIddict" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="5.8.0" />
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="7.2.0" />
+    <PackageReference Include="OpenIddict" Version="6.0.0" />
+    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="6.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Tinify" Version="1.6.0" />
   </ItemGroup>
@@ -190,6 +189,10 @@
     <Compile Remove="Modules\Permissions\Models\BasePermissionData.cs" />
     <Compile Remove="Modules\Permissions\Models\ModulePermissionData.cs" />
     <Compile Remove="Modules\Permissions\Models\QueryPermissionData.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\GeeksCoreLibrary\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
   </ItemGroup>
 
 </Project>

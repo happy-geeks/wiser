@@ -97,7 +97,7 @@ public class TemplateHelpers
             }
         }
 
-        var externalFiles = dataRow.Field<string>("external_files")?.Split(new[] {';', ','}, StringSplitOptions.RemoveEmptyEntries);
+        var externalFiles = dataRow.Field<string>("external_files")?.Split([';', ','], StringSplitOptions.RemoveEmptyEntries);
         if (externalFiles != null && externalFiles.Any())
         {
             foreach (var file in externalFiles)

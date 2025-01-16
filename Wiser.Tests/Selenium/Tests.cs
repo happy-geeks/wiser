@@ -407,6 +407,11 @@ public class Tests
     // 4. Close data selector module.
     public void DataSelector()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);

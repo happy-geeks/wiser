@@ -6,15 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace FrontEnd.Modules.FileManager.Controllers;
 
 [Area("FileManager"), Route("Modules/FileManager")]
-public class FileManagerController : Controller
+public class FileManagerController(IBaseService baseService) : Controller
 {
-    private readonly IBaseService baseService;
-
-    public FileManagerController(IBaseService baseService)
-    {
-        this.baseService = baseService;
-    }
-        
     public IActionResult Index([FromQuery]FileManagerViewModel viewModel)
     {
         viewModel ??= new FileManagerViewModel();

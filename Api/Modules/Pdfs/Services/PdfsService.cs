@@ -17,127 +17,125 @@ using GeeksCoreLibrary.Modules.GclConverters.Interfaces;
 using GeeksCoreLibrary.Modules.GclConverters.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
-namespace Api.Modules.Pdfs.Services
+namespace Api.Modules.Pdfs.Services;
+
+/// <inheritdoc cref="IPdfService" />
+public class PdfsService : IPdfService, IScopedService
 {
-    /// <inheritdoc cref="IPdfService" />
-    public class PdfsService : IPdfService, IScopedService
+    private readonly IHtmlToPdfConverterService htmlToPdfConverterService;
+    private readonly IDatabaseConnection clientDatabaseConnection;
+    private readonly IWiserTenantsService wiserTenantsService;
+    private readonly IFilesService filesService;
+    private readonly IWebHostEnvironment webHostEnvironment;
+    private readonly IHttpClientService httpClientService;
+
+    /// <summary>
+    /// Creates a new instance of <see cref="PdfsService"/>.
+    /// </summary>
+    public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment, IHttpClientService httpClientService)
     {
-        private readonly IHtmlToPdfConverterService htmlToPdfConverterService;
-        private readonly IDatabaseConnection clientDatabaseConnection;
-        private readonly IWiserTenantsService wiserTenantsService;
-        private readonly IFilesService filesService;
-        private readonly IWebHostEnvironment webHostEnvironment;
-        private readonly IHttpClientService httpClientService;
+        this.htmlToPdfConverterService = htmlToPdfConverterService;
+        this.clientDatabaseConnection = clientDatabaseConnection;
+        this.wiserTenantsService = wiserTenantsService;
+        this.filesService = filesService;
+        this.webHostEnvironment = webHostEnvironment;
+        this.httpClientService = httpClientService;
+    }
 
-        /// <summary>
-        /// Creates a new instance of <see cref="PdfsService"/>.
-        /// </summary>
-        public PdfsService(IHtmlToPdfConverterService htmlToPdfConverterService, IDatabaseConnection clientDatabaseConnection, IWiserTenantsService wiserTenantsService, IFilesService filesService, IWebHostEnvironment webHostEnvironment, IHttpClientService httpClientService)
+    /// <inheritdoc />
+    public async Task<FileContentResult> ConvertHtmlToPdfAsync(ClaimsIdentity identity, HtmlToPdfRequestModel data)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        return await htmlToPdfConverterService.ConvertHtmlStringToPdfAsync(data);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<string>> SaveHtmlAsPdfAsync(ClaimsIdentity identity, HtmlToPdfRequestModel data)
+    {
+        var tenant = await wiserTenantsService.GetSingleAsync(identity);
+        var pdfResult = await ConvertHtmlToPdfAsync(identity, data);
+
+        if (data.SaveInDatabase)
         {
-            this.htmlToPdfConverterService = htmlToPdfConverterService;
-            this.clientDatabaseConnection = clientDatabaseConnection;
-            this.wiserTenantsService = wiserTenantsService;
-            this.filesService = filesService;
-            this.webHostEnvironment = webHostEnvironment;
-            this.httpClientService = httpClientService;
-        }
-
-        /// <inheritdoc />
-        public async Task<FileContentResult> ConvertHtmlToPdfAsync(ClaimsIdentity identity, HtmlToPdfRequestModel data)
-        {
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            return await htmlToPdfConverterService.ConvertHtmlStringToPdfAsync(data);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<string>> SaveHtmlAsPdfAsync(ClaimsIdentity identity, HtmlToPdfRequestModel data)
-        {
-            var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            var pdfResult = await ConvertHtmlToPdfAsync(identity, data);
-
-            if (data.SaveInDatabase)
+            var saveResult = await filesService.SaveAsync(identity, pdfResult.FileContents, MediaTypeNames.Application.Pdf, pdfResult.FileDownloadName, "TEMPORARY_FILE_FROM_WISER");
+            if (saveResult.StatusCode != HttpStatusCode.OK)
             {
-                var saveResult = await filesService.SaveAsync(identity, pdfResult.FileContents, MediaTypeNames.Application.Pdf, pdfResult.FileDownloadName, "TEMPORARY_FILE_FROM_WISER");
-                if (saveResult.StatusCode != HttpStatusCode.OK)
+                return new ServiceResult<string>
                 {
-                    return new ServiceResult<string>
-                    {
-                        StatusCode = saveResult.StatusCode,
-                        ErrorMessage = saveResult.ErrorMessage
-                    };
+                    StatusCode = saveResult.StatusCode,
+                    ErrorMessage = saveResult.ErrorMessage
+                };
+            }
+
+            return new ServiceResult<string>(saveResult.ModelObject.FileId.ToString());
+        }
+
+        // Create temporary directory if it doesn't exist yet.
+        var pdfDirectory = Path.Combine(webHostEnvironment.WebRootPath, "/App_Data/temp/", tenant.ModelObject.Id.ToString());
+        if (!Directory.Exists(pdfDirectory))
+        {
+            Directory.CreateDirectory(pdfDirectory);
+        }
+
+        // Save the file to disc.
+        var fileLocation = Path.Combine(pdfDirectory, data.FileName);
+        await using (var fileStream = new FileStream(fileLocation, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+        {
+            await fileStream.WriteAsync(pdfResult.FileContents, 0, pdfResult.FileContents.Length);
+        }
+
+        return new ServiceResult<string>(fileLocation);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string[] propertyNames, string entityType, SelectionOptions selectionOptions = SelectionOptions.None)
+    {
+        using var mergeResultPdfDocument = new PdfDocument();
+
+        // Load the documents and add them to the merged file.
+        foreach (var encryptedId in encryptedItemIdsList)
+        {
+            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+
+            foreach (var propertyName in propertyNames)
+            {
+                var pdfFile = (await filesService.GetAsync(itemId, 0, identity, 0, entityType, propertyName:propertyName, selectionOption: selectionOptions)).ModelObject;
+                using var pdfStream = new MemoryStream();
+
+                // Check if the PDF must be downloaded first.
+                if (!String.IsNullOrWhiteSpace(pdfFile.Url))
+                {
+                    using var response = await httpClientService.Client.GetAsync(pdfFile.Url, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    await using var downloadStream = await response.Content.ReadAsStreamAsync();
+                    await downloadStream.CopyToAsync(pdfStream);
+                }
+                else if (pdfFile.Data is {Length: > 0})
+                {
+                    await pdfStream.WriteAsync(pdfFile.Data.AsMemory(0, pdfFile.Data.Length));
                 }
 
-                return new ServiceResult<string>(saveResult.ModelObject.FileId.ToString());
-            }
-
-            // Create temporary directory if it doesn't exist yet.
-            var pdfDirectory = Path.Combine(webHostEnvironment.WebRootPath, "/App_Data/temp/", tenant.ModelObject.Id.ToString());
-            if (!Directory.Exists(pdfDirectory))
-            {
-                Directory.CreateDirectory(pdfDirectory);
-            }
-
-            // Save the file to disc.
-            var fileLocation = Path.Combine(pdfDirectory, data.FileName);
-            await using (var fileStream = new FileStream(fileLocation, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
-            {
-                await fileStream.WriteAsync(pdfResult.FileContents, 0, pdfResult.FileContents.Length);
-            }
-
-            return new ServiceResult<string>(fileLocation);
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<byte[]>> MergePdfFilesAsync(ClaimsIdentity identity, string[] encryptedItemIdsList, string[] propertyNames, string entityType, SelectionOptions selectionOptions = SelectionOptions.None)
-        {
-            using var mergeResultPdfDocument = new PdfDocument();
-
-            // Load the documents and add them to the merged file.
-            foreach (var encryptedId in encryptedItemIdsList)
-            {
-                var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-
-                foreach (var propertyName in propertyNames)
+                // If the pdf file is empty (no file at the URL and no file in the blob field) then skip to next file
+                if (pdfStream.Length == 0)
                 {
-                    var pdfFile = (await filesService.GetAsync(itemId, 0, identity, 0, entityType, propertyName:propertyName, selectionOption: selectionOptions)).ModelObject;
-                    using var pdfStream = new MemoryStream();
+                    continue;
+                }
 
-                    // Check if the PDF must be downloaded first.
-                    if (!String.IsNullOrWhiteSpace(pdfFile.Url))
-                    {
-                        using var response = await httpClientService.Client.GetAsync(pdfFile.Url, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                        await using var downloadStream = await response.Content.ReadAsStreamAsync();
-                        await downloadStream.CopyToAsync(pdfStream);
-                    }
-                    else if (!pdfFile.Data.IsNullOrEmpty())
-                    {
-                        await pdfStream.WriteAsync(pdfFile.Data.AsMemory(0, pdfFile.Data.Length));
-                    }
+                using var inputDocument = PdfReader.Open(pdfStream, PdfDocumentOpenMode.Import);
 
-                    // If the pdf file is empty (no file at the URL and no file in the blob field) then skip to next file
-                    if (pdfStream.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    using var inputDocument = PdfReader.Open(pdfStream, PdfDocumentOpenMode.Import);
-
-                    // Copy all pages from the input document to the output document.
-                    for (var i = inputDocument.PageCount - 1; i >= 0; i--)
-                    {
-                        mergeResultPdfDocument.AddPage(inputDocument.Pages[i]);
-                    }
+                // Copy all pages from the input document to the output document.
+                for (var i = inputDocument.PageCount - 1; i >= 0; i--)
+                {
+                    mergeResultPdfDocument.AddPage(inputDocument.Pages[i]);
                 }
             }
-
-            using var saveStream = new MemoryStream();
-            mergeResultPdfDocument?.Save(saveStream);
-            return new ServiceResult<byte[]>(saveStream.ToArray());
         }
+
+        using var saveStream = new MemoryStream();
+        mergeResultPdfDocument?.Save(saveStream);
+        return new ServiceResult<byte[]>(saveStream.ToArray());
     }
 }

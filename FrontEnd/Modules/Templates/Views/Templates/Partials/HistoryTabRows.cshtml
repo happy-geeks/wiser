@@ -1,6 +1,5 @@
-@using FrontEnd.Modules.Templates.Models
 @using GeeksCoreLibrary.Modules.Templates.Enums
-@model HistoryTabViewModel
+@model FrontEnd.Modules.Templates.Models.HistoryTabViewModel
 @{
     var publishLogCounter = 0;
 }
@@ -195,7 +194,7 @@
                         <span class="handler">&nbsp;</span>
                         <span class="inline">
                             <label class="checkbox">
-                                @if ((Boolean)change.Value.Item2)
+                                @if ((bool)change.Value.Item2)
                                 {
                                     <input id="change.Key" name="change.Key" type="checkbox" checked="checked" disabled>
                                 }
@@ -213,7 +212,7 @@
                         <span class="handler">&nbsp;</span>
                         <span class="inline">
                             <label class="checkbox">
-                                @if ((Boolean)change.Value.Item1)
+                                @if ((bool)change.Value.Item1)
                                 {
                                     <input id="@change.Key" name="@change.Key" type="checkbox" checked="checked" disabled>
                                 }

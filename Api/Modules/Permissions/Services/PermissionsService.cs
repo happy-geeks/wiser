@@ -116,17 +116,19 @@ public class PermissionsService : IPermissionsService, IScopedService
 
     private async Task<IList<PermissionData>> GetQueryPermissionsAsync(int roleId)
     {
-        var query = $@"SELECT
-	permission.id,
-	role.id AS `roleId`,
-	role.role_name AS `roleName`,
-	`query`.id AS `objectId`,
-	IFNULL(`query`.description, CONCAT('QueryID: ',`query`.id)) AS `objectName`,
-	IFNULL(permission.permissions, 0) AS `permission`
-FROM {WiserTableNames.WiserQuery} AS `query`
-JOIN {WiserTableNames.WiserRoles} AS role ON role.id = ?roleId
-LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON role.id = permission.role_id AND permission.query_id = `query`.id
-ORDER BY objectName ASC";
+        var query = $"""
+                     SELECT
+                     	permission.id,
+                     	role.id AS `roleId`,
+                     	role.role_name AS `roleName`,
+                     	`query`.id AS `objectId`,
+                     	IFNULL(`query`.description, CONCAT('QueryID: ',`query`.id)) AS `objectName`,
+                     	IFNULL(permission.permissions, 0) AS `permission`
+                     FROM {WiserTableNames.WiserQuery} AS `query`
+                     JOIN {WiserTableNames.WiserRoles} AS role ON role.id = ?roleId
+                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON role.id = permission.role_id AND permission.query_id = `query`.id
+                     ORDER BY objectName ASC
+                     """;
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
 
@@ -135,17 +137,19 @@ ORDER BY objectName ASC";
 
     private async Task<IList<PermissionData>> GetModulePermissionsAsync(int roleId)
     {
-        var query = $@"SELECT
-	permission.id,
-	role.id AS `roleId`,
-	role.role_name AS `roleName`,
-	module.id AS `objectId`,
-	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `objectName`,
-	IFNULL(permission.permissions, 0) AS `permission`
-FROM {WiserTableNames.WiserModule} AS module
-JOIN {WiserTableNames.WiserRoles} AS role ON role.id = ?roleId
-LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON role.id = permission.role_id AND permission.module_id = module.id
-ORDER BY objectName ASC";
+        var query = $"""
+                     SELECT
+                     	permission.id,
+                     	role.id AS `roleId`,
+                     	role.role_name AS `roleName`,
+                     	module.id AS `objectId`,
+                     	IFNULL(module.name, CONCAT('ModuleID: ',module.id)) AS `objectName`,
+                     	IFNULL(permission.permissions, 0) AS `permission`
+                     FROM {WiserTableNames.WiserModule} AS module
+                     JOIN {WiserTableNames.WiserRoles} AS role ON role.id = ?roleId
+                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON role.id = permission.role_id AND permission.module_id = module.id
+                     ORDER BY objectName ASC
+                     """;
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
 
@@ -154,18 +158,20 @@ ORDER BY objectName ASC";
 
     private async Task<IList<PermissionData>> GetEndpointPermissionsAsync(int roleId)
     {
-        var query = $@"SELECT
-	permission.id,
-	role.id AS `roleId`,
-	role.role_name AS `roleName`,
-    permission.endpoint_url AS `endpointUrl`,
-    permission.endpoint_http_method AS `endpointHttpMethod`,
-	IFNULL(permission.permissions, 0) AS `permission`
-FROM {WiserTableNames.WiserPermission} AS permission
-JOIN {WiserTableNames.WiserRoles} AS role ON role.id = permission.role_id
-WHERE permission.role_id = ?roleId
-AND permission.endpoint_url != ''
-ORDER BY endpointUrl ASC";
+        var query = $"""
+                     SELECT
+                     	permission.id,
+                     	role.id AS `roleId`,
+                     	role.role_name AS `roleName`,
+                         permission.endpoint_url AS `endpointUrl`,
+                         permission.endpoint_http_method AS `endpointHttpMethod`,
+                     	IFNULL(permission.permissions, 0) AS `permission`
+                     FROM {WiserTableNames.WiserPermission} AS permission
+                     JOIN {WiserTableNames.WiserRoles} AS role ON role.id = permission.role_id
+                     WHERE permission.role_id = ?roleId
+                     AND permission.endpoint_url != ''
+                     ORDER BY endpointUrl ASC
+                     """;
         databaseConnection.ClearParameters();
         databaseConnection.AddParameter("roleId", roleId);
 

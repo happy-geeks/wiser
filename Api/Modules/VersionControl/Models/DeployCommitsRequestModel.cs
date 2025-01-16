@@ -17,5 +17,5 @@ public class DeployCommitsRequestModel
     /// <summary>
     /// Gets or sets the IDs of the commits to deploy.
     /// </summary>
-    public List<int> CommitIds { get; set; } = new();
+    public List<int> CommitIds { get; set; } = [];
 }
