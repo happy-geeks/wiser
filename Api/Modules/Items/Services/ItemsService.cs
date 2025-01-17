@@ -49,66 +49,26 @@ namespace Api.Modules.Items.Services;
 /// <summary>
 /// A service for working with Wiser items for the new Wiser data structure that was introduced in early 2019.
 /// </summary>
-public class ItemsService : IItemsService, IScopedService
+public class ItemsService(
+    IWiserTenantsService wiserTenantsService,
+    IDatabaseConnection clientDatabaseConnection,
+    IWiserItemsService wiserItemsService,
+    IJsonService jsonService,
+    IObjectsService objectsService,
+    IStringReplacementsService stringReplacementsService,
+    ILogger<ItemsService> logger,
+    IServiceProvider serviceProvider,
+    IBranchesService branchesService,
+    IDatabaseHelpersService databaseHelpersService,
+    IApiReplacementsService apiReplacementsService,
+    ITemplatesService templatesService,
+    IFilesService filesService,
+    IEntityPropertiesService entityPropertiesService,
+    ILanguagesService languagesService,
+    IGoogleTranslateService googleTranslateService,
+    IHttpContextAccessor httpContextAccessor = null) : IItemsService,
+    IScopedService
 {
-    private readonly ITemplatesService templatesService;
-    private readonly IWiserTenantsService wiserTenantsService;
-    private readonly IDatabaseConnection clientDatabaseConnection;
-    private readonly IHttpContextAccessor httpContextAccessor;
-    private readonly IWiserItemsService wiserItemsService;
-    private readonly IJsonService jsonService;
-    private readonly ILogger<ItemsService> logger;
-    private readonly IStringReplacementsService stringReplacementsService;
-    private readonly IApiReplacementsService apiReplacementsService;
-    private readonly IFilesService filesService;
-    private readonly IDatabaseHelpersService databaseHelpersService;
-    private readonly ILanguagesService languagesService;
-    private readonly IEntityPropertiesService entityPropertiesService;
-    private readonly IGoogleTranslateService googleTranslateService;
-    private readonly IObjectsService objectsService;
-    private readonly IServiceProvider serviceProvider;
-    private readonly IBranchesService branchesService;
-
-    /// <summary>
-    /// Creates a new instance of <see cref="ItemsService"/>.
-    /// </summary>
-    public ItemsService(ITemplatesService templatesService,
-        IWiserTenantsService wiserTenantsService,
-        IDatabaseConnection clientDatabaseConnection,
-        IHttpContextAccessor httpContextAccessor,
-        IWiserItemsService wiserItemsService,
-        IJsonService jsonService,
-        ILogger<ItemsService> logger,
-        IStringReplacementsService stringReplacementsService,
-        IApiReplacementsService apiReplacementsService,
-        IFilesService filesService,
-        IDatabaseHelpersService databaseHelpersService,
-        ILanguagesService languagesService,
-        IEntityPropertiesService entityPropertiesService,
-        IGoogleTranslateService googleTranslateService,
-        IObjectsService objectsService,
-        IServiceProvider serviceProvider,
-        IBranchesService branchesService)
-    {
-        this.templatesService = templatesService;
-        this.wiserTenantsService = wiserTenantsService;
-        this.clientDatabaseConnection = clientDatabaseConnection;
-        this.httpContextAccessor = httpContextAccessor;
-        this.wiserItemsService = wiserItemsService;
-        this.jsonService = jsonService;
-        this.logger = logger;
-        this.stringReplacementsService = stringReplacementsService;
-        this.apiReplacementsService = apiReplacementsService;
-        this.filesService = filesService;
-        this.databaseHelpersService = databaseHelpersService;
-        this.languagesService = languagesService;
-        this.entityPropertiesService = entityPropertiesService;
-        this.googleTranslateService = googleTranslateService;
-        this.objectsService = objectsService;
-        this.serviceProvider = serviceProvider;
-        this.branchesService = branchesService;
-    }
-
     /// <inheritdoc />
     public async Task<ServiceResult<PagedResults<FlatItemModel>>> GetItemsAsync(ClaimsIdentity identity, GetItemsInputModel input)
     {
@@ -269,7 +229,7 @@ public class ItemsService : IItemsService, IScopedService
                                      LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name) AND field.language_code = property.language_code
                                      GROUP BY x.id
                      				ORDER BY IFNULL(x.changed_on, x.added_on) DESC
-                                 
+
                      """;
         dataTable = await clientDatabaseConnection.GetAsync(query);
 
@@ -341,7 +301,7 @@ public class ItemsService : IItemsService, IScopedService
                 ErrorMessage = "Id must be greater than zero."
             };
         }
-     
+
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         var username = IdentityHelpers.GetUserName(identity, true);
         var tenant = await wiserTenantsService.GetSingleAsync(identity);

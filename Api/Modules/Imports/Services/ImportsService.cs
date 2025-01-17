@@ -33,29 +33,9 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Imports.Services;
 
 /// <inheritdoc cref="Api.Modules.Imports.Interfaces.IImportsService" />
-public class ImportsService : IImportsService, IScopedService
+public class ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IExcelService excelService, ILogger<ImportsService> logger) : IImportsService, IScopedService
 {
-    private readonly IWiserItemsService wiserItemsService;
-    private readonly IUsersService usersService;
-    private readonly IWiserTenantsService wiserTenantsService;
-    private readonly IDatabaseConnection clientDatabaseConnection;
-    private readonly IExcelService excelService;
-    private readonly ILogger<ImportsService> logger;
-
     private const uint ImportLimit = 1000000;
-
-    /// <summary>
-    /// Creates a new instance of <see cref="ImportsService"/>.
-    /// </summary>
-    public ImportsService(IWiserItemsService wiserItemsService, IUsersService usersService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IExcelService excelService, ILogger<ImportsService> logger)
-    {
-        this.wiserItemsService = wiserItemsService;
-        this.usersService = usersService;
-        this.wiserTenantsService = wiserTenantsService;
-        this.clientDatabaseConnection = clientDatabaseConnection;
-        this.excelService = excelService;
-        this.logger = logger;
-    }
 
     /// <inheritdoc />
     public async Task<ServiceResult<ImportResultModel>> PrepareImportAsync(ClaimsIdentity identity, ImportRequestModel importRequest)
