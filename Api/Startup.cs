@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -25,6 +24,7 @@ using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -202,15 +202,18 @@ namespace Api
             services.AddOpenIddict()
                 .AddServer(options =>
                 {
-                    options.SetTokenEndpointUris("/connect/token");
+                    options.SetTokenEndpointUris("/connect/token")
+                           .SetAuthorizationEndpointUris("/google/callback");
 
                     // Degraded mode is needed because we handle authentication, user rights etc. ourselves
                     // Without Degraded mode openiddict would try find users, scopes and such using Entity Framework
                     options.EnableDegradedMode();
 
-                    options.UseAspNetCore();
+                    options.UseAspNetCore()
+                        .EnableAuthorizationEndpointPassthrough();
                     options.AllowPasswordFlow();
                     options.AllowRefreshTokenFlow();
+                    options.AllowAuthorizationCodeFlow();
 
                     if (webHostEnvironment.IsDevelopment())
                     {
@@ -260,6 +263,17 @@ namespace Api
                         builder.UseScopedHandler<OpenIddictTokenRequestHandler>();
                     });
 
+                    // Register handler for authorisation requests this is used for the signin via external auth providers
+                    /*options.AddEventHandler<OpenIddictServerEvents.HandleAuthorizationRequestContext>(builder =>
+                    {
+                        builder.UseScopedHandler<OpenIddictAuthorizationRequestHandler>();
+                    });*/
+
+                    options.AddEventHandler<OpenIddictServerEvents.ValidateAuthorizationRequestContext>(builder =>
+                    {
+                        builder.UseInlineHandler(context => ValueTask.CompletedTask);
+                    });
+
                     options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(builder =>
                     {
                         builder.UseInlineHandler(context =>
@@ -288,7 +302,14 @@ namespace Api
                 });
 
             // Sets authentication to be done using OpenIddict by default
-            services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+            services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)
+                .AddCookie()
+                .AddGoogle("Google", options =>
+                {
+                    options.ClientId = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientId");
+                    options.ClientSecret = Configuration.GetValue<string>("Api:GoogleAuthentication:ClientSecret");
+                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                });
 
             // Define policies that can be used on the Wiser endpoints
             services.AddAuthorization(options =>

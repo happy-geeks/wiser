@@ -1089,6 +1089,44 @@ ORDER BY username.`value` ASC";
         {
             return await SaveSettingsAsync(identity, String.Empty, UserDashboardSettingsKey, settings);
         }
+        
+        /// <inheritdoc />
+        public async Task<ServiceResult<UserModel>> LoginExternalAsync(string email)
+        {
+            const string query = $"""
+                                  SELECT
+                                      user.id,
+                                      user.title AS name,
+                                      IFNULL(role.role_name, '') AS role,
+                                      email.value AS emailAddress
+                                  FROM {WiserTableNames.WiserItem} user
+                                  JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}' AND email.`value` = ?email
+                                  LEFT JOIN {WiserTableNames.WiserUserRoles} userRole ON userRole.user_id = user.id
+                                  LEFT JOIN {WiserTableNames.WiserRoles} role ON role.id = userRole.role_id
+                                  WHERE user.entity_type = '{WiserUserEntityType}'
+                                  AND user.published_environment > 0
+                                  """;
+
+            clientDatabaseConnection.AddParameter("email", email);
+            var dataTable = await clientDatabaseConnection.GetAsync(query, skipCache: true);
+
+            if (dataTable.Rows.Count == 0)
+            {
+                throw new NotImplementedException();
+            }
+
+            var dataRow = dataTable.Rows[0];
+            
+            var user = new UserModel
+            {
+                Id = dataRow.Field<ulong>("id"),
+                Name = dataRow.Field<string>("name"),
+                Role = dataRow.Field<string>("role"),
+                EmailAddress = dataRow.Field<string>("emailAddress")
+            };
+
+            return new ServiceResult<UserModel>(user);
+        }
 
         /// <summary>
         /// Validates an encrypted admin account ID.
@@ -1196,7 +1234,7 @@ ORDER BY username.`value` ASC";
             }
 
             var attempts = dataTable.Rows[0].Field<int>("attempts");
-            if (maximumLoginAttemptsAllowed == 0 || attempts < maximumLoginAttemptsAllowed)
+            if (maximumLoginAttemptsAllowed == 0 || attempts < maximumLoginAttemptsAllowed && maximumLoginAttemptsAllowed > 0)
             {
                 // Is still allowed more attempts.
                 return false;

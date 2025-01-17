@@ -235,5 +235,11 @@ namespace Api.Modules.Tenants.Services
         {
             return usersService.SaveDashboardSettingsAsync(identity, settings);
         }
+
+        /// <inheritdoc />
+        public Task<ServiceResult<UserModel>> LoginExternalAsync(string email)
+        {
+            return usersService.LoginExternalAsync(email);
+        }
     }
 }

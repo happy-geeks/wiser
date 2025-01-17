@@ -9,6 +9,7 @@ using Api.Modules.Tenants.Interfaces;
 using Api.Modules.Tenants.Models;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -45,7 +46,39 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
             case OpenIddictConstants.GrantTypes.RefreshToken:
                 await HandleRefreshAsync(context);
                 break;
+            case OpenIddictConstants.GrantTypes.AuthorizationCode:
+                await HandleAuthorizationCCodeAsync(context);
+                break;
         }
+    }
+
+    private async Task HandleAuthorizationCCodeAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
+    {
+        // Ensure the request is for an authorization code.
+        if (!context.Request.IsAuthorizationCodeGrantType())
+        {
+            return;
+        }
+
+        if (httpContextAccessor.HttpContext is null)
+        {
+            throw new InvalidOperationException("No httpContext found");
+        }
+
+        // Retrieve the claims principal associated with the authorization code.
+        var principal = await httpContextAccessor.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        if (principal?.Principal is null)
+        {
+            context.Reject(
+                error: OpenIddictConstants.Errors.InvalidGrant,
+                description: "The authorization code is invalid or has already been redeemed.");
+            return;
+        }
+
+        // Create a new access token principal from the existing authorization code principal.
+        var accessTokenPrincipal = principal.Principal.Clone();
+        
+        context.SignIn(accessTokenPrincipal);
     }
 
     private ValueTask HandleRefreshAsync(OpenIddictServerEvents.HandleTokenRequestContext context)

@@ -3,7 +3,8 @@ export const START_REQUEST = "startRequest";
 export const END_REQUEST = "endRequest";
 
 // Login module.
-export const AUTH_REQUEST = "authenticationRequest";
+export const AUTH_REQUEST_PASSWORD = "authenticationRequestPassword";
+export const AUTH_REQUEST_CODE = "authenticationRequestCode"
 export const AUTH_SUCCESS = "authenticationSuccess";
 export const AUTH_ERROR = "authenticationError";
 export const AUTH_LOGOUT = "authenticationLogout";
@@ -17,6 +18,7 @@ export const RESET_PASSWORD_ERROR = "resetPasswordError";
 export const USE_TOTP_BACKUP_CODE = "useTotpBackupCode";
 export const USE_TOTP_BACKUP_CODE_ERROR = "useTotpBackupCodeError";
 export const USER_BACKUP_CODES_GENERATED = "userBackupCodesGenerated";
+export const AUTH_GOOGLE_SIGNIN = "googleSignIn"
 
 // Modules module.
 export const MODULES_REQUEST = "modulesRequest";

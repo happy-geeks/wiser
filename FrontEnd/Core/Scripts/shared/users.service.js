@@ -84,6 +84,63 @@ export default class UsersService extends BaseService {
 
         return result;
     }
+
+
+    /**
+     * Sends a login request to the API and returns the result.
+     * If an error occurred, it will return a friendly user message.
+     * @param {string} code The authentication code
+     * @returns {any} An object that looks like this: { success: true, message: "", data: {}}
+     */
+    async loginWithAuthenticationCode(code) {
+        const result = {};
+
+        try {
+            const loginData = new URLSearchParams();
+            loginData.append("grant_type", "authorization_code");
+            loginData.append("code", code);
+            loginData.append("subDomain", this.base.appSettings.subDomain);
+            loginData.append("client_id", this.base.appSettings.apiClientId);
+            loginData.append("client_secret", this.base.appSettings.apiClientSecret);
+
+            const loginResult = await this.base.api.post("/connect/token", loginData);
+            result.success = true;
+            result.data = loginResult.data;
+            result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in > 60 ? 60 : 0)) * 1000));
+
+           
+        } catch (error) {
+            result.success = false;
+            console.error("Error during login", error);
+
+            if (error.response) {
+                console.warn(error.response);
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+
+                if (error.response.status === 401 && error.response.data.error === "invalid_client") {
+                    result.message = "U heeft ongeldige gegevens ingevuld. Probeer het a.u.b. opnieuw.";
+                } else if(error.response.data && error.response.data.error_description && error.response.data.error_description.toLowerCase().includes("blocked")) {
+                    result.message = "Gebruikersnaam is geblokkeerd vanwege te veel mislukte inlogpogingen.";
+                } else {
+                    result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+                }
+            } else if (error.request) {
+                // The request was made but no response was received
+                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                // http.ClientRequest in node.js
+                console.warn(error.request);
+                result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.warn(error.message);
+                result.message = "Er is een onbekende fout opgetreden tijdens het inloggen. Probeer het a.u.b. nogmaals of neem contact op met ons.";
+            }
+        }
+
+        return result;
+    }
+    
     /**
      * Refreshes the user login via a refresh token that was supplied by the API.
      * @param {string} refreshToken The refresh token.
@@ -134,6 +191,22 @@ export default class UsersService extends BaseService {
         }
 
         return result;
+    }
+    
+    async loginGoogle() {
+        // Redirect to /connect/authorize for Google login
+        const params = new URLSearchParams({
+            response_type: 'code', // Authorization Code Flow
+            client_id: this.base.appSettings.apiClientId, // Must match the OpenIddict configuration
+            redirect_uri: new URL("/auth/callback/", document.baseURI).href, // Callback URL
+            scope: 'openid email profile', // Scopes you want
+            state: 'some-random-state', // Optional: use for CSRF protection
+            prompt: 'select_account', // Optional: force Google to show account selection
+            subDomain: this.base.appSettings.subDomain,
+            isTestEnvironment: this.base.appSettings.isTestEnvironment
+        });
+
+        window.location.href = `${this.base.appSettings.apiBase}signin/google?${params.toString()}`;
     }
 
     /**

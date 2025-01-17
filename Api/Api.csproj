@@ -156,6 +156,7 @@
 
   <ItemGroup>
     <PackageReference Include="GeeksCoreLibrary" Version="4.4.1" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.26.0" />
@@ -163,6 +164,7 @@
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="7.0.20" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.7.1" />
     <PackageReference Include="NUglify" Version="1.21.9" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />

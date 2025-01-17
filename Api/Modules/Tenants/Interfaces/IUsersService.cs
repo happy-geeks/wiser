@@ -253,5 +253,12 @@ namespace Api.Modules.Tenants.Interfaces
         /// <param name="settings">The JSON that represents the dashboard layout data.</param>
         /// <returns>A boolean whether the saving of the data was successful.</returns>
         Task<ServiceResult<bool>> SaveDashboardSettingsAsync(ClaimsIdentity identity, JToken settings);
+
+        /// <summary>
+        /// Login the user into wiser after authentication with an external auth provider
+        /// </summary>
+        /// <param name="email">The email of the user</param>
+        /// <returns>The data of the user that is logged in.</returns>
+        Task<ServiceResult<UserModel>> LoginExternalAsync(string email);
     }
 }

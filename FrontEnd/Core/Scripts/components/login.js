@@ -1,4 +1,4 @@
-﻿import {AUTH_LOGOUT, AUTH_REQUEST, CHANGE_PASSWORD_LOGIN, FORGOT_PASSWORD} from "../store/mutation-types";
+﻿import {AUTH_LOGOUT, AUTH_REQUEST_PASSWORD, CHANGE_PASSWORD_LOGIN, FORGOT_PASSWORD, AUTH_GOOGLE_SIGNIN} from "../store/mutation-types";
 import {ComboBox} from "@progress/kendo-vue-dropdowns";
 
 export default {
@@ -30,7 +30,7 @@ export default {
         };
     },
     async created() {
-        await this.$store.dispatch(AUTH_REQUEST);
+        await this.$store.dispatch(AUTH_REQUEST_PASSWORD);
     },
     computed: {
         loginStatus() {
@@ -107,7 +107,7 @@ export default {
                 return;
             }
 
-            await this.$store.dispatch(AUTH_REQUEST, {
+            await this.$store.dispatch(AUTH_REQUEST_PASSWORD, {
                 user: Object.assign({}, this.loginForm),
                 loginStatus: this.loginStatus
             });
@@ -119,6 +119,11 @@ export default {
             else if (this.users && this.users.length > 0) {
                 this.loginForm.selectedUser = this.users[0];
             }
+        },
+        
+        async googleSignIn() {
+            await this.$store.dispatch(AUTH_GOOGLE_SIGNIN);
+            
         },
 
         async logout() {

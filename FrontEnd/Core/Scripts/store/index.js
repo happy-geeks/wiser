@@ -1,10 +1,11 @@
 ﻿import {createStore} from "vuex";
 import {
     ACTIVATE_MODULE,
-    AUTH_ERROR,
+    AUTH_ERROR, AUTH_GOOGLE_SIGNIN,
     AUTH_LIST,
     AUTH_LOGOUT,
-    AUTH_REQUEST,
+    AUTH_REQUEST_CODE,
+    AUTH_REQUEST_PASSWORD,
     AUTH_SUCCESS,
     AUTH_TOTP_PIN,
     AUTH_TOTP_SETUP,
@@ -105,7 +106,7 @@ const loginModule = {
     }),
 
     mutations: {
-        [AUTH_REQUEST]: (state, user) => {
+        [AUTH_REQUEST_PASSWORD]: (state, user) => {
             if (user && user.selectedUser) {
                 state.loginStatus = "list_loading";
             }
@@ -205,9 +206,9 @@ const loginModule = {
     },
 
     actions: {
-        async [AUTH_REQUEST]({ commit, rootState }, data = {}) {
+        async [AUTH_REQUEST_PASSWORD]({ commit, rootState }, data = {}) {
             const user = data.user;
-            commit(AUTH_REQUEST, user);
+            commit(AUTH_REQUEST_PASSWORD, user);
 
             // Check if we have user data in the local storage and if that data is still valid.
             if (!user) {
@@ -302,6 +303,19 @@ const loginModule = {
             // If a login log ID is also set in the user data, use it to start the "time active" timer.
             if (!rootState.users.updateTimeActiveTimerWorking && user.hasOwnProperty("encryptedLoginLogId")) {
                 await this.dispatch(START_UPDATE_TIME_ACTIVE_TIMER);
+            }
+        },
+        
+        async [AUTH_GOOGLE_SIGNIN]({ commit }) {
+            await main.usersService.loginGoogle()
+        },
+        
+        async [AUTH_REQUEST_CODE]({commit}) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            urlParams.delete('code');
+            if (code) {
+                await main.usersService.loginWithAuthenticationCode();
             }
         },
 

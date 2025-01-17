@@ -1967,7 +1967,7 @@ WHERE changed_on >= ?lastChange";
                 SELECT {(idIsFromBranch ? "production_id" : "our_id")} AS mappedId
                 FROM {WiserTableNames.WiserIdMappings}
                 WHERE {(idIsFromBranch ? "our_id" : "production_id")} = ?id
-""");
+            """);
 
             return dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("mappedId") : null;
         }

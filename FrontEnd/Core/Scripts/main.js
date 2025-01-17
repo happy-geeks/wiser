@@ -25,7 +25,7 @@ import "../Scss/task-alerts.scss";
 import {
     ACTIVATE_MODULE,
     AUTH_LOGOUT,
-    AUTH_REQUEST,
+    AUTH_REQUEST_PASSWORD,
     CHANGE_PASSWORD,
     BRANCH_CHANGE_COMPLETED,
     CLEAR_CACHE,
@@ -54,7 +54,7 @@ import {
     RESET_BRANCH_CHANGES,
     TOGGLE_PIN_MODULE,
     UPDATE_ACTIVE_TIME,
-    USER_BACKUP_CODES_GENERATED
+    USER_BACKUP_CODES_GENERATED, AUTH_REQUEST_CODE
 } from "./store/mutation-types";
 
 class Main {
@@ -69,7 +69,7 @@ class Main {
         this.branchesService = new BranchesService(this);
         this.cacheService = new CacheService(this);
         this.databasesService = new DatabasesService(this);
-
+        
         // Fire event on page ready for direct actions
         document.addEventListener("DOMContentLoaded", () => {
             this.onPageReady();
@@ -81,6 +81,9 @@ class Main {
      * Do things that need to wait until the DOM has been fully loaded.
      */
     async onPageReady() {
+        // Re-authenticate with the refresh token.
+        await this.vueApp.$store.dispatch(AUTH_REQUEST_CODE);
+        
         const configElement = document.getElementById("vue-config");
         this.appSettings = JSON.parse(configElement.innerHTML);
 
@@ -112,7 +115,7 @@ class Main {
                         this.vueApp.$store.dispatch(AUTH_LOGOUT);
                     } else {
                         // Re-authenticate with the refresh token.
-                        await this.vueApp.$store.dispatch(AUTH_REQUEST, {gotUnauthorized: true});
+                        await this.vueApp.$store.dispatch(AUTH_REQUEST_PASSWORD, {gotUnauthorized: true});
                         error.config.headers.Authorization = `Bearer ${localStorage.getItem("accessToken")}`;
 
                         // Retry the original request.
@@ -165,7 +168,7 @@ class Main {
                 }
 
                 // Request authentication, refreshing the token if needed.
-                this.vueApp.$store.dispatch(AUTH_REQUEST).then(() => {
+                this.vueApp.$store.dispatch(AUTH_REQUEST_PASSWORD).then(() => {
                     // Post a message back to the sender with the token and original request.
                     // The original request is sent back to the sender to allow the message data to be validated.
                     event.source.postMessage({
