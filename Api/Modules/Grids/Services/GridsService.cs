@@ -39,17 +39,9 @@ namespace Api.Modules.Grids.Services;
 /// <summary>
 /// Service for (Kendo) grid functionality.
 /// </summary>
-public class GridsService : IGridsService, IScopedService
+public class GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IOptions<ApiSettings> apiSettings) : IGridsService, IScopedService
 {
-    private readonly IItemsService itemsService;
-    private readonly IWiserTenantsService wiserTenantsService;
-    private readonly IDatabaseConnection clientDatabaseConnection;
-    private readonly IWiserItemsService wiserItemsService;
-    private readonly ILogger<GridsService> logger;
-    private readonly IStringReplacementsService stringReplacementsService;
-    private readonly IApiReplacementsService apiReplacementsService;
-    private readonly ApiSettings apiSettings;
-
+    private readonly ApiSettings apiSettings = apiSettings.Value;
     private static readonly List<string> ItemColumns =
     [
         "id",
@@ -72,21 +64,6 @@ public class GridsService : IGridsService, IScopedService
         "changed_by",
         "changedBy"
     ];
-
-    /// <summary>
-    /// Creates a new instance of GridsService.
-    /// </summary>
-    public GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IOptions<ApiSettings> apiSettings)
-    {
-        this.itemsService = itemsService;
-        this.wiserTenantsService = wiserTenantsService;
-        this.clientDatabaseConnection = clientDatabaseConnection;
-        this.wiserItemsService = wiserItemsService;
-        this.logger = logger;
-        this.stringReplacementsService = stringReplacementsService;
-        this.apiReplacementsService = apiReplacementsService;
-        this.apiSettings = apiSettings.Value;
-    }
 
     /// <inheritdoc />
     public async Task<ServiceResult<GridSettingsAndDataModel>> GetEntityGridDataAsync(string encryptedId,
@@ -927,7 +904,7 @@ public class GridsService : IGridsService, IScopedService
                 results.SchemaModel.Fields.Add("changedon", new FieldModel {Type = "date", Editable = false});
                 results.SchemaModel.Fields.Add("changedby", new FieldModel {Type = "string", Editable = false});
                 results.SchemaModel.Fields.Add(GclCoreConstants.LinkOrderingFieldName, new FieldModel {Type = "number", Nullable = false});
-                    
+
                 await itemsService.FixTreeViewOrderingAsync(moduleId, identity, itemId, linkTypeNumber);
 
                 var columnsQuery = $"""

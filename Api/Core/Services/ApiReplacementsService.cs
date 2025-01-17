@@ -10,18 +10,8 @@ using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 namespace Api.Core.Services;
 
 /// <inheritdoc cref="IApiReplacementsService" />
-public class ApiReplacementsService : IApiReplacementsService, IScopedService
+public class ApiReplacementsService(IStringReplacementsService stringReplacementsService) : IApiReplacementsService, IScopedService
 {
-    private readonly IStringReplacementsService stringReplacementsService;
-
-    /// <summary>
-    /// Creates a new instance of ApiReplacementsService.
-    /// </summary>
-    public ApiReplacementsService(IStringReplacementsService stringReplacementsService)
-    {
-        this.stringReplacementsService = stringReplacementsService;
-    }
-
     /// <inheritdoc />
     public string DoIdentityReplacements(string input, ClaimsIdentity identity, bool forQuery = false)
     {

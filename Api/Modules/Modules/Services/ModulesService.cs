@@ -34,44 +34,10 @@ namespace Api.Modules.Modules.Services;
 /// <summary>
 /// Service for getting information / settings for Wiser modules.
 /// </summary>
-public class ModulesService : IModulesService, IScopedService
+public class ModulesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IJsonService jsonService, IGridsService gridsService, IExcelService excelService, IObjectsService objectsService, IUsersService usersService, IStringReplacementsService stringReplacementsService, ILogger<ModulesService> logger, ICsvService csvService) : IModulesService, IScopedService
 {
-    private readonly IWiserTenantsService wiserTenantsService;
-    private readonly IDatabaseConnection clientDatabaseConnection;
-    private readonly IWiserItemsService wiserItemsService;
-    private readonly IJsonService jsonService;
-    private readonly IGridsService gridsService;
-    private readonly IExcelService excelService;
-    private readonly IObjectsService objectsService;
-    private readonly IUsersService usersService;
-    private readonly IStringReplacementsService stringReplacementsService;
-    private readonly ILogger<ModulesService> logger;
-    private readonly ICsvService csvService;
-
     private const string DefaultModulesGroupName = "Overig";
     private const string PinnedModulesGroupName = "Vastgepind";
-
-    /// <summary>
-    /// Creates a new instance of <see cref="ModulesService"/>.
-    /// </summary>
-    public ModulesService(IWiserTenantsService wiserTenantsService, IGridsService gridsService,
-        IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService,
-        IJsonService jsonService, IExcelService excelService, IObjectsService objectsService,
-        IUsersService usersService, IStringReplacementsService stringReplacementsService,
-        ILogger<ModulesService> logger, ICsvService csvService)
-    {
-        this.wiserTenantsService = wiserTenantsService;
-        this.gridsService = gridsService;
-        this.wiserItemsService = wiserItemsService;
-        this.jsonService = jsonService;
-        this.excelService = excelService;
-        this.objectsService = objectsService;
-        this.usersService = usersService;
-        this.stringReplacementsService = stringReplacementsService;
-        this.logger = logger;
-        this.csvService = csvService;
-        this.clientDatabaseConnection = clientDatabaseConnection;
-    }
 
     /// <inheritdoc />
     public async Task<ServiceResult<Dictionary<string, List<ModuleAccessRightsModel>>>> GetAsync(ClaimsIdentity identity)
