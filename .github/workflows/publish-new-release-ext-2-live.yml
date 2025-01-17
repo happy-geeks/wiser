@@ -12,8 +12,8 @@ jobs:
     runs-on: wiser-ext-2-live
 
     steps:
-    - uses: actions/checkout@v2
-    
+    - uses: actions/checkout@v4
+
     - name: Restore dependencies
       run: dotnet restore
 
@@ -25,19 +25,19 @@ jobs:
 
     - name: Add plugins API
       run: dotnet add Api package GeeksCoreLibrary.Components.Configurator
-      
+
     - name: Copy partner styles
       run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION_EXT_2_LIVE }}\*" -Destination "${{ secrets.WORKER_LOCATION_EXT_2_LIVE }}\Core\Css\partner" -Recurse
-      
+
     - name: Build
       run: dotnet build --no-restore
-      
+
     #- name: Test
     #  run: dotnet test --no-build --verbosity normal
-      
+
     - name: Enable maintenance notice API
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_EXT_2_LIVE }}\_App_Offline.htm" -NewName "App_Offline.htm"
-      
+
     - name: Enable maintenance notice FrontEnd
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_EXT_2_LIVE }}\_App_Offline.htm" -NewName "App_Offline.htm"
 
@@ -45,7 +45,7 @@ jobs:
       run: |
         dotnet publish API -c Release -o "${{ secrets.PUBLISH_LOCATION_API_EXT_2_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
 
-      #substitute production appsettings entries to appsettings json file              
+      #substitute production appsettings entries to appsettings json file
     - name: App Settings Variable Substitution
       uses: microsoft/variable-substitution@v1
       with:
@@ -62,7 +62,7 @@ jobs:
       working-directory: ${{ secrets.WORKING_DIRECTORY_EXT_2_LIVE }}
       env:
         KENDO_UI_LICENSE: ${{ secrets.KENDO_UI_LICENSE }}
-                
+
     - name: Compile scripts and styles with webpack
       run: node_modules\.bin\webpack --mode=production
       working-directory: ${{ secrets.WORKING_DIRECTORY_EXT_2_LIVE }}
@@ -71,18 +71,18 @@ jobs:
       run: |
         dotnet publish FrontEnd -c Release -o "${{ secrets.PUBLISH_LOCATION_FRONT_END_EXT_2_LIVE }}" --self-contained true  -r win-x64 /p:EnvironmentName=Live
 
-      #substitute production appsettings entries to appsettings json file              
+      #substitute production appsettings entries to appsettings json file
     - name: App Settings Variable Substitution
       uses: microsoft/variable-substitution@v1
       with:
         files: "${{ secrets.PUBLISH_LOCATION_FRONT_END_EXT_2_LIVE }}/appsettings.json"
       env:
         GCL.SecretsBaseDirectory: "${{ secrets.SECRETS_BASE_DIRECTORY_FRONT_END_EXT_2_LIVE }}"
-      
+
     - name: Disable maintenance notice API
       if: ${{ always() }}
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_API_EXT_2_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"
-      
+
     - name: Disable maintenance notice FrontEnd
       if: ${{ always() }}
       run: Rename-Item -Path "${{ secrets.PUBLISH_LOCATION_FRONT_END_EXT_2_LIVE }}\App_Offline.htm" -NewName "_App_Offline.htm"
