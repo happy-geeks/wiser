@@ -21,3 +21,5 @@ SET @newItemId = LAST_INSERT_ID();
 
 -- Set up the branch settings module to always open the newly created item.
 UPDATE `wiser_module` SET `options` = CONCAT('{\n    \"gridViewMode\": true,\n    \"gridViewSettings\": {\n        \"informationBlock\": {\n            \"position\": \"left\",\n            \"width\": \"100%\",\n            \"openGridItemsInBlock\": true,\n            \"initialItem\": {\n                \"itemId\": ', @newItemId, ',\n                \"entityType\": \"branch_settings\",\n                \"readOnly\": false\n            }\n        }\n    },\n    \"onlyOneInstanceAllowed\": true\n}') WHERE `id` = @newModuleId;
+
+INSERT IGNORE INTO `wiser_table_changes` (`name`, `last_update`) VALUES ('wiser_add_branch_settings_module', NOW());

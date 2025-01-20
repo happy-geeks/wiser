@@ -82,7 +82,7 @@
             </section>
 
             <keep-alive>
-                <tenant-management v-if="user.adminLogin && activeModule === 'tenantManagement'" v-bind:sub-domain="appSettings.subDomain" ref="tenantManagement"></tenant-management>
+                <tenant-management v-if="user.adminlogin && activeModule === 'tenantManagement'" v-bind:sub-domain="appSettings.subDomain" ref="tenantManagement"></tenant-management>
             </keep-alive>
         </main>
 
