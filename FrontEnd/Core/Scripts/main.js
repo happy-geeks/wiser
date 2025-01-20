@@ -81,9 +81,6 @@ class Main {
      * Do things that need to wait until the DOM has been fully loaded.
      */
     async onPageReady() {
-        // Re-authenticate with the refresh token.
-        await this.vueApp.$store.dispatch(AUTH_REQUEST_CODE);
-        
         const configElement = document.getElementById("vue-config");
         this.appSettings = JSON.parse(configElement.innerHTML);
 
@@ -382,6 +379,7 @@ class Main {
                 };
             },
             async created() {
+                await this.$store.dispatch(AUTH_REQUEST_CODE);
                 this.$store.dispatch(GET_TENANT_TITLE, this.appSettings.subDomain);
                 document.addEventListener("keydown", this.onAppKeyDown.bind(this));
             },

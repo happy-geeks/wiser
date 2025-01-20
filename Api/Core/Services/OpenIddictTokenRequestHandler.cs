@@ -66,8 +66,8 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         }
 
         // Retrieve the claims principal associated with the authorization code.
-        var principal = await httpContextAccessor.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-        if (principal?.Principal is null)
+        var codeAuthenticationResult = await httpContextAccessor.HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        if (codeAuthenticationResult?.Principal is null)
         {
             context.Reject(
                 error: OpenIddictConstants.Errors.InvalidGrant,
@@ -75,10 +75,23 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
             return;
         }
 
-        // Create a new access token principal from the existing authorization code principal.
-        var accessTokenPrincipal = principal.Principal.Clone();
+        var id = codeAuthenticationResult.Principal.GetClaims(OpenIddictConstants.Claims.Subject).FirstOrDefault();
+        var subDomain = codeAuthenticationResult.Principal.GetClaims("SubDomain").FirstOrDefault();
+        var isTestEnvironment = codeAuthenticationResult.Principal.GetClaims("IsTestEnvironment").FirstOrDefault();
         
-        context.SignIn(accessTokenPrincipal);
+        var parameters = new Dictionary<string, OpenIddictParameter>();
+        
+        // Match or create a local user record
+        var loginResult = await usersService.LoginExternalAsync(id);
+
+        var user = loginResult.ModelObject;
+
+        var identity = CreateIdentity(user, subDomain, 0, String.Empty, isTestEnvironment, true);
+
+        var principal = new ClaimsPrincipal(identity);
+        SetDefaultScopes(principal);
+        
+        Signin(context, principal, parameters);
     }
 
     private ValueTask HandleRefreshAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
@@ -212,14 +225,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
          // if the third party authentication still needs to be completed.
          if (!loginResult.ModelObject.TotpAuthentication.Enabled || totpSuccess)
          {
-             principal.SetScopes(
-                 OpenIddictConstants.Scopes.OpenId,
-                 OpenIddictConstants.Scopes.Email,
-                 OpenIddictConstants.Scopes.Profile,
-                 OpenIddictConstants.Scopes.OfflineAccess,  // Required for refresh tokens
-                 "api.read", 
-                 "api.write"
-             );
+             SetDefaultScopes(principal);
          }
 
          Signin(context, principal, parameters);
@@ -262,6 +268,18 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         {
             parameters.Add("cookieValue", user.CookieValue);
         }
+    }
+    
+    private static void SetDefaultScopes(ClaimsPrincipal principal)
+    {
+        principal.SetScopes(
+            OpenIddictConstants.Scopes.OpenId,
+            OpenIddictConstants.Scopes.Email,
+            OpenIddictConstants.Scopes.Profile,
+            OpenIddictConstants.Scopes.OfflineAccess,  // Required for refresh tokens
+            "api.read", 
+            "api.write"
+        );
     }
 
     private void Signin(OpenIddictServerEvents.HandleTokenRequestContext context, ClaimsPrincipal principal, Dictionary<string, OpenIddictParameter> parameters)

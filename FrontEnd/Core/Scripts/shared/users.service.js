@@ -99,6 +99,7 @@ export default class UsersService extends BaseService {
             const loginData = new URLSearchParams();
             loginData.append("grant_type", "authorization_code");
             loginData.append("code", code);
+            loginData.append("redirect_uri", this.getAuthRedirectionUrl());
             loginData.append("subDomain", this.base.appSettings.subDomain);
             loginData.append("client_id", this.base.appSettings.apiClientId);
             loginData.append("client_secret", this.base.appSettings.apiClientSecret);
@@ -107,7 +108,6 @@ export default class UsersService extends BaseService {
             result.success = true;
             result.data = loginResult.data;
             result.data.expiresOn = new Date(new Date().getTime() + ((loginResult.data.expires_in - (loginResult.data.expires_in > 60 ? 60 : 0)) * 1000));
-
            
         } catch (error) {
             result.success = false;
@@ -198,15 +198,17 @@ export default class UsersService extends BaseService {
         const params = new URLSearchParams({
             response_type: 'code', // Authorization Code Flow
             client_id: this.base.appSettings.apiClientId, // Must match the OpenIddict configuration
-            redirect_uri: new URL("/auth/callback/", document.baseURI).href, // Callback URL
-            scope: 'openid email profile', // Scopes you want
+            redirect_uri: this.getAuthRedirectionUrl(), // Callback URL
             state: 'some-random-state', // Optional: use for CSRF protection
-            prompt: 'select_account', // Optional: force Google to show account selection
             subDomain: this.base.appSettings.subDomain,
             isTestEnvironment: this.base.appSettings.isTestEnvironment
         });
 
         window.location.href = `${this.base.appSettings.apiBase}signin/google?${params.toString()}`;
+    }
+    
+    getAuthRedirectionUrl() {
+        return new URL("/", document.baseURI).href
     }
 
     /**

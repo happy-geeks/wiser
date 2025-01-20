@@ -1091,7 +1091,7 @@ ORDER BY username.`value` ASC";
         }
         
         /// <inheritdoc />
-        public async Task<ServiceResult<UserModel>> LoginExternalAsync(string email)
+        public async Task<ServiceResult<UserModel>> LoginExternalAsync(string id)
         {
             const string query = $"""
                                   SELECT
@@ -1100,14 +1100,15 @@ ORDER BY username.`value` ASC";
                                       IFNULL(role.role_name, '') AS role,
                                       email.value AS emailAddress
                                   FROM {WiserTableNames.WiserItem} user
-                                  JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}' AND email.`value` = ?email
+                                  JOIN {WiserTableNames.WiserItemDetail} email ON email.item_id = user.id AND email.`key` = '{EmailAddressKey}'
                                   LEFT JOIN {WiserTableNames.WiserUserRoles} userRole ON userRole.user_id = user.id
                                   LEFT JOIN {WiserTableNames.WiserRoles} role ON role.id = userRole.role_id
-                                  WHERE user.entity_type = '{WiserUserEntityType}'
-                                  AND user.published_environment > 0
+                                  WHERE user.unique_UUID = ?external_id
+                                      AND user.entity_type = '{WiserUserEntityType}'
+                                      AND user.published_environment > 0
                                   """;
 
-            clientDatabaseConnection.AddParameter("email", email);
+            clientDatabaseConnection.AddParameter("external_id", id);
             var dataTable = await clientDatabaseConnection.GetAsync(query, skipCache: true);
 
             if (dataTable.Rows.Count == 0)

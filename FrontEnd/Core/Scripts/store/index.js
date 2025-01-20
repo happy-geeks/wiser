@@ -315,7 +315,7 @@ const loginModule = {
             const code = urlParams.get('code');
             urlParams.delete('code');
             if (code) {
-                await main.usersService.loginWithAuthenticationCode();
+                await main.usersService.loginWithAuthenticationCode(code);
             }
         },
 
