@@ -832,7 +832,7 @@ public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
     private async Task<bool> LogTableExistsAsync(MySqlCommand command)
     {
         // Simple text file that indicates whether or not the log table exists, so that we don't have to execute an extra query every time.
-        var cacheDirectory = FileSystemHelpers.GetContentCacheFolderPath(webHostEnvironment);
+        var cacheDirectory = FileSystemHelpers.GetOutputCacheDirectory(webHostEnvironment);
         var filePath = cacheDirectory == null ? null : Path.Combine(cacheDirectory, String.Format(Constants.LogTableExistsCacheFileName, ConnectionForReading.Database));
         if (filePath != null && File.Exists(filePath))
         {
