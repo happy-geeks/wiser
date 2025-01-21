@@ -37,7 +37,7 @@ export class Dialogs {
                 { text: "Opslaan", primary: true, action: (event) => this.createItem() }
             ]
         }).data("kendoDialog");
-        
+
         if (window.parent?.main?.branchesService !== undefined && (await window.parent.main.branchesService.isMainBranch()).data && this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row").length > 0) {
             this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row")[0].classList.add("hidden");
         }
@@ -211,6 +211,7 @@ export class Dialogs {
     async createItem(skipName = false, skipInitialDialog = false) {
         const options = this.newItemDialog.element.data();
         const entityType = skipInitialDialog ? options.entityType : (this.newItemDialogEntityTypeDropDown.value() || options.entityType);
+        const linkTypeNumber = this.newItemDialogEntityTypeDropDown?.dataItem()?.linkTypeNumber || options.linkTypeNumber;
         const parentId = options.parentId;
         let node = options.treeNode;
         const newName = $("#newItemNameField").val() || "";
@@ -227,7 +228,7 @@ export class Dialogs {
         }
 
         // Create the item in database.
-        const createItemResult = await this.base.createItem(entityType, parentId, newName, options.linkTypeNumber, [], false, options.moduleId, alsoCreateInMainBranch);
+        const createItemResult = await this.base.createItem(entityType, parentId, newName, linkTypeNumber, [], false, options.moduleId, alsoCreateInMainBranch);
         if (!createItemResult) {
             return;
         }
