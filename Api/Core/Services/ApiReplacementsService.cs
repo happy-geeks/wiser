@@ -7,41 +7,30 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 
-namespace Api.Core.Services
+namespace Api.Core.Services;
+
+/// <inheritdoc cref="IApiReplacementsService" />
+public class ApiReplacementsService(IStringReplacementsService stringReplacementsService) : IApiReplacementsService, IScopedService
 {
-    /// <inheritdoc cref="IApiReplacementsService" />
-    public class ApiReplacementsService : IApiReplacementsService, IScopedService
+    /// <inheritdoc />
+    public string DoIdentityReplacements(string input, ClaimsIdentity identity, bool forQuery = false)
     {
-        private readonly IStringReplacementsService stringReplacementsService;
-
-        /// <summary>
-        /// Creates a new instance of ApiReplacementsService.
-        /// </summary>
-        public ApiReplacementsService(IStringReplacementsService stringReplacementsService)
+        if (String.IsNullOrWhiteSpace(input))
         {
-            this.stringReplacementsService = stringReplacementsService;
+            return input;
         }
 
-        /// <inheritdoc />
-        public string DoIdentityReplacements(string input, ClaimsIdentity identity, bool forQuery = false)
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var dictionary = new Dictionary<string, object>
         {
-            if (String.IsNullOrWhiteSpace(input))
-            {
-                return input;
-            }
+            { "userId", userId },
+            { "encryptedUserId", userId.ToString().EncryptWithAesWithSalt(withDateTime: true) },
+            { "username", IdentityHelpers.GetUserName(identity, true) },
+            { "userType", IdentityHelpers.GetRoles(identity) },
+            { "subDomain", IdentityHelpers.GetSubDomain(identity) },
+            { "isTest", IdentityHelpers.IsTestEnvironment(identity) }
+        };
 
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var dictionary = new Dictionary<string, object>
-            {
-                { "userId", userId },
-                { "encryptedUserId", userId.ToString().EncryptWithAesWithSalt(withDateTime: true) },
-                { "username", IdentityHelpers.GetUserName(identity, true) },
-                { "userType", IdentityHelpers.GetRoles(identity) },
-                { "subDomain", IdentityHelpers.GetSubDomain(identity) },
-                { "isTest", IdentityHelpers.IsTestEnvironment(identity) }
-            };
-            
-            return stringReplacementsService.DoReplacements(input, dictionary, forQuery: forQuery);
-        }
+        return stringReplacementsService.DoReplacements(input, dictionary, forQuery: forQuery);
     }
 }

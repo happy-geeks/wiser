@@ -95,11 +95,17 @@ public class Tests
             {
                 if (element == null)
                 {
-                    if (driver.FindElement(by).Displayed) return;
+                    if (driver.FindElement(by).Displayed)
+                    {
+                        return;
+                    }
                 }
                 else
                 {
-                    if (element.FindElement(by).Displayed) return;
+                    if (element.FindElement(by).Displayed)
+                    {
+                        return;
+                    }
                 }
             }
             catch { }
@@ -142,6 +148,11 @@ public class Tests
     // 6. Logout.
     public void LoginPortal()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);
@@ -190,6 +201,11 @@ public class Tests
     // 7. Close tree view module.
     public void WiserItem()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);
@@ -204,7 +220,11 @@ public class Tests
             WaitTillElementIsFound(By.ClassName("k-treeview-leaf"));
             foreach (var element in driver.FindElements(By.ClassName("k-treeview-leaf")))
             {
-                if (element.FindElement(By.CssSelector(".k-treeview-leaf-text")).Text != "Selenium test folder") continue;
+                if (element.FindElement(By.CssSelector(".k-treeview-leaf-text")).Text != "Selenium test folder")
+                {
+                    continue;
+                }
+
                 element.Click();
                 break;
             }
@@ -217,7 +237,11 @@ public class Tests
                 // Because the dropdown is reloaded the element will not be in the DOM. Retry in that case.
                 try
                 {
-                    if (element.FindElement(By.ClassName("k-list-item-text")).Text != "SeleniumTestItem") continue;
+                    if (element.FindElement(By.ClassName("k-list-item-text")).Text != "SeleniumTestItem")
+                    {
+                        continue;
+                    }
+
                     element.Click();
                     break;
                 }
@@ -225,7 +249,11 @@ public class Tests
                 {
                     foreach (var element2 in driver.FindElements(By.CssSelector("#newItemEntityTypeField_listbox li")))
                     {
-                        if (element2.FindElement(By.ClassName("k-list-item-text")).Text != "SeleniumTestItem") continue;
+                        if (element2.FindElement(By.ClassName("k-list-item-text")).Text != "SeleniumTestItem")
+                        {
+                            continue;
+                        }
+
                         element2.Click();
                         break;
                     }
@@ -244,13 +272,21 @@ public class Tests
             // Reopen item.
             foreach (var element in driver.FindElements(By.ClassName("k-treeview-leaf")))
             {
-                if (element.FindElement(By.ClassName("k-treeview-leaf-text")).Text != "Selenium test folder") continue;
+                if (element.FindElement(By.ClassName("k-treeview-leaf-text")).Text != "Selenium test folder")
+                {
+                    continue;
+                }
+
                 element.Click();
                 break;
             }
             foreach (var element in driver.FindElements(By.ClassName("k-treeview-leaf")))
             {
-                if (element.FindElement(By.CssSelector(".k-treeview-leaf-text")).Text != "Selenium test item") continue;
+                if (element.FindElement(By.CssSelector(".k-treeview-leaf-text")).Text != "Selenium test item")
+                {
+                    continue;
+                }
+
                 element.Click();
                 WaitTillElementIsFound(By.Id("field_2394"));
                 var a = driver.FindElement(By.Id("field_2394")).GetDomAttribute("value");
@@ -286,6 +322,11 @@ public class Tests
     // 6. Close grid module.
     public void WiserGrid()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);
@@ -336,6 +377,11 @@ public class Tests
     // 3. Close search module.
     public void Search()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);
@@ -370,6 +416,11 @@ public class Tests
     // 4. Close item window.
     public void OpenWiserItemById()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);
@@ -407,6 +458,11 @@ public class Tests
     // 4. Close data selector module.
     public void DataSelector()
     {
+        if (testSettings.TestUrls == null)
+        {
+            return;
+        }
+
         foreach (var url in testSettings.TestUrls)
         {
             driver.Navigate().GoToUrl(url);

@@ -67,16 +67,14 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         const string addBranchSettingsModuleName = "wiser_add_branch_settings_module";
 
         // These tables need to be updated first, because others depend on them.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserEntity,
             WiserTableNames.WiserEntityProperty,
             WiserTableNames.WiserLink
-        });
+        ]);
 
         // Do the rest of the tables.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserItem,
             WiserTableNames.WiserItemDetail,
             WiserTableNames.WiserModule,
@@ -98,7 +96,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
             WiserTableNames.WiserParentUpdates,
             WiserTableNames.WiserHistory,
             Constants.DatabaseConnectionLogTableName
-        });
+        ]);
 
         // Make sure that all triggers for Wiser tables are up-to-date.
         if (!lastTableUpdates.TryGetValue(triggersName, out var value) || value < new DateTime(2024, 10, 21))
@@ -232,8 +230,8 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         logTable.Indexes.ForEach(index => index.TableName = ApiTableNames.ApiRequestLogs);
         logTable.Columns.Add(new ColumnSettingsModel("sub_domain", MySqlDbType.VarChar, 255, notNull: true, defaultValue: ""));
         logTable.Columns.Add(new ColumnSettingsModel("is_from_wiser_front_end", MySqlDbType.Int16, 1, notNull: true, defaultValue: "0"));
-        logTable.Indexes.Add(new IndexSettingsModel(ApiTableNames.ApiRequestLogs, "idx_sub_domain", IndexTypes.Normal, new List<string> {"sub_domain", "is_from_wiser_front_end"}));
-        mainDatabaseHelpersService.ExtraWiserTableDefinitions = new List<WiserTableDefinitionModel> {logTable};
+        logTable.Indexes.Add(new IndexSettingsModel(ApiTableNames.ApiRequestLogs, "idx_sub_domain", IndexTypes.Normal, ["sub_domain", "is_from_wiser_front_end"]));
+        mainDatabaseHelpersService.ExtraWiserTableDefinitions = [logTable];
 
         await mainDatabaseHelpersService.CheckAndUpdateTablesAsync(tablesToUpdate);
     }

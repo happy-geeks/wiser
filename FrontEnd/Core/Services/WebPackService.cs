@@ -1,23 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using FrontEnd.Core.Interfaces;
 using System.Threading.Tasks;
+using FrontEnd.Core.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 
 namespace FrontEnd.Core.Services;
 
-public class WebPackService : IWebPackService
+public class WebPackService(IWebHostEnvironment webHostEnvironment) : IWebPackService
 {
-    private readonly IWebHostEnvironment webHostEnvironment;
     private Dictionary<string, string> Manifest { get; set; } = new();
-
-    public WebPackService(IWebHostEnvironment webHostEnvironment)
-    {
-        this.webHostEnvironment = webHostEnvironment;
-    }
 
     /// <inheritdoc />
     public async Task InitializeAsync()

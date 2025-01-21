@@ -3,6 +3,9 @@ using Api.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Attributes;
 
+/// <summary>
+/// A custom attribute for properties for WTS settings, for dynamically generating a user interface.
+/// </summary>
 [AttributeUsage(AttributeTargets.Property)]
 public class WtsPropertyAttribute : Attribute
 {

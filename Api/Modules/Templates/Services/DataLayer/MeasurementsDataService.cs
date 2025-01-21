@@ -92,52 +92,56 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
             whereClauseString = $"AND {String.Join(" AND ", whereClause)}";
         }
 
-        var query = new StringBuilder(@$"(
-    SELECT 
-        log.id AS logId,
-        log.{idColumn} AS id,
-        log.version,
-        log.url,
-        log.environment,
-        log.start, 
-        log.end,
-        {(getDailyAverage ? "DATE(log.start) AS `date`" : "log.start AS date")},
-        {(getDailyAverage ? "AVG(log.time_taken) AS time_taken" : "log.time_taken")},
-        log.user_id,
-        log.language_code,
-        log.error,
-        'Template' AS name
-    FROM {tableName} AS log
-    WHERE log.{idColumn} = ?id
-    {whereClauseString}
-    {(getDailyAverage ? "GROUP BY DATE(log.start)" : "")}
-)");
+        var query = new StringBuilder($"""
+                                       (
+                                           SELECT 
+                                               log.id AS logId,
+                                               log.{idColumn} AS id,
+                                               log.version,
+                                               log.url,
+                                               log.environment,
+                                               log.start, 
+                                               log.end,
+                                               {(getDailyAverage ? "DATE(log.start) AS `date`" : "log.start AS date")},
+                                               {(getDailyAverage ? "AVG(log.time_taken) AS time_taken" : "log.time_taken")},
+                                               log.user_id,
+                                               log.language_code,
+                                               log.error,
+                                               'Template' AS name
+                                           FROM {tableName} AS log
+                                           WHERE log.{idColumn} = ?id
+                                           {whereClauseString}
+                                           {(getDailyAverage ? "GROUP BY DATE(log.start)" : "")}
+                                       )
+                                       """);
         if (componentId == 0)
         {
-            query.AppendLine(@$"
-UNION ALL
-(
-    SELECT 
-        log.id AS logId,
-        log.content_id AS id,
-        log.version,
-        log.url,
-        log.environment,
-        log.start, 
-        log.end,
-        {(getDailyAverage ? "DATE(log.start) AS `date`" : "log.start AS date")},
-        {(getDailyAverage ? "AVG(log.time_taken) AS time_taken" : "log.time_taken")},
-        log.user_id,
-        log.language_code,
-        log.error,
-        component.title AS name
-    FROM {WiserTableNames.WiserTemplateDynamicContent} AS link
-    JOIN {WiserTableNames.WiserDynamicContent} AS component ON component.content_id = link.content_id AND component.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserDynamicContent} AS x WHERE x.content_id = link.destination_template_id)
-    JOIN {WiserTableNames.WiserDynamicContentRenderLog} AS log ON log.content_id = link.content_id
-    {whereClauseString}
-    WHERE link.destination_template_id = ?id
-    {(getDailyAverage ? "GROUP BY log.content_id, DATE(log.start)" : "")}
-)");
+            query.AppendLine($"""
+
+                              UNION ALL
+                              (
+                                  SELECT 
+                                      log.id AS logId,
+                                      log.content_id AS id,
+                                      log.version,
+                                      log.url,
+                                      log.environment,
+                                      log.start, 
+                                      log.end,
+                                      {(getDailyAverage ? "DATE(log.start) AS `date`" : "log.start AS date")},
+                                      {(getDailyAverage ? "AVG(log.time_taken) AS time_taken" : "log.time_taken")},
+                                      log.user_id,
+                                      log.language_code,
+                                      log.error,
+                                      component.title AS name
+                                  FROM {WiserTableNames.WiserTemplateDynamicContent} AS link
+                                  JOIN {WiserTableNames.WiserDynamicContent} AS component ON component.content_id = link.content_id AND component.version = (SELECT MAX(x.version) FROM {WiserTableNames.WiserDynamicContent} AS x WHERE x.content_id = link.destination_template_id)
+                                  JOIN {WiserTableNames.WiserDynamicContentRenderLog} AS log ON log.content_id = link.content_id
+                                  {whereClauseString}
+                                  WHERE link.destination_template_id = ?id
+                                  {(getDailyAverage ? "GROUP BY log.content_id, DATE(log.start)" : "")}
+                              )
+                              """);
         }
 
         query.AppendLine("ORDER BY start DESC");

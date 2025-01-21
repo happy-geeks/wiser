@@ -15,5 +15,5 @@ public class ClearCacheSettingsModel
     /// <summary>
     /// Gets or sets the cache areas to clear.
     /// </summary>
-    public List<string> Areas { get; set; } = new();
+    public List<string> Areas { get; set; } = [];
 }

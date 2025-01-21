@@ -20,7 +20,7 @@ public class EntityPropertyTabModel
     /// <summary>
     /// Gets or sets all fields in this tab.
     /// </summary>
-    public List<EntityPropertyModel> Properties { get; set; } = new();
+    public List<EntityPropertyModel> Properties { get; set; } = [];
 
     /// <summary>
     /// This just indicates that the current item is a tab. This makes it easier for our javascript code to check if an item in the item is a tab or a field.

@@ -18,6 +18,7 @@ using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.WiserDashboard.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.Dashboard.Services;
@@ -143,12 +144,12 @@ public class DashboardService : IDashboardService, IScopedService
             // Data is stored as a JSON string.
             var rawItemsData = wiserStatsData.Rows[0].Field<string>("items_data");
             var itemsData = !String.IsNullOrWhiteSpace(rawItemsData)
-                ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<ItemsCountModel>>>(rawItemsData)
+                ? JsonConvert.DeserializeObject<Dictionary<string, List<ItemsCountModel>>>(rawItemsData)
                 : new Dictionary<string, List<ItemsCountModel>>(0);
 
             var rawEntitiesData = wiserStatsData.Rows[0].Field<string>("entities_data");
             var entitiesData = !String.IsNullOrWhiteSpace(rawEntitiesData)
-                ? Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, List<EntityTypeModel>>>(rawEntitiesData)
+                ? JsonConvert.DeserializeObject<Dictionary<string, List<EntityTypeModel>>>(rawEntitiesData)
                 : new Dictionary<string, List<EntityTypeModel>>(0);
 
             var userLoginActiveTop10 = wiserStatsData.Rows[0].Field<long>("user_login_active_top10");
@@ -219,7 +220,7 @@ public class DashboardService : IDashboardService, IScopedService
     {
         if (!result.ContainsKey(collectionName))
         {
-            result.Add(collectionName, new List<ItemsCountModel>());
+            result.Add(collectionName, []);
         }
 
         foreach (var itemsCount in itemsCountList)
@@ -377,11 +378,13 @@ public class DashboardService : IDashboardService, IScopedService
         var wherePart = whereParts.Count > 0 ? $" WHERE {String.Join(" AND ", whereParts)}" : String.Empty;
 
         // Retrieve user login count data.
-        var query = $@"SELECT user_id, COUNT(*) AS login_count
-FROM {databasePart}{WiserTableNames.WiserLoginLog}
-{wherePart}
-GROUP BY user_id
-ORDER BY login_count DESC";
+        var query = $"""
+                     SELECT user_id, COUNT(*) AS login_count
+                     FROM {databasePart}{WiserTableNames.WiserLoginLog}
+                     {wherePart}
+                     GROUP BY user_id
+                     ORDER BY login_count DESC
+                     """;
         var userLoginCountData = await clientDatabaseConnection.GetAsync(query);
 
         // Turn data rows into a list of counts.
@@ -390,11 +393,13 @@ ORDER BY login_count DESC";
         var loginCountOther = loginCounts.Count > 10 ? loginCounts.Skip(10).Sum() : 0;
 
         // Retrieve user login time active data.
-        query = $@"SELECT user_id, SUM(time_active_in_seconds) AS time_active
-FROM {databasePart}{WiserTableNames.WiserLoginLog}
-{wherePart}
-GROUP BY user_id
-ORDER BY time_active DESC";
+        query = $"""
+                 SELECT user_id, SUM(time_active_in_seconds) AS time_active
+                 FROM {databasePart}{WiserTableNames.WiserLoginLog}
+                 {wherePart}
+                 GROUP BY user_id
+                 ORDER BY time_active DESC
+                 """;
         var userLoginTimeData = await clientDatabaseConnection.GetAsync(query);
 
         // Turn the data rows into a list of TimeSpans.
@@ -425,12 +430,14 @@ ORDER BY time_active DESC";
 
         // The database portion which will be placed in front of the table names of the FROM and JOIN statements.
         var queryDatabasePart = !String.IsNullOrWhiteSpace(databaseName) ? $"`{databaseName}`." : String.Empty;
-        var entitiesData = await clientDatabaseConnection.GetAsync($@"
-            SELECT entity.`name`, entity.dedicated_table_prefix, module.id AS module_id, module.icon
-            FROM {queryDatabasePart}{WiserTableNames.WiserEntity} AS entity
-            JOIN {queryDatabasePart}{WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
-            WHERE entity.show_in_dashboard = 1
-            LIMIT 3");
+        var entitiesData = await clientDatabaseConnection.GetAsync($"""
+                                                                    
+                                                                                SELECT entity.`name`, entity.dedicated_table_prefix, module.id AS module_id, module.icon
+                                                                                FROM {queryDatabasePart}{WiserTableNames.WiserEntity} AS entity
+                                                                                JOIN {queryDatabasePart}{WiserTableNames.WiserModule} AS module ON module.id = entity.module_id
+                                                                                WHERE entity.show_in_dashboard = 1
+                                                                                LIMIT 3
+                                                                    """);
 
         foreach (var dataRow in entitiesData.Rows.Cast<DataRow>())
         {
@@ -446,18 +453,22 @@ ORDER BY time_active DESC";
             clientDatabaseConnection.AddParameter("entity_type", entityName);
 
             // Retrieve total count of items with this entity type.
-            var entityCountData = await clientDatabaseConnection.GetAsync($@"
-                SELECT COUNT(*)
-                FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}
-                WHERE entity_type = ?entity_type");
+            var entityCountData = await clientDatabaseConnection.GetAsync($"""
+                                                                           
+                                                                                           SELECT COUNT(*)
+                                                                                           FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}
+                                                                                           WHERE entity_type = ?entity_type
+                                                                           """);
 
             var entityCount = Convert.ToInt32(entityCountData.Rows[0][0]);
 
             // Now retrieve the count for entities that are new. New is considered to be a month old at most.
-            var newEntityCountData = await clientDatabaseConnection.GetAsync($@"
-                SELECT COUNT(*)
-                FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}
-                WHERE entity_type = ?entity_type AND added_on BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()");
+            var newEntityCountData = await clientDatabaseConnection.GetAsync($"""
+                                                                              
+                                                                                              SELECT COUNT(*)
+                                                                                              FROM {queryDatabasePart}{tablePrefix}{WiserTableNames.WiserItem}
+                                                                                              WHERE entity_type = ?entity_type AND added_on BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()
+                                                                              """);
 
             var newEntityCount = Convert.ToInt32(newEntityCountData.Rows[0][0]);
 
@@ -591,8 +602,7 @@ ORDER BY time_active DESC";
     /// <param name="databaseName">The name of the database that is currently being worked in (for the branches functionality).</param>
     private async Task CheckAndUpdateTablesAsync(string databaseName = null)
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserEntity,
             // Ensure data selector table has the "show_in_dashboard" column.
             WiserTableNames.WiserDataSelector,
@@ -600,7 +610,7 @@ ORDER BY time_active DESC";
             WiserTableNames.WiserDashboard,
             // For the user login data.
             WiserTableNames.WiserLoginLog
-        }, databaseName);
+        ], databaseName);
     }
 
     /// <summary>
@@ -631,8 +641,8 @@ ORDER BY time_active DESC";
 
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("last_update", DateTime.Now);
-        clientDatabaseConnection.AddParameter("items_data", Newtonsoft.Json.JsonConvert.SerializeObject(itemsData));
-        clientDatabaseConnection.AddParameter("entities_data", Newtonsoft.Json.JsonConvert.SerializeObject(entitiesData));
+        clientDatabaseConnection.AddParameter("items_data", JsonConvert.SerializeObject(itemsData));
+        clientDatabaseConnection.AddParameter("entities_data", JsonConvert.SerializeObject(entitiesData));
         clientDatabaseConnection.AddParameter("user_login_count_top10", userData.UserLoginCountTop10);
         clientDatabaseConnection.AddParameter("user_login_count_other", userData.UserLoginCountOther);
         clientDatabaseConnection.AddParameter("user_login_active_top10", userData.UserLoginActiveTop10);
@@ -643,11 +653,10 @@ ORDER BY time_active DESC";
     /// <inheritdoc />
     public async Task<ServiceResult<List<Service>>> GetWtsServicesAsync(ClaimsIdentity identity)
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WtsLogs,
             WiserTableNames.WtsServices
-        });
+        ]);
 
         var services = new List<Service>();
 
@@ -664,7 +673,7 @@ ORDER BY time_active DESC";
 
         foreach (DataRow row in dataTable.Rows)
         {
-            var service = new Service()
+            var service = new Service
             {
                 Id = row.Field<int>("id"),
                 Configuration = row.Field<string>("configuration"),
@@ -696,15 +705,17 @@ ORDER BY time_active DESC";
         var logs = new List<ServiceLog>();
 
         clientDatabaseConnection.AddParameter("serviceId", id);
-        var datatable = await clientDatabaseConnection.GetAsync($@"SELECT log.*
-                                                                        FROM {WiserTableNames.WtsServices} AS service
-                                                                        JOIN {WiserTableNames.WtsLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
-                                                                        WHERE service.id = ?serviceId
-                                                                        ORDER BY log.added_on DESC");
+        var datatable = await clientDatabaseConnection.GetAsync($"""
+                                                                 SELECT log.*
+                                                                                                                                         FROM {WiserTableNames.WtsServices} AS service
+                                                                                                                                         JOIN {WiserTableNames.WtsLogs} AS log ON log.configuration = service.configuration AND log.time_id = service.time_id
+                                                                                                                                         WHERE service.id = ?serviceId
+                                                                                                                                         ORDER BY log.added_on DESC
+                                                                 """);
 
         foreach (DataRow row in datatable.Rows)
         {
-            var log = new ServiceLog()
+            var log = new ServiceLog
             {
                 Id = row.Field<int>("id"),
                 Level = row.Field<string>("level"),
@@ -721,7 +732,7 @@ ORDER BY time_active DESC";
             logs.Add(log);
         }
 
-        return new ServiceResult<List<ServiceLog>>()
+        return new ServiceResult<List<ServiceLog>>
         {
             ModelObject = logs,
             StatusCode = HttpStatusCode.OK
@@ -738,7 +749,7 @@ ORDER BY time_active DESC";
 
         if (dataTable.Rows.Count == 0)
         {
-            return new ServiceResult<ServicePauseStates>()
+            return new ServiceResult<ServicePauseStates>
             {
                 StatusCode = HttpStatusCode.NotFound,
                 ErrorMessage = $"There is no service with ID '{id}' and can therefore not be paused."
@@ -750,12 +761,14 @@ ORDER BY time_active DESC";
         var serviceIsCurrentlyRunning = currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase);
         var serviceIsNotActive = currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase);
 
-        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WtsServices}
-SET paused = ?pauseState
-{(state && !serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'paused'" : !state &&!serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'active'" : "")}
-WHERE id = ?serviceId");
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     UPDATE {WiserTableNames.WtsServices}
+                                                     SET paused = ?pauseState
+                                                     {(state && !serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'paused'" : !state &&!serviceIsCurrentlyRunning && !serviceIsNotActive ? ", state = 'active'" : "")}
+                                                     WHERE id = ?serviceId
+                                                     """);
 
-        return new ServiceResult<ServicePauseStates>()
+        return new ServiceResult<ServicePauseStates>
         {
             StatusCode = HttpStatusCode.OK,
             ModelObject = !state ? ServicePauseStates.Unpaused : serviceIsCurrentlyRunning ? ServicePauseStates.WillPauseAfterRunFinished : ServicePauseStates.Paused
@@ -772,7 +785,7 @@ WHERE id = ?serviceId");
 
         if (dataTable.Rows.Count == 0)
         {
-            return new ServiceResult<ServiceExtraRunStates>()
+            return new ServiceResult<ServiceExtraRunStates>
             {
                 StatusCode = HttpStatusCode.NotFound,
                 ErrorMessage = $"There is no service with ID '{id}' and can therefore not be marked for an extra run."
@@ -784,7 +797,7 @@ WHERE id = ?serviceId");
         // If the service is currently running the extra run state can't change.
         if (currentState.Equals("running", StringComparison.InvariantCultureIgnoreCase))
         {
-            return new ServiceResult<ServiceExtraRunStates>()
+            return new ServiceResult<ServiceExtraRunStates>
             {
                 StatusCode = HttpStatusCode.OK,
                 ModelObject = ServiceExtraRunStates.ServiceRunning
@@ -794,18 +807,20 @@ WHERE id = ?serviceId");
         // If the service is stopped no WTS instance is able to perform the extra run.
         if (currentState.Equals("stopped", StringComparison.InvariantCultureIgnoreCase))
         {
-            return new ServiceResult<ServiceExtraRunStates>()
+            return new ServiceResult<ServiceExtraRunStates>
             {
                 StatusCode = HttpStatusCode.OK,
                 ModelObject = ServiceExtraRunStates.WtsOffline
             };
         }
 
-        await clientDatabaseConnection.ExecuteAsync($@"UPDATE {WiserTableNames.WtsServices}
-SET extra_run = ?extraRunState
-WHERE id = ?serviceId");
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     UPDATE {WiserTableNames.WtsServices}
+                                                     SET extra_run = ?extraRunState
+                                                     WHERE id = ?serviceId
+                                                     """);
 
-        return new ServiceResult<ServiceExtraRunStates>()
+        return new ServiceResult<ServiceExtraRunStates>
         {
             StatusCode = HttpStatusCode.OK,
             ModelObject = state ? ServiceExtraRunStates.Marked : ServiceExtraRunStates.Unmarked

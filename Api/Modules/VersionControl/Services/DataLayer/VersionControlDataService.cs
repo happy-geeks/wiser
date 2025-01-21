@@ -26,10 +26,12 @@ public class VersionControlDataService : IVersionControlDataService, IScopedServ
     /// <inheritdoc />
     public async Task<Dictionary<int, int>> GetPublishedTemplateIdAndVersionAsync()
     {
-        var query = $@"SELECT template_id, version
-FROM {WiserTableNames.WiserTemplate}
-WHERE published_environment != 0
-GROUP BY template_id;";
+        var query = $"""
+                     SELECT template_id, version
+                     FROM {WiserTableNames.WiserTemplate}
+                     WHERE published_environment != 0
+                     GROUP BY template_id;
+                     """;
 
         clientDatabaseConnection.ClearParameters();
 
@@ -54,14 +56,16 @@ GROUP BY template_id;";
     /// <inheritdoc />
     public async Task<List<TemplateCommitModel>> GetTemplatesFromCommitAsync(int commitId)
     {
-        var query = $@"SELECT
-    commit.commit_id,
-    commit.template_id,
-    commit.version
-FROM {WiserTableNames.WiserCommitTemplate} AS commit 
-LEFT JOIN {WiserTableNames.WiserCommitTemplate} AS otherVersion ON otherVersion.template_id = commit.template_id AND otherVersion.version > commit.version
-WHERE commit.commit_id = ?commitId
-AND otherVersion.id IS NULL";
+        var query = $"""
+                     SELECT
+                         commit.commit_id,
+                         commit.template_id,
+                         commit.version
+                     FROM {WiserTableNames.WiserCommitTemplate} AS commit 
+                     LEFT JOIN {WiserTableNames.WiserCommitTemplate} AS otherVersion ON otherVersion.template_id = commit.template_id AND otherVersion.version > commit.version
+                     WHERE commit.commit_id = ?commitId
+                     AND otherVersion.id IS NULL
+                     """;
 
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("commitId", commitId);
@@ -88,14 +92,16 @@ AND otherVersion.id IS NULL";
     /// <inheritdoc />
     public async Task<List<DynamicContentCommitModel>> GetDynamicContentFromCommitAsync(int commitId)
     {
-        var query = $@"SELECT
-    commit.commit_id,
-    commit.dynamic_content_id,
-    commit.version
-FROM {WiserTableNames.WiserCommitDynamicContent} AS commit
-LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS otherVersion ON otherVersion.dynamic_content_id = commit.dynamic_content_id AND otherVersion.version > commit.version 
-WHERE commit.commit_id = ?commitId
-AND otherVersion.id IS NULL";
+        var query = $"""
+                     SELECT
+                         commit.commit_id,
+                         commit.dynamic_content_id,
+                         commit.version
+                     FROM {WiserTableNames.WiserCommitDynamicContent} AS commit
+                     LEFT JOIN {WiserTableNames.WiserCommitDynamicContent} AS otherVersion ON otherVersion.dynamic_content_id = commit.dynamic_content_id AND otherVersion.version > commit.version 
+                     WHERE commit.commit_id = ?commitId
+                     AND otherVersion.id IS NULL
+                     """;
 
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("commitId", commitId);

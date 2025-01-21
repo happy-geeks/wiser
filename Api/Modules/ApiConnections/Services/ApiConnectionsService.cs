@@ -17,31 +17,17 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.ApiConnections.Services;
 
 /// <inheritdoc cref="IApiConnectionsService" />
-public class ApiConnectionsService : IApiConnectionsService, IScopedService
+public class ApiConnectionsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IJsonService jsonService) : IApiConnectionsService, IScopedService
 {
-    private readonly IWiserTenantsService wiserTenantsService;
-    private readonly IDatabaseConnection clientDatabaseConnection;
-    private readonly IJsonService jsonService;
-
-    /// <summary>
-    /// Creates a new instance of <see cref="ApiConnectionsService"/>.
-    /// </summary>
-    public ApiConnectionsService(IWiserTenantsService wiserTenantsService, IDatabaseConnection databaseConnection, IJsonService jsonService)
-    {
-        this.wiserTenantsService = wiserTenantsService;
-        this.clientDatabaseConnection = databaseConnection;
-        this.jsonService = jsonService;
-    }
-
     /// <inheritdoc />
     public async Task<ServiceResult<List<ApiConnectionModel>>> GetSettingsAsync(ClaimsIdentity identity)
     {
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         var query = $"SELECT id, `name`, options, authentication_data FROM {WiserTableNames.WiserApiConnection}";
-        
+
         var dataTable = await clientDatabaseConnection.GetAsync(query);
         var result = new List<ApiConnectionModel>();
-        
+
         foreach (DataRow row in dataTable.Rows)
         {
             var optionsString = row.Field<string>("options");
@@ -54,14 +40,14 @@ public class ApiConnectionsService : IApiConnectionsService, IScopedService
                 Options = String.IsNullOrWhiteSpace(optionsString) ? new JObject() : JToken.Parse(optionsString),
                 AuthenticationData = String.IsNullOrWhiteSpace(authenticationDataString) ? new JObject() : JToken.Parse(authenticationDataString)
             };
-            
+
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
             jsonService.EncryptValuesInJson(apiConnectionModel.Options, tenant.ModelObject.EncryptionKey);
             jsonService.EncryptValuesInJson(apiConnectionModel.AuthenticationData, tenant.ModelObject.EncryptionKey);
 
             result.Add(apiConnectionModel);
         }
-        
+
         return new ServiceResult<List<ApiConnectionModel>>(result);
     }
 
@@ -81,7 +67,7 @@ public class ApiConnectionsService : IApiConnectionsService, IScopedService
                 ErrorMessage = $"API connection with id '{id}' does not exist"
             };
         }
-        
+
         var firstRow = dataTable.Rows[0];
         var optionsString = firstRow.Field<string>("options");
         var authenticationDataString = firstRow.Field<string>("authentication_data");
@@ -92,7 +78,7 @@ public class ApiConnectionsService : IApiConnectionsService, IScopedService
             Options = String.IsNullOrWhiteSpace(optionsString) ? new JObject() : JToken.Parse(optionsString),
             AuthenticationData = String.IsNullOrWhiteSpace(authenticationDataString) ? new JObject() : JToken.Parse(authenticationDataString)
         };
-            
+
         var tenant = await wiserTenantsService.GetSingleAsync(identity);
         jsonService.EncryptValuesInJson(result.Options, tenant.ModelObject.EncryptionKey);
         jsonService.EncryptValuesInJson(result.AuthenticationData, tenant.ModelObject.EncryptionKey);

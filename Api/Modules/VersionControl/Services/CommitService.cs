@@ -83,15 +83,14 @@ public class CommitService : ICommitService, IScopedService
         }
 
         // Make sure the tables are up-to-date.
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserCommit,
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent,
             WiserTableNames.WiserCommitReviews,
             WiserTableNames.WiserCommitReviewRequests,
             WiserTableNames.WiserCommitReviewComments
-        });
+        ]);
 
         // Don't allow commits to live if there are any pending reviews.
         if (data.Environment == Environments.Live && data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
@@ -190,7 +189,7 @@ public class CommitService : ICommitService, IScopedService
                     {
                         try
                         {
-                            await versionControlService.DeployToBranchAsync(identity, new List<int> {result.Id}, branch.Id, false);
+                            await versionControlService.DeployToBranchAsync(identity, [result.Id], branch.Id, false);
                         }
                         catch (Exception exception)
                         {
@@ -306,10 +305,7 @@ public class CommitService : ICommitService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<bool>> LogDeploymentOfCommitAsync(int id, Environments environment, ClaimsIdentity identity)
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
-            WiserTableNames.WiserCommit
-        });
+        await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserCommit]);
 
         await commitDataService.LogDeploymentOfCommitAsync(id, environment, IdentityHelpers.GetUserName(identity, true));
         return new ServiceResult<bool>(true);
@@ -318,12 +314,11 @@ public class CommitService : ICommitService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<List<TemplateCommitModel>>> GetTemplatesToCommitAsync()
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserCommit,
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
-        });
+        ]);
 
         // Do any table updates that might be needed.
         await templateDataService.KeepTablesUpToDateAsync();
@@ -336,12 +331,11 @@ public class CommitService : ICommitService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<List<DynamicContentCommitModel>>> GetDynamicContentsToCommitAsync()
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserCommit,
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
-        });
+        ]);
 
         // Do any table updates that might be needed.
         await dynamicContentDataService.KeepTablesUpToDateAsync();
@@ -354,12 +348,11 @@ public class CommitService : ICommitService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<List<CommitModel>>> GetCommitHistoryAsync(bool includeCompleted, bool includeIncompleted)
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync(new List<string>
-        {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([
             WiserTableNames.WiserCommit,
             WiserTableNames.WiserCommitTemplate,
             WiserTableNames.WiserCommitDynamicContent
-        });
+        ]);
 
         var results = await commitDataService.GetCommitHistoryAsync(includeCompleted, includeIncompleted);
 

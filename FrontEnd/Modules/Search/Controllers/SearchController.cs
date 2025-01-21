@@ -1,22 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using FrontEnd.Core.Interfaces;
+﻿using FrontEnd.Core.Interfaces;
 using FrontEnd.Modules.Base.Models;
+using Microsoft.AspNetCore.Mvc;
 
-namespace FrontEnd.Modules.Search.Controllers
+namespace FrontEnd.Modules.Search.Controllers;
+
+[Area("Search"), Route("Modules/Search")]
+public class SearchController(IBaseService baseService) : Controller
 {
-    [Area("Search"), Route("Modules/Search")]
-    public class SearchController : Controller
+    public IActionResult Index()
     {
-        private readonly IBaseService baseService;
-
-        public SearchController(IBaseService baseService)
-        {
-            this.baseService = baseService;
-        }
-        
-        public IActionResult Index()
-        {
-            return View(baseService.CreateBaseViewModel<BaseModuleViewModel>());
-        }
+        return View(baseService.CreateBaseViewModel<BaseModuleViewModel>());
     }
 }

@@ -19,853 +19,852 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace Api.Modules.Items.Controllers
+namespace Api.Modules.Items.Controllers;
+
+/// <summary>
+/// Controller for all operations that have something to do with Wiser items.
+/// </summary>
+[Route("api/v3/[controller]")]
+[ApiController]
+[Authorize]
+[Consumes(MediaTypeNames.Application.Json)]
+[Produces(MediaTypeNames.Application.Json)]
+public class ItemsController : ControllerBase
 {
+    private readonly IWiserTenantsService wiserTenantsService;
+    private readonly IItemsService itemsService;
+    private readonly IGridsService gridsService;
+    private readonly IFilesService filesService;
+    private readonly GclSettings gclSettings;
+
     /// <summary>
-    /// Controller for all operations that have something to do with Wiser items.
+    /// Initializes a new instance of <see cref="ItemsController"/>.
     /// </summary>
-    [Route("api/v3/[controller]")]
-    [ApiController]
-    [Authorize]
-    [Consumes(MediaTypeNames.Application.Json)]
-    [Produces(MediaTypeNames.Application.Json)]
-    public class ItemsController : ControllerBase
+    public ItemsController(IWiserTenantsService wiserTenantsService, IItemsService itemsService, IGridsService gridsService, IFilesService filesService, IOptions<GclSettings> gclSettings)
     {
-        private readonly IWiserTenantsService wiserTenantsService;
-        private readonly IItemsService itemsService;
-        private readonly IGridsService gridsService;
-        private readonly IFilesService filesService;
-        private readonly GclSettings gclSettings;
+        this.wiserTenantsService = wiserTenantsService;
+        this.itemsService = itemsService;
+        this.gridsService = gridsService;
+        this.filesService = filesService;
+        this.gclSettings = gclSettings.Value;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of <see cref="ItemsController"/>.
-        /// </summary>
-        public ItemsController(IWiserTenantsService wiserTenantsService, IItemsService itemsService, IGridsService gridsService, IFilesService filesService, IOptions<GclSettings> gclSettings)
+    /// <summary>
+    /// Gets all items from Wiser. It's possible to use filters here.
+    /// The results will be returned in multiple pages, with a max of 500 items per page.
+    /// </summary>
+    /// <param name="input">The filters and paging settings to specify the items you're looking for.</param>
+    /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetItemsAsync([FromQuery]GetItemsInputModel input = null)
+    {
+        return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, input)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the HTML and javascript for single Wiser item, to show the item in Wiser.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item to get.</param>
+    /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
+    /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
+    /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
+    /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
+    /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
+    [HttpGet]
+    [Route("{encryptedId}")]
+    [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.GetItemHtmlAsync(itemId, identity, propertyIdSuffix, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the HTML and javascript for single Wiser item, to show the item in Wiser.
+    /// </summary>
+    /// <param name="id">The ID of the item to get.</param>
+    /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
+    /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
+    /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
+    /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
+    /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
+    [HttpGet]
+    [Route("~/api/v4/[controller]/{id:long}")]
+    [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetItemAsync(ulong id, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+    {
+        return (await itemsService.GetItemHtmlAsync(id, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Gets all details of an item.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item.</param>
+    /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("{encryptedId}/details")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.GetItemDetailsAsync(itemId, identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Gets all details of an item.
+    /// </summary>
+    /// <param name="itemId">The ID of the item.</param>
+    /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("~/api/v4/[controller]/{itemId:long}/details")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetItemDetailsAsync(ulong itemId, [FromQuery]string entityType = null)
+    {
+        return (await itemsService.GetItemDetailsAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Retrieve an item that the given item is linked to, or and item that is linked to the given item.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the main item.</param>
+    /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+    /// <param name="linkType">Optional: The type number of the link.</param>
+    /// <param name="reversed">Optional: Whether to retrieve an item that that given item is linked to (<see langword="true"/>), or an item that is linked to the given item (<see langword="false"/>).</param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("{encryptedId}/linked/details")]
+    [ProducesResponseType(typeof(IEnumerable<WiserItemModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLinkedItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null, [FromQuery]string itemIdEntityType = null, [FromQuery]int linkType = 0, [FromQuery]bool reversed = false)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.GetLinkedItemDetailsAsync(itemId, identity, entityType, itemIdEntityType, linkType, reversed)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Retrieve an item that the given item is linked to, or and item that is linked to the given item.
+    /// </summary>
+    /// <param name="itemId">The ID of the main item.</param>
+    /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
+    /// <param name="linkType">Optional: The type number of the link.</param>
+    /// <param name="reversed">Optional: Whether to retrieve an item that that given item is linked to (<see langword="true"/>), or an item that is linked to the given item (<see langword="false"/>).</param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("~/api/v4/[controller]/{itemId:long}/linked/details")]
+    [ProducesResponseType(typeof(IEnumerable<WiserItemModel>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetLinkedItemDetailsAsync(ulong itemId, [FromQuery]string entityType = null, [FromQuery]string itemIdEntityType = null, [FromQuery]int linkType = 0, [FromQuery]bool reversed = false)
+    {
+        return (await itemsService.GetLinkedItemDetailsAsync(itemId, (ClaimsIdentity)User.Identity, entityType, itemIdEntityType, linkType, reversed)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item.</param>
+    /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns>The item meta data.</returns>
+    [HttpGet]
+    [Route("{encryptedId}/meta")]
+    [ProducesResponseType(typeof(ItemMetaDataModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetItemMetDataAsync(string encryptedId, [FromQuery]string entityType = null)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.GetItemMetaDataAsync(itemId, identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
+    /// </summary>
+    /// <param name="itemId">The encrypted ID of the item.</param>
+    /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns>The item meta data.</returns>
+    [HttpGet]
+    [Route("~/api/v4/[controller]/{itemId:long}/meta")]
+    [ProducesResponseType(typeof(ItemMetaDataModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetItemMetDataAsync(ulong itemId, [FromQuery]string entityType = null)
+    {
+        return (await itemsService.GetItemMetaDataAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the HTML for a specific Wiser item.
+    /// In Wiser you can declare a default query and HTML template for entity types, to render a single item of that type on a website.
+    /// This method will return that rendered HTML.
+    /// </summary>
+    /// <param name="itemId">The ID of the item to render to HTML.</param>
+    /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns>The rendered HTML for the item.</returns>
+    [HttpGet]
+    [Route("{itemId}/block")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetHtmlBlockAsync(ulong itemId, [FromQuery]string entityType = null)
+    {
+        return (await itemsService.GetHtmlForWiserEntityAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Create a new item.
+    /// </summary>
+    /// <param name="item">The item to create.</param>
+    /// <param name="parentId">Optional: The encrypted ID of the parent to create this item under.</param>
+    /// <param name="linkType">Optional: The link type of the link to the parent.</param>
+    /// <param name="alsoCreateInMainBranch"></param>
+    /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(parentId, identity);
+        return (await itemsService.CreateAsync(item, identity, itemId, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Create a new item.
+    /// </summary>
+    /// <param name="item">The item to create.</param>
+    /// <param name="parentId">Optional: The ID of the parent to create this item under.</param>
+    /// <param name="linkType">Optional: The link type of the link to the parent.</param>
+    /// <param name="alsoCreateInMainBranch"></param>
+    /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
+    [HttpPost]
+    [Route("~/api/v4/[controller]")]
+    [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]ulong? parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
+    {
+        return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId ?? 0, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Updates an item.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item to update.</param>
+    /// <param name="item">The new data for the item.</param>
+    /// <returns>The updated item.</returns>
+    [HttpPut]
+    [Route("{encryptedId}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> PutAsync(string encryptedId, WiserItemModel item)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.UpdateAsync(itemId, item, identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Updates an item.
+    /// </summary>
+    /// <param name="itemId">The ID of the item to update.</param>
+    /// <param name="item">The new data for the item.</param>
+    /// <returns>The updated item.</returns>
+    [HttpPut]
+    [Route("~/api/v4/[controller]/{itemId:long}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> PutAsync(ulong itemId, WiserItemModel item)
+    {
+        return (await itemsService.UpdateAsync(itemId, item, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Creates a duplicate copy of an existing item.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item to duplicate.</param>
+    /// <param name="encryptedParentId">The encrypted ID of the parent of the item to duplicate. The copy will be placed under the same parent.</param>
+    /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <param name="parentEntityType">Optional: The entity type of the parent of the item to duplicate. This is needed when the parent item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns>A WiserItemDuplicationResultModel containing the result of the duplication.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/duplicate/{encryptedParentId}")]
+    [ProducesResponseType(typeof(WiserItemDuplicationResultModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DuplicateAsync(string encryptedId, string encryptedParentId, [FromQuery]string entityType = null, [FromQuery]string parentEntityType = null)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        var parentId = await wiserTenantsService.DecryptValue<ulong>(encryptedParentId, identity);
+        return (await itemsService.DuplicateItemAsync(itemId, parentId, identity, entityType, parentEntityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Creates a duplicate copy of an existing item.
+    /// </summary>
+    /// <param name="itemId">The ID of the item to duplicate.</param>
+    /// <param name="parentId">The ID of the parent of the item to duplicate. The copy will be placed under the same parent.</param>
+    /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <param name="parentEntityType">Optional: The entity type of the parent of the item to duplicate. This is needed when the parent item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
+    /// <returns>A WiserItemDuplicationResultModel containing the result of the duplication.</returns>
+    [HttpPost]
+    [Route("~/api/v4/[controller]/{itemId:long}/duplicate/{parentId}")]
+    [ProducesResponseType(typeof(WiserItemDuplicationResultModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DuplicateAsync(ulong itemId, ulong parentId, [FromQuery]string entityType = null, [FromQuery]string parentEntityType = null)
+    {
+        return (await itemsService.DuplicateItemAsync(itemId, parentId, (ClaimsIdentity)User.Identity, entityType, parentEntityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Copy an item one or more other environments, so that you can have multiple different versions of an item for different environments.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item.</param>
+    /// <param name="newEnvironments">The environment(s) to copy the item to.</param>
+    /// <returns>The copied item.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/copy-to-environment/{newEnvironments:int}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
+    public async Task<IActionResult> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.CopyToEnvironmentAsync(itemId, newEnvironments, identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Copy an item one or more other environments, so that you can have multiple different versions of an item for different environments.
+    /// </summary>
+    /// <param name="itemId">The ID of the item.</param>
+    /// <param name="newEnvironments">The environment(s) to copy the item to.</param>
+    /// <returns>The copied item.</returns>
+    [HttpPost]
+    [Route("~/api/v4/[controller]/{itemId:long}/copy-to-environment/{newEnvironments:int}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
+    public async Task<IActionResult> CopyToEnvironmentAsync(ulong itemId, Environments newEnvironments)
+    {
+        return (await itemsService.CopyToEnvironmentAsync(itemId, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Change the environments that an item should be visible in.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item.</param>
+    /// <param name="entityType">The entity type of the item.</param>
+    /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+    [HttpPatch]
+    [Route("{encryptedId}/environment/{newEnvironments:int}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
+    public async Task<IActionResult> ChangeEnvironmentAsync(string encryptedId, Environments newEnvironments, [FromQuery]string entityType)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.ChangeEnvironmentAsync(itemId, entityType, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Change the environments that an item should be visible in.
+    /// </summary>
+    /// <param name="itemId">The ID of the item.</param>
+    /// <param name="entityType">The entity type of the item.</param>
+    /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
+    [HttpPatch]
+    [Route("~/api/v4/[controller]/{itemId:long}/environment/{newEnvironments:int}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
+    public async Task<IActionResult> ChangeEnvironmentAsync(ulong itemId, Environments newEnvironments, [FromQuery]string entityType)
+    {
+        return (await itemsService.ChangeEnvironmentAsync(itemId, entityType, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Delete or undelete an item. Deleting an item will move it to an archive table, so it's never completely deleted by this method.
+    /// Undeleting an item moves it from the archive table back to the actual table.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item to delete.</param>
+    /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
+    /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
+    [HttpDelete]
+    [Route("{encryptedId}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteAsync(string encryptedId, [FromQuery]bool undelete = false, [FromQuery]string entityType = null)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.DeleteAsync(itemId, identity, undelete, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Delete or undelete an item. Deleting an item will move it to an archive table, so it's never completely deleted by this method.
+    /// Undeleting an item moves it from the archive table back to the actual table.
+    /// </summary>
+    /// <param name="itemId">The ID of the item to delete.</param>
+    /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
+    /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
+    [HttpDelete]
+    [Route("~/api/v4/[controller]/{itemId:long}")]
+    [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteAsync(ulong itemId, [FromQuery]bool undelete = false, [FromQuery]string entityType = null)
+    {
+        return (await itemsService.DeleteAsync(itemId, (ClaimsIdentity)User.Identity, undelete, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Executes the workflow for an item. In wiser_entity you can set queries that need to be executed after an item has been created or updated.
+    /// This method will execute these queries, based on what is being done with the item.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item that was recently created or updated.</param>
+    /// <param name="isNewItem">Set to true if the item was just created, or false if it was updated.</param>
+    /// <param name="item">Optional: The data of the item to execute the workflow for.</param>
+    /// <returns>A boolean indicating whether or not anything was done. If there was no workflow setup, false will be returned, otherwise true.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/workflow")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> WorkflowAsync(string encryptedId, WiserItemModel item, [FromQuery] bool isNewItem = false)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.ExecuteWorkflowAsync(itemId, isNewItem, identity, item)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Executes the workflow for an item. In wiser_entity you can set queries that need to be executed after an item has been created or updated.
+    /// This method will execute these queries, based on what is being done with the item.
+    /// </summary>
+    /// <param name="itemId">The ID of the item that was recently created or updated.</param>
+    /// <param name="isNewItem">Set to true if the item was just created, or false if it was updated.</param>
+    /// <param name="item">Optional: The data of the item to execute the workflow for.</param>
+    /// <returns>A boolean indicating whether or not anything was done. If there was no workflow setup, false will be returned, otherwise true.</returns>
+    [HttpPost]
+    [Route("~/api/v4/[controller]/{itemId:long}/workflow")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> WorkflowAsync(ulong itemId, WiserItemModel item, [FromQuery] bool isNewItem = false)
+    {
+        return (await itemsService.ExecuteWorkflowAsync(itemId, isNewItem, (ClaimsIdentity)User.Identity, item)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Executes a custom query and return the results.
+    /// This will call GetCustomQueryAsync and use that query.
+    /// This will replace the details from an item in the query before executing it.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item to execute the query for.</param>
+    /// <param name="propertyId">The ID of the property from wiser_entityproperty. Set to 0 if you want to use a query ID.</param>
+    /// <param name="extraParameters">Any extra parameters to use in the query.</param>
+    /// <param name="queryId">The encrypted ID of the query from wiser_query. Encrypt the value "0" if you want to use a property ID.</param>
+    /// <param name="itemLinkId">Optional: If the item is linked to something else and you need to know that in the query, enter the ID of that link from wiser_itemlink here.</param>
+    /// <returns>The results of the query.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/action-button/{propertyId:int}")]
+    [ProducesResponseType(typeof(ActionButtonResultModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActionButton(string encryptedId, int propertyId, [FromBody] Dictionary<string, object> extraParameters, [FromQuery] string queryId = null, [FromQuery] ulong itemLinkId = 0)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        var decryptedQueryId = await wiserTenantsService.DecryptValue<int>(queryId, identity);
+
+        return (await itemsService.ExecuteCustomQueryAsync(itemId, propertyId, extraParameters, decryptedQueryId, identity, itemLinkId)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Executes a custom query and return the results.
+    /// This will call GetCustomQueryAsync and use that query.
+    /// This will replace the details from an item in the query before executing it.
+    /// </summary>
+    /// <param name="itemId">The ID of the item to execute the query for.</param>
+    /// <param name="propertyId">The ID of the property from wiser_entityproperty. Set to 0 if you want to use a query ID.</param>
+    /// <param name="extraParameters">Any extra parameters to use in the query.</param>
+    /// <param name="queryId">The ID of the query from wiser_query. Set to 0 if you want to use a property ID.</param>
+    /// <param name="itemLinkId">Optional: If the item is linked to something else and you need to know that in the query, enter the ID of that link from wiser_itemlink here.</param>
+    /// <returns>The results of the query.</returns>
+    [HttpPost]
+    [Route("~/api/v4/[controller]/{itemId:long}/action-button/{propertyId:int}")]
+    [ProducesResponseType(typeof(ActionButtonResultModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActionButton(ulong itemId, int propertyId, [FromBody] Dictionary<string, object> extraParameters, [FromQuery] int? queryId = null, [FromQuery] ulong itemLinkId = 0)
+    {
+        return (await itemsService.ExecuteCustomQueryAsync(itemId, propertyId, extraParameters, queryId ?? 0, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the data for a sub-entities-grid.
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="entityType">The entity type of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="linkTypeNumber">The link type number to use for getting linked items.</param>
+    /// <param name="moduleId">The module ID of the items to get.</param>
+    /// <param name="mode">The mode that the sub-entities-grid is in.</param>
+    /// <param name="options">The options for the grid.</param>
+    /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+    /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
+    /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
+    /// <param name="fieldGroupName">Optional: The field group name, when getting all fields of a group.</param>
+    /// <param name="currentItemIsSourceId">Optional: Whether the opened item (that contains the sub-entities-grid) is the source instead of the destination.</param>
+    /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/entity-grids/{entityType}")]
+    [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+    public async Task<IActionResult> EntityGridAsync(string encryptedId, string entityType, GridReadOptionsModel options, [FromQuery]int linkTypeNumber = 0, [FromQuery]int moduleId = 0, [FromQuery]EntityGridModes mode = EntityGridModes.Normal, [FromQuery]int propertyId = 0, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null, [FromQuery]string fieldGroupName = null, [FromQuery]bool currentItemIsSourceId = false)
+    {
+        return (await gridsService.GetEntityGridDataAsync(encryptedId, entityType, linkTypeNumber, moduleId, mode, options, propertyId, queryId, countQueryId, fieldGroupName, currentItemIsSourceId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the data for a grid.
+    /// </summary>
+    /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+    /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
+    /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
+    /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
+    [HttpGet]
+    [Route("{encryptedId}/grids/{propertyId:int}")]
+    [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGridDataAsync(string encryptedId, int propertyId, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null)
+    {
+        return (await gridsService.GetDataAsync(propertyId, encryptedId, new GridReadOptionsModel(), queryId, countQueryId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the data for a grid with filters.
+    /// </summary>
+    /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+    /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="options">The options for the grid.</param>
+    /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
+    /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
+    /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/grids-with-filters/{propertyId:int}")]
+    [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGridDataWithFiltersAsync(string encryptedId, int propertyId, GridReadOptionsModel options, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null)
+    {
+        return (await gridsService.GetDataAsync(propertyId, encryptedId, options, queryId, countQueryId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Insert a new row in a grid.
+    /// </summary>
+    /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+    /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="data">The data for the new row.</param>
+    /// <returns>The newly added data.</returns>
+    [HttpPost]
+    [Route("{encryptedId}/grids/{propertyId:int}")]
+    [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> InsertGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
+    {
+        return (await gridsService.InsertDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Update a row in a grid.
+    /// </summary>
+    /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+    /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="data">The new data for the row.</param>
+    [HttpPut]
+    [Route("{encryptedId}/grids/{propertyId:int}")]
+    [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
+    {
+        return (await gridsService.UpdateDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Delete a row in a grid.
+    /// </summary>
+    /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
+    /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
+    /// <param name="data">The new data for the row.</param>
+    [HttpDelete]
+    [Route("{encryptedId}/grids/{propertyId:int}")]
+    [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
+    {
+        return (await gridsService.DeleteDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Gets all entity types from an item ID.
+    /// Wiser can have multiple wiser_item tables, with a prefix for certain entity types. This means an ID can exists multiple times.
+    /// This method will get the different entity types with the given ID.
+    /// </summary>
+    /// <param name="itemId">The ID of the item to render to HTML.</param>
+    /// <returns>A list of all entity types that contain an item with this ID.</returns>
+    [HttpGet]
+    [Route("{itemId:long}/entity-types")]
+    [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPossibleEntityTypesAsync(ulong itemId)
+    {
+        return (await itemsService.GetPossibleEntityTypesAsync(itemId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get all items for a tree view for a specific parent.
+    /// </summary>
+    /// <param name="moduleId">The ID of the module.</param>
+    /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a dedicated table table.</param>
+    /// <param name="encryptedItemId">Optional: Item id of the item to get the child items of. If no value has been given, the root will be used as parent.</param>
+    /// <param name="entityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
+    /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
+    /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
+    /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
+    /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
+    [HttpGet]
+    [Route("tree-view")]
+    [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string parentEntityType = "", [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null, [FromQuery] int linkType = 0)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
+        var decryptedCheckId = await wiserTenantsService.DecryptValue<ulong>(checkId, identity);
+        return (await itemsService.GetItemsForTreeViewAsync(moduleId, identity, parentEntityType, itemId, orderBy, decryptedCheckId, linkType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get all items for a tree view for a specific parent.
+    /// </summary>
+    /// <param name="moduleId">The ID of the module.</param>
+    /// <param name="entityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
+    /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a dedicated table.</param>
+    /// <param name="itemId">Optional: The ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
+    /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
+    /// <param name="checkId">Optional: This is meant for item-linker fields. This is the ID for the item that should currently be checked.</param>
+    /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
+    /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
+    [HttpGet]
+    [Route("~/api/v4/[controller]/tree-view")]
+    [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] ulong? itemId = null, [FromQuery] string parentEntityType = "", [FromQuery] string entityType = null,  [FromQuery] string orderBy = null, [FromQuery] ulong? checkId = null, [FromQuery] int linkType = 0)
+    {
+        return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, parentEntityType, itemId ?? 0,orderBy, checkId ?? 0, linkType, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get the context menu items for the given item dependant on what the user is allowed to do.
+    /// </summary>
+    /// <param name="moduleId">the module the item is in.</param>
+    /// <param name="encryptedItemId">The item of the item to get the menu items for.</param>
+    /// <param name="entityType">The entity type of the item.</param>
+    /// <returns></returns>
+    [HttpGet]
+    [Route("context-menu")]
+    [ProducesResponseType(typeof(List<ContextMenuItem>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId, string entityType = "")
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
+        return (await itemsService.GetContextMenuAsync((ClaimsIdentity)User.Identity, moduleId, itemId, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Move an item to a different position in the tree view.
+    /// </summary>
+    /// <param name="encryptedSourceId">The encrypted ID of the item that is being moved.</param>
+    /// <param name="encryptedDestinationId">The encrypted ID of the item that it's being moved towards.</param>
+    /// <param name="data">The data needed to know where the item should be moved to.</param>
+    [HttpPut]
+    [Route("{encryptedSourceId}/move/{encryptedDestinationId}")]
+    [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MoveItemAsync(string encryptedSourceId, string encryptedDestinationId, [FromBody]MoveItemRequestModel data)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var sourceId = await wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, identity);
+        var destinationId = await wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, identity);
+        var sourceParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedSourceParentId, identity);
+        var destinationParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedDestinationParentId, identity);
+
+        return (await itemsService.MoveItemAsync(identity, sourceId, destinationId, data.Position, sourceParentId, destinationParentId, data.SourceEntityType, data.DestinationEntityType, data.ModuleId)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Move an item to a different position in the tree view.
+    /// </summary>
+    /// <param name="sourceId">The ID of the item that is being moved.</param>
+    /// <param name="destinationId">The ID of the item that it's being moved towards.</param>
+    /// <param name="data">The data needed to know where the item should be moved to.</param>
+    [HttpPut]
+    [Route("~/api/v4/[controller]/{sourceId:long}/move/{destinationId:long}")]
+    [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> MoveItemAsync(ulong sourceId, ulong destinationId, [FromBody]MoveItemRequestModel data)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var sourceParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedSourceParentId, identity);
+        var destinationParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedDestinationParentId, identity);
+
+        return (await itemsService.MoveItemAsync(identity, sourceId, destinationId, data.Position, sourceParentId, destinationParentId, data.SourceEntityType, data.DestinationEntityType, data.ModuleId)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Deprecated: Link one or more items to one or more other items.
+    /// </summary>
+    /// <param name="data">The data needed to add new links.</param>
+    [HttpPost]
+    [Route("add-links")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AddMultipleLinksAsyncV3([FromBody]AddOrRemoveLinksRequestModel data)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var sourceIds = new List<ulong>();
+        var destinationIds = new List<ulong>();
+
+        foreach (var encryptedSourceId in data.EncryptedSourceIds)
         {
-            this.wiserTenantsService = wiserTenantsService;
-            this.itemsService = itemsService;
-            this.gridsService = gridsService;
-            this.filesService = filesService;
-            this.gclSettings = gclSettings.Value;
+            var decryptedSourceId = await wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, identity);
+            sourceIds.Add(decryptedSourceId);
         }
 
-        /// <summary>
-        /// Gets all items from Wiser. It's possible to use filters here.
-        /// The results will be returned in multiple pages, with a max of 500 items per page.
-        /// </summary>
-        /// <param name="input">The filters and paging settings to specify the items you're looking for.</param>
-        /// <returns>A PagedResults with information about the total amount of items, page number etc. The results property contains the actual results, of type FlatItemModel.</returns>
-        [HttpGet]
-        [ProducesResponseType(typeof(PagedResults<FlatItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsAsync([FromQuery]GetItemsInputModel input = null)
+        foreach (var encryptedDestinationId in data.EncryptedDestinationIds)
         {
-            return (await itemsService.GetItemsAsync((ClaimsIdentity)User.Identity, input)).GetHttpResponseMessage();
+            var decryptedDestinationId = await wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, identity);
+            destinationIds.Add(decryptedDestinationId);
         }
 
-        /// <summary>
-        /// Get the HTML and javascript for single Wiser item, to show the item in Wiser.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item to get.</param>
-        /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
-        /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
-        /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
-        /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
-        /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
-        [HttpGet]
-        [Route("{encryptedId}")]
-        [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetItemAsync(string encryptedId, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+        return (await itemsService.AddMultipleLinksAsync(identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Link one or more items to one or more other items.
+    /// </summary>
+    /// <param name="data">The data needed to add new links.</param>
+    [HttpPost]
+    [Route("~/api/v4/[controller]/add-links")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AddMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
+    {
+        return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Removed one or more links between items.
+    /// </summary>
+    /// <param name="data">The data for the links to remove.</param>
+    [HttpDelete]
+    [Route("remove-links")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveMultipleLinksAsyncV3([FromBody]AddOrRemoveLinksRequestModel data)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var sourceIds = new List<ulong>();
+        var destinationIds = new List<ulong>();
+
+        foreach (var encryptedSourceId in data.EncryptedSourceIds)
         {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.GetItemHtmlAsync(itemId, identity, propertyIdSuffix, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
+            var decryptedSourceId = await wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, identity);
+            sourceIds.Add(decryptedSourceId);
         }
 
-        /// <summary>
-        /// Get the HTML and javascript for single Wiser item, to show the item in Wiser.
-        /// </summary>
-        /// <param name="id">The ID of the item to get.</param>
-        /// <param name="propertyIdSuffix">Optional: The suffix of every field on the item. This is used to give each field a unique ID, when multiple items are opened at the same time. Default value is <see langword="null"/>.</param>
-        /// <param name="itemLinkId">Optional: The id of the item link from wiser_itemlink. This should be used when opening an item via a sub-entities-grid, to show link fields. Default value is 0.</param>
-        /// <param name="entityType">Optional: The entity type of the item. Default value is <see langword="null"/>.</param>
-        /// <param name="linkType">Optional: The type number of the link, if this item also contains fields on a link.</param>
-        /// <returns>A <see cref="ItemHtmlAndScriptModel"/> with the HTML and javascript needed to load this item in Wiser.</returns>
-        [HttpGet]
-        [Route("~/api/v4/[controller]/{id:long}")]
-        [ProducesResponseType(typeof(ItemHtmlAndScriptModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> GetItemAsync(ulong id, [FromQuery]string propertyIdSuffix = null, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+        foreach (var encryptedDestinationId in data.EncryptedDestinationIds)
         {
-            return (await itemsService.GetItemHtmlAsync(id, (ClaimsIdentity)User.Identity, propertyIdSuffix, itemLinkId, entityType, linkType)).GetHttpResponseMessage();
+            var decryptedDestinationId = await wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, identity);
+            destinationIds.Add(decryptedDestinationId);
         }
 
-        /// <summary>
-        /// Gets all details of an item.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item.</param>
-        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("{encryptedId}/details")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.GetItemDetailsAsync(itemId, identity, entityType)).GetHttpResponseMessage();
-        }
+        return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+    }
 
-        /// <summary>
-        /// Gets all details of an item.
-        /// </summary>
-        /// <param name="itemId">The ID of the item.</param>
-        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("~/api/v4/[controller]/{itemId:long}/details")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetItemDetailsAsync(ulong itemId, [FromQuery]string entityType = null)
-        {
-            return (await itemsService.GetItemDetailsAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
-        }
+    /// <summary>
+    /// Removed one or more links between items.
+    /// </summary>
+    /// <param name="data">The data for the links to remove.</param>
+    [HttpDelete]
+    [Route("~/api/v4/[controller]/remove-links")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RemoveMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
+    {
+        return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+    }
 
-        /// <summary>
-        /// Retrieve an item that the given item is linked to, or and item that is linked to the given item.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the main item.</param>
-        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
-        /// <param name="linkType">Optional: The type number of the link.</param>
-        /// <param name="reversed">Optional: Whether to retrieve an item that that given item is linked to (<see langword="true"/>), or an item that is linked to the given item (<see langword="false"/>).</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("{encryptedId}/linked/details")]
-        [ProducesResponseType(typeof(IEnumerable<WiserItemModel>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetLinkedItemDetailsAsync(string encryptedId, [FromQuery]string entityType = null, [FromQuery]string itemIdEntityType = null, [FromQuery]int linkType = 0, [FromQuery]bool reversed = false)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.GetLinkedItemDetailsAsync(itemId, identity, entityType, itemIdEntityType, linkType, reversed)).GetHttpResponseMessage();
-        }
+    /// <summary>
+    /// Encrypt an ID of an item.
+    /// </summary>
+    /// <param name="id">The ID to encrypt.</param>
+    /// <returns>The encrypted ID.</returns>
+    [HttpGet]
+    [Route("{id:long}/encrypt")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetEncryptedIdAsync(ulong id)
+    {
+        return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
+    }
 
-        /// <summary>
-        /// Retrieve an item that the given item is linked to, or and item that is linked to the given item.
-        /// </summary>
-        /// <param name="itemId">The ID of the main item.</param>
-        /// <param name="entityType">Optional: The entity type of the item to retrieve. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <param name="itemIdEntityType">Optional: You can enter the entity type of the given itemId here, if you want to get items from a dedicated table and those items can have multiple different entity types. This only works if all those items exist in the same table. Default is null.</param>
-        /// <param name="linkType">Optional: The type number of the link.</param>
-        /// <param name="reversed">Optional: Whether to retrieve an item that that given item is linked to (<see langword="true"/>), or an item that is linked to the given item (<see langword="false"/>).</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("~/api/v4/[controller]/{itemId:long}/linked/details")]
-        [ProducesResponseType(typeof(IEnumerable<WiserItemModel>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetLinkedItemDetailsAsync(ulong itemId, [FromQuery]string entityType = null, [FromQuery]string itemIdEntityType = null, [FromQuery]int linkType = 0, [FromQuery]bool reversed = false)
-        {
-            return (await itemsService.GetLinkedItemDetailsAsync(itemId, (ClaimsIdentity)User.Identity, entityType, itemIdEntityType, linkType, reversed)).GetHttpResponseMessage();
-        }
+    /// <summary>
+    /// Translate all fields of an item into one or more other languages, using the Google Translation API.
+    /// This will only translate fields that don't have a value yet for the destination language
+    /// </summary>
+    /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
+    /// <param name="settings">The settings for translating.</param>
+    [HttpPut]
+    [Route("{encryptedId}/translate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> TranslateAllFieldsAsync(string encryptedId, TranslateItemRequestModel settings)
+    {
+        var identity = (ClaimsIdentity)User.Identity;
+        var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
+        return (await itemsService.TranslateAllFieldsAsync(identity, itemId, settings)).GetHttpResponseMessage();
+    }
 
-        /// <summary>
-        /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns>The item meta data.</returns>
-        [HttpGet]
-        [Route("{encryptedId}/meta")]
-        [ProducesResponseType(typeof(ItemMetaDataModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetItemMetDataAsync(string encryptedId, [FromQuery]string entityType = null)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.GetItemMetaDataAsync(itemId, identity, entityType)).GetHttpResponseMessage();
-        }
+    /// <summary>
+    /// Translate all fields of an item into one or more other languages, using the Google Translation API.
+    /// This will only translate fields that don't have a value yet for the destination language
+    /// </summary>
+    /// <param name="itemId">The ID of the item to translate.</param>
+    /// <param name="settings">The settings for translating.</param>
+    [HttpPut]
+    [Route("~/api/v4/[controller]/{itemId:long}/translate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> TranslateAllFieldsAsync(ulong itemId, TranslateItemRequestModel settings)
+    {
+        return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, itemId, settings)).GetHttpResponseMessage();
+    }
 
-        /// <summary>
-        /// Get the meta data of an item. This is data such as the title, entity type, last change date etc.
-        /// </summary>
-        /// <param name="itemId">The encrypted ID of the item.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns>The item meta data.</returns>
-        [HttpGet]
-        [Route("~/api/v4/[controller]/{itemId:long}/meta")]
-        [ProducesResponseType(typeof(ItemMetaDataModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetItemMetDataAsync(ulong itemId, [FromQuery]string entityType = null)
-        {
-            return (await itemsService.GetItemMetaDataAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get the HTML for a specific Wiser item.
-        /// In Wiser you can declare a default query and HTML template for entity types, to render a single item of that type on a website.
-        /// This method will return that rendered HTML.
-        /// </summary>
-        /// <param name="itemId">The ID of the item to render to HTML.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns>The rendered HTML for the item.</returns>
-        [HttpGet]
-        [Route("{itemId}/block")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetHtmlBlockAsync(ulong itemId, [FromQuery]string entityType = null)
-        {
-            return (await itemsService.GetHtmlForWiserEntityAsync(itemId, (ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Create a new item.
-        /// </summary>
-        /// <param name="item">The item to create.</param>
-        /// <param name="parentId">Optional: The encrypted ID of the parent to create this item under.</param>
-        /// <param name="linkType">Optional: The link type of the link to the parent.</param>
-        /// <param name="alsoCreateInMainBranch"></param>
-        /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
-        [HttpPost]
-        [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(parentId, identity);
-            return (await itemsService.CreateAsync(item, identity, itemId, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Create a new item.
-        /// </summary>
-        /// <param name="item">The item to create.</param>
-        /// <param name="parentId">Optional: The ID of the parent to create this item under.</param>
-        /// <param name="linkType">Optional: The link type of the link to the parent.</param>
-        /// <param name="alsoCreateInMainBranch"></param>
-        /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
-        [HttpPost]
-        [Route("~/api/v4/[controller]")]
-        [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]ulong? parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
-        {
-            return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId ?? 0, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Updates an item.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item to update.</param>
-        /// <param name="item">The new data for the item.</param>
-        /// <returns>The updated item.</returns>
-        [HttpPut]
-        [Route("{encryptedId}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> PutAsync(string encryptedId, WiserItemModel item)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.UpdateAsync(itemId, item, identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Updates an item.
-        /// </summary>
-        /// <param name="itemId">The ID of the item to update.</param>
-        /// <param name="item">The new data for the item.</param>
-        /// <returns>The updated item.</returns>
-        [HttpPut]
-        [Route("~/api/v4/[controller]/{itemId:long}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> PutAsync(ulong itemId, WiserItemModel item)
-        {
-            return (await itemsService.UpdateAsync(itemId, item, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Creates a duplicate copy of an existing item.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item to duplicate.</param>
-        /// <param name="encryptedParentId">The encrypted ID of the parent of the item to duplicate. The copy will be placed under the same parent.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <param name="parentEntityType">Optional: The entity type of the parent of the item to duplicate. This is needed when the parent item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns>A WiserItemDuplicationResultModel containing the result of the duplication.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/duplicate/{encryptedParentId}")]
-        [ProducesResponseType(typeof(WiserItemDuplicationResultModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DuplicateAsync(string encryptedId, string encryptedParentId, [FromQuery]string entityType = null, [FromQuery]string parentEntityType = null)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            var parentId = await wiserTenantsService.DecryptValue<ulong>(encryptedParentId, identity);
-            return (await itemsService.DuplicateItemAsync(itemId, parentId, identity, entityType, parentEntityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Creates a duplicate copy of an existing item.
-        /// </summary>
-        /// <param name="itemId">The ID of the item to duplicate.</param>
-        /// <param name="parentId">The ID of the parent of the item to duplicate. The copy will be placed under the same parent.</param>
-        /// <param name="entityType">Optional: The entity type of the item to duplicate. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <param name="parentEntityType">Optional: The entity type of the parent of the item to duplicate. This is needed when the parent item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-        /// <returns>A WiserItemDuplicationResultModel containing the result of the duplication.</returns>
-        [HttpPost]
-        [Route("~/api/v4/[controller]/{itemId:long}/duplicate/{parentId}")]
-        [ProducesResponseType(typeof(WiserItemDuplicationResultModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DuplicateAsync(ulong itemId, ulong parentId, [FromQuery]string entityType = null, [FromQuery]string parentEntityType = null)
-        {
-            return (await itemsService.DuplicateItemAsync(itemId, parentId, (ClaimsIdentity)User.Identity, entityType, parentEntityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Copy an item one or more other environments, so that you can have multiple different versions of an item for different environments.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item.</param>
-        /// <param name="newEnvironments">The environment(s) to copy the item to.</param>
-        /// <returns>The copied item.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/copy-to-environment/{newEnvironments:int}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
-        public async Task<IActionResult> CopyToEnvironmentAsync(string encryptedId, Environments newEnvironments)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.CopyToEnvironmentAsync(itemId, newEnvironments, identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Copy an item one or more other environments, so that you can have multiple different versions of an item for different environments.
-        /// </summary>
-        /// <param name="itemId">The ID of the item.</param>
-        /// <param name="newEnvironments">The environment(s) to copy the item to.</param>
-        /// <returns>The copied item.</returns>
-        [HttpPost]
-        [Route("~/api/v4/[controller]/{itemId:long}/copy-to-environment/{newEnvironments:int}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
-        public async Task<IActionResult> CopyToEnvironmentAsync(ulong itemId, Environments newEnvironments)
-        {
-            return (await itemsService.CopyToEnvironmentAsync(itemId, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Change the environments that an item should be visible in.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item.</param>
-        /// <param name="entityType">The entity type of the item.</param>
-        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
-        [HttpPatch]
-        [Route("{encryptedId}/environment/{newEnvironments:int}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
-        public async Task<IActionResult> ChangeEnvironmentAsync(string encryptedId, Environments newEnvironments, [FromQuery]string entityType)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.ChangeEnvironmentAsync(itemId, entityType, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Change the environments that an item should be visible in.
-        /// </summary>
-        /// <param name="itemId">The ID of the item.</param>
-        /// <param name="entityType">The entity type of the item.</param>
-        /// <param name="newEnvironments">The environment(s) to make the item visible in. Use Environments.Hidden (0) to hide an item completely.</param>
-        [HttpPatch]
-        [Route("~/api/v4/[controller]/{itemId:long}/environment/{newEnvironments:int}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        // ReSharper disable once RouteTemplates.ParameterTypeAndConstraintsMismatch
-        public async Task<IActionResult> ChangeEnvironmentAsync(ulong itemId, Environments newEnvironments, [FromQuery]string entityType)
-        {
-            return (await itemsService.ChangeEnvironmentAsync(itemId, entityType, newEnvironments, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Delete or undelete an item. Deleting an item will move it to an archive table, so it's never completely deleted by this method.
-        /// Undeleting an item moves it from the archive table back to the actual table.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item to delete.</param>
-        /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
-        /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
-        [HttpDelete]
-        [Route("{encryptedId}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DeleteAsync(string encryptedId, [FromQuery]bool undelete = false, [FromQuery]string entityType = null)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.DeleteAsync(itemId, identity, undelete, entityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Delete or undelete an item. Deleting an item will move it to an archive table, so it's never completely deleted by this method.
-        /// Undeleting an item moves it from the archive table back to the actual table.
-        /// </summary>
-        /// <param name="itemId">The ID of the item to delete.</param>
-        /// <param name="undelete">Optional: Whether to undelete the item instead of deleting it.</param>
-        /// <param name="entityType">Optional: The entity type of the item. This is needed if the item is saved in a different table than wiser_item.</param>
-        [HttpDelete]
-        [Route("~/api/v4/[controller]/{itemId:long}")]
-        [ProducesResponseType(typeof(WiserItemModel), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> DeleteAsync(ulong itemId, [FromQuery]bool undelete = false, [FromQuery]string entityType = null)
-        {
-            return (await itemsService.DeleteAsync(itemId, (ClaimsIdentity)User.Identity, undelete, entityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Executes the workflow for an item. In wiser_entity you can set queries that need to be executed after an item has been created or updated.
-        /// This method will execute these queries, based on what is being done with the item.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item that was recently created or updated.</param>
-        /// <param name="isNewItem">Set to true if the item was just created, or false if it was updated.</param>
-        /// <param name="item">Optional: The data of the item to execute the workflow for.</param>
-        /// <returns>A boolean indicating whether or not anything was done. If there was no workflow setup, false will be returned, otherwise true.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/workflow")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> WorkflowAsync(string encryptedId, WiserItemModel item, [FromQuery] bool isNewItem = false)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.ExecuteWorkflowAsync(itemId, isNewItem, identity, item)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Executes the workflow for an item. In wiser_entity you can set queries that need to be executed after an item has been created or updated.
-        /// This method will execute these queries, based on what is being done with the item.
-        /// </summary>
-        /// <param name="itemId">The ID of the item that was recently created or updated.</param>
-        /// <param name="isNewItem">Set to true if the item was just created, or false if it was updated.</param>
-        /// <param name="item">Optional: The data of the item to execute the workflow for.</param>
-        /// <returns>A boolean indicating whether or not anything was done. If there was no workflow setup, false will be returned, otherwise true.</returns>
-        [HttpPost]
-        [Route("~/api/v4/[controller]/{itemId:long}/workflow")]
-        [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> WorkflowAsync(ulong itemId, WiserItemModel item, [FromQuery] bool isNewItem = false)
-        {
-            return (await itemsService.ExecuteWorkflowAsync(itemId, isNewItem, (ClaimsIdentity)User.Identity, item)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Executes a custom query and return the results.
-        /// This will call GetCustomQueryAsync and use that query.
-        /// This will replace the details from an item in the query before executing it.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item to execute the query for.</param>
-        /// <param name="propertyId">The ID of the property from wiser_entityproperty. Set to 0 if you want to use a query ID.</param>
-        /// <param name="extraParameters">Any extra parameters to use in the query.</param>
-        /// <param name="queryId">The encrypted ID of the query from wiser_query. Encrypt the value "0" if you want to use a property ID.</param>
-        /// <param name="itemLinkId">Optional: If the item is linked to something else and you need to know that in the query, enter the ID of that link from wiser_itemlink here.</param>
-        /// <returns>The results of the query.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/action-button/{propertyId:int}")]
-        [ProducesResponseType(typeof(ActionButtonResultModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> ActionButton(string encryptedId, int propertyId, [FromBody] Dictionary<string, object> extraParameters, [FromQuery] string queryId = null, [FromQuery] ulong itemLinkId = 0)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            var decryptedQueryId = await wiserTenantsService.DecryptValue<int>(queryId, identity);
-
-            return (await itemsService.ExecuteCustomQueryAsync(itemId, propertyId, extraParameters, decryptedQueryId, identity, itemLinkId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Executes a custom query and return the results.
-        /// This will call GetCustomQueryAsync and use that query.
-        /// This will replace the details from an item in the query before executing it.
-        /// </summary>
-        /// <param name="itemId">The ID of the item to execute the query for.</param>
-        /// <param name="propertyId">The ID of the property from wiser_entityproperty. Set to 0 if you want to use a query ID.</param>
-        /// <param name="extraParameters">Any extra parameters to use in the query.</param>
-        /// <param name="queryId">The ID of the query from wiser_query. Set to 0 if you want to use a property ID.</param>
-        /// <param name="itemLinkId">Optional: If the item is linked to something else and you need to know that in the query, enter the ID of that link from wiser_itemlink here.</param>
-        /// <returns>The results of the query.</returns>
-        [HttpPost]
-        [Route("~/api/v4/[controller]/{itemId:long}/action-button/{propertyId:int}")]
-        [ProducesResponseType(typeof(ActionButtonResultModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> ActionButton(ulong itemId, int propertyId, [FromBody] Dictionary<string, object> extraParameters, [FromQuery] int? queryId = null, [FromQuery] ulong itemLinkId = 0)
-        {
-            return (await itemsService.ExecuteCustomQueryAsync(itemId, propertyId, extraParameters, queryId ?? 0, (ClaimsIdentity)User.Identity, itemLinkId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get the data for a sub-entities-grid.
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="entityType">The entity type of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="linkTypeNumber">The link type number to use for getting linked items.</param>
-        /// <param name="moduleId">The module ID of the items to get.</param>
-        /// <param name="mode">The mode that the sub-entities-grid is in.</param>
-        /// <param name="options">The options for the grid.</param>
-        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
-        /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
-        /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
-        /// <param name="fieldGroupName">Optional: The field group name, when getting all fields of a group.</param>
-        /// <param name="currentItemIsSourceId">Optional: Whether the opened item (that contains the sub-entities-grid) is the source instead of the destination.</param>
-        /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/entity-grids/{entityType}")]
-        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> EntityGridAsync(string encryptedId, string entityType, GridReadOptionsModel options, [FromQuery]int linkTypeNumber = 0, [FromQuery]int moduleId = 0, [FromQuery]EntityGridModes mode = EntityGridModes.Normal, [FromQuery]int propertyId = 0, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null, [FromQuery]string fieldGroupName = null, [FromQuery]bool currentItemIsSourceId = false)
-        {
-            return (await gridsService.GetEntityGridDataAsync(encryptedId, entityType, linkTypeNumber, moduleId, mode, options, propertyId, queryId, countQueryId, fieldGroupName, currentItemIsSourceId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get the data for a grid.
-        /// </summary>
-        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
-        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
-        /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
-        /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
-        [HttpGet]
-        [Route("{encryptedId}/grids/{propertyId:int}")]
-        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetGridDataAsync(string encryptedId, int propertyId, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null)
-        {
-            return (await gridsService.GetDataAsync(propertyId, encryptedId, new GridReadOptionsModel(), queryId, countQueryId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get the data for a grid with filters.
-        /// </summary>
-        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
-        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="options">The options for the grid.</param>
-        /// <param name="queryId">Optional: The encrypted ID of the query to execute for getting the data.</param>
-        /// <param name="countQueryId">Optional: The encrypted ID of the query to execute for counting the total amount of items.</param>
-        /// <returns>The data of the grid, as a <see cref="GridSettingsAndDataModel"/>.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/grids-with-filters/{propertyId:int}")]
-        [ProducesResponseType(typeof(GridSettingsAndDataModel), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetGridDataWithFiltersAsync(string encryptedId, int propertyId, GridReadOptionsModel options, [FromQuery]string queryId = null, [FromQuery]string countQueryId = null)
-        {
-            return (await gridsService.GetDataAsync(propertyId, encryptedId, options, queryId, countQueryId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Insert a new row in a grid.
-        /// </summary>
-        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
-        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="data">The data for the new row.</param>
-        /// <returns>The newly added data.</returns>
-        [HttpPost]
-        [Route("{encryptedId}/grids/{propertyId:int}")]
-        [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> InsertGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
-        {
-            return (await gridsService.InsertDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Update a row in a grid.
-        /// </summary>
-        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
-        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="data">The new data for the row.</param>
-        [HttpPut]
-        [Route("{encryptedId}/grids/{propertyId:int}")]
-        [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> UpdateGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
-        {
-            return (await gridsService.UpdateDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Delete a row in a grid.
-        /// </summary>
-        /// <param name="propertyId">The ID of the corresponding row in wiser_entityproperty.</param>
-        /// <param name="encryptedId">The encrypted ID of the currently opened item that contains the sub-entities-grid.</param>
-        /// <param name="data">The new data for the row.</param>
-        [HttpDelete]
-        [Route("{encryptedId}/grids/{propertyId:int}")]
-        [ProducesResponseType(typeof(List<Dictionary<string, object>>), StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> DeleteGridDataAsync(string encryptedId, int propertyId, Dictionary<string, object> data)
-        {
-            return (await gridsService.DeleteDataAsync(propertyId, encryptedId, data, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Gets all entity types from an item ID.
-        /// Wiser can have multiple wiser_item tables, with a prefix for certain entity types. This means an ID can exists multiple times.
-        /// This method will get the different entity types with the given ID.
-        /// </summary>
-        /// <param name="itemId">The ID of the item to render to HTML.</param>
-        /// <returns>A list of all entity types that contain an item with this ID.</returns>
-        [HttpGet]
-        [Route("{itemId:long}/entity-types")]
-        [ProducesResponseType(typeof(List<EntityTypeModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetPossibleEntityTypesAsync(ulong itemId)
-        {
-            return (await itemsService.GetPossibleEntityTypesAsync(itemId, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get all items for a tree view for a specific parent.
-        /// </summary>
-        /// <param name="moduleId">The ID of the module.</param>
-        /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a dedicated table table.</param>
-        /// <param name="encryptedItemId">Optional: Item id of the item to get the child items of. If no value has been given, the root will be used as parent.</param>
-        /// <param name="entityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
-        /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
-        /// <param name="checkId">Optional: This is meant for item-linker fields. This is the encrypted ID for the item that should currently be checked.</param>
-        /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
-        /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
-        [HttpGet]
-        [Route("tree-view")]
-        [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId = null, [FromQuery] string parentEntityType = "", [FromQuery] string entityType = null, [FromQuery] string orderBy = null, [FromQuery] string checkId = null, [FromQuery] int linkType = 0)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
-            var decryptedCheckId = await wiserTenantsService.DecryptValue<ulong>(checkId, identity);
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, identity, parentEntityType, itemId, orderBy, decryptedCheckId, linkType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get all items for a tree view for a specific parent.
-        /// </summary>
-        /// <param name="moduleId">The ID of the module.</param>
-        /// <param name="entityType">Optional: Restricts the returned items to items of the given entity types. This is a string of comma separated values.</param>
-        /// <param name="parentEntityType">Optional: Entitytype of the parent item. Used in the case that the parentItem is an a dedicated table.</param>
-        /// <param name="itemId">Optional: The ID of the parent to fix the ordering for. If no value has been given, the root will be used as parent.</param>
-        /// <param name="orderBy">Optional: Enter the value "item_title" to order by title, or nothing to order by order number.</param>
-        /// <param name="checkId">Optional: This is meant for item-linker fields. This is the ID for the item that should currently be checked.</param>
-        /// <param name="linkType">Optional: The type number of the link. This is used in combination with "checkId"; So that items will only be marked as checked if they have the given link ID.</param>
-        /// <returns>A list of <see cref="TreeViewItemModel"/>.</returns>
-        [HttpGet]
-        [Route("~/api/v4/[controller]/tree-view")]
-        [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetItemsForTreeViewAsync([FromQuery] int moduleId, [FromQuery] ulong? itemId = null, [FromQuery] string parentEntityType = "", [FromQuery] string entityType = null,  [FromQuery] string orderBy = null, [FromQuery] ulong? checkId = null, [FromQuery] int linkType = 0)
-        {
-            return (await itemsService.GetItemsForTreeViewAsync(moduleId, (ClaimsIdentity)User.Identity, parentEntityType, itemId ?? 0,orderBy, checkId ?? 0, linkType, entityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Get the contact menu items for the given item dependant on what the user is allowed to do.
-        /// </summary>
-        /// <param name="moduleId">the module the item is in.</param>
-        /// <param name="encryptedItemId">The item of the item to get the menu items for.</param>
-        /// <param name="entityType">The entity type of the item.</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("context-menu")]
-        [ProducesResponseType(typeof(List<ContextMenuItem>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetContextMenuAsync([FromQuery] int moduleId, [FromQuery] string encryptedItemId, string entityType = "")
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedItemId, identity);
-            return (await itemsService.GetContextMenuAsync((ClaimsIdentity)User.Identity, moduleId, itemId, entityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Move an item to a different position in the tree view.
-        /// </summary>
-        /// <param name="encryptedSourceId">The encrypted ID of the item that is being moved.</param>
-        /// <param name="encryptedDestinationId">The encrypted ID of the item that it's being moved towards.</param>
-        /// <param name="data">The data needed to know where the item should be moved to.</param>
-        [HttpPut]
-        [Route("{encryptedSourceId}/move/{encryptedDestinationId}")]
-        [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> MoveItemAsync(string encryptedSourceId, string encryptedDestinationId, [FromBody]MoveItemRequestModel data)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var sourceId = await wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, identity);
-            var destinationId = await wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, identity);
-            var sourceParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedSourceParentId, identity);
-            var destinationParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedDestinationParentId, identity);
-
-            return (await itemsService.MoveItemAsync(identity, sourceId, destinationId, data.Position, sourceParentId, destinationParentId, data.SourceEntityType, data.DestinationEntityType, data.ModuleId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Move an item to a different position in the tree view.
-        /// </summary>
-        /// <param name="sourceId">The ID of the item that is being moved.</param>
-        /// <param name="destinationId">The ID of the item that it's being moved towards.</param>
-        /// <param name="data">The data needed to know where the item should be moved to.</param>
-        [HttpPut]
-        [Route("~/api/v4/[controller]/{sourceId:long}/move/{destinationId:long}")]
-        [ProducesResponseType(typeof(List<TreeViewItemModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> MoveItemAsync(ulong sourceId, ulong destinationId, [FromBody]MoveItemRequestModel data)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var sourceParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedSourceParentId, identity);
-            var destinationParentId = await wiserTenantsService.DecryptValue<ulong>(data.EncryptedDestinationParentId, identity);
-
-            return (await itemsService.MoveItemAsync(identity, sourceId, destinationId, data.Position, sourceParentId, destinationParentId, data.SourceEntityType, data.DestinationEntityType, data.ModuleId)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Deprecated: Link one or more items to one or more other items.
-        /// </summary>
-        /// <param name="data">The data needed to add new links.</param>
-        [HttpPost]
-        [Route("add-links")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> AddMultipleLinksAsyncV3([FromBody]AddOrRemoveLinksRequestModel data)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var sourceIds = new List<ulong>();
-            var destinationIds = new List<ulong>();
-
-            foreach (var encryptedSourceId in data.EncryptedSourceIds)
-            {
-                var decryptedSourceId = await wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, identity);
-                sourceIds.Add(decryptedSourceId);
-            }
-
-            foreach (var encryptedDestinationId in data.EncryptedDestinationIds)
-            {
-                var decryptedDestinationId = await wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, identity);
-                destinationIds.Add(decryptedDestinationId);
-            }
-
-            return (await itemsService.AddMultipleLinksAsync(identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Link one or more items to one or more other items.
-        /// </summary>
-        /// <param name="data">The data needed to add new links.</param>
-        [HttpPost]
-        [Route("~/api/v4/[controller]/add-links")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> AddMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
-        {
-            return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Removed one or more links between items.
-        /// </summary>
-        /// <param name="data">The data for the links to remove.</param>
-        [HttpDelete]
-        [Route("remove-links")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> RemoveMultipleLinksAsyncV3([FromBody]AddOrRemoveLinksRequestModel data)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var sourceIds = new List<ulong>();
-            var destinationIds = new List<ulong>();
-
-            foreach (var encryptedSourceId in data.EncryptedSourceIds)
-            {
-                var decryptedSourceId = await wiserTenantsService.DecryptValue<ulong>(encryptedSourceId, identity);
-                sourceIds.Add(decryptedSourceId);
-            }
-
-            foreach (var encryptedDestinationId in data.EncryptedDestinationIds)
-            {
-                var decryptedDestinationId = await wiserTenantsService.DecryptValue<ulong>(encryptedDestinationId, identity);
-                destinationIds.Add(decryptedDestinationId);
-            }
-
-            return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Removed one or more links between items.
-        /// </summary>
-        /// <param name="data">The data for the links to remove.</param>
-        [HttpDelete]
-        [Route("~/api/v4/[controller]/remove-links")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> RemoveMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
-        {
-            return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Encrypt an ID of an item.
-        /// </summary>
-        /// <param name="id">The ID to encrypt.</param>
-        /// <returns>The encrypted ID.</returns>
-        [HttpGet]
-        [Route("{id:long}/encrypt")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetEncryptedIdAsync(ulong id)
-        {
-            return (await itemsService.GetEncryptedIdAsync(id, (ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Translate all fields of an item into one or more other languages, using the Google Translation API.
-        /// This will only translate fields that don't have a value yet for the destination language
-        /// </summary>
-        /// <param name="encryptedId">The encrypted ID of the item to translate.</param>
-        /// <param name="settings">The settings for translating.</param>
-        [HttpPut]
-        [Route("{encryptedId}/translate")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> TranslateAllFieldsAsync(string encryptedId, TranslateItemRequestModel settings)
-        {
-            var identity = (ClaimsIdentity)User.Identity;
-            var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
-            return (await itemsService.TranslateAllFieldsAsync(identity, itemId, settings)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Translate all fields of an item into one or more other languages, using the Google Translation API.
-        /// This will only translate fields that don't have a value yet for the destination language
-        /// </summary>
-        /// <param name="itemId">The ID of the item to translate.</param>
-        /// <param name="settings">The settings for translating.</param>
-        [HttpPut]
-        [Route("~/api/v4/[controller]/{itemId:long}/translate")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
-        public async Task<IActionResult> TranslateAllFieldsAsync(ulong itemId, TranslateItemRequestModel settings)
-        {
-            return (await itemsService.TranslateAllFieldsAsync((ClaimsIdentity)User.Identity, itemId, settings)).GetHttpResponseMessage();
-        }
-
-        /// <summary>
-        /// Search for items.
-        /// </summary>
-        /// <param name="parentId">The ID of the parent to start searching. Can be 0.</param>
-        /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
-        [HttpGet]
-        [Route("{parentId:long}/search")]
-        [ProducesResponseType(typeof(List<SearchResponseModel>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> SearchAsync(ulong parentId, [FromQuery]SearchRequestModel data)
-        {
-            return (await itemsService.SearchAsync((ClaimsIdentity)User.Identity, parentId, data)).GetHttpResponseMessage();
-        }
+    /// <summary>
+    /// Search for items.
+    /// </summary>
+    /// <param name="parentId">The ID of the parent to start searching. Can be 0.</param>
+    /// <param name="data">The data for the search, such as the search value, entity type of items to search for etc.</param>
+    [HttpGet]
+    [Route("{parentId:long}/search")]
+    [ProducesResponseType(typeof(List<SearchResponseModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SearchAsync(ulong parentId, [FromQuery]SearchRequestModel data)
+    {
+        return (await itemsService.SearchAsync((ClaimsIdentity)User.Identity, parentId, data)).GetHttpResponseMessage();
     }
 }

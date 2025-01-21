@@ -46,5 +46,5 @@ public class GetItemsInputModel
     /// Filters for the details of the items.
     /// </summary>
     [FromQuery]
-    public List<WiserItemDetailInputModel> Details { get; set; } = new List<WiserItemDetailInputModel>();
+    public List<WiserItemDetailInputModel> Details { get; set; } = [];
 }

@@ -18,12 +18,16 @@ using Api.Modules.Files.Models;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Exceptions;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Amazon.Interfaces;
 using GeeksCoreLibrary.Modules.Amazon.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Ftps.Enums;
+using GeeksCoreLibrary.Modules.Ftps.Interfaces;
+using GeeksCoreLibrary.Modules.Ftps.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -35,1009 +39,1053 @@ using TinifyAPI;
 using Constants = Api.Modules.Files.Models.Constants;
 using GclCoreConstants = GeeksCoreLibrary.Core.Models.Constants;
 
-namespace Api.Modules.Files.Services
+namespace Api.Modules.Files.Services;
+
+/// <inheritdoc cref="IFilesService" />
+public class FilesService : IFilesService, IScopedService
 {
-    /// <inheritdoc cref="IFilesService" />
-    public class FilesService : IFilesService, IScopedService
+    private readonly IWiserTenantsService wiserTenantsService;
+    private readonly ILogger<FilesService> logger;
+    private readonly IDatabaseConnection databaseConnection;
+    private readonly IWiserItemsService wiserItemsService;
+    private readonly ICloudFlareService cloudFlareService;
+    private readonly IFilesRepository filesRepository;
+    private readonly IBranchesService branchesService;
+    private readonly IServiceProvider serviceProvider;
+    private readonly IAmazonS3Service amazonS3Service;
+    private readonly IFtpHandlerFactory ftpHandlerFactory;
+
+    /// <summary>
+    /// Creates a new instance of <see cref="FilesService"/>.
+    /// </summary>
+    public FilesService(IWiserTenantsService wiserTenantsService,
+        ILogger<FilesService> logger,
+        IDatabaseConnection databaseConnection,
+        IWiserItemsService wiserItemsService,
+        ICloudFlareService cloudFlareService,
+        IFilesRepository filesRepository,
+        IOptions<TinyPngSettings> tinyPngSettings,
+        IBranchesService branchesService,
+        IServiceProvider serviceProvider,
+        IAmazonS3Service amazonS3Service,
+        IFtpHandlerFactory ftpHandlerFactory)
     {
-        private readonly IWiserTenantsService wiserTenantsService;
-        private readonly ILogger<FilesService> logger;
-        private readonly IDatabaseConnection databaseConnection;
-        private readonly IWiserItemsService wiserItemsService;
-        private readonly ICloudFlareService cloudFlareService;
-        private readonly IFilesRepository filesRepository;
-        private readonly IBranchesService branchesService;
-        private readonly IServiceProvider serviceProvider;
-        private readonly IAmazonS3Service amazonS3Service;
+        this.wiserTenantsService = wiserTenantsService;
+        this.logger = logger;
+        this.databaseConnection = databaseConnection;
+        this.wiserItemsService = wiserItemsService;
+        this.cloudFlareService = cloudFlareService;
+        this.filesRepository = filesRepository;
+        this.branchesService = branchesService;
+        this.serviceProvider = serviceProvider;
+        this.amazonS3Service = amazonS3Service;
+        this.ftpHandlerFactory = ftpHandlerFactory;
 
-        /// <summary>
-        /// Creates a new instance of <see cref="FilesService"/>.
-        /// </summary>
-        public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider, IAmazonS3Service amazonS3Service)
+        Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<FileTreeViewModel>>> GetTreeAsync(ClaimsIdentity identity, ulong parentId = 0)
+    {
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(parentId, EntityActions.Read, userId, entityType: Constants.FilesDirectoryEntityType);
+        if (!success)
         {
-            this.wiserTenantsService = wiserTenantsService;
-            this.logger = logger;
-            this.databaseConnection = databaseConnection;
-            this.wiserItemsService = wiserItemsService;
-            this.cloudFlareService = cloudFlareService;
-            this.filesRepository = filesRepository;
-            this.branchesService = branchesService;
-            this.serviceProvider = serviceProvider;
-            this.amazonS3Service = amazonS3Service;
-
-            Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
+            return new ServiceResult<List<FileTreeViewModel>>
+            {
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<FileTreeViewModel>>> GetTreeAsync(ClaimsIdentity identity, ulong parentId = 0)
+        var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(Constants.FilesDirectoryEntityType);
+        var results = await filesRepository.GetTreeAsync(parentId, tablePrefix);
+
+        foreach (var fileTreeViewModel in results)
         {
-            var userId = IdentityHelpers.GetWiserUserId(identity);
+            fileTreeViewModel.EncryptedId = await wiserTenantsService.EncryptValue(fileTreeViewModel.Id.ToString(), identity);
+            fileTreeViewModel.EncryptedItemId = await wiserTenantsService.EncryptValue(fileTreeViewModel.ItemId.ToString(), identity);
+        }
+
+        return new ServiceResult<List<FileTreeViewModel>>(results);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0)
+    {
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+
+        if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
+        {
+            return new ServiceResult<List<FileModel>>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "Id must be greater than zero."
+            };
+        }
+
+        if (files == null || files.Count == 0)
+        {
+            return new ServiceResult<List<FileModel>>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "No files found in the request"
+            };
+        }
+
+        try
+        {
             await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(parentId, EntityActions.Read, userId, entityType: Constants.FilesDirectoryEntityType);
+            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
             if (!success)
             {
-                return new ServiceResult<List<FileTreeViewModel>>
+                return new ServiceResult<List<FileModel>>
                 {
                     ErrorMessage = errorMessage,
                     StatusCode = HttpStatusCode.Forbidden
                 };
             }
 
-            var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(Constants.FilesDirectoryEntityType);
-            var results = await filesRepository.GetTreeAsync(parentId, tablePrefix);
+            databaseConnection.ClearParameters();
 
-            foreach (var fileTreeViewModel in results)
+            var (ftpDirectory, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
+            var (useAmazonS3, amazonS3BucketName, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
+
+            // Fix ordering of files.
+            if (itemId > 0)
             {
-                fileTreeViewModel.EncryptedId = await wiserTenantsService.EncryptValue(fileTreeViewModel.Id.ToString(), identity);
-                fileTreeViewModel.EncryptedItemId = await wiserTenantsService.EncryptValue(fileTreeViewModel.ItemId.ToString(), identity);
+                await FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
             }
 
-            return new ServiceResult<List<FileTreeViewModel>>(results);
-        }
+            var result = new List<FileModel>();
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0)
-        {
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-
-            if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
+            var tinifyProblemEncountered = false;
+            foreach (var file in files)
             {
-                return new ServiceResult<List<FileModel>>
+                byte[] fileBytes;
+                await using (var memoryStream = new MemoryStream())
                 {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id must be greater than zero."
-                };
-            }
-
-            if (files == null || files.Count == 0)
-            {
-                return new ServiceResult<List<FileModel>>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No files found in the request"
-                };
-            }
-
-            try
-            {
-                await databaseConnection.EnsureOpenConnectionForReadingAsync();
-                var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
-                if (!success)
-                {
-                    return new ServiceResult<List<FileModel>>
-                    {
-                        ErrorMessage = errorMessage,
-                        StatusCode = HttpStatusCode.Forbidden
-                    };
+                    await file.CopyToAsync(memoryStream);
+                    fileBytes = memoryStream.ToArray();
                 }
 
-                databaseConnection.ClearParameters();
+                var fileName = file.FileName.Trim('"');
+                fileName = Path.GetFileNameWithoutExtension(fileName).ConvertToSeo() + Path.GetExtension(fileName).ToLowerInvariant();
+                var fileExtension = Path.GetExtension(fileName);
 
-                var (ftpDirectory, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-                var (useAmazonS3, amazonS3BucketName, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
-
-                // Fix ordering of files.
-                if (itemId > 0)
+                if (useTinyPng && (fileExtension.Equals(".png", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)))
                 {
-                    await FixOrderingAsync(itemId, itemLinkId, propertyName, identity);
-                }
-
-                var result = new List<FileModel>();
-
-                var tinifyProblemEncountered = false;
-                foreach (var file in files)
-                {
-                    byte[] fileBytes;
-                    await using (var memoryStream = new MemoryStream())
-                    {
-                        await file.CopyToAsync(memoryStream);
-                        fileBytes = memoryStream.ToArray();
-                    }
-
-                    var fileName = file.FileName.Trim('"');
-                    fileName = Path.GetFileNameWithoutExtension(fileName).ConvertToSeo() + Path.GetExtension(fileName).ToLowerInvariant();
-                    var fileExtension = Path.GetExtension(fileName);
-
-                    if (useTinyPng && (fileExtension.Equals(".png", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".jpg", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        try
-                        {
-                            fileBytes = await Tinify.FromBuffer(fileBytes).ToBuffer();
-                        }
-                        catch (ClientException e)
-                        {
-                            logger.LogDebug(e, "Problem with input encountered when calling the tinyPng API");
-                            tinifyProblemEncountered = true;
-                        }
-                        catch (AccountException e)
-                        {
-                            logger.LogError(e, "Account Problem encountered when calling the tinyPng API");
-
-                            // Don't try to tinify the rest of the images after an accountException
-                            useTinyPng = false;
-                            tinifyProblemEncountered = true;
-                        }
-                        catch (ConnectionException e)
-                        {
-                            logger.LogInformation(e, "Network problem encountered when calling the tinyPng API");
-                            useTinyPng = false;
-                            tinifyProblemEncountered = true;
-                        }
-                        catch (ServerException e)
-                        {
-                            logger.LogInformation(e, "Third party server problem encountered when calling the tinyPng API");
-                            useTinyPng = false;
-                            tinifyProblemEncountered = true;
-                        }
-                    }
-
-                    var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType, useAmazonS3, amazonS3BucketName, awsSettings);
-                    if (fileResult.StatusCode != HttpStatusCode.OK)
-                    {
-                        return new ServiceResult<List<FileModel>>
-                        {
-                            StatusCode = fileResult.StatusCode,
-                            ErrorMessage = fileResult.ErrorMessage
-                        };
-                    }
-
-                    result.Add(fileResult.ModelObject);
-                }
-
-                if (tinifyProblemEncountered)
-                {
-                    return new ServiceResult<List<FileModel>>(result)
-                    {
-                        StatusCode = HttpStatusCode.OK,
-                        ErrorMessage = "Partial success: file uploaded but not all images tinified"
-                    };
-                }
-
-                return new ServiceResult<List<FileModel>>(result);
-            }
-            catch (MySqlException mySqlException)
-            {
-                if (mySqlException.Number == 1153)
-                {
-                    return new ServiceResult<List<FileModel>>
-                    {
-                        StatusCode = HttpStatusCode.BadRequest,
-                        ErrorMessage = "File is to large for database."
-                    };
-                }
-
-                throw;
-            }
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null)
-        {
-            var content = Array.Empty<byte>();
-            var contentUrl = String.Empty;
-            var fileExtension = Path.GetExtension(fileName);
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            if ((ftpSettings == null || !ftpSettings.Any()) && !useCloudFlare && !useAmazonS3)
-            {
-                content = fileBytes;
-            }
-            else if (useCloudFlare)
-            {
-                contentUrl = await cloudFlareService.UploadImageAsync(fileName, fileBytes);
-            }
-            else if (useAmazonS3)
-            {
-                contentUrl = $"s3://{amazonS3BucketName}/{fileName}";
-
-                var filePath = Path.Combine(Path.GetTempPath(), fileName);
-                await File.WriteAllBytesAsync(filePath, fileBytes);
-                await amazonS3Service.UploadFileAsync(amazonS3BucketName, fileName, filePath, awsSettings);
-                File.Delete(filePath);
-            }
-            else
-            {
-                // Add GUID to file name to make sure we always have a unique name, otherwise you can never upload multiple files in a single file-upload field.
-                var localFileName = $"{itemId}_{propertyName}_{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
-                var ftpPath = Path.Combine("/", ftpSettings.First().RootDirectory ?? "", ftpDirectory ?? "");
-                var ftpFileLocation = Path.Combine(ftpPath, localFileName).Replace(@"\", "/");
-                contentUrl = ftpFileLocation;
-
-                var succeededFtpUploads = new List<FtpSettingsModel>();
-                try
-                {
-                    foreach (var ftp in ftpSettings)
-                    {
-                        if (ftp.Mode == FtpModes.Sftp)
-                        {
-                            throw new NotImplementedException("SFTP is not yet supported");
-                            /*using (var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password))
-                            {
-                                await using var fileStream = new MemoryStream(fileBytes);
-                                client.Connect();
-                                client.UploadFile(fileStream, ftpFileLocation);
-                            }*/
-                        }
-                        else
-                        {
-                            // Get the object used to communicate with the server.
-                            var fullFtpLocation = $"ftp://{ftp.Host}{ftpFileLocation}";
-                            var request = (FtpWebRequest)WebRequest.Create(fullFtpLocation);
-                            request.Method = WebRequestMethods.Ftp.UploadFile;
-                            request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
-                            // Copy the contents of the file to the request stream.
-                            request.ContentLength = fileBytes.Length;
-
-                            await using var requestStream = request.GetRequestStream();
-                            await requestStream.WriteAsync(fileBytes, 0, fileBytes.Length);
-                        }
-
-                        succeededFtpUploads.Add(ftp);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    logger.LogError($"Error while trying to upload file via FTP: {exception}");
-
-                    var errorMessage = $"Er is iets fout gegaan tijdens het uploaden van het bestand via FTP. Probeer het aub opnieuw of neem contact op met ons.<br><br>De fout was:<br>{exception.Message}";
-                    if (!succeededFtpUploads.Any())
-                    {
-                        return new ServiceResult<FileModel>
-                        {
-                            StatusCode = HttpStatusCode.InternalServerError,
-                            ErrorMessage = errorMessage
-                        };
-                    }
-
                     try
                     {
-                        foreach (var ftp in succeededFtpUploads)
-                        {
-                            await DeleteFileFromFtp(ftp, ftpFileLocation);
-                        }
+                        fileBytes = await Tinify.FromBuffer(fileBytes).ToBuffer();
                     }
-                    catch (Exception deleteException)
+                    catch (ClientException clientException)
                     {
-                        logger.LogError($"We got an error while uploading to one of the FTP servers, after at least one already succeeded. So we tried to delete the file from the FTP that succeeded, but that also failed with the exception: {deleteException}");
+                        logger.LogDebug(clientException, "Problem with input encountered when calling the tinyPng API");
+                        tinifyProblemEncountered = true;
+                    }
+                    catch (AccountException accountException)
+                    {
+                        logger.LogError(accountException, "Account Problem encountered when calling the tinyPng API");
+
+                        // Don't try to tinify the rest of the images after an accountException
+                        useTinyPng = false;
+                        tinifyProblemEncountered = true;
+                    }
+                    catch (ConnectionException connectionException)
+                    {
+                        logger.LogInformation(connectionException, "Network problem encountered when calling the tinyPng API");
+                        useTinyPng = false;
+                        tinifyProblemEncountered = true;
+                    }
+                    catch (ServerException serverException)
+                    {
+                        logger.LogInformation(serverException, "Third party server problem encountered when calling the tinyPng API");
+                        useTinyPng = false;
+                        tinifyProblemEncountered = true;
+                    }
+                }
+
+                var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType, useAmazonS3, amazonS3BucketName, awsSettings);
+                if (fileResult.StatusCode != HttpStatusCode.OK)
+                {
+                    return new ServiceResult<List<FileModel>>
+                    {
+                        StatusCode = fileResult.StatusCode,
+                        ErrorMessage = fileResult.ErrorMessage
+                    };
+                }
+
+                result.Add(fileResult.ModelObject);
+            }
+
+            if (tinifyProblemEncountered)
+            {
+                return new ServiceResult<List<FileModel>>(result)
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    ErrorMessage = "Partial success: file uploaded but not all images tinified"
+                };
+            }
+
+            return new ServiceResult<List<FileModel>>(result);
+        }
+        catch (GclQueryException gclQueryException)
+        {
+            if (gclQueryException.InnerException is MySqlException {ErrorCode: MySqlErrorCode.PacketTooLarge})
+            {
+                return new ServiceResult<List<FileModel>>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File is to large for database."
+                };
+            }
+
+            throw;
+        }
+        catch (MySqlException mySqlException)
+        {
+            if (mySqlException.ErrorCode == MySqlErrorCode.PacketTooLarge)
+            {
+                return new ServiceResult<List<FileModel>>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File is to large for database."
+                };
+            }
+
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null)
+    {
+        var content = Array.Empty<byte>();
+        var contentUrl = String.Empty;
+        var fileExtension = Path.GetExtension(fileName);
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        if ((ftpSettings == null || ftpSettings.Count == 0) && !useCloudFlare && !useAmazonS3)
+        {
+            content = fileBytes;
+        }
+        else if (useCloudFlare)
+        {
+            contentUrl = await cloudFlareService.UploadImageAsync(fileName, fileBytes);
+        }
+        else if (useAmazonS3)
+        {
+            contentUrl = $"s3://{amazonS3BucketName}/{fileName}";
+
+            var filePath = Path.Combine(Path.GetTempPath(), fileName);
+            await File.WriteAllBytesAsync(filePath, fileBytes);
+            await amazonS3Service.UploadFileAsync(amazonS3BucketName, fileName, filePath, awsSettings);
+            File.Delete(filePath);
+        }
+        else
+        {
+            // Add GUID to file name to make sure we always have a unique name, otherwise you can never upload multiple files in a single file-upload field.
+            var localFileName = $"{itemId}_{propertyName}_{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
+            var ftpPath = Path.Combine("/", ftpSettings.First().RootDirectory ?? "", ftpDirectory ?? "");
+            var ftpFileLocation = Path.Combine(ftpPath, localFileName).Replace(@"\", "/");
+            contentUrl = ftpFileLocation;
+
+            var succeededFtpUploads = new List<FtpSettingsModel>();
+            try
+            {
+                foreach (var ftp in ftpSettings)
+                {
+                    var ftpHandler = GetFtpHandler(ftp);
+                    var ftpHandlerSettings = new FtpSettings
+                    {
+                        EncryptionMode = ftp.Mode == FtpModes.Unsecure ? EncryptionModes.None : EncryptionModes.Auto,
+                        Host = ftp.Host,
+                        Password = ftp.Password,
+                        User = ftp.Username
+                    };
+
+                    await ftpHandler.OpenConnectionAsync(ftpHandlerSettings);
+                    try
+                    {
+                        await ftpHandler.UploadAsync(ftpFileLocation, fileBytes);
+                    }
+                    finally
+                    {
+                        await ftpHandler.CloseConnectionAsync();
                     }
 
-                    errorMessage = $"Er is iets fout gegaan tijdens het uploaden van het bestand via FTP.<br>Op {succeededFtpUploads.Count} van de {ftpSettings.Count} servers is het wel gelukt, maar bij de eerstvolgende niet.<br>Het uploaden is daarom ongedaan gemaakt op alle servers.<br>Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br>{exception.Message}";
+                    succeededFtpUploads.Add(ftp);
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Error while trying to upload file via FTP.");
+
+                var errorMessage = $"Er is iets fout gegaan tijdens het uploaden van het bestand via FTP. Probeer het aub opnieuw of neem contact op met ons.<br><br>De fout was:<br>{exception.Message}";
+                if (succeededFtpUploads.Count == 0)
+                {
                     return new ServiceResult<FileModel>
                     {
                         StatusCode = HttpStatusCode.InternalServerError,
                         ErrorMessage = errorMessage
                     };
                 }
-            }
 
-            var username = IdentityHelpers.GetUserName(identity, true);
+                try
+                {
+                    foreach (var ftp in succeededFtpUploads)
+                    {
+                        await DeleteFileFromFtp(ftp, ftpFileLocation);
+                    }
+                }
+                catch (Exception deleteException)
+                {
+                    logger.LogError($"We got an error while uploading to one of the FTP servers, after at least one already succeeded. So we tried to delete the file from the FTP that succeeded, but that also failed with the exception: {deleteException}");
+                }
 
-            var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            if (branchesService.IsMainBranch(tenant.ModelObject).ModelObject || !propertyName.Equals("global_file"))
-            {
-                return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
-            }
-
-            // Check if directory ID is in the mappings. If true use ID for main database, if false throw exception.
-            var directoryIdMainBranch = await branchesService.GetMappedIdAsync(itemId);
-
-            if (directoryIdMainBranch == null)
-            {
+                errorMessage = $"Er is iets fout gegaan tijdens het uploaden van het bestand via FTP.<br>Op {succeededFtpUploads.Count} van de {ftpSettings.Count} servers is het wel gelukt, maar bij de eerstvolgende niet.<br>Het uploaden is daarom ongedaan gemaakt op alle servers.<br>Probeer het a.u.b. nogmaals of neem contact op met ons.<br><br>De fout was:<br>{exception.Message}";
                 return new ServiceResult<FileModel>
                 {
-                    ErrorMessage = $"Failed to upload file in main branch. Directory with ID {itemId} does not exist in main branch and can therefore not (safely) be mapped.",
-                    StatusCode = HttpStatusCode.Forbidden
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    ErrorMessage = errorMessage
                 };
-            }
-
-            using var scope = serviceProvider.CreateScope();
-            var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
-            var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
-            var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
-            await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
-
-            try
-            {
-                await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
-                await databaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
-
-                var fileId = await branchesService.GenerateNewIdAsync(WiserTableNames.WiserItemFile, mainDatabaseConnection, databaseConnection);
-
-                await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId);
-                return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false, fileId);
-            }
-            finally
-            {
-                await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
-                await databaseConnection.ExecuteAsync("UNLOCK TABLES");
             }
         }
 
-        /// <summary>
-        /// Save the Wiser item file to the provided database.
-        /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="dbConnection">The <see cref="IDatabaseConnection"/> to use when saving the file to the database.</param>
-        /// <param name="username">The name of the user saving the file.</param>
-        /// <param name="itemId">The ID of the item the file should be linked to.</param>
-        /// <param name="itemLinkId">If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
-        /// <param name="entityType">When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
-        /// <param name="linkType">When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
-        /// <param name="title">The title/description of the file.</param>
-        /// <param name="fileBytes">The file contents.</param>
-        /// <param name="content">The content to save if the file itself needs to be saved in the database.</param>
-        /// <param name="contentUrl">The URL to the file if the file itself does not need to be saved in the database.</param>
-        /// <param name="fileExtension">The extension of the file.</param>
-        /// <param name="contentType">The content type of the file.</param>
-        /// <param name="fileName">The name of the file.</param>
-        /// <param name="propertyName">The name of the property that contains the file upload.</param>
-        /// <param name="saveHistory">Optional: If the history of the file needs to be saved.</param>
-        /// <param name="fileId">Optional: If an ID is provided the file will be inserted on that ID instead of using the auto increment.</param>
-        /// <returns>An object of <see cref="FileModel"/> with file data.</returns>
-        private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true, ulong fileId = 0)
+        var username = IdentityHelpers.GetUserName(identity, true);
+
+        var tenant = await wiserTenantsService.GetSingleAsync(identity);
+        if (branchesService.IsMainBranch(tenant.ModelObject).ModelObject || !propertyName.Equals("global_file"))
         {
+            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
+        }
+
+        // Check if directory ID is in the mappings. If true use ID for main database, if false throw exception.
+        var directoryIdMainBranch = await branchesService.GetMappedIdAsync(itemId);
+
+        if (directoryIdMainBranch == null)
+        {
+            return new ServiceResult<FileModel>
+            {
+                ErrorMessage = $"Failed to upload file in main branch. Directory with ID {itemId} does not exist in main branch and can therefore not (safely) be mapped.",
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
+
+        using var scope = serviceProvider.CreateScope();
+        var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
+        var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
+        var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
+        await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
+
+        try
+        {
+            await mainDatabaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
+            await databaseConnection.ExecuteAsync($"LOCK TABLES {WiserTableNames.WiserItemFile} WRITE, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ");
+
+            var fileId = await branchesService.GenerateNewIdAsync(WiserTableNames.WiserItemFile, mainDatabaseConnection, databaseConnection);
+
+            await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId);
+            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false, fileId);
+        }
+        finally
+        {
+            await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
+            await databaseConnection.ExecuteAsync("UNLOCK TABLES");
+        }
+    }
+
+    /// <summary>
+    /// Gets the FTP handler/service from the ftpHandlerFactory, based on the FtpSettingsModel.
+    /// </summary>
+    /// <param name="ftp">The FTP settings.</param>
+    /// <returns>The IFtpHandler.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If an FTP type is used that we don't support.</exception>
+    private IFtpHandler GetFtpHandler(FtpSettingsModel ftp)
+    {
+        var ftpHandler = ftp.Mode switch
+        {
+            FtpModes.Unsecure or FtpModes.Ssl => ftpHandlerFactory.GetFtpHandler(FtpTypes.Ftps),
+            FtpModes.Sftp => ftpHandlerFactory.GetFtpHandler(FtpTypes.Sftp),
+            _ => throw new ArgumentOutOfRangeException(nameof(ftp.Mode), ftp.Mode.ToString(), null)
+        };
+        return ftpHandler;
+    }
+
+    /// <summary>
+    /// Save the Wiser item file to the provided database.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="dbConnection">The <see cref="IDatabaseConnection"/> to use when saving the file to the database.</param>
+    /// <param name="username">The name of the user saving the file.</param>
+    /// <param name="itemId">The ID of the item the file should be linked to.</param>
+    /// <param name="itemLinkId">If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
+    /// <param name="entityType">When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
+    /// <param name="linkType">When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+    /// <param name="title">The title/description of the file.</param>
+    /// <param name="fileBytes">The file contents.</param>
+    /// <param name="content">The content to save if the file itself needs to be saved in the database.</param>
+    /// <param name="contentUrl">The URL to the file if the file itself does not need to be saved in the database.</param>
+    /// <param name="fileExtension">The extension of the file.</param>
+    /// <param name="contentType">The content type of the file.</param>
+    /// <param name="fileName">The name of the file.</param>
+    /// <param name="propertyName">The name of the property that contains the file upload.</param>
+    /// <param name="saveHistory">Optional: If the history of the file needs to be saved.</param>
+    /// <param name="fileId">Optional: If an ID is provided the file will be inserted on that ID instead of using the auto increment.</param>
+    /// <returns>An object of <see cref="FileModel"/> with file data.</returns>
+    private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true, ulong fileId = 0)
+    {
+        dbConnection.ClearParameters();
+        var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
+        var tablePrefix = "";
+
+        if (itemLinkId > 0)
+        {
+            tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
             dbConnection.ClearParameters();
-            var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
-            var tablePrefix = "";
+            dbConnection.AddParameter("itemlink_id", itemLinkId);
+            columnsForInsertQuery.Add("itemlink_id");
+        }
+        else if (itemId > 0)
+        {
+            tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+            dbConnection.ClearParameters();
+            dbConnection.AddParameter("item_id", itemId);
+            columnsForInsertQuery.Add("item_id");
+        }
+        else
+        {
+            dbConnection.AddParameter("itemlink_id", 0);
+            dbConnection.AddParameter("item_id", 0);
+        }
 
-            if (itemLinkId > 0)
-            {
-                tablePrefix = await wiserItemsService.GetTablePrefixForLinkAsync(linkType, entityType);
-                dbConnection.ClearParameters();
-                dbConnection.AddParameter("itemlink_id", itemLinkId);
-                columnsForInsertQuery.Add("itemlink_id");
-            }
-            else if (itemId > 0)
-            {
-                tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-                dbConnection.ClearParameters();
-                dbConnection.AddParameter("item_id", itemId);
-                columnsForInsertQuery.Add("item_id");
-            }
-            else
-            {
-                dbConnection.AddParameter("itemlink_id", 0);
-                dbConnection.AddParameter("item_id", 0);
-            }
+        if (content?.Length > 0)
+        {
+            dbConnection.AddParameter("content", content);
+            columnsForInsertQuery.Add("content");
+        }
 
-            if (content?.Length > 0)
-            {
-                dbConnection.AddParameter("content", content);
-                columnsForInsertQuery.Add("content");
-            }
+        if (fileId > 0)
+        {
+            dbConnection.AddParameter("id", fileId);
+            columnsForInsertQuery.Insert(0, "id");
+        }
 
-            if (fileId > 0)
-            {
-                dbConnection.AddParameter("id", fileId);
-                columnsForInsertQuery.Insert(0, "id");
-            }
+        dbConnection.AddParameter("content_url", contentUrl);
+        dbConnection.AddParameter("content_type", contentType);
+        dbConnection.AddParameter("file_name", fileName);
+        dbConnection.AddParameter("extension", Path.GetExtension(fileName));
+        dbConnection.AddParameter("added_by", username ?? "");
+        dbConnection.AddParameter("title", title ?? "");
+        dbConnection.AddParameter("property_name", propertyName);
 
-            dbConnection.AddParameter("content_url", contentUrl);
-            dbConnection.AddParameter("content_type", contentType);
-            dbConnection.AddParameter("file_name", fileName);
-            dbConnection.AddParameter("extension", Path.GetExtension(fileName));
-            dbConnection.AddParameter("added_by", username ?? "");
-            dbConnection.AddParameter("title", title ?? "");
-            dbConnection.AddParameter("property_name", propertyName);
-
-            var ordering = 1;
-            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
-            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
+        var ordering = 1;
+        var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
+        var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
 FROM {tablePrefix}{WiserTableNames.WiserItemFile}
 WHERE {whereClause}
 AND property_name = ?property_name";
-            var dataTable = await dbConnection.GetAsync(query);
-            if (dataTable.Rows.Count > 0)
-            {
-                ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
-            }
-            dbConnection.AddParameter("ordering", ordering);
+        var dataTable = await dbConnection.GetAsync(query);
+        if (dataTable.Rows.Count > 0)
+        {
+            ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
+        }
+        dbConnection.AddParameter("ordering", ordering);
 
-            dbConnection.AddParameter("saveHistoryGcl", saveHistory); // This is used in triggers.
+        dbConnection.AddParameter("saveHistoryGcl", saveHistory); // This is used in triggers.
 
-            query = $@"SET @saveHistory = ?saveHistoryGcl;
+        query = $@"SET @saveHistory = ?saveHistoryGcl;
 SET @_username = ?added_by;
 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
 SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
-            var newItem = await dbConnection.GetAsync(query);
+        var newItem = await dbConnection.GetAsync(query);
 
-            var result = new FileModel
+        var result = new FileModel
+        {
+            FileId = Convert.ToInt32(newItem.Rows[0]["newId"]),
+            Name = fileName,
+            Extension = fileExtension,
+            ItemId = await wiserTenantsService.EncryptValue(itemId, identity),
+            Size = fileBytes.Length,
+            Title = title,
+            ContentType = contentType,
+            EntityType = entityType,
+            LinkType = linkType
+        };
+
+        return new ServiceResult<FileModel>(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null, SelectionOptions selectionOption = SelectionOptions.None)
+    {
+        if (itemId == 0)
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>
             {
-                FileId = Convert.ToInt32(newItem.Rows[0]["newId"]),
-                Name = fileName,
-                Extension = fileExtension,
-                ItemId = await wiserTenantsService.EncryptValue(itemId, identity),
-                Size = fileBytes.Length,
-                Title = title,
-                ContentType = contentType,
-                EntityType = entityType,
-                LinkType = linkType
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "itemId must be greater than zero."
             };
-
-            return new ServiceResult<FileModel>(result);
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<(string ContentType, byte[] Data, string Url)>> GetAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, string propertyName = null, SelectionOptions selectionOption = SelectionOptions.None)
+        if (fileId <= 0 && String.IsNullOrEmpty(propertyName))
         {
-            if (itemId == 0)
-            {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "itemId must be greater than zero."
-                };
-            }
+            throw new ArgumentException("Image ID must be greater than zero or property name must be given.");
+        }
 
-            if (fileId <= 0 && String.IsNullOrEmpty(propertyName))
-            {
-                throw new ArgumentException("Image ID must be greater than zero or property name must be given.");
-            }
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+        databaseConnection.ClearParameters();
 
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            databaseConnection.ClearParameters();
+        string wherePart;
+        if (fileId > 0)
+        {
+            wherePart = "id = ?imageId";
+            databaseConnection.AddParameter("imageId", fileId);
+        }
+        else if (itemLinkId > 0)
+        {
+            wherePart = "itemlink_id = ?itemLinkId AND property_name = ?propertyName";
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            databaseConnection.AddParameter("propertyName", propertyName);
+        }
+        else
+        {
+            wherePart = "item_id = ?itemId AND property_name = ?propertyName";
+            databaseConnection.AddParameter("itemId", itemId);
+            databaseConnection.AddParameter("propertyName", propertyName);
+        }
 
-            string wherePart;
-            if (fileId > 0)
-            {
-                wherePart = "id = ?imageId";
-                databaseConnection.AddParameter("imageId", fileId);
-            }
-            else if (itemLinkId > 0)
-            {
-                wherePart = "itemlink_id = ?itemLinkId AND property_name = ?propertyName";
-                databaseConnection.AddParameter("itemLinkId", itemLinkId);
-                databaseConnection.AddParameter("propertyName", propertyName);
-            }
-            else
-            {
-                wherePart = "item_id = ?itemId AND property_name = ?propertyName";
-                databaseConnection.AddParameter("itemId", itemId);
-                databaseConnection.AddParameter("propertyName", propertyName);
-            }
+        var sortPart = selectionOption switch
+        {
+            SelectionOptions.Oldest => "ORDER BY added_on ASC",
+            SelectionOptions.Newest => "ORDER BY added_on DESC",
+            SelectionOptions.None => String.Empty,
+            _ => throw new NotImplementedException($"selectionOptions {selectionOption.ToString()} has not yet been implemented into FileService.GetAsync")
+        };
 
-            var sortPart = selectionOption switch
+        var query = $"""
+                     SELECT content_type, content, content_url, file_name, property_name
+                     FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+                     WHERE {wherePart}
+                     {sortPart}
+                     LIMIT 1
+                     """;
+        var dataTable = await databaseConnection.GetAsync(query);
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>
             {
-                SelectionOptions.Oldest => "ORDER BY added_on ASC",
-                SelectionOptions.Newest => "ORDER BY added_on DESC",
-                SelectionOptions.None => String.Empty,
-                _ => throw new NotImplementedException($"selectionOptions {selectionOption.ToString()} has not yet been implemented into FileService.GetAsync")
+                StatusCode = HttpStatusCode.NotFound,
+                ErrorMessage = "File not found"
+            };
+        }
+
+        var contentUrl = dataTable.Rows[0].Field<string>("content_url");
+        var contentType = dataTable.Rows[0].Field<string>("content_type");
+        propertyName = dataTable.Rows[0].Field<string>("property_name");
+        byte[] data;
+        if (!dataTable.Rows[0].IsNull("content"))
+        {
+            data = dataTable.Rows[0].Field<byte[]>("content");
+            return new ServiceResult<(string ContentType, byte[] Data, string url)>((ContentType: contentType, Data: data, url: null));
+        }
+
+        if (String.IsNullOrWhiteSpace(contentUrl))
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                ErrorMessage = "File not found"
+            };
+        }
+
+        var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
+        var (useAmazonS3, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
+        if (ftpSettings.Count == 0 && !useAmazonS3)
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: contentUrl));
+        }
+
+        if (ftpSettings.Count != 0)
+        {
+            var ftp = ftpSettings.First();
+            var ftpHandler = GetFtpHandler(ftp);
+            var ftpHandlerSettings = new FtpSettings
+            {
+                EncryptionMode = ftp.Mode == FtpModes.Unsecure ? EncryptionModes.None : EncryptionModes.Auto,
+                Host = ftp.Host,
+                Password = ftp.Password,
+                User = ftp.Username
             };
 
-            var query = $"""
-                         SELECT content_type, content, content_url, file_name, property_name
-                         FROM {tablePrefix}{WiserTableNames.WiserItemFile}
-                         WHERE {wherePart}
-                         {sortPart}
-                         LIMIT 1
-                         """;
-            var dataTable = await databaseConnection.GetAsync(query);
-
-            if (dataTable.Rows.Count == 0)
+            byte[] fileBytes;
+            await ftpHandler.OpenConnectionAsync(ftpHandlerSettings);
+            try
             {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>
-                {
-                    StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "File not found"
-                };
+                fileBytes = await ftpHandler.DownloadAsBytesAsync(contentUrl);
+            }
+            finally
+            {
+                await ftpHandler.CloseConnectionAsync();
             }
 
-            var contentUrl = dataTable.Rows[0].Field<string>("content_url");
-            var contentType = dataTable.Rows[0].Field<string>("content_type");
-            propertyName = dataTable.Rows[0].Field<string>("property_name");
-            byte[] data;
-            if (!dataTable.Rows[0].IsNull("content"))
-            {
-                data = dataTable.Rows[0].Field<byte[]>("content");
-                return new ServiceResult<(string ContentType, byte[] Data, string url)>((ContentType: contentType, Data: data, url: null));
-            }
+            return fileBytes == null
+                ? new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null))
+                : new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: fileBytes, Url: null));
+        }
 
-            if (String.IsNullOrWhiteSpace(contentUrl))
-            {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>
-                {
-                    StatusCode = HttpStatusCode.NotFound,
-                    ErrorMessage = "File not found"
-                };
-            }
+        // Set to use FTP settings, but no FTP settings found.
+        if (!useAmazonS3)
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
+        }
 
+        // Using Amazon S3.
+        var s3Uri = new Uri(contentUrl);
+        var s3Bucket = s3Uri.Host;
+        var s3Object = s3Uri.LocalPath.TrimStart('/');
+
+        var localFolder = Path.GetTempPath();
+        if (!await amazonS3Service.DownloadObjectFromBucketAsync(s3Bucket, s3Object, localFolder, awsSettings))
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
+        }
+
+        data = await File.ReadAllBytesAsync(Path.Combine(localFolder, s3Object));
+        File.Delete(Path.Combine(localFolder, s3Object));
+        return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: data, Url: null));
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> DeleteAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+    {
+        if (itemId <= 0 && itemLinkId <= 0)
+        {
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "Id or itemLinkId must be greater than zero."
+            };
+        }
+
+        if (fileId <= 0)
+        {
+            return new ServiceResult<bool>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "File ID must be greater than zero."
+            };
+        }
+
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
+        if (!success)
+        {
+            return new ServiceResult<bool>
+            {
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
+
+        databaseConnection.ClearParameters();
+        databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
+        databaseConnection.AddParameter("fileId", fileId);
+        var query = $"SELECT property_name, content_url FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+        var dataTable = await databaseConnection.GetAsync(query);
+        if (dataTable.Rows.Count == 0)
+        {
+            return new ServiceResult<bool>(false) { StatusCode = HttpStatusCode.NotFound };
+        }
+
+        var propertyName = dataTable.Rows[0].Field<string>("property_name");
+        var fileUrl = dataTable.Rows[0].Field<string>("content_url");
+
+        // Delete the files from the FTP(s), if this file-input uses FTP upload
+        // else delete them from CloudFlare if url matches
+        if (!String.IsNullOrWhiteSpace(fileUrl))
+        {
             var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-            var (useAmazonS3, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
-            if (!ftpSettings.Any() && !useAmazonS3)
-            {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: contentUrl));
-            }
-
             if (ftpSettings.Any())
             {
-                var ftp = ftpSettings.First();
-                if (ftp.Mode == FtpModes.Sftp)
+                foreach (var ftp in ftpSettings)
                 {
-                    throw new NotImplementedException("SFTP is not yet supported");
-                }
-
-                // Get the object used to communicate with the server.
-                var fullFtpLocation = $"ftp://{ftp.Host}{contentUrl}";
-                var request = (FtpWebRequest) WebRequest.Create(fullFtpLocation);
-                request.Method = WebRequestMethods.Ftp.DownloadFile;
-                request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
-
-                using var response = await request.GetResponseAsync();
-                await using var responseStream = response.GetResponseStream();
-                if (responseStream == null)
-                {
-                    return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
-                }
-
-                await using var memoryStream = new MemoryStream();
-                await responseStream.CopyToAsync(memoryStream);
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: memoryStream.ToArray(), Url: null));
-            }
-
-            // Set to use FTP settings, but no FTP settings found.
-            if (!useAmazonS3) return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
-
-            // Using Amazon S3.
-            var s3Uri = new Uri(contentUrl);
-            var s3Bucket = s3Uri.Host;
-            var s3Object = s3Uri.LocalPath.TrimStart('/');
-
-            var localFolder = Path.GetTempPath();
-            if (!await amazonS3Service.DownloadObjectFromBucketAsync(s3Bucket, s3Object, localFolder, awsSettings))
-            {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
-            }
-
-            data = await File.ReadAllBytesAsync(Path.Combine(localFolder, s3Object));
-            File.Delete(Path.Combine(localFolder, s3Object));
-            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: data, Url: null));
-        }
-
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> DeleteAsync(ulong itemId, int fileId, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
-        {
-            if (itemId <= 0 && itemLinkId <= 0)
-            {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id or itemLinkId must be greater than zero."
-                };
-            }
-
-            if (fileId <= 0)
-            {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "File ID must be greater than zero."
-                };
-            }
-
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
-            if (!success)
-            {
-                return new ServiceResult<bool>
-                {
-                    ErrorMessage = errorMessage,
-                    StatusCode = HttpStatusCode.Forbidden
-                };
-            }
-
-            databaseConnection.ClearParameters();
-            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
-            databaseConnection.AddParameter("fileId", fileId);
-            var query = $"SELECT property_name, content_url FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-            var dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
-            {
-                return new ServiceResult<bool>(false) { StatusCode = HttpStatusCode.NotFound };
-            }
-
-            var propertyName = dataTable.Rows[0].Field<string>("property_name");
-            var fileUrl = dataTable.Rows[0].Field<string>("content_url");
-
-            // Delete the files from the FTP(s), if this file-input uses FTP upload
-            // else delete them from CloudFlare if url matches
-            if (!String.IsNullOrWhiteSpace(fileUrl))
-            {
-                var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-                if (ftpSettings.Any())
-                {
-                    foreach (var ftp in ftpSettings)
-                    {
-                        await DeleteFileFromFtp(ftp, fileUrl);
-                    }
-                }
-                else if (fileUrl.StartsWith("https://imagedelivery.net"))
-                {
-                    // CloudFlare file?
-                    await cloudFlareService.DeleteImageAsync(fileUrl);
-                }
-                else if (fileUrl.StartsWith("s3://"))
-                {
-                    // Amazon S3 file.
-                    var (_, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
-                    var s3Uri = new Uri(fileUrl);
-                    var s3Bucket = s3Uri.Host;
-                    var s3Object = s3Uri.LocalPath.TrimStart('/');
-                    await amazonS3Service.DeleteObjectAsync(s3Bucket, s3Object, awsSettings);
+                    await DeleteFileFromFtp(ftp, fileUrl);
                 }
             }
-
-            query = $"DELETE FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-            await databaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
-        }
-
-        private static async Task DeleteFileFromFtp(FtpSettingsModel ftp, string fileUrl)
-        {
-            if (ftp.Mode == FtpModes.Sftp)
+            else if (fileUrl.StartsWith("https://imagedelivery.net"))
             {
-                throw new NotImplementedException("SFTP is not yet supported");
-                /*using var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password);
-                client.Connect();
-                client.DeleteFile(fileUrl);*/
+                // CloudFlare file?
+                await cloudFlareService.DeleteImageAsync(fileUrl);
             }
-            else
+            else if (fileUrl.StartsWith("s3://"))
             {
-                // Get the object used to communicate with the server.
-                var fullFtpLocation = $"ftp://{ftp.Host}{fileUrl}";
-                var request = (FtpWebRequest)WebRequest.Create(fullFtpLocation);
-                request.Method = WebRequestMethods.Ftp.DeleteFile;
-                request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
-                using var response = await request.GetResponseAsync();
+                // Amazon S3 file.
+                var (_, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
+                var s3Uri = new Uri(fileUrl);
+                var s3Bucket = s3Uri.Host;
+                var s3Object = s3Uri.LocalPath.TrimStart('/');
+                await amazonS3Service.DeleteObjectAsync(s3Bucket, s3Object, awsSettings);
             }
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> RenameAsync(ulong itemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        query = $"DELETE FROM {tablePrefix}{WiserTableNames.WiserItemFile} WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+        await databaseConnection.ExecuteAsync(query);
+
+        return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+    }
+
+    private async Task DeleteFileFromFtp(FtpSettingsModel ftp, string fileUrl)
+    {
+        var ftpHandler = GetFtpHandler(ftp);
+        var ftpHandlerSettings = new FtpSettings
         {
-            if (itemId <= 0 && itemLinkId <= 0)
+            EncryptionMode = ftp.Mode == FtpModes.Unsecure ? EncryptionModes.None : EncryptionModes.Auto,
+            Host = ftp.Host,
+            Password = ftp.Password,
+            User = ftp.Username
+        };
+
+        await ftpHandler.OpenConnectionAsync(ftpHandlerSettings);
+        try
+        {
+            await ftpHandler.DeleteFileAsync(false, fileUrl);
+        }
+        finally
+        {
+            await ftpHandler.CloseConnectionAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> RenameAsync(ulong itemId, int fileId, string newName, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+    {
+        if (itemId <= 0 && itemLinkId <= 0)
+        {
+            return new ServiceResult<bool>
             {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id or itemLinkId must be greater than zero."
-                };
-            }
-
-            if (fileId <= 0)
-            {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "File ID must be greater than zero."
-                };
-            }
-
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-
-            var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET file_name = ?newName WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
-            if (!success)
-            {
-                return new ServiceResult<bool>
-                {
-                    ErrorMessage = errorMessage,
-                    StatusCode = HttpStatusCode.Forbidden
-                };
-            }
-
-            databaseConnection.ClearParameters();
-            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
-            databaseConnection.AddParameter("fileId", fileId);
-            databaseConnection.AddParameter("newName", Path.GetFileNameWithoutExtension(newName).ConvertToSeo() + Path.GetExtension(newName).ToLowerInvariant());
-            await databaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "Id or itemLinkId must be greater than zero."
+            };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateTitleAsync(ulong itemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        if (fileId <= 0)
         {
-            if (itemId <= 0 && itemLinkId <= 0)
+            return new ServiceResult<bool>
             {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id or itemLinkId must be greater than zero."
-                };
-            }
-
-            if (fileId <= 0)
-            {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "File ID must be greater than zero."
-                };
-            }
-
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-
-            var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
-            if (!success)
-            {
-                return new ServiceResult<bool>
-                {
-                    ErrorMessage = errorMessage,
-                    StatusCode = HttpStatusCode.Forbidden
-                };
-            }
-
-            databaseConnection.ClearParameters();
-            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
-            databaseConnection.AddParameter("fileId", fileId);
-            databaseConnection.AddParameter("newTitle", newTitle);
-            await databaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "File ID must be greater than zero."
+            };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateExtraDataAsync(ulong itemId, int fileId, FileExtraDataModel extraData, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+        var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET file_name = ?newName WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
+
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
+        if (!success)
         {
-            if (itemId <= 0 && itemLinkId <= 0)
+            return new ServiceResult<bool>
             {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id or itemLinkId must be greater than zero."
-                };
-            }
-
-            if (fileId <= 0)
-            {
-                return new ServiceResult<bool>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "File ID must be greater than zero."
-                };
-            }
-
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-
-            var query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET extra_data = ?extraData WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
-
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
-            if (!success)
-            {
-                return new ServiceResult<bool>
-                {
-                    ErrorMessage = errorMessage,
-                    StatusCode = HttpStatusCode.Forbidden
-                };
-            }
-
-            databaseConnection.ClearParameters();
-            databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
-            databaseConnection.AddParameter("fileId", fileId);
-            databaseConnection.AddParameter("extraData", extraData == null ? null : JsonConvert.SerializeObject(extraData));
-            await databaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
+        databaseConnection.ClearParameters();
+        databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
+        databaseConnection.AddParameter("fileId", fileId);
+        databaseConnection.AddParameter("newName", Path.GetFileNameWithoutExtension(newName).ConvertToSeo() + Path.GetExtension(newName).ToLowerInvariant());
+        await databaseConnection.ExecuteAsync(query);
+
+        return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> UpdateTitleAsync(ulong itemId, int fileId, string newTitle, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+    {
+        if (itemId <= 0 && itemLinkId <= 0)
         {
-            if (itemId <= 0)
+            return new ServiceResult<bool>
             {
-                return new ServiceResult<FileModel>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "Id must be greater than zero."
-                };
-            }
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "Id or itemLinkId must be greater than zero."
+            };
+        }
 
-            if (file == null || String.IsNullOrWhiteSpace(file.ContentUrl))
+        if (fileId <= 0)
+        {
+            return new ServiceResult<bool>
             {
-                return new ServiceResult<FileModel>
-                {
-                    StatusCode = HttpStatusCode.BadRequest,
-                    ErrorMessage = "No files found in the request"
-                };
-            }
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "File ID must be greater than zero."
+            };
+        }
 
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+        var query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET title = ?newTitle WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
 
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
-            if (!success)
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
+        if (!success)
+        {
+            return new ServiceResult<bool>
             {
-                return new ServiceResult<FileModel>
-                {
-                    ErrorMessage = errorMessage,
-                    StatusCode = HttpStatusCode.Forbidden
-                };
-            }
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
 
-            databaseConnection.ClearParameters();
-            var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
+        databaseConnection.ClearParameters();
+        databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
+        databaseConnection.AddParameter("fileId", fileId);
+        databaseConnection.AddParameter("newTitle", newTitle);
+        await databaseConnection.ExecuteAsync(query);
 
-            if (itemLinkId > 0)
+        return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> UpdateExtraDataAsync(ulong itemId, int fileId, FileExtraDataModel extraData, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+    {
+        if (itemId <= 0 && itemLinkId <= 0)
+        {
+            return new ServiceResult<bool>
             {
-                databaseConnection.AddParameter("itemlink_id", itemLinkId);
-                columnsForInsertQuery.Add("itemlink_id");
-            }
-            else
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "Id or itemLinkId must be greater than zero."
+            };
+        }
+
+        if (fileId <= 0)
+        {
+            return new ServiceResult<bool>
             {
-                databaseConnection.AddParameter("item_id", itemId);
-                columnsForInsertQuery.Add("item_id");
-            }
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "File ID must be greater than zero."
+            };
+        }
 
-            file.Name = String.IsNullOrWhiteSpace(file.Name) ? Path.GetFileName(file.ContentUrl) : file.Name;
-            file.Extension = String.IsNullOrWhiteSpace(file.Extension) ? Path.GetExtension(file.Name) : file.Extension;
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            databaseConnection.AddParameter("content_type", file.ContentType ?? "");
-            databaseConnection.AddParameter("content_url", file.ContentUrl);
-            databaseConnection.AddParameter("file_name", Path.GetFileNameWithoutExtension(file.Name).ConvertToSeo() + Path.GetExtension(file.Name).ToLowerInvariant());
-            databaseConnection.AddParameter("extension", file.Extension);
-            databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true) ?? "");
-            databaseConnection.AddParameter("title", file.Title ?? "");
-            databaseConnection.AddParameter("property_name", propertyName);
+        var query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} SET extra_data = ?extraData WHERE item{(itemLinkId > 0 ? "link" : "")}_id = ?id AND id = ?fileId";
 
-            var ordering = 1;
-            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
-            var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
+        if (!success)
+        {
+            return new ServiceResult<bool>
+            {
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
+
+        databaseConnection.ClearParameters();
+        databaseConnection.AddParameter("id", itemLinkId > 0 ? itemLinkId : itemId);
+        databaseConnection.AddParameter("fileId", fileId);
+        databaseConnection.AddParameter("extraData", extraData == null ? null : JsonConvert.SerializeObject(extraData));
+        await databaseConnection.ExecuteAsync(query);
+
+        return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
+    {
+        if (itemId <= 0)
+        {
+            return new ServiceResult<FileModel>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "Id must be greater than zero."
+            };
+        }
+
+        if (file == null || String.IsNullOrWhiteSpace(file.ContentUrl))
+        {
+            return new ServiceResult<FileModel>
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = "No files found in the request"
+            };
+        }
+
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId, entityType: entityType);
+        if (!success)
+        {
+            return new ServiceResult<FileModel>
+            {
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
+
+        databaseConnection.ClearParameters();
+        var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
+
+        if (itemLinkId > 0)
+        {
+            databaseConnection.AddParameter("itemlink_id", itemLinkId);
+            columnsForInsertQuery.Add("itemlink_id");
+        }
+        else
+        {
+            databaseConnection.AddParameter("item_id", itemId);
+            columnsForInsertQuery.Add("item_id");
+        }
+
+        file.Name = String.IsNullOrWhiteSpace(file.Name) ? Path.GetFileName(file.ContentUrl) : file.Name;
+        file.Extension = String.IsNullOrWhiteSpace(file.Extension) ? Path.GetExtension(file.Name) : file.Extension;
+
+        databaseConnection.AddParameter("content_type", file.ContentType ?? "");
+        databaseConnection.AddParameter("content_url", file.ContentUrl);
+        databaseConnection.AddParameter("file_name", Path.GetFileNameWithoutExtension(file.Name).ConvertToSeo() + Path.GetExtension(file.Name).ToLowerInvariant());
+        databaseConnection.AddParameter("extension", file.Extension);
+        databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true) ?? "");
+        databaseConnection.AddParameter("title", file.Title ?? "");
+        databaseConnection.AddParameter("property_name", propertyName);
+
+        var ordering = 1;
+        var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
+        var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
 FROM {tablePrefix}{WiserTableNames.WiserItemFile}
 WHERE {whereClause}
 AND property_name = ?property_name";
-            var dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count > 0)
-            {
-                ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
-            }
-            databaseConnection.AddParameter("ordering", ordering);
+        var dataTable = await databaseConnection.GetAsync(query);
+        if (dataTable.Rows.Count > 0)
+        {
+            ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
+        }
+        databaseConnection.AddParameter("ordering", ordering);
 
-            query = $@"SET @_username = ?added_by;
+        query = $@"SET @_username = ?added_by;
 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
 SELECT LAST_INSERT_ID() AS newId;";
-            var newItem = await databaseConnection.GetAsync(query);
-            file.FileId = Convert.ToInt32(newItem.Rows[0]["newId"]);
+        var newItem = await databaseConnection.GetAsync(query);
+        file.FileId = Convert.ToInt32(newItem.Rows[0]["newId"]);
 
-            return new ServiceResult<FileModel>(file);
+        return new ServiceResult<FileModel>(file);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> UpdateOrderingAsync(ClaimsIdentity identity, int fileId, int previousPosition, int newPosition, ulong itemId, string propertyName, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+    {
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
+        if (!success)
+        {
+            return new ServiceResult<bool>
+            {
+                ErrorMessage = errorMessage,
+                StatusCode = HttpStatusCode.Forbidden
+            };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<bool>> UpdateOrderingAsync(ClaimsIdentity identity, int fileId, int previousPosition, int newPosition, ulong itemId, string propertyName, ulong itemLinkId = 0, string entityType = null, int linkType = 0)
+        if (newPosition == previousPosition)
         {
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
+            // Don't need to do anything if the position isn't changed.
+            return new ServiceResult<bool>(true);
+        }
 
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var (success, errorMessage, _) = await wiserItemsService.CheckIfEntityActionIsPossibleAsync(itemId, EntityActions.Update, userId);
-            if (!success)
-            {
-                return new ServiceResult<bool>
-                {
-                    ErrorMessage = errorMessage,
-                    StatusCode = HttpStatusCode.Forbidden
-                };
-            }
+        databaseConnection.AddParameter("fileId", fileId);
+        databaseConnection.AddParameter("previousPosition", previousPosition);
+        databaseConnection.AddParameter("newPosition", newPosition);
+        databaseConnection.AddParameter("itemId", itemId);
+        databaseConnection.AddParameter("propertyName", propertyName);
+        databaseConnection.AddParameter("itemLinkId", itemLinkId);
+        databaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
 
-            if (newPosition == previousPosition)
-            {
-                // Don't need to do anything if the position isn't changed.
-                return new ServiceResult<bool>(true);
-            }
+        var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
 
-            databaseConnection.AddParameter("fileId", fileId);
-            databaseConnection.AddParameter("previousPosition", previousPosition);
-            databaseConnection.AddParameter("newPosition", newPosition);
-            databaseConnection.AddParameter("itemId", itemId);
-            databaseConnection.AddParameter("propertyName", propertyName);
-            databaseConnection.AddParameter("itemLinkId", itemLinkId);
-            databaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
-
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
-
-            string query;
-            if (newPosition < previousPosition)
-            {
-                // Increase the ordering of all files that come later than the new position and earlier than the previous position.
-                query = $@"SET @_username = ?username;
+        string query;
+        if (newPosition < previousPosition)
+        {
+            // Increase the ordering of all files that come later than the new position and earlier than the previous position.
+            query = $@"SET @_username = ?username;
 UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
 SET ordering = ordering + 1
 WHERE {whereClause}
 AND property_name = ?propertyName
 AND ordering >= ?newPosition
 AND ordering < ?previousPosition";
-                await databaseConnection.ExecuteAsync(query);
-            }
-            else
-            {
-                // Lower the ordering of all files that come later than the previous position and earlier than the new position.
-                query = $@"SET @_username = ?username;
+            await databaseConnection.ExecuteAsync(query);
+        }
+        else
+        {
+            // Lower the ordering of all files that come later than the previous position and earlier than the new position.
+            query = $@"SET @_username = ?username;
 UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} 
 SET ordering = ordering - 1
 WHERE {whereClause}
 AND property_name = ?propertyName
 AND ordering > ?previousPosition
 AND ordering <= ?newPosition";
-                await databaseConnection.ExecuteAsync(query);
-            }
-
-            // Move the file to the new position.
-            query = $@"UPDATE {WiserTableNames.WiserItemFile} SET ordering = ?newPosition WHERE id = ?fileId";
             await databaseConnection.ExecuteAsync(query);
-
-            return new ServiceResult<bool>(true);
         }
 
-        /// <inheritdoc />
-        public async Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, ClaimsIdentity identity, string entityType = null, int linkType = 0)
-        {
-            var tablePrefix = itemLinkId > 0
-                ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
-                : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+        // Move the file to the new position.
+        query = $@"UPDATE {WiserTableNames.WiserItemFile} SET ordering = ?newPosition WHERE id = ?fileId";
+        await databaseConnection.ExecuteAsync(query);
 
-            databaseConnection.AddParameter("itemId", itemId);
-            databaseConnection.AddParameter("itemLinkId", itemLinkId);
-            databaseConnection.AddParameter("propertyName", propertyName);
-            databaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
-            var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
-            var query = $@"SET @orderingNumber = 0;
+        return new ServiceResult<bool>(true);
+    }
+
+    /// <inheritdoc />
+    public async Task FixOrderingAsync(ulong itemId, ulong itemLinkId, string propertyName, ClaimsIdentity identity, string entityType = null, int linkType = 0)
+    {
+        var tablePrefix = itemLinkId > 0
+            ? await wiserItemsService.GetTablePrefixForLinkAsync(linkType)
+            : await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
+
+        databaseConnection.AddParameter("itemId", itemId);
+        databaseConnection.AddParameter("itemLinkId", itemLinkId);
+        databaseConnection.AddParameter("propertyName", propertyName);
+        databaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
+        var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemLinkId" : "item_id = ?itemId";
+        var query = $@"SET @orderingNumber = 0;
 SET @_username = ?username;
 
 UPDATE {tablePrefix}{WiserTableNames.WiserItemFile} AS file
@@ -1057,53 +1105,53 @@ JOIN (
 SET file.ordering = ordering.ordering
 WHERE {whereClause}
 AND property_name = ?propertyName";
-            await databaseConnection.ExecuteAsync(query);
-        }
+        await databaseConnection.ExecuteAsync(query);
+    }
 
-        private async Task<(string UploadDirectory, List<FtpSettingsModel> FtpSettings)> GetFtpSettingsAsync(ClaimsIdentity identity, ulong itemLinkId, string propertyName, ulong itemId)
+    private async Task<(string UploadDirectory, List<FtpSettingsModel> FtpSettings)> GetFtpSettingsAsync(ClaimsIdentity identity, ulong itemLinkId, string propertyName, ulong itemId)
+    {
+        var ftpSettings = new List<FtpSettingsModel>();
+        string query;
+
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+        databaseConnection.AddParameter("propertyName", propertyName);
+
+        if (itemLinkId > 0)
         {
-            var ftpSettings = new List<FtpSettingsModel>();
-            string query;
-
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            databaseConnection.AddParameter("propertyName", propertyName);
-
-            if (itemLinkId > 0)
-            {
-                databaseConnection.AddParameter("itemLinkId", itemLinkId);
-                query = $@"SELECT options FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?itemLinkId AND property_name = ?propertyName LIMIT 1";
-            }
-            else
-            {
-                databaseConnection.AddParameter("itemId", itemId);
-                query = $@"SELECT p.options 
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            query = $@"SELECT options FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?itemLinkId AND property_name = ?propertyName LIMIT 1";
+        }
+        else
+        {
+            databaseConnection.AddParameter("itemId", itemId);
+            query = $@"SELECT p.options 
                             FROM {WiserTableNames.WiserEntityProperty} AS p 
                             JOIN wiser_item AS i ON i.id = ?itemId AND i.entity_type = p.entity_name
                             WHERE property_name = ?propertyName
                             LIMIT 1";
-            }
+        }
 
-            var dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
-            {
-                return (null, ftpSettings);
-            }
+        var dataTable = await databaseConnection.GetAsync(query);
+        if (dataTable.Rows.Count == 0)
+        {
+            return (null, ftpSettings);
+        }
 
-            var options = dataTable.Rows[0].Field<string>("options");
-            if (String.IsNullOrWhiteSpace(options))
-            {
-                return (null, ftpSettings);
-            }
+        var options = dataTable.Rows[0].Field<string>("options");
+        if (String.IsNullOrWhiteSpace(options))
+        {
+            return (null, ftpSettings);
+        }
 
-            var parsedOptions = JObject.Parse(options);
-            if (!parsedOptions.Value<bool>("useFtp"))
-            {
-                return (null, ftpSettings);
-            }
+        var parsedOptions = JObject.Parse(options);
+        if (!parsedOptions.Value<bool>("useFtp"))
+        {
+            return (null, ftpSettings);
+        }
 
-            var ftpDirectory = parsedOptions.Value<string>("uploadDirectory") ?? "";
+        var ftpDirectory = parsedOptions.Value<string>("uploadDirectory") ?? "";
 
-            query = $@"SELECT
+        query = $@"SELECT
                         host.value AS host,
                         mode.value AS mode,
                         username.value AS username,
@@ -1116,121 +1164,123 @@ AND property_name = ?propertyName";
                     JOIN {WiserTableNames.WiserItemDetail} AS password ON password.item_id = item.id AND password.`key` = 'password' AND password.value <> ''
                     LEFT JOIN {WiserTableNames.WiserItemDetail} AS root_directory ON root_directory.item_id = item.id AND root_directory.`key` = 'root_directory'
                     WHERE item.entity_type = 'ftp_configuration'";
-            dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
-            {
-                return (null, ftpSettings);
-            }
-
-            var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
-            if (String.IsNullOrWhiteSpace(encryptionKey))
-            {
-                encryptionKey = tenant.ModelObject.EncryptionKey;
-            }
-
-            ftpSettings.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new FtpSettingsModel
-            {
-                Username = dataRow.Field<string>("username"),
-                Host = dataRow.Field<string>("host"),
-                Password = dataRow.Field<string>("password").DecryptWithAesWithSalt(encryptionKey),
-                RootDirectory = dataRow.Field<string>("root_directory") ?? "",
-                Mode = (FtpModes)Enum.Parse(typeof(FtpModes), dataRow.Field<string>("mode") ?? "Ftp", true)
-            }));
-
-            return (ftpDirectory, ftpSettings);
-        }
-
-        /// <summary>
-        /// Get Amazon S3 settings for the file upload.
-        /// </summary>
-        /// <param name="identity">The identity of the authenticated user.</param>
-        /// <param name="propertyName">The property name of the <c>image-upload</c> property.</param>
-        /// <param name="itemId">The item ID that the image is linked to.</param>
-        /// <param name="itemLinkId">The item link ID that the image is linked to.</param>
-        /// <returns>A <c>ValueTuple</c> with three properties: <c>UseAmazonS3</c>, <c>BucketName</c> and <c>AwsSettings</c>.</returns>
-        private async Task<(bool UseAmazonS3, string BucketName, AwsSettings AwsSettings)> GetAmazonS3SettingsAsync(ClaimsIdentity identity, string propertyName, ulong itemId = 0, ulong itemLinkId = 0)
+        dataTable = await databaseConnection.GetAsync(query);
+        if (dataTable.Rows.Count == 0)
         {
-            string query;
-
-            await databaseConnection.EnsureOpenConnectionForReadingAsync();
-            databaseConnection.AddParameter("propertyName", propertyName);
-
-            if (itemLinkId > 0)
-            {
-                databaseConnection.AddParameter("itemLinkId", itemLinkId);
-                query = $"SELECT options FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?itemLinkId AND property_name = ?propertyName LIMIT 1";
-            }
-            else
-            {
-                databaseConnection.AddParameter("itemId", itemId);
-                query = $"""
-                    SELECT p.options 
-                    FROM {WiserTableNames.WiserEntityProperty} AS p 
-                    JOIN wiser_item AS i ON i.id = ?itemId AND i.entity_type = p.entity_name
-                    WHERE property_name = ?propertyName
-                    LIMIT 1
-                    """;
-            }
-
-            var dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0)
-            {
-                return (false, null, null);
-            }
-
-            var options = dataTable.Rows[0].Field<string>("options");
-            if (String.IsNullOrWhiteSpace(options))
-            {
-                return (false, null, null);
-            }
-
-            var parsedOptions = JObject.Parse(options);
-            if (!parsedOptions.Value<bool>("useAmazonS3"))
-            {
-                return (false, null, null);
-            }
-
-            var bucketName = parsedOptions.Value<string>("amazonS3BucketName") ?? "";
-            if (String.IsNullOrWhiteSpace(bucketName))
-            {
-                logger.LogWarning("No bucket name was found in the Amazon S3 settings.");
-                return (false, null, null);
-            }
-
-            query = $"""
-                SELECT
-                    accessKey.value AS accessKey,
-                    secretKey.value AS secretKey,
-                    region.`value` AS region
-                FROM {WiserTableNames.WiserItem} AS item
-                JOIN {WiserTableNames.WiserItemDetail} AS accessKey ON accessKey.item_id = item.id AND accessKey.`key` = 'access_key' AND accessKey.value <> ''
-                JOIN {WiserTableNames.WiserItemDetail} AS secretKey ON secretKey.item_id = item.id AND secretKey.`key` = 'secret_key' AND secretKey.value <> ''
-                JOIN {WiserTableNames.WiserItemDetail} AS region ON region.item_id = item.id AND region.`key` = 'region' AND region.value <> ''
-                WHERE item.entity_type = 'aws_account'
-                """;
-
-            dataTable = await databaseConnection.GetAsync(query);
-            if (dataTable.Rows.Count == 0) return (true, bucketName, null);
-
-            // Get the encryption key from the tenant settings.
-            var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
-            if (String.IsNullOrWhiteSpace(encryptionKey))
-            {
-                encryptionKey = tenant.ModelObject.EncryptionKey;
-            }
-
-            var accessKey = dataTable.Rows[0].Field<string>("accessKey");
-            var secretKey = dataTable.Rows[0].Field<string>("secretKey");
-            var awsSettings = new AwsSettings
-            {
-                AccessKey = String.IsNullOrWhiteSpace(accessKey) ? null : accessKey.DecryptWithAesWithSalt(encryptionKey),
-                SecretKey = String.IsNullOrWhiteSpace(secretKey) ? null : secretKey.DecryptWithAesWithSalt(encryptionKey),
-                Region = dataTable.Rows[0].Field<string>("region")
-            };
-
-            return (true, bucketName, awsSettings);
+            return (null, ftpSettings);
         }
+
+        var tenant = await wiserTenantsService.GetSingleAsync(identity);
+        var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
+        if (String.IsNullOrWhiteSpace(encryptionKey))
+        {
+            encryptionKey = tenant.ModelObject.EncryptionKey;
+        }
+
+        ftpSettings.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new FtpSettingsModel
+        {
+            Username = dataRow.Field<string>("username"),
+            Host = dataRow.Field<string>("host"),
+            Password = dataRow.Field<string>("password").DecryptWithAesWithSalt(encryptionKey),
+            RootDirectory = dataRow.Field<string>("root_directory") ?? "",
+            Mode = (FtpModes)Enum.Parse(typeof(FtpModes), dataRow.Field<string>("mode") ?? "Ftp", true)
+        }));
+
+        return (ftpDirectory, ftpSettings);
+    }
+
+    /// <summary>
+    /// Get Amazon S3 settings for the file upload.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="propertyName">The property name of the <c>image-upload</c> property.</param>
+    /// <param name="itemId">The item ID that the image is linked to.</param>
+    /// <param name="itemLinkId">The item link ID that the image is linked to.</param>
+    /// <returns>A <c>ValueTuple</c> with three properties: <c>UseAmazonS3</c>, <c>BucketName</c> and <c>AwsSettings</c>.</returns>
+    private async Task<(bool UseAmazonS3, string BucketName, AwsSettings AwsSettings)> GetAmazonS3SettingsAsync(ClaimsIdentity identity, string propertyName, ulong itemId = 0, ulong itemLinkId = 0)
+    {
+        string query;
+
+        await databaseConnection.EnsureOpenConnectionForReadingAsync();
+        databaseConnection.AddParameter("propertyName", propertyName);
+
+        if (itemLinkId > 0)
+        {
+            databaseConnection.AddParameter("itemLinkId", itemLinkId);
+            query = $"SELECT options FROM {WiserTableNames.WiserEntityProperty} WHERE link_type = ?itemLinkId AND property_name = ?propertyName LIMIT 1";
+        }
+        else
+        {
+            databaseConnection.AddParameter("itemId", itemId);
+            query = $"""
+                     SELECT p.options 
+                     FROM {WiserTableNames.WiserEntityProperty} AS p 
+                     JOIN wiser_item AS i ON i.id = ?itemId AND i.entity_type = p.entity_name
+                     WHERE property_name = ?propertyName
+                     LIMIT 1
+                     """;
+        }
+
+        var dataTable = await databaseConnection.GetAsync(query);
+        if (dataTable.Rows.Count == 0)
+        {
+            return (false, null, null);
+        }
+
+        var options = dataTable.Rows[0].Field<string>("options");
+        if (String.IsNullOrWhiteSpace(options))
+        {
+            return (false, null, null);
+        }
+
+        var parsedOptions = JObject.Parse(options);
+        if (!parsedOptions.Value<bool>("useAmazonS3"))
+        {
+            return (false, null, null);
+        }
+
+        var bucketName = parsedOptions.Value<string>("amazonS3BucketName") ?? "";
+        if (String.IsNullOrWhiteSpace(bucketName))
+        {
+            logger.LogWarning("No bucket name was found in the Amazon S3 settings.");
+            return (false, null, null);
+        }
+
+        query = $"""
+                 SELECT
+                     accessKey.value AS accessKey,
+                     secretKey.value AS secretKey,
+                     region.`value` AS region
+                 FROM {WiserTableNames.WiserItem} AS item
+                 JOIN {WiserTableNames.WiserItemDetail} AS accessKey ON accessKey.item_id = item.id AND accessKey.`key` = 'access_key' AND accessKey.value <> ''
+                 JOIN {WiserTableNames.WiserItemDetail} AS secretKey ON secretKey.item_id = item.id AND secretKey.`key` = 'secret_key' AND secretKey.value <> ''
+                 JOIN {WiserTableNames.WiserItemDetail} AS region ON region.item_id = item.id AND region.`key` = 'region' AND region.value <> ''
+                 WHERE item.entity_type = 'aws_account'
+                 """;
+
+        dataTable = await databaseConnection.GetAsync(query);
+        if (dataTable.Rows.Count == 0)
+        {
+            return (true, bucketName, null);
+        }
+
+        // Get the encryption key from the tenant settings.
+        var tenant = await wiserTenantsService.GetSingleAsync(identity);
+        var encryptionKey = parsedOptions.Value<string>(GclCoreConstants.SecurityKeyKey);
+        if (String.IsNullOrWhiteSpace(encryptionKey))
+        {
+            encryptionKey = tenant.ModelObject.EncryptionKey;
+        }
+
+        var accessKey = dataTable.Rows[0].Field<string>("accessKey");
+        var secretKey = dataTable.Rows[0].Field<string>("secretKey");
+        var awsSettings = new AwsSettings
+        {
+            AccessKey = String.IsNullOrWhiteSpace(accessKey) ? null : accessKey.DecryptWithAesWithSalt(encryptionKey),
+            SecretKey = String.IsNullOrWhiteSpace(secretKey) ? null : secretKey.DecryptWithAesWithSalt(encryptionKey),
+            Region = dataTable.Rows[0].Field<string>("region")
+        };
+
+        return (true, bucketName, awsSettings);
     }
 }
