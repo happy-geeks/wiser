@@ -18,12 +18,16 @@ using Api.Modules.Files.Models;
 using Api.Modules.Tenants.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Exceptions;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Amazon.Interfaces;
 using GeeksCoreLibrary.Modules.Amazon.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Ftps.Enums;
+using GeeksCoreLibrary.Modules.Ftps.Interfaces;
+using GeeksCoreLibrary.Modules.Ftps.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -49,11 +53,22 @@ public class FilesService : IFilesService, IScopedService
     private readonly IBranchesService branchesService;
     private readonly IServiceProvider serviceProvider;
     private readonly IAmazonS3Service amazonS3Service;
+    private readonly IFtpHandlerFactory ftpHandlerFactory;
 
     /// <summary>
     /// Creates a new instance of <see cref="FilesService"/>.
     /// </summary>
-    public FilesService(IWiserTenantsService wiserTenantsService, ILogger<FilesService> logger, IDatabaseConnection databaseConnection, IWiserItemsService wiserItemsService, ICloudFlareService cloudFlareService, IFilesRepository filesRepository, IOptions<TinyPngSettings> tinyPngSettings, IBranchesService branchesService, IServiceProvider serviceProvider, IAmazonS3Service amazonS3Service)
+    public FilesService(IWiserTenantsService wiserTenantsService,
+        ILogger<FilesService> logger,
+        IDatabaseConnection databaseConnection,
+        IWiserItemsService wiserItemsService,
+        ICloudFlareService cloudFlareService,
+        IFilesRepository filesRepository,
+        IOptions<TinyPngSettings> tinyPngSettings,
+        IBranchesService branchesService,
+        IServiceProvider serviceProvider,
+        IAmazonS3Service amazonS3Service,
+        IFtpHandlerFactory ftpHandlerFactory)
     {
         this.wiserTenantsService = wiserTenantsService;
         this.logger = logger;
@@ -64,6 +79,7 @@ public class FilesService : IFilesService, IScopedService
         this.branchesService = branchesService;
         this.serviceProvider = serviceProvider;
         this.amazonS3Service = amazonS3Service;
+        this.ftpHandlerFactory = ftpHandlerFactory;
 
         Tinify.Key ??= tinyPngSettings.Value.TinifyApiKey;
     }
@@ -164,28 +180,28 @@ public class FilesService : IFilesService, IScopedService
                     {
                         fileBytes = await Tinify.FromBuffer(fileBytes).ToBuffer();
                     }
-                    catch (ClientException e)
+                    catch (ClientException clientException)
                     {
-                        logger.LogDebug(e, "Problem with input encountered when calling the tinyPng API");
+                        logger.LogDebug(clientException, "Problem with input encountered when calling the tinyPng API");
                         tinifyProblemEncountered = true;
                     }
-                    catch (AccountException e)
+                    catch (AccountException accountException)
                     {
-                        logger.LogError(e, "Account Problem encountered when calling the tinyPng API");
+                        logger.LogError(accountException, "Account Problem encountered when calling the tinyPng API");
 
                         // Don't try to tinify the rest of the images after an accountException
                         useTinyPng = false;
                         tinifyProblemEncountered = true;
                     }
-                    catch (ConnectionException e)
+                    catch (ConnectionException connectionException)
                     {
-                        logger.LogInformation(e, "Network problem encountered when calling the tinyPng API");
+                        logger.LogInformation(connectionException, "Network problem encountered when calling the tinyPng API");
                         useTinyPng = false;
                         tinifyProblemEncountered = true;
                     }
-                    catch (ServerException e)
+                    catch (ServerException serverException)
                     {
-                        logger.LogInformation(e, "Third party server problem encountered when calling the tinyPng API");
+                        logger.LogInformation(serverException, "Third party server problem encountered when calling the tinyPng API");
                         useTinyPng = false;
                         tinifyProblemEncountered = true;
                     }
@@ -215,9 +231,22 @@ public class FilesService : IFilesService, IScopedService
 
             return new ServiceResult<List<FileModel>>(result);
         }
+        catch (GclQueryException gclQueryException)
+        {
+            if (gclQueryException.InnerException is MySqlException {ErrorCode: MySqlErrorCode.PacketTooLarge})
+            {
+                return new ServiceResult<List<FileModel>>
+                {
+                    StatusCode = HttpStatusCode.BadRequest,
+                    ErrorMessage = "File is to large for database."
+                };
+            }
+
+            throw;
+        }
         catch (MySqlException mySqlException)
         {
-            if (mySqlException.Number == 1153)
+            if (mySqlException.ErrorCode == MySqlErrorCode.PacketTooLarge)
             {
                 return new ServiceResult<List<FileModel>>
                 {
@@ -238,7 +267,7 @@ public class FilesService : IFilesService, IScopedService
         var fileExtension = Path.GetExtension(fileName);
         await databaseConnection.EnsureOpenConnectionForReadingAsync();
 
-        if ((ftpSettings == null || !ftpSettings.Any()) && !useCloudFlare && !useAmazonS3)
+        if ((ftpSettings == null || ftpSettings.Count == 0) && !useCloudFlare && !useAmazonS3)
         {
             content = fileBytes;
         }
@@ -268,28 +297,23 @@ public class FilesService : IFilesService, IScopedService
             {
                 foreach (var ftp in ftpSettings)
                 {
-                    if (ftp.Mode == FtpModes.Sftp)
+                    var ftpHandler = GetFtpHandler(ftp);
+                    var ftpHandlerSettings = new FtpSettings
                     {
-                        throw new NotImplementedException("SFTP is not yet supported");
-                        /*using (var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password))
-                        {
-                            await using var fileStream = new MemoryStream(fileBytes);
-                            client.Connect();
-                            client.UploadFile(fileStream, ftpFileLocation);
-                        }*/
-                    }
-                    else
-                    {
-                        // Get the object used to communicate with the server.
-                        var fullFtpLocation = $"ftp://{ftp.Host}{ftpFileLocation}";
-                        var request = (FtpWebRequest)WebRequest.Create(fullFtpLocation);
-                        request.Method = WebRequestMethods.Ftp.UploadFile;
-                        request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
-                        // Copy the contents of the file to the request stream.
-                        request.ContentLength = fileBytes.Length;
+                        EncryptionMode = ftp.Mode == FtpModes.Unsecure ? EncryptionModes.None : EncryptionModes.Auto,
+                        Host = ftp.Host,
+                        Password = ftp.Password,
+                        User = ftp.Username
+                    };
 
-                        await using var requestStream = request.GetRequestStream();
-                        await requestStream.WriteAsync(fileBytes, 0, fileBytes.Length);
+                    await ftpHandler.OpenConnectionAsync(ftpHandlerSettings);
+                    try
+                    {
+                        await ftpHandler.UploadAsync(ftpFileLocation, fileBytes);
+                    }
+                    finally
+                    {
+                        await ftpHandler.CloseConnectionAsync();
                     }
 
                     succeededFtpUploads.Add(ftp);
@@ -297,10 +321,10 @@ public class FilesService : IFilesService, IScopedService
             }
             catch (Exception exception)
             {
-                logger.LogError($"Error while trying to upload file via FTP: {exception}");
+                logger.LogError(exception, "Error while trying to upload file via FTP.");
 
                 var errorMessage = $"Er is iets fout gegaan tijdens het uploaden van het bestand via FTP. Probeer het aub opnieuw of neem contact op met ons.<br><br>De fout was:<br>{exception.Message}";
-                if (!succeededFtpUploads.Any())
+                if (succeededFtpUploads.Count == 0)
                 {
                     return new ServiceResult<FileModel>
                     {
@@ -371,6 +395,23 @@ public class FilesService : IFilesService, IScopedService
             await mainDatabaseConnection.ExecuteAsync("UNLOCK TABLES");
             await databaseConnection.ExecuteAsync("UNLOCK TABLES");
         }
+    }
+
+    /// <summary>
+    /// Gets the FTP handler/service from the ftpHandlerFactory, based on the FtpSettingsModel.
+    /// </summary>
+    /// <param name="ftp">The FTP settings.</param>
+    /// <returns>The IFtpHandler.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">If an FTP type is used that we don't support.</exception>
+    private IFtpHandler GetFtpHandler(FtpSettingsModel ftp)
+    {
+        var ftpHandler = ftp.Mode switch
+        {
+            FtpModes.Unsecure or FtpModes.Ssl => ftpHandlerFactory.GetFtpHandler(FtpTypes.Ftps),
+            FtpModes.Sftp => ftpHandlerFactory.GetFtpHandler(FtpTypes.Sftp),
+            _ => throw new ArgumentOutOfRangeException(nameof(ftp.Mode), ftp.Mode.ToString(), null)
+        };
+        return ftpHandler;
     }
 
     /// <summary>
@@ -568,39 +609,44 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
 
         var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
         var (useAmazonS3, _, awsSettings) = await GetAmazonS3SettingsAsync(identity, propertyName, itemId, itemLinkId);
-        if (!ftpSettings.Any() && !useAmazonS3)
+        if (ftpSettings.Count == 0 && !useAmazonS3)
         {
             return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: contentUrl));
         }
 
-        if (ftpSettings.Any())
+        if (ftpSettings.Count != 0)
         {
             var ftp = ftpSettings.First();
-            if (ftp.Mode == FtpModes.Sftp)
+            var ftpHandler = GetFtpHandler(ftp);
+            var ftpHandlerSettings = new FtpSettings
             {
-                throw new NotImplementedException("SFTP is not yet supported");
+                EncryptionMode = ftp.Mode == FtpModes.Unsecure ? EncryptionModes.None : EncryptionModes.Auto,
+                Host = ftp.Host,
+                Password = ftp.Password,
+                User = ftp.Username
+            };
+
+            byte[] fileBytes;
+            await ftpHandler.OpenConnectionAsync(ftpHandlerSettings);
+            try
+            {
+                fileBytes = await ftpHandler.DownloadAsBytesAsync(contentUrl);
+            }
+            finally
+            {
+                await ftpHandler.CloseConnectionAsync();
             }
 
-            // Get the object used to communicate with the server.
-            var fullFtpLocation = $"ftp://{ftp.Host}{contentUrl}";
-            var request = (FtpWebRequest) WebRequest.Create(fullFtpLocation);
-            request.Method = WebRequestMethods.Ftp.DownloadFile;
-            request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
-
-            using var response = await request.GetResponseAsync();
-            await using var responseStream = response.GetResponseStream();
-            if (responseStream == null)
-            {
-                return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
-            }
-
-            await using var memoryStream = new MemoryStream();
-            await responseStream.CopyToAsync(memoryStream);
-            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: memoryStream.ToArray(), Url: null));
+            return fileBytes == null
+                ? new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null))
+                : new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: contentType, Data: fileBytes, Url: null));
         }
 
         // Set to use FTP settings, but no FTP settings found.
-        if (!useAmazonS3) return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
+        if (!useAmazonS3)
+        {
+            return new ServiceResult<(string ContentType, byte[] Data, string Url)>((ContentType: null, Data: null, Url: null));
+        }
 
         // Using Amazon S3.
         var s3Uri = new Uri(contentUrl);
@@ -703,23 +749,25 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         return new ServiceResult<bool>(true) { StatusCode = HttpStatusCode.NoContent };
     }
 
-    private static async Task DeleteFileFromFtp(FtpSettingsModel ftp, string fileUrl)
+    private async Task DeleteFileFromFtp(FtpSettingsModel ftp, string fileUrl)
     {
-        if (ftp.Mode == FtpModes.Sftp)
+        var ftpHandler = GetFtpHandler(ftp);
+        var ftpHandlerSettings = new FtpSettings
         {
-            throw new NotImplementedException("SFTP is not yet supported");
-            /*using var client = new SftpClient(ftp.Host, ftp.Username, ftp.Password);
-            client.Connect();
-            client.DeleteFile(fileUrl);*/
+            EncryptionMode = ftp.Mode == FtpModes.Unsecure ? EncryptionModes.None : EncryptionModes.Auto,
+            Host = ftp.Host,
+            Password = ftp.Password,
+            User = ftp.Username
+        };
+
+        await ftpHandler.OpenConnectionAsync(ftpHandlerSettings);
+        try
+        {
+            await ftpHandler.DeleteFileAsync(false, fileUrl);
         }
-        else
+        finally
         {
-            // Get the object used to communicate with the server.
-            var fullFtpLocation = $"ftp://{ftp.Host}{fileUrl}";
-            var request = (FtpWebRequest)WebRequest.Create(fullFtpLocation);
-            request.Method = WebRequestMethods.Ftp.DeleteFile;
-            request.Credentials = new NetworkCredential(ftp.Username, ftp.Password);
-            using var response = await request.GetResponseAsync();
+            await ftpHandler.CloseConnectionAsync();
         }
     }
 
@@ -1211,7 +1259,10 @@ AND property_name = ?propertyName";
                  """;
 
         dataTable = await databaseConnection.GetAsync(query);
-        if (dataTable.Rows.Count == 0) return (true, bucketName, null);
+        if (dataTable.Rows.Count == 0)
+        {
+            return (true, bucketName, null);
+        }
 
         // Get the encryption key from the tenant settings.
         var tenant = await wiserTenantsService.GetSingleAsync(identity);

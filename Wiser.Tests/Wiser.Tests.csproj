@@ -9,6 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="GeeksCoreLibrary" Version="5.0.2501.3" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.1" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
@@ -18,21 +19,17 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="coverlet.collector" Version="6.0.3">
+        <PackageReference Include="coverlet.collector" Version="6.0.4">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Selenium.WebDriver" Version="4.27.0" />
+        <PackageReference Include="Selenium.WebDriver" Version="4.28.0" />
     </ItemGroup>
 
     <ItemGroup>
       <None Update="appsettings.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\GeeksCoreLibrary\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
     </ItemGroup>
 
 </Project>

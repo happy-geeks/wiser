@@ -191,7 +191,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
             }
         }
 
-        results.PageSize = options != null && options.PageSize > 0 ? options.PageSize : 100;
+        results.PageSize = options is {PageSize: > 0} ? options.PageSize : 100;
 
         var hasPredefinedSchema = false;
 
@@ -1864,7 +1864,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 }
                 else
                 {
-                    if (((fieldMap != null && fieldMap.AddToWhereInsteadOfJoin) || ItemColumns.Any(c => c.Equals(fieldName, StringComparison.OrdinalIgnoreCase))) && Decimal.TryParse(filter.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDecimal))
+                    if ((fieldMap is {AddToWhereInsteadOfJoin: true} || ItemColumns.Any(c => c.Equals(fieldName, StringComparison.OrdinalIgnoreCase))) && Decimal.TryParse(filter.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDecimal))
                     {
                         value = parsedDecimal;
                     }
@@ -1990,7 +1990,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                 if (fieldMap == null || !fieldMap.Ignore)
                 {
-                    if ((fieldMap != null && fieldMap.AddToWhereInsteadOfJoin) || ItemColumns.Any(c => c.Equals(fieldName, StringComparison.OrdinalIgnoreCase)))
+                    if (fieldMap is {AddToWhereInsteadOfJoin: true} || ItemColumns.Any(c => c.Equals(fieldName, StringComparison.OrdinalIgnoreCase)))
                     {
                         subWhereClause.Item2.Add($"{whereColumnSelector} {@operator} {parameterInWhere}");
                     }

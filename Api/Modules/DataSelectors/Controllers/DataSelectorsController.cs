@@ -297,26 +297,94 @@ public class DataSelectorsController : ControllerBase
         model1.Environment ??= model2.Environment;
         model1.ExtraData ??= model2.ExtraData;
         model1.DataSelectorId ??= model2.DataSelectorId;
-        if (String.IsNullOrWhiteSpace(model1.EncryptedDataSelectorId)) model1.EncryptedDataSelectorId = model2.EncryptedDataSelectorId;
-        if (String.IsNullOrWhiteSpace(model1.QueryId)) model1.QueryId = model2.QueryId;
-        if (String.IsNullOrWhiteSpace(model1.ModuleId)) model1.ModuleId = model2.ModuleId;
+        if (String.IsNullOrWhiteSpace(model1.EncryptedDataSelectorId))
+        {
+            model1.EncryptedDataSelectorId = model2.EncryptedDataSelectorId;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.QueryId))
+        {
+            model1.QueryId = model2.QueryId;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.ModuleId))
+        {
+            model1.ModuleId = model2.ModuleId;
+        }
+
         model1.NumberOfLevels ??= model2.NumberOfLevels;
-        if (String.IsNullOrWhiteSpace(model1.LanguageCode)) model1.LanguageCode = model2.LanguageCode;
-        if (String.IsNullOrWhiteSpace(model1.NumberOfItems)) model1.NumberOfItems = model2.NumberOfItems;
+        if (String.IsNullOrWhiteSpace(model1.LanguageCode))
+        {
+            model1.LanguageCode = model2.LanguageCode;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.NumberOfItems))
+        {
+            model1.NumberOfItems = model2.NumberOfItems;
+        }
+
         model1.PageNumber ??= model2.PageNumber;
-        if (String.IsNullOrWhiteSpace(model1.ContainsPath)) model1.ContainsPath = model2.ContainsPath;
-        if (String.IsNullOrWhiteSpace(model1.ContainsPath)) model1.ContainsPath = model2.ContainsPath;
-        if (String.IsNullOrWhiteSpace(model1.ParentId)) model1.ParentId = model2.ParentId;
-        if (String.IsNullOrWhiteSpace(model1.EntityTypes)) model1.EntityTypes = model2.EntityTypes;
+        if (String.IsNullOrWhiteSpace(model1.ContainsPath))
+        {
+            model1.ContainsPath = model2.ContainsPath;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.ContainsPath))
+        {
+            model1.ContainsPath = model2.ContainsPath;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.ParentId))
+        {
+            model1.ParentId = model2.ParentId;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.EntityTypes))
+        {
+            model1.EntityTypes = model2.EntityTypes;
+        }
+
         model1.LinkType ??= model2.LinkType;
-        if (String.IsNullOrWhiteSpace(model1.QueryAddition)) model1.QueryAddition = model2.QueryAddition;
-        if (String.IsNullOrWhiteSpace(model1.OrderPart)) model1.OrderPart = model2.OrderPart;
-        if (String.IsNullOrWhiteSpace(model1.Fields)) model1.Fields = model2.Fields;
-        if (String.IsNullOrWhiteSpace(model1.FileTypes)) model1.FileTypes = model2.FileTypes;
-        if (String.IsNullOrWhiteSpace(model1.FileName)) model1.FileName = model2.FileName;
-        if (String.IsNullOrWhiteSpace(model1.OutputTemplate)) model1.OutputTemplate = model2.OutputTemplate;
-        if (String.IsNullOrWhiteSpace(model1.ContentItemId)) model1.ContentItemId = model2.ContentItemId;
-        if (String.IsNullOrWhiteSpace(model1.ContentPropertyName)) model1.ContentPropertyName = model2.ContentPropertyName;
+        if (String.IsNullOrWhiteSpace(model1.QueryAddition))
+        {
+            model1.QueryAddition = model2.QueryAddition;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.OrderPart))
+        {
+            model1.OrderPart = model2.OrderPart;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.Fields))
+        {
+            model1.Fields = model2.Fields;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.FileTypes))
+        {
+            model1.FileTypes = model2.FileTypes;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.FileName))
+        {
+            model1.FileName = model2.FileName;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.OutputTemplate))
+        {
+            model1.OutputTemplate = model2.OutputTemplate;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.ContentItemId))
+        {
+            model1.ContentItemId = model2.ContentItemId;
+        }
+
+        if (String.IsNullOrWhiteSpace(model1.ContentPropertyName))
+        {
+            model1.ContentPropertyName = model2.ContentPropertyName;
+        }
+
         return model1;
     }
 }

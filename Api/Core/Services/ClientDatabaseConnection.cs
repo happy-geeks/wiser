@@ -702,7 +702,11 @@ public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
 
     private async Task CleanUpAsync()
     {
-        if (dataReader != null) await dataReader.DisposeAsync();
+        if (dataReader != null)
+        {
+            await dataReader.DisposeAsync();
+        }
+
         dataReader = null;
     }
 
@@ -738,11 +742,31 @@ public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
                 httpMethod = httpContextAccessor.HttpContext.Request.Method;
             }
 
-            if(commandToUse.Parameters.Contains("gclConnectionOpened")) commandToUse.Parameters.Remove("gclConnectionOpened");
-            if(commandToUse.Parameters.Contains("gclConnectionUrl")) commandToUse.Parameters.Remove("gclConnectionUrl");
-            if(commandToUse.Parameters.Contains("gclConnectionHttpMethod")) commandToUse.Parameters.Remove("gclConnectionHttpMethod");
-            if(commandToUse.Parameters.Contains("gclConnectionInstanceId")) commandToUse.Parameters.Remove("gclConnectionInstanceId");
-            if(commandToUse.Parameters.Contains("gclConnectionType")) commandToUse.Parameters.Remove("gclConnectionType");
+            if(commandToUse.Parameters.Contains("gclConnectionOpened"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionOpened");
+            }
+
+            if(commandToUse.Parameters.Contains("gclConnectionUrl"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionUrl");
+            }
+
+            if(commandToUse.Parameters.Contains("gclConnectionHttpMethod"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionHttpMethod");
+            }
+
+            if(commandToUse.Parameters.Contains("gclConnectionInstanceId"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionInstanceId");
+            }
+
+            if(commandToUse.Parameters.Contains("gclConnectionType"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionType");
+            }
+
             commandToUse.Parameters.AddWithValue("gclConnectionOpened", DateTime.Now);
             commandToUse.Parameters.AddWithValue("gclConnectionUrl", url);
             commandToUse.Parameters.AddWithValue("gclConnectionHttpMethod", httpMethod);
@@ -800,8 +824,16 @@ public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
                 await commandToUse.Connection.OpenAsync();
             }
 
-            if(commandToUse.Parameters.Contains("gclConnectionClosed")) commandToUse.Parameters.Remove("gclConnectionClosed");
-            if(commandToUse.Parameters.Contains("gclConnectionId")) commandToUse.Parameters.Remove("gclConnectionId");
+            if(commandToUse.Parameters.Contains("gclConnectionClosed"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionClosed");
+            }
+
+            if(commandToUse.Parameters.Contains("gclConnectionId"))
+            {
+                commandToUse.Parameters.Remove("gclConnectionId");
+            }
+
             commandToUse.Parameters.AddWithValue("gclConnectionClosed", DateTime.Now);
             commandToUse.Parameters.AddWithValue("gclConnectionId", isWriteConnection ? writeConnectionLogId : readConnectionLogId);
             commandToUse.CommandText = $"UPDATE {Constants.DatabaseConnectionLogTableName} SET closed = ?gclConnectionClosed WHERE id = ?gclConnectionId";

@@ -1,0 +1,73 @@
+@using Api.Modules.Templates.Enums
+@model FrontEnd.Modules.Templates.Models.RenderPropertiesModel
+
+@foreach (var property in Model.Properties)
+{
+    var attributes = property.Attributes;
+    var data = property.Data;
+    var dependsOnValue = attributes?.DependsOnValue != null
+        ? String.Join(",", attributes.DependsOnValue)
+        : "";
+
+    <div class="item">
+        @switch (attributes?.KendoComponent)
+        {
+            case KendoComponents.TextBox:
+                <h4><label>@attributes.Title</label></h4>
+                <span>
+                    <input
+                        type="text"
+                        name="@property.Name"
+                        value="@(data ?? "")"
+                        data-kendo-tab="@Model.Tab"
+                        data-kendo-component="@KendoComponents.TextBox"
+                        data-kendo-options="@attributes.KendoOptions"
+                        data-depend-on-field="@attributes.DependsOnField"
+                        data-depend-on-value="@dependsOnValue"
+                        is-required="@attributes.IsRequired.ToString().ToLower()"
+                        use-datasource="@attributes.UseDataSource.ToString().ToLower()"
+                    />
+                    <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                </span>
+                break;
+            case KendoComponents.NumericTextBox:
+                <h4><label>@attributes.Title</label></h4>
+                <span>
+                    <input
+                        type="number"
+                        name="@property.Name"
+                        value="@(data ?? "")"
+                        data-kendo-tab="@Model.Tab"
+                        data-kendo-component="@KendoComponents.NumericTextBox"
+                        data-kendo-options="@attributes.KendoOptions"
+                        data-depend-on-field="@attributes.DependsOnField"
+                        data-depend-on-value="@dependsOnValue"
+                        is-required="@attributes.IsRequired.ToString().ToLower()"
+                        use-datasource="@attributes.UseDataSource.ToString().ToLower()"
+                    />
+                    <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                </span>
+                break;
+            case KendoComponents.CheckBox:
+                <label class="checkbox">
+                    <input
+                        type="checkbox"
+                        name="@property.Name"
+                        data-kendo-tab="@Model.Tab"
+                        data-kendo-component="@KendoComponents.CheckBox"
+                        data-kendo-options="@attributes.KendoOptions"
+                        data-depend-on-field="@attributes.DependsOnField"
+                        data-depend-on-value="@dependsOnValue"
+                        is-required="@attributes.IsRequired.ToString().ToLower()"
+                        use-datasource="@attributes.UseDataSource.ToString().ToLower()"
+                    />
+                    <span>@attributes.Description</span>
+                </label>
+                break;
+            // Handle other cases...
+            default:
+                <p class="error">Unknown property type "@property.Name".</p>
+                break;
+        }
+    </div>
+}

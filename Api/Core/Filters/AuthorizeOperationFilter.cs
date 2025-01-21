@@ -14,7 +14,10 @@ public class AuthorizeOperationFilter : IOperationFilter
         var isAuthorized = context.MethodInfo.DeclaringType != null && (context.MethodInfo.DeclaringType.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any() ||
                                                                         context.MethodInfo.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any());
 
-        if (!isAuthorized) return;
+        if (!isAuthorized)
+        {
+            return;
+        }
 
         // Try setting the Unauthorized and Forbidden API responses. Will only do something if the response hasn't already been set in the controller endpoint.
         operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized" });

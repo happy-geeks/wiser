@@ -156,6 +156,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="GeeksCoreLibrary" Version="5.0.2501.3" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.27.3" />
@@ -190,10 +191,6 @@
     <Compile Remove="Modules\Permissions\Models\BasePermissionData.cs" />
     <Compile Remove="Modules\Permissions\Models\ModulePermissionData.cs" />
     <Compile Remove="Modules\Permissions\Models\QueryPermissionData.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\GeeksCoreLibrary\GeeksCoreLibrary\GeeksCoreLibrary.csproj" />
   </ItemGroup>
 
 </Project>

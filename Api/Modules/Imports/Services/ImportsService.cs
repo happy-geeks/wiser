@@ -436,7 +436,10 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
     {
         var idIndex = Array.FindIndex(headerFields, s => s.Equals("id", StringComparison.OrdinalIgnoreCase));
 
-        if (idIndex >= 0) return (null, idIndex);
+        if (idIndex >= 0)
+        {
+            return (null, idIndex);
+        }
 
         importResult.Failed += 1U;
         importResult.Errors.Add("Can't do import because of missing ID column");
@@ -705,7 +708,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         try
         {
             // Import files.
-            if (images != null && images.Count > 0)
+            if (images is {Count: > 0})
             {
                 foreach (var image in images)
                 {
@@ -1443,7 +1446,9 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             foreach (var deleteLinksConfirm in deleteLinksConfirms)
             {
                 if (deleteLinksConfirm.Ids.Count == 0)
+                {
                     continue;
+                }
 
                 if (deleteLinksConfirm.UseParentId)
                 {

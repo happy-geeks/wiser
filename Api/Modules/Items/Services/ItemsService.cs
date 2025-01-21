@@ -1325,15 +1325,25 @@ public class ItemsService(
                         foreach (var customAction in customActions)
                         {
                             var rolesToken = customAction.SelectToken("roles");
-                            if (rolesToken == null) continue; // No roles defined = access
+                            if (rolesToken == null)
+                            {
+                                continue; // No roles defined = access
+                            }
 
                             var roles = rolesToken.Values<string>().ToList();
                             var hasRole = false;
                             foreach (var role in roles)
                             {
-                                if (IdentityHelpers.HasRole(identity, role)) hasRole = true;
+                                if (IdentityHelpers.HasRole(identity, role))
+                                {
+                                    hasRole = true;
+                                }
                             }
-                            if (hasRole) continue;
+                            if (hasRole)
+                            {
+                                continue;
+                            }
+
                             deletedCustomActions.Add(customAction);
                         }
 
@@ -1812,7 +1822,10 @@ public class ItemsService(
 
         // Now try to retrieve a linked item.
         var result = await wiserItemsService.GetLinkedItemDetailsAsync(itemId, linkType, entityType, false, userId, reversed, itemIdEntityType);
-        if (result == null) return new ServiceResult<List<WiserItemModel>>();
+        if (result == null)
+        {
+            return new ServiceResult<List<WiserItemModel>>();
+        }
 
         foreach (var item in result)
         {

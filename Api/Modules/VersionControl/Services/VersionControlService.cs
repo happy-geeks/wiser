@@ -106,7 +106,10 @@ public class VersionControlService : IVersionControlService, IScopedService
             };
         }
 
-        if (useTransaction) await databaseConnection.BeginTransactionAsync();
+        if (useTransaction)
+        {
+            await databaseConnection.BeginTransactionAsync();
+        }
 
         try
         {
@@ -149,11 +152,18 @@ public class VersionControlService : IVersionControlService, IScopedService
                 }
             }
 
-            if (useTransaction) await databaseConnection.CommitTransactionAsync();
+            if (useTransaction)
+            {
+                await databaseConnection.CommitTransactionAsync();
+            }
         }
         catch (Exception)
         {
-            if (useTransaction) await databaseConnection.RollbackTransactionAsync();
+            if (useTransaction)
+            {
+                await databaseConnection.RollbackTransactionAsync();
+            }
+
             throw;
         }
 

@@ -63,7 +63,11 @@ public class DynamicContentService : IDynamicContentService, IScopedService
 
         foreach (var enumField in enumFields)
         {
-            if (enumField.Name.Equals("value__")) continue;
+            if (enumField.Name.Equals("value__"))
+            {
+                continue;
+            }
+
             returnDict.Add((int)enumField.GetRawConstantValue(), enumField.Name);
         }
 

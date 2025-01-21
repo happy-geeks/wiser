@@ -1618,7 +1618,10 @@ public class TemplatesService : ITemplatesService, IScopedService
                                                                                                   WHERE ROUTINE_NAME = ?routineName
                                                                           """);
 
-                if (routineData.Rows.Count == 0) continue;
+                if (routineData.Rows.Count == 0)
+                {
+                    continue;
+                }
 
                 clientDatabaseConnection.AddParameter("routineName", $"WISER_{treeViewItem.TemplateName}");
                 routineData = await clientDatabaseConnection.GetAsync("""
@@ -1628,7 +1631,10 @@ public class TemplatesService : ITemplatesService, IScopedService
                                                                                               WHERE ROUTINE_NAME = ?routineName
                                                                       """);
 
-                if (routineData.Rows.Count == 0) continue;
+                if (routineData.Rows.Count == 0)
+                {
+                    continue;
+                }
 
                 // Routine doesn't exist with the template's name, but DOES exist with the "WISER_" prefix.
                 // Update the template's name to stay consistent.
@@ -1788,7 +1794,10 @@ public class TemplatesService : ITemplatesService, IScopedService
             var templateTrees = (await GetTreeViewSectionAsync(identity, parentId)).ModelObject;
             foreach (var templateTree in templateTrees)
             {
-                if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase)) continue;
+                if (!String.IsNullOrWhiteSpace(startFrom) && !path[0].Equals(templateTree.TemplateName, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    continue;
+                }
 
                 if (templateTree.HasChildren)
                 {
@@ -2490,38 +2499,62 @@ public class TemplatesService : ITemplatesService, IScopedService
 
         if (settings.MeasureRenderTimesOnDevelopmentForCurrent)
         {
-            if (!developmentIds.Contains(templateId)) developmentIds.Add(templateId);
+            if (!developmentIds.Contains(templateId))
+            {
+                developmentIds.Add(templateId);
+            }
         }
         else
         {
-            if (developmentIds.Contains(templateId)) developmentIds.Remove(templateId);
+            if (developmentIds.Contains(templateId))
+            {
+                developmentIds.Remove(templateId);
+            }
         }
 
         if (settings.MeasureRenderTimesOnTestForCurrent)
         {
-            if (!testIds.Contains(templateId)) testIds.Add(templateId);
+            if (!testIds.Contains(templateId))
+            {
+                testIds.Add(templateId);
+            }
         }
         else
         {
-            if (testIds.Contains(templateId)) testIds.Remove(templateId);
+            if (testIds.Contains(templateId))
+            {
+                testIds.Remove(templateId);
+            }
         }
 
         if (settings.MeasureRenderTimesOnAcceptanceForCurrent)
         {
-            if (!acceptanceIds.Contains(templateId)) acceptanceIds.Add(templateId);
+            if (!acceptanceIds.Contains(templateId))
+            {
+                acceptanceIds.Add(templateId);
+            }
         }
         else
         {
-            if (acceptanceIds.Contains(templateId)) acceptanceIds.Remove(templateId);
+            if (acceptanceIds.Contains(templateId))
+            {
+                acceptanceIds.Remove(templateId);
+            }
         }
 
         if (settings.MeasureRenderTimesOnLiveForCurrent)
         {
-            if (!liveIds.Contains(templateId)) liveIds.Add(templateId);
+            if (!liveIds.Contains(templateId))
+            {
+                liveIds.Add(templateId);
+            }
         }
         else
         {
-            if (liveIds.Contains(templateId)) liveIds.Remove(templateId);
+            if (liveIds.Contains(templateId))
+            {
+                liveIds.Remove(templateId);
+            }
         }
 
         // Save the new settings.

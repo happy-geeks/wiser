@@ -28,7 +28,11 @@ public class TemplateTreeViewModel
         set
         {
             isFolder = value;
-            if (!value) return;
+            if (!value)
+            {
+                return;
+            }
+
             CollapsedSpriteCssClass = "icon-folder-closed";
             ExpandedSpriteCssClass = "icon-folder";
             SpriteCssClass = "icon-folder-closed";
