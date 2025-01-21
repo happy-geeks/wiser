@@ -41,5 +41,11 @@
         /// Gets or sets the total amount of items of this entity type.
         /// </summary>
         public int? TotalItems { get; set; }
+
+        /// <summary>
+        /// Gets or sets the link type number from this entity to the parent entity.
+        /// Only set when the entity information is requested as a child entity.
+        /// </summary>
+        public ulong? LinkTypeNumber { get; set; }
     }
 }

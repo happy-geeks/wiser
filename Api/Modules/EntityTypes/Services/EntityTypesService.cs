@@ -261,10 +261,12 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
             var result = new List<EntityTypeModel>();
             var query = $@"SELECT 
                                 childEntity.name, 
-                                IF(childEntity.friendly_name IS NULL OR childEntity.friendly_name = '', childEntity.name, childEntity.friendly_name) AS displayName
+                                IF(childEntity.friendly_name IS NULL OR childEntity.friendly_name = '', childEntity.name, childEntity.friendly_name) AS displayName,
+                                IFNULL(link.type, 1) AS linkTypeNumber
                             FROM {WiserTableNames.WiserEntity} AS entity
                             LEFT JOIN {tablePrefix}{WiserTableNames.WiserItem} AS item ON item.entity_type = entity.name AND item.moduleid = entity.module_id
                             JOIN {WiserTableNames.WiserEntity} AS childEntity ON childEntity.module_id = ?moduleId AND childEntity.name <> '' AND FIND_IN_SET(childEntity.name, entity.accepted_childtypes)
+                            LEFT JOIN {WiserTableNames.WiserLink} AS link ON link.destination_entity_type = ?entityType AND link.connected_entity_type = childEntity.`name`
                             WHERE entity.module_id = ?moduleId
                             AND ((?parentId = 0 AND entity.name = '') OR (?parentId > 0 AND item.id = ?parentId AND (?entityType = '' OR entity.name = ?entityType)))
                             GROUP BY childEntity.name
@@ -279,7 +281,8 @@ ORDER BY CONCAT(IF(entity.friendly_name IS NULL OR entity.friendly_name = '', en
             result.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new EntityTypeModel
             {
                 Id = dataRow.Field<string>("name"),
-                DisplayName = dataRow.Field<string>("displayName")
+                DisplayName = dataRow.Field<string>("displayName"),
+                LinkTypeNumber = Convert.ToUInt64(dataRow["linkTypeNumber"])
             }));
 
             return new ServiceResult<List<EntityTypeModel>>(result);
