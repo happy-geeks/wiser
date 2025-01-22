@@ -4,7 +4,7 @@ Wiser v3. This includes the API and the front-end projects.
 ## Requirements
 ### Software
 1. Install [NodeJs](https://nodejs.org/en/) LTS.
-2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/7.0) and install it.
+2. To run Wiser in IIS, you need to download the [Windows Hosting Bundle](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) and install it.
 
 ### Compile front-end
 1. Open PowerShell/CMD Window in the directory that contains the `FrontEnd.csproj` file (__NOT__ the root directory, that contains the `WiserCore.sln` file!).
@@ -15,6 +15,16 @@ Wiser v3. This includes the API and the front-end projects.
 
 If you get an error for not having enough rights to execute the script please execute the following in PowerShell as administrator:
 ```Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted```
+
+### Kendo UI license
+Wiser uses Kendo UI for the front-end. You need a license for this and then activate it. 
+Once you have a license, you can download it from [here](https://www.telerik.com/account/your-licenses/license-keys). Add this file to the root directory of the front-end project. The file should be named `kendo-ui-license.txt`.
+You can activate it by running the following command in the root directory of the front-end project:
+```
+npx kendo-ui-license activate
+```
+
+This also works in things like GitHub actions, see our yaml files or the Kendo documentation for examples.~~~~
 
 ### Setup secrets<a name="setup-secrets"></a>
 1. Create 2 files named `appsettings-secrets.json`, one for the API and one for the front-end, somewhere outside of the project directory.
