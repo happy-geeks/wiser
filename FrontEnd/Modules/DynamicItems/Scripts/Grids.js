@@ -697,6 +697,7 @@ export class Grids {
             const gridOptions = {
                 page: 1,
                 pageSize: options.pageSize,
+                persistSelection: options.persistSelection,
                 skip: 0,
                 take: options.pageSize,
                 extraValuesForQuery: extraData
@@ -988,6 +989,7 @@ export class Grids {
             editable: false,
             navigatable: true,
             selectable: options.selectable || false,
+            persistSelection: options.persistSelection || false,
             height: height,
             filterable: {
                 extra: false,
