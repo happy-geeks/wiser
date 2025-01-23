@@ -19,6 +19,8 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySqlConnector;
 using Constants = GeeksCoreLibrary.Modules.Languages.Models.Constants;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.EntityProperties.Services;
 
@@ -74,7 +76,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         var result = FromDataRow(dataTable.Rows[0]);
 
-        if (!String.IsNullOrEmpty(result.GroupName) && String.IsNullOrEmpty(result.PropertyName))
+        if (result.InputType == EntityPropertyInputTypes.Group)
         {
             result.Type = EntityPropertyModelTypes.Group;
         }
@@ -90,7 +92,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         var query = $"""
                      SELECT *
                                                  FROM {WiserTableNames.WiserEntityProperty}
-                                                 WHERE entity_name = ?entityName
+                                                 WHERE entity_name = ?entityName AND inputtype <> 'group'
                                                  {(onlyEntityTypesWithDisplayName ? "AND display_name IS NOT NULL AND display_name <> ''" : "")}
                                                  {(onlyEntityTypesWithPropertyName ? "AND property_name IS NOT NULL AND property_name <> ''" : "")}
                                                  ORDER BY {(orderByName ? "display_name" : "ordering")} ASC
@@ -117,18 +119,48 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         return new ServiceResult<List<EntityPropertyModel>>(results);
     }
 
-    /// <inheritdoc />
-    public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
-    {
-        var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
-        if (allProperties.StatusCode != HttpStatusCode.OK)
+    private async Task<ServiceResult<Dictionary<string, EntityPropertyGroupModel>>> GetPropertyGroupsOfEntity(ClaimsIdentity identity, string entityType, bool orderByName = false)
         {
-            return new ServiceResult<List<EntityPropertyTabModel>>
+            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("entityName", entityType);
+            var query = $@"SELECT *
+                            FROM {WiserTableNames.WiserEntityProperty}
+                            WHERE entity_name = ?entityName AND inputtype = 'group'
+                            ORDER BY {(orderByName ? "display_name" : "ordering")} ASC";
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+            var results = new Dictionary<string, EntityPropertyGroupModel>();
+            foreach (DataRow dataRow in dataTable.Rows)
             {
-                StatusCode = allProperties.StatusCode,
-                ErrorMessage = allProperties.ErrorMessage
-            };
+                var groupOptions = dataRow.Field<string>("options") ?? "";
+                var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
+
+                results.Add(dataRow.Field<string>("display_name"), new()
+                {
+                    Name = dataRow.Field<string>("display_name"),
+                    Width = dataRow.Field<short>("width"),
+                    MinimumWidth = goObject.Value<int>("minWidth"),
+                    Orientation = goObject.Value<string>("orientation"),
+                    ShowName = goObject.Value<bool>("showName"),
+                    Collapsible = goObject.Value<bool>("collapsible"),
+                });
+            }
+            return new ServiceResult<Dictionary<string, EntityPropertyGroupModel>>(results);
         }
+
+        /// <inheritdoc />
+        public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
+        {
+            var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
+            if (allProperties.StatusCode != HttpStatusCode.OK)
+            {
+                return new ServiceResult<List<EntityPropertyTabModel>>
+                {
+                    StatusCode = allProperties.StatusCode,
+                    ErrorMessage = allProperties.ErrorMessage
+                };
+            }
 
             var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
             {
@@ -137,7 +169,8 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                  Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
                  {
                      Id = y.First().GroupID,
-                     Name = y.Key,
+                     EntityType = entityName,
+                     Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
                      TabName = x.Key,
                      Properties = y.ToList()
                  }).ToList()
@@ -338,12 +371,12 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             };
         }
 
-        if (String.IsNullOrWhiteSpace(entityProperty.PropertyName))
+        if (String.IsNullOrWhiteSpace(entityProperty.PropertyName) && entityProperty.InputType != EntityPropertyInputTypes.Group)
         {
             return new ServiceResult<bool>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                ErrorMessage = "PropertyName is required."
+                ErrorMessage = $"PropertyName is required. InputType = {entityProperty.InputType}"
             };
         }
 
@@ -1153,10 +1186,12 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                 return "qr";
             case EntityPropertyInputTypes.Iframe:
                 return "iframe";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
+            case EntityPropertyInputTypes.Group:
+                    return "group";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
+            }
         }
-    }
 
     private static EntityPropertyModel FromDataRow(DataRow dataRow)
     {
