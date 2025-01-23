@@ -36,7 +36,6 @@ public class EntityPropertyModel
     /// <summary>
     /// Gets or sets the name.
     /// </summary>
-    [Required]
     public string PropertyName { get; set; }
 
     /// <summary>

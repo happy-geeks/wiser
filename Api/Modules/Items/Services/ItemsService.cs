@@ -220,7 +220,7 @@ public class ItemsService(
 					ORDER BY IFNULL(item.changed_on, item.added_on) DESC
                     LIMIT {(pagedRequest.Page - 1) * pagedRequest.PageSize}, {pagedRequest.PageSize}
                 ) AS x
-                LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr')
+                LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr', 'group')
                 LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name) AND field.language_code = property.language_code
                 GROUP BY x.id
 				ORDER BY IFNULL(x.changed_on, x.added_on) DESC
@@ -1185,9 +1185,10 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
     	                            e.save_on_change, files.JSON AS filesJSON, 0 AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
     	                            IF(e.readonly > 0 OR i.readonly > 0 OR SUM(IF(permission.permissions IS NULL OR (permission.permissions & 4) > 0, 1, 0)) = 0, TRUE, FALSE) AS readonly,
-    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex
+    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex, g.width AS group_width, g.options AS group_options
                                 FROM {WiserTableNames.WiserEntityProperty} e
                                 JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} i ON i.id = ?itemId AND i.entity_type = e.entity_name
+                                LEFT JOIN {WiserTableNames.WiserEntityProperty} g ON g.id = e.group_id
                                 LEFT JOIN {WiserTableNames.WiserFieldTemplates} t ON t.field_type = e.inputtype
                                 LEFT JOIN {tablePrefix}{WiserTableNames.WiserItemDetail}{{0}} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                 # TODO: Find a more efficient way to load images and files?
@@ -1207,7 +1208,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                                     WHERE userRole.user_id = ?userId
                                 ) permission ON permission.entity_property_id = e.id OR permission.entity_property_id IS NULL
 
-                                WHERE permission.permissions IS NULL OR permission.permissions > 0
+                                WHERE (permission.permissions IS NULL OR permission.permissions > 0) AND e.inputtype <> 'group'
                                 GROUP BY id
                                 
                                 UNION ALL
@@ -1218,7 +1219,7 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
     	                            e.save_on_change, files.JSON AS filesJSON, il.id AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
     	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
     	                            IF(e.readonly > 0 OR SUM(IF(permission.permissions IS NULL OR (permission.permissions & 4) > 0, 1, 0)) = 0, TRUE, FALSE) AS readonly, 
-    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex
+    	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex, 100 AS group_width, '' AS group_options
                                 FROM {WiserTableNames.WiserEntityProperty} e
                                 JOIN {tablePrefix}{WiserTableNames.WiserItem}{{0}} i ON i.id = ?itemId
                                 JOIN {linkTablePrefix}{WiserTableNames.WiserItemLink}{{0}} il ON il.id = ?itemLinkId AND il.type = e.link_type
@@ -1291,6 +1292,13 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 if (group == null)
                 {
                     group = new ItemGroupModel { Name = groupName };
+                    var groupOptions = dataRow.Field<string>("group_options") ?? "";
+                    var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
+                    group.Width = Convert.ToInt32(dataRow.Field<long?>("group_width") ?? group.Width);
+                    group.MinimumWidth = goObject.ContainsKey("minWidth") ? goObject.Value<int>("minWidth") : group.MinimumWidth;
+                    group.Orientation = goObject.ContainsKey("orientation") ? goObject.Value<string>("orientation") : group.Orientation;
+                    group.ShowName = goObject.ContainsKey("showName") ? goObject.Value<bool>("showName") : group.ShowName && !String.IsNullOrEmpty(groupName);
+                    group.Collapsible = goObject.ContainsKey("collapsible") ? goObject.Value<bool>("collapsible") : group.Collapsible;
                     tab.Groups.Add(group);
                 }
 
@@ -1784,14 +1792,15 @@ DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} AS link WHERE (link
                 {
                     foreach (var group in tab.Groups)
                     {
-                        string width = "width: " + group.Width + "%;";
-                        string minWidth = "min-width: " + group.MinimumWidth + "px;";
-                        string display = "display: " + (group.Orientation == "Vertical" ? "grid;" : "block;");
+                        string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
+                        string minWidth = $"min-width: {group.MinimumWidth}px;";
+                        string display = "display: " + (group.Orientation == "vertical" ? "grid;" : "flex;");
                         string margin = group.Width < 100 ? "margin: 5px; " : "";
-                        string border = group.Width < 100 ? "border-bottom: 0px; " : "";
-                        string groupStyle = $"style=\"{width}{minWidth}{display}{margin}{border} background: var(--item-bg-color);\"";
+                        string border = group.Width < 100 ? "border-right: 2px solid white; " : "";
+                        string padding = group.Width < 100 ? "padding: 10px 10px; " : "";
+                        string groupStyle = $"style=\"{width}{minWidth}{display}{margin}{padding}{border} background: var(--item-bg-color);\"";
 
-                        if (String.IsNullOrEmpty(group.Name))
+                        if (String.IsNullOrEmpty(group.Name) || group.ShowName == false)
                         {
                             tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\" {groupStyle}>");
                         }
