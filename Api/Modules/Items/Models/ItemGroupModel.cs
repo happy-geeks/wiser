@@ -31,11 +31,23 @@ namespace Api.Modules.Items.Models
         public string Orientation { get; set; } = "Horizontal";
 
         /// <summary>
+        /// Gets or sets if the group is collapsible.
+        /// Options are true or false.
+        /// </summary>
+        public bool Collapsible { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets if the group name is visible.
+        /// Options are true or false.
+        /// </summary>
+        public bool ShowName { get; set; } = true;
+
+        /// <summary>
         /// Gets or sets the <see cref="StringBuilder"/> for generating the HTML for this group.
         /// </summary>
         [JsonIgnore]
         public StringBuilder HtmlTemplateBuilder { get; set; } = new();
-        
+
         /// <summary>
         /// Gets or sets the <see cref="StringBuilder"/> for generating the javascript for this group.
         /// </summary>
