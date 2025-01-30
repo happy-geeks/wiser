@@ -1325,6 +1325,11 @@ CREATE TRIGGER `EntityInsert` AFTER INSERT ON `wiser_entity` FOR EACH ROW BEGIN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', NULL, NEW.`store_type`);
     END IF;
+
+    IF IFNULL(NEW.`allow_creation_on_main_from_branch`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'allow_creation_on_main_from_branch', NULL, NEW.`allow_creation_on_main_from_branch`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `EntityUpdate`;
@@ -1457,6 +1462,11 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
     IF IFNULL(NEW.`store_type`, '') <> IFNULL(OLD.`store_type`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', OLD.`store_type`, NEW.`store_type`);
+    END IF;
+
+    IF IFNULL(NEW.`allow_creation_on_main_from_branch`, '') <> IFNULL(OLD.`allow_creation_on_main_from_branch`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'allow_creation_on_main_from_branch', OLD.`allow_creation_on_main_from_branch`, NEW.`allow_creation_on_main_from_branch`);
     END IF;
 END;
 

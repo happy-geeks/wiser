@@ -169,7 +169,7 @@ export class Dialogs {
         }
 
         await this.loadAvailableEntityTypesInDropDown(parentId, parentEntityType);
-
+        
         this.newItemDialog.element.find("#alsoCreateInMainBranch").prop("checked", false);
         const newItemNameField = this.newItemDialog.element.find("#newItemNameField").val("");
 
@@ -280,7 +280,7 @@ export class Dialogs {
         if (!this.newItemDialogEntityTypeDropDown || !this.newItemDialogEntityTypeDropDown.dataSource) {
             return;
         }
-
+        
         const data = this.newItemDialogEntityTypeDropDown.dataSource.data();
         if (!data.length) {
             return;
@@ -295,11 +295,56 @@ export class Dialogs {
         let title = "Nieuw item aanmaken";
         if (data.length === 1) {
             title = `${data[0].displayName} aanmaken`;
+            this.EnableOrDisableCreateInMainBranch(data[0].displayName);
         }
         if (this.base.selectedItem) {
             title += ` onder '${this.base.selectedItem.name || this.base.selectedItem.title}'`;
+            this.EnableOrDisableCreateInMainBranch(this.base.selectedItem.name || this.base.selectedItem.title);
         }
-
+        
         this.newItemDialog.title(title);
     }
+
+    async EnableOrDisableCreateInMainBranch(entityType) {
+        const process = `EnableOrDisableCreateInMainBranch_${Date.now()}`;
+        window.processing.addProcess(process);
+
+        try {
+            const element = this.newItemDialog.element.find("#alsoCreateInMainBranch").closest(".new-item-dialog-row");
+            let optionIsallowed = false;
+
+            if (!element || element.length <= 0) {
+                return;
+            }
+            
+            // get option for entity to see if it is allowed to create in main branch when on a child branch
+            if ( entityType !== undefined && entityType !== null ) {
+                {
+                    const entitySettings = await this.base.getEntityType(entityType);
+                    if (entitySettings !== undefined 
+                        && entitySettings.allowCreationOnMainFromBranch !== undefined 
+                        && entitySettings.allowCreationOnMainFromBranch !== null
+                    ) {
+                        optionIsallowed = entitySettings.allowCreationOnMainFromBranch;
+                    }
+                }
+            }
+            
+            if( !optionIsallowed 
+                || (window.parent?.main?.branchesService !== undefined && (await window.parent.main.branchesService.isMainBranch()).data ) 
+            ) {
+                element[0].classList.add("hidden");
+            }
+            else
+            {
+                element[0].classList.remove("hidden");
+            }
+        } catch (exception) {
+            console.error("Error while getting options for entity", exception);
+            kendo.alert("Er is iets fout gegaan met het ophalen van opties voor entities. Neem a.u.b. contact op met ons.");
+        }
+
+        window.processing.removeProcess(process);
+    }
+    
 }
