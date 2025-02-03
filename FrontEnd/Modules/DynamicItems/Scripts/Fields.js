@@ -2342,6 +2342,14 @@ export class Fields {
                                 // Make an API call for all selected items.
                                 allActionResults = allActionResults.concat(await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues));
                             }
+
+                            if (action.showResponse) {
+                                $("<div></div>").kendoAlert({
+                                    title: action.showResponseTitle || "API Response",
+                                    content: `<pre>${JSON.stringify(allActionResults, null, 2)}</pre>`
+                                }).data("kendoAlert").open();
+                            }
+
                         } catch (apiCallException) {
                             if (typeof apiCallException === "string") {
                                 kendo.alert(apiCallException);

@@ -1796,7 +1796,6 @@ export class EntityTab {
         let emailDataQueryId = popUpHtml.find("#emailDataQueryId");
         let actionButtonUrlWindowOpen = popUpHtml.find("#actionButtonUrlWindowOpen");
         let actionButtonApiCallConnection = popUpHtml.find("#actionButtonApiCallConnection");
-        let actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
 
         const showFields = (fieldType) => {
             const fieldTypes = this.base.fieldTypesDropDown;
@@ -2156,6 +2155,7 @@ export class EntityTab {
                         document.querySelector(".loaderWrap").classList.add("active");
                         document.getElementById("actionButtonApiCallIterative").checked = gridDataItem.action.iterative;
                         document.getElementById("actionButtonApiCallShowResponse").checked = gridDataItem.action.showResponse;
+                        document.getElementById("actionButtonApiCallShowResponseTitle").value = gridDataItem.action.showResponseTitle ?? "";
 
                         Wiser.api({
                             url: `${this.base.settings.wiserApiRoot}api-connections`,
@@ -2304,6 +2304,7 @@ export class EntityTab {
                     action.apiConnectionId = this.actionButtonApiCallConnection.dataItem().id;
                     action.iterative = document.getElementById("actionButtonApiCallIterative").checked;
                     action.showResponse = document.getElementById("actionButtonApiCallShowResponse").checked;
+                    action.showResponseTitle = document.getElementById("actionButtonApiCallShowResponseTitle").value ?? "";
                 }
                 break;
             case actionTypes.ACTIONCONFIRMDIALOG.id:
