@@ -1796,6 +1796,7 @@ export class EntityTab {
         let emailDataQueryId = popUpHtml.find("#emailDataQueryId");
         let actionButtonUrlWindowOpen = popUpHtml.find("#actionButtonUrlWindowOpen");
         let actionButtonApiCallConnection = popUpHtml.find("#actionButtonApiCallConnection");
+        let actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
 
         const showFields = (fieldType) => {
             const fieldTypes = this.base.fieldTypesDropDown;
@@ -2142,7 +2143,7 @@ export class EntityTab {
                     let userParametersGridDataSourceSettings = this.userParametersGridDataSourceSettings;
                     userParametersGridDataSourceSettings.data = rows;
                     this.userParametersGrid.setDataSource(userParametersGridDataSourceSettings);
-                    
+
                     if (gridDataItem.type === actionTypes.GENERATEFILE.id) {
                         this.dataSelectorId.value(gridDataItem.action.dataSelectorId);
                         this.contentItemId.value(gridDataItem.action.contentItemId);
@@ -2154,7 +2155,8 @@ export class EntityTab {
                     } else if (gridDataItem.type === actionTypes.APICALL.id) {
                         document.querySelector(".loaderWrap").classList.add("active");
                         document.getElementById("actionButtonApiCallIterative").checked = gridDataItem.action.iterative;
-                        
+                        document.getElementById("actionButtonApiCallShowResponse").checked = gridDataItem.action.showResponse;
+
                         Wiser.api({
                             url: `${this.base.settings.wiserApiRoot}api-connections`,
                             method: "GET"
@@ -2301,6 +2303,7 @@ export class EntityTab {
                 else if (actionTypes.APICALL.id) {
                     action.apiConnectionId = this.actionButtonApiCallConnection.dataItem().id;
                     action.iterative = document.getElementById("actionButtonApiCallIterative").checked;
+                    action.showResponse = document.getElementById("actionButtonApiCallShowResponse").checked;
                 }
                 break;
             case actionTypes.ACTIONCONFIRMDIALOG.id:

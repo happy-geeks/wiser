@@ -2308,6 +2308,7 @@ export class Fields {
                             // Retrieve the optional attribute whether this action has to be run iteratively.
                             const isIterative = action.iterative ?? false;
                             const hasItemsSelected = selectedItems && selectedItems.length > 0;
+                            let allActionResults = [];
 
                             if(isIterative && hasItemsSelected) {
                                 // Loop over all of the selected items from the grid.
@@ -2331,7 +2332,7 @@ export class Fields {
                                     }
 
                                     // Make an API call for the currently selected item in the iteration.
-                                    await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, extraData);
+                                    allActionResults = allActionResults.concat(await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, extraData));
                                 }
                             } else {
                                 // Combine all values of the selected items.
@@ -2339,7 +2340,7 @@ export class Fields {
                                     await combineValuesFromAllSelectedItemsAndAddToUserParameters();
 
                                 // Make an API call for all selected items.
-                                await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues);
+                                allActionResults = allActionResults.concat(await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues));
                             }
                         } catch (apiCallException) {
                             if (typeof apiCallException === "string") {
