@@ -1796,6 +1796,7 @@ export class EntityTab {
         let emailDataQueryId = popUpHtml.find("#emailDataQueryId");
         let actionButtonUrlWindowOpen = popUpHtml.find("#actionButtonUrlWindowOpen");
         let actionButtonApiCallConnection = popUpHtml.find("#actionButtonApiCallConnection");
+        let actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
 
         const showFields = (fieldType) => {
             const fieldTypes = this.base.fieldTypesDropDown;
