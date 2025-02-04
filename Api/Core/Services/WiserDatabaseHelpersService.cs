@@ -91,6 +91,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
             WiserTableNames.WiserDynamicContentPublishLog,
             WiserTableNames.WiserQuery,
             WiserTableNames.WiserPermission,
+            WiserTableNames.WiserUserRoles,
             WiserTableNames.WiserCommunication,
             WiserTableNames.WiserStyledOutput,
             WiserTableNames.WiserParentUpdates,
