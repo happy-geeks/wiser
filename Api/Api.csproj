@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>HappyHorizon.Wiser.Api</PackageId>
-    <Version>3.6.2502.1</Version>
+    <Version>3.6.2502.2</Version>
     <Authors>Happy Horizon B.V.</Authors>
     <Company>Happy Horizon B.V.</Company>
     <Product>Wiser API</Product>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>3.6.2502.1</AssemblyVersion>
-    <FileVersion>3.6.2502.1</FileVersion>
+    <AssemblyVersion>3.6.2502.2</AssemblyVersion>
+    <FileVersion>3.6.2502.2</FileVersion>
 	<LangVersion>default</LangVersion>
 	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
@@ -53,7 +53,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="5.0.2501.7" />
+    <PackageReference Include="GeeksCoreLibrary" Version="5.0.2502.1" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.27.3" />

@@ -750,10 +750,10 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 importResult.ItemsUpdated += 1U;
             }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
             importResult.Failed += 1U;
-            importResult.Errors.Add(ex.Message);
+            importResult.Errors.Add(exception.Message);
         }
     }
 

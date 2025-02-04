@@ -307,7 +307,7 @@ node_modules/
 *.dsw
 *.dsp
 
-# Visual Studio 6 technical files 
+# Visual Studio 6 technical files
 *.ncb
 *.aps
 
@@ -404,6 +404,10 @@ FodyWeavers.xsd
 .idea/
 *.sln.iml
 
+# GCL Specific
+*/App_Data/*
+*/wwwroot/PublicFiles/*
+
 # Content Builder
 /FrontEnd/wwwroot/ContentBuilder/*
 !/FrontEnd/wwwroot/ContentBuilder/plugins/
@@ -418,4 +422,3 @@ FodyWeavers.xsd
 
 # Partner CSS
 /FrontEnd/Core/Css/partner/*.css
-
