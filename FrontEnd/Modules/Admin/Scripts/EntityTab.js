@@ -1796,7 +1796,6 @@ export class EntityTab {
         let emailDataQueryId = popUpHtml.find("#emailDataQueryId");
         let actionButtonUrlWindowOpen = popUpHtml.find("#actionButtonUrlWindowOpen");
         let actionButtonApiCallConnection = popUpHtml.find("#actionButtonApiCallConnection");
-        let actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
 
         const showFields = (fieldType) => {
             const fieldTypes = this.base.fieldTypesDropDown;
@@ -2154,8 +2153,17 @@ export class EntityTab {
                         document.getElementById("pdfFilename").value = gridDataItem.action.pdfFilename;
                     } else if (gridDataItem.type === actionTypes.APICALL.id) {
                         document.querySelector(".loaderWrap").classList.add("active");
+
+                        let actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
+                        let actionButtonApiCallShowResponseTitleHolder = popUpHtml.find("#actionButtonApiCallShowResponseTitleHolder");
+
+                        actionButtonApiCallShowResponse.on("change", (event) => {
+                            actionButtonApiCallShowResponseTitleHolder.toggle(event.currentTarget.checked);
+                        });
+
                         document.getElementById("actionButtonApiCallIterative").checked = gridDataItem.action.iterative;
-                        document.getElementById("actionButtonApiCallShowResponse").checked = gridDataItem.action.showResponse;
+                        actionButtonApiCallShowResponse[0].checked = gridDataItem.action.showResponse;
+                        actionButtonApiCallShowResponse[0].dispatchEvent(new Event("change"));
                         document.getElementById("actionButtonApiCallShowResponseTitle").value = gridDataItem.action.showResponseTitle ?? "";
 
                         Wiser.api({
