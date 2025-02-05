@@ -2095,9 +2095,38 @@ export class EntityTab {
         // load existing queries into combobox
         this.actionButtonQueryList.setDataSource(this.base.wiserQueryTab.queryList);
 
+        const actionTypes = this.base.actionButtonTypes;
+
+        // Prepare the popup for the API call action before potentionally setting the data.
+        if (gridDataItem.type === actionTypes.APICALL.id) {document.querySelector(".loaderWrap").classList.add("active");
+
+            const actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
+            const actionButtonApiCallShowResponseTitleHolder = popUpHtml.find("#actionButtonApiCallShowResponseTitleHolder");
+
+            actionButtonApiCallShowResponse.on("change", (event) => {
+                actionButtonApiCallShowResponseTitleHolder.toggle(event.currentTarget.checked);
+            });
+
+            Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}api-connections`,
+                method: "GET"
+            }).then((apiConnections) => {
+                this.actionButtonApiCallConnection.setDataSource(apiConnections);
+
+                if (gridDataItem.action) {
+                    this.actionButtonApiCallConnection.select((dataItem) => {
+                        return dataItem.id === gridDataItem.action.apiConnectionId;
+                    });
+                }
+            }).catch(() => {
+                this.base.showNotification("notification", "Het ophalen van de API connecties is mislukt, probeer het opnieuw", "error");
+            }).finally(() => {
+                document.querySelector(".loaderWrap").classList.remove("active");
+            });
+        }
+
         // set properties accordingly
         if (gridDataItem.action) {
-            const actionTypes = this.base.actionButtonTypes;
             switch (gridDataItem.type) {
                 case actionTypes.OPENURL.id:
                 case actionTypes.OPENURLONCE.id:
@@ -2152,33 +2181,11 @@ export class EntityTab {
                         document.getElementById("pdfDocumentOptionsPropertyName").value = gridDataItem.action.pdfDocumentOptionsPropertyName;
                         document.getElementById("pdfFilename").value = gridDataItem.action.pdfFilename;
                     } else if (gridDataItem.type === actionTypes.APICALL.id) {
-                        document.querySelector(".loaderWrap").classList.add("active");
-
-                        let actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
-                        let actionButtonApiCallShowResponseTitleHolder = popUpHtml.find("#actionButtonApiCallShowResponseTitleHolder");
-
-                        actionButtonApiCallShowResponse.on("change", (event) => {
-                            actionButtonApiCallShowResponseTitleHolder.toggle(event.currentTarget.checked);
-                        });
-
+                        const actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
                         document.getElementById("actionButtonApiCallIterative").checked = gridDataItem.action.iterative;
                         actionButtonApiCallShowResponse[0].checked = gridDataItem.action.showResponse;
                         actionButtonApiCallShowResponse[0].dispatchEvent(new Event("change"));
                         document.getElementById("actionButtonApiCallShowResponseTitle").value = gridDataItem.action.showResponseTitle ?? "";
-
-                        Wiser.api({
-                            url: `${this.base.settings.wiserApiRoot}api-connections`,
-                            method: "GET"
-                        }).then((apiConnections) => {
-                            this.actionButtonApiCallConnection.setDataSource(apiConnections);
-                            this.actionButtonApiCallConnection.select((dataItem) => {
-                                return dataItem.id === gridDataItem.action.apiConnectionId;
-                            });
-                        }).catch(() => {
-                            this.base.showNotification("notification", "Het ophalen van de API connecties is mislukt, probeer het opnieuw", "error");
-                        }).finally(() => {
-                            document.querySelector(".loaderWrap").classList.remove("active");
-                        });
                     }
                     break;
                 }
