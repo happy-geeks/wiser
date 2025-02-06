@@ -2310,13 +2310,24 @@ export class Fields {
                             const hasItemsSelected = selectedItems && selectedItems.length > 0;
                             let allActionResults = [];
 
+                            // If a query has been provided for the full action add it's results to use as extra data.
+                            if (action.queryId) {
+                                const executeQueryResult = await executeQuery();
+                                if (!executeQueryResult.success) {
+                                    kendo.alert(executeQueryResult.errorMessage || "Er is iets fout gegaan met het uitvoeren van de actie (executeQuery), probeer het a.u.b. nogmaals of neem contact op met ons.");
+                                    return false;
+                                }
+
+                                action.queryExtraData = executeQueryResult.otherData[0];
+                            }
+
                             if(isIterative && hasItemsSelected) {
                                 // Loop over all of the selected items from the grid.
                                 for(const selectedItem of selectedItems) {
                                     const selectedItemData = selectedItem['dataItem'];
 
                                     // Prepare an object with the data of the currently selected item in the iteration.
-                                    let extraData = {};
+                                    let extraData = action.queryExtraData || {};
                                     // Loop over all data fields of the currently selected item in the iteration.
                                     for(const selectedItemKey in selectedItemData) {
                                         // Exclude data fields if they are irrelevant to the data provided to the API call (objects, functions, etc).
@@ -2339,8 +2350,10 @@ export class Fields {
                                 if(hasItemsSelected)
                                     await combineValuesFromAllSelectedItemsAndAddToUserParameters();
 
+                                const extraData = {...action.queryExtraData, ...userParametersWithValues};
+
                                 // Make an API call for all selected items.
-                                allActionResults = allActionResults.concat(await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, userParametersWithValues));
+                                allActionResults = allActionResults.concat(await Wiser.doApiCall(this.base.settings, action.apiConnectionId, mainItemDetails, extraData));
                             }
 
                             if (action.showResponse) {

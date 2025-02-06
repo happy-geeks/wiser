@@ -664,6 +664,11 @@ export class Wiser {
                     return;
                 }
 
+                // Do replacements on the base URL.
+                if (extraData) {
+                    apiOptions.baseUrl = Wiser.doObjectReplacements(apiOptions.baseUrl, extraData);
+                }
+
                 // If base URL ends with a slash, remove it.
                 if (apiOptions.baseUrl[apiOptions.baseUrl.length - 1] === "/") {
                     apiOptions.baseUrl = apiOptions.baseUrl.substr(0, apiOptions.baseUrl.length - 2);
