@@ -2098,7 +2098,8 @@ export class EntityTab {
         const actionTypes = this.base.actionButtonTypes;
 
         // Prepare the popup for the API call action before potentionally setting the data.
-        if (gridDataItem.type === actionTypes.APICALL.id) {document.querySelector(".loaderWrap").classList.add("active");
+        if (gridDataItem.type === actionTypes.APICALL.id) {
+            document.querySelector(".loaderWrap").classList.add("active");
 
             const actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
             const actionButtonApiCallShowResponseTitleHolder = popUpHtml.find("#actionButtonApiCallShowResponseTitleHolder");
