@@ -664,6 +664,11 @@ export class Wiser {
                     return;
                 }
 
+                // Do replacements on the base URL.
+                if (extraData) {
+                    apiOptions.baseUrl = Wiser.doObjectReplacements(apiOptions.baseUrl, extraData);
+                }
+
                 // If base URL ends with a slash, remove it.
                 if (apiOptions.baseUrl[apiOptions.baseUrl.length - 1] === "/") {
                     apiOptions.baseUrl = apiOptions.baseUrl.substr(0, apiOptions.baseUrl.length - 2);
@@ -693,7 +698,7 @@ export class Wiser {
                     // If a query ID is set, execute that query first, so that the results can be used in the call to the API.
                     if (action.preRequestQueryId && itemDetails) {
                         const queryResult = await Wiser.api({
-                            method: action.method,
+                            method: "POST",
                             url: `${settings.wiserApiRoot}items/${encodeURIComponent(itemDetails.encryptedId || itemDetails.encrypted_id || itemDetails.encryptedid)}/action-button/0?queryId=${encodeURIComponent(action.preRequestQueryId)}&itemLinkId=${encodeURIComponent(itemDetails.linkId || itemDetails.link_id || 0)}`,
                             data: !extraData ? null : JSON.stringify(extraData),
                             contentType: "application/json"
@@ -763,7 +768,7 @@ export class Wiser {
                     let apiResults = await $.ajax({
                         url: "/ExternalApis/Proxy",
                         headers: headers,
-                        method: "POST",
+                        method: action.method,
                         contentType: action.contentType,
                         data: action.contentType.toLowerCase() === "application/json" ? JSON.stringify(action.data) : action.data
                     });
@@ -792,9 +797,9 @@ export class Wiser {
                             }
                             break;
                     }
-                    
+
                     let postQueryData = apiResults;
-                    
+
                     const appendDataWithApiResults = action.appendDataWithApiResults ?? false;
                     if(appendDataWithApiResults) {
                         postQueryData = {};
@@ -1690,10 +1695,10 @@ export class Misc {
         for(let key of keys) {
             // Get the absolute path of the property.
             const propertyPath = (currentPath !== null ? currentPath + "." : '') + key;
-            
+
             // Get the value of the property.
             const propertyValue = currentObject[key];
-            
+
             // Check whether the property is an object. If so, perform a new recursion iteration over this object.
             // Otherwise, flatten the property by saving its value and path (as key) to the object that will be
             // returned.
@@ -1703,7 +1708,7 @@ export class Misc {
                 writeRootObject[propertyPath] = propertyValue;
             }
         }
-        
+
         // Give back the object in it's current state.
         // Returning is necessary, since adding new properties to objects is not by reference, but by value.
         return writeRootObject;
