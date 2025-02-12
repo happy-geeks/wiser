@@ -174,7 +174,7 @@ public class DataSelectorsController : ControllerBase
     [Route("csv")]
     [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [Produces("text/csv")]
+    [Produces(MediaTypeNames.Text.Csv)]
     public async Task<IActionResult> ToCsvAsync([FromQuery] WiserDataSelectorRequestModel dataFromUri)
     {
         using var reader = new StreamReader(Request.Body, Encoding.UTF8);
@@ -182,7 +182,7 @@ public class DataSelectorsController : ControllerBase
         var bodyModel = String.IsNullOrWhiteSpace(dataFromBody) ? new WiserDataSelectorRequestModel() : JsonConvert.DeserializeObject<WiserDataSelectorRequestModel>(dataFromBody, new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() });
         var data = CombineDataSelectorRequestModels(bodyModel, dataFromUri);
         var result = await dataSelectorsService.ToCsvAsync(data, (ClaimsIdentity)User.Identity, ';');
-        return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.csv", ".csv", "text/csv");
+        return result.StatusCode != HttpStatusCode.OK ? result.GetHttpResponseMessage() : dataSelectorsService.CreateFileResult(data, result, "Export.csv", ".csv", MediaTypeNames.Text.Csv);
     }
 
     /// <summary>
