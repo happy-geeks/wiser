@@ -3157,6 +3157,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
                 entityProperties.options.validation = {};
                 entityProperties.options.queryId = $("#queryId").data("kendoNumericTextBox").value();
                 entityProperties.options.multiple = document.getElementById("allowMultipleFiles").checked;
+                entityProperties.options.filesCanBeAccessedPublicly = document.getElementById("filesCanBeAccessedPublicly").checked;
                 const allowedExtensions = document.getElementById("allowedExtensions").value;
                 entityProperties.options.validation.allowedExtensions = allowedExtensions && allowedExtensions !== '' ? allowedExtensions.split(',') : [];
                 break;
@@ -3666,6 +3667,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
             return options[key] || defaultValue;
         };
+
         const addIdsToArrayObjectItems = (targetObject = {}) => {
             let autoIncrement = 0;
 
@@ -4008,6 +4010,8 @@ this.dataSourceDataSelector.value(dataSelectorId);
             case inputTypes.FILEUPLOAD:
             case inputTypes.IMAGEUPLOAD:
                 document.getElementById("allowMultipleFiles").checked = getOptionValueAndDeleteForOptionsField("multiple");
+                // Images should be publicly accessible by default, other files shouldn't.
+                document.getElementById("filesCanBeAccessedPublicly").checked = getOptionValueAndDeleteForOptionsField("filesCanBeAccessedPublicly", resultSet.inputType === inputTypes.IMAGEUPLOAD);
                 const validation = getOptionValueAndDeleteForOptionsField("validation");
                 if (validation && validation.allowedExtensions && validation.allowedExtensions.length > 0) {
                     document.getElementById("allowedExtensions").value = validation.allowedExtensions.join(",");
