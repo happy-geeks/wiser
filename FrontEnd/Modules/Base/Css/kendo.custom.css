@@ -1244,6 +1244,7 @@ div.k-filebrowser-dropzone em {
 .k-multiple-files-extension-wrapper {
     color: var(--lighter-txt);
     border-color: var(--lighter-txt);
+    display: block;
 }
 
 .k-file-invalid .k-file-name-invalid {

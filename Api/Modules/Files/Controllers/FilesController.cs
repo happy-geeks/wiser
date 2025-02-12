@@ -70,6 +70,7 @@ public class FilesController : Controller
     /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
     /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
     /// <param name="useCloudFlare">Optional: Whether to use CloudFlare to store image files.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
     [HttpPost]
     [Route("~/api/v3/items/{encryptedId}/upload")]
@@ -77,7 +78,7 @@ public class FilesController : Controller
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadAsync(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+    public async Task<IActionResult> UploadAsync(string encryptedId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false, [FromQuery]string entityType = null, [FromQuery]int linkType = 0, [FromQuery]bool markAsProtected = true)
     {
         var form = await Request.ReadFormAsync();
 
@@ -87,7 +88,7 @@ public class FilesController : Controller
             itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
         }
 
-        var result = await filesService.UploadAsync(itemId, propertyName, title, form.Files, identity, itemLinkId, useTinyPng, useCloudFlare, entityType, linkType);
+        var result = await filesService.UploadAsync(itemId, propertyName, title, form.Files, identity, itemLinkId, useTinyPng, useCloudFlare, entityType, linkType, markAsProtected);
         return result.GetHttpResponseMessage();
     }
 
@@ -103,6 +104,7 @@ public class FilesController : Controller
     /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
     /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
     /// <param name="useCloudFlare">Optional: Whether to use CloudFlare to store image files.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
     [HttpPost]
     [Route("~/api/v4/items/{itemId:long}/upload")]
@@ -110,11 +112,11 @@ public class FilesController : Controller
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> UploadAsync(ulong itemId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+    public async Task<IActionResult> UploadAsync(ulong itemId, [FromQuery]string propertyName, [FromQuery]string title = "", [FromQuery]ulong itemLinkId = 0, [FromQuery]bool useTinyPng = false, [FromQuery] bool useCloudFlare = false, [FromQuery]string entityType = null, [FromQuery]int linkType = 0, [FromQuery]bool markAsProtected = true)
     {
         var form = await Request.ReadFormAsync();
 
-        var result = await filesService.UploadAsync(itemId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng, useCloudFlare, entityType, linkType);
+        var result = await filesService.UploadAsync(itemId, propertyName, title, form.Files, (ClaimsIdentity)User.Identity, itemLinkId, useTinyPng, useCloudFlare, entityType, linkType, markAsProtected);
         return result.GetHttpResponseMessage();
     }
 
@@ -127,17 +129,18 @@ public class FilesController : Controller
     /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
     /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
     /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
     [HttpPost]
     [Route("~/api/v3/items/{encryptedId}/files/url")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> AddFileUrlAsync(string encryptedId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+    public async Task<IActionResult> AddFileUrlAsync(string encryptedId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0, [FromQuery]bool markAsProtected = true)
     {
         var identity = (ClaimsIdentity)User.Identity;
         var itemId = await wiserTenantsService.DecryptValue<ulong>(encryptedId, identity);
 
-        var result = await filesService.AddUrlAsync(itemId, propertyName, file, identity, itemLinkId, entityType, linkType);
+        var result = await filesService.AddUrlAsync(itemId, propertyName, file, identity, itemLinkId, entityType, linkType, markAsProtected);
         return result.GetHttpResponseMessage();
     }
 
@@ -150,14 +153,15 @@ public class FilesController : Controller
     /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
     /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
     /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
     [HttpPost]
     [Route("~/api/v4/items/{itemId:long}/files/url")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> AddFileUrlAsync(ulong itemId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0)
+    public async Task<IActionResult> AddFileUrlAsync(ulong itemId, [FromBody]FileModel file, [FromQuery]string propertyName, [FromQuery]ulong itemLinkId = 0, [FromQuery]string entityType = null, [FromQuery]int linkType = 0, [FromQuery]bool markAsProtected = true)
     {
-        var result = await filesService.AddUrlAsync(itemId, propertyName, file, (ClaimsIdentity)User.Identity, itemLinkId, entityType, linkType);
+        var result = await filesService.AddUrlAsync(itemId, propertyName, file, (ClaimsIdentity)User.Identity, itemLinkId, entityType, linkType, markAsProtected);
         return result.GetHttpResponseMessage();
     }
 

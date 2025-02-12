@@ -263,7 +263,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
-  `protected` tinyint NOT NULL DEFAULT 0,
+  `protected` tinyint NOT NULL DEFAULT 1,
   `ordering` int NOT NULL DEFAULT 0,
   `extra_data` mediumtext,
   PRIMARY KEY (`id`) USING BTREE,

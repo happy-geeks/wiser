@@ -24,4 +24,9 @@ public static class Constants
     /// The property name for a global file.
     /// </summary>
     public const string GlobalFilePropertyName = "global_file";
+
+    /// <summary>
+    /// The property name for a file that Wiser stored temporarily in the database.
+    /// </summary>
+    public const string TemporaryFilePropertyName = "TEMPORARY_FILE_FROM_WISER";
 }
