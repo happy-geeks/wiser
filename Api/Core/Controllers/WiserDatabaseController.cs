@@ -35,7 +35,7 @@ public class WiserDatabaseController : Controller
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DoDatabaseMigrationsForTenantAsync()
     {
-        await wiserDatabaseHelpersService.DoDatabaseMigrationsForTenantAsync((ClaimsIdentity)User.Identity);
+        await wiserDatabaseHelpersService.DoAutomaticDatabaseMigrationsForTenantAsync((ClaimsIdentity)User.Identity);
         return NoContent();
     }
 }
