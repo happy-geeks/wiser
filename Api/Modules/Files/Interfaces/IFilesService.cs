@@ -35,8 +35,9 @@ public interface IFilesService
     /// <param name="useCloudFlare">Optional: Whether to use CloudFlare to store image files.</param>
     /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
     /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
-    Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0);
+    Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool markAsProtected = true);
 
     /// <summary>
     /// Save a file to the database or FTP. By default, the file will be saved in the database (wiser_itemfile), unless FTP settings are given.
@@ -57,8 +58,9 @@ public interface IFilesService
     /// <param name="useAmazonS3">Optional: Whether to upload the file to Amazon S3.</param>
     /// <param name="amazonS3BucketName">Optional: The Amazon S3 bucket name when Amazon S3 is used. Becomes required if useAmazonS3 is set to <c>true</c>.</param>
     /// <param name="awsSettings">Optional: The AWS credentials required to connect to Amazon S3.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>A list of <see cref="FileModel"/> with file data.</returns>
-    Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null);
+    Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null, bool markAsProtected = true);
 
     /// <summary>
     /// Gets a file of an item.
@@ -131,8 +133,9 @@ public interface IFilesService
     /// <param name="itemLinkId">Optional: If the file should be added to a link between two items, instead of an item, enter the ID of that link here.</param>
     /// <param name="entityType">Optional: When uploading a file for an item that has a dedicated table, enter the entity type name here so that we can see which table we need to add the file to.</param>
     /// <param name="linkType">Optional: When uploading a file for an item link that has a dedicated table, enter the link type here so that we can see which table we need to add the file to.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>The <see cref="FileModel">FileModel</see> of the new file.</returns>
-    Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0);
+    Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId = 0, string entityType = null, int linkType = 0, bool markAsProtected = true);
 
     /// <summary>
     /// Updates the ordering of a file.
