@@ -3,15 +3,8 @@
 export class WiserLinkTab {
     constructor(base) {
         this.base = base;
-        this.setupBindings();
-    }
 
-    /**
-    * Setup all basis bindings for this module.
-    * Specific bindings (for buttons in certain pop-ups for example) will be set when they are needed.
-    */
-    async setupBindings() {
-        await this.initializeKendoComponents();
+        this.initializeKendoComponents();
     }
 
     async initializeKendoComponents() {

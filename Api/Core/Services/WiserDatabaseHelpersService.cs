@@ -39,6 +39,74 @@ public class WiserDatabaseHelpersService(
     private const string AddBranchSettingsModuleName = "wiser_add_branch_settings_module";
     private const string UpdateFileSecuritySettingsName = "wiser_update_file_security_settings";
 
+    /// <summary>
+    /// The list of tables that need to be updated first, because others depend on them.
+    /// </summary>
+    private static readonly List<string> FirstPriorityTables =
+    [
+        WiserTableNames.WiserEntity,
+        WiserTableNames.WiserEntityProperty,
+        WiserTableNames.WiserLink
+    ];
+
+    /// <summary>
+    /// The list of tables that should be updated after the first priority tables.
+    /// </summary>
+    private static readonly List<string> SecondPriorityTables =
+    [
+        WiserTableNames.WiserItem,
+        WiserTableNames.WiserItemDetail,
+        WiserTableNames.WiserModule,
+        WiserTableNames.WiserItemFile,
+        WiserTableNames.WiserItemLink,
+        WiserTableNames.WiserItemLinkDetail,
+        WiserTableNames.WiserDataSelector,
+        WiserTableNames.WiserTemplate,
+        WiserTableNames.WiserTemplateExternalFiles,
+        WiserTableNames.WiserDynamicContent,
+        WiserTableNames.WiserTemplateDynamicContent,
+        WiserTableNames.WiserTemplatePublishLog,
+        WiserTableNames.WiserPreviewProfiles,
+        WiserTableNames.WiserDynamicContentPublishLog,
+        WiserTableNames.WiserQuery,
+        WiserTableNames.WiserPermission,
+        WiserTableNames.WiserUserRoles,
+        WiserTableNames.WiserCommunication,
+        WiserTableNames.WiserStyledOutput,
+        WiserTableNames.WiserParentUpdates,
+        WiserTableNames.WiserHistory,
+        Constants.DatabaseConnectionLogTableName
+    ];
+
+    /// <summary>
+    /// The list of custom migrations that can be triggered automatically when a user logs in.
+    /// </summary>
+    private static readonly List<string> AutomaticCustomMigrations =
+    [
+        TriggersName,
+        RemoveVirtualColumnsName,
+        AddBranchSettingsModuleName
+    ];
+
+    /// <summary>
+    /// The list of custom migrations that need to be triggered manually by a user.
+    /// </summary>
+    private static readonly List<string> ManualCustomMigrations =
+    [
+        UpdateFileSecuritySettingsName
+    ];
+
+    /// <summary>
+    /// The list of custom migration definitions.
+    /// </summary>
+    private static readonly List<WiserTableDefinitionModel> CustomMigrationDefinitions =
+    [
+        new() {Name = TriggersName, LastUpdate = new DateTime(2024, 10, 21)},
+        new() {Name = RemoveVirtualColumnsName, LastUpdate = new DateTime(2024, 9, 12)},
+        new() {Name = AddBranchSettingsModuleName, LastUpdate = new DateTime(2024, 11, 18)},
+        new() {Name = UpdateFileSecuritySettingsName, LastUpdate = new DateTime(2025, 1, 12)}
+    ];
+
     /// <inheritdoc />
     public async Task DoAutomaticDatabaseMigrationsForTenantAsync(ClaimsIdentity identity)
     {
@@ -61,42 +129,29 @@ public class WiserDatabaseHelpersService(
         }
 
         // These tables need to be updated first, because others depend on them.
-        await databaseHelpersService.CheckAndUpdateTablesAsync([
-            WiserTableNames.WiserEntity,
-            WiserTableNames.WiserEntityProperty,
-            WiserTableNames.WiserLink
-        ]);
+        await databaseHelpersService.CheckAndUpdateTablesAsync(FirstPriorityTables);
 
         // Do the rest of the tables.
-        await databaseHelpersService.CheckAndUpdateTablesAsync([
-            WiserTableNames.WiserItem,
-            WiserTableNames.WiserItemDetail,
-            WiserTableNames.WiserModule,
-            WiserTableNames.WiserItemFile,
-            WiserTableNames.WiserItemLink,
-            WiserTableNames.WiserItemLinkDetail,
-            WiserTableNames.WiserDataSelector,
-            WiserTableNames.WiserTemplate,
-            WiserTableNames.WiserTemplateExternalFiles,
-            WiserTableNames.WiserDynamicContent,
-            WiserTableNames.WiserTemplateDynamicContent,
-            WiserTableNames.WiserTemplatePublishLog,
-            WiserTableNames.WiserPreviewProfiles,
-            WiserTableNames.WiserDynamicContentPublishLog,
-            WiserTableNames.WiserQuery,
-            WiserTableNames.WiserPermission,
-            WiserTableNames.WiserUserRoles,
-            WiserTableNames.WiserCommunication,
-            WiserTableNames.WiserStyledOutput,
-            WiserTableNames.WiserParentUpdates,
-            WiserTableNames.WiserHistory,
-            Constants.DatabaseConnectionLogTableName
-        ]);
+        await databaseHelpersService.CheckAndUpdateTablesAsync(SecondPriorityTables);
 
         // Execute custom migrations.
-        await UpdateTriggersAsync(entityTypes, migrationsList);
-        await RemoveVirtualColumnsAsync(migrationsList, entityTypes, linkTypes);
-        await AddBranchSettingsModuleAsync(migrationsList);
+        foreach (var migration in AutomaticCustomMigrations)
+        {
+            switch (migration)
+            {
+                case TriggersName:
+                    await UpdateTriggersAsync(entityTypes, migrationsList);
+                    break;
+                case RemoveVirtualColumnsName:
+                    await RemoveVirtualColumnsAsync(migrationsList, entityTypes, linkTypes);
+                    break;
+                case AddBranchSettingsModuleName:
+                    await AddBranchSettingsModuleAsync(migrationsList);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.");
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -112,6 +167,11 @@ public class WiserDatabaseHelpersService(
 
         foreach (var migration in migrationNames)
         {
+            if (!ManualCustomMigrations.Contains(migration))
+            {
+                throw new ArgumentException($"Unknown migration name: {migration}");
+            }
+
             switch (migration)
             {
                 case UpdateFileSecuritySettingsName:
@@ -121,6 +181,79 @@ public class WiserDatabaseHelpersService(
                     throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.");
             }
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<DatabaseMigrationInformationModel>>> GetMigrationsAsync(ClaimsIdentity identity, bool manualMigrationsOnly, bool includeAlreadyExecutedMigrations)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        // Get the migration status from the tenant database.
+        var migrationsList = await databaseHelpersService.GetMigrationsStatusAsync(clientDatabaseConnection.ConnectedDatabase);
+
+        // Create lists with all migrations that can be done.
+        var allManualMigrations = ManualCustomMigrations;
+        List<string> allAutomaticMigrations =
+        [
+            ..AutomaticCustomMigrations,
+            ..FirstPriorityTables,
+            ..SecondPriorityTables
+        ];
+
+        List<string> allMigrations = [..allManualMigrations];
+        if (!manualMigrationsOnly)
+        {
+            allMigrations.AddRange(allAutomaticMigrations);
+        }
+
+        // Generate the list to return.
+        var migrations = new List<DatabaseMigrationInformationModel>();
+        foreach (var migration in allMigrations)
+        {
+            // A migration can be a custom migration or a table update, so check in both lists.
+            var migrationDefinition = WiserTableDefinitions.TablesToUpdate.SingleOrDefault(table => table.Name == migration) ?? CustomMigrationDefinitions.SingleOrDefault(definition => definition.Name == migration);
+            if (migrationDefinition == null)
+            {
+                // Throw an exception if the migration is not found, because that means the developer forgot to add it to the list.
+                throw new InvalidOperationException($"Migration definition not found for migration: {migration}");
+            }
+
+            // Skip migrations that were not requested.
+            if (migrationsList.TryGetValue(migration, out var lastUpdate) && lastUpdate >= migrationDefinition.LastUpdate && !includeAlreadyExecutedMigrations)
+            {
+                continue;
+            }
+
+            // Add the migration to the list and create a display name and description for it.
+            migrations.Add(new DatabaseMigrationInformationModel
+            {
+                Id = migration,
+                Name = migration switch
+                {
+                    TriggersName => "Update triggers for all Wiser tables",
+                    RemoveVirtualColumnsName => "Remove virtual columns on all wiser item detail tables",
+                    AddBranchSettingsModuleName => "Add the branch settings module",
+                    UpdateFileSecuritySettingsName => "Update file security settings",
+                    _ when FirstPriorityTables.Contains(migration) || SecondPriorityTables.Contains(migration) => $"Table: {migrationDefinition.Name}",
+                    _ => throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.")
+                },
+                Description = migration switch
+                {
+                    TriggersName => "Update the triggers for all Wiser tables. We use these triggers to keep track of changes in data and to update related data in other tables.",
+                    RemoveVirtualColumnsName => "Remove virtual columns on all wiser item detail tables. These columns were an experiment that did not work out (caused too many problems), so we want to delete them again.",
+                    AddBranchSettingsModuleName => "Add the branch settings module. This is a new module that all tenants should have. This module is for configuring the default settings of branches and automatic merges of those branches.",
+                    UpdateFileSecuritySettingsName => "Update file security settings. This migration will update the security settings for wiser item files. They used to be disabled by default, this will enable them by default. This is not fully backwards compatible, so this needs to be coordinated and tested properly before executing this migration.",
+                    _ when FirstPriorityTables.Contains(migration) || SecondPriorityTables.Contains(migration) => $"Update the table definition of '{migrationDefinition.Name}' to add any new or updated columns or indexes.",
+                    _ => throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.")
+                },
+                IsCustomMigration = AutomaticCustomMigrations.Contains(migration),
+                LastRunOn = lastUpdate,
+                LastUpdateOn = migrationDefinition.LastUpdate,
+                RequiresManualTrigger = allManualMigrations.Contains(migration)
+            });
+        }
+
+        return new ServiceResult<List<DatabaseMigrationInformationModel>>(migrations);
     }
 
     /// <inheritdoc />
@@ -159,88 +292,90 @@ public class WiserDatabaseHelpersService(
     /// <param name="linkTypes">The list of all link types in the current tenant.</param>
     private async Task RemoveVirtualColumnsAsync(Dictionary<string, DateTime> migrationsList, List<EntityTypeModel> entityTypes, List<LinkSettingsModel> linkTypes)
     {
-        if (!migrationsList.TryGetValue(RemoveVirtualColumnsName, out var value) || value < new DateTime(2024, 9, 12))
+        if (migrationsList.TryGetValue(RemoveVirtualColumnsName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == RemoveVirtualColumnsName).LastUpdate)
         {
-            // Remove virtual columns from wiser_itemdetail and wiser_itemdetail_archive tables.
-            var tablePrefixes = entityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
-            foreach (var tablePrefix in tablePrefixes)
-            {
-                var tableName = $"{tablePrefix}{WiserTableNames.WiserItemDetail}";
-                if (await databaseHelpersService.TableExistsAsync(tableName))
-                {
-                    if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_int"))
-                    {
-                        await databaseHelpersService.DropColumnAsync(tableName, "value_as_int");
-                    }
-
-                    if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_decimal"))
-                    {
-                        await databaseHelpersService.DropColumnAsync(tableName, "value_as_decimal");
-                    }
-                }
-
-                var archiveTableName = $"{tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix}";
-                if (!await databaseHelpersService.TableExistsAsync(archiveTableName))
-                {
-                    continue;
-                }
-
-                if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_int"))
-                {
-                    await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_int");
-                }
-
-                if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_decimal"))
-                {
-                    await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_decimal");
-                }
-            }
-
-            // Remove virtual columns from wiser_itemlinkdetail and wiser_itemlinkdetail_archive tables.
-            tablePrefixes = linkTypes.Where(type => type.UseDedicatedTable).Select(type => $"{type.Type}_").Distinct().ToList();
-            tablePrefixes.Add("");
-            foreach (var tablePrefix in tablePrefixes)
-            {
-                var tableName = $"{tablePrefix}{WiserTableNames.WiserItemLinkDetail}";
-                if (await databaseHelpersService.TableExistsAsync(tableName))
-                {
-                    if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_int"))
-                    {
-                        await databaseHelpersService.DropColumnAsync(tableName, "value_as_int");
-                    }
-
-                    if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_decimal"))
-                    {
-                        await databaseHelpersService.DropColumnAsync(tableName, "value_as_decimal");
-                    }
-                }
-
-                var archiveTableName = $"{tablePrefix}{WiserTableNames.WiserItemLinkDetail}{WiserTableNames.ArchiveSuffix}";
-                if (!await databaseHelpersService.TableExistsAsync(archiveTableName))
-                {
-                    continue;
-                }
-
-                if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_int"))
-                {
-                    await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_int");
-                }
-
-                if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_decimal"))
-                {
-                    await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_decimal");
-                }
-            }
-
-            // Update wiser_table_changes.
-            clientDatabaseConnection.AddParameter("tableName", RemoveVirtualColumnsName);
-            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            await clientDatabaseConnection.ExecuteAsync($"""
-                                                         INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-                                                         VALUES (?tableName, ?lastUpdate) 
-                                                         ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
-                                                         """);
+            return;
         }
+
+        // Remove virtual columns from wiser_itemdetail and wiser_itemdetail_archive tables.
+        var tablePrefixes = entityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
+        foreach (var tablePrefix in tablePrefixes)
+        {
+            var tableName = $"{tablePrefix}{WiserTableNames.WiserItemDetail}";
+            if (await databaseHelpersService.TableExistsAsync(tableName))
+            {
+                if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_int"))
+                {
+                    await databaseHelpersService.DropColumnAsync(tableName, "value_as_int");
+                }
+
+                if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_decimal"))
+                {
+                    await databaseHelpersService.DropColumnAsync(tableName, "value_as_decimal");
+                }
+            }
+
+            var archiveTableName = $"{tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix}";
+            if (!await databaseHelpersService.TableExistsAsync(archiveTableName))
+            {
+                continue;
+            }
+
+            if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_int"))
+            {
+                await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_int");
+            }
+
+            if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_decimal"))
+            {
+                await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_decimal");
+            }
+        }
+
+        // Remove virtual columns from wiser_itemlinkdetail and wiser_itemlinkdetail_archive tables.
+        tablePrefixes = linkTypes.Where(type => type.UseDedicatedTable).Select(type => $"{type.Type}_").Distinct().ToList();
+        tablePrefixes.Add("");
+        foreach (var tablePrefix in tablePrefixes)
+        {
+            var tableName = $"{tablePrefix}{WiserTableNames.WiserItemLinkDetail}";
+            if (await databaseHelpersService.TableExistsAsync(tableName))
+            {
+                if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_int"))
+                {
+                    await databaseHelpersService.DropColumnAsync(tableName, "value_as_int");
+                }
+
+                if (await databaseHelpersService.ColumnExistsAsync(tableName, "value_as_decimal"))
+                {
+                    await databaseHelpersService.DropColumnAsync(tableName, "value_as_decimal");
+                }
+            }
+
+            var archiveTableName = $"{tablePrefix}{WiserTableNames.WiserItemLinkDetail}{WiserTableNames.ArchiveSuffix}";
+            if (!await databaseHelpersService.TableExistsAsync(archiveTableName))
+            {
+                continue;
+            }
+
+            if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_int"))
+            {
+                await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_int");
+            }
+
+            if (await databaseHelpersService.ColumnExistsAsync(archiveTableName, "value_as_decimal"))
+            {
+                await databaseHelpersService.DropColumnAsync(archiveTableName, "value_as_decimal");
+            }
+        }
+
+        // Update wiser_table_changes.
+        clientDatabaseConnection.AddParameter("tableName", RemoveVirtualColumnsName);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                     VALUES (?tableName, ?lastUpdate) 
+                                                     ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
+                                                     """);
     }
 
     /// <summary>
@@ -252,29 +387,31 @@ public class WiserDatabaseHelpersService(
     {
         var tablePrefixes = allEntityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
 
-        if (!migrationsList.TryGetValue(TriggersName, out var value) || value < new DateTime(2024, 10, 21))
+        if (migrationsList.TryGetValue(TriggersName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == TriggersName).LastUpdate)
         {
-            // Normal table trigger.
-            var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
-            await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
-
-            // Dedicated table trigger.
-            var createDedicatedTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateDedicatedItemTablesTriggers.sql");
-
-            foreach (var dedicatedTriggersQuery in tablePrefixes.Where(tablePrefix => !String.IsNullOrWhiteSpace(tablePrefix)).Select(tablePrefix => (tablePrefix.EndsWith('_') ? tablePrefix : tablePrefix + "_")).Select(prefix => createDedicatedTriggersQuery.Replace("{tablePrefix}", prefix)))
-            {
-                await clientDatabaseConnection.ExecuteAsync(dedicatedTriggersQuery);
-            }
-
-            // Update wiser_table_changes.
-            clientDatabaseConnection.AddParameter("tableName", TriggersName);
-            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            await clientDatabaseConnection.ExecuteAsync($"""
-                                                         INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-                                                         VALUES (?tableName, ?lastUpdate) 
-                                                         ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
-                                                         """);
+            return;
         }
+
+        // Normal table trigger.
+        var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
+        await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
+
+        // Dedicated table trigger.
+        var createDedicatedTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateDedicatedItemTablesTriggers.sql");
+
+        foreach (var dedicatedTriggersQuery in tablePrefixes.Where(tablePrefix => !String.IsNullOrWhiteSpace(tablePrefix)).Select(tablePrefix => (tablePrefix.EndsWith('_') ? tablePrefix : tablePrefix + "_")).Select(prefix => createDedicatedTriggersQuery.Replace("{tablePrefix}", prefix)))
+        {
+            await clientDatabaseConnection.ExecuteAsync(dedicatedTriggersQuery);
+        }
+
+        // Update wiser_table_changes.
+        clientDatabaseConnection.AddParameter("tableName", TriggersName);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                     VALUES (?tableName, ?lastUpdate) 
+                                                     ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
+                                                     """);
     }
 
     /// <summary>
@@ -283,20 +420,22 @@ public class WiserDatabaseHelpersService(
     /// <param name="migrationsList">The list of all migrations that have been done on the database and the dates and times when they have been done.</param>
     private async Task AddBranchSettingsModuleAsync(Dictionary<string, DateTime> migrationsList)
     {
-        if (!migrationsList.TryGetValue(AddBranchSettingsModuleName, out var value) || value < new DateTime(2024, 11, 18))
+        if (migrationsList.TryGetValue(AddBranchSettingsModuleName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == AddBranchSettingsModuleName).LastUpdate)
         {
-            var addBranchSettingsModuleQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.BranchSettingsModule.sql");
-            await clientDatabaseConnection.ExecuteAsync(addBranchSettingsModuleQuery);
-
-            // Update wiser_table_changes.
-            clientDatabaseConnection.AddParameter("tableName", AddBranchSettingsModuleName);
-            clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
-            await clientDatabaseConnection.ExecuteAsync($"""
-                                                         INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
-                                                         VALUES (?tableName, ?lastUpdate) 
-                                                         ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
-                                                         """);
+            return;
         }
+
+        var addBranchSettingsModuleQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.BranchSettingsModule.sql");
+        await clientDatabaseConnection.ExecuteAsync(addBranchSettingsModuleQuery);
+
+        // Update wiser_table_changes.
+        clientDatabaseConnection.AddParameter("tableName", AddBranchSettingsModuleName);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                     VALUES (?tableName, ?lastUpdate) 
+                                                     ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
+                                                     """);
     }
 
     /// <summary>
@@ -307,7 +446,7 @@ public class WiserDatabaseHelpersService(
     /// <param name="linkTypes">The list of all link types in the current tenant.</param>
     private async Task UpdateFileSecuritySettingsAsync(Dictionary<string, DateTime> migrationsList, List<LinkSettingsModel> linkTypes, List<EntityTypeModel> entityTypes)
     {
-        if (!migrationsList.TryGetValue(UpdateFileSecuritySettingsName, out var value) || value < new DateTime(2025, 1, 12))
+        if (!migrationsList.TryGetValue(UpdateFileSecuritySettingsName, out var value) || value < CustomMigrationDefinitions.Single(definition => definition.Name == UpdateFileSecuritySettingsName).LastUpdate)
         {
             return;
         }
