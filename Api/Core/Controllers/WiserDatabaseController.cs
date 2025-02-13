@@ -1,7 +1,9 @@
-﻿using System.Net.Mime;
+﻿using System.Collections.Generic;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Interfaces;
+using Api.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +28,20 @@ public class WiserDatabaseController : Controller
     public WiserDatabaseController(IWiserDatabaseHelpersService wiserDatabaseHelpersService)
     {
         this.wiserDatabaseHelpersService = wiserDatabaseHelpersService;
+    }
+
+    /// <summary>
+    /// Get a list of database migrations that are available for the tenant database, of the currently authenticated user.
+    /// </summary>
+    /// <param name="manualMigrationsOnly">Whether to only return migrations that need to be triggered manually.</param>
+    /// <param name="includeAlreadyExecutedMigrations">Whether to include migrations that have already been completed.</param>
+    /// <returns>A list of migrations that need to be manually triggered and that haven't been triggered yet.</returns>
+    [HttpGet("tenant-migrations")]
+    [ProducesResponseType(typeof(List<DatabaseMigrationInformationModel>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMigrationsAsync(bool manualMigrationsOnly, bool includeAlreadyExecutedMigrations)
+    {
+        var result = await wiserDatabaseHelpersService.GetMigrationsAsync((ClaimsIdentity)User.Identity, manualMigrationsOnly, includeAlreadyExecutedMigrations);
+        return result.GetHttpResponseMessage();
     }
 
     /// <summary>
