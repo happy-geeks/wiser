@@ -128,6 +128,13 @@ public class WiserDatabaseHelpersService(
             migrationsList.TryAdd(WiserTableNames.WiserItemDetail, DateTime.Now);
         }
 
+        // Same for wiser_itemlink.
+        if (!migrationsList.ContainsKey(WiserTableNames.WiserItemLink))
+        {
+            await clientDatabaseConnection.ExecuteAsync($"INSERT IGNORE INTO {WiserTableNames.WiserTableChanges} (name, last_update) VALUES ('{WiserTableNames.WiserItemLink}', '{DateTime.Now:yyyy-MM-dd HH:mm:ss}')");
+            migrationsList.TryAdd(WiserTableNames.WiserItemLink, DateTime.Now);
+        }
+
         // These tables need to be updated first, because others depend on them.
         await databaseHelpersService.CheckAndUpdateTablesAsync(FirstPriorityTables);
 
@@ -246,7 +253,7 @@ public class WiserDatabaseHelpersService(
                     _ when FirstPriorityTables.Contains(migration) || SecondPriorityTables.Contains(migration) => $"Update the table definition of '{migrationDefinition.Name}' to add any new or updated columns or indexes.",
                     _ => throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.")
                 },
-                IsCustomMigration = AutomaticCustomMigrations.Contains(migration),
+                IsCustomMigration = AutomaticCustomMigrations.Contains(migration) || ManualCustomMigrations.Contains(migration),
                 LastRunOn = lastUpdate,
                 LastUpdateOn = migrationDefinition.LastUpdate,
                 RequiresManualTrigger = allManualMigrations.Contains(migration)
@@ -446,7 +453,7 @@ public class WiserDatabaseHelpersService(
     /// <param name="linkTypes">The list of all link types in the current tenant.</param>
     private async Task UpdateFileSecuritySettingsAsync(Dictionary<string, DateTime> migrationsList, List<LinkSettingsModel> linkTypes, List<EntityTypeModel> entityTypes)
     {
-        if (!migrationsList.TryGetValue(UpdateFileSecuritySettingsName, out var value) || value < CustomMigrationDefinitions.Single(definition => definition.Name == UpdateFileSecuritySettingsName).LastUpdate)
+        if (migrationsList.TryGetValue(UpdateFileSecuritySettingsName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == UpdateFileSecuritySettingsName).LastUpdate)
         {
             return;
         }
