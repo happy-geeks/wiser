@@ -46,12 +46,26 @@ public class WiserDatabaseController : Controller
 
     /// <summary>
     /// Do database migrations for the tenant database, of the currently authenticated user, to keep all tables and data up-to-date.
+    /// This will do migrations that can (and should) be done automatically, without user interaction.
     /// </summary>
     [HttpPut("tenant-migrations")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> DoDatabaseMigrationsForTenantAsync()
+    public async Task<IActionResult> DoAutomaticDatabaseMigrationsForTenantAsync()
     {
         await wiserDatabaseHelpersService.DoAutomaticDatabaseMigrationsForTenantAsync((ClaimsIdentity)User.Identity);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Do database migrations that require user interaction for the tenant database, of the currently authenticated user.
+    /// This is for doing migrations that are not safe to do automatically, and require a user to decide when to do them.
+    /// </summary>
+    /// <param name="migrationNames">The migrations that should be executed.</param>
+    [HttpPut("manual-tenant-migrations")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DoManualDatabaseMigrationsForTenantAsync(List<string> migrationNames)
+    {
+        await wiserDatabaseHelpersService.DoManualDatabaseMigrationsForTenantAsync((ClaimsIdentity)User.Identity, migrationNames);
         return NoContent();
     }
 }
