@@ -307,7 +307,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemlink`  (
   `destination_item_id` bigint NOT NULL DEFAULT 0,
   `ordering` mediumint NOT NULL DEFAULT 1,
   `type` mediumint NOT NULL DEFAULT 1,
-  `added_on` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+  `added_on` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uniquelink`(`item_id`, `destination_item_id`, `type`) USING BTREE,
   INDEX `type`(`type`, `destination_item_id`, `ordering`) USING BTREE,

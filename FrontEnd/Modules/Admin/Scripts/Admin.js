@@ -1,11 +1,10 @@
-﻿import {InfoText} from "../Scripts/InfoText";
-import {ModuleTab} from "../Scripts/ModuleTab.js";
-import {RoleTab} from "../Scripts/RoleTab.js";
-import {EntityTab} from "../Scripts/EntityTab.js";
-import {EntityFieldTab} from "../Scripts/EntityFieldTab.js";
-import {EntityPropertyTab} from "../Scripts/EntityPropertyTab.js";
-import {WiserQueryTab} from "../Scripts/WiserQueryTab.js";
-import {WiserLinkTab} from "../Scripts/WiserLinkTab.js";
+﻿import {InfoText} from "./InfoText";
+import {ModuleTab} from "./ModuleTab";
+import {RoleTab} from "./RoleTab";
+import {EntityTab} from "./EntityTab";
+import {WiserQueryTab} from "./WiserQueryTab";
+import {WiserLinkTab} from "./WiserLinkTab";
+import {DatabaseMigrationsTab} from "./DatabaseMigrationsTab";
 import {Misc, Wiser} from "../../Base/Scripts/Utils.js";
 import "../Css/Admin.css";
 
@@ -35,15 +34,14 @@ const moduleSettings = {
 
             this.activeMainTab = "Modules";
 
-            //classes
+            // Sub classes
             this.entityTab = null;
-            this.entityFieldTab = null;
-            this.entityPropertyTab = null;
             this.moduleTab = null;
             this.translations = null;
             this.roleTab = null;
             this.wiserQueryTab = null;
             this.wiserLinkTab = null;
+            this.databaseMigrationsTab = null;
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -197,11 +195,10 @@ const moduleSettings = {
 
             this.moduleTab = new ModuleTab(this);
             this.entityTab = new EntityTab(this);
-            this.entityFieldsTab = new EntityFieldTab(this);
-            this.entityPropertyTab = new EntityPropertyTab(this);
             this.roleTab = new RoleTab(this);
             this.wiserQueryTab = new WiserQueryTab(this);
             this.wiserLinkTab = new WiserLinkTab(this);
+            this.databaseMigrationsTab = new DatabaseMigrationsTab(this);
             this.setupBindings();
             this.initializeKendoComponents();
 

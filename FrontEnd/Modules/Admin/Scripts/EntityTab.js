@@ -7,12 +7,15 @@ export class EntityTab {
         this.base = base;
         this.selectedEntityType = null;
         this.selectedEntityProperty = null;
-        this.setupBindings();
-        this.initializeKendoComponents();
-        // init hide/show elements
-        this.hideShowElementsBasedOnValue();
         this.fieldOptions = {};
         this.selectedTabOrProperty = null;
+
+        this.initialize();
+    }
+
+    async initialize() {
+        await this.setupBindings();
+        await this.initializeKendoComponents();
     }
 
     checkIfEntityIsSet() {
