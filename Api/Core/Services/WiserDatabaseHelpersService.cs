@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net.Mime;
 using System.Security.Claims;
@@ -472,19 +473,42 @@ public class WiserDatabaseHelpersService(
         var updateDefaultProtectionValueQuery = String.Join(Environment.NewLine, tablesToUpdate.Select(table => $"ALTER TABLE `{table}` MODIFY COLUMN `protected` tinyint NOT NULL DEFAULT 1;"));
         await clientDatabaseConnection.ExecuteAsync(updateDefaultProtectionValueQuery);
 
-        // Update the protected column of most existing item files to have a value of 1.
-        const string enableFileProtectionQuery = $$"""
-                                                   UPDATE `{0}`
-                                                   SET `protected` = 1
-                                                   WHERE `content_type` NOT LIKE 'image/%'
+        const string getUnprotectedFilesQuery = $$"""
+                                                   SELECT `id`
+                                                   FROM `{0}`
+                                                   WHERE `protected` = 0 
+                                                   AND `content_type` NOT LIKE 'image/%'
                                                    AND `content_type` NOT LIKE 'video/%'
                                                    AND `content_type` NOT LIKE 'application/font-%'
                                                    AND `content_type` NOT LIKE 'font/%'
                                                    AND `content_type` NOT IN ('{{MediaTypeNames.Text.Html}}', 'application/vnd.ms-fontobject')
+                                                   LIMIT 200
                                                    """;
+
+        const string enableFileProtectionQuery = """
+                                                UPDATE `{0}`
+                                                SET `protected` = 1
+                                                WHERE `id` IN ({1})
+                                                """;
+
         foreach (var tableName in tablesToUpdate)
         {
-            await clientDatabaseConnection.ExecuteAsync(String.Format(enableFileProtectionQuery, tableName));
+            var dataTable = await clientDatabaseConnection.GetAsync(String.Format(getUnprotectedFilesQuery, tableName));
+            var ids = dataTable.Rows.Cast<DataRow>().Select(row => Convert.ToUInt64(row["id"])).ToList();
+
+            // Update items in batches of 200 to not overtax the database (which happened during tests) and to not run into timeouts.
+            while (ids.Count > 0)
+            {
+                // Update the current 200 files.
+                await clientDatabaseConnection.ExecuteAsync(String.Format(enableFileProtectionQuery, tableName, String.Join(",", ids)));
+
+                // Get the next 200 file IDs.
+                dataTable = await clientDatabaseConnection.GetAsync(String.Format(getUnprotectedFilesQuery, tableName));
+                ids = dataTable.Rows.Cast<DataRow>().Select(row => Convert.ToUInt64(row["id"])).ToList();
+
+                // Wait a little bit to give the database some time to process our changes.
+                await Task.Delay(100);
+            }
         }
 
         // Update wiser_table_changes.
