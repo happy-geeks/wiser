@@ -55,7 +55,15 @@ export class DatabaseMigrationsTab {
                     }
                 }
             },
-            pageable: false,
+            pageable: {
+                refresh: true,
+                pageSizes: false,
+                info: false,
+                previousNext: false,
+                pageSize: false,
+                alwaysVisible: false,
+                numeric: false
+            },
             scrollable: true,
             sortable: true,
             persistSelection: true,
@@ -68,14 +76,20 @@ export class DatabaseMigrationsTab {
                 { field: "lastRunOn", title: "Laatst uitgevoerd op", width: "250px", template: "#= lastRunOn && lastRunOn.getFullYear() > 2020 ? kendo.toString(lastRunOn, 'dd MMMM yyyy HH:mm:ss') : 'Nooit' #" },
             ],
             detailTemplate: `<span class="migration-description">#= description #</span>`,
+            noRecords: {
+                template: `<p>Er zijn geen openstaande migraties op dit moment.</p>`
+            },
             toolbar: [{
                 name: "doManualMigrations",
                 text: "Geselecteerde migraties uitvoeren",
-                iconClass: "k-icon k-i-upload",
-            }]
+                iconClass: "k-icon k-i-upload"
+            }],
+            dataBound: (event) => {
+                $(".k-grid-doManualMigrations").toggleClass("hidden", !event.sender.dataItems().length);
+            }
         }).data("kendoGrid");
 
-        $(".k-grid-doManualMigrations").click(async (event) => {
+        $(".k-grid-doManualMigrations").addClass("hidden").click(async (event) => {
             let selectedMigrations = [];
             for (const row of this.migrationList.select()) {
                 selectedMigrations.push(this.migrationList.dataItem(row));
