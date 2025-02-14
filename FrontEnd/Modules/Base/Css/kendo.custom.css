@@ -95,6 +95,14 @@
     color: #ff5722;
 }
 
+.k-grid-norecords {
+    align-items: start;
+}
+
+.k-grid-norecords p {
+    padding: 5px;
+}
+
 .k-grid-norecords-template {
     background-color: var(--white-color);
     border: 1px solid var(--sec-color);
