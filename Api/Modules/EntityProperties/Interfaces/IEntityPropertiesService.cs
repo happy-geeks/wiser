@@ -95,6 +95,14 @@ public interface IEntityPropertiesService
     Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0);
 
     /// <summary>
+    /// Creates property group entries in the database for a specific entity type or link type, if they didn't exist already
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="entityType">Optional: The entity type to fix the ordering for. Leave empty if you want to do it for link fields instead of entity fields.</param>
+    /// <param name="linkType">Optional: The link type to fix the ordering for. Leave empty if you want to do it for entity fields instead of link fields.</param>
+    Task<ServiceResult<bool>> AddPropertyGroupsAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0);
+
+    /// <summary>
     /// Gets all unique values for a specific property of a specific entity type.
     /// </summary>
     /// <param name="identity">The identity of the authenticated user.</param>
