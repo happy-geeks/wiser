@@ -120,60 +120,60 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
     }
 
     private async Task<ServiceResult<Dictionary<string, EntityPropertyGroupModel>>> GetPropertyGroupsOfEntity(ClaimsIdentity identity, string entityType, bool orderByName = false)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("entityName", entityType);
+        var query = $@"SELECT *
+                        FROM {WiserTableNames.WiserEntityProperty}
+                        WHERE entity_name = ?entityName AND inputtype = 'group'
+                        ORDER BY {(orderByName ? "display_name" : "ordering")} ASC";
+        var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+        var results = new Dictionary<string, EntityPropertyGroupModel>();
+        foreach (DataRow dataRow in dataTable.Rows)
         {
-            await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("entityName", entityType);
-            var query = $@"SELECT *
-                            FROM {WiserTableNames.WiserEntityProperty}
-                            WHERE entity_name = ?entityName AND inputtype = 'group'
-                            ORDER BY {(orderByName ? "display_name" : "ordering")} ASC";
-            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            var groupOptions = dataRow.Field<string>("options") ?? "";
+            var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
 
-            var results = new Dictionary<string, EntityPropertyGroupModel>();
-            foreach (DataRow dataRow in dataTable.Rows)
+            results.Add(dataRow.Field<string>("display_name"), new()
             {
-                var groupOptions = dataRow.Field<string>("options") ?? "";
-                var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
+                Name = dataRow.Field<string>("display_name"),
+                Width = dataRow.Field<short>("width"),
+                MinimumWidth = goObject.Value<int>("minWidth"),
+                Orientation = goObject.Value<string>("orientation"),
+                ShowName = goObject.Value<bool>("showName"),
+                Collapsible = goObject.Value<bool>("collapsible"),
+            });
+        }
+        return new ServiceResult<Dictionary<string, EntityPropertyGroupModel>>(results);
+    }
 
-                results.Add(dataRow.Field<string>("display_name"), new()
-                {
-                    Name = dataRow.Field<string>("display_name"),
-                    Width = dataRow.Field<short>("width"),
-                    MinimumWidth = goObject.Value<int>("minWidth"),
-                    Orientation = goObject.Value<string>("orientation"),
-                    ShowName = goObject.Value<bool>("showName"),
-                    Collapsible = goObject.Value<bool>("collapsible"),
-                });
-            }
-            return new ServiceResult<Dictionary<string, EntityPropertyGroupModel>>(results);
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
+    {
+        var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
+        if (allProperties.StatusCode != HttpStatusCode.OK)
+        {
+            return new ServiceResult<List<EntityPropertyTabModel>>
+            {
+                StatusCode = allProperties.StatusCode,
+                ErrorMessage = allProperties.ErrorMessage
+            };
         }
 
-        /// <inheritdoc />
-        public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
+        var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
         {
-            var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
-            if (allProperties.StatusCode != HttpStatusCode.OK)
-            {
-                return new ServiceResult<List<EntityPropertyTabModel>>
-                {
-                    StatusCode = allProperties.StatusCode,
-                    ErrorMessage = allProperties.ErrorMessage
-                };
-            }
-
-            var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
-            {
-                 Id = x.Key,
-                 Name = x.Key,
-                 Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
-                 {
-                     Id = y.First().GroupID,
-                     EntityType = entityName,
-                     Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
-                     TabName = x.Key,
-                     Properties = y.ToList()
-                 }).ToList()
+             Id = x.Key,
+             Name = x.Key,
+             Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
+             {
+                 Id = y.First().GroupID,
+                 EntityType = entityName,
+                 Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
+                 TabName = x.Key,
+                 Properties = y.ToList()
+             }).ToList()
         }).ToList();
 
         return new ServiceResult<List<EntityPropertyTabModel>>(tabs);
@@ -191,7 +191,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             };
         }
 
-        if (String.IsNullOrWhiteSpace(entityProperty.PropertyName))
+        if (String.IsNullOrWhiteSpace(entityProperty.PropertyName) && entityProperty.InputType != EntityPropertyInputTypes.Group)
         {
             return new ServiceResult<EntityPropertyModel>
             {
@@ -242,8 +242,8 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
         clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
         clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
-        clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
-        clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex);
+        clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey ?? "");
+        clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex ?? "");
 
         var query = $"""
                      SET @_username = ?username;
@@ -356,12 +356,32 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             throw;
         }
 
-        return new ServiceResult<EntityPropertyModel>(entityProperty);
-    }
+        // if we created a group property, we need to link all existing properties to that group id
+        if (entityProperty.InputType == EntityPropertyInputTypes.Group)
+        {
+            clientDatabaseConnection.ClearParameters();
+            clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
+            clientDatabaseConnection.AddParameter("entityName", entityProperty.EntityType);
+            clientDatabaseConnection.AddParameter("tabName", entityProperty.TabName);
+            clientDatabaseConnection.AddParameter("groupName", entityProperty.DisplayName);
+            clientDatabaseConnection.AddParameter("groupId", entityProperty.Id);
 
-    /// <inheritdoc />
-    public async Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty)
-    {
+            query = $"""
+                        SET @_username = ?username;
+                        UPDATE {WiserTableNames.WiserEntityProperty}
+                            SET group_id = ?groupId
+                            WHERE entity_name = ?entityName AND tab_name = ?tabName AND group_name = ?groupName;
+                     """;
+
+            await clientDatabaseConnection.ExecuteAsync(query);
+        }
+
+        return new ServiceResult<EntityPropertyModel>(entityProperty);
+     }
+
+     /// <inheritdoc />
+     public async Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty)
+     {
         if (entityProperty == null || (String.IsNullOrWhiteSpace(entityProperty.EntityType) && entityProperty.LinkType <= 0))
         {
             return new ServiceResult<bool>
@@ -761,16 +781,54 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                      		(@orderingNumber := @orderingNumber + 1) AS ordering
                      	FROM (
                      		SELECT
-                     			id
-                     		FROM {WiserTableNames.WiserEntityProperty}
+                     			id,
+                     			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} tab WHERE property.entity_name = tab.entity_name AND property.tab_name = tab.tab_name) AS tabOrder,
+                     			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} grp WHERE property.entity_name = grp.entity_name AND property.tab_name = grp.tab_name AND property.group_name = grp.group_name) AS groupOrder
+                     		FROM {WiserTableNames.WiserEntityProperty} property
                      		WHERE {whereClause}
-                     		ORDER BY ordering ASC
+                     		ORDER BY tabOrder, groupOrder, ordering ASC
                      	) AS x
                      ) AS ordering ON ordering.id = property.id
                      SET property.ordering = ordering.ordering
                      WHERE {whereClause}
                      """;
         await clientDatabaseConnection.ExecuteAsync(query);
+        return new ServiceResult<bool>(true)
+        {
+            StatusCode = HttpStatusCode.NoContent
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> AddPropertyGroupsAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0)
+    {
+        // create groups in the property table for every used group that doesn't have one yet, with the same ordering as the first property that is in that group
+        clientDatabaseConnection.AddParameter("entityType", entityType);
+        clientDatabaseConnection.AddParameter("linkType", linkType);
+        var whereClause = linkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+        var query = $$"""
+                      INSERT INTO {{WiserTableNames.WiserEntityProperty}}(entity_name, tab_name, inputtype, display_name, property_name, ordering, width, `options`)
+                      SELECT entity_name, tab_name, 'group', group_name, CONCAT(LOWER(tab_name), '_', LOWER(group_name)), ordering, 100, '{}' FROM (
+                        SELECT property.entity_name, property.tab_name, MIN(property.ordering) - 1 AS ordering, property.group_name,
+                        (SELECT MIN(ordering) FROM {{WiserTableNames.WiserEntityProperty}} tab WHERE property.entity_name = tab.entity_name AND property.tab_name = tab.tab_name) AS tabOrder
+                        FROM {{WiserTableNames.WiserEntityProperty}} property
+                        WHERE property.{{whereClause}} AND property.inputtype <> 'group' AND property.group_id IS NULL
+                        GROUP BY property.tab_name, property.group_name ORDER BY tabOrder, ordering ASC) unknownGroups
+                      """;
+
+        await clientDatabaseConnection.ExecuteAsync(query);
+
+        // set the group_id column for all existing non-group properties to the ids of the freshly created groups
+        clientDatabaseConnection.AddParameter("entityType", entityType);
+        clientDatabaseConnection.AddParameter("linkType", linkType);
+        var query2 = $$"""
+                       UPDATE {{WiserTableNames.WiserEntityProperty}} properties
+                       LEFT JOIN {{WiserTableNames.WiserEntityProperty}} grp ON grp.group_name = properties.group_name AND grp.entity_name = properties.entity_name AND grp.tab_name = properties.tab_name AND grp.inputtype = 'group'
+                       SET properties.group_id = grp.id WHERE properties.{{whereClause}} AND properties.inputtype <> 'group' AND properties.group_id IS NULL
+                       """;
+
+        await clientDatabaseConnection.ExecuteAsync(query2);
+
         return new ServiceResult<bool>(true)
         {
             StatusCode = HttpStatusCode.NoContent
@@ -1187,9 +1245,9 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             case EntityPropertyInputTypes.Iframe:
                 return "iframe";
             case EntityPropertyInputTypes.Group:
-                    return "group";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
+                return "group";
+            default:
+                throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }
         }
 

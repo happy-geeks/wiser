@@ -1303,7 +1303,7 @@ public class ItemsService(
                 group = new ItemGroupModel { Name = groupName };
                 var groupOptions = dataRow.Field<string>("group_options") ?? "";
                 var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
-                group.Width = Convert.ToInt32(dataRow.Field<long?>("group_width") ?? group.Width);
+                group.Width = Convert.ToInt32(dataRow.Field<short?>("group_width") ?? group.Width);
                 group.MinimumWidth = goObject.ContainsKey("minWidth") ? goObject.Value<int>("minWidth") : group.MinimumWidth;
                 group.Orientation = goObject.ContainsKey("orientation") ? goObject.Value<string>("orientation") : group.Orientation;
                 group.ShowName = goObject.ContainsKey("showName") ? goObject.Value<bool>("showName") : group.ShowName && !String.IsNullOrEmpty(groupName);
@@ -1773,12 +1773,16 @@ public class ItemsService(
             {
                 foreach (var group in tab.Groups)
                 {
+                    if (group.HtmlTemplateBuilder.Length == 0)
+                    {
+                        continue;
+                    }
                     string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
                     string minWidth = $"min-width: {group.MinimumWidth}px;";
-                    string display = "display: " + (group.Orientation == "vertical" ? "grid;" : "flex;");
+                    string display = "display: " + (group.Orientation == "vertical" ? "block;" : "ruby;");
                     string margin = group.Width < 100 ? "margin: 5px; " : "";
                     string border = group.Width < 100 ? "border-right: 2px solid white; " : "";
-                    string padding = group.Width < 100 ? "padding: 10px 10px; " : "";
+                    string padding = group.Width < 100 ? "padding: 20px 10px; " : "";
                     string groupStyle = $"style=\"{width}{minWidth}{display}{margin}{padding}{border} background: var(--item-bg-color);\"";
 
                     if (String.IsNullOrEmpty(group.Name) || group.ShowName == false)

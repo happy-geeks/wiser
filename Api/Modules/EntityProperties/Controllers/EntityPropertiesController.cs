@@ -218,4 +218,28 @@ public class EntityPropertiesController : ControllerBase
     {
         return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, linkType: linkType)).GetHttpResponseMessage();
     }
+
+    /// <summary>
+    /// Creates property group entries in the database for a specific entity type, if they didn't exist already
+    /// </summary>
+    /// <param name="entityType">The entity type to fix the ordering for.</param>
+    [HttpPut]
+    [Route("{entityType}/create-property-groups")]
+    [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CreatePropertyGroupsAsync(string entityType)
+    {
+        return (await entityPropertiesService.AddPropertyGroupsAsync((ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Creates property group entries in the database for a specific link type, if they didn't exist already
+    /// </summary>
+    /// <param name="linkType">The link type to fix the ordering for.</param>
+    [HttpPut]
+    [Route("{linkType:int}/create-property-groups")]
+    [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CreatePropertyGroupsAsync(int linkType)
+    {
+        return (await entityPropertiesService.AddPropertyGroupsAsync((ClaimsIdentity)User.Identity, linkType: linkType)).GetHttpResponseMessage();
+    }
 }
