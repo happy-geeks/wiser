@@ -52,8 +52,27 @@
     <None Remove="tempkey.jwk" />
   </ItemGroup>
 
+  <!-- Default PackageReference when no RuntimeIdentifier is specified -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Windows'))">
+    <PackageReference Include="EvoPdf.Chromium.Windows" Version="11.4.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux'))">
+    <PackageReference Include="EvoPdf.Chromium.Linux" Version="11.4.1" />
+  </ItemGroup>
+
+  <!-- Windows-specific dependency -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <PackageReference Include="EvoPdf.Chromium.Windows" Version="11.4.1" />
+  </ItemGroup>
+
+  <!-- Linux-specific dependency -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+    <PackageReference Include="EvoPdf.Chromium.Linux" Version="11.4.1" />
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="5.0.2502.2" />
+    <PackageReference Include="GeeksCoreLibrary" Version="5.1.2502.1" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.27.3" />
@@ -61,9 +80,9 @@
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.3.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.5.0" />
     <PackageReference Include="NUglify" Version="1.21.11" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="6.0.0" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="6.1.0" />
     <PackageReference Include="PDFsharp" Version="6.1.1" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
@@ -73,9 +92,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="7.2.0" />
-    <PackageReference Include="OpenIddict" Version="6.0.0" />
-    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="6.0.0" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
+    <PackageReference Include="OpenIddict" Version="6.1.0" />
+    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="6.1.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.2" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="Tinify" Version="1.6.0" />
   </ItemGroup>
