@@ -3,8 +3,13 @@
 export class WiserQueryTab {
     constructor(base) {
         this.base = base;
-        this.setupBindings();
-        this.initializeKendoComponents();
+
+        this.initialize();
+    }
+
+    async initialize() {
+        await this.setupBindings();
+        await this.initializeKendoComponents();
     }
 
     async initializeKendoComponents() {
@@ -47,7 +52,7 @@ export class WiserQueryTab {
         });
 
         // set query dropdown list
-        this.getQueries();
+        await this.getQueries();
     }
 
     async setupBindings() {
@@ -92,7 +97,7 @@ export class WiserQueryTab {
 
     async onQueryComboBoxSelect(event) {
         if (this.checkIfQueryIsSet((event.userTriggered === true))) {
-            this.getQueryById(this.queryCombobox.dataItem().id);
+            await this.getQueryById(this.queryCombobox.dataItem().id);
         }
     }
 

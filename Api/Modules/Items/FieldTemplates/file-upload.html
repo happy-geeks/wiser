@@ -1,21 +1,26 @@
 ﻿<script id="fileTemplate_{propertyIdWithSuffix}" type="text/x-kendo-template">
-    <div class="fileContainer" data-file-id="#= files[0].fileId || files[0].fileId #" data-item-id="#= files[0].itemId || files[0].item_id #" data-name="#= name #" data-title="#= files[0].title #" data-entity-type="{entityType}" data-link-type="{linkType}" data-item-link-id="{itemLinkId}">
-        <span class="k-file-extension-wrapper">
-            <span class="k-file-extension">#= files[0].extension #</span>
-        </span>
+    <div class="fileContainer #if (files[0].error) { # k-file-invalid # } #" data-file-id="#= files[0].fileId || files[0].fileId #" data-item-id="#= files[0].itemId || files[0].item_id #" data-name="#= name #" data-title="#= files[0].title #" data-entity-type="{entityType}" data-link-type="{linkType}" data-item-link-id="{itemLinkId}">
+        # if(files.length && files[0].validationErrors && files[0].validationErrors.indexOf('invalidFileExtension') > -1) { #
+        <div class='k-file-error k-text-error'>Bestandstype niet toegestaan</div>
+        # } else { #
         <span class="k-file-id-wrapper">
+            <span class="k-file-extension-wrapper">
+                <span class="k-file-extension">#= files[0].extension #</span>
+            </span>
             <span class="k-fil-id"><span>ID:</span> <span class="fileId">#= files[0].fileId || files[0].fileId #</span></span>
         </span>
         <span class="k-file-name-size-wrapper">
             <span class="k-file-name" title="#= name #"><span>Name:</span> <a href="#= window.dynamicItems.settings.wiserApiRoot #items/#= encodeURIComponent(files[0].itemId || files[0].item_id) #/files/#= encodeURIComponent(files[0].fileId || files[0].file_id) #/#= name #?encryptedCustomerId=#= encodeURIComponent(window.dynamicItems.settings.customerId) #&encryptedUserId=#= encodeURIComponent(window.dynamicItems.settings.userId) #&isTest=#= window.dynamicItems.settings.isTestEnvironment #&subDomain=#= encodeURIComponent(window.dynamicItems.settings.subDomain) #&entityType=#= encodeURIComponent('{entityType}') #&linkType={linkType}" target="_blank" class="name">#= name #</a> <a class="editName" href="\#"><span class="k-icon k-i-edit"></span></a></span>
-            <span class="k-file-name"><span>Omschrijving:</span> <span class="title">#= files[0].title #</span> <a class="editTitle" href="\#"><span class="k-icon k-i-edit"></span></a></span>
+            <span class="k-file-name"><span>Omschrijving:</span> <span class="title">#= files[0].title || "(Leeg)" #</span> <a class="editTitle" href="\#"><span class="k-icon k-i-edit"></span></a></span>
             <span class="k-file-name"><span>Datum:</span> <span class="fileDate">#= Dates.formatWiserDateString(files[0].addedOn) #</span></span>
-            # if (size > 0) { # <span class="k-file-size">#= Strings.getTotalFileSizeMessage(size) #</span> # } #
+            # if (files[0].size > 0) { # <span class="k-file-name"><span>Bestandsgrootte:</span> <span class="fileSize">#= Strings.getTotalFileSizeMessage(files[0].size) #</span></span> # } #
+            <span class="k-file-name"><span>Is beveiligd:</span> <span class="fileIsProtected">#= files[0].protected ? "Ja" : "Nee" #</span></span>
         </span>
         <strong class="k-upload-status">
             <button type='button' class='k-upload-action'></button>
             <button type='button' class='k-upload-action'></button>
         </strong>
+        # } #
     </div>
 </script>
 

@@ -570,7 +570,7 @@ public class DynamicContentDataService : IDynamicContentDataService, IScopedServ
     /// <inheritdoc />
     public async Task KeepTablesUpToDateAsync()
     {
-        var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(clientDatabaseConnection.ConnectedDatabase);
+        var lastTableUpdates = await databaseHelpersService.GetMigrationsStatusAsync(clientDatabaseConnection.ConnectedDatabase);
 
         // Check if the components table needs to be updated.
         if ((lastTableUpdates.TryGetValue(Constants.SetIsDirtyToComponents, out var value) && value >= new DateTime(2023, 7, 4)))
