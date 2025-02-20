@@ -9,7 +9,7 @@ export class EntityTab {
         this.selectedEntityProperty = null;
         this.fieldOptions = {};
         this.selectedTabOrProperty = null;
-
+        this.entityStructure = null;
         this.initialize();
     }
 
@@ -2371,13 +2371,13 @@ export class EntityTab {
 
         $("#entityView .delBtn").toggleClass("hidden", !selectedItem.id);
 
-        const tabsAndFields = await Wiser.api({
+        this.entityStructure = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
             method: "GET"
         });
-        console.log(`tabsAndFields: ${JSON.stringify(tabsAndFields)}`);
+        console.log(`entityStructure: ${JSON.stringify(this.entityStructure)}`);
         this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
-            data: tabsAndFields,
+            data: this.entityStructure,
             schema: {
                 model: {
                     children: {
@@ -2391,7 +2391,7 @@ export class EntityTab {
                 }
             }
         }));
-        this.tabNameProperty.setDataSource(tabsAndFields.filter((value) => value.type === "Tab"));
+        this.tabNameProperty.setDataSource(this.entityStructure.filter((value) => value.type === "Tab"));
 
         // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
         this.queryAfterInsert.refresh();
@@ -2948,6 +2948,17 @@ export class EntityTab {
         document.querySelector(".loaderWrap").classList.remove("active");
     }
 
+    getEntityGroupId(tabName, groupName) {
+        const tab = this.entityStructure.find(({name}) => name === tabName);
+        if (tab) {
+            const group = tab.properties.find(({name}) => name === groupName);
+            if (group) {
+                return group.id;
+            }
+        }
+        return "0";
+    }
+
     // save entity properties to database
     async saveEntityFieldProperties() {
         // create entity property model
@@ -2963,6 +2974,7 @@ export class EntityTab {
             entityProperties.tabName = "";
         }
         entityProperties.groupName = this.groupNameComboBox.value();
+        entityProperties.groupId = getEntityGroupId(this.tabNameProperty.value(), this.groupNameComboBox.value());
         entityProperties.inputType = this.inputTypeSelector.value();
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
