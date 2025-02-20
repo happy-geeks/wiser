@@ -18,10 +18,10 @@ jobs:
       run: dotnet nuget add source --username GilianJuice --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/happy-geeks/index.json"
 
     - name: Get package versions
-      run: INSTALLED_PACKAGES=$(dotnet list package --format json || true)
+      run: $INSTALLED_PACKAGES=$(dotnet list package --format json || true)
       
     - name: Get GCL version
-      run: GCL_INSTALLED_VERSION=$(echo $INSTALLED_PACKAGES | jq -r --arg id "GeeksCoreLibrary" '.projects[].frameworks[].topLevelPackages[] | select(.id == $id) | .requestedVersion')
+      run: $GCL_INSTALLED_VERSION=$(echo $INSTALLED_PACKAGES | jq -r --arg id "GeeksCoreLibrary" '.projects[].frameworks[].topLevelPackages[] | select(.id == $id) | .requestedVersion')
     
     - name: Add plugins FrontEnd
       run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator --version $GCL_INSTALLED_VERSION
