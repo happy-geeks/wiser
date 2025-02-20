@@ -3333,6 +3333,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
         document.getElementById("showTitleField").checked = false;
         document.getElementById("saveHistory").checked = false;
         document.getElementById("showInDashboard").checked = false;
+        document.getElementById("allowCreationOnMainFromBranch").checked = true;
         document.getElementById("enableMultipleEnvironments").checked = false;
 
         // codemirror fields
@@ -3489,6 +3490,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
         document.getElementById("entityDedicatedTablePrefix").value = resultSet.dedicatedTablePrefix;
         document.getElementById("showInDashboard").checked = resultSet.showInDashboard;
         document.getElementById("enableMultipleEnvironments").checked = resultSet.enableMultipleEnvironments;
+        document.getElementById("allowCreationOnMainFromBranch").checked = resultSet.allowCreationOnMainFromBranch;
 
         // CodeMirror fields
         this.setCodeMirrorFields(this.queryAfterInsert, resultSet.queryAfterInsert);

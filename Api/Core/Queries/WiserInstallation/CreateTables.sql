@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS `wiser_entity`  (
   `delete_action` enum('archive','permanent','hide','disallow') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'archive',
   `show_in_dashboard` tinyint(1) NOT NULL DEFAULT 0,
   `store_type` enum('table','document_store','hybrid') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'table',
+  `allow_creation_on_main_from_branch` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `name_module_id`(`name`, `module_id`) USING BTREE,
   INDEX `name`(`name`(100), `show_in_tree_view`) USING BTREE,
