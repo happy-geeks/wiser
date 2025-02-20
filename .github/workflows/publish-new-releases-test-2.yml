@@ -1,9 +1,7 @@
 name: Publish test server 2
 
 on:
-  push:
-    branches:
-      - develop
+  workflow_dispatch
 
 jobs:
   build:
@@ -19,11 +17,17 @@ jobs:
     - name: Add NuGet Sources
       run: dotnet nuget add source --username GilianJuice --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/happy-geeks/index.json"
 
+    - name: Get package versions
+      run: INSTALLED_PACKAGES=$(dotnet list package --format json || true)
+      
+    - name: Get GCL version
+      run: GCL_INSTALLED_VERSION=$(echo $INSTALLED_PACKAGES | jq -r --arg id "GeeksCoreLibrary" '.projects[].frameworks[].topLevelPackages[] | select(.id == $id) | .requestedVersion')
+    
     - name: Add plugins FrontEnd
-      run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator
+      run: dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator --version $GCL_INSTALLED_VERSION
 
     - name: Add plugins API
-      run: dotnet add Api package GeeksCoreLibrary.Components.Configurator
+      run: dotnet add Api package GeeksCoreLibrary.Components.Configurator --version $GCL_INSTALLED_VERSION
 
     - name: Copy partner styles
       run: Copy-Item -Path "${{ secrets.PARTNER_STYLES_LOCATION }}\*" -Destination "${{ secrets.WORKER_LOCATION_TEST }}\wiser\wiser\FrontEnd\Core\Css\partner" -Recurse
