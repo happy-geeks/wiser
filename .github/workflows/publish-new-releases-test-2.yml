@@ -1,7 +1,9 @@
 name: Publish test server 2
 
 on:
-  workflow_dispatch
+  push:
+    branches:
+      - develop
 
 jobs:
   build:
