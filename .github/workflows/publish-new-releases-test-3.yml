@@ -19,8 +19,8 @@ jobs:
 
     - name: Add GCLC package
       run: |
-            $INSTALLED_PACKAGES = dotnet list Api package
-            $GCL_INSTALLED_VERSION = $INSTALLED_PACKAGES --format json | ConvertFrom-Json | Select-Object -ExpandProperty projects | ForEach-Object { $_.frameworks | ForEach-Object { $_.topLevelPackages | Where-Object { $_.id -eq "GeeksCoreLibrary" } | Select-Object -ExpandProperty requestedVersion } }
+            $INSTALLED_PACKAGES = dotnet list Api package --format json
+            $GCL_INSTALLED_VERSION = $INSTALLED_PACKAGES | ConvertFrom-Json | Select-Object -ExpandProperty projects | ForEach-Object { $_.frameworks | ForEach-Object { $_.topLevelPackages | Where-Object { $_.id -eq "GeeksCoreLibrary" } | Select-Object -ExpandProperty requestedVersion } }
             echo "Used GCL version: $GCL_INSTALLED_VERSION"
             dotnet add FrontEnd package GeeksCoreLibrary.Components.Configurator --version $GCL_INSTALLED_VERSION
             dotnet add Api package GeeksCoreLibrary.Components.Configurator --version $GCL_INSTALLED_VERSION
