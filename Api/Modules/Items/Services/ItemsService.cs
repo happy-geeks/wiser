@@ -1072,8 +1072,8 @@ public class ItemsService(
             clientDatabaseConnection.AddParameter("userId", userId);
             dataTable = await clientDatabaseConnection.GetAsync($"""
                                                                  SET @_username = ?username;
-                                                                                                                                     SET @_userId = ?userId;
-                                                                                                                                     {actionQuery}
+                                                                 SET @_userId = ?userId;
+                                                                 {actionQuery}
                                                                  """);
         }
         catch (MySqlException mySqlException)
@@ -1450,6 +1450,9 @@ public class ItemsService(
             var extraAttributes = "";
             var containerCss = dataRow.Field<string>("css") ?? "";
             var elementCss = "";
+            var fieldContainerCss = "";
+            var fieldErrorContainerCss = "";
+            var fieldErrorMessage = "";
             var inputType = GclCoreConstants.DefaultInputType;
 
             // Setup any extra attributes.
@@ -1607,22 +1610,58 @@ public class ItemsService(
                 var linkTypeNumber = optionsObject.Value<int>("linkTypeNumber");
                 var limit = fieldType.Equals("combobox") ? "LIMIT 1" : "";
                 var linkTablePrefixForSaving = await wiserItemsService.GetTablePrefixForLinkAsync(linkTypeNumber);
+                var linkSettings = linkTypeNumber > 0 ? await wiserItemsService.GetLinkTypeSettingsAsync(linkTypeNumber) : new LinkSettingsModel();
 
-                var linkValueQuery = $"""
-                                      SELECT {(currentItemIsDestinationId ? "item_id" : "destination_item_id")} AS result
-                                                                                  FROM {linkTablePrefixForSaving}{WiserTableNames.WiserItemLink} 
-                                                                                  WHERE {(currentItemIsDestinationId ? "destination_item_id" : "item_id")} = ?itemId 
-                                                                                  AND type = ?linkTypeNumber
-                                                                                  {limit}
-                                      """;
+                if (fieldType.Equals("multiselect", StringComparison.OrdinalIgnoreCase) && currentItemIsDestinationId && linkSettings.UseItemParentId)
+                {
+                    // Impossible combination.
+                    fieldContainerCss = "display: none;";
+                    fieldErrorMessage = "Het is niet mogelijk om een multiselect veld te gebruiken met de huidige instellingen.";
+                }
+                else
+                {
+                    fieldErrorContainerCss = "display: none;";
+                    fieldErrorMessage = "";
+                }
+
+                string linkValueQuery;
+
+                if (linkSettings.UseItemParentId)
+                {
+                    linkValueQuery = $"""
+                        SELECT {(currentItemIsDestinationId ? "id" : "parent_item_id")} AS result
+                        FROM {linkTablePrefixForSaving}{WiserTableNames.WiserItem}
+                        WHERE {(currentItemIsDestinationId ? "parent_item_id" : "id")} = ?itemId AND entity_type = ?entityType
+                        {limit}
+                        """;
+                }
+                else
+                {
+                    linkValueQuery = $"""
+                        SELECT {(currentItemIsDestinationId ? "item_id" : "destination_item_id")} AS result
+                        FROM {linkTablePrefixForSaving}{WiserTableNames.WiserItemLink} 
+                        WHERE {(currentItemIsDestinationId ? "destination_item_id" : "item_id")} = ?itemId 
+                        AND type = ?linkTypeNumber
+                        {limit}
+                        """;
+                }
 
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("itemId", itemId);
                 clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
+                clientDatabaseConnection.AddParameter("entityType", currentItemIsDestinationId ? linkSettings.SourceEntityType : linkSettings.DestinationEntityType);
                 dataTable = await clientDatabaseConnection.GetAsync(linkValueQuery);
                 if (dataTable.Rows.Count > 0)
                 {
-                    var values = dataTable.Rows.Cast<DataRow>().Select(linkedItemDataRow => linkedItemDataRow.Field<long>("result").ToString()).ToList();
+                    var rawValues = dataTable.Rows.Cast<DataRow>().Select(linkedItemDataRow => linkedItemDataRow["result"].ToString()).ToList();
+                    var values = new List<ulong>();
+                    foreach (var rawValue in rawValues)
+                    {
+                        if (UInt64.TryParse(rawValue, out var parsedValue))
+                        {
+                            values.Add(parsedValue);
+                        }
+                    }
 
                     defaultValue = String.Join(",", values);
                 }
@@ -1683,7 +1722,11 @@ public class ItemsService(
                     .Replace("{extraAttribute}", extraAttributes)
                     .Replace("{itemId}", itemId.ToString())
                     .Replace("{style}", containerCss)
+                    .Replace("{fieldContainerStyle}", fieldContainerCss)
+                    .Replace("{fieldErrorContainerStyle}", fieldErrorContainerCss)
+                    .Replace("{style}", containerCss)
                     .Replace("{elementStyle}", elementCss)
+                    .Replace("{fieldErrorMessage}", fieldErrorMessage)
                     .Replace("{itemIdEncrypted}", encryptedId.Replace(" ", "+"))
                     .Replace("{dependsOnField}", dataRow.Field<string>("depends_on_field") ?? "")
                     .Replace("{dependsOnOperator}", dataRow.Field<string>("depends_on_operator") ?? "")
