@@ -232,7 +232,8 @@ public class EntityTypesService : IEntityTypesService, IScopedService
             IconExpanded = dataRow.Field<string>("icon_expanded"),
             DedicatedTablePrefix = dataRow.Field<string>("dedicated_table_prefix"),
             DeleteAction = deleteAction,
-            ShowInDashboard = Convert.ToBoolean(dataRow["show_in_dashboard"])
+            ShowInDashboard = Convert.ToBoolean(dataRow["show_in_dashboard"]),
+            AllowCreationOnMainFromBranch = Convert.ToBoolean(dataRow["allow_creation_on_main_from_branch"])
         };
 
         return new ServiceResult<EntitySettingsModel>(result);
@@ -443,6 +444,7 @@ public class EntityTypesService : IEntityTypesService, IScopedService
         clientDatabaseConnection.AddParameter("dedicated_table_prefix", settings.DedicatedTablePrefix);
         clientDatabaseConnection.AddParameter("delete_action", deleteAction);
         clientDatabaseConnection.AddParameter("show_in_dashboard", settings.ShowInDashboard);
+        clientDatabaseConnection.AddParameter("allow_creation_on_main_from_branch", settings.AllowCreationOnMainFromBranch);
         await clientDatabaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserEntity, id);
 
         return new ServiceResult<bool>(true)
