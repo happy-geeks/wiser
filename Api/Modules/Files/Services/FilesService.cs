@@ -112,11 +112,11 @@ public class FilesService : IFilesService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0)
+    public async Task<ServiceResult<List<FileModel>>> UploadAsync(ulong itemId, string propertyName, string title, IFormFileCollection files, ClaimsIdentity identity, ulong itemLinkId = 0, bool useTinyPng = false, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool markAsProtected = true)
     {
         var userId = IdentityHelpers.GetWiserUserId(identity);
 
-        if (itemId <= 0 && !String.Equals("TEMPORARY_FILE_FROM_WISER", propertyName, StringComparison.OrdinalIgnoreCase))
+        if (itemId <= 0 && !String.Equals(Constants.TemporaryFilePropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
         {
             return new ServiceResult<List<FileModel>>
             {
@@ -207,7 +207,7 @@ public class FilesService : IFilesService, IScopedService
                     }
                 }
 
-                var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType, useAmazonS3, amazonS3BucketName, awsSettings);
+                var fileResult = await SaveAsync(identity, fileBytes, file.ContentType, fileName, propertyName, title, ftpSettings, ftpDirectory, itemId, itemLinkId, useCloudFlare, entityType, linkType, useAmazonS3, amazonS3BucketName, awsSettings, markAsProtected);
                 if (fileResult.StatusCode != HttpStatusCode.OK)
                 {
                     return new ServiceResult<List<FileModel>>
@@ -260,7 +260,7 @@ public class FilesService : IFilesService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null)
+    public async Task<ServiceResult<FileModel>> SaveAsync(ClaimsIdentity identity, byte[] fileBytes, string contentType, string fileName, string propertyName, string title = "", List<FtpSettingsModel> ftpSettings = null, string ftpDirectory = null, ulong itemId = 0, ulong itemLinkId = 0, bool useCloudFlare = false, string entityType = null, int linkType = 0, bool useAmazonS3 = false, string amazonS3BucketName = null, AwsSettings awsSettings = null, bool markAsProtected = true)
     {
         var content = Array.Empty<byte>();
         var contentUrl = String.Empty;
@@ -357,9 +357,9 @@ public class FilesService : IFilesService, IScopedService
         var username = IdentityHelpers.GetUserName(identity, true);
 
         var tenant = await wiserTenantsService.GetSingleAsync(identity);
-        if (branchesService.IsMainBranch(tenant.ModelObject).ModelObject || !propertyName.Equals("global_file"))
+        if (branchesService.IsMainBranch(tenant.ModelObject).ModelObject || !propertyName.Equals(Constants.GlobalFilePropertyName, StringComparison.OrdinalIgnoreCase))
         {
-            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName);
+            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, markAsProtected: markAsProtected);
         }
 
         // Check if directory ID is in the mappings. If true use ID for main database, if false throw exception.
@@ -387,8 +387,8 @@ public class FilesService : IFilesService, IScopedService
 
             var fileId = await branchesService.GenerateNewIdAsync(WiserTableNames.WiserItemFile, mainDatabaseConnection, databaseConnection);
 
-            await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId);
-            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false, fileId);
+            await SaveToDatabaseAsync(identity, mainDatabaseConnection, username, directoryIdMainBranch.Value, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, true, fileId, markAsProtected: markAsProtected);
+            return await SaveToDatabaseAsync(identity, databaseConnection, username, itemId, itemLinkId, entityType, linkType, title, fileBytes, content, contentUrl, fileExtension, contentType, fileName, propertyName, false, fileId, markAsProtected: markAsProtected);
         }
         finally
         {
@@ -434,11 +434,18 @@ public class FilesService : IFilesService, IScopedService
     /// <param name="propertyName">The name of the property that contains the file upload.</param>
     /// <param name="saveHistory">Optional: If the history of the file needs to be saved.</param>
     /// <param name="fileId">Optional: If an ID is provided the file will be inserted on that ID instead of using the auto increment.</param>
+    /// <param name="markAsProtected">Optional: Whether to mark the file as protected. This means that it can only be accessed via temporary encrypted IDs in GCL projects, to prevent users from downloading sensitive files by guessing IDs. Default value is <c>true</c>.</param>
     /// <returns>An object of <see cref="FileModel"/> with file data.</returns>
-    private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true, ulong fileId = 0)
+    private async Task<ServiceResult<FileModel>> SaveToDatabaseAsync(ClaimsIdentity identity, IDatabaseConnection dbConnection, string username, ulong itemId, ulong itemLinkId, string entityType, int linkType, string title, byte[] fileBytes, byte[] content, string contentUrl, string fileExtension, string contentType, string fileName, string propertyName, bool saveHistory = true, ulong fileId = 0, bool markAsProtected = true)
     {
+        // Global files should never be marked as protected, the entire point of them is to be accessible to everyone.
+        if (String.Equals(Constants.GlobalFilePropertyName, propertyName, StringComparison.OrdinalIgnoreCase))
+        {
+            markAsProtected = false;
+        }
+
         dbConnection.ClearParameters();
-        var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
+        var columnsForInsertQuery = new List<string> {"content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering", "protected"};
         var tablePrefix = "";
 
         if (itemLinkId > 0)
@@ -480,27 +487,34 @@ public class FilesService : IFilesService, IScopedService
         dbConnection.AddParameter("added_by", username ?? "");
         dbConnection.AddParameter("title", title ?? "");
         dbConnection.AddParameter("property_name", propertyName);
+        dbConnection.AddParameter("protected", markAsProtected);
 
         var ordering = 1;
         var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
-        var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
-FROM {tablePrefix}{WiserTableNames.WiserItemFile}
-WHERE {whereClause}
-AND property_name = ?property_name";
+        var query = $"""
+                     SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
+                     FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+                     WHERE {whereClause}
+                     AND property_name = ?property_name
+                     """;
         var dataTable = await dbConnection.GetAsync(query);
         if (dataTable.Rows.Count > 0)
         {
             ordering = Convert.ToInt32(dataTable.Rows[0]["maxOrdering"]) + 1;
         }
+
         dbConnection.AddParameter("ordering", ordering);
 
-        dbConnection.AddParameter("saveHistoryGcl", saveHistory); // This is used in triggers.
+        // This is used in triggers.
+        dbConnection.AddParameter("saveHistoryGcl", saveHistory);
 
-        query = $@"SET @saveHistory = ?saveHistoryGcl;
-SET @_username = ?added_by;
-INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
-VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
-SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
+        query = $"""
+                 SET @saveHistory = ?saveHistoryGcl;
+                 SET @_username = ?added_by;
+                 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
+                 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
+                 SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;
+                 """;
         var newItem = await dbConnection.GetAsync(query);
 
         var result = new FileModel
@@ -513,7 +527,8 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
             Title = title,
             ContentType = contentType,
             EntityType = entityType,
-            LinkType = linkType
+            LinkType = linkType,
+            Protected = markAsProtected
         };
 
         return new ServiceResult<FileModel>(result);
@@ -919,7 +934,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0)
+    public async Task<ServiceResult<FileModel>> AddUrlAsync(ulong itemId, string propertyName, FileModel file, ClaimsIdentity identity, ulong itemLinkId, string entityType = null, int linkType = 0, bool markAsProtected = true)
     {
         if (itemId <= 0)
         {
@@ -957,7 +972,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         }
 
         databaseConnection.ClearParameters();
-        var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering" };
+        var columnsForInsertQuery = new List<string> { "content_url", "content_type", "file_name", "extension", "added_by", "title", "property_name", "ordering", "protected" };
 
         if (itemLinkId > 0)
         {
@@ -972,6 +987,7 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
 
         file.Name = String.IsNullOrWhiteSpace(file.Name) ? Path.GetFileName(file.ContentUrl) : file.Name;
         file.Extension = String.IsNullOrWhiteSpace(file.Extension) ? Path.GetExtension(file.Name) : file.Extension;
+        file.Protected = markAsProtected;
 
         databaseConnection.AddParameter("content_type", file.ContentType ?? "");
         databaseConnection.AddParameter("content_url", file.ContentUrl);
@@ -980,13 +996,16 @@ SELECT {(fileId > 0 ? "?id" :  "LAST_INSERT_ID()")} AS newId;";
         databaseConnection.AddParameter("added_by", IdentityHelpers.GetUserName(identity, true) ?? "");
         databaseConnection.AddParameter("title", file.Title ?? "");
         databaseConnection.AddParameter("property_name", propertyName);
+        databaseConnection.AddParameter("protected", markAsProtected);
 
         var ordering = 1;
         var whereClause = itemLinkId > 0 ? "itemlink_id = ?itemlink_id" : "item_id = ?item_id";
-        var query = $@"SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
-FROM {tablePrefix}{WiserTableNames.WiserItemFile}
-WHERE {whereClause}
-AND property_name = ?property_name";
+        var query = $"""
+                     SELECT IFNULL(MAX(ordering), 0) AS maxOrdering
+                     FROM {tablePrefix}{WiserTableNames.WiserItemFile}
+                     WHERE {whereClause}
+                     AND property_name = ?property_name
+                     """;
         var dataTable = await databaseConnection.GetAsync(query);
         if (dataTable.Rows.Count > 0)
         {
@@ -994,10 +1013,12 @@ AND property_name = ?property_name";
         }
         databaseConnection.AddParameter("ordering", ordering);
 
-        query = $@"SET @_username = ?added_by;
-INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
-VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
-SELECT LAST_INSERT_ID() AS newId;";
+        query = $"""
+                 SET @_username = ?added_by;
+                 INSERT INTO {tablePrefix}{WiserTableNames.WiserItemFile} ({String.Join(", ", columnsForInsertQuery)})
+                 VALUES ({String.Join(", ", columnsForInsertQuery.Select(x => $"?{x}"))});
+                 SELECT LAST_INSERT_ID() AS newId;
+                 """;
         var newItem = await databaseConnection.GetAsync(query);
         file.FileId = Convert.ToInt32(newItem.Rows[0]["newId"]);
 

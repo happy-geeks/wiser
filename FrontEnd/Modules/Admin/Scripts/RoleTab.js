@@ -4,6 +4,10 @@ export class RoleTab {
     constructor(base) {
         this.base = base;
 
+        this.initialize();
+    }
+
+    initialize() {
         this.setupBindings();
         this.initializeKendoComponents();
     }
@@ -273,7 +277,7 @@ export class RoleTab {
             }
         });
     }
-    
+
     initializeOrRefreshRolesModulesGrid(roleId) {
         const subject = 'Modules';
         if (!this.modulesGrid) {
