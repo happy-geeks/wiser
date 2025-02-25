@@ -81,7 +81,7 @@
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.5.0" />
-    <PackageReference Include="NUglify" Version="1.21.11" />
+    <PackageReference Include="NUglify" Version="1.21.12" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="6.1.0" />
     <PackageReference Include="PDFsharp" Version="6.1.1" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
