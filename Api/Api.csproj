@@ -54,7 +54,7 @@
 
   <!-- Default PackageReference when no RuntimeIdentifier is specified -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Windows'))">
-    <PackageReference Include="EvoPdf.Chromium.Windows" Version="11.4.1" />
+    <PackageReference Include="EvoPdf.Chromium.Windows" Version="11.4.3" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOsPlatform('Linux'))">
@@ -63,7 +63,7 @@
 
   <!-- Windows-specific dependency -->
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
-    <PackageReference Include="EvoPdf.Chromium.Windows" Version="11.4.1" />
+    <PackageReference Include="EvoPdf.Chromium.Windows" Version="11.4.3" />
   </ItemGroup>
 
   <!-- Linux-specific dependency -->
