@@ -39,7 +39,7 @@
     "@vue/compiler-sfc": "^3.5.13",
     "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.3",
-    "sass": "^1.77.8",
+    "sass": "^1.85.1",
     "sass-loader": "^16.0.0",
     "style-loader": "^4.0.0",
     "vue-cli-plugin-vue-next": "~0.1.4",
