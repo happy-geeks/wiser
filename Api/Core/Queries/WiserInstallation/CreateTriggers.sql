@@ -1689,6 +1689,26 @@ CREATE TRIGGER `PermissionInsert` AFTER INSERT ON `wiser_permission` FOR EACH RO
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'module_id', NULL, NEW.`module_id`);
     END IF;
+
+    IF IFNULL(NEW.`query_id`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'query_id', NULL, NEW.`query_id`);
+    END IF;
+
+    IF IFNULL(NEW.`data_selector_id`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'data_selector_id', NULL, NEW.`data_selector_id`);
+    END IF;
+
+    IF IFNULL(NEW.`endpoint_url`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'endpoint_url', NULL, NEW.`endpoint_url`);
+    END IF;
+
+    IF IFNULL(NEW.`endpoint_http_method`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'endpoint_http_method', NULL, NEW.`endpoint_http_method`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `PermissionUpdate`;
@@ -1722,12 +1742,32 @@ CREATE TRIGGER `PermissionUpdate` AFTER UPDATE ON `wiser_permission` FOR EACH RO
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'module_id', OLD.`module_id`, NEW.`module_id`);
     END IF;
+
+    IF IFNULL(NEW.`query_id`, '') <> IFNULL(OLD.`query_id`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'query_id', OLD.`query_id`, NEW.`query_id`);
+    END IF;
+
+    IF IFNULL(NEW.`data_selector_id`, '') <> IFNULL(OLD.`data_selector_id`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'data_selector_id', OLD.`data_selector_id`, NEW.`data_selector_id`);
+    END IF;
+
+    IF IFNULL(NEW.`endpoint_url`, '') <> IFNULL(OLD.`endpoint_url`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'endpoint_url', OLD.`endpoint_url`, NEW.`endpoint_url`);
+    END IF;
+
+    IF IFNULL(NEW.`endpoint_http_method`, '') <> IFNULL(OLD.`endpoint_http_method`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'endpoint_http_method', OLD.`endpoint_http_method`, NEW.`endpoint_http_method`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `PermissionDelete`;
 CREATE TRIGGER `PermissionDelete` AFTER DELETE ON `wiser_permission` FOR EACH ROW BEGIN
     INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-    VALUES ('DELETE_PERMISSION', 'wiser_permission', OLD.id, IFNULL(@_username, USER()), 'old_data', JSON_OBJECT('role_id', OLD.role_id, 'entity_name', OLD.entity_name, 'item_id', OLD.item_id, 'entity_property_id', OLD.entity_property_id, 'permissions', OLD.permissions, 'module_id', OLD.module_id), '');
+    VALUES ('DELETE_PERMISSION', 'wiser_permission', OLD.id, IFNULL(@_username, USER()), 'old_data', JSON_OBJECT('role_id', OLD.role_id, 'entity_name', OLD.entity_name, 'item_id', OLD.item_id, 'entity_property_id', OLD.entity_property_id, 'permissions', OLD.permissions, 'module_id', OLD.module_id, 'query_id', OLD.query_id, 'data_selector_id', OLD.data_selector_id, 'endpoint_url', OLD.endpoint_url, 'endpoint_http_method', OLD.endpoint_http_method), '');
 END;
 
 -- ----------------------------
