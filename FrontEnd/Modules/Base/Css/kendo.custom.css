@@ -4693,3 +4693,8 @@ table.k-editor {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.item[data-label-style="float"] .k-input:focus-within,
+.item[data-label-style="float"] .k-input:hover {
+    background-color: #FFFFFF
+}

@@ -24,12 +24,15 @@
             <ins class="icon-info-full"></ins>
         </span>
     </h4>
-    <div class="flex-container">
+    <div class="flex-container" style="{fieldContainerStyle}">
         <select id="field_{propertyIdWithSuffix}" name="{propertyName}_{languageCode}" data-kendo-control="kendoMultiSelect"
                 class="multi-select" multiple="multiple" placeholder="Maak uw keuze..." data-placeholder="Maak uw keuze..."
                 {required} pattern="{pattern}" data-lpignore="true">
         </select>
         <button class="hidden newItemButton"></button>
+    </div>
+    <div class="flex-container" style="{fieldErrorContainerStyle}">
+        {fieldErrorMessage}
     </div>
     <div class="form-hint {formHintClass}">{hint}</div>
 </div>
