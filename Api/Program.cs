@@ -22,6 +22,7 @@ using Api.Modules.Tenants.Services;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Services;
+using GeeksCoreLibrary.Modules.GclConverters.EvoPdf.Extensions;
 using JavaScriptEngineSwitcher.ChakraCore;
 using JavaScriptEngineSwitcher.Extensions.MsDependencyInjection;
 using Microsoft.AspNetCore.Authorization;
@@ -139,6 +140,7 @@ builder.Services.AddSwaggerGen(config =>
 
 // Services from GCL. Some services are registered because they are required by other GCL services, not because this API uses them.
 builder.Services.AddGclServices(builder.Configuration, false, true);
+builder.Services.AddEvoPdfHtmlToPdfConverterService();
 builder.Services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>();
 
 // Set default settings for JSON.NET.
