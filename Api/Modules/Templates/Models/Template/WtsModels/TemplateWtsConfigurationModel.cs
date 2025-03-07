@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
@@ -83,8 +85,31 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlElement("Query")]
         [WtsProperty(
-            IsVisible = false,
-            ConfigurationTab = ConfigurationTab.Actions
+            IsVisible = true,
+            ConfigurationTab = ConfigurationTab.Actions,
+        KendoComponent = KendoComponents.Grid,
+            Title = "Query",
+        AllowEdit = true, 
+        IdProperty = "Actionid",
+        UseDataSource = true,
+        KendoOptions = @"
+               {
+                  ""resizable"": true,
+                  ""height"": 280,
+                  ""selectable"": true,
+                  ""columns"": [
+                    {
+                        ""field"": ""actionid"",
+                        ""title"": ""ID""
+                    },
+                    {
+                        ""field"": ""order"",
+                        ""title"": ""Type""
+                    }
+                  ]
+               }
+            "
+            
         )]
         public List<WtsQueryModel> Queries { get; set; }
 
@@ -97,5 +122,39 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             ConfigurationTab = ConfigurationTab.Actions
         )]
         public List<HttpApiModel> HttpApis { get; set; }
+        
+        [XmlAnyElement]
+        public List<XElement> ChildItemsExtra { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the all items the don't have a dedicated object/class in the current version system, intended to avoid dataloss. becarefull if you choose to edit these manualy
+        /// </summary>
+        [XmlIgnore, WtsProperty(
+            IsVisible = true,
+            IsRequired = true,
+            Title = "extra",
+            Description = "De extra spul",
+            ConfigurationTab = ConfigurationTab.Service,
+            KendoComponent = KendoComponents.TextBox
+        )]
+        public string ChildItemsExtraString {
+            get
+            {
+                List<string> s = new List<string>();
+                if (ChildItemsExtra == null)
+                {
+                    ChildItemsExtra=new List<XElement>();
+                }
+                ChildItemsExtra.ForEach(x => s.Add(x.ToString()));
+                return string.Join(",", s);;
+            }
+            set
+            {
+                
+                List<string> listBack = value.Split(',').ToList();
+                ChildItemsExtra= new List<XElement>();
+                listBack.ForEach(si=>ChildItemsExtra.Add(XElement.Parse(si)));
+            }
+        }
     }
 }

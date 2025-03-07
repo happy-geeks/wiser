@@ -1,5 +1,7 @@
 @using System.Collections
 @using System.Reflection
+@using System.Xml
+@using System.Xml.Linq
 @using Api.Modules.Templates.Attributes
 @using Api.Modules.Templates.Enums
 @using Newtonsoft.Json.Linq
@@ -14,19 +16,19 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, ""); }
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
+            @{ RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }
         </div>
     </div>
 
     <div id="actionsTab">
         <div class="formview compact">
             @* This is currently commented out since the actions tab is not working yet *@
-            @* @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");} *@
+            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}
         </div>
     </div>
 
@@ -248,14 +250,24 @@
 
     void RenderProperties(object data, Type type, string tab, bool IsFilled, string trace)
     {
+        if (type == typeof(XmlCDataSection))
+        {
+            return;
+        }
+        
+        var test = type.GetProperties();
+        Console.WriteLine(test);
+        //if (test.GetType() == typeof(XElement)) return;
         foreach (var property in type.GetProperties())
         {
+            if (property.Name == "ChildItemsExtra") continue;
+            var e = property.GetType();
             var attributes = property.GetCustomAttributes(typeof(WtsPropertyAttribute), false).Cast<WtsPropertyAttribute>().FirstOrDefault();
-
             // Only render properties that have attributes and where isVisible is true
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
             if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
             {
+                
                 if (data is IList list)
                 {
                     RenderProperty(null, property, attributes, null, tab, trace);
@@ -315,6 +327,8 @@
                 {
                     // Render the properties of the class
                     RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property?.Name}");
+
+                    
                 }
             }
         }

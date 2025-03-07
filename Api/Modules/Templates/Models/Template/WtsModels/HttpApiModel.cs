@@ -2,7 +2,7 @@ using System.Xml.Serialization;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels
 {
-    public class HttpApiModel : ActionModel
+    public class HttpApiModel //: //ActionModel
     {
         public string Url { get; set; }
         
