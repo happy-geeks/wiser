@@ -30,6 +30,8 @@ export class WtsConfiguration {
         this.serviceKendoFields = [];
         this.timersInputFields = [];
         this.timersKendoFields = [];
+        this.actionsInputFields = [];
+        this.actionsKendoFields = [];
     }
 
     async reloadWtsConfigurationTab(id) {
@@ -41,7 +43,8 @@ export class WtsConfiguration {
         this.serviceKendoFields = [];
         this.timersInputFields = [];
         this.timersKendoFields = [];
-
+        this.actionsInputFields = [];
+        this.actionsKendoFields = [];
         // Check to see if id is set
         if (id === undefined || id === null || id === 0) {
             console.error("id is not set");
@@ -156,6 +159,10 @@ export class WtsConfiguration {
                     case "Timers":
                         this.timersInputFields.push(component[0]);
                         this.timersKendoFields.push(newComponent);
+                        break;
+                    case "Actions":
+                        this.actionsInputFields.push(component[0]);
+                        this.actionsKendoFields.push(newComponent);
                         break;
                 }
             } else {
@@ -275,7 +282,7 @@ export class WtsConfiguration {
 
         // Get the datasource of the grid
         let dataSource = this.template[gridName];
-
+        console.log(dataSource);
         // The index of the selected item in the datasource
         let indexOfSelectedItem = null;
 
@@ -288,7 +295,7 @@ export class WtsConfiguration {
 
         // Get all the input fields for the given tab
         let inputFields = this[`${currentTabName}InputFields`];
-
+        inputFields.forEach((inputField) => {console.log(inputField);})
         // Loop through all the input fields
         inputFields.forEach((inputField) => {
             // Get the name of the input field
@@ -331,6 +338,8 @@ export class WtsConfiguration {
             // For new items, check if the ID is already in use
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
+            console.log('TEST-IN:');
+            //console.log($(`[]`));
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
 
             if (dataSource.find((item) => {
@@ -344,6 +353,10 @@ export class WtsConfiguration {
             // For existing items, check if the ID is already in use by another item
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
+            console.log('TEST:');
+            console.log(grid.element[0]);
+            console.log(idField);
+            console.log(idFieldElement);
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
 
             if (dataSource.find((item) => {
@@ -422,8 +435,9 @@ export class WtsConfiguration {
 
     clearInputFieldsForTab(tab) {
         // Find all the input fields for the given tab
+        console.log(tab);     
         let inputFields = this[`${tab}InputFields`];
-
+        console.log(inputFields);
         // Loop through all the input fields
         inputFields.forEach((inputField) => {
             // If the input field is a dropdownlist and is required, set the value to the first item
@@ -444,6 +458,8 @@ export class WtsConfiguration {
 
     onListChange(e) {
         // Check if the selected item is null
+        console.log("tesyt "+e.sender);
+        console.log(e.sender.select());
         if (e.sender.select() === null) {
             return;
         }
@@ -456,6 +472,8 @@ export class WtsConfiguration {
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
 
+        console.log(currentTabName);
+        
         currentTabName = currentTabName.replace("tab", "");
 
         this.clearInputFieldsForTab(currentTabName);
@@ -586,7 +604,7 @@ export class WtsConfiguration {
 
     getCurrentSettings() {
         console.log("Saving configuration...");
-
+        console.log(this.serviceInputFields);
         let data = {};
 
         // Get all the values from the service input fields
@@ -607,8 +625,9 @@ export class WtsConfiguration {
         this.correctValues(this.template.runSchemes, this.timersInputFields);
 
         // Manually add runschemes to the data
+        console.log("templat", this.template)
         data["RunSchemes"] = this.template.runSchemes;
-
+        data["Queries"]= this.template.queries
         console.log("Data: ", data);
 
         return data;
@@ -641,6 +660,8 @@ export class WtsConfiguration {
 
     getValueOfElement(element) {
         // Check what type of element it is
+        console.log("element: ");
+        console.log(element);
         switch (element.tagName) {
             case "INPUT":
                 switch (element.type) {
