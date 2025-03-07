@@ -106,7 +106,7 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.connectedUsers = new TemplateConnectedUsers(this);
-            //this.wtsConfiguration = new WtsConfiguration(this);
+            this.wtsConfiguration = new WtsConfiguration(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -463,7 +463,7 @@ const moduleSettings = {
                     const templateType = this.templateSettings.type ? this.templateSettings.type.toUpperCase() : "UNKNOWN";
                     // Prevent loading the configuration tab if the template is not an XML template.
                     if (templateType === "XML") {
-                        //this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
+                        this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
                     }
                     break;
             }
@@ -2323,6 +2323,7 @@ const moduleSettings = {
                 let data = null;
                 if (this.mainTabStrip.select().data("name") === "configuration") {
                     data = this.wtsConfiguration.getCurrentSettings();
+                    console.log("data", data);
                     this.saving = true;
 
                     const response = await Wiser.api({

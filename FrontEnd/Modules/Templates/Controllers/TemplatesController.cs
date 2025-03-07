@@ -40,6 +40,7 @@ namespace FrontEnd.Modules.Templates.Controllers;
         [HttpPost, Route("DevelopmentTab")]
         public IActionResult DevelopmentTab([FromBody]DevelopmentTabViewModel tabViewData)
         {
+            Console.WriteLine("Loading dev tab");
             tabViewData.EditorType = tabViewData.TemplateSettings.Type switch
             {
                 TemplateTypes.Unknown => "text",
@@ -73,6 +74,7 @@ namespace FrontEnd.Modules.Templates.Controllers;
         [HttpPost, Route("WtsConfigurationTab")]
         public IActionResult WtsConfigurationTab([FromBody]TemplateWtsConfigurationModel data)
         {
+            
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/WtsConfigurationTab", data);
         }
