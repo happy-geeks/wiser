@@ -1317,6 +1317,11 @@ export class Wiser {
                         event.sender.title("Template invoegen");
                         break;
                 }
+            },
+            close: () => {
+                if (fileManagerWindowSender.contentbuilder && window.contentBuilderIframeWindow && window.contentBuilderIframeWindow.toFront) {
+                    window.contentBuilderIframeWindow.toFront();
+                }
             }
         }).data("kendoWindow");
 

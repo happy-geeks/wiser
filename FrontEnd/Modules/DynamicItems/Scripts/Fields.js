@@ -3192,17 +3192,19 @@ export class Fields {
         }
         iframe.attr("src", `/Modules/${moduleName}?wiserItemId=${encodeURIComponent(itemId)}&propertyName=${encodeURIComponent(propertyName)}&languageCode=${encodeURIComponent(languageCode || "")}&userId=${encodeURIComponent(this.base.settings.userId)}`);
 
-        htmlWindow.kendoWindow({
-            width: "100%",
-            height: "100%",
-            title: "Content builder",
-            close: (closeEvent) => {
-                closeEvent.sender.destroy();
-                htmlWindow.remove();
-            }
-        });
-
-        const kendoWindow = htmlWindow.data("kendoWindow").maximize().open();
+        if (!window.contentBuilderIframeWindow || !(window.contentBuilderIframeWindow instanceof kendo.ui.Window)) {
+            window.contentBuilderIframeWindow = htmlWindow.kendoWindow({
+                width: "100%",
+                height: "100%",
+                title: "Content builder",
+                close: (closeEvent) => {
+                    closeEvent.sender.destroy();
+                    htmlWindow.remove();
+                    delete window.contentBuilderIframeWindow;
+                }
+            }).getKendoWindow();
+        }
+        window.contentBuilderIframeWindow.maximize().open();
 
         htmlWindow.find(".k-primary, .k-button-solid-primary").kendoButton({
             click: () => {
@@ -3214,14 +3216,14 @@ export class Fields {
                 const container = editor.element.closest(".entity-container");
                 container.find(".saveBottomPopup, .saveButton").trigger("click");
 
-                kendoWindow.close();
+                window.contentBuilderIframeWindow.close();
             },
             icon: "save"
         });
 
         htmlWindow.find(".k-secondary").kendoButton({
             click: () => {
-                kendoWindow.close();
+                window.contentBuilderIframeWindow.close();
             },
             icon: "cancel"
         });
@@ -3231,7 +3233,6 @@ export class Fields {
      * Event that gets called when the user executes the custom action for maximizing an HTML editor.
      * @param {any} event The event from the execute action.
      * @param {any} editor The HTML editor where the action is executed in.
-     * @param {any} itemId The ID of the current item.
      */
     async onHtmlEditorFullScreenExec(event, editor) {
         const htmlWindow = $("#maximizeEditorWindow").clone(true);
