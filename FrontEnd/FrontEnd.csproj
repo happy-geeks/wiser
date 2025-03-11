@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="5.2.2503.1" />
+    <PackageReference Include="GeeksCoreLibrary" Version="5.2.2503.4" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
   </ItemGroup>
 
