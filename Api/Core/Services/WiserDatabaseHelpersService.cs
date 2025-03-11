@@ -17,6 +17,7 @@ using GeeksCoreLibrary.Modules.Databases.Helpers;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using GeeksCoreLibrary.Modules.Databases.Models;
 using GeeksCoreLibrary.Modules.Databases.Services;
+using LazyCache;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MySqlConnector;
@@ -31,7 +32,8 @@ public class WiserDatabaseHelpersService(
     IDatabaseHelpersService databaseHelpersService,
     IServiceProvider serviceProvider,
     IEntityTypesService entityTypesService,
-    ILinkTypesService linkTypesService)
+    ILinkTypesService linkTypesService,
+    IAppCache cache)
     : IWiserDatabaseHelpersService, IScopedService
 {
     // Constants for custom migrations.
@@ -160,6 +162,9 @@ public class WiserDatabaseHelpersService(
                     throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.");
             }
         }
+
+        // Delete the cache, to make sure that the migrations list gets updated correctlt.
+        cache.Remove($"CachedDatabaseHelpersService_GetLastTableUpdates_{clientDatabaseConnection.ConnectedDatabase}_");
     }
 
     /// <inheritdoc />
@@ -189,6 +194,9 @@ public class WiserDatabaseHelpersService(
                     throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.");
             }
         }
+
+        // Delete the cache, to make sure that the migrations list gets updated correctlt.
+        cache.Remove($"CachedDatabaseHelpersService_GetLastTableUpdates_{clientDatabaseConnection.ConnectedDatabase}_");
     }
 
     /// <inheritdoc />
@@ -289,6 +297,9 @@ public class WiserDatabaseHelpersService(
         mainDatabaseHelpersService.ExtraWiserTableDefinitions = [logTable];
 
         await mainDatabaseHelpersService.CheckAndUpdateTablesAsync(tablesToUpdate);
+
+        // Delete the cache, to make sure that the migrations list gets updated correctlt.
+        cache.Remove($"CachedDatabaseHelpersService_GetLastTableUpdates_{originalConnection.ConnectedDatabase}_");
     }
 
     /// <summary>
