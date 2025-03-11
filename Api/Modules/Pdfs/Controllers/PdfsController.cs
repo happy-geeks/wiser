@@ -73,6 +73,6 @@ public class PdfsController : ControllerBase
     public async Task<IActionResult> MergePdfFilesAsync(MergePdfModel data)
     {
         var mergedPdfResult = await pdfsService.MergePdfFilesAsync((ClaimsIdentity)User.Identity, data.EncryptedItemIdsList, data.PropertyNames, data.EntityType, data.FileSelection);
-        return File(mergedPdfResult.ModelObject, "application/pdf");
+        return File(mergedPdfResult.ModelObject, MediaTypeNames.Application.Pdf);
     }
 }
