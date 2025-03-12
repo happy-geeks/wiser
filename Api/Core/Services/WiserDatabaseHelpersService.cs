@@ -127,7 +127,6 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
             }
 
             // Update wiser_table_changes.
-
             clientDatabaseConnection.AddParameter("tableName", triggersName);
             clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
             await clientDatabaseConnection.ExecuteAsync($"""
