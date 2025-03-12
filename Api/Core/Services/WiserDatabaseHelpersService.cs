@@ -103,7 +103,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         var tablePrefixes = allEntityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
         
         // Make sure that all triggers for Wiser tables are up-to-date.
-        if (!lastTableUpdates.TryGetValue(triggersName, out var value) || value < new DateTime(2024, 10, 21))
+        if (!lastTableUpdates.TryGetValue(triggersName, out var lastTableUpdate) || lastTableUpdate < new DateTime(2024, 10, 21))
         {
             // Normal table trigger.
             var createTriggersQuery =
@@ -121,12 +121,13 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
                 if (String.IsNullOrWhiteSpace(tablePrefix)) continue;
 
                 var prefix = (tablePrefix.EndsWith("_") ? tablePrefix : tablePrefix + "_");
-                createTriggersQuery = createTriggersQuery.Replace("{tablePrefix}", prefix);
+                var dedicatedTriggersQuery = createDedicatedTriggersQuery.Replace("{tablePrefix}", prefix);
                 
-                await clientDatabaseConnection.ExecuteAsync(createDedicatedTriggersQuery);
+               await clientDatabaseConnection.ExecuteAsync(dedicatedTriggersQuery);
             }
 
             // Update wiser_table_changes.
+
             clientDatabaseConnection.AddParameter("tableName", triggersName);
             clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
             await clientDatabaseConnection.ExecuteAsync($"""
@@ -137,7 +138,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         }
 
         // Remove virtual columns from Wiser tables, if they stil exist. This was an experiment in the past, but we decided not to use them due to some problems with them.
-        if (!lastTableUpdates.TryGetValue(removeVirtualColumnsName, out value) || value < new DateTime(2024, 9, 12))
+        if (!lastTableUpdates.TryGetValue(removeVirtualColumnsName, out var value) || value < new DateTime(2024, 9, 12))
         {
             // Remove virtual columns from wiser_itemdetail and wiser_itemdetail_archive tables.
             foreach (var tablePrefix in tablePrefixes)
