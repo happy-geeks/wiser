@@ -118,17 +118,12 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
             
             foreach (var tablePrefix in tablePrefixes)
             {
-                var prefix = tablePrefix;
-                if (!String.IsNullOrWhiteSpace(prefix))
-                {
-                    if (!prefix.EndsWith("_"))
-                    {
-                        prefix += "_";
-                    }
+                if (String.IsNullOrWhiteSpace(tablePrefix)) continue;
 
-                    createTriggersQuery = createTriggersQuery.Replace("{tablePrefix}", prefix);
-                    await clientDatabaseConnection.ExecuteAsync(createDedicatedTriggersQuery);
-                }
+                var prefix = (tablePrefix.EndsWith("_") ? tablePrefix : tablePrefix + "_");
+                createTriggersQuery = createTriggersQuery.Replace("{tablePrefix}", prefix);
+                
+                await clientDatabaseConnection.ExecuteAsync(createDedicatedTriggersQuery);
             }
 
             // Update wiser_table_changes.
