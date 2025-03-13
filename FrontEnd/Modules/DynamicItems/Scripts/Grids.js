@@ -1100,11 +1100,11 @@ export class Grids {
             if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
                 continue;
             }
-            
+
             const conditionAttribute = customAction.condition
                 ? `data-condition=${customAction.condition}`
                 : '';
-            
+
             const selector = gridSelector.replace(/#/g, "\\#");
 
             if (customAction.groupName) {
@@ -1118,7 +1118,7 @@ export class Grids {
 
                     groups.push(group);
                 }
-                
+
                 group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
@@ -1319,6 +1319,25 @@ export class Grids {
             enableSelectAllServerSide: gridOptions.searchGridSettings.enableSelectAllServerSide,
             currentItemIsSourceId: gridOptions.currentItemIsSourceId
         });
+    }
+
+    async addKeyValuePairRow(senderGridSelector) {
+        const newKeyValuePairDialog = $("#createNewKeyValuePairDialog").kendoDialog({
+            width: "400px",
+            visible: true,
+            title: "Nieuwe regel toevoegen",
+            closable: true,
+            modal: true,
+            content: kendo.template($("#createNewKeyValuePairDialogTemplate").html()),
+            actions: [
+                { text: "Annuleren" },
+                { text: "Opslaan", primary: true, action: (event) => {
+                        const senderGrid = $(senderGridSelector).data("kendoGrid");
+                        senderGrid.element.siblings(".grid-loader").addClass("loading");
+                        senderGrid.addRow();
+                    } }
+            ]
+        }).data("kendoDialog");
     }
 
     /**
@@ -1588,10 +1607,10 @@ export class Grids {
         conditionalButtons.each(async function () {
             const button = $(this);
             const condition = button.data('condition');
-            
+
             // Do not hide buttons by default.
             let shouldHide = false;
-            
+
             // Conditional check.
             if(condition) {
                 // Gather field data for each selected row in the grid.
@@ -1612,11 +1631,11 @@ export class Grids {
                     return func(...parameterValues);
                 });
             }
-            
+
             // Show or hide the action button based on the evaluated condition or default value.
             button.toggleClass('hidden', shouldHide || event.sender.select().length === 0);
         });
-        
+
         // Check whether to hide a button group when no buttons are visible in the group.
         for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
             const buttonGroupElement = $(buttonGroup);

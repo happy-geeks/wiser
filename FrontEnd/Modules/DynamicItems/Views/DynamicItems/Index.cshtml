@@ -13,7 +13,7 @@
     <script>
         window.wiserVersion = "@Model.WiserVersion?.ToString()";
     </script>
-    
+
     <style>
         #mainScreenForm,
         body.iframe #left-pane,
@@ -359,6 +359,28 @@
         </div>
     </div>
 
+    <div id="createNewKeyValuePairDialog"></div>
+    <script id="createNewKeyValuePairDialogTemplate" type="text/x-kendo-template">
+        <div class="new-item-dialog-row">
+            <h4><label for="newKeyValuePairNameField">Vul een naam in</label></h4>
+            <span class="k-widget k-input k-state-default">
+                <input type="text" id="newKeyValuePairNameField" class="textField k-input" />
+            </span>
+        </div>
+        <div class="new-item-dialog-row">
+            <h4><label for="newKeyValuePairValueField">Vul een waarde in</label></h4>
+            <span class="k-widget k-input k-state-default">
+                <input type="text" id="newKeyValuePairValueField" class="textField k-input" />
+            </span>
+        </div>
+        <div class="new-item-dialog-row">
+            <h4><label for="newKeyValuePairLanguageCodeField">Vul een taalcode in</label></h4>
+            <span class="k-widget k-input k-state-default">
+                <input type="text" id="newKeyValuePairLanguageCodeField" class="textField k-input" />
+            </span>
+        </div>
+    </script>
+
     <!-- Dialog for open URL links. -->
     <div id="openLinkWindow"></div>
 
@@ -366,7 +388,7 @@
     <div id="fileManagerWindow" class="popup-container">
         <div class="horizontal">
             <iframe frameborder="0" id="fileManagerFrame"></iframe>
-            
+
             <!-- FIXED FOOTER -->
             <footer class="fixed">
                 <div class="actions">

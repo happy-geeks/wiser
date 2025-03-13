@@ -24,13 +24,13 @@ if (options.fieldGroupName) {
 }
 
 if (customQueryGrid) {
-    Wiser.api({ 
-        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}` 
+    Wiser.api({
+        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}`
     }).then(function(customQueryResults) {
         if (customQueryResults.extraJavascript) {
             jQuery.globalEval(customQueryResults.extraJavascript);
         }
-        
+
         if (!hideCheckboxColumn) {
             customQueryResults.columns.splice(0, 0, {
                 selectable: true,
@@ -44,14 +44,14 @@ if (customQueryGrid) {
                 options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
             }
         }
-        
+
         if (!options.hideCommandColumn) {
             let commandColumnWidth = 0;
             let commands = [];
-            
+
             if (!options.disableOpeningOfItems) {
                 commandColumnWidth += 60;
-                
+
                 commands.push({
                     name: "openDetails",
                     iconClass: "k-icon k-i-hyperlink-open",
@@ -59,7 +59,7 @@ if (customQueryGrid) {
                     title: "Item openen",
                     click: function(event) { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
                 });
-                
+
                 if (options.allowOpeningOfItemsInNewTab) {
                     commandColumnWidth += 60;
 
@@ -75,7 +75,7 @@ if (customQueryGrid) {
 
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
                 commandColumnWidth += 60;
-                
+
                 commands.push({
                     name: "remove",
                     text: "",
@@ -84,7 +84,7 @@ if (customQueryGrid) {
                 });
             } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
                 commandColumnWidth += 120;
-                
+
                 commands.push("destroy");
             }
 
@@ -96,7 +96,7 @@ if (customQueryGrid) {
                 });
             }
         }
-        
+
         generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
     });
 } else {
@@ -107,16 +107,16 @@ if (customQueryGrid) {
                 columns: options.columns
             };
         }
-        
+
         if (gridSettings.extraJavascript) {
             jQuery.globalEval(gridSettings.extraJavascript);
         }
-        
+
         // Add most columns here.
         if (gridSettings.columns && gridSettings.columns.length) {
             for (var i = 0; i < gridSettings.columns.length; i++) {
                 var column = gridSettings.columns[i];
-                
+
                 switch ((column.field || "").toLowerCase()) {
                     case "":
                         column.hidden = hideCheckboxColumn;
@@ -165,12 +165,12 @@ if (customQueryGrid) {
                 options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encrypted_id || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemaModel.fields.idencrypted);
             }
         }
-        
+
         // Add command columns separately, because of the click event that we can't do properly server-side.
         if (!options.hideCommandColumn) {
             let commandColumnWidth = 0;
             let commands = [];
-            
+
             if (!options.disableOpeningOfItems && !options.fieldGroupName) {
                 commandColumnWidth += 60;
                 commands.push({
@@ -191,10 +191,10 @@ if (customQueryGrid) {
                     });
                 }
             }
-            
+
             if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off" && !options.fieldGroupName) {
                 commandColumnWidth += 60;
-                
+
                 commands.push({
                     name: "remove",
                     text: "",
@@ -202,7 +202,7 @@ if (customQueryGrid) {
                     click: function(event) { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
                 });
             }
-            
+
             if (gridSettings.columns && commands.length > 0) {
                 gridSettings.columns.push({
                     title: "&nbsp;",
@@ -211,10 +211,10 @@ if (customQueryGrid) {
                 });
             }
         }
-        
+
         generateGrid(gridSettings.data, gridSettings.schemaModel, gridSettings.columns);
     }
-    
+
     if (usingDataSelector) {
         Wiser.api({
             url: `${window.dynamicItems.settings.getItemsUrl}?trace=false&encryptedDataSelectorId=${encodeURIComponent(options.dataSelectorId)}&itemId=${encodeURIComponent("{itemIdEncrypted}")}`,
@@ -227,7 +227,7 @@ if (customQueryGrid) {
             contentType: "application/json"
         }).then(done);
     }
-}    
+}
 async function generateGrid(data, model, columns) {
     var toolbar = [];
     if (!options.toolbar || !options.toolbar.hideExportButton) {
@@ -269,13 +269,23 @@ async function generateGrid(data, model, columns) {
     }
 
     if (!readonly && (!options.toolbar || !options.toolbar.hideCreateButton)) {
-        toolbar.push(options.fieldGroupName || (customQueryGrid && (!options.entityType || options.hasCustomInsertQuery))
-            ? "create"
-            : {
+        let createAction = "create";
+        if (options.fieldGroupName) {
+            createAction = {
+                name: "keyValuePair",
+                text: "Regel toevoegen",
+                template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.addKeyValuePairRow(\"\\#overviewGrid{propertyIdWithSuffix}\")'><span class='k-icon k-i-plus'></span>Regel toevoegen</a>"
+            }
+        }
+        else if (!(customQueryGrid && (!options.entityType || options.hasCustomInsertQuery))) {
+            createAction = {
                 name: "add",
                 text: "Nieuw",
                 template: "<a class='k-button k-button-icontext' href='\\#' onclick='return window.dynamicItems.grids.onNewSubEntityClick(\"{itemIdEncrypted}\", \"" + options.entityType + "\", \"\\#overviewGrid{propertyIdWithSuffix}\", " + !options.hideTitleColumn + ", \"" + (options.linkTypeNumber || "") + "\")'><span class='k-icon k-i-file-add'></span>" + window.dynamicItems.getEntityTypeFriendlyName(options.entityType) + " toevoegen</a>"
-            });
+            };
+        }
+
+        toolbar.push(createAction);
     }
 
     if (!readonly && options.entityType && (!options.toolbar || !options.toolbar.hideLinkButton)) {
@@ -577,15 +587,18 @@ async function generateGrid(data, model, columns) {
                         if (options.fieldGroupName) {
                             let itemModel = {
                                 details: [],
-                                entityType: "{entityType}" 
+                                entityType: "{entityType}"
                             };
-                            
+
                             const encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
+                            transportOptions.data.key = document.querySelector("#createNewKeyValuePairDialog #newKeyValuePairNameField").value;
+                            transportOptions.data.value = document.querySelector("#createNewKeyValuePairDialog #newKeyValuePairValueField").value;
+                            transportOptions.data.languageCode = document.querySelector("#createNewKeyValuePairDialog #newKeyValuePairLanguageCodeField").value;
                             // If we have a predefined language code, then always force that language code, so that the user doesn't have to enter it manually.
-                            if (options.languageCode) {
+                            /*if (options.languageCode) {
                                 transportOptions.data.languageCode = options.languageCode;
-                            }
+                            }*/
                             itemModel.details.push(transportOptions.data);
 
                             Wiser.api({
@@ -595,6 +608,7 @@ async function generateGrid(data, model, columns) {
                                 dataType: "json",
                                 data: JSON.stringify(itemModel)
                             }).then(function (result) {
+                                debugger;
                                 if (transportOptions.data && transportOptions.data.details) {
                                     for (var i = 0; i < transportOptions.data.details.length; i++) {
                                         var currentField = transportOptions.data.details[i];
