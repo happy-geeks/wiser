@@ -97,17 +97,18 @@ public class OpenIddictTokenRequestHandler(
         }
 
         // First try to login as a regular user.
-        var loginResult = await usersService.LoginTenantAsync(context.Request.Username, context.Request.Password,
+        var loginResult = await usersService.LoginTenantAsync(context.Request.Username,
+            context.Request.Password,
             subDomain: subDomain,
-            generateAuthenticationTokenForCookie: true, totpPin: totpPin, totpBackupCode: totpBackupCode);
+            generateAuthenticationTokenForCookie: true,
+            totpPin: totpPin,
+            totpBackupCode: totpBackupCode);
 
         // If the regular user login failed, try to login as an admin account.
         var totpSuccessAdmin = false;
         if (loginResult.StatusCode != HttpStatusCode.OK)
         {
-            var adminAccountLoginResult =
-                await usersService.LoginAdminAccountAsync(context.Request.Username, context.Request.Password,
-                    totpPin: totpPin);
+            var adminAccountLoginResult = await usersService.LoginAdminAccountAsync(context.Request.Username, context.Request.Password, totpPin: totpPin);
             if (adminAccountLoginResult.StatusCode != HttpStatusCode.OK)
             {
                 context.Reject(OpenIddictConstants.Errors.InvalidClient, loginResult.ErrorMessage);
@@ -116,8 +117,7 @@ public class OpenIddictTokenRequestHandler(
 
             adminAccountId = adminAccountLoginResult.ModelObject.Id;
             adminAccountName = adminAccountLoginResult.ModelObject.Name;
-            if (adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled && String.IsNullOrWhiteSpace(totpPin) &&
-                String.IsNullOrWhiteSpace(totpBackupCode))
+            if (adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled && String.IsNullOrWhiteSpace(totpPin) && String.IsNullOrWhiteSpace(totpBackupCode))
             {
                 AddLoginResultParameters(parameters, adminAccountLoginResult.ModelObject, false);
 
@@ -128,8 +128,7 @@ public class OpenIddictTokenRequestHandler(
                 return;
             }
 
-            totpSuccessAdmin = adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled &&
-                               !String.IsNullOrWhiteSpace(totpPin);
+            totpSuccessAdmin = adminAccountLoginResult.ModelObject.TotpAuthentication.Enabled && !String.IsNullOrWhiteSpace(totpPin);
             if (String.IsNullOrWhiteSpace(selectedUser))
             {
                 var usersList = await usersService.GetAsync();
@@ -151,8 +150,7 @@ public class OpenIddictTokenRequestHandler(
                 }
             }
 
-            loginResult = await usersService.LoginTenantAsync(selectedUser, null,
-                adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
+            loginResult = await usersService.LoginTenantAsync(selectedUser, null, adminAccountLoginResult.ModelObject.EncryptedId, subDomain, true);
         }
 
          // If we still haven't been able to login, return a login error.
