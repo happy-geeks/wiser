@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
+using OpenIddict.Validation.AspNetCore;
 
 namespace Api.Modules.Tenants.Controllers;
 
@@ -52,7 +53,7 @@ public class UsersController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("users-list")]
-    [Authorize("ApiUsersList")]
+    [Authorize("ApiUsersList", AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     [ProducesResponseType(typeof(List<FlatItemModel>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserList()
     {

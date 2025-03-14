@@ -49,7 +49,7 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.SetCommandTimeout(600);
 
-        var lastTableUpdates = await databaseHelpersService.GetLastTableUpdatesAsync(clientDatabaseConnection.ConnectedDatabase);
+        var lastTableUpdates = await databaseHelpersService.GetMigrationsStatusAsync(clientDatabaseConnection.ConnectedDatabase);
 
         // If the table changes don't contain wiser_itemdetail, it means this is an older database.
         // We can assume that this database already has the able, otherwise nothing would work.

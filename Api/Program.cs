@@ -35,6 +35,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
@@ -70,6 +71,11 @@ Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .CreateLogger();
 
+// Enable logging of sensitive data in development.
+if (builder.Environment.IsDevelopment())
+{
+    IdentityModelEventSource.ShowPII = true;
+}
 
 var apiBaseUrl = builder.Configuration.GetValue<string>("Api:BaseUrl");
 var clientSecret = builder.Configuration.GetValue<string>("Api:ClientSecret");
