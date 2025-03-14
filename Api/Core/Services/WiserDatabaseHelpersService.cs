@@ -99,11 +99,32 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
             Constants.DatabaseConnectionLogTableName
         ]);
 
+        var allEntityTypes = (await entityTypesService.GetAsync(identity, false)).ModelObject;
+        var tablePrefixes = allEntityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
+        
         // Make sure that all triggers for Wiser tables are up-to-date.
-        if (!lastTableUpdates.TryGetValue(triggersName, out var value) || value < new DateTime(2024, 10, 21))
+        if (!lastTableUpdates.TryGetValue(triggersName, out var lastTableUpdate) || lastTableUpdate < new DateTime(2024, 10, 21))
         {
-            var createTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
+            // Normal table trigger.
+            var createTriggersQuery =
+                await ResourceHelpers.ReadTextResourceFromAssemblyAsync(
+                    "Api.Core.Queries.WiserInstallation.CreateTriggers.sql");
             await clientDatabaseConnection.ExecuteAsync(createTriggersQuery);
+
+            // Dedicated table trigger.
+            var createDedicatedTriggersQuery =
+                await ResourceHelpers.ReadTextResourceFromAssemblyAsync(
+                    "Api.Core.Queries.WiserInstallation.CreateDedicatedItemTablesTriggers.sql");
+            
+            foreach (var tablePrefix in tablePrefixes)
+            {
+                if (String.IsNullOrWhiteSpace(tablePrefix)) continue;
+
+                var prefix = (tablePrefix.EndsWith("_") ? tablePrefix : tablePrefix + "_");
+                var dedicatedTriggersQuery = createDedicatedTriggersQuery.Replace("{tablePrefix}", prefix);
+                
+               await clientDatabaseConnection.ExecuteAsync(dedicatedTriggersQuery);
+            }
 
             // Update wiser_table_changes.
             clientDatabaseConnection.AddParameter("tableName", triggersName);
@@ -116,11 +137,9 @@ public class WiserDatabaseHelpersService : IWiserDatabaseHelpersService, IScoped
         }
 
         // Remove virtual columns from Wiser tables, if they stil exist. This was an experiment in the past, but we decided not to use them due to some problems with them.
-        if (!lastTableUpdates.TryGetValue(removeVirtualColumnsName, out value) || value < new DateTime(2024, 9, 12))
+        if (!lastTableUpdates.TryGetValue(removeVirtualColumnsName, out var value) || value < new DateTime(2024, 9, 12))
         {
             // Remove virtual columns from wiser_itemdetail and wiser_itemdetail_archive tables.
-            var allEntityTypes = (await entityTypesService.GetAsync(identity, false)).ModelObject;
-            var tablePrefixes = allEntityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
             foreach (var tablePrefix in tablePrefixes)
             {
                 var tableName = $"{tablePrefix}{WiserTableNames.WiserItemDetail}";
