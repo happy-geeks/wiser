@@ -21,23 +21,14 @@ namespace Api.Core.Services;
 /// <summary>
 /// Handles the token request for the OpenIddict server.
 /// </summary>
-public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddictServerEvents.HandleTokenRequestContext>
+public class OpenIddictTokenRequestHandler(
+    ILogger<OpenIddictTokenRequestHandler> logger,
+    IHttpContextAccessor httpContextAccessor,
+    IOptions<GclSettings> gclSettings,
+    IUsersService usersService)
+    : IOpenIddictServerHandler<OpenIddictServerEvents.HandleTokenRequestContext>
 {
-    private readonly ILogger<OpenIddictTokenRequestHandler> logger;
-    private readonly IHttpContextAccessor httpContextAccessor;
-    private readonly GclSettings gclSettings;
-    private readonly IUsersService usersService;
-
-    /// <summary>
-    /// Creates a new instance of <see cref="OpenIddictTokenRequestHandler"/>.
-    /// </summary>
-    public OpenIddictTokenRequestHandler(ILogger<OpenIddictTokenRequestHandler> logger, IHttpContextAccessor httpContextAccessor, IOptions<GclSettings> gclSettings, IUsersService usersService)
-    {
-        this.logger = logger;
-        this.httpContextAccessor = httpContextAccessor;
-        this.usersService = usersService;
-        this.gclSettings = gclSettings.Value;
-    }
+    private readonly GclSettings gclSettings = gclSettings.Value;
 
     /// <inheritdoc />
     public async ValueTask HandleAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
@@ -53,12 +44,10 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         }
     }
 
-    private ValueTask HandleRefreshAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
+    private static ValueTask HandleRefreshAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
     {
         // Create a new ClaimsPrincipal for the refreshed token.
-        var identity = context?.Principal?.Identity as ClaimsIdentity;
-
-        if (identity is not { IsAuthenticated: true })
+        if (context?.Principal?.Identity is not ClaimsIdentity { IsAuthenticated: true } identity)
         {
             context!.Reject(OpenIddictConstants.Errors.InvalidClient, "no identity given");
             return ValueTask.CompletedTask;
@@ -198,9 +187,9 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     }
 
     /// <summary>
-    /// Fill the list of parameters that will be passed to the frontend beside the access token
+    /// Fill the list with parameters that will be passed to the front-end, besides the access token.
     /// </summary>
-    private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, AdminAccountModel user, bool totpSuccess)
+    private static void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, AdminAccountModel user, bool totpSuccess)
     {
         parameters.Add("name", user.Name);
         parameters.Add("SkipRefreshTokenGeneration", !totpSuccess);
@@ -212,9 +201,9 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     }
 
     /// <summary>
-    /// Fill the list of parameters that will be passed to the frontend beside the access token
+    /// Fill the list with parameters that will be passed to the front-end, beside the access token.
     /// </summary>
-    private void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, UserModel user, bool totpSuccess, bool isAdminLogin)
+    private static void AddLoginResultParameters(Dictionary<string, OpenIddictParameter> parameters, UserModel user, bool totpSuccess, bool isAdminLogin)
     {
         parameters.Add("name", user.Name);
         parameters.Add("role", user.Role);
@@ -236,7 +225,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
         }
     }
 
-    private void Signin(OpenIddictServerEvents.HandleTokenRequestContext context, ClaimsPrincipal principal, Dictionary<string, OpenIddictParameter> parameters)
+    private static void Signin(OpenIddictServerEvents.HandleTokenRequestContext context, ClaimsPrincipal principal, Dictionary<string, OpenIddictParameter> parameters)
     {
         principal.SetDestinations(_ => new List<string> { OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken }.AsReadOnly());
         context.SignIn(principal, parameters);
@@ -246,7 +235,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     /// Create an ClaimsIdentity with a defined claims collection
     /// </summary>
     /// <returns></returns>
-    private ClaimsIdentity CreateIdentity(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
+    private static ClaimsIdentity CreateIdentity(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
     {
         var claims = CreateClaimsList(user, subDomain, adminAccountId, adminAccountName, isTestEnvironment, isWiserFrontEndLogin);
 
@@ -258,7 +247,7 @@ public class OpenIddictTokenRequestHandler : IOpenIddictServerHandler<OpenIddict
     /// Create the list of claims to be added to the token
     /// </summary>
     /// <returns><see cref="IEnumerable{Claim}"/> of <see cref="Claim"/></returns>
-    private static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
+    public static IEnumerable<Claim> CreateClaimsList(UserModel user, string subDomain, ulong adminAccountId, string adminAccountName, string isTestEnvironment, bool isWiserFrontEndLogin)
     {
         var claimsIdentity = new List<Claim>
         {

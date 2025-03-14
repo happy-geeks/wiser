@@ -147,7 +147,7 @@ builder.Services.Decorate<IDatabaseHelpersService, CachedDatabaseHelpersService>
 JsonConvert.DefaultSettings = () => new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
 
 // Enable CORS, to allow the API to be called by javascript via other domains.
-builder.Services.AddCors((options) =>
+builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName,
         policyBuilder =>
@@ -175,15 +175,14 @@ builder.Services.AddControllers(options => { options.AllowEmptyInputInBodyModelB
 // Make sure all API URLs are lower case.
 builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
 
-// Configure OAuth2
-// Configure OpenIddict
+// Configure OAuth2 using OpenIddict.
 builder.Services.AddOpenIddict()
     .AddServer(options =>
     {
         options.SetTokenEndpointUris("/connect/token");
 
-        // Degraded mode is needed because we handle authentication, user rights etc. ourselves
-        // Without Degraded mode openiddict would try find users, scopes and such using Entity Framework
+        // Degraded mode is needed because we handle authentication, user rights etc. ourselves.
+        // Without Degraded mode, OpenIddict would try to find users, scopes and such using Entity Framework.
         options.EnableDegradedMode();
 
         options.UseAspNetCore();
@@ -232,20 +231,18 @@ builder.Services.AddOpenIddict()
         // Register handler for token requests
         // This contains all the logic of authenticating users
         // And passing back all the data the frontend needs.
-        options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(builder =>
+        options.AddEventHandler<OpenIddictServerEvents.HandleTokenRequestContext>(openIdBuilder =>
         {
-            builder.UseScopedHandler<OpenIddictTokenRequestHandler>();
+            openIdBuilder.UseScopedHandler<OpenIddictTokenRequestHandler>();
         });
 
-        options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(builder =>
+        options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(openIdBuilder =>
         {
-            builder.UseInlineHandler(context =>
+            openIdBuilder.UseInlineHandler(context =>
             {
                 if (context.Request.ClientId != "wiser" || context.Request.ClientSecret != clientSecret)
                 {
-                    context.Reject(
-                        error: OpenIddictConstants.Errors.InvalidClient,
-                        description: "The client credentials is invalid.");
+                    context.Reject(error: OpenIddictConstants.Errors.InvalidClient, description: "The client credentials are invalid.");
                 }
 
                 return ValueTask.CompletedTask;
@@ -267,51 +264,43 @@ builder.Services.AddOpenIddict()
 // Sets authentication to be done using OpenIddict by default
 builder.Services.AddAuthentication(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
 
-// Define policies that can be used on the Wiser endpoints
-builder.Services.AddAuthorization(options =>
-{
-    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+// Define policies that can be used on the Wiser endpoints.
+builder.Services.AddAuthorizationBuilder()
+    .SetDefaultPolicy(new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser() // Requires the user to be authenticated
         .RequireAssertion(context =>
         {
             var scopes = context.User.GetClaims("scope").FirstOrDefault();
             return scopes is not null && scopes.Split(" ").Contains("api.write");
         })
-        .Build();
-
-    options.AddPolicy("ApiUsersList",
-        policy =>
-        {
-            policy.RequireAuthenticatedUser()
-                .RequireAssertion(context =>
-                {
-                    var scopes = context.User.GetClaims("scope").FirstOrDefault();
-                    return scopes is not null && scopes.Split(" ").Contains("api.users_list");
-                });
-        });
-
-    options.AddPolicy("ApiWrite",
-        policy =>
-        {
-            policy.RequireAuthenticatedUser()
-                .RequireAssertion(context =>
-                {
-                    var scopes = context.User.GetClaims("scope").FirstOrDefault();
-                    return scopes is not null && scopes.Split(" ").Contains("api.write");
-                });
-        });
-
-    options.AddPolicy("ApiRead",
-        policy =>
-        {
-            policy.RequireAuthenticatedUser()
-                .RequireAssertion(context =>
-                {
-                    var scopes = context.User.GetClaims("scope").FirstOrDefault();
-                    return scopes is not null && scopes.Split(" ").Contains("api.read");
-                });
-        });
-});
+        .Build())
+    .AddPolicy("ApiUsersList", policy =>
+    {
+        policy.RequireAuthenticatedUser()
+            .RequireAssertion(context =>
+            {
+                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                return scopes is not null && scopes.Split(" ").Contains("api.users_list");
+            });
+    })
+    .AddPolicy("ApiWrite", policy =>
+    {
+        policy.RequireAuthenticatedUser()
+            .RequireAssertion(context =>
+            {
+                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                return scopes is not null && scopes.Split(" ").Contains("api.write");
+            });
+    })
+    .AddPolicy("ApiRead", policy =>
+    {
+        policy.RequireAuthenticatedUser()
+            .RequireAssertion(context =>
+            {
+                var scopes = context.User.GetClaims("scope").FirstOrDefault();
+                return scopes is not null && scopes.Split(" ").Contains("api.read");
+            });
+    });
 
 // Configure dependency injection.
 builder.Services.AddScoped<MySqlDatabaseConnection>();
@@ -359,7 +348,7 @@ app.UseSwagger(options =>
         var scheme = httpReq.Scheme;
         var host = httpReq.Host.Host;
         var port = "";
-        if (host.ToLowerInvariant() == "localhost" && httpReq.Host.Port.HasValue)
+        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) && httpReq.Host.Port.HasValue)
         {
             port = $":{httpReq.Host.Port.Value}";
         }
@@ -426,16 +415,18 @@ static X509Certificate2 GetCertificateByName(string certificateName)
     using var webHostingStore = new X509Store("WebHosting", StoreLocation.LocalMachine);
     webHostingStore.Open(OpenFlags.ReadOnly);
     var certificateCollection = webHostingStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+    if (certificateCollection.Count != 0)
+    {
+        return certificateCollection.First();
+    }
+
+    using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+    personalStore.Open(OpenFlags.ReadOnly);
+    certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
+
     if (certificateCollection.Count == 0)
     {
-        using var personalStore = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-        personalStore.Open(OpenFlags.ReadOnly);
-        certificateCollection = personalStore.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, certificateName, validOnly: false);
-
-        if (certificateCollection.Count == 0)
-        {
-            throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
-        }
+        throw new Exception($"Certificate with name \"{certificateName}\" not found in WebHosting or Personal store.");
     }
 
     return certificateCollection.First();
