@@ -1,0 +1,5 @@
+// FrontEnd/Core/Scss/core/index.scss
+@forward '_colors' as colors-*;
+@forward '_fonts' as fonts-*;
+@forward '_scrollbars' as scrollbars-*;
+@forward '_sizes' as sizes-*;

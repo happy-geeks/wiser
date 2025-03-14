@@ -1,8 +1,4 @@
-﻿// Variables
-@import 'variables';
-
-//// MIXINS
-@import 'mixin/mixin';
+﻿@use '../vars/index' as vars;
 
 .branches-dialog {
     .w-dialog {
@@ -10,81 +6,81 @@
         max-width: 90vw;
         display: flex;
         flex-direction: column;
-    
+
         .container {
             max-width: 1500px;
             margin: 0;
-    
+
             &.stretch {
                 overflow: hidden;
                 display: flex;
                 flex-direction: column;
             }
-    
+
             .row {
                 padding-left: 0;
                 padding-right: 0;
-    
+
                 .col {
                     &.open-branches-container {
                         flex: 0 0 auto;
                     }
-                    
+
                     &.align-right {
                         display: flex;
                         justify-content: end;
-    
+
                         .btn {
                             margin-left: 10px;
                             margin-right: 0;
                         }
                     }
-    
+
                     &.flex-inline {
                         display: flex;
                         align-items: center;
                         gap: 20px;
                         padding: 20px 0;
-    
+
                         button {
                             margin: 0;
                         }
                     }
                 }
-    
+
                 &.no-scroll {
                     overflow: hidden;
                     display: contents;
                 }
-                
+
                 .form-row {
                     padding-bottom: 10px;
                     max-width: 100%;
                     width: 100%;
-                    
+
                     input[type=url] {
                         width: 100%;
                     }
                 }
             }
-    
+
             + footer {
                 .inline {
                     display: flex;
                     align-items: center;
-    
+
                     .radio {
                         + .radio {
                             margin-left: 30px;
                         }
                     }
                 }
-    
+
                 > .row {
                     padding: 20px;
                 }
             }
-    
+
             footer {
                 .col {
                     display: flex;
@@ -92,16 +88,16 @@
                 }
             }
         }
-    
+
         .form-row {
             label {
                 width: 100%;
-    
+
                 .label-info {
                     float: right;
                     padding-right: 20px;
                 }
-                
+
                 &[for=newBranchName] {
                     padding-right: 15px;
                 }
@@ -111,19 +107,19 @@
                 min-width: 300px;
             }
         }
-    
+
         .table-row {
             overflow: hidden;
             display: contents;
-    
+
             table {
                 .extra {
-    
+
                     label, div {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-    
+
                         input {
                             width: calc(50% - 10px);
                         }
@@ -131,59 +127,59 @@
                 }
             }
         }
-    
+
         .fixed-table {
             overflow: auto;
             height: 100%;
             width: calc(100% - 20px);
             margin: 0 10px;
-    
+
             table {
                 border-collapse: collapse;
                 width: 100%;
-    
+
                 thead {
                     th {
-                        background-color: $line-md-color;
-                        border-bottom: 1px solid $line-color;
-                        color: $thead-color;
+                        background-color: vars.$colors-line-md-color;
+                        border-bottom: 1px solid vars.$colors-line-color;
+                        color: vars.$colors-thead-color;
                         position: sticky;
                         top: 0;
                         z-index: 1;
                         text-align: left;
                     }
                 }
-    
+
                 tbody {
                     tr {
                         &:nth-child(even) {
                             td {
-                                background-color: $lt-color;
+                                background-color: vars.$colors-lt-color;
                             }
                         }
-                        
+
                         &.accepted {
                             td {
-                                background-color: $primary-color;
-                                color: $white-color;
-                                border-top: 1px solid $white-color;
+                                background-color: vars.$colors-primary-color;
+                                color: vars.$colors-white-color;
+                                border-top: 1px solid vars.$colors-white-color;
                             }
                         }
 
                         &.denied {
                             td {
-                                background-color: $alert-color;
-                                color: $white-color;
-                                border-top: 1px solid $white-color;
+                                background-color: vars.$colors-alert-color;
+                                color: vars.$colors-white-color;
+                                border-top: 1px solid vars.$colors-white-color;
                             }
                         }
                     }
                 }
-    
+
                 th {
                     padding: 1px 5px;
                 }
-    
+
                 td {
                     padding: 5px;
                 }
@@ -201,7 +197,7 @@
 
                 .btn {
                     margin-top: 50px;
-                    
+
                     &.open-branch {
                         margin-top: 5px;
                     }

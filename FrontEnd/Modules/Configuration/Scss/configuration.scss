@@ -1,4 +1,5 @@
-﻿@import "../../Base/Scss/base.scss";
+﻿@use "../../Base/Scss/base.scss";
+@use "sass:color";
 
 #fullForm {
     display:  block;
@@ -9,20 +10,20 @@
     gap: 1rem;
     flex-direction: column;
     padding: 1.5rem;
-    
-    .group-wrapper {    
+
+    .group-wrapper {
         display: flex;
         flex-wrap: wrap;
-        gap: 1rem;    
+        gap: 1rem;
         box-shadow: 1px 1px 7px 1px rgb(0 0 0 / 2%);
         background: var(--white-color);
         padding: 1.5rem;
-        
+
         .group-wrapper-title {
             flex: 0 0 100%;
             font: 700 18px/22px "Roboto", sans-serif;
         }
-        
+
         .group-item {
             transition: 200ms all ease-in-out;
             display: flex;
@@ -41,7 +42,7 @@
                 font-size: 2.5rem;
                 color: var(--light-txt);
             }
-            
+
             button.pin-item {
                 transition: 200ms all ease-in-out;
                 position: absolute;
@@ -53,13 +54,13 @@
                 cursor: pointer;
                 opacity: 0;
                 pointer-events: none;
-                
+
                 ins {
                     transition: 200ms all ease-in-out;
                     font-size: 20px;
                 }
             }
-            
+
             &.has-sub {
                 .group-sub {
                     box-shadow: 0 2px 20px 0 rgb(0 0 0 / 10%);
@@ -105,14 +106,14 @@
                         white-space: nowrap;
                         text-decoration: none;
                         color: var(--dark-txt);
-                        
+
                         ins {
                             font-size: 20px;
                             padding: 0 10px 0 5px;
                             vertical-align: text-bottom;
                             color: var(--light-txt);
                         }
-                        
+
                         &:hover {
                             color: var(--action-color);
 
@@ -120,7 +121,7 @@
                                 color: var(--action-color);
                             }
                         }
-                        
+
                         &:focus {
                             border: none;
                             outline: none;
@@ -171,7 +172,7 @@
 
 
             &:hover {
-                border: solid 1px darken(#e6e6e6,10%);
+                border: solid 1px color.adjust(#e6e6e6, $lightness: -10%);
                 cursor: pointer;
                 color: var(--action-color);
 
@@ -197,4 +198,3 @@
         }
     }
 }
- 

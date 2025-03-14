@@ -1,8 +1,5 @@
-// Variables
-@import 'variables';
-
-//// MIXINS 
-@import 'mixin/mixin';
+@use 'vars/index' as vars;
+@use 'core/mixin' as mixins;
 
 /**
  *  Form elements
@@ -21,24 +18,24 @@ input[type="url"],
 input[type="password"],
 input[type="email"],
 input[type="date"] {
-    background-color: $white-color;
+    background-color: vars.$colors-white-color;
     border: {
-        color: $line-color;
+        color: vars.$colors-line-color;
         style: solid;
         width: 1px;
     }
     border-radius: 3px;
-    font: 16px/24px $font-medium;
+    font: 16px/24px vars.$fonts-font-medium;
     padding: 9px;
     height: 42px;
-    
+
     &:focus {
-        @include transition(200ms);
-        @include drop-shadow($black-color, 10px, 0.1);
+        @include mixins.transition(200ms);
+        @include mixins.drop-shadow(vars.$colors-black-color, 10px, 0.1);
     }
-    
+
     &.error {
-        border-color: $alert-color;
+        border-color: vars.$colors-alert-color;
     }
 }
 
@@ -46,11 +43,11 @@ input[type="date"] {
     input + span {
         display: block;
         padding-left: 30px;
-        
+
         &:before {
-            background-color: $white-color;
+            background-color: vars.$colors-white-color;
             border: {
-                color: $line-color;
+                color: vars.$colors-line-color;
                 style: solid;
                 width: 1px;
             }
@@ -64,9 +61,9 @@ input[type="date"] {
         }
     }
     input:checked + span {
-        
+
         &:after {
-            background-color: $primary-color;
+            background-color: vars.$colors-primary-color;
             border-radius: 2px;
             content: "";
             position: absolute;
@@ -75,18 +72,18 @@ input[type="date"] {
             height: 12px;
             width: 12px;
         }
-        
+
     }
 }
 .radio-button {
     input + span {
         display: block;
         padding-left: 30px;
-        
+
         &:before {
-            background-color: $white-color;
+            background-color: vars.$colors-white-color;
             border: {
-                color: $line-color;
+                color: vars.$colors-line-color;
                 style: solid;
                 width: 1px;
             }
@@ -100,9 +97,9 @@ input[type="date"] {
         }
     }
     input:checked + span {
-        
+
         &:after {
-            background-color: $primary-color;
+            background-color: vars.$colors-primary-color;
             border-radius: 100%;
             content: "";
             position: absolute;
@@ -111,9 +108,9 @@ input[type="date"] {
             height: 12px;
             width: 12px;
         }
-        
+
     }
-    
+
 }
 
 .btn {
@@ -128,7 +125,7 @@ input[type="date"] {
     justify-content: center;
     top: 0;
     left: 0;
-    
+
     > section {
         align-self: center;
         max-width: 400px;
@@ -150,7 +147,7 @@ input[type="date"] {
     }
 
     p {
-        color: $grey-color;
+        color: vars.$colors-grey-color;
         line-height: 24px;
         padding-bottom: 8px;
     }
@@ -218,11 +215,11 @@ input[type="date"] {
     }
 
     .pwd-message {
-        color: $alert-color;
-        font: 16px/24px $font-medium;
+        color: vars.$colors-alert-color;
+        font: 16px/24px vars.$fonts-font-medium;
         padding: 10px;
     }
-    
+
     .totp {
         img {
             width: 300px;

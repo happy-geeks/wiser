@@ -1,40 +1,34 @@
-// GOOGLE FONT
+@use 'vars/index' as vars;
 @import url('https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;700&family=Roboto:wght@300;400;500;700;900&display=swap');
 
-// VARIABLES
-@import 'variables';
-
-//// MIXINS 
-@import 'mixin/mixin';
-
 body {
-    font: 400 16px/30px $font-body;
+    font: 400 16px/30px vars.$fonts-font-body;
 }
 
 h1 {
-    font: 700 32px/40px $font-body;
+    font: 700 32px/40px vars.$fonts-font-body;
 }
 
 h2 {
-    font: 500 24px/32px $font-body;
+    font: 500 24px/32px vars.$fonts-font-body;
 }
 
 h3 {
-    font: 500 18px/32px $font-body;
+    font: 500 18px/32px vars.$fonts-font-body;
 }
 
 h4 {
-    font: 500 16px/28px $font-body;
+    font: 500 16px/28px vars.$fonts-font-body;
 }
 
 strong {
-    font: 700 18px/22px $font-bold;
+    font: 700 18px/22px vars.$fonts-font-bold;
 }
 
 .title {
-    font: 700 18px/32px $font-bold;
+    font: 700 18px/32px vars.$fonts-font-bold;
 }
 
 .sub-title {
-    font: 500 18px/22px $font-medium;
+    font: 500 18px/22px vars.$fonts-font-medium;
 }

@@ -1,8 +1,4 @@
-﻿// Variables
-@import 'variables';
-
-//// MIXINS
-@import 'mixin/mixin';
+﻿@use '../vars/index' as vars;
 
 .w-dialog-container {
     position: absolute;
@@ -11,7 +7,7 @@
     right: 0;
     bottom: 0;
     z-index: 1100;
-    
+
     &.general-message-dialog {
         z-index: 1101;
     }
@@ -19,7 +15,7 @@
 
 .w-overlay {
     position: absolute;
-    background: $black-color;
+    background: vars.$colors-black-color;
     top: 0;
     left: 0;
     right: 0;
@@ -31,14 +27,14 @@
 .w-dialog {
     position: absolute;
     z-index: 1102;
-    background-color: $white-color;
+    background-color: vars.$colors-white-color;
     top: 50%;
     left: 50%;
     transform: translate(-50%,-50%);
     padding: 20px;
 
     h1 {
-        font: 30px/43px $font-book;
+        font: 30px/43px vars.$fonts-font-book;
     }
 
     /* Form elements */
@@ -51,12 +47,12 @@
     input[type=date],
     input[type=datetime-local],
     select {
-        background-color: $white-color;
-        border-color: $line-color;
+        background-color: vars.$colors-white-color;
+        border-color: vars.$colors-line-color;
         border-style: solid;
         border-width: 1px;
         border-radius: 3px;
-        font: 16px/24px $font-body;
+        font: 16px/24px vars.$fonts-font-body;
         padding: 9px;
         height: 42px;
     }
@@ -85,8 +81,8 @@
             position: relative;
 
             &:before {
-                background: $white-color;
-                border: 1px solid $button-cancel-color;
+                background: vars.$colors-white-color;
+                border: 1px solid vars.$colors-button-cancel-color;
                 box-sizing: content-box;
                 content: "";
                 height: 18px;
@@ -97,7 +93,7 @@
             }
 
             &:after {
-                background: $selected-color;
+                background: vars.$colors-selected-color;
                 content: "";
                 height: 10px;
                 position: absolute;
@@ -127,12 +123,12 @@
     }
 
     .error {
-        color: $alert-color;
+        color: vars.$colors-alert-color;
     }
 
     .btn-alert {
-        background-color: $alert-color;
-        color: $white-color;
+        background-color: vars.$colors-alert-color;
+        color: vars.$colors-white-color;
     }
 
     button {
@@ -143,7 +139,7 @@
         border-bottom: none;
         padding: 0 0 5px 0;
     }
-    
+
     .close-dialog {
         background: none;
         width: auto;

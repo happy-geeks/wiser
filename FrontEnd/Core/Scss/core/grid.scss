@@ -1,4 +1,4 @@
-@import "../variables";
+@use "../vars/index" as vars;
 
 @mixin responsive-df {
     $grid-responsive: 0;
@@ -7,38 +7,38 @@
 }
 
 @mixin responsive-sm {
-    $grid-responsive: $screen-sm-min;
+    $grid-responsive: vars.$sizes-screen-sm-min;
     $breakpoint-letters: sm;
     @include responsive-grid($grid-responsive, $breakpoint-letters);
 }
 
 @mixin responsive-md {
-    $grid-responsive: $screen-md-min;
+    $grid-responsive: vars.$sizes-screen-md-min;
     $breakpoint-letters: md;
     @include responsive-grid($grid-responsive, $breakpoint-letters);
 }
 
 @mixin responsive-lg {
-    $grid-responsive: $screen-lg-min;
+    $grid-responsive: vars.$sizes-screen-lg-min;
     $breakpoint-letters: lg;
     @include responsive-grid($grid-responsive, $breakpoint-letters);
 }
 
 @mixin responsive-xl {
-    $grid-responsive: $screen-xl-min;
+    $grid-responsive: vars.$sizes-screen-xl-min;
     $breakpoint-letters: xl;
     @include responsive-grid($grid-responsive, $breakpoint-letters);
 }
 
 @mixin responsive-grid($grid-responsive, $breakpoint) {
     @media (min-width: #{$grid-responsive}) {
-        @for $i from 1 through $column-count {
-            $col-devide: calc(#{$column-count} / #{$i});
+        @for $i from 1 through vars.$sizes-column-count {
+            $col-devide: calc(#{vars.$sizes-column-count} / #{$i});
             $col-width: calc(100% / #{$col-devide});
 
             .col-#{$breakpoint}-#{$i} {
-                flex-basis: calc(#{$col-width} - #{$gutter-width});
-                max-width: calc(#{$col-width} - #{$gutter-width});
+                flex-basis: calc(#{$col-width} - #{vars.$sizes-gutter-width});
+                max-width: calc(#{$col-width} - #{vars.$sizes-gutter-width});
             }
         }
     }
@@ -49,39 +49,39 @@
     position: relative;
     box-sizing: border-box;
     width: 100%;
-    max-width: $base-width + $gutter-width;
+    max-width: vars.$sizes-base-width + vars.$sizes-gutter-width;
     margin: auto;
 
     .row {
         display: flex;
         flex-wrap: wrap;
         width: 100%;
-        padding: calc(#{$gutter-width} / 2);
+        padding: calc(#{vars.$sizes-gutter-width} / 2);
 
         > .col {
-            flex: 0 0 calc(100% - #{$gutter-width});
-            max-width: calc(100% - #{$gutter-width});
-            margin: calc(#{$gutter-width} / 2);
+            flex: 0 0 calc(100% - #{vars.$sizes-gutter-width});
+            max-width: calc(100% - #{vars.$sizes-gutter-width});
+            margin: calc(#{vars.$sizes-gutter-width} / 2);
 
-            $margin-width: calc(#{$gutter-width} / 2);
-            $negative-margin-width: calc(-#{$gutter-width} / 2);
+            $margin-width: calc(#{vars.$sizes-gutter-width} / 2);
+            $negative-margin-width: calc(-#{vars.$sizes-gutter-width} / 2);
 
             .row {
                 /* NESTED */
                 margin-top: $negative-margin-width;
                 margin-left: $negative-margin-width;
                 padding: 0;
-                width: calc(100% + #{$gutter-width});
+                width: calc(100% + #{vars.$sizes-gutter-width});
             }
         }
 
-        @for $i from 1 through $column-count {
-            $col-devide: calc(#{$column-count} / #{$i});
+        @for $i from 1 through vars.$sizes-column-count {
+            $col-devide: calc(#{vars.$sizes-column-count} / #{$i});
             $col-width: calc(100% / #{$col-devide});
 
             .col-#{$i} {
-                flex-basis: calc(#{$col-width} - #{$gutter-width});
-                max-width: calc(#{$col-width} - #{$gutter-width});
+                flex-basis: calc(#{$col-width} - #{vars.$sizes-gutter-width});
+                max-width: calc(#{$col-width} - #{vars.$sizes-gutter-width});
             }
         }
 

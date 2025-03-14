@@ -1158,7 +1158,7 @@ span.k-input .k-input:hover {
 }
 .k-colorpicker .k-selected-color .k-i-line:before,
 .k-colorpicker .k-selected-color .k-i-line:after {
-	background: linear-gradient(to top right, transparent calc(50% - 1px), var(--medium-color), transparent calc(50%+ 1px));
+	background: linear-gradient(to top right, transparent calc(50% - 1px), var(--medium-color), transparent calc(50% + 1px));
 	content: "";
 	height: 100%;
 	position: absolute;

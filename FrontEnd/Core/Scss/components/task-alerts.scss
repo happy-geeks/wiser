@@ -1,8 +1,5 @@
-﻿// Variables
-@import 'variables';
-
-//// MIXINS
-@import 'mixin/mixin';
+﻿@use '../vars/index' as vars;
+@use '../core/mixin' as mixins;
 
 #task {
     .taskAlert {
@@ -61,10 +58,10 @@
         top: 60px;
         right: 0;
         background: #ffffff;
-        -moz-transition: all 0.2s 0;
-        -webkit-transition: all 0.2s 0;
-        -o-transition: all 0.2s 0;
-        transition: all 0.2s 0;
+        -moz-transition: all 0.2s ease 0s;
+        -webkit-transition: all 0.2s ease 0s;
+        -o-transition: all 0.2s ease 0s;
+        transition: all 0.2s ease 0s;
         opacity: 0;
         visibility: hidden;
         z-index: -1;
@@ -103,7 +100,7 @@
         z-index: 100;
 
         > iframe {
-            box-shadow: 0px 8px 15px rgb(75 72 72 / 10%);
+            box-shadow: 0 8px 15px rgb(75 72 72 / 10%);
             height: calc(100vh - 70px);
             opacity: 1;
             visibility: visible;
@@ -117,16 +114,14 @@
         }
 
         &:after {
-            border: solid transparent;
             content: " ";
             height: 0;
             width: 0;
             position: absolute;
             pointer-events: none;
             z-index: 1000;
-            border-color: rgba(255, 255, 255, 0);
-            border-bottom-color: $text-color;
-            border-width: 10px;
+            border: 10px solid rgba(255, 255, 255, 0);
+            border-bottom-color: vars.$colors-text-color;
             left: 50%;
             margin-left: -11px;
             bottom: 0;

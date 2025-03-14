@@ -1,0 +1,12 @@
+// _sizes.scss
+$base-width: 1280px;
+$gutter-width: 20px;
+$column-count: 12;
+$screen-sm-min: 415px;
+$screen-md-min: 769px;
+$screen-lg-min: 1025px;
+$screen-xl-min: $base-width + $gutter-width;
+$screen-sm-max: 414px;
+$screen-md-max: 768px;
+$screen-lg-max: 1024px;
+$footer-bl-width: 160px;

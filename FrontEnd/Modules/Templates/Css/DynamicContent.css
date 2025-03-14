@@ -1,4 +1,4 @@
-﻿@import "../../Base/Scss/base.scss";
+﻿@import "../../Base/Css/index.css";
 
 #htmlPreviewWindow {
     display: none;
@@ -219,7 +219,7 @@
     max-height: 50px;
 }
 
-/********************** 
+/**********************
 * CodeMirror
 **********************/
 .k-window-content .CodeMirror-fullscreen,

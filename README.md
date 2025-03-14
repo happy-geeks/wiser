@@ -63,7 +63,6 @@ This also works in things like GitHub actions, see our yaml files or the Kendo d
     "ApiClientId": "wiser", // Mandatory: The client ID for OAUTH2 authentication with the API, this should (at the moment) always be "wiser".
     "ApiClientSecret": "", // Mandatory: The client secret for OAUTH2 authentication with the API, this should be the same value as "API.ClientSecret" in the appsettings-secrets.json of the API.
     "TrackJsToken": "", // If you want to use Track JS to track all errors, enter a token for that here. TrackJS will not be loaded if this is empty.
-    "MarkerIoToken": "", // If you want to use Marker.io for allowing your users to send bug reports, enter the token for that here. Marker.io will not be loaded if this is empty.
     "ApiBaseUrl": "", // Mandatory: The base URL for the API. Example: https://api.wiser3.nl/. You should use https://localhost:44349 when running/debugging Wiser locally on your PC.
     "WiserHostNames": [] // One or more host names for running the Wiser FrontEnd on. This is needed to figure out the sub domain for multi tenancy. These values well be stripped from the host name and what is left over will be considered the sub domain. This should be an empty array when running/debugging Wiser locally on your PC.
   }

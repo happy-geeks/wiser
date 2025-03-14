@@ -1,11 +1,7 @@
-﻿//// VARIABLES
-@import '../../../Core/Scss/variables';
-
-//// MIXINS
-@import '../../../Core/Scss/mixin/mixin';
-
-//// BASE
-@import "../../Base/Scss/base.scss";
+﻿@use '../../../Core/Scss/vars/index' as vars;
+@use '../../../Core/Scss/core/mixin' as mixins;
+@use '../../Base/Scss/base.scss';
+@use 'sass:color';
 
 /**
  *  Common styles
@@ -33,8 +29,8 @@ html {
     width: 100%;
 }
 body {
-    background-color: $body-color;
-    color: $text-color;
+    background-color: vars.$colors-body-color;
+    color: vars.$colors-text-color;
     min-height: 100%;
     overflow-x: hidden;
     width: 100%;
@@ -42,8 +38,8 @@ body {
     flex-direction: column;
 
     &:after {
-        @include icon-font;
-        @include text-rgba($black-color, 0.02);
+        @include mixins.icon-font;
+        @include mixins.text-rgba(vars.$colors-black-color, 0.02);
         content: "\ea32";
         font-size: 1350px;
         position: fixed;
@@ -70,12 +66,12 @@ ins, a {
 
 .k-list {
     overflow-y: auto;
-    
+
     ul {
         li {
             cursor: pointer;
             padding: 0 8px;
-            
+
             &:hover {
                 background-color: var(--light-color);
             }
@@ -88,10 +84,9 @@ ins, a {
  **/
 .dashboard {
     header {
-        background-color: $white-color;
-        @include header-shadow($black-color, 0.05);
+        background-color: vars.$colors-white-color;
+        @include mixins.header-shadow(vars.$colors-black-color, 0.05);
         padding: 15px;
-        position: -webkit-sticky;
         position: sticky;
         top: 0;
         z-index: 100;
@@ -100,28 +95,27 @@ ins, a {
             display: flex;
             flex-direction: row;
             flex-wrap: nowrap;
-            
+
             &.full {
                 .item {
                     width: auto;
                     min-width: auto;
                     max-width: none;
-                    
+
                     &.drop-down {
                         min-width: 25%;
                     }
                 }
             }
         }
-        
-       .item {
-            background-color: $white-color;
-            padding: 0;
-            padding-right: 10px;
 
-            .flex-container {
-                display: flex;                
-                
+       .item {
+            background-color: vars.$colors-white-color;
+           padding: 0 10px 0 0;
+
+           .flex-container {
+                display: flex;
+
                 label {
                     font-size: 14px;
                     font-weight: 500;
@@ -134,7 +128,7 @@ ins, a {
                     top: auto;
                     overflow: unset;
                 }
-                
+
                 > .k-dropdownlist {
                     display: flex;
 
@@ -143,10 +137,10 @@ ins, a {
                         flex-grow: 1;
                     }
                 }
-                
+
                 .k-button {
                     padding: 0;
-                } 
+                }
             }
 
             &.actions {
@@ -170,14 +164,14 @@ ins, a {
                     }
                 }
             }
-            
+
             .k-floating-label-container {
                 flex-direction: row-reverse;
                 flex-wrap: nowrap;
                 align-items: center;
                 padding: 0;
             }
-           
+
            .k-picker {
                margin: 0;
            }
@@ -218,7 +212,7 @@ ins, a {
         width: 42px;
 
         > ins {
-            color: $black-color;
+            color: vars.$colors-black-color;
             height: 42px;
             line-height: 42px;
             width: 42px;
@@ -229,7 +223,7 @@ ins, a {
     }
 
     &:hover {
-        background-color: $line-md-color;
+        background-color: vars.$colors-line-md-color;
 
         .editSub {
             opacity: 1;
@@ -240,8 +234,8 @@ ins, a {
 }
 
 .editSub {
-    border: 1px solid $line-color;
-    background-color: $white-color;
+    border: 1px solid vars.$colors-line-color;
+    background-color: vars.$colors-white-color;
     display: block;
     opacity: 0;
     padding: 8px;
@@ -258,7 +252,7 @@ ins, a {
         width: 100%;
 
         &:hover {
-            background-color: $line-md-color;
+            background-color: vars.$colors-line-md-color;
         }
     }
 
@@ -308,12 +302,12 @@ ins, a {
 }
 
 .k-tilelayout-item {
-    @include tile-shadow($black-color, 0.05);
-    border-color: $white-color;
+    @include mixins.tile-shadow(vars.$colors-black-color, 0.05);
+    border-color: vars.$colors-white-color;
 
     .k-card-header {
-        background-color: $white-color;
-        border-color: $white-color;
+        background-color: vars.$colors-white-color;
+        border-color: vars.$colors-white-color;
         min-height: 55px;
         box-sizing: border-box;
 
@@ -323,7 +317,7 @@ ins, a {
     }
 
     .k-card-title {
-        color: $black-color;
+        color: vars.$colors-black-color;
         font-size: 18px;
         font-weight: 500;
     }
@@ -335,7 +329,7 @@ ins, a {
 
     .k-close-button,
     .k-refresh-button {
-        background-color: $white-color;
+        background-color: vars.$colors-white-color;
         box-shadow: none;
         font-size: 18px;
         line-height: 1.42857143;
@@ -345,16 +339,16 @@ ins, a {
         margin: 5px;
         padding: 4px;
         z-index: 10;
-        
+
         &:hover {
             background: var(--item-bg-color)!important;
         }
     }
-    
+
     .k-close-button {
         right: 0;
     }
-    
+
     .k-refresh-button {
         right: 47px;
 
@@ -422,9 +416,9 @@ ins, a {
 
         thead {
             th {
-                background-color: $line-md-color;
-                border-bottom: 1px solid $line-color;
-                color: $thead-color;
+                background-color: vars.$colors-line-md-color;
+                border-bottom: 1px solid vars.$colors-line-color;
+                color: vars.$colors-thead-color;
                 position: sticky;
                 top: 0;
                 z-index: 1;
@@ -436,7 +430,7 @@ ins, a {
             tr {
                 &:nth-child(even) {
                     td {
-                        background-color: $lt-color;
+                        background-color: vars.$colors-lt-color;
                     }
                 }
             }
@@ -451,19 +445,19 @@ ins, a {
 
             &.status {
                 &.success {
-                    background-color: $color-success;
+                    background-color: vars.$colors-color-success;
                 }
 
                 &.failed {
-                    background-color: $color-failed;
+                    background-color: vars.$colors-color-failed;
                 }
 
                 &.paused {
-                    background-color: $color-paused;
+                    background-color: vars.$colors-color-paused;
                 }
 
                 &.warning {
-                    background-color: $color-warning;
+                    background-color: vars.$colors-color-warning;
                 }
             }
 
@@ -483,7 +477,7 @@ ins, a {
  * NUMBERS
  **/
 .number-item {
-    color: $black-color;
+    color: vars.$colors-black-color;
     display: flex;
     flex-direction: column;
     padding-top: 30px;
@@ -523,11 +517,11 @@ progress {
     width: 100%;
 
     &::-webkit-progress-bar {
-        background-color: $line-lt-color !important;
+        background-color: vars.$colors-line-lt-color !important;
     }
 
     &::-webkit-progress-value {
-        border: 1px solid rgba($black-color, 0.15);
+        border: 1px solid rgba(vars.$colors-black-color, 0.15);
     }
 
     &:after {
@@ -541,8 +535,8 @@ progress {
 @for $i from 1 through 50 {
     [value="#{$i}"] {
         &::-webkit-progress-value {
-            background-color: $color-progress-green !important;
-            border-color: darken( $color-progress-green, 15% );
+            background-color: vars.$colors-color-progress-green !important;
+            border-color: color.adjust(vars.$colors-color-progress-green, $lightness: -15%);
         }
     }
 }
@@ -550,20 +544,20 @@ progress {
 @for $i from 51 through 70 {
     [value="#{$i}"] {
         &::-webkit-progress-value {
-            background-color: $color-progress-yellow !important;
-            border-color: darken( $color-progress-yellow, 15% );
+            background-color: vars.$colors-color-progress-yellow !important;
+            border-color: color.adjust(vars.$colors-color-progress-yellow, $lightness: -15%);
         }
     }
     [data-percent="#{$i}"] {
-        color: $black-color !important;
+        color: vars.$colors-black-color !important;
     }
 }
 
 @for $i from 71 through 89 {
     [value="#{$i}"] {
         &::-webkit-progress-value {
-            background-color: $color-progress-orange !important;
-            border-color: darken( $color-progress-orange, 15% );
+            background-color: vars.$colors-color-progress-orange !important;
+            border-color: color.adjust(vars.$colors-color-progress-orange, $lightness: -15%);
         }
     }
 }
@@ -571,8 +565,8 @@ progress {
 @for $i from 90 through 100 {
     [value="#{$i}"] {
         &::-webkit-progress-value {
-            background-color: $color-progress-red !important;
-            border-color: darken( $color-progress-red, 15% );
+            background-color: vars.$colors-color-progress-red !important;
+            border-color: color.adjust(vars.$colors-color-progress-red, $lightness: -15%);
         }
     }
 }
@@ -605,9 +599,9 @@ progress {
         width: 100%;
 
         span {
-            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%,rgba(255,255,255,0.3) 25%,rgba(255,255,255,0) 100%);
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 25%, rgba(255,255,255,0) 100%);
             box-sizing: border-box;
-            color: $white-color;
+            color: vars.$colors-white-color;
             display: inline-flex;
             align-items: center;
             justify-content: flex-end;
@@ -633,7 +627,7 @@ progress {
     width: 100%;
 
     button {
-        @include transition(150ms);
+        @include mixins.transition(150ms);
         border: none;
         cursor: pointer;
         font-weight: 400;
@@ -644,15 +638,15 @@ progress {
         width: 100%;
 
         &.selected {
-            background-color: $primary-color;
-            color: $white-color;
+            background-color: vars.$colors-primary-color;
+            color: vars.$colors-white-color;
         }
 
         &:hover {
-            background-color: darken($line-color, 3%);
+            background-color: color.adjust(vars.$colors-line-color, $lightness: -3%);
 
             &.selected {
-                background-color: darken($primary-color, 5%);
+                background-color: color.adjust(vars.$colors-primary-color, $lightness: -5%);
             }
         }
     }
@@ -664,7 +658,7 @@ progress {
         .k-button {
             min-width: 24px;
             box-shadow: none;
-            
+
             .k-icon {
                 height: 24px;
                 width: 24px;
@@ -681,7 +675,7 @@ progress {
     .folded-message {
         white-space: nowrap;
     }
-    
+
     .unfolded-message {
         white-space: normal;
     }
@@ -689,18 +683,18 @@ progress {
 
 /* SCROLLBAR */
 ::-webkit-scrollbar-track {
-    border-radius: $scroll-bar-radius;
-    background-color: $scroll-track-color;
+    border-radius: vars.$scrollbars-scroll-bar-radius;
+    background-color: vars.$scrollbars-scroll-track-color;
 }
 
 ::-webkit-scrollbar {
-    border-radius: $scroll-bar-radius;
-    height: calc(#{$scroll-bar-radius} * 2);
-    width: calc(#{$scroll-bar-radius} * 2);
-    background-color: $scroll-track-color;
+    border-radius: vars.$scrollbars-scroll-bar-radius;
+    height: calc(#{vars.$scrollbars-scroll-bar-radius} * 2);
+    width: calc(#{vars.$scrollbars-scroll-bar-radius} * 2);
+    background-color: vars.$scrollbars-scroll-track-color;
 }
 
 ::-webkit-scrollbar-thumb {
-    border-radius: $scroll-bar-radius;
-    background-color: $scroll-thumb-color;
+    border-radius: vars.$scrollbars-scroll-bar-radius;
+    background-color: vars.$scrollbars-scroll-thumb-color;
 }

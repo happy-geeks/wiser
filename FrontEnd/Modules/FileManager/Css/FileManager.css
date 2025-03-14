@@ -1,4 +1,4 @@
-@import "../../Base/Scss/base.scss";
+@import "../../Base/Css/index.css";
 
 html, body {
     height: 100%;
@@ -10,7 +10,7 @@ html, body {
     display: none;
 }
 
-.hide-fields .image-preview .group-columns .item-group:last-child, 
+.hide-fields .image-preview .group-columns .item-group:last-child,
 .hide-fields .file-preview .group-columns .item-group:last-child {
     width: 100%;
 }

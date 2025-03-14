@@ -1,8 +1,5 @@
-// Variables
-@import 'variables';
-
-//// MIXINS
-@import 'mixin/mixin';
+@use 'vars/index' as vars;
+@use 'core/mixin' as mixins;
 
 /**
  *  Common styles
@@ -32,8 +29,8 @@ html {
 }
 
 body {
-    background-color: $body-color;
-    color: $text-color;
+    background-color: vars.$colors-body-color;
+    color: vars.$colors-text-color;
     min-height: 100%;
     overflow-x: hidden;
     width: 100%;
@@ -41,8 +38,8 @@ body {
     flex-direction: column;
 
     &:after {
-        @include icon-font;
-        @include text-rgba($black-color, 0.02);
+        @include mixins.icon-font;
+        @include mixins.text-rgba(vars.$colors-black-color, 0.02);
         content: "\ea32";
         font-size: 1350px;
         position: fixed;
@@ -63,26 +60,26 @@ img {
 
 /* SCROLLBAR */
 ::-webkit-scrollbar-track {
-	border-radius: $scroll-bar-radius;
-	background-color: $scroll-track-color;
+	border-radius: vars.$scrollbars-scroll-bar-radius;
+	background-color: vars.$scrollbars-scroll-track-color;
 }
 ::-webkit-scrollbar {
-    border-radius: $scroll-bar-radius;
-    height: $scroll-bar-radius * 2;
-    width: $scroll-bar-radius * 2;
-    background-color: $scroll-track-color;
+    border-radius: vars.$scrollbars-scroll-bar-radius;
+    height: vars.$scrollbars-scroll-bar-radius * 2;
+    width: vars.$scrollbars-scroll-bar-radius * 2;
+    background-color: vars.$scrollbars-scroll-track-color;
 }
 ::-webkit-scrollbar-thumb {
-	border-radius: $scroll-bar-radius;
-	background-color: $scroll-thumb-color;
+	border-radius: vars.$scrollbars-scroll-bar-radius;
+	background-color: vars.$scrollbars-scroll-thumb-color;
 }
 
 a:not(.btn) {
-    color: $text-color;
+    color: vars.$colors-text-color;
     text-decoration: none;
 
     &:hover {
-        color: $primary-color;
+        color: vars.$colors-primary-color;
     }
 }
 
@@ -103,8 +100,8 @@ button,
     line-height: 24px;
     padding: 8px 20px;
     display: inline-block;
-    color: $text-color;
-    font-family: $font-body;
+    color: vars.$colors-text-color;
+    font-family: vars.$fonts-font-body;
     border: none;
 }
 
@@ -132,7 +129,7 @@ header {
 
 .form-row {
     border-bottom: {
-        color: $line-color;
+        color: vars.$colors-line-color;
         style: solid;
         width: 1px;
     }
@@ -157,8 +154,8 @@ main {
  * Error alerts
  **/
 .full-error {
-    background-color: $alert-color;
-    color: $white-color;
+    background-color: vars.$colors-alert-color;
+    color: vars.$colors-white-color;
     padding: 12px 12px 12px 40px;
     line-height: 20px;
     max-height: 400px;
@@ -172,8 +169,8 @@ main {
     }
 }
 .error-row {
-    @include background-rgba($alert-color, 0.15);
-    color: $alert-color;
+    @include mixins.background-rgba(vars.$colors-alert-color, 0.15);
+    color: vars.$colors-alert-color;
     font-style: italic;
     padding: 6px 12px;
     white-space: pre-wrap;
@@ -196,7 +193,7 @@ main {
         color: transparent !important;
 
         &:after {
-            color: $white-color;
+            color: vars.$colors-white-color;
             content: "\ec50";
             font-family: 'icomoon' !important;
             font-size: 30px;
@@ -216,8 +213,8 @@ main {
 main, div, section {
     &.loading {
         &:before {
-            @include background-rgba($black-color, 0.75);
-            color: $white-color;
+            @include mixins.background-rgba(vars.$colors-black-color, 0.75);
+            color: vars.$colors-white-color;
             content: "Bezig met laden...";
             position: absolute;
             top: 0;
@@ -232,7 +229,7 @@ main, div, section {
         }
 
         &:after {
-            color: $white-color;
+            color: vars.$colors-white-color;
             content: "\ec50";
             font-family: 'icomoon' !important;
             font-size: 50px;
@@ -279,15 +276,15 @@ main, div, section {
     height: 54px;
     width: 100%;
 
-    @include xl {
+    @include mixins.xl {
         flex-wrap: nowrap;
     }
 
-    @include md {
+    @include mixins.md {
         height: 70px;
     }
 
-    @include lg-down {
+    @include mixins.lg-down {
         flex-wrap: nowrap;
     }
 
@@ -306,10 +303,10 @@ main, div, section {
         }
 
         &.tabs {
-            background-color: $white-color;
+            background-color: vars.$colors-white-color;
 
             border-top: {
-                color: $line-color;
+                color: vars.$colors-line-color;
                 width: 1px;
                 style: solid;
             }
@@ -322,7 +319,7 @@ main, div, section {
             scroll-snap-type: x mandatory;
             overflow-y: hidden;
 
-            @include lg-down {
+            @include mixins.lg-down {
                 position: absolute;
                 top: 70px;
                 left: 0;
@@ -330,7 +327,7 @@ main, div, section {
                 height: 35px;
             }
 
-            @include xl {
+            @include mixins.xl {
                 align-items: flex-end;
                 background-color: transparent;
                 border-color: transparent;
@@ -350,7 +347,7 @@ main, div, section {
             .swiper-slide {
                 width: auto;
 
-                @include xl {
+                @include mixins.xl {
                     width: 200px;
                 }
 
@@ -361,8 +358,7 @@ main, div, section {
 
             .swiper-button-prev,
             .swiper-button-next {
-                background: none;
-                background-color: $white-color;
+                background: vars.$colors-white-color none;
                 height: 34px;
                 margin: 0;
                 position: absolute;
@@ -427,7 +423,7 @@ main, div, section {
 
                     &:before,
                     &:after {
-                        background: $grey-color;
+                        background: vars.$colors-grey-color;
                         content: "";
                         height: 15px;
                         position: absolute;
@@ -446,7 +442,7 @@ main, div, section {
                 }
 
                 &:after {
-                    background-color: $tab-color;
+                    background-color: vars.$colors-tab-color;
                     content: "";
                     height: 24px;
                     position: absolute;
@@ -457,7 +453,7 @@ main, div, section {
                 }
 
                 &.active {
-                    background-color: $tab-color;
+                    background-color: vars.$colors-tab-color;
                     max-width: fit-content !important;
 
                     &:before,
@@ -467,13 +463,13 @@ main, div, section {
                 }
 
                 &:hover {
-                    color: $primary-color;
+                    color: vars.$colors-primary-color;
 
                     > span {
 
                         &:before,
                         &:after {
-                            background: $primary-color;
+                            background: vars.$colors-primary-color;
                         }
                     }
                 }
@@ -486,11 +482,11 @@ main, div, section {
             padding: 0;
             z-index: 60 !important;
 
-            @include xl {
+            @include mixins.xl {
                 margin-left: 0;
             }
 
-            @include md-down {
+            @include mixins.md-down {
                 margin-left: -1px;
             }
 
@@ -508,14 +504,14 @@ main, div, section {
 
                 &:first-child {
                     border-left: {
-                        color: $line-color;
+                        color: vars.$colors-line-color;
                         width: 1px;
                         style: solid;
                     }
 
                     padding-left: 2px;
 
-                    @include lg-down {
+                    @include mixins.lg-down {
                         padding-left: 0;
                     }
                 }
@@ -530,12 +526,12 @@ main, div, section {
             cursor: pointer;
 
             border-left: {
-                color: $line-color;
+                color: vars.$colors-line-color;
                 width: 1px;
                 style: solid;
             }
 
-            @include lg-down {
+            @include mixins.lg-down {
                 flex-shrink: 1;
             }
 
@@ -545,7 +541,7 @@ main, div, section {
                 text-align: right;
                 font-size: 12px;
 
-                @include lg-down {
+                @include mixins.lg-down {
                     padding: 14px 35px 0 20px;
                     max-width: 100%;
                 }
@@ -567,7 +563,7 @@ main, div, section {
                     right: 20px;
                     bottom: 15px;
 
-                    @include lg-down {
+                    @include mixins.lg-down {
                         right: 10px;
                     }
                 }
@@ -578,24 +574,24 @@ main, div, section {
             padding: 15px 10px;
             width: 100px;
 
-            @include lg-down {
+            @include mixins.lg-down {
                 padding: 25px 10px;
                 width: 80px;
             }
 
             .logo1 {
-                fill: $logo-color-1;
+                fill: vars.$colors-logo-color-1;
             }
 
             .logo2 {
-                fill: rgba($logo-color-2, 0.5);
+                fill: rgba(vars.$colors-logo-color-2, 0.5);
             }
         }
 
         .sub-menu {
-            @include drop-shadow($black-color, 20px, 0.1);
-            @include transition(50ms);
-            background-color: $white-color;
+            @include mixins.drop-shadow(vars.$colors-black-color, 20px, 0.1);
+            @include mixins.transition(50ms);
+            background-color: vars.$colors-white-color;
             border-radius: 8px;
             display: block;
             padding: 20px;
@@ -620,7 +616,7 @@ main, div, section {
             }
 
             &:after {
-                @include arrow(top, $white-color, 10px);
+                @include mixins.arrow(top, vars.$colors-white-color, 10px);
                 content: "";
                 position: absolute;
                 bottom: 100%;
@@ -646,8 +642,8 @@ main, div, section {
     }
 
     &:after {
-        @include header-shadow($black-color, 0.05);
-        background-color: $white-color;
+        @include mixins.header-shadow(vars.$colors-black-color, 0.05);
+        background-color: vars.$colors-white-color;
         content: "";
         position: absolute;
         top: 0;
@@ -678,11 +674,11 @@ main, div, section {
     }
 
     nav {
-        @include header-shadow($black-color, 0.05);
-        background-color: $white-color;
+        @include mixins.header-shadow(vars.$colors-black-color, 0.05);
+        background-color: vars.$colors-white-color;
 
         border-top: {
-            color: $line-color;
+            color: vars.$colors-line-color;
             width: 1px;
             style: solid;
         }
@@ -697,7 +693,7 @@ main, div, section {
         z-index: 10;
 
 
-        @include xl {
+        @include mixins.xl {
             top: 70px;
         }
 
@@ -706,7 +702,7 @@ main, div, section {
         }
 
         a {
-            @include transition(50ms);
+            @include mixins.transition(50ms);
             display: block;
             line-height: 40px;
         }
@@ -735,7 +731,7 @@ main, div, section {
             text-overflow: ellipsis;
             vertical-align: middle;
 
-            @include lg {
+            @include mixins.lg {
                 font-size: 16px;
                 max-width: 220px;
             }
@@ -755,7 +751,7 @@ main, div, section {
             background: none;
 
             ins {
-                @include transition(100ms);
+                @include mixins.transition(100ms);
                 opacity: 0;
                 width: 60px;
             }
@@ -784,7 +780,7 @@ main, div, section {
                 white-space: nowrap;
 
                 > a {
-                    @include transition(50ms);
+                    @include mixins.transition(50ms);
                     display: block;
                     line-height: 40px;
 
@@ -799,7 +795,7 @@ main, div, section {
                         text-overflow: ellipsis;
                         vertical-align: middle;
 
-                        @include lg {
+                        @include mixins.lg {
                             max-width: 220px;
                         }
                     }
@@ -813,7 +809,7 @@ main, div, section {
             width: 200px;
             height: 100%;
 
-            @include lg {
+            @include mixins.lg {
                 width: 300px;
             }
 
@@ -841,7 +837,7 @@ main, div, section {
                     text-align: center;
                     margin-top: -14px;
                     margin-bottom: 15px;
-                    padding: 0px 3px;
+                    padding: 0 3px;
                     height: 30px;
                 }
 
@@ -864,7 +860,7 @@ main, div, section {
 }
 
 main {
-    @include transition(50ms);
+    @include mixins.transition(50ms);
     overflow: hidden;
     padding: 10px;
     position: fixed;
@@ -874,13 +870,13 @@ main {
     bottom: 0;
     z-index: 1;
 
-    @include xl {
+    @include mixins.xl {
         padding: 20px;
         top: 70px;
     }
 
     .window-container {
-        @include transition(50ms);
+        @include mixins.transition(50ms);
         height: 100%;
         overflow: visible !important;
         width: 100%;
@@ -913,7 +909,7 @@ main {
 
 #menu-btn {
     border-right: {
-        color: $line-color;
+        color: vars.$colors-line-color;
         width: 1px;
         style: solid;
     }
@@ -927,12 +923,12 @@ main {
 }
 
 #side-btn {
-    @include header-shadow($black-color, 0.05);
-    @include transition(50ms);
-    background: $white-color;
+    @include mixins.header-shadow(vars.$colors-black-color, 0.05);
+    @include mixins.transition(50ms);
+    background: vars.$colors-white-color;
 
     border-left: {
-        color: $line-color;
+        color: vars.$colors-line-color;
         width: 1px;
         style: solid;
     }
@@ -947,12 +943,12 @@ main {
     width: 30px;
     z-index: 5;
 
-    @include xl {
+    @include mixins.xl {
         display: none;
     }
 
     > ins {
-        @include transition(50ms);
+        @include mixins.transition(50ms);
         font-size: 12px;
         position: absolute;
         left: 0;
@@ -966,20 +962,20 @@ main {
     padding: 0 20px;
 
     h1 {
-        font: 30px/43px $font-book;
+        font: 30px/43px vars.$fonts-font-book;
     }
 
     label {
-        font: 15px/24px $font-bold;
-        color: $grey-color;
+        font: 15px/24px vars.$fonts-font-bold;
+        color: vars.$colors-grey-color;
         display: block;
         padding-left: 2px;
     }
 
     .hint {
-        font: 14px/17px $font-book;
+        font: 14px/17px vars.$fonts-font-book;
         font-style: italic;
-        color: $grey-color;
+        color: vars.$colors-grey-color;
         padding-left: 2px;
 
         strong {
@@ -1005,7 +1001,7 @@ main {
         border: none;
 
         border-top: {
-            color: $grey-color;
+            color: vars.$colors-grey-color;
             style: solid;
             width: 1px;
         }
@@ -1013,8 +1009,8 @@ main {
         margin-top: 15px;
 
         legend {
-            background-color: $grey-color;
-            color: $white-color;
+            background-color: vars.$colors-grey-color;
+            color: vars.$colors-white-color;
             padding: 0 10px;
             border-radius: 3px;
         }
@@ -1026,7 +1022,7 @@ body {
         nav {
             width: 200px;
 
-            @include lg {
+            @include mixins.lg {
                 width: 300px;
             }
 
@@ -1043,7 +1039,7 @@ body {
         #side-btn {
             left: 200px;
 
-            @include lg {
+            @include mixins.lg {
                 left: 300px;
             }
 
@@ -1055,7 +1051,7 @@ body {
         main {
             left: 200px;
 
-            @include lg {
+            @include mixins.lg {
                 left: 300px;
             }
 
@@ -1098,14 +1094,14 @@ body {
     bottom: 20px;
     margin-right: 20px;
     padding: 0;
-    background-color: $text-color;
-    color: $white-color;
+    background-color: vars.$colors-text-color;
+    color: vars.$colors-white-color;
     font-size: 32px;
     cursor: pointer;
 
     &:hover {
-        background-color: $primary-hover-color;
-        box-shadow: 0 2px 6px rgba($black-color, 0.2), 0 2px 3px rgba($black-color, 0.05);
+        background-color: vars.$colors-primary-hover-color;
+        box-shadow: 0 2px 6px rgba(vars.$colors-black-color, 0.2), 0 2px 3px rgba(vars.$colors-black-color, 0.05);
     }
 }
 
@@ -1122,14 +1118,14 @@ body {
     bottom: 20px;
     margin-right: 20px;
     padding: 0;
-    background-color: $text-color;
-    color: $white-color;
+    background-color: vars.$colors-text-color;
+    color: vars.$colors-white-color;
     font-size: 32px;
     cursor: pointer;
 
     &:hover {
-        background-color: $primary-hover-color;
-        box-shadow: 0 2px 6px rgba($black-color, 0.2), 0 2px 3px rgba($black-color, 0.05);
+        background-color: vars.$colors-primary-hover-color;
+        box-shadow: 0 2px 6px rgba(vars.$colors-black-color, 0.2), 0 2px 3px rgba(vars.$colors-black-color, 0.05);
     }
 }
 

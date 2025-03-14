@@ -1,52 +1,55 @@
+@use '../vars/index' as vars;
+@use 'sass:color';
+
 // RESPONSIVE
 @mixin sm {
-    @media (min-width: #{$screen-sm-min}) {
+    @media (min-width: #{vars.$sizes-screen-sm-min}) {
         @content;
     }
 }
 
 @mixin md {
-    @media (min-width: #{$screen-md-min}) {
+    @media (min-width: #{vars.$sizes-screen-md-min}) {
         @content;
     }
 }
 
 @mixin lg {
-    @media (min-width: #{$screen-lg-min}) {
+    @media (min-width: #{vars.$sizes-screen-lg-min}) {
         @content;
     }
 }
 
 @mixin xl {
-    @media (min-width: #{$screen-xl-min}) {
+    @media (min-width: #{vars.$sizes-screen-xl-min}) {
         @content;
     }
 }
 
 @mixin sm-down {
-    @media (max-width: #{$screen-sm-max}) {
+    @media (max-width: #{vars.$sizes-screen-sm-max}) {
         @content;
     }
 }
 
 @mixin md-down {
-    @media (max-width: #{$screen-md-max}) {
+    @media (max-width: #{vars.$sizes-screen-md-max}) {
         @content;
     }
 }
 
 @mixin lg-down {
-    @media (max-width: #{$screen-lg-max}) {
+    @media (max-width: #{vars.$sizes-screen-lg-max}) {
         @content;
     }
 }
 
 // MIXINS
 @mixin make-col($size) {
-    $col-devide: $column-count / $size;
+    $col-devide: vars.$sizes-column-count / $size;
     $col-width: 100% / $col-devide;
-     
-    flex-basis: calc(#{$col-width} - #{$gutter-width});
+
+    flex-basis: calc(#{$col-width} - #{vars.$sizes-gutter-width});
 }
 
 @mixin transition($duration) {
@@ -55,8 +58,7 @@
 
 // COLORS
 @mixin background-color-rgba($color, $opacity) {
-    background-color: $color;
-    background-color: rgba(red($color), green($color), blue($color), $opacity);
+    background-color: rgba($color, $opacity);
 }
 
 @mixin background-rgba($color, $opacity) {
@@ -64,7 +66,7 @@
 }
 
 @mixin text-color-rgba($color, $opacity) {
-    color: rgba(red($color), green($color), blue($color), $opacity);
+    color: rgba($color, $opacity);
 }
 
 @mixin text-rgba($color, $opacity) {
@@ -72,7 +74,7 @@
 }
 
 @mixin border-color-rgba($color, $opacity) {
-    border-color: rgba(red($color), green($color), blue($color), $opacity);
+    border-color: rgba($color, $opacity);
 }
 
 @mixin border-rgba($color, $opacity) {
@@ -91,7 +93,7 @@
     box-shadow: 0 4px 16px 0 rgba($color, $opacity);
 }
 
-// VERTICAL ALIGN 
+// VERTICAL ALIGN
 @mixin v-align($location, $distance) {
     position: absolute;
     top: 50%;
@@ -119,7 +121,7 @@
     display: block;
     height: 0;
     width: 0;
-    
+
     @if $direction == 'top' {
         border-left: $size solid transparent;
     	border-right: $size solid transparent;
@@ -137,16 +139,16 @@
     	border-right: $size solid $color;
     	border-bottom: $size solid transparent;
     } @else if $direction == 'top-left' {
-        border-top: $size solid $color; 
-        border-right: $size solid transparent;	
+        border-top: $size solid $color;
+        border-right: $size solid transparent;
     } @else if $direction == 'top-right' {
-        border-top: $size solid $color; 
+        border-top: $size solid $color;
         border-left: $size solid transparent;
     } @else if $direction == 'bottom-left' {
-        border-bottom: $size solid $color; 
-        border-right: $size solid transparent;	
+        border-bottom: $size solid $color;
+        border-right: $size solid transparent;
     } @else if $direction == 'bottom-right' {
-        border-bottom: $size solid $color; 
+        border-bottom: $size solid $color;
         border-left: $size solid transparent;
     }
 }

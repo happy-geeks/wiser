@@ -1,4 +1,4 @@
-﻿import "../../Scss/tenant-management.scss";
+﻿import "../../Scss/components/tenant-management.scss";
 
 export default {
     name: "tenantManagement",

@@ -1,4 +1,4 @@
-@import "../../Base/Scss/base.scss";
+@import "../../Base/Css/index.css";
 
 #fullForm {
     height: 100%;
@@ -16,7 +16,7 @@
     flex-direction: column;
 }
 
-h2, 
+h2,
 p {
     margin-bottom: 10px;
 }

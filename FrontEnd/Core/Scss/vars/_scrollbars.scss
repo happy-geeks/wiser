@@ -1,0 +1,5 @@
+// _scrollbars.scss
+@use 'colors' as colors;
+$scroll-track-color: colors.$line-color;
+$scroll-thumb-color: colors.$grey-color;
+$scroll-bar-radius: 4px;
