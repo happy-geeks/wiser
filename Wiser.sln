@@ -9,6 +9,30 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FrontEnd", "FrontEnd\FrontE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wiser.Tests", "Wiser.Tests\Wiser.Tests.csproj", "{93504FCB-A4D9-4540-812D-868222B43D23}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub", "GitHub", "{13812A6D-3449-4FCB-9E71-3B5A0172F075}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		.github\dependabot.yml = .github\dependabot.yml
+		.github\pull_request_template.md = .github\pull_request_template.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{4D72169F-B343-4E64-8F0E-62B1089A97FB}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\publish-new-release-ext-2-live.yml = .github\workflows\publish-new-release-ext-2-live.yml
+		.github\workflows\publish-new-releases-live-1.yml = .github\workflows\publish-new-releases-live-1.yml
+		.github\workflows\publish-new-releases-live-2.yml = .github\workflows\publish-new-releases-live-2.yml
+		.github\workflows\publish-new-releases-test-1.yml = .github\workflows\publish-new-releases-test-1.yml
+		.github\workflows\publish-new-releases-test-2.yml = .github\workflows\publish-new-releases-test-2.yml
+		.github\workflows\publish-to-docker.yml = .github\workflows\publish-to-docker.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{3E22C79F-099F-4CDA-82FB-76E9920392EE}"
+	ProjectSection(SolutionItems) = preProject
+		CONTRIBUTING.md = CONTRIBUTING.md
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,5 +57,8 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1D0C3936-A0DF-4158-B0A5-1CC17257B630}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4D72169F-B343-4E64-8F0E-62B1089A97FB} = {13812A6D-3449-4FCB-9E71-3B5A0172F075}
 	EndGlobalSection
 EndGlobal
