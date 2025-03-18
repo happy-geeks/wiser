@@ -2471,12 +2471,7 @@ export class EntityTab {
         }
 
         const sourceDataItem = event.sender.dataItem(event.sourceNode);
-        const destinationDataItem = event.sender.dataItem(destinationNode) || { isRoot: true, isTab: false };
-
-        sourceDataItem.isRoot = false;
-        sourceDataItem.isTab = sourceDataItem.isTab || false;
-        destinationDataItem.isRoot = destinationDataItem.isRoot || false;
-        destinationDataItem.isTab = destinationDataItem.isTab || false;
+        const destinationDataItem = event.sender.dataItem(destinationNode) || { type: "Root" };
 
         if (!sourceDataItem) {
             console.warn("Source data item not found.");
@@ -2484,12 +2479,28 @@ export class EntityTab {
             return;
         }
 
-        if ((!sourceDataItem.isTab && destinationDataItem.isTab) || (sourceDataItem.isTab && destinationDataItem.isRoot) || (!sourceDataItem.isTab && destinationDataItem.isRoot)) {
-            return;
+        console.log(`sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type} -> ${event.statusClass}`);
+
+        // properties can be only be reordered within the same group 
+        if (sourceDataItem.type === "Property") {
+            if (destinationDataItem.type === "Group" && sourceDataItem.groupName === destinationDataItem.name && event.statusClass !== "i-insert-up") {
+                return;
+            }
+        }
+        // groups can be only be reordered within the same tab
+        if (sourceDataItem.type === "Group") {
+            if (destinationDataItem.type === "Tab" && sourceDataItem.tabName === destinationDataItem.name && event.statusClass !== "i-insert-up") {
+                return;
+            }
+        }
+        // tabs can be only be reordered on the root
+        if (sourceDataItem.type === "Tab") {
+            if (destinationDataItem.type === "Root") {
+                return;
+            }
         }
 
-        // Tell the kendo tree view to deny the drag to this item, if the current item is another field.
-        // Fields can only be dragged to tabs and tabs can only be dragged into the root.
+        // Tell the kendo tree view to deny the drag in any other case
         event.setStatusClass("k-i-cancel");
     }
 
@@ -2510,6 +2521,11 @@ export class EntityTab {
             sourceTabName = sourceTabName === "Gegevens" ? "" : sourceTabName;
             let destinationTabName = destinationDataItem.isTab ? destinationDataItem.name : destinationDataItem.tabName;
             destinationTabName = destinationTabName === "Gegevens" ? "" : destinationTabName;
+
+            console.log(`onPropertiesTreeViewDrop: sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type}`);
+            console.log(`dropPosition: ${event.dropPosition}`);
+            
+            return;
 
             if (sourceDataItem.isTab) {
                 return Wiser.api({
@@ -2906,6 +2922,7 @@ export class EntityTab {
         }
         entityProperties.inputType = 'Group';
         entityProperties.displayName = $("#groupName").val();
+        entityProperties.groupName = $("#groupName").val();
         entityProperties.width = this.groupWidth.value();
         entityProperties.options = {};
         entityProperties.options.minWidth = this.minWidth.value();
