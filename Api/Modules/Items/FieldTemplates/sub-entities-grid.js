@@ -433,10 +433,10 @@ async function generateGrid(data, model, columns) {
                         let itemModel = {
                             title: transportOptions.data.name,
                             details: [],
-                            entityType: "{entityType}"
+                            entityType: transportOptions.data.entitytype || "{entityType}"
                         };
 
-                        var encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
+                        let encryptedId = transportOptions.data.encryptedId || transportOptions.data.encrypted_id || transportOptions.data.encryptedid;
                         if (options.fieldGroupName) {
                             encryptedId = "{itemIdEncrypted}";
                             transportOptions.data.groupName = options.fieldGroupName;
@@ -446,7 +446,7 @@ async function generateGrid(data, model, columns) {
                             }
                             itemModel.details.push(transportOptions.data);
                         } else {
-                            var nonFieldProperties = [
+                            const nonFieldProperties = [
                                 "id",
                                 "published_environment",
                                 "publishedenvironment",
@@ -468,7 +468,7 @@ async function generateGrid(data, model, columns) {
                                 "changed_by",
                                 "changedby"
                             ];
-                            for (var key in transportOptions.data) {
+                            for (let key in transportOptions.data) {
                                 if (!transportOptions.data.hasOwnProperty(key) || nonFieldProperties.indexOf(key.toLowerCase()) > -1) {
                                     continue;
                                 }
@@ -490,14 +490,14 @@ async function generateGrid(data, model, columns) {
                                 }
 
                                 if (kendoComponent && kendoComponent.columns) {
-                                    for (var i = 0; i < kendoComponent.columns.length; i++) {
-                                        var column = kendoComponent.columns[i];
+                                    for (let i = 0; i < kendoComponent.columns.length; i++) {
+                                        const column = kendoComponent.columns[i];
                                         if ((column.field + "_input") !== key || !column.values || !column.values.length) {
                                             continue;
                                         }
 
-                                        for (var i2 = 0; i2 < column.values.length; i2++) {
-                                            var columnDataItem = column.values[i2];
+                                        for (let i2 = 0; i2 < column.values.length; i2++) {
+                                            const columnDataItem = column.values[i2];
                                             if (transportOptions.data[key.replace("_input", "")] !== columnDataItem.value) {
                                                 continue;
                                             }
@@ -507,9 +507,9 @@ async function generateGrid(data, model, columns) {
                                     }
                                 }
 
-                                var isLinkProperty = false;
+                                let isLinkProperty = false;
                                 if (columns && columns.length) {
-                                    for (var i = 0; i < columns.length; i++) {
+                                    for (let i = 0; i < columns.length; i++) {
                                         if (columns[i].field !== key) {
                                             continue;
                                         }
@@ -537,8 +537,8 @@ async function generateGrid(data, model, columns) {
                             data: JSON.stringify(itemModel)
                         }).then(function (result) {
                             if (transportOptions.data && transportOptions.data.details) {
-                                for (var i = 0; i < transportOptions.data.details.length; i++) {
-                                    var currentField = transportOptions.data.details[i];
+                                for (let i = 0; i < transportOptions.data.details.length; i++) {
+                                    const currentField = transportOptions.data.details[i];
                                     if (currentField.key !== "__ordering") {
                                         continue;
                                     }
