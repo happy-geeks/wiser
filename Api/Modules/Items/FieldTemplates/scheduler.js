@@ -1,9 +1,9 @@
-﻿(function() {
-var field = $("#scheduler{propertyIdWithSuffix}");
-var loader = field.closest(".item").find(".field-loader");
-var optionsFromProperty = {options};
+﻿(() => {
+let field = $("#scheduler{propertyIdWithSuffix}");
+let loader = field.closest(".item").find(".field-loader");
+let optionsFromProperty = {options};
 
-var options = $.extend(true, {
+let options = $.extend(true, {
     views: [
         "day",
         { type: "week", selected: true },
@@ -16,30 +16,35 @@ var options = $.extend(true, {
     dataSource: {
         transport: {
             read: function(transportOptions) {
-                Wiser.api({
-                    method: "POST",
-                    url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
-                    contentType: "application/json"
-                }).then(function(queryResults) {
+                let queryResults = null;
+                try {
+                    queryResults = Wiser.api({
+                        method: "POST",
+                        url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
+                        contentType: "application/json"
+                    });
+
                     if (!queryResults || !queryResults.otherData) {
                         transportOptions.error(queryResults);
                         return;
                     }
-                    
-                    for (var dataIndex = 0; dataIndex < queryResults.otherData.length; dataIndex++) {
-                        var dataItem = queryResults.otherData[dataIndex];
-                        
+
+                    for (let dataIndex = 0; dataIndex < queryResults.otherData.length; dataIndex++) {
+                        let dataItem = queryResults.otherData[dataIndex];
+
                         if (typeof dataItem.resources !== "string") {
                             continue;
                         }
-                        
+
                         dataItem.resources = dataItem.resources.split(",");
                     }
-                    
-                    transportOptions.success(queryResults.otherData);
-                }).catcg(function(jqXHR, textStatus, errorThrown) {
-                    transportOptions.error(jqXHR, textStatus, errorThrown);
-                });
+
+                    transportOptions.success(queryResults.otherData)
+                }
+                
+                catch (exception) {
+                    transportOptions.error(exception)
+                }
             }
         },
         
@@ -99,7 +104,7 @@ if (optionsFromProperty.resourcesQueryId) {
 }
 
 
-var kendoComponent = field.kendoScheduler(options).data("kendoScheduler");
+let kendoComponent = field.kendoScheduler(options).data("kendoScheduler");
 	
 {customScript}
 })();
