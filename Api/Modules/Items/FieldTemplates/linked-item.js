@@ -1,4 +1,4 @@
-﻿(function() {
+﻿(() => {
 const options = $.extend({
     "entityType": "item",
     "linkType": 1,
@@ -48,7 +48,7 @@ Wiser.api({ url: url }).then(function(results) {
         if (options.textOnly) {
             $("<span class='openWindow' />").html(newValue).appendTo(field);
         } else {
-            $("<a class='openWindow' href='#' />").html(`${newValue}&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>`).appendTo(field).click(function() {
+            $("<a class='openWindow' href='#' />").html(`${newValue}&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>`).appendTo(field).click(() => {
                 window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, { hideTitleColumn: false }, result.linkId, null, null, options.linkType);
             });
         }
