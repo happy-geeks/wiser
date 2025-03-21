@@ -124,7 +124,7 @@ export default class BranchesService extends BaseService {
                 entities: [],
                 settings: [],
                 linkTypes: [],
-                checkForConflicts: data.checkForConflicts,
+                checkForConflicts: data.mergeType === "direct" && data.checkForConflicts,
                 conflictSettings: data.conflicts.map(conflict => {
                     return {
                         id: conflict.id,
