@@ -1,5 +1,7 @@
 using System.IO;
+using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.Template.WtsModels;
@@ -13,6 +15,12 @@ namespace Api.Modules.Templates.Services
         /// <inheritdoc />
         public TemplateWtsConfigurationModel ParseXmlToObject(string xml)
         {
+            //add a root element if en empty xml is recieved. done to avoid errors on new files
+            if (string.IsNullOrWhiteSpace(xml))
+            {
+                xml = "<Configuration></Configuration>";
+            }
+            
             // TODO: Check if this is still needed.
             // For backwards compatibility, we need to remove queries elements from the xml.
             // This is because query elements are now allowed to exist within configuration instead of just configuration > queries.

@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
+using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels
 {
@@ -42,6 +43,16 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// <summary>
         /// Gets or sets the log settings for the configuration (Global if not overwritten)
         /// </summary>
+        [WtsProperty(
+             IsVisible = true,
+             IsRequired = false,
+             Title = "Notificatie emails",
+             Description = "stuurt een email als de service faalt, meerdere emails kunnen worden gescheiden door een puntkomma",
+             ConfigurationTab = ConfigurationTab.Service,
+             KendoComponent = KendoComponents.TextBox
+         )]
+        public string ServiceFailedNotificationEmails { get; set; }
+        
         [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Service
@@ -103,8 +114,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
                         ""title"": ""ID""
                     },
                     {
-                        ""field"": ""order"",
-                        ""title"": ""Type""
+                        ""field"": ""comment"",
+                        ""title"": ""Comment""
                     }
                   ]
                }
@@ -116,14 +127,16 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// <summary>
         /// Gets or sets the http api's in the configuration.
         /// </summary>
-        [XmlElement("HttpApi")]
+        /*
+         [XmlElement("HttpApi")]
         [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Actions
         )]
-        public List<HttpApiModel> HttpApis { get; set; }
+        public List<HttpApiModel> HttpApis { get; set; }*/
         
         [XmlAnyElement]
+        [JsonIgnore]
         public List<XElement> ChildItemsExtra { get; set; }
         
         /// <summary>
@@ -131,9 +144,10 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         /// </summary>
         [XmlIgnore, WtsProperty(
             IsVisible = true,
+            IsDisabled = true,
             IsRequired = true,
             Title = "extra",
-            Description = "De extra spul",
+            Description = "informatie die niet in het system verwerkt is. verkomt data verlies. in een idiale situtatie is deze leeg",
             ConfigurationTab = ConfigurationTab.Service,
             KendoComponent = KendoComponents.TextBox
         )]
@@ -153,6 +167,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
                 
                 List<string> listBack = value.Split(',').ToList();
                 ChildItemsExtra= new List<XElement>();
+                if (listBack.Count == 0 || string.IsNullOrWhiteSpace(listBack[0]))
+                {
+                    return;
+                }
+
                 listBack.ForEach(si=>ChildItemsExtra.Add(XElement.Parse(si)));
             }
         }

@@ -1345,6 +1345,7 @@ LIMIT 1";
         /// <inheritdoc />
         public async Task<ServiceResult<bool>> SaveAsync(ClaimsIdentity identity, int templateId, TemplateWtsConfigurationModel configuration)
         {
+            
             // Convert the configuration object to raw XML
             var updatedEditorValue = wtsConfigurationService.ParseObjectToXml(configuration);
 

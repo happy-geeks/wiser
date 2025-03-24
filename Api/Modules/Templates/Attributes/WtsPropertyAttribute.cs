@@ -76,4 +76,15 @@ public class WtsPropertyAttribute : Attribute
     /// This requires the property DependsOnField to be set.
     /// </summary>
     public string[] DependsOnValue { get; set; }
+    
+    /// <summary>
+    /// Declares if an textbox needs to be grayedout.
+    /// For example: an id fields need to be visiable but can't be alterd
+    /// </summary>
+    public bool IsDisabled { get; set; }
+    
+    /// <summary>
+    /// if the value is set this field will be shown first. if multple fields have this attribute the lower numbers will be renderd first
+    /// </summary>
+    public int customUiOrder { get; set; }
 }
