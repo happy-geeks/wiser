@@ -2323,7 +2323,6 @@ const moduleSettings = {
                 let data = null;
                 if (this.mainTabStrip.select().data("name") === "configuration") {
                     data = this.wtsConfiguration.getCurrentSettings();
-                    console.log("data", data);
                     this.saving = true;
 
                     const response = await Wiser.api({

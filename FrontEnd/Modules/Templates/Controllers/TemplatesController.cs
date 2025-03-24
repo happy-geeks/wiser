@@ -40,7 +40,6 @@ namespace FrontEnd.Modules.Templates.Controllers;
         [HttpPost, Route("DevelopmentTab")]
         public IActionResult DevelopmentTab([FromBody]DevelopmentTabViewModel tabViewData)
         {
-            Console.WriteLine("Loading dev tab");
             tabViewData.EditorType = tabViewData.TemplateSettings.Type switch
             {
                 TemplateTypes.Unknown => "text",
