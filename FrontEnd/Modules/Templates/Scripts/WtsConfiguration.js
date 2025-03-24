@@ -64,8 +64,7 @@ export class WtsConfiguration {
                 method: "GET"
             });
             this.template = templateSettings;
-            console.clear();
-            console.log(templateSettings);
+            //console.clear();
         }
         catch (e) {
             console.error(e);
@@ -103,6 +102,7 @@ export class WtsConfiguration {
         // Empty the array
         this.serviceInputFields = [];
 
+        console.log("kendoComponents",kendoComponents);
         // Loop through all the components
         for (let i = 0; i < kendoComponents.length; i++) {
             let component = $(kendoComponents[i]);
@@ -146,7 +146,7 @@ export class WtsConfiguration {
                 // Add an attribute to the component to indicate that it is depended on
                 component.attr("data-is-depended-on", true);
             }
-
+            
             // Make sure the method exists on componentSelector and if so create the component
             if (component[componentName] && typeof component[componentName] === "function") {
                 let newComponent = component[componentName](componentOptions).data(componentName);
@@ -166,7 +166,7 @@ export class WtsConfiguration {
                         break;
                 }
             } else {
-                console.error(`Method ${componentName} does not exist on componentSelector.`);
+                console.error(`Method ${componentName}+${i} does not exist on componentSelector.`);
                 return;
             }
 
@@ -260,6 +260,7 @@ export class WtsConfiguration {
     }
 
     onSaveButtonClick(e) {
+        
         // Get the current tab name
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
@@ -282,7 +283,6 @@ export class WtsConfiguration {
 
         // Get the datasource of the grid
         let dataSource = this.template[gridName];
-        console.log(dataSource);
         // The index of the selected item in the datasource
         let indexOfSelectedItem = null;
 
@@ -295,7 +295,7 @@ export class WtsConfiguration {
 
         // Get all the input fields for the given tab
         let inputFields = this[`${currentTabName}InputFields`];
-        inputFields.forEach((inputField) => {console.log(inputField);})
+        inputFields.forEach((inputField) => {console.log("inputField",inputField);})
         // Loop through all the input fields
         inputFields.forEach((inputField) => {
             // Get the name of the input field
@@ -332,16 +332,20 @@ export class WtsConfiguration {
             // Set the value of the selected item
             selectedItem[name] = value;
         });
-
         // Error checking for using an id that is already in use
         if (indexOfSelectedItem === null) {
             // For new items, check if the ID is already in use
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
-            console.log('TEST-IN:');
-            //console.log($(`[]`));
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
-
+            
+            //check if an action if is used
+            if('timeId' in selectedItem && 'order' in selectedItem){
+                let newActionId= selectedItem.timeId+"-"+selectedItem.order;
+                idFieldValue = newActionId;
+                selectedItem.actionid = newActionId;
+            }
+            
             if (dataSource.find((item) => {
                 return item[this.uncapitalizeFirstLetter(idField)] === idFieldValue;
             })) {
@@ -353,11 +357,13 @@ export class WtsConfiguration {
             // For existing items, check if the ID is already in use by another item
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
-            console.log('TEST:');
-            console.log(grid.element[0]);
-            console.log(idField);
-            console.log(idFieldElement);
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
+            if('timeId' in selectedItem && 'order' in selectedItem){
+                let newActionId= selectedItem.timeId+"-"+selectedItem.order;
+                idFieldValue = newActionId;
+                selectedItem.actionid = newActionId;
+            }
+            
 
             if (dataSource.find((item) => {
                 return item[this.uncapitalizeFirstLetter(idField)] === idFieldValue && item !== dataSource[indexOfSelectedItem];
@@ -366,6 +372,7 @@ export class WtsConfiguration {
                 return;
             }
         }
+        
 
         if (indexOfSelectedItem != null && indexOfSelectedItem >= 0) {
             dataSource[indexOfSelectedItem] = selectedItem; // Update the item
@@ -373,7 +380,6 @@ export class WtsConfiguration {
         else {
             dataSource.push(selectedItem); // Add the item
         }
-
         // Refresh the grid
         grid.dataSource.read();
 
@@ -604,7 +610,6 @@ export class WtsConfiguration {
 
     getCurrentSettings() {
         console.log("Saving configuration...");
-        console.log(this.serviceInputFields);
         let data = {};
 
         // Get all the values from the service input fields
@@ -660,14 +665,14 @@ export class WtsConfiguration {
 
     getValueOfElement(element) {
         // Check what type of element it is
-        console.log("element: ");
-        console.log(element);
         switch (element.tagName) {
             case "INPUT":
+            case "TEXTAREA":
                 switch (element.type) {
                     case "checkbox":
                         return element.checked;
                     default:
+                        console.log("TEST",element.value);
                         return element.value;
                 }
             case "SELECT":

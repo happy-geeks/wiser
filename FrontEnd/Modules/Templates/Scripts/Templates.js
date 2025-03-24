@@ -772,8 +772,10 @@ const moduleSettings = {
          * @param {Object} [virtualItem=null] If the item is a virtual item, this parameter will contain the necessary data to open it.
          */
         async loadTemplate(id, virtualItem = null) {
+            
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const historyTab = this.mainTabStrip.element.find(".history-tab");
+            const configTab = this.mainTabStrip.element.find(".config-tab");
 
             if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
                 this.templateSettings = {};
@@ -781,11 +783,12 @@ const moduleSettings = {
                 this.templateHistory = null;
 
                 document.getElementById("developmentTab").innerHTML = "";
+                document.getElementById("wtsConfigurationTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
                 this.mainTabStrip.disable(historyTab);
+                this.mainTabStrip.disable(configTab);
                 return;
             }
-
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
 
@@ -2321,7 +2324,6 @@ const moduleSettings = {
                 let data = null;
                 if (this.mainTabStrip.select().data("name") === "configuration") {
                     data = this.wtsConfiguration.getCurrentSettings();
-                    console.log("data", data);
                     this.saving = true;
 
                     const response = await Wiser.api({

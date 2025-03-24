@@ -4,6 +4,7 @@
 @using System.Xml.Linq
 @using Api.Modules.Templates.Attributes
 @using Api.Modules.Templates.Enums
+@using DocumentFormat.OpenXml.Office2010.ExcelAc
 @using Newtonsoft.Json.Linq
 @using FrontEnd.Modules.Templates.Models
 @model Api.Modules.Templates.Models.Template.WtsModels.TemplateWtsConfigurationModel;
@@ -65,12 +66,34 @@
         <div class="item">
             @switch (attributes?.KendoComponent)
             {
+                    case KendoComponents.TextArea:
+                        <h4><label>@attributes?.Title</label></h4>
+                        <span>
+                            <textarea
+                                type="text"
+                                name="@property.Name"
+                                disabled=@(attributes?.IsDisabled ?? false)
+                                value="@(data ?? "")"
+                                trace="@trace"
+                                data-kendo-tab="@tab"
+                                data-kendo-component="@KendoComponents.TextBox"
+                                data-kendo-options="@attributes?.KendoOptions"
+                                data-depend-on-field="@attributes?.DependsOnField"
+                                data-depend-on-value="@dependsOnValue"
+                                is-required="@attributes?.IsRequired.ToString().ToLower()"
+                                use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
+                            ></textarea>
+                            <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                        </span>
+
+                        break;
                 case KendoComponents.TextBox:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
                             type="text"
                             name="@property.Name"
+                            disabled=@(attributes?.IsDisabled ?? false)
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
@@ -88,6 +111,7 @@
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
+                            id="test"
                             type="number"
                             name="@property.Name"
                             value="@(data ?? "")"
@@ -249,6 +273,13 @@
 
     void RenderProperties(object data, Type type, string tab, bool IsFilled, string trace)
     {
+<<<<<<< HEAD
+=======
+        if (type == typeof(XmlCDataSection)||type ==typeof(XmlNode))
+        {
+            return;
+        }
+>>>>>>> 61cfa54a (progress towards the m.v.p.)
         foreach (var property in type.GetProperties())
         {
             var attributes = property.GetCustomAttributes(typeof(WtsPropertyAttribute), false).Cast<WtsPropertyAttribute>().FirstOrDefault();

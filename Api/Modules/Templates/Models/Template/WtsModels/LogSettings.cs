@@ -15,7 +15,7 @@ public class LogSettings
         IsVisible = true,
         Title = "Minimaal log level",
         Description = "Het minimale log level dat gelogd wordt.",
-        ConfigurationTab = null,
+        ConfigurationTab = ConfigurationTab.Timers,
         KendoComponent = KendoComponents.DropDownList,
         IsRequired = true
     )]

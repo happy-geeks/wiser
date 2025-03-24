@@ -4,12 +4,13 @@ namespace Api.Modules.Templates.Enums;
 /// <summary>
 /// Kendo components that can be used for user interface inputs.
 /// </summary>
-public enum KendoComponents
-{
-    TextBox,
-    NumericTextBox,
-    DropDownList,
-    CheckBox,
-    TimePicker,
-    Grid
-}
+    public enum KendoComponents
+    {
+        TextArea,
+        TextBox,
+        NumericTextBox,
+        DropDownList,
+        CheckBox,
+        TimePicker,
+        Grid
+    }

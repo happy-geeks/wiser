@@ -4,6 +4,7 @@ using System.Linq;
 using System.Xml.Linq;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
+using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
 
@@ -42,6 +43,16 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         /// <summary>
         /// Gets or sets the log settings for the configuration (Global if not overwritten)
         /// </summary>
+        [WtsProperty(
+             IsVisible = true,
+             IsRequired = false,
+             Title = "Notificatie emails",
+             Description = "stuurt een email als de service faalt, meerdere emails kunnen worden gescheiden door een puntkomma",
+             ConfigurationTab = ConfigurationTab.Service,
+             KendoComponent = KendoComponents.TextBox
+         )]
+        public string ServiceFailedNotificationEmails { get; set; }
+        
         [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Service
@@ -105,8 +116,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                         ""title"": ""ID""
                     },
                     {
-                        ""field"": ""order"",
-                        ""title"": ""Type""
+                        ""field"": ""comment"",
+                        ""title"": ""Comment""
                     }
                   ]
                }
@@ -118,19 +129,27 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         /// <summary>
         /// Gets or sets the http api's in the configuration.
         /// </summary>
-        [XmlElement("HttpApi")]
+        /*
+         [XmlElement("HttpApi")]
         [WtsProperty(
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Actions
         )]
+<<<<<<< HEAD
         public List<HttpApiModel> HttpApis { get; set; }
+=======
+        public List<HttpApiModel> HttpApis { get; set; }*/
+        
+>>>>>>> 61cfa54a (progress towards the m.v.p.)
         [XmlAnyElement]
+        [JsonIgnore]
         public List<XElement> ChildItemsExtra { get; set; }
         
         /// <summary>
         /// Gets or sets the all items the don't have a dedicated object/class in the current version system, intended to avoid dataloss. becarefull if you choose to edit these manualy
         /// </summary>
         [XmlIgnore, WtsProperty(
+<<<<<<< HEAD
              IsVisible = true,
              IsRequired = true,
              Title = "extra",
@@ -138,6 +157,16 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
              ConfigurationTab = ConfigurationTab.Service,
              KendoComponent = KendoComponents.TextBox
          )]
+=======
+            IsVisible = true,
+            IsDisabled = true,
+            IsRequired = true,
+            Title = "extra",
+            Description = "informatie die niet in het system verwerkt is. verkomt data verlies. in een idiale situtatie is deze leeg",
+            ConfigurationTab = ConfigurationTab.Service,
+            KendoComponent = KendoComponents.TextBox
+        )]
+>>>>>>> 61cfa54a (progress towards the m.v.p.)
         public string ChildItemsExtraString {
             get
             {
@@ -154,6 +183,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 
                 List<string> listBack = value.Split(',').ToList();
                 ChildItemsExtra= new List<XElement>();
+                if (listBack.Count == 0 || string.IsNullOrWhiteSpace(listBack[0]))
+                {
+                    return;
+                }
+
                 listBack.ForEach(si=>ChildItemsExtra.Add(XElement.Parse(si)));
             }
         }
