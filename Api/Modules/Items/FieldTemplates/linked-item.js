@@ -1,17 +1,23 @@
-﻿(() => {
-const options = $.extend({
-    "entityType": "item",
-    "linkType": 1,
-    "template": "{itemTitle}",
-    "reversed": false,
-    "noLinkText": "Geen koppeling",
-    "hideFieldIfNoLink": false,
-    "removeUnknownVariables": false
-}, {options});
+﻿(async () => {
+    const options = $.extend({
+        "entityType": "item",
+        "linkType": 1,
+        "template": "{itemTitle}",
+        "reversed": false,
+        "noLinkText": "Geen koppeling",
+        "hideFieldIfNoLink": false,
+        "removeUnknownVariables": false
+    }, {options});
 
-const url = `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/linked/details?entityType=${encodeURIComponent(options.entityType)}&itemIdEntityType={entityType}&linkType=${encodeURIComponent(options.linkType)}&reversed=${encodeURIComponent(!options.reversed)}`;
+// Function to escape all special regex characters.
+    const regExpEscape = (input) => {
+        return input.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
+    };
 
-Wiser.api({ url: url }).then(function(results) {
+    const url = `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/linked/details?entityType=${encodeURIComponent(options.entityType)}&itemIdEntityType={entityType}&linkType=${encodeURIComponent(options.linkType)}&reversed=${encodeURIComponent(!options.reversed)}`;
+
+    let apiResult = await Wiser.api({url: url});
+
     const field = $("#field_{propertyIdWithSuffix}").html("");
 
     if (!results || !results.length) {
@@ -22,11 +28,6 @@ Wiser.api({ url: url }).then(function(results) {
         }
         return;
     }
-
-    // Function to escape all special regex characters.
-    const regExpEscape = (input) => {
-        return input.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
-    };
 
     results.forEach((result) => {
         let newValue = options.template.replace(/\{itemTitle}/gi, result.title);
@@ -49,9 +50,8 @@ Wiser.api({ url: url }).then(function(results) {
             $("<span class='openWindow' />").html(newValue).appendTo(field);
         } else {
             $("<a class='openWindow' href='#' />").html(`${newValue}&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>`).appendTo(field).click(() => {
-                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, { hideTitleColumn: false }, result.linkId, null, null, options.linkType);
+                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, {hideTitleColumn: false}, result.linkId, null, null, options.linkType);
             });
         }
     });
-});
 })();
