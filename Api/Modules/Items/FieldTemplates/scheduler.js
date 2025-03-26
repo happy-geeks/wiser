@@ -15,10 +15,9 @@ let options = $.extend(true, {
     editable: false,
     dataSource: {
         transport: {
-            read: function(transportOptions) {
-                let queryResults = null;
+            read: async (transportOptions) => {
                 try {
-                    queryResults = Wiser.api({
+                    const queryResults = await Wiser.api({
                         method: "POST",
                         url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&&itemLinkId={itemLinkId}",
                         contentType: "application/json"
@@ -41,7 +40,6 @@ let options = $.extend(true, {
 
                     transportOptions.success(queryResults.otherData)
                 }
-                
                 catch (exception) {
                     transportOptions.error(exception)
                 }
@@ -84,18 +82,21 @@ if (optionsFromProperty.resourcesQueryId) {
                     data: "otherData"
                 },
                 transport: {
-                    read: (kendoReadOptions) => {
-                        Wiser.api({
-                            url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.resourcesQueryId || 0) + "&itemLinkId={itemLinkId}",
-                            contentType: "application/json",
-                            dataType: "json",
-                            method: "POST",
-                            data: kendoReadOptions.data
-                        }).then((result) => {
+                    read: async (kendoReadOptions) => {
+                        try {
+                            const result = await Wiser.api({
+                                url: `${dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/action-button/{propertyId}?queryId=${encodeURIComponent(optionsFromProperty.resourcesQueryId || 0)}&itemLinkId={itemLinkId}`,
+                                contentType: "application/json",
+                                dataType: "json",
+                                method: "POST",
+                                data: kendoReadOptions.data
+                            });
+
                             kendoReadOptions.success(result);
-                        }).catch((result) => {
-                            kendoReadOptions.error(result);
-                        });
+                        }
+                        catch (exception) {
+                            kendoReadOptions.error(exception);
+                        }
                     }
                 }
             }
