@@ -1,20 +1,26 @@
-﻿(function() {
-const options = $.extend({
-    "entityType": "item",
-    "linkType": 1,
-    "template": "{itemTitle}",
-    "reversed": false,
-    "noLinkText": "Geen koppeling",
-    "hideFieldIfNoLink": false,
-    "removeUnknownVariables": false
-}, {options});
+﻿(async () => {
+    const options = $.extend({
+        "entityType": "item",
+        "linkType": 1,
+        "template": "{itemTitle}",
+        "reversed": false,
+        "noLinkText": "Geen koppeling",
+        "hideFieldIfNoLink": false,
+        "removeUnknownVariables": false
+    }, {options});
 
-const url = `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/linked/details?entityType=${encodeURIComponent(options.entityType)}&itemIdEntityType={entityType}&linkType=${encodeURIComponent(options.linkType)}&reversed=${encodeURIComponent(!options.reversed)}`;
+// Function to escape all special regex characters.
+    const regExpEscape = (input) => {
+        return input.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
+    };
 
-Wiser.api({ url: url }).then(function(results) {
+    const url = `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/linked/details?entityType=${encodeURIComponent(options.entityType)}&itemIdEntityType={entityType}&linkType=${encodeURIComponent(options.linkType)}&reversed=${encodeURIComponent(!options.reversed)}`;
+
+    let apiResult = await Wiser.api({url: url});
+
     const field = $("#field_{propertyIdWithSuffix}").html("");
 
-    if (!results || !results.length) {
+    if (!apiResult || !apiResult.length) {
         if (options.hideFieldIfNoLink) {
             $("#container_{propertyIdWithSuffix}").addClass("forceHidden");
         } else {
@@ -23,12 +29,7 @@ Wiser.api({ url: url }).then(function(results) {
         return;
     }
 
-    // Function to escape all special regex characters.
-    const regExpEscape = (input) => {
-        return input.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
-    };
-
-    results.forEach((result) => {
+    apiResult.forEach((result) => {
         let newValue = options.template.replace(/\{itemTitle}/gi, result.title);
         newValue = newValue.replace(/\{id}/gi, result.id);
         newValue = newValue.replace(/\{environment}/gi, result.publishedEnvironment);
@@ -48,10 +49,9 @@ Wiser.api({ url: url }).then(function(results) {
         if (options.textOnly) {
             $("<span class='openWindow' />").html(newValue).appendTo(field);
         } else {
-            $("<a class='openWindow' href='#' />").html(`${newValue}&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>`).appendTo(field).click(function() {
-                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, { hideTitleColumn: false }, result.linkId, null, null, options.linkType);
+            $("<a class='openWindow' href='#' />").html(`${newValue}&nbsp;<span class='k-icon k-i-hyperlink-open-sm'></span>`).appendTo(field).click(() => {
+                window.dynamicItems.windows.loadItemInWindow(false, result.id, result.encryptedId, result.entityType, result.title, true, null, {hideTitleColumn: false}, result.linkId, null, null, options.linkType);
             });
         }
     });
-});
 })();
