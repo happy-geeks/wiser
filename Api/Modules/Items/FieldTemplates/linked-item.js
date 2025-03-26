@@ -20,7 +20,7 @@
 
     const field = $("#field_{propertyIdWithSuffix}").html("");
 
-    if (!results || !results.length) {
+    if (!apiResult || !apiResult.length) {
         if (options.hideFieldIfNoLink) {
             $("#container_{propertyIdWithSuffix}").addClass("forceHidden");
         } else {
@@ -29,7 +29,7 @@
         return;
     }
 
-    results.forEach((result) => {
+    apiResult.forEach((result) => {
         let newValue = options.template.replace(/\{itemTitle}/gi, result.title);
         newValue = newValue.replace(/\{id}/gi, result.id);
         newValue = newValue.replace(/\{environment}/gi, result.publishedEnvironment);
