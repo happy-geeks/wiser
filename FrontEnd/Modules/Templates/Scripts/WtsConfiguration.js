@@ -24,7 +24,7 @@ export class WtsConfiguration {
      */
     constructor(base) {
         this.base = base;
-
+        
         this.template = null;
         this.serviceInputFields = [];
         this.serviceKendoFields = [];
@@ -32,6 +32,9 @@ export class WtsConfiguration {
         this.timersKendoFields = [];
         this.actionsInputFields = [];
         this.actionsKendoFields = [];
+        
+        //temporary for testing only
+        this.editorSql = [];
     }
 
     async reloadWtsConfigurationTab(id) {
@@ -94,6 +97,18 @@ export class WtsConfiguration {
 
         this.initializeKendoComponents();
         this.bindEvents();
+        var a = async()=>{await Misc.ensureCodeMirror();}
+        a();
+        var editortmp = CodeMirror.fromTextArea(document.getElementById("editor2"), {
+            mode: "text/x-mysql",
+            lineNumbers: true
+        });
+        editortmp.refresh();
+        this.editorSql.push(
+            {
+                editor: editortmp,
+                original: document.getElementById("editor2")
+            });
     }
 
     initializeKendoComponents() {
@@ -102,14 +117,14 @@ export class WtsConfiguration {
         // Empty the array
         this.serviceInputFields = [];
 
-        console.log("kendoComponents",kendoComponents);
+        //console.log("kendoComponents",kendoComponents[24].id);
         // Loop through all the components
         for (let i = 0; i < kendoComponents.length; i++) {
+            console.log("kendoComponents-"+i,kendoComponents[i]);
             let component = $(kendoComponents[i]);
             let componentName = `kendo${component.attr("data-kendo-component")}`;
             let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
-
             // Check if the options are set
             if (componentOptions === undefined || componentOptions === null || componentOptions === "") {
                 componentOptions = {};
@@ -124,7 +139,7 @@ export class WtsConfiguration {
                     componentOptions.change = eval(componentOptions.change);
                 }
             }
-
+            
             // Add a list change event to the grid if it allows editing
             if (component.attr("data-kendo-component") === "Grid" && component.attr("allow-edit") === "true") {
                 componentOptions.change = eval("this.onListChange.bind(this)");
@@ -146,8 +161,22 @@ export class WtsConfiguration {
                 // Add an attribute to the component to indicate that it is depended on
                 component.attr("data-is-depended-on", true);
             }
-            
+
             // Make sure the method exists on componentSelector and if so create the component
+            if(i==24){
+                switch (componentTab) {
+                    case "Service":
+                        this.serviceInputFields.push(component[0]);
+                        break;
+                    case "Timers":
+                        this.timersInputFields.push(component[0]);
+                        break;
+                    case "Actions":
+                        this.actionsInputFields.push(component[0]);
+                        break;
+                }
+            }
+            
             if (component[componentName] && typeof component[componentName] === "function") {
                 let newComponent = component[componentName](componentOptions).data(componentName);
                 // Save the component and field so we can access it later
@@ -266,7 +295,12 @@ export class WtsConfiguration {
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
         currentTabName = currentTabName.replace("tab", "");
-
+        
+        this.editorSql.forEach((editor)=>{
+            console.log("editor", editor)
+            editor.original.value = editor.editor.getValue();
+        })
+        
         // Find the corresponding grid in the corresponding KendoFields array
         let grid = this[`${currentTabName}KendoFields`].find((grid) => {
             return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
@@ -460,6 +494,10 @@ export class WtsConfiguration {
             // Clear the value of the input field
             this.setValueOfElement(inputField, "");
         });
+        this.editorSql.forEach((editor)=>{
+            editor.editor.getDoc().setValue("");
+        })
+        
     }
 
     onListChange(e) {
@@ -491,6 +529,11 @@ export class WtsConfiguration {
 
         // Fire any change events that are set
         this.fireAllChangeEvents();
+        
+        this.editorSql.forEach((editor)=>{
+            console.log("editor", editor.original)
+            editor.editor.getDoc().setValue(editor.original.value);
+        })
     }
 
     findAndSetValuesOfInputFields(obj, inputFields) {
@@ -546,7 +589,7 @@ export class WtsConfiguration {
         }
 
         let type = e.getAttribute("data-kendo-component");
-
+        console.log("test before kendo type",e);
         switch (type) {
             case "CheckBox":
                 ($(e).data("kendoCheckBox")).value(v);
@@ -559,6 +602,9 @@ export class WtsConfiguration {
                 break;
             case "TextBox":
                 ($(e).data("kendoTextBox")).value(v);
+                break;
+            case "TextArea":
+                ($(e).data("kendoTextArea")).value(v);
                 break;
             case "DropDownList":
                 ($(e).data("kendoDropDownList")).value(v);
@@ -575,6 +621,7 @@ export class WtsConfiguration {
             case "TimePicker":
             case "NumericTextBox":
             case "TextBox":
+            case "TextArea":
             case "DropDownList":
                 element.closest(".item").hide();
                 break;
@@ -587,6 +634,7 @@ export class WtsConfiguration {
             case "TimePicker":
             case "NumericTextBox":
             case "TextBox":
+            case "TextArea":
             case "DropDownList":
                 element.closest(".item").show();
                 break;
@@ -672,7 +720,6 @@ export class WtsConfiguration {
                     case "checkbox":
                         return element.checked;
                     default:
-                        console.log("TEST",element.value);
                         return element.value;
                 }
             case "SELECT":
