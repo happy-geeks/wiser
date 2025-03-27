@@ -23,6 +23,7 @@ using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Constants = GeeksCoreLibrary.Modules.Databases.Models.Constants;
 using IEntityTypesService = Api.Modules.EntityTypes.Interfaces.IEntityTypesService;
+using IGclEntityTypesService = GeeksCoreLibrary.Core.Interfaces.IEntityTypesService;
 
 namespace Api.Core.Services;
 
@@ -33,7 +34,8 @@ public class WiserDatabaseHelpersService(
     IServiceProvider serviceProvider,
     IEntityTypesService entityTypesService,
     ILinkTypesService linkTypesService,
-    IAppCache cache)
+    IAppCache cache,
+    IGclEntityTypesService gclEntityTypesService)
     : IWiserDatabaseHelpersService, IScopedService
 {
     // Constants for custom migrations.
@@ -104,7 +106,7 @@ public class WiserDatabaseHelpersService(
     /// </summary>
     private static readonly List<WiserTableDefinitionModel> CustomMigrationDefinitions =
     [
-        new() {Name = TriggersName, LastUpdate = new DateTime(2025, 2, 14)},
+        new() {Name = TriggersName, LastUpdate = new DateTime(2025, 3, 27)},
         new() {Name = RemoveVirtualColumnsName, LastUpdate = new DateTime(2024, 9, 12)},
         new() {Name = AddBranchSettingsModuleName, LastUpdate = new DateTime(2024, 11, 18)},
         new() {Name = UpdateFileSecuritySettingsName, LastUpdate = new DateTime(2025, 1, 12)}
@@ -118,8 +120,18 @@ public class WiserDatabaseHelpersService(
 
         // Get information that we need for (some of) the migrations.
         var migrationsList = await databaseHelpersService.GetMigrationsStatusAsync(clientDatabaseConnection.ConnectedDatabase);
-        var entityTypes = (await entityTypesService.GetAsync(identity, false))?.ModelObject ?? [];
         var linkTypes = await linkTypesService.GetAllLinkTypeSettingsAsync() ?? [];
+        var dedicatedLinkTablePrefixes = linkTypes.Select(linkTypesService.GetTablePrefixForLink).Distinct().ToList();
+        var dedicatedEntityTablePrefixes = await gclEntityTypesService.GetDedicatedTablePrefixesAsync() ?? [];
+
+        if (!dedicatedLinkTablePrefixes.Contains(String.Empty))
+        {
+            dedicatedLinkTablePrefixes.Add(String.Empty);
+        }
+        if (!dedicatedEntityTablePrefixes.Contains(String.Empty))
+        {
+            dedicatedEntityTablePrefixes.Add(String.Empty);
+        }
 
         // If the table changes don't contain wiser_itemdetail, it means this is an older database.
         // We can assume that this database already has the table, otherwise nothing would work.
@@ -150,10 +162,10 @@ public class WiserDatabaseHelpersService(
             switch (migration)
             {
                 case TriggersName:
-                    await UpdateTriggersAsync(entityTypes, migrationsList);
+                    await UpdateTriggersAsync(migrationsList, dedicatedEntityTablePrefixes, dedicatedLinkTablePrefixes);
                     break;
                 case RemoveVirtualColumnsName:
-                    await RemoveVirtualColumnsAsync(migrationsList, entityTypes, linkTypes);
+                    await RemoveVirtualColumnsAsync(migrationsList, dedicatedEntityTablePrefixes, dedicatedLinkTablePrefixes);
                     break;
                 case AddBranchSettingsModuleName:
                     await AddBranchSettingsModuleAsync(migrationsList);
@@ -307,9 +319,9 @@ public class WiserDatabaseHelpersService(
     /// This was an experiment in the past, but we decided not to use them due to some problems with them.
     /// </summary>
     /// <param name="migrationsList">The list of all migrations that have been done on the database and the dates and times when they have been done.</param>
-    /// <param name="entityTypes">The list with all entity types in the current tenant.</param>
-    /// <param name="linkTypes">The list of all link types in the current tenant.</param>
-    private async Task RemoveVirtualColumnsAsync(Dictionary<string, DateTime> migrationsList, List<EntityTypeModel> entityTypes, List<LinkSettingsModel> linkTypes)
+    /// <param name="dedicatedEntityTablePrefixes">The list with all unique table prefixes of entity types in the current tenant.</param>
+    /// <param name="dedicatedLinkTablePrefixes">The list of all unique table prefixes of link types in the current tenant.</param>
+    private async Task RemoveVirtualColumnsAsync(Dictionary<string, DateTime> migrationsList, List<string> dedicatedEntityTablePrefixes, List<string> dedicatedLinkTablePrefixes)
     {
         if (migrationsList.TryGetValue(RemoveVirtualColumnsName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == RemoveVirtualColumnsName).LastUpdate)
         {
@@ -317,8 +329,7 @@ public class WiserDatabaseHelpersService(
         }
 
         // Remove virtual columns from wiser_itemdetail and wiser_itemdetail_archive tables.
-        var tablePrefixes = entityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
-        foreach (var tablePrefix in tablePrefixes)
+        foreach (var tablePrefix in dedicatedEntityTablePrefixes)
         {
             var tableName = $"{tablePrefix}{WiserTableNames.WiserItemDetail}";
             if (await databaseHelpersService.TableExistsAsync(tableName))
@@ -352,9 +363,7 @@ public class WiserDatabaseHelpersService(
         }
 
         // Remove virtual columns from wiser_itemlinkdetail and wiser_itemlinkdetail_archive tables.
-        tablePrefixes = linkTypes.Where(type => type.UseDedicatedTable).Select(type => $"{type.Type}_").Distinct().ToList();
-        tablePrefixes.Add("");
-        foreach (var tablePrefix in tablePrefixes)
+        foreach (var tablePrefix in dedicatedLinkTablePrefixes)
         {
             var tableName = $"{tablePrefix}{WiserTableNames.WiserItemLinkDetail}";
             if (await databaseHelpersService.TableExistsAsync(tableName))
@@ -400,12 +409,11 @@ public class WiserDatabaseHelpersService(
     /// <summary>
     /// Make sure that all triggers for Wiser tables are up-to-date.
     /// </summary>
-    /// <param name="allEntityTypes">The list of all entity types.</param>
     /// <param name="migrationsList">The list of all migrations that have been done on the database and the dates and times when they have been done.</param>
-    private async Task UpdateTriggersAsync(List<EntityTypeModel> allEntityTypes, Dictionary<string, DateTime> migrationsList)
+    /// <param name="dedicatedEntityTablePrefixes">The list with all unique table prefixes of entity types in the current tenant.</param>
+    /// <param name="dedicatedLinkTablePrefixes">The list of all unique table prefixes of link types in the current tenant.</param>
+    private async Task UpdateTriggersAsync(Dictionary<string, DateTime> migrationsList, List<string> dedicatedEntityTablePrefixes, List<string> dedicatedLinkTablePrefixes)
     {
-        var tablePrefixes = allEntityTypes.Select(type => type.DedicatedTablePrefix).Distinct().ToList();
-
         if (migrationsList.TryGetValue(TriggersName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == TriggersName).LastUpdate)
         {
             return;
@@ -418,9 +426,23 @@ public class WiserDatabaseHelpersService(
         // Dedicated table trigger.
         var createDedicatedTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateDedicatedItemTablesTriggers.sql");
 
-        foreach (var dedicatedTriggersQuery in tablePrefixes.Where(tablePrefix => !String.IsNullOrWhiteSpace(tablePrefix)).Select(tablePrefix => (tablePrefix.EndsWith('_') ? tablePrefix : tablePrefix + "_")).Select(prefix => createDedicatedTriggersQuery.Replace("{tablePrefix}", prefix)))
+        var queries = dedicatedEntityTablePrefixes
+            .Where(tablePrefix => !String.IsNullOrWhiteSpace(tablePrefix))
+            .Select(tablePrefix => createDedicatedTriggersQuery.Replace("{tablePrefix}", tablePrefix));
+        foreach (var query in queries)
         {
-            await clientDatabaseConnection.ExecuteAsync(dedicatedTriggersQuery);
+            await clientDatabaseConnection.ExecuteAsync(query);
+        }
+
+        // Dedicated link table trigger.
+        var createDedicatedLinkTriggersQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.CreateDedicatedLinkTableTriggers.sql");
+
+        queries = dedicatedLinkTablePrefixes
+            .Where(tablePrefix => !String.IsNullOrWhiteSpace(tablePrefix))
+            .Select(tablePrefix => createDedicatedLinkTriggersQuery.Replace("{LinkType}", tablePrefix.Trim('_')));
+        foreach (var query in queries)
+        {
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         // Update wiser_table_changes.

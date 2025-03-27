@@ -864,16 +864,6 @@ CREATE TRIGGER `FileInsert` AFTER INSERT ON `wiser_itemfile` FOR EACH ROW BEGIN
             VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'content_url', NULL, NEW.content_url);
         END IF;
 
-        IF IFNULL(NEW.width, '') <> '' THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'width', NULL, NEW.width);
-        END IF;
-
-        IF IFNULL(NEW.height, '') <> '' THEN
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'height', NULL, NEW.height);
-        END IF;
-
         IF IFNULL(NEW.file_name, '') <> '' THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', 'wiser_itemfile', NEW.id, IFNULL(@_username, USER()), 'file_name', NULL, NEW.file_name);
@@ -954,18 +944,6 @@ CREATE TRIGGER `FileUpdate` AFTER UPDATE ON `wiser_itemfile` FOR EACH ROW BEGIN
             SET updateChangeDate = TRUE;
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'content_url', OLD.content_url, NEW.content_url);
-        END IF;
-
-        IF NEW.width <> OLD.width THEN
-            SET updateChangeDate = TRUE;
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'width', OLD.width, NEW.width);
-        END IF;
-
-        IF NEW.height <> OLD.height THEN
-            SET updateChangeDate = TRUE;
-            INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-            VALUES ('UPDATE_FILE', 'wiser_itemfile', OLD.id, IFNULL(@_username, USER()), 'height', OLD.height, NEW.height);
         END IF;
 
         IF NEW.file_name <> OLD.file_name THEN
