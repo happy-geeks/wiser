@@ -885,12 +885,10 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
         clientDatabaseConnection.AddParameter("entityType", data.EntityType);
         clientDatabaseConnection.AddParameter("linkType", data.LinkType);
-        clientDatabaseConnection.AddParameter("newTabName", data.NewTabName);
-        clientDatabaseConnection.AddParameter("currentTabName", data.CurrentTabName);
 
         var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
 
-        var query = new StringBuilder($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex, tab_name = ?newTabName WHERE id = ?id;");
+        var query = new StringBuilder($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex WHERE id = ?id;");
         if (data.NewIndex < data.CurrentIndex)
         {
             query.AppendLine($"""
@@ -915,6 +913,12 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         }
 
         await clientDatabaseConnection.ExecuteAsync(query.ToString());
+        return new ServiceResult<bool>(true);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> MoveGroupAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data)
+    {
         return new ServiceResult<bool>(true);
     }
 

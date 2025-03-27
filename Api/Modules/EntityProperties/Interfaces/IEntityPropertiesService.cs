@@ -120,6 +120,14 @@ public interface IEntityPropertiesService
     /// <param name="id">The ID of the entity property</param>
     /// <param name="data">Data required to do the move.</param>
     Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data);
+    
+    /// <summary>
+    /// Move an entity property group to a new position.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="id">The ID of the entity property group</param>
+    /// <param name="data">Data required to do the move.</param>
+    Task<ServiceResult<bool>> MoveGroupAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data);
 
     /// <summary>
     /// Move an entity tab with all it's properties to a new position.
