@@ -1196,7 +1196,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
-
+            console.log("testeetestestest");
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {
