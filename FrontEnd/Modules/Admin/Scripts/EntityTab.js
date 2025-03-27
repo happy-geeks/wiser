@@ -2517,58 +2517,89 @@ export class EntityTab {
             const sourceDataItem = event.sender.dataItem(event.sourceNode);
             const destinationDataItem = event.sender.dataItem(event.destinationNode);
 
-            let sourceTabName = sourceDataItem.isTab ? sourceDataItem.name : sourceDataItem.tabName;
-            sourceTabName = sourceTabName === "Gegevens" ? "" : sourceTabName;
-            let destinationTabName = destinationDataItem.isTab ? destinationDataItem.name : destinationDataItem.tabName;
-            destinationTabName = destinationTabName === "Gegevens" ? "" : destinationTabName;
-
-            console.log(`onPropertiesTreeViewDrop: sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type}`);
-            console.log(`dropPosition: ${event.dropPosition}`);
-            
-            return;
-
-            if (sourceDataItem.isTab) {
-                return Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/move-tab`,
-                    method: "PUT",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        currentTabName: sourceTabName,
-                        destinationTabName: destinationTabName,
-                        entityType: this.entitiesCombobox.dataItem().name,
-                        dropPosition: event.dropPosition
-                    })
-                });
-            }
+            console.log(`onPropertiesTreeViewDrop: sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> ${event.dropPosition} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type}`);
 
             const oldIndex = sourceDataItem.ordering;
-            let newIndex = destinationDataItem.ordering;
+            // calculate new position
+            let newIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : 0) + (oldIndex > destinationDataItem.ordering ? 0 : -1);
 
-            switch (event.dropPosition) {
-                case "over":
-                    if (destinationDataItem) {
-                        destinationDataItem.set("expanded", true);
-                        newIndex = event.sender.dataItem(event.destinationNode.querySelector("ul li:last-child")).ordering;
-                    }
+            // we use the new entity structure data to redraw the tree, so stop the tree from moving stuff around by itself
+            event.preventDefault();
+            
+            switch (sourceDataItem.type) {
+                case "Property": 
+                    await Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
+                        method: "PUT",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            currentIndex: oldIndex,
+                            newIndex: newIndex,
+                            id: sourceDataItem.id,
+                            entityType: this.entitiesCombobox.dataItem().name
+                        })
+                    });
                     break;
-                case "after":
-                    newIndex++;
+                case "Group":
+                    await Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move-group`,
+                        method: "PUT",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            currentIndex: oldIndex,
+                            newIndex: newIndex,
+                            id: sourceDataItem.id,
+                            entityType: this.entitiesCombobox.dataItem().name
+                        })
+                    });
                     break;
-            }
+                case "Tab":
+                    await Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}entity-properties/move-tab`,
+                        method: "PUT",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            currentTabName: sourceDataItem.name === "Gegevens" ? "" : sourceDataItem.name,
+                            destinationTabName: destinationDataItem.name === "Gegevens" ? "" : destinationDataItem.name,
+                            entityType: this.entitiesCombobox.dataItem().name,
+                            dropPosition: event.dropPosition
+                        })
+                    });
+                    break;
+            }            
 
-            return Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
-                method: "PUT",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    currentIndex: oldIndex,
-                    newIndex: newIndex,
-                    id: sourceDataItem.id,
-                    currentTabName: sourceTabName,
-                    newTabName: destinationTabName,
-                    entityType: this.entitiesCombobox.dataItem().name
-                })
+            // update the entity structure
+            this.entityStructure = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/grouped-by-tab`,
+                method: "GET"
             });
+            
+            console.log(`entityStructure after move: ${JSON.stringify(this.entityStructure)}`);
+            // refresh treeview
+            this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
+                data: this.entityStructure,
+                schema: {
+                    model: {
+                        children: {
+                            schema: {
+                                data: "properties",
+                                model: {
+                                    children: "properties"
+                                }
+                            }
+                        }
+                    }
+                }
+            }));
+
+            // refreshing the treeview data collapsed everything, expand the relevant tab/group again
+            if (sourceDataItem.type !== "Tab") {
+                this.propertiesTreeView.expand(this.propertiesTreeView.findByText(sourceDataItem.tabName));
+            }
+            if (sourceDataItem.type === "Property") {
+                this.propertiesTreeView.expand(this.propertiesTreeView.findByText(sourceDataItem.groupName));
+            }
+            
         } catch (exception) {
             console.error(exception);
             kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit veld. De fout was:<br>${exception.responseText || exception.statusText}`);
@@ -3448,12 +3479,12 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
         const tabNode = this.propertiesTreeView.findByUid(tabDataItem.uid);
         this.propertiesTreeView.expand(tabNode);
 
-        if (this.selectedTabOrProperty.type === "Group") {
+        if (property.type === "Group") {
             // can't use property.id here because not all groups have an id (will get one after saving)
             const groupNode = this.propertiesTreeView.findByText(property.displayName);
             this.propertiesTreeView.select(groupNode);
         }
-        else if (this.selectedTabOrProperty.type === "Property") {
+        else if (property.type === "Property") {
             // we find the group by name, names are unique per tab and only the correct tab should be expanded
             const groupNode = this.propertiesTreeView.findByText(property.groupName);
             this.propertiesTreeView.expand(groupNode);

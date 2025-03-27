@@ -182,6 +182,19 @@ public class EntityPropertiesController : ControllerBase
     {
         return (await entityPropertiesService.MovePropertyAsync((ClaimsIdentity)User.Identity, id, data)).GetHttpResponseMessage();
     }
+    
+    /// <summary>
+    /// Move an entity property group to a new position.
+    /// </summary>
+    /// <param name="id">The ID of the entity property group</param>
+    /// <param name="data">Data required to do the move.</param>
+    [HttpPut]
+    [Route("{id}/move-group")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MovePropertyGroupAsync(int id, MoveEntityPropertyRequestModel data)
+    {
+        return (await entityPropertiesService.MoveGroupAsync((ClaimsIdentity)User.Identity, id, data)).GetHttpResponseMessage();
+    }
 
     /// <summary>
     /// Move an entity tab with all it's properties to a new position.
