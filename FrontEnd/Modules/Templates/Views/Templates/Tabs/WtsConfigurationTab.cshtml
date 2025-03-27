@@ -66,18 +66,20 @@
         }
         <div class="item">
             @switch (attributes?.KendoComponent)
-            {
+            {       //werkt
                     case KendoComponents.TextArea:
                         <h4><label>@attributes?.Title</label></h4>
                         <span>
-                            <textarea
+                        <textarea
                                 type="text"
+                                id="editor2"
                                 name="@property.Name"
                                 disabled=@(attributes?.IsDisabled ?? false)
                                 value="@(data ?? "")"
                                 trace="@trace"
+                                data-editor-type="text/x-mysql"
                                 data-kendo-tab="@tab"
-                                data-kendo-component="@KendoComponents.TextBox"
+                                
                                 data-kendo-options="@attributes?.KendoOptions"
                                 data-depend-on-field="@attributes?.DependsOnField"
                                 data-depend-on-value="@dependsOnValue"
@@ -86,7 +88,6 @@
                             ></textarea>
                             <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                         </span>
-
                         break;
                 case KendoComponents.TextBox:
                     <h4><label>@attributes?.Title</label></h4>
