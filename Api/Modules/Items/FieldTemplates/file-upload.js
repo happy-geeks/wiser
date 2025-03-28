@@ -1,12 +1,17 @@
-﻿(() => {
+﻿(async () => {
 const container = $("#container_{propertyIdWithSuffix}");
 const fileTemplate = kendo.template($("#fileTemplate_{propertyIdWithSuffix}").html());
 
-const options = $.extend({
+let options = {options};
+
+// Files should not be publicly accessible by default, unless specified otherwise, so use truthy check here.
+const markAsProtected = !options.filesCanBeAccessedPublicly;
+
+options = $.extend({
 	multiple: true,
 	template: fileTemplate,
 	async: {
-		saveUrl: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/upload?propertyName=" + encodeURIComponent("{propertyName}") + "&itemLinkId={itemLinkId}&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
+		saveUrl: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/upload?propertyName=${encodeURIComponent("{propertyName}")}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}&markAsProtected=${markAsProtected}`,
 		removeUrl: "remove",
 		withCredentials: false
     },
@@ -23,7 +28,7 @@ const options = $.extend({
 	remove: window.dynamicItems.fields.onFileDelete.bind(window.dynamicItems.fields),
     success: window.dynamicItems.fields.onUploaderSuccess.bind(window.dynamicItems.fields),
     error: window.dynamicItems.fields.onFileUploadError.bind(window.dynamicItems.fields)
-}, {options});
+}, options);
 
 const addFileUrl = async (event) => {
     const fileUrl = event.sender.element.find("#fileUrl").val();
@@ -43,10 +48,10 @@ const addFileUrl = async (event) => {
             method: "POST",
             contentType: "application/json",
             dataType: "json",
-            url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/files/url?itemLinkId={itemLinkId}&propertyName=" + encodeURIComponent("{propertyName}") + "&entityType=" + encodeURIComponent("{entityType}") + "&linkType={linkType}",
+            url: `${dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/files/url?itemLinkId={itemLinkId}&propertyName=${encodeURIComponent("{propertyName}")}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`,
             data: JSON.stringify(fileData)
         });
-        
+
         dataResult.itemId = dataResult.itemId || "{itemIdEncrypted}";
         dataResult.addedOn = dataResult.addedOn || new Date();
         const newFile = {
@@ -69,7 +74,7 @@ const addFileUrl = async (event) => {
     catch(error) {
         console.error("read error - {title}", error);
         kendo.alert("Er is iets fout gegaan toevoegen van een bestands-URL voor het veld '{title}'. Probeer het a.u.b. nogmaals of neem contact op met ons.")
-    };
+    }
 };
 
 let files = {initialFiles};
@@ -81,15 +86,15 @@ const initialize = async () => {
 
     kendoComponent.wrapper.find(".editTitle").click(window.dynamicItems.fields.onUploaderEditTitleClick.bind(window.dynamicItems.fields));
     kendoComponent.wrapper.find(".editName").click(window.dynamicItems.fields.onUploaderEditNameClick.bind(window.dynamicItems.fields));
-    
+
     const readonly = {readonly};
-    
+
     if (readonly === true || options.queryId) {
         kendoComponent.disable();
     }
 
     const addFileUrlButton = container.find(".addFileUrl");
-    
+
     if (!options.showAddFileUrlButton) {
         addFileUrlButton.hide();
     } else {
@@ -132,7 +137,7 @@ const initialize = async () => {
             const propertyName = container.data("propertyName");
 
             try {
-                let dataResult = await Wiser.api({
+                await Wiser.api({
                     method: "PUT",
                     contentType: "application/json",
                     dataType: "json",
@@ -149,24 +154,24 @@ const initialize = async () => {
 };
 
 if (!options.queryId) {
-    initialize();
+    await initialize();
 } else {
     let dataResult = null;
     try {
-        dataResult = Wiser.api({
+        dataResult = await Wiser.api({
             method: "POST",
             contentType: "application/json",
             dataType: "json",
             url: `${dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/action-button/{propertyId}?queryId=${encodeURIComponent(options.queryId)}&itemLinkId={itemLinkId}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`,
-        })
+        });
     }
-    catch(error) {
+    catch (error) {
         console.error("read error - {title}", error);
         kendo.alert("Er is iets fout gegaan tijdens het laden van de bestanden voor het veld '{title}'. Probeer het a.u.b. nogmaals of neem contact op met ons.");
     }
     finally {
-        files = dataResult.otherData;
-        initialize();
+        files = dataResult?.otherData;
+        await initialize();
     }
 }
 })();

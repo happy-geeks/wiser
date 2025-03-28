@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using Api.Modules.Files.Interfaces.Repository;
 using Api.Modules.Files.Models;
@@ -42,10 +43,10 @@ public class FilesRepository : IFilesRepository, ITransientService
                          item_id AS itemId,
                          CASE
                              WHEN content_type LIKE 'image/%' THEN 'image'
-                             WHEN content_type = 'text/html' THEN 'html'
+                             WHEN content_type = '{MediaTypeNames.Text.Html}' THEN 'html'
                              ELSE 'file'
                          END AS spriteCssClass,
-                         IF(content_type IN('text/html', 'application/octet-stream'), CONVERT(content USING utf8), '') AS html
+                         IF(content_type IN('{MediaTypeNames.Text.Html}', '{MediaTypeNames.Application.Octet}'), CONVERT(content USING utf8), '') AS html
                      FROM {tablePrefix}{WiserTableNames.WiserItemFile}
                      WHERE item_id = ?parentId AND itemlink_id=0
 

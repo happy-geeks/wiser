@@ -13,9 +13,12 @@ if (initialFiles && initialFiles.length > 0) {
 
 let options = {options};
 
+// Images should almost always be publicly accessible, so we default to true.
+const markAsProtected = options.filesCanBeAccessedPublicly === false || options.filesCanBeAccessedPublicly === 0;
+
 options = $.extend({
     async: {
-        saveUrl: `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/upload?propertyName=${encodeURIComponent("{propertyName}")}&itemLinkId={itemLinkId}&useTinyPng=${(options.useTinyPng === true).toString()}&useCloudFlare=${(options.useCloudFlare === true).toString()}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}`,
+        saveUrl: `${window.dynamicItems.settings.wiserApiRoot}items/{itemIdEncrypted}/upload?propertyName=${encodeURIComponent("{propertyName}")}&itemLinkId={itemLinkId}&useTinyPng=${(options.useTinyPng === true).toString()}&useCloudFlare=${(options.useCloudFlare === true).toString()}&entityType=${encodeURIComponent("{entityType}")}&linkType={linkType}&markAsProtected=${markAsProtected}`,
         withCredentials: false,
         removeUrl: "remove"
     },
@@ -23,8 +26,8 @@ options = $.extend({
         allowedExtensions: [
             ".bmp",
             ".gif",
-            ".jpg", 
-            ".jpeg", 
+            ".jpg",
+            ".jpeg",
             ".png",
             ".svg",
             ".tif",
@@ -50,7 +53,7 @@ options = $.extend({
     showFileList: true,
     template: "# if(files.length && files[0].validationErrors && files[0].validationErrors.indexOf('invalidFileExtension') > -1) { # <div class='k-file-error k-text-error'>Bestandstype niet toegestaan</div> # } #",
     dropZone: ".imageUploader_{propertyIdWithSuffix}"
-}, {options});
+}, options);
 
 if (window.dynamicItems.fields.onFileUploadError) {
     options.error = window.dynamicItems.fields.onFileUploadError.bind(window.dynamicItems.fields);
@@ -84,7 +87,7 @@ container.find(".imagesContainer").kendoSortable({
         const propertyName = container.data("propertyName");
 
         try {
-            let apiResult = await Wiser.api({
+            await Wiser.api({
                 method: "PUT",
                 contentType: "application/json",
                 dataType: "json",

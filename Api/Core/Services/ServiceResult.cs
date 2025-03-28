@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mime;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Core.Services;
@@ -51,14 +52,14 @@ public class ServiceResult<T> : ActionResult
     public ActionResult GetHttpResponseMessage(string contentType = null)
     {
         ActionResult response;
-            
+
         if (!String.IsNullOrEmpty(ErrorMessage))
         {
             response = new ContentResult
             {
                 Content = ErrorMessage,
                 StatusCode = (int)StatusCode,
-                ContentType = contentType ?? "application/json"
+                ContentType = contentType ?? MediaTypeNames.Application.Json
             };
         }
         else if (ModelObject != null && StatusCode != HttpStatusCode.NoContent)
@@ -75,8 +76,7 @@ public class ServiceResult<T> : ActionResult
 
     private ActionResult GetContentForModelObject(string contentType = null)
     {
-        // ReSharper disable once OperatorIsCanBeUsed <-- We can't actually use this, because it's a C# 7.1 function, we use C# 7.0.
-        if (ModelObject.GetType() == typeof(string) && !String.IsNullOrWhiteSpace(contentType) && contentType != "application/json")
+        if (ModelObject is string && !String.IsNullOrWhiteSpace(contentType) && !String.Equals(contentType, MediaTypeNames.Application.Json, StringComparison.OrdinalIgnoreCase))
         {
             return new ContentResult
             {
@@ -85,7 +85,7 @@ public class ServiceResult<T> : ActionResult
                 Content = ModelObject?.ToString()
             };
         }
-            
+
         return new ObjectResult(ModelObject) { StatusCode = (int)StatusCode };
     }
 }

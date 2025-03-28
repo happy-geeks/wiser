@@ -37,7 +37,7 @@ public class ContentBuilderController : ControllerBase
         this.contentBuilderService = contentBuilderService;
         this.gclSettings = gclSettings.Value;
     }
-        
+
     /// <summary>
     /// Gets all snippets for the content builder. Snippets are pieces of HTML that the user can add in the Content Builder.
     /// </summary>
@@ -49,7 +49,7 @@ public class ContentBuilderController : ControllerBase
     {
         return (await contentBuilderService.GetSnippetsAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
     }
-        
+
     /// <summary>
     /// Gets all templates for the content box. Templates are pieces of HTML that the user can add in the Content Box.
     /// </summary>
@@ -61,7 +61,7 @@ public class ContentBuilderController : ControllerBase
     {
         return (await contentBuilderService.GetTemplatesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
     }
-        
+
     /// <summary>
     /// Gets all categories for templates for the content box. Templates are pieces of HTML that the user can add in the Content Box.
     /// </summary>
@@ -73,7 +73,7 @@ public class ContentBuilderController : ControllerBase
     {
         return (await contentBuilderService.GetTemplateCategoriesAsync((ClaimsIdentity)User.Identity)).GetHttpResponseMessage();
     }
-        
+
     /// <summary>
     /// Gets the HTML of an item, for the Content Builder.
     /// </summary>
@@ -107,7 +107,7 @@ public class ContentBuilderController : ControllerBase
     /// <returns>A string with the contents of the javascript file.</returns>
     [HttpGet]
     [Route("template.js")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, "text/javascript")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK, MediaTypeNames.Text.JavaScript)]
     [AllowAnonymous]
     public async Task<IActionResult> GetTemplateJavascriptFileAsync([FromQuery] TenantInformationModel tenantInformation)
     {
@@ -115,13 +115,13 @@ public class ContentBuilderController : ControllerBase
         var userId = String.IsNullOrWhiteSpace(tenantInformation.encryptedUserId) ? 0 : Int32.Parse(tenantInformation.encryptedUserId.Replace(" ", "+").DecryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true));
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
+            new(ClaimTypes.NameIdentifier, userId.ToString()),
+            new(ClaimTypes.GroupSid, tenantInformation.subDomain ?? "")
         };
         var dummyClaimsIdentity = new ClaimsIdentity(claims);
         //Set the sub domain for the database connection.
         HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
-            
-        return (await contentBuilderService.GetTemplateJavascriptFileAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/javascript");
+
+        return (await contentBuilderService.GetTemplateJavascriptFileAsync(dummyClaimsIdentity)).GetHttpResponseMessage(MediaTypeNames.Text.JavaScript);
     }
 }

@@ -5,10 +5,13 @@ export class ModuleTab {
         this.base = base;
         this.previouslySelectedModule = 0;
 
+        this.initialize();
+    }
+
+    async initialize() {
         this.setupBindings();
-        this.initializeKendoComponents();
-        // set query dropdown list
-        this.getModules();
+        await this.initializeKendoComponents();
+        await this.getModules();
     }
 
     /**
@@ -666,7 +669,7 @@ export class ModuleTab {
      */
     getCurrentModuleSettings() {
         const moduleId = Number.parseInt(document.getElementById("moduleId").value);
-        
+
         if (isNaN(moduleId)) {
             return null;
         }

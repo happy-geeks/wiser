@@ -473,3 +473,9 @@ table.k-editor {
         transform: translate(19px, 0);
     }
 }
+
+/* Migrations tab */
+#migrationList .k-detail-cell .migration-description {
+    display: block;
+    white-space: normal;
+}

@@ -70,7 +70,7 @@ public class TemplatesController : ControllerBase
         //Set the sub domain for the database connection.
         HttpContext.Items[HttpContextConstants.SubDomainKey] = tenantInformation.subDomain;
 
-        return (await templatesService.GetCssForHtmlEditorsAsync(dummyClaimsIdentity)).GetHttpResponseMessage("text/css");
+        return (await templatesService.GetCssForHtmlEditorsAsync(dummyClaimsIdentity)).GetHttpResponseMessage(MediaTypeNames.Text.Css);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public class TemplatesController : ControllerBase
     [HttpGet]
     [HttpPost]
     [Route("get-and-execute-query/{templateName}")]
-    [Consumes(MediaTypeNames.Application.Json, "application/x-www-form-urlencoded")]
+    [Consumes(MediaTypeNames.Application.Json, MediaTypeNames.Application.FormUrlEncoded)]
     [ProducesResponseType(typeof(JToken), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAndExecuteQueryAsync(string templateName)
     {

@@ -56,6 +56,11 @@ public class FileModel
     public int LinkType { get; set; }
 
     /// <summary>
+    /// Whether the file is a protected file. Protected files are only accessible via encrypted IDs to prevent unauthorized access.
+    /// </summary>
+    public bool Protected { get; set; }
+
+    /// <summary>
     /// Gets or sets the object for storing extra data, such as alt texts in multiple languages for images.
     /// </summary>
     public FileExtraDataModel ExtraData { get; set; }
