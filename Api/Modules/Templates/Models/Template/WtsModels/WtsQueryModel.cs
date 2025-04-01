@@ -17,6 +17,10 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
     [XmlType("Query")]
     public class WtsQueryModel : ActionModel
     {
+        /// <summary>
+        /// Gets or sets the query that will be used
+        /// </summary>
+        
         [XmlIgnore]
         [WtsProperty(
             IsVisible = true,
@@ -25,7 +29,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Description = "de query die moet worden uitgevoerd",
             UseDataSource = true,
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextArea
+            DataComponent = DataComponents.TextArea
         )]
         public string Query
         {
@@ -34,51 +38,30 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 if (CDataContent == null) return "";
                 return CDataContent.Value;
             }
-            set
-            {
-                CDataContent = new XmlDocument().CreateCDataSection(value);
-            }
+            set => CDataContent = new XmlDocument().CreateCDataSection(value);
         }
 
-        private XmlCDataSection cDataContent;
-        
+        /// <summary>
+        /// converts the query to a cdata section for loading/storing in the xml file
+        /// </summary>
         [XmlElement("Query")]
         [JsonIgnore]
-        public XmlCDataSection CDataContent
-        {
-            get
-            {
-                /*if (cDataContent != null && cDataContent.Attributes == null)
-                {
-                    cDataContent.Attributes = new XmlAttributeCollection();
-                }
-                
-                if (cDataContent != null && cDataContent.Attributes.GetNamedItem("genre") == null)
-                {
-                    XmlDocument doc = new XmlDocument();
-                    XmlAttribute newAttr = doc.CreateAttribute("genre");
-                    newAttr.Value = "novel";
-
-                    cDataContent.Attributes.SetNamedItem(newAttr);
-                }*/
-                return cDataContent;
-            }
-            set
-            {
-                cDataContent=value;
-            }
-        }
+        public XmlCDataSection CDataContent { get; set; }
+        
         [XmlIgnore]
         [CanBeNull]
         private string timeout;
         
+        /// <summary>
+        /// Gets or sets the timeout in seconds. if the interger is 0 it will be null instead)
+        /// </summary>
         [WtsProperty(
             IsVisible = true,
             IsRequired = false,
             Title = "Timeout",
             Description = "how many seconds until timeout? 0 = no timeout",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.NumericTextBox,
+            DataComponent = DataComponents.KendoNumericTextBox,
             KendoOptions = @"
                        {
                           ""format"": ""#"",
@@ -93,14 +76,13 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 if( timeout=="0" ) return null;
                 return timeout;
             }
-            set
-            {
-                timeout = value;
-            }
+            set => timeout = value;
         }
 
         private CharacterEncodingModel characterEncoding;
-
+        /// <summary>
+        /// Gets or sets the character encoding settings. if the data is incompleet it will be null instead
+        /// </summary>
         public CharacterEncodingModel CharacterEncoding
         {
             get
@@ -119,7 +101,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 characterEncoding = value;
             }
         }
-
+        
         [XmlIgnore]     
         private bool? useTransaction { get; set; }
 
@@ -129,7 +111,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Use Transaction",
             Description = "moeten transacties gebruikt worden in deze query?",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.CheckBox
+            DataComponent = DataComponents.KendoCheckBox
         )]
         [XmlIgnore] 
         public bool? UseTransaction {
@@ -141,10 +123,11 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 }
                 return useTransaction;
             }
-            set
-            {
-                useTransaction = value;
-            } }
+            set => useTransaction = value;
+        }
+        /// <summary>
+        /// Gets or sets is tranactions will be used
+        /// </summary>
         [XmlElement("UseTransaction")]
         [CanBeNull]
         public string UseTransactionString {
@@ -166,11 +149,4 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 }
                 useTransaction = bool.Parse(value);
             } }
-        
-        //when would this get used?
-        /*[XmlIgnore]
-        public bool UseTransactionSpecified
-        {
-            get { return UseTransaction.HasValue; }
-        }*/
     }

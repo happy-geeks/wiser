@@ -17,6 +17,9 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
 
     public abstract class ActionModel
     {
+        /// <summary>
+        /// Gets or sets the time id. which is use to decide what timer should be connected to this action
+        /// </summary>
         [XmlElement("TimeId", DataType = "int")]
         [WtsProperty(
             IsVisible = true,
@@ -24,7 +27,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "TijdId",
             Description = "het tijd id wordt gebruikt om de kopellen aan de timer, zorg dat deze werde gelijk is aan het is van de timer",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.NumericTextBox,
+            DataComponent = DataComponents.KendoNumericTextBox,
             KendoOptions = @"
                    {
                       ""format"": ""#"",
@@ -34,6 +37,9 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         )]
         public int TimeId { get; set; }
         
+        /// <summary>
+        /// Gets or sets the order id. this decides the order in which diffrent actions within the same timer are executed
+        /// </summary>
         [XmlElement("Order", DataType = "int")]
         [WtsProperty(
             IsVisible = true,
@@ -41,7 +47,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Order",
             Description = "de volgorde waarin de acties moeten worden uitgevoerd",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.NumericTextBox,
+            DataComponent = DataComponents.KendoNumericTextBox,
             KendoOptions = @"
                    {
                       ""format"": ""#"",
@@ -51,6 +57,9 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         )]
         public int Order { get; set; }
         
+        /// <summary>
+        /// the action id is a combination between the time and order ids. this should be unique
+        /// </summary>
         [XmlIgnore]
         [WtsProperty(
             IsVisible = true,
@@ -59,19 +68,23 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Action",
             Description = "een combinatie tussen de timeid en de order",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox,
+            DataComponent = DataComponents.KendoTextBox,
             IsDisabled = true
         )]
         public string Actionid => (TimeId + "-" + Order);
         
+        
         private string _resultSetName;
+        /// <summary>
+        /// get or set the game which will be used to store the result set, empty string = null
+        /// </summary>
         [WtsProperty(
             IsVisible = true,
             IsRequired = false,
             Title = "ResultSetName",
             Description = "indien de actie een resultaat moet data retourneren, geef hier de naam van de resultaatset op, anders laat dit leeg",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         [CanBeNull]
         public string ResultSetName{
@@ -84,14 +97,16 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         }
         
         private string _useResultSet;
-        
+        /// <summary>
+        /// get or set the game which will be used to get the result set, empty string = null
+        /// </summary>
         [WtsProperty(
             IsVisible = true,
             IsRequired = false,
             Title = "UseResultSet",
             Description = "als er gebruik moet worden van een eerder defineerde result set, geef hier de naam op, anders laat dit leeg.",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         
         [CanBeNull]
@@ -104,7 +119,9 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                     _useResultSet = value;
                 } 
         }
-        
+        /// <summary>
+        /// get or set is data should be hashed
+        /// </summary>
         [XmlIgnore]
         [WtsProperty(
             IsVisible = true,
@@ -112,10 +129,13 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "hash data",
             Description = "moet data worden gehashed",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.CheckBox
+            DataComponent = DataComponents.KendoCheckBox
         )]
         public bool HashData { get; set; }
         
+        /// <summary>
+        /// get or set the Hashing algorithm used, if HashData is false this = null
+        /// </summary>
         [XmlIgnore]
         [WtsProperty(
             IsVisible = true,
@@ -123,10 +143,13 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Hash algorithm",
             Description = "als hash data is geselecteerd, geef hier de hash algoritme op.",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.DropDownList
+            DataComponent = DataComponents.KendoDropDownList
         )]
         public HashAlgorithms HashAlgorithm { get; set; }
         
+        /// <summary>
+        /// get or set the Hash Representation used, if HashData is false this = null
+        /// </summary>
         [XmlIgnore]
         [WtsProperty(
             IsVisible = true,
@@ -134,16 +157,18 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "hash representation",
             Description = "als hash data is geselecteerd, geef hier de hash representatie op.",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.DropDownList
+            DataComponent = DataComponents.KendoDropDownList
         )]
         public HashRepresentations HashRepresentation { get; set; }
         
+        /// <summary>
+        /// get or set the Hash setting used for the xml file generation/loading, if HashData is false this = null
+        /// </summary>
         [CanBeNull]
         [XmlElement("HashSettings")]
         public HashSettingsModel HashSettings {
             get
             {
-                Console.WriteLine("HASH? "+HashData);
                 if (HashData)
                 {
                     return new HashSettingsModel()
@@ -177,7 +202,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Only execute when",
             Description = "only execute the result set contain specific values/states. the needed field will depend on where the result set came from, see wts wiki",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.DropDownList
+            DataComponent = DataComponents.KendoDropDownList
         )]
         public OnlyWithTypes OnlyWithTypes { get; set; }
         
@@ -191,10 +216,9 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             UseDataSource = true,
             Description = "the source of the status code",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox,
+            DataComponent = DataComponents.KendoTextBox,
             DependsOnField = "OnlyWithTypes",
-            DependsOnValue = new [] {"OnlyWithStatusCode"},
-            customUiOrder = 0
+            DependsOnValue = new [] {"OnlyWithStatusCode"}
         )]
         [CanBeNull]
         public string OnlyWithStatusCode_item
@@ -210,7 +234,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "status code",
             Description = "the status code (werkt alleen met resulaten van een http api call)",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.NumericTextBox,
+            DataComponent = DataComponents.KendoNumericTextBox,
             DependsOnField = "OnlyWithTypes",
             DependsOnValue = new [] {"OnlyWithStatusCode"},
             KendoOptions = @"
@@ -225,12 +249,12 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         [JsonIgnore]
         public XmlNode OnlyWithStatusCode
         {
-        get
-        {   
-            if (OnlyWithStatusCode_item==null||OnlyWithStatusCode_code==null)return null;
-            if (OnlyWithTypes != OnlyWithTypes.OnlyWithStatusCode) return null;
-            return new XmlDocument().CreateCDataSection(OnlyWithStatusCode_item +","+ OnlyWithStatusCode_code);
-        }
+            get
+            {   
+                if (OnlyWithStatusCode_item==null||OnlyWithStatusCode_code==null)return null;
+                if (OnlyWithTypes != OnlyWithTypes.OnlyWithStatusCode) return null;
+                return new XmlDocument().CreateCDataSection(OnlyWithStatusCode_item +","+ OnlyWithStatusCode_code);
+            }
             set
             {
                 if (value==null || value.Value== null)return;
@@ -251,7 +275,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             UseDataSource = true,
             Description = "the source van de sucess code",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox,          
+            DataComponent = DataComponents.KendoTextBox,          
             DependsOnField = "OnlyWithTypes",
             DependsOnValue = new [] {"OnlyWithSuccessState"}
         )]
@@ -269,7 +293,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "sucess code",
             Description = "the sucess code (werkt alleen met resulaten van een ImportFile of GenerateFile)",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox,
+            DataComponent = DataComponents.KendoTextBox,
             DependsOnField = "OnlyWithTypes",
             DependsOnValue = new [] {"OnlyWithSuccessState"}
         )]
@@ -305,7 +329,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             UseDataSource = true,
             Description = "de source van de value",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox,
+            DataComponent = DataComponents.KendoTextBox,
             DependsOnField = "OnlyWithTypes",
             DependsOnValue = new [] {"OnlyWithValue"}
         )]
@@ -323,7 +347,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "value",
             Description = "de verwachte value",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox,
+            DataComponent = DataComponents.KendoTextBox,
             DependsOnField = "OnlyWithTypes",
             DependsOnValue = new [] {"OnlyWithValue"}
         )]
@@ -359,13 +383,17 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
 
         [XmlIgnore]
         private string comment { get; set; }
+        
+        /// <summary>
+        /// get or set the comments. used for documentation
+        /// </summary>
         [WtsProperty(
             IsVisible = true,
             IsRequired = false,
             Title = "Comment",
             Description = "gebruikt voor documentatie, geen effect op de actie zelf.",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         [CanBeNull]
         public string Comment {
@@ -374,10 +402,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
                 if (string.IsNullOrWhiteSpace(comment)) return null;
                 return comment;
             }
-            set
-            {
-                comment = value;
-            } }
+            set => comment = value;
+        }
     }
 }
 >>>>>>> 61cfa54a (progress towards the m.v.p.)

@@ -6,6 +6,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
 
     public class CharacterEncodingModel
     {   
+        //if either of the 2 setting are equal to the default return null to reduce file size
         [XmlIgnore]
         private readonly string defaultCharacterSet = "utf8mb4";
         [XmlIgnore]
@@ -20,7 +21,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "CharacterSet",
             Description = "welke characterset moet gebruikt worden?",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         [XmlIgnore]
         public string CharacterSet
@@ -41,7 +42,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             }
             set
             {
-                if (value == null)
+                if (string.IsNullOrWhiteSpace(CharacterSet))
                 {
                     CharacterSet = defaultCharacterSet;
                 }
@@ -59,7 +60,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Collation",
             Description = "welke Collation moet gebruikt worden?",
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         public string Collation { get; set; }
         [XmlElement("Collation")]
@@ -75,7 +76,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             }
             set
             {
-                if (value == null)
+                if (string.IsNullOrWhiteSpace(Collation))
                 {
                     Collation = defaultCollation;
                 }
