@@ -17,12 +17,13 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, ""); }
+            <!-- @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, ""); }-->
+            
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{ RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }
+        <!-- @{ RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }-->
         </div>
     </div>
 
@@ -65,9 +66,9 @@
             dependsOnValue = string.Join(",", attributes.DependsOnValue);
         }
         <div class="item">
-            @switch (attributes?.KendoComponent)
-            {       //werkt
-                    case KendoComponents.TextArea:
+            @switch (attributes?.DataComponent)
+            {
+                    case DataComponents.TextArea:
                         <h4><label>@attributes?.Title</label></h4>
                         <span>
                         <textarea
@@ -77,9 +78,9 @@
                                 disabled=@(attributes?.IsDisabled ?? false)
                                 value="@(data ?? "")"
                                 trace="@trace"
-                                data-editor-type="text/x-mysql"
+                                data-wts-editor-type="text/x-mysql"
                                 data-kendo-tab="@tab"
-                                
+                                data-kendo-component="@DataComponents.TextArea"
                                 data-kendo-options="@attributes?.KendoOptions"
                                 data-depend-on-field="@attributes?.DependsOnField"
                                 data-depend-on-value="@dependsOnValue"
@@ -89,7 +90,7 @@
                             <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                         </span>
                         break;
-                case KendoComponents.TextBox:
+                case DataComponents.KendoTextBox:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
@@ -99,7 +100,7 @@
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponents.TextBox"
+                            data-kendo-component="@DataComponents.KendoTextBox"
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
@@ -109,7 +110,7 @@
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponents.NumericTextBox:
+                case DataComponents.KendoNumericTextBox:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
@@ -119,7 +120,7 @@
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponents.NumericTextBox"
+                            data-kendo-component="@DataComponents.KendoNumericTextBox"
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
@@ -129,7 +130,7 @@
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponents.TimePicker:
+                case DataComponents.KendoTimePicker:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <input
@@ -138,7 +139,7 @@
                             value="@(data ?? "")"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponents.TimePicker"
+                            data-kendo-component="@DataComponents.KendoTimePicker"
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
@@ -148,7 +149,7 @@
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponents.CheckBox:
+                case DataComponents.KendoCheckBox:
                     <h4></h4>
                     <span>
                         <label class="checkbox">
@@ -160,7 +161,7 @@
                                     trace="@trace"
                                     data-kendo-tab="@tab"
                                     checked
-                                    data-kendo-component="@KendoComponents.CheckBox"
+                                    data-kendo-component="@DataComponents.KendoCheckBox"
                                     data-kendo-options="@attributes?.KendoOptions"
                                     data-depend-on-field="@attributes?.DependsOnField"
                                     data-depend-on-value="@dependsOnValue"
@@ -175,7 +176,7 @@
                                     name="@property.Name"
                                     trace="@trace"
                                     data-kendo-tab="@tab"
-                                    data-kendo-component="@KendoComponents.CheckBox"
+                                    data-kendo-component="@DataComponents.KendoCheckBox"
                                     data-kendo-options="@attributes?.KendoOptions"
                                     data-depend-on-field="@attributes?.DependsOnField"
                                     data-depend-on-value="@dependsOnValue"
@@ -187,7 +188,7 @@
                         </label>
                     </span>
                     break;
-                case KendoComponents.DropDownList:
+                case DataComponents.KendoDropDownList:
                     Array enumData = Array.Empty<object>();
                     // Check if the property is an enum
                     if (property.PropertyType.IsEnum)
@@ -217,7 +218,7 @@
                             name="@property.Name"
                             trace="@trace"
                             data-kendo-tab="@tab"
-                            data-kendo-component="@KendoComponents.DropDownList"
+                            data-kendo-component="@DataComponents.KendoDropDownList"
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
@@ -239,13 +240,13 @@
                         <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                     </span>
                     break;
-                case KendoComponents.Grid:
+                case DataComponents.KendoGrid:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
                         <table
                             name="@property.Name"
                             trace="@trace"
-                            data-kendo-component="@KendoComponents.Grid"
+                            data-kendo-component="@DataComponents.KendoGrid"
                             data-kendo-tab="@tab"
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"

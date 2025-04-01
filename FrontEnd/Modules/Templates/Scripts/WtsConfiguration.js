@@ -1,6 +1,7 @@
 import {Wiser} from "../../Base/Scripts/Utils.js";
 import "../../Base/Scripts/Processing.js";
 import "../css/WtsConfiguration.css";
+import codeMirrorComponents from "../../Base/Scripts/codemirror/scsslint";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -32,8 +33,6 @@ export class WtsConfiguration {
         this.timersKendoFields = [];
         this.actionsInputFields = [];
         this.actionsKendoFields = [];
-        
-        //temporary for testing only
         this.editorSql = [];
     }
 
@@ -67,7 +66,6 @@ export class WtsConfiguration {
                 method: "GET"
             });
             this.template = templateSettings;
-            //console.clear();
         }
         catch (e) {
             console.error(e);
@@ -96,19 +94,10 @@ export class WtsConfiguration {
         }
 
         this.initializeKendoComponents();
+        this.initializeCodeMirror();
         this.bindEvents();
-        var a = async()=>{await Misc.ensureCodeMirror();}
-        a();
-        var editortmp = CodeMirror.fromTextArea(document.getElementById("editor2"), {
-            mode: "text/x-mysql",
-            lineNumbers: true
-        });
-        editortmp.refresh();
-        this.editorSql.push(
-            {
-                editor: editortmp,
-                original: document.getElementById("editor2")
-            });
+
+
     }
 
     initializeKendoComponents() {
@@ -116,13 +105,14 @@ export class WtsConfiguration {
         let kendoComponents = document.querySelectorAll("[data-kendo-component]");
         // Empty the array
         this.serviceInputFields = [];
-
-        //console.log("kendoComponents",kendoComponents[24].id);
+        
         // Loop through all the components
         for (let i = 0; i < kendoComponents.length; i++) {
-            console.log("kendoComponents-"+i,kendoComponents[i]);
             let component = $(kendoComponents[i]);
-            let componentName = `kendo${component.attr("data-kendo-component")}`;
+            let componentName = `${component.attr("data-kendo-component")}`;
+            
+            //sets the value of a component name. and makes sure the first letter is lowercase
+            componentName=String(componentName).charAt(0).toLowerCase() + String(componentName).slice(1);
             let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
             // Check if the options are set
@@ -141,7 +131,7 @@ export class WtsConfiguration {
             }
             
             // Add a list change event to the grid if it allows editing
-            if (component.attr("data-kendo-component") === "Grid" && component.attr("allow-edit") === "true") {
+            if (component.attr("data-kendo-component") === "KendoGrid" && component.attr("allow-edit") === "true") {
                 componentOptions.change = eval("this.onListChange.bind(this)");
             }
 
@@ -163,7 +153,7 @@ export class WtsConfiguration {
             }
 
             // Make sure the method exists on componentSelector and if so create the component
-            if(i==24){
+            if(componentName === "textArea"){
                 switch (componentTab) {
                     case "Service":
                         this.serviceInputFields.push(component[0]);
@@ -175,9 +165,7 @@ export class WtsConfiguration {
                         this.actionsInputFields.push(component[0]);
                         break;
                 }
-            }
-            
-            if (component[componentName] && typeof component[componentName] === "function") {
+            }else if (component[componentName] && typeof component[componentName] === "function") {
                 let newComponent = component[componentName](componentOptions).data(componentName);
                 // Save the component and field so we can access it later
                 switch (componentTab) {
@@ -223,13 +211,40 @@ export class WtsConfiguration {
         this.fireAllChangeEvents();
     }
 
+    initializeCodeMirror(){
+        var a = async()=>{await Misc.ensureCodeMirror();}
+        a();
+        //clear the array of editors
+        this.editorSql=[]
+
+        //get all compononents that need to be codemirror instances 
+        let CodeMirrorComponents = document.querySelectorAll("[data-wts-editor-type]");
+        
+        for (let i = 0; i < CodeMirrorComponents.length; i++) {
+            //create a code mirror instance
+            var editortmp = CodeMirror.fromTextArea(CodeMirrorComponents[i], {
+                mode: `${$(CodeMirrorComponents[i]).attr("data-wts-editor-type")}`,
+                lineNumbers: true
+            });
+            //refresh the code mirror. needed to avoid ui errors
+            editortmp.refresh();
+            //add the code mirror to a array for later access while mentaining a link to the original component
+            this.editorSql.push(
+                {
+                    editor: editortmp,
+                    original: CodeMirrorComponents[i]
+                });
+        }
+    }
+    
     fireAllChangeEvents() {
         // Fire any change events that are set
         let elementsWithChangeEvent = document.querySelectorAll('[data-is-depended-on]');
 
         elementsWithChangeEvent.forEach((changeEvent) => {
             let component = $(changeEvent);
-            let componentName = `kendo${component.attr("data-kendo-component")}`;
+            let componentName = `${component.attr("data-kendo-component")}`;
+            componentName=String(componentName).charAt(0).toLowerCase() + String(componentName).slice(1);
 
             // Check if the component exists
             if (component[componentName] && typeof component[componentName] === "function") {
@@ -297,7 +312,6 @@ export class WtsConfiguration {
         currentTabName = currentTabName.replace("tab", "");
         
         this.editorSql.forEach((editor)=>{
-            console.log("editor", editor)
             editor.original.value = editor.editor.getValue();
         })
         
@@ -329,14 +343,13 @@ export class WtsConfiguration {
 
         // Get all the input fields for the given tab
         let inputFields = this[`${currentTabName}InputFields`];
-        inputFields.forEach((inputField) => {console.log("inputField",inputField);})
         // Loop through all the input fields
         inputFields.forEach((inputField) => {
             // Get the name of the input field
             let name = inputField.getAttribute("name");
 
             // Ignore field if it is a grid
-            if (inputField.getAttribute("data-kendo-component") === "Grid") {
+            if (inputField.getAttribute("data-kendo-component") === "KendoGrid") {
                 return;
             }
 
@@ -347,7 +360,7 @@ export class WtsConfiguration {
             let value = this.getValueOfElement(inputField);
 
             // Convert value to the correct type if possible
-            if (inputField.getAttribute("data-kendo-component") === "NumericTextBox") {
+            if (inputField.getAttribute("data-kendo-component") === "KendoNumericTextBox") {
                 value = parseInt(value);
             }
 
@@ -475,9 +488,7 @@ export class WtsConfiguration {
 
     clearInputFieldsForTab(tab) {
         // Find all the input fields for the given tab
-        console.log(tab);     
         let inputFields = this[`${tab}InputFields`];
-        console.log(inputFields);
         // Loop through all the input fields
         inputFields.forEach((inputField) => {
             // If the input field is a dropdownlist and is required, set the value to the first item
@@ -485,7 +496,7 @@ export class WtsConfiguration {
             if (typeof inputField.getAttribute !== "function") {
                 return;
             }
-            if (inputField.getAttribute("data-kendo-component") === "DropDownList" && inputField.getAttribute("is-required") === "true") {
+            if (inputField.getAttribute("data-kendo-component") === "KendoDropDownList" && inputField.getAttribute("is-required") === "true") {
                 let dropDownList = $(inputField).data("kendoDropDownList");
                 let options = dropDownList.dataSource.data();
                 this.setValueOfElement(inputField, options[0].value);
@@ -494,6 +505,7 @@ export class WtsConfiguration {
             // Clear the value of the input field
             this.setValueOfElement(inputField, "");
         });
+        //clears the value of any codemirror instance
         this.editorSql.forEach((editor)=>{
             editor.editor.getDoc().setValue("");
         })
@@ -502,8 +514,6 @@ export class WtsConfiguration {
 
     onListChange(e) {
         // Check if the selected item is null
-        console.log("tesyt "+e.sender);
-        console.log(e.sender.select());
         if (e.sender.select() === null) {
             return;
         }
@@ -516,7 +526,6 @@ export class WtsConfiguration {
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
 
-        console.log(currentTabName);
         
         currentTabName = currentTabName.replace("tab", "");
 
@@ -530,8 +539,8 @@ export class WtsConfiguration {
         // Fire any change events that are set
         this.fireAllChangeEvents();
         
+        //updates the values of any code mirror instances
         this.editorSql.forEach((editor)=>{
-            console.log("editor", editor.original)
             editor.editor.getDoc().setValue(editor.original.value);
         })
     }
@@ -589,24 +598,23 @@ export class WtsConfiguration {
         }
 
         let type = e.getAttribute("data-kendo-component");
-        console.log("test before kendo type",e);
         switch (type) {
-            case "CheckBox":
+            case "KendoCheckBox":
                 ($(e).data("kendoCheckBox")).value(v);
                 break;
-            case "TimePicker":
+            case "KendoTimePicker":
                 e.value = v; // Using the value function from kendo doesn't set the correct value (Cuts off the last 2 digits)
                 break;
-            case "NumericTextBox":
+            case "KendoNumericTextBox":
                 ($(e).data("kendoNumericTextBox")).value(v);
                 break;
-            case "TextBox":
+            case "KendoTextBox":
                 ($(e).data("kendoTextBox")).value(v);
                 break;
             case "TextArea":
-                ($(e).data("kendoTextArea")).value(v);
+                e.value = v;
                 break;
-            case "DropDownList":
+            case "KendoDropDownList":
                 ($(e).data("kendoDropDownList")).value(v);
                 break;
             default:
@@ -617,12 +625,12 @@ export class WtsConfiguration {
 
     hideField(type, element) {
         switch (type) {
-            case "CheckBox":
-            case "TimePicker":
-            case "NumericTextBox":
-            case "TextBox":
+            case "KendoCheckBox":
+            case "KendoTimePicker":
+            case "KendoNumericTextBox":
+            case "KendoTextBox":
             case "TextArea":
-            case "DropDownList":
+            case "KendoDropDownList":
                 element.closest(".item").hide();
                 break;
         }
@@ -630,12 +638,12 @@ export class WtsConfiguration {
 
     showField(type, element) {
         switch (type) {
-            case "CheckBox":
-            case "TimePicker":
-            case "NumericTextBox":
-            case "TextBox":
+            case "KendoCheckBox":
+            case "KendoTimePicker":
+            case "KendoNumericTextBox":
+            case "KendoTextBox":
             case "TextArea":
-            case "DropDownList":
+            case "KendoDropDownList":
                 element.closest(".item").show();
                 break;
         }
@@ -657,7 +665,6 @@ export class WtsConfiguration {
     }
 
     getCurrentSettings() {
-        console.log("Saving configuration...");
         let data = {};
 
         // Get all the values from the service input fields
@@ -678,10 +685,8 @@ export class WtsConfiguration {
         this.correctValues(this.template.runSchemes, this.timersInputFields);
 
         // Manually add runschemes to the data
-        console.log("templat", this.template)
         data["RunSchemes"] = this.template.runSchemes;
         data["Queries"]= this.template.queries
-        console.log("Data: ", data);
 
         return data;
     }

@@ -15,8 +15,8 @@ public class LogSettings
         IsVisible = true,
         Title = "Minimaal log level",
         Description = "Het minimale log level dat gelogd wordt.",
-        ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.DropDownList,
+        ConfigurationTab = null,
+        DataComponent = DataComponents.KendoDropDownList,
         IsRequired = true
     )]
     public LogMinimumLevels LogMinimumLevel { get; set; } = LogMinimumLevels.Information;
@@ -28,7 +28,7 @@ public class LogSettings
         IsVisible = true,
         Description = "Loggen wanneer de service gestart en gestopt wordt",
         ConfigurationTab = null,
-        KendoComponent = KendoComponents.DropDownList,
+        DataComponent = DataComponents.KendoDropDownList,
         IsRequired = true
     )]
     public LogBoolean LogStartAndStop { get; set; }
@@ -40,7 +40,7 @@ public class LogSettings
         IsVisible = true,
         Description = "Loggen wanneer een run-cyclus begint en eindigt",
         ConfigurationTab = null,
-        KendoComponent = KendoComponents.DropDownList,
+        DataComponent = DataComponents.KendoDropDownList,
         IsRequired = true
     )]
     public LogBoolean LogRunStartAndStop { get; set; }
@@ -52,7 +52,7 @@ public class LogSettings
         IsVisible = true,
         Description = "Log de body (bijvoorbeeld de query of de API call die wordt uitgevoerd)",
         ConfigurationTab = null,
-        KendoComponent = KendoComponents.DropDownList,
+        DataComponent = DataComponents.KendoDropDownList,
         IsRequired = true
     )]
     public LogBoolean LogRunBody { get; set; }

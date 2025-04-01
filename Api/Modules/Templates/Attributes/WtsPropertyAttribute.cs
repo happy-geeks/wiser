@@ -43,7 +43,7 @@ public class WtsPropertyAttribute : Attribute
     /// <summary>
     /// The kendo component to use for the field.
     /// </summary>
-    public KendoComponents KendoComponent { get; set; }
+    public DataComponents DataComponent { get; set; }
 
     /// <summary>
     /// The kendo options to use for the field.
@@ -85,6 +85,7 @@ public class WtsPropertyAttribute : Attribute
     
     /// <summary>
     /// if the value is set this field will be shown first. if multple fields have this attribute the lower numbers will be renderd first
+    /// Not currently in use
     /// </summary>
     public int customUiOrder { get; set; }
 }

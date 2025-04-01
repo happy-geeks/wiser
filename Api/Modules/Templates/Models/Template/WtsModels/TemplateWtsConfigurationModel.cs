@@ -23,7 +23,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             Title = "Naam",
             Description = "De naam van de service",
             ConfigurationTab = ConfigurationTab.Service,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         public string ServiceName { get; set; }
 
@@ -36,7 +36,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
              Title = "Connectiestring",
              Description = "De connection string van de database",
              ConfigurationTab = ConfigurationTab.Service,
-             KendoComponent = KendoComponents.TextBox
+             DataComponent = DataComponents.KendoTextBox
         )]
         public string ConnectionString { get; set; }
 
@@ -49,7 +49,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
              Title = "Notificatie emails",
              Description = "stuurt een email als de service faalt, meerdere emails kunnen worden gescheiden door een puntkomma",
              ConfigurationTab = ConfigurationTab.Service,
-             KendoComponent = KendoComponents.TextBox
+             DataComponent = DataComponents.KendoTextBox
          )]
         public string ServiceFailedNotificationEmails { get; set; }
         
@@ -67,7 +67,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             Title = "Timers",
             Description = "",
             ConfigurationTab = ConfigurationTab.Timers,
-            KendoComponent = KendoComponents.Grid,
+            DataComponent = DataComponents.KendoGrid,
             AllowEdit = true,
             IdProperty = "TimeId",
             UseDataSource = true,
@@ -98,7 +98,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
         [WtsProperty(
             IsVisible = true,
             ConfigurationTab = ConfigurationTab.Actions,
-        KendoComponent = KendoComponents.Grid,
+        DataComponent = DataComponents.KendoGrid,
             Title = "Query",
         AllowEdit = true, 
         IdProperty = "Actionid",
@@ -149,7 +149,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels
             Title = "extra",
             Description = "informatie die niet in het system verwerkt is. verkomt data verlies. in een idiale situtatie is deze leeg",
             ConfigurationTab = ConfigurationTab.Service,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         public string ChildItemsExtraString {
             get
