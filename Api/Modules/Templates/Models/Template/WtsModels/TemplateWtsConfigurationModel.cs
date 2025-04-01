@@ -1,13 +1,12 @@
 using System.Collections.Generic;
-using System.Xml.Serialization;
 using System.Linq;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
 using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
-
     /// <summary>
     /// A model for parsed xml of a template.
     /// </summary>
@@ -23,7 +22,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Naam",
             Description = "De naam van de service",
             ConfigurationTab = ConfigurationTab.Service,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
         public string ServiceName { get; set; }
 
@@ -36,7 +35,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
              Title = "Connectiestring",
              Description = "De connection string van de database",
              ConfigurationTab = ConfigurationTab.Service,
-             KendoComponent = KendoComponents.TextBox
+             DataComponent = DataComponents.KendoTextBox
         )]
         public string ConnectionString { get; set; }
 
@@ -49,7 +48,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
              Title = "Notificatie emails",
              Description = "stuurt een email als de service faalt, meerdere emails kunnen worden gescheiden door een puntkomma",
              ConfigurationTab = ConfigurationTab.Service,
-             KendoComponent = KendoComponents.TextBox
+             DataComponent = DataComponents.KendoTextBox
          )]
         public string ServiceFailedNotificationEmails { get; set; }
         
@@ -67,29 +66,27 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             Title = "Timers",
             Description = "",
             ConfigurationTab = ConfigurationTab.Timers,
-            KendoComponent = KendoComponents.Grid,
+            DataComponent = DataComponents.KendoGrid,
             AllowEdit = true,
             IdProperty = "TimeId",
             UseDataSource = true,
-            KendoOptions = """
-                           
-                                          {
-                                             "resizable": true,
-                                             "height": 280,
-                                             "selectable": true,
-                                             "columns": [
-                                               {
-                                                   "field": "timeId",
-                                                   "title": "ID"
-                                               },
-                                               {
-                                                   "field": "type",
-                                                   "title": "Type"
-                                               }
-                                             ]
-                                          }
-                                       
-                           """
+            KendoOptions = @"
+               {
+                  ""resizable"": true,
+                  ""height"": 280,
+                  ""selectable"": true,
+                  ""columns"": [
+                    {
+                        ""field"": ""timeId"",
+                        ""title"": ""ID""
+                    },
+                    {
+                        ""field"": ""type"",
+                        ""title"": ""Type""
+                    }
+                  ]
+               }
+            "
         )]
         public List<RunScheme> RunSchemes { get; set; }
 
@@ -100,12 +97,12 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         [WtsProperty(
             IsVisible = true,
             ConfigurationTab = ConfigurationTab.Actions,
-            KendoComponent = KendoComponents.Grid,
+            DataComponent = DataComponents.KendoGrid,
             Title = "Query",
-            AllowEdit = true, 
-            IdProperty = "Actionid",
-            UseDataSource = true,
-            KendoOptions = @"
+        AllowEdit = true, 
+        IdProperty = "Actionid",
+        UseDataSource = true,
+        KendoOptions = @"
                {
                   ""resizable"": true,
                   ""height"": 280,
@@ -135,12 +132,8 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             IsVisible = false,
             ConfigurationTab = ConfigurationTab.Actions
         )]
-<<<<<<< HEAD
-        public List<HttpApiModel> HttpApis { get; set; }
-=======
         public List<HttpApiModel> HttpApis { get; set; }*/
         
->>>>>>> 61cfa54a (progress towards the m.v.p.)
         [XmlAnyElement]
         [JsonIgnore]
         public List<XElement> ChildItemsExtra { get; set; }
@@ -149,24 +142,14 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         /// Gets or sets the all items the don't have a dedicated object/class in the current version system, intended to avoid dataloss. becarefull if you choose to edit these manualy
         /// </summary>
         [XmlIgnore, WtsProperty(
-<<<<<<< HEAD
-             IsVisible = true,
-             IsRequired = true,
-             Title = "extra",
-             Description = "De extra spul",
-             ConfigurationTab = ConfigurationTab.Service,
-             KendoComponent = KendoComponents.TextBox
-         )]
-=======
             IsVisible = true,
             IsDisabled = true,
             IsRequired = true,
             Title = "extra",
             Description = "informatie die niet in het system verwerkt is. verkomt data verlies. in een idiale situtatie is deze leeg",
             ConfigurationTab = ConfigurationTab.Service,
-            KendoComponent = KendoComponents.TextBox
+            DataComponent = DataComponents.KendoTextBox
         )]
->>>>>>> 61cfa54a (progress towards the m.v.p.)
         public string ChildItemsExtraString {
             get
             {
