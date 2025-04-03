@@ -43,6 +43,7 @@ public class WiserDatabaseHelpersService(
     private const string RemoveVirtualColumnsName = "wiser_remove_virtual_columns";
     private const string AddBranchSettingsModuleName = "wiser_add_branch_settings_module";
     private const string UpdateFileSecuritySettingsName = "wiser_update_file_security_settings";
+    private const string AddPaymentMethodFilterProperties = "wiser_add_paymentmethod_filter_properties";
 
     /// <summary>
     /// The list of tables that need to be updated first, because others depend on them.
@@ -90,7 +91,8 @@ public class WiserDatabaseHelpersService(
     [
         TriggersName,
         RemoveVirtualColumnsName,
-        AddBranchSettingsModuleName
+        AddBranchSettingsModuleName,
+        AddPaymentMethodFilterProperties,
     ];
 
     /// <summary>
@@ -169,6 +171,9 @@ public class WiserDatabaseHelpersService(
                     break;
                 case AddBranchSettingsModuleName:
                     await AddBranchSettingsModuleAsync(migrationsList);
+                    break;
+                case AddPaymentMethodFilterProperties:
+                    await AddPaymentMethodFilterPropertiesAsync(migrationsList);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.");
@@ -471,6 +476,41 @@ public class WiserDatabaseHelpersService(
 
         // Update wiser_table_changes.
         clientDatabaseConnection.AddParameter("tableName", AddBranchSettingsModuleName);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                     VALUES (?tableName, ?lastUpdate) 
+                                                     ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
+                                                     """);
+    }
+    
+    /// <summary>
+    /// Add properties used for filters
+    /// </summary>
+    /// <param name="migrationsList">The list of all migrations that have been done on the database and the dates and times when they have been done.</param>
+    private async Task AddPaymentMethodFilterPropertiesAsync(Dictionary<string, DateTime> migrationsList)
+    {
+        if (migrationsList.TryGetValue(AddPaymentMethodFilterProperties, out var value) && value >= new DateTime(2025, 4, 2))
+        {
+            return;
+        }
+
+        // Check whether there is a WiserPaymentMethod to update
+        var paymentMethodEntityTable = await clientDatabaseConnection.GetAsync($"""
+                                                                 SELECT id 
+                                                                 FROM {WiserTableNames.WiserEntity}
+                                                                 WHERE `name` = 'WiserPaymentMethod';
+                                                                 """);
+        if (paymentMethodEntityTable.Rows.Count > 0)
+        {
+            await clientDatabaseConnection.ExecuteAsync($"""
+                 INSERT IGNORE INTO {WiserTableNames.WiserEntityProperty} (`module_id`, `entity_name`, `link_type`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`, `enable_aggregation`, `aggregate_options`, `access_key`, `visibility_path_regex`)VALUES (0,  'WiserPaymentMethod', 0,  '', '', 'input', 'Taalcodes', 'paymentmethodlanguagecodes', 'Puntkomma (;) gescheiden taalcodes waarmee bepaald kan worden wanneer de betaalmethode zichtbaar is. Als dit leeg is dan is het zichtbaar bij elke taalcode.', 11, '', 0, 0, '', NULL, 0, 0, '', '', '', '', '', '', '', '', '', NULL, '', '', '', 0, NULL, 0, 0, 'normal', '0', 0, '', '', '');
+                 INSERT IGNORE INTO {WiserTableNames.WiserEntityProperty} (`module_id`, `entity_name`, `link_type`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`, `enable_aggregation`, `aggregate_options`, `access_key`, `visibility_path_regex`) VALUES (0, 'WiserPaymentMethod', 0, '', '', 'input', 'Url Regex', 'paymentmethodurlregex', 'Regex waarmee bepaald kan worden of de betaalmethode op het url moet worden getoond. Dit gebruikt het seo pad en de query parameters. Als het leeg is dan is het zichtbaar op elk URL', 10, '', 0, 0, '', NULL, 0, 0, '', '', '', '', '', '', '', '', '', NULL, '', '', '', 0, NULL, 0, 0, 'normal', '0', 0, '', '', '');
+                 """);
+        }
+        
+        // Update wiser_table_changes.
+        clientDatabaseConnection.AddParameter("tableName", AddPaymentMethodFilterProperties);
         clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
         await clientDatabaseConnection.ExecuteAsync($"""
                                                      INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
