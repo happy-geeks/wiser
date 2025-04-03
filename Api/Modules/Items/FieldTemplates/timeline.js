@@ -1,40 +1,41 @@
 ﻿(function () {
-    var field = $("#timeline{propertyIdWithSuffix}");
-    var loader = field.closest(".item").find(".field-loader");
-    var optionsFromProperty = {options};
-    var disableOpeningOfItems = optionsFromProperty.disableOpeningOfItems;
-    var html = $("#eventTemplate_{propertyIdWithSuffix}").html();
+    let field = $("#timeline{propertyIdWithSuffix}");
+    let loader = field.closest(".item").find(".field-loader");
+    let optionsFromProperty = {options};
+    let disableOpeningOfItems = optionsFromProperty.disableOpeningOfItems;
+    let html = $("#eventTemplate_{propertyIdWithSuffix}").html();
 
     if (disableOpeningOfItems) {
         html = html.replace("openDetails", "openDetails hidden");
     }
 
-    var options = $.extend(true, {
+    let options = $.extend(true, {
         orientation: "horizontal",
         editable: false,
         eventTemplate: kendo.template(html),
         dateFormat: "d MMM, yyyy",
         dataSource: {
             transport: {
-                read: function (transportOptions) {
-                    Wiser.api({
-                        method: "POST",
-                        url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&itemLinkId={itemLinkId}",
-                        contentType: "application/json"
-                    }).then(function (queryResults) {
+                read: async (transportOptions) =>{
+                    try {
+                        let queryResults = await Wiser.api({
+                            method: "POST",
+                            url: dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent("{itemIdEncrypted}") + "/action-button/{propertyId}?queryId=" + encodeURIComponent(optionsFromProperty.queryId || 0) + "&itemLinkId={itemLinkId}",
+                            contentType: "application/json"
+                        });
+
                         if (!queryResults || !queryResults.otherData || queryResults.otherData.length === 0) {
                             transportOptions.error("Geen data");
                             loader.removeClass("loading");
                             field.html("Geen data");
                             field.attr("class", "");
-                            return;
-                        }
-                        else {
+                        } else {
                             transportOptions.success(queryResults.otherData);
                         }
-                    }).catch(function (jqXHR, textStatus, errorThrown) {
-                        transportOptions.error(jqXHR, textStatus, errorThrown);
-                    });
+                    }
+                    catch(errorThrown) {
+                        transportOptions.error(errorThrown);
+                    }
                 }
             },
             schema: {
@@ -48,23 +49,23 @@
                 }
             }
         },
-        dataBound: function (event) {
+        dataBound: (event) => {
             loader.removeClass("loading");
 
             // Default select last item
-            var lastEvent = event.sender.element.find(".k-timeline-track-item:last");
+            let lastEvent = event.sender.element.find(".k-timeline-track-item:last");
             event.sender.open(lastEvent);
 
             // Bind action to "open item" buttons
             if (!disableOpeningOfItems) {
-                field.on("click", ".openDetails", function (event) {
-                    var itemId = $(this).closest(".timelineEvent").data("itemid");
+                field.on("click", ".openDetails", (event) => {
+                    let itemId = $(this).closest(".timelineEvent").data("itemid");
                     window.dynamicItems.windows.loadItemInWindow(false, 0, itemId, options.entityType, "", false, null, options, 0);
                 });
             }
         }
     }, optionsFromProperty);
 
-    var kendoComponent = field.kendoTimeline(options).data("kendoTimeline");
+    let kendoComponent = field.kendoTimeline(options).data("kendoTimeline");
     {customScript}
 })();
