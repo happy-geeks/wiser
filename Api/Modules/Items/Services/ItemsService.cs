@@ -1022,7 +1022,7 @@ public class ItemsService(
                     DateTime dateTimeValue => dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss"),
                     decimal decimalValue => decimalValue.ToString(new CultureInfo("en-US")),
                     JArray jArrayValue => String.Join(",", jArrayValue.Values<string>()),
-                    _ => parameter.Value.ToString().ToMySqlSafeValue(false)
+                    _ => parameter.Value.ToString()
                 };
 
                 parameters.TryAdd(parameter.Key, value);
