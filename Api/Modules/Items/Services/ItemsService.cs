@@ -997,72 +997,59 @@ public class ItemsService(
                 ErrorMessage = "Query 'GET_ITEM_DETAILS' not found or empty."
             };
         }
-
-        // TODO: Research sql encryptedId usage
         var encryptedId = await wiserTenantsService.EncryptValue(itemId, identity);
 
-        actionQuery = actionQuery.Replace("{userId}", userId.ToString(), StringComparison.OrdinalIgnoreCase);
-        actionQuery = actionQuery.Replace("{username}", (username ?? "").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
-        actionQuery = actionQuery.Replace("{userEmailAddress}", (userEmailAddress ?? "").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
-        actionQuery = actionQuery.Replace("{itemLinkId}", itemLinkId.ToString(), StringComparison.OrdinalIgnoreCase);
-        actionQuery = actionQuery.Replace("{userType}", (userType ?? "").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
-        actionQuery = actionQuery.Replace("{encryptedId}", encryptedId.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
-        actionQuery = actionQuery.Replace("'{itemId}'", "?itemId", StringComparison.OrdinalIgnoreCase).Replace("{itemId}", "?itemId", StringComparison.OrdinalIgnoreCase);
+        var parameters = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["userId"] = userId,
+            ["username"] = username,
+            ["userEmailAddress"] = userEmailAddress,
+            ["itemLinkId"] = itemLinkId,
+            ["userType"] = userType,
+            ["encryptedId"] = encryptedId,
+            ["itemId"] = itemId
+        };
         actionQuery = apiReplacementsService.DoIdentityReplacements(actionQuery, identity, true);
-
-        detailsQuery = detailsQuery.Replace("{itemId:decrypt(true)}", "?itemId", StringComparison.OrdinalIgnoreCase);
-        detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
-
-        // Execute the query to get the details of the current item.
-        clientDatabaseConnection.AddParameter("itemId", itemId);
-        var dataTable = await clientDatabaseConnection.GetAsync(detailsQuery);
 
         // These are parameters that the user can enter values for in Wiser.
         if (extraParameters != null)
         {
             foreach (var parameter in extraParameters)
             {
-                string value;
-                if (parameter.Value == null)
+                var value = parameter.Value switch
                 {
-                    value = "";
-                }
-                else
-                {
-                    switch (parameter.Value)
-                    {
-                        case DateTime dateTimeValue:
-                            value = dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss");
-                            break;
-                        case decimal decimalValue:
-                            value = decimalValue.ToString(new CultureInfo("en-US"));
-                            break;
-                        case JArray jArrayValue:
-                            value = String.Join(",", jArrayValue.Values<string>());
-                            break;
-                        default:
-                            value = parameter.Value.ToString().ToMySqlSafeValue(false);
-                            break;
-                    }
-                }
+                    null => String.Empty,
+                    DateTime dateTimeValue => dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss"),
+                    decimal decimalValue => decimalValue.ToString(new CultureInfo("en-US")),
+                    JArray jArrayValue => String.Join(",", jArrayValue.Values<string>()),
+                    _ => parameter.Value.ToString()
+                };
 
-                actionQuery = actionQuery.Replace($"{{{parameter.Key.ToMySqlSafeValue(false)}}}", value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+                parameters.TryAdd(parameter.Key, value);
             }
         }
+        
+        detailsQuery = detailsQuery.Replace("{itemId:decrypt(true)}", "?itemId", StringComparison.OrdinalIgnoreCase);
+        detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
 
+        // Execute the query to get the details of the current item.
+        clientDatabaseConnection.AddParameter("itemId", itemId);
+        var dataTable = await clientDatabaseConnection.GetAsync(detailsQuery);
         // Do replacements on the data query with the details of the current item.
         if (dataTable.Rows.Count > 0)
         {
             var firstRow = dataTable.Rows[0];
-            actionQuery = actionQuery.Replace("{itemTitle}", firstRow.Field<string>("title").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
-            actionQuery = actionQuery.Replace("{environment}", firstRow["published_environment"].ToString().ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
-            actionQuery = actionQuery.Replace("{entityType}", firstRow.Field<string>("entity_type").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+            parameters.TryAdd("itemTitle", firstRow.Field<string>("title"));
+            parameters.TryAdd("environment", firstRow["published_environment"]);
+            parameters.TryAdd("entityType", firstRow.Field<string>("entity_type"));
 
             foreach (DataRow dataRow in dataTable.Rows)
             {
-                actionQuery = actionQuery.Replace($"{{{dataRow.Field<string>("property_name").ToMySqlSafeValue(false)}}}", dataRow.Field<string>("property_value").ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+                parameters.TryAdd(dataRow.Field<string>("property_name"), dataRow.Field<string>("property_value"));
             }
         }
+        
+        actionQuery = stringReplacementsService.DoReplacements(actionQuery, parameters, forQuery: true);
 
         // And finally execute the action button query.
         try
