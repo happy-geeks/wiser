@@ -2461,14 +2461,6 @@ export class EntityTab {
 
         const dropTarget = $(event.dropTarget);
         let destinationNode = dropTarget.closest("li.k-item");
-        if (dropTarget.hasClass("k-mid")) {
-            // If the dropTarget is an element with class k-mid we need to go higher, because those elements are located inside an li.k-item instead of after/before them.
-            destinationNode = destinationNode.parentsUntil("li.k-item");
-        }
-        if (event.statusClass === "i-insert-down" || (event.statusClass === "i-insert-middle" && (dropTarget.hasClass("k-bot") || dropTarget.hasClass("k-in")))) {
-            // If the statusClass is i-insert-down, it means we are adding the item below the destination, so we need to check it's parent.
-            destinationNode = destinationNode.parentsUntil("li.k-item");
-        }
 
         const sourceDataItem = event.sender.dataItem(event.sourceNode);
         const destinationDataItem = event.sender.dataItem(destinationNode) || { type: "Root" };
@@ -2478,24 +2470,29 @@ export class EntityTab {
             event.setStatusClass("k-i-cancel");
             return;
         }
+        // we don't allow drag & dropping to change item parents, only reorder amongst siblings
+        if (event.statusClass === "i-plus") {
+            event.setStatusClass("k-i-cancel");
+            return;
+        }
 
-        console.log(`sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type} -> ${event.statusClass}`);
+        console.log(`sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.id} - ${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.id} - ${destinationDataItem.ordering}) - ${destinationDataItem.type} -> ${event.statusClass}`);
 
-        // properties can be only be reordered within the same group 
+        // properties can be only be reordered within the same group and tab, so before or after another property 
         if (sourceDataItem.type === "Property") {
-            if (destinationDataItem.type === "Group" && sourceDataItem.groupName === destinationDataItem.name && event.statusClass !== "i-insert-up") {
+            if (destinationDataItem.type === "Property" && sourceDataItem.tabName === destinationDataItem.tabName && sourceDataItem.groupName === destinationDataItem.groupName) {
                 return;
             }
         }
         // groups can be only be reordered within the same tab
-        if (sourceDataItem.type === "Group") {
-            if (destinationDataItem.type === "Tab" && sourceDataItem.tabName === destinationDataItem.name && event.statusClass !== "i-insert-up") {
+        else if (sourceDataItem.type === "Group") {
+            if (destinationDataItem.type === "Group" && sourceDataItem.tabName === destinationDataItem.tabName) {
                 return;
             }
         }
-        // tabs can be only be reordered on the root
-        if (sourceDataItem.type === "Tab") {
-            if (destinationDataItem.type === "Root") {
+        // tabs can be only be reordered amongst other tabs
+        else if (sourceDataItem.type === "Tab") {
+            if (destinationDataItem.type === "Tab") {
                 return;
             }
         }
@@ -2520,34 +2517,33 @@ export class EntityTab {
             console.log(`onPropertiesTreeViewDrop: sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> ${event.dropPosition} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type}`);
 
             const oldIndex = sourceDataItem.ordering;
-            // calculate new position
-            let newIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : 0) + (oldIndex > destinationDataItem.ordering ? 0 : -1);
-
             // we use the new entity structure data to redraw the tree, so stop the tree from moving stuff around by itself
             event.preventDefault();
             
             switch (sourceDataItem.type) {
                 case "Property": 
+                    let newItemIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : 0) + (oldIndex > destinationDataItem.ordering ? 0 : -1);
                     await Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
                         method: "PUT",
                         contentType: "application/json",
                         data: JSON.stringify({
                             currentIndex: oldIndex,
-                            newIndex: newIndex,
+                            newIndex: newItemIndex,
                             id: sourceDataItem.id,
                             entityType: this.entitiesCombobox.dataItem().name
                         })
                     });
                     break;
                 case "Group":
+                    let newGroupIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : -1);
                     await Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move-group`,
                         method: "PUT",
                         contentType: "application/json",
                         data: JSON.stringify({
                             currentIndex: oldIndex,
-                            newIndex: newIndex,
+                            newIndex: newGroupIndex,
                             id: sourceDataItem.id,
                             entityType: this.entitiesCombobox.dataItem().name
                         })
