@@ -376,9 +376,6 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
         
         [CanBeNull]
         public LogSettings LogSettings { get; set; }
-<<<<<<< HEAD
-    }
-=======
         
 
         [XmlIgnore]
@@ -405,5 +402,3 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
             set => comment = value;
         }
     }
-}
->>>>>>> 61cfa54a (progress towards the m.v.p.)
