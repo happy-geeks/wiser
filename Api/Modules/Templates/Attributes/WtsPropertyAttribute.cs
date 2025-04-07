@@ -90,5 +90,5 @@ public class WtsPropertyAttribute : Attribute
     /// if the value is set this field will be shown first. if multple fields have this attribute the lower numbers will be renderd first
     /// Not currently in use
     /// </summary>
-    public int customUiOrder { get; set; }
+    public int CustomUiOrder { get; set; }
 }
