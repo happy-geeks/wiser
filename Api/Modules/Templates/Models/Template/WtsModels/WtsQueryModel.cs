@@ -6,12 +6,8 @@ using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
-<<<<<<< HEAD
-    
+  
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-=======
-using Twilio.Rest.Api.V2010.Account.IncomingPhoneNumber;
->>>>>>> 61cfa54a (progress towards the m.v.p.)
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
     [XmlType("Query")]
