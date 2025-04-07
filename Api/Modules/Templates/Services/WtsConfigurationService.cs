@@ -1,5 +1,7 @@
 using System.IO;
+using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.Template.WtsModels;

@@ -73,6 +73,7 @@ namespace FrontEnd.Modules.Templates.Controllers;
         [HttpPost, Route("WtsConfigurationTab")]
         public IActionResult WtsConfigurationTab([FromBody]TemplateWtsConfigurationModel data)
         {
+            
             // ReSharper disable once Mvc.PartialViewNotResolved
             return PartialView("Tabs/WtsConfigurationTab", data);
         }

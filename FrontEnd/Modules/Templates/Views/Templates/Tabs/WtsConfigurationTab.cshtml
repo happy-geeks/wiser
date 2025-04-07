@@ -5,7 +5,6 @@
 @using Api.Modules.Templates.Attributes
 @using Api.Modules.Templates.Enums
 @using DocumentFormat.OpenXml.Office2010.ExcelAc
-@using FrontEnd.Modules.Templates.Models
 @using Newtonsoft.Json.Linq
 @model Api.Modules.Templates.Models.Template.WtsModels.TemplateWtsConfigurationModel;
 <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
@@ -18,14 +17,13 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
-           
+            <!-- @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, ""); }-->
+            
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
-            
+        <!-- @{ RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }-->
         </div>
     </div>
 
@@ -33,15 +31,19 @@
         <div class="formview compact">
             @* This is currently commented out since the actions tab is not working yet *@
             @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}
-            
         </div>
     </div>
 
     <div id="statisticTab">
-        <em>Statistics and logs will appear here.</em>
+        <em>Informatie over hoe lang de service erover deed
+            om te draaien komt hier te staan. Liefst in een
+            grafiek met de laatste x-keer dat deze gedraaid
+            heeft. En of er fouten waren en zo ja welke</em>
     </div>
     <div id="loggingTab">
-        <em>Logs for the service will be displayed here with filters and options.</em>
+        <em>Hier worden de logs geopend van deze service.
+            Per actie moet je de logs kunnen filteren. Tevens
+            op periode filteren...</em>
     </div>
 </div>
 
@@ -76,7 +78,7 @@
                                 disabled=@(attributes?.IsDisabled ?? false)
                                 value="@(data ?? "")"
                                 trace="@trace"
-                                data-editor-type="text/x-mysql"
+                                data-wts-editor-type="text/x-mysql"
                                 data-kendo-tab="@tab"
                                 data-kendo-component="@DataComponents.TextArea"
                                 data-kendo-options="@attributes?.KendoOptions"
