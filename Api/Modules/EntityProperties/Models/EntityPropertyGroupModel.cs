@@ -32,6 +32,11 @@ public class EntityPropertyGroupModel
     /// Gets or sets the name of the tab the property is shown in.
     /// </summary>
     public string TabName { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the order the property is shown in.
+    /// </summary>
+    public int Ordering { get; set; }
 
     /// <summary>
     /// Gets or sets the width of the property group in percentages.

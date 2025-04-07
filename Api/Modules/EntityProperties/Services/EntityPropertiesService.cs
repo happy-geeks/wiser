@@ -138,7 +138,9 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
             results.Add(dataRow.Field<string>("display_name"), new()
             {
+                Id = dataRow.Field<int>("id"),
                 Name = dataRow.Field<string>("display_name"),
+                Ordering = dataRow.Field<short>("ordering"),
                 Width = dataRow.Field<short>("width"),
                 MinimumWidth = goObject.Value<int>("minWidth"),
                 Orientation = goObject.Value<string>("orientation"),
@@ -153,7 +155,8 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
     public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
     {
         var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
-        if (allProperties.StatusCode != HttpStatusCode.OK)
+        var allGroups = await GetPropertyGroupsOfEntity(identity, entityName);
+        if (allProperties.StatusCode != HttpStatusCode.OK || allGroups.StatusCode != HttpStatusCode.OK)
         {
             return new ServiceResult<List<EntityPropertyTabModel>>
             {
@@ -168,11 +171,12 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
              Name = x.Key,
              Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
              {
-                 Id = y.First().GroupID,
+                 Id = allGroups.ModelObject[y.Key].Id,
                  EntityType = entityName,
                  Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
                  TabName = x.Key,
-                 Properties = y.ToList()
+                 Properties = y.ToList(),
+                 Ordering = allGroups.ModelObject[y.Key].Ordering
              }).ToList()
         }).ToList();
 
@@ -789,10 +793,10 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                      		SELECT
                      			id,
                      			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} tab WHERE property.entity_name = tab.entity_name AND property.tab_name = tab.tab_name) AS tabOrder,
-                     			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} grp WHERE property.entity_name = grp.entity_name AND property.tab_name = grp.tab_name AND property.group_name = grp.group_name) AS groupOrder
+                     			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} grp WHERE property.entity_name = grp.entity_name AND property.tab_name = grp.tab_name AND property.group_name = grp.group_name AND grp.inputtype = 'group') AS groupOrder
                      		FROM {WiserTableNames.WiserEntityProperty} property
                      		WHERE {whereClause}
-                     		ORDER BY tabOrder, groupOrder, ordering ASC
+                     		ORDER BY tabOrder, groupOrder, inputtype != 'group', ordering ASC
                      	) AS x
                      ) AS ordering ON ordering.id = property.id
                      SET property.ordering = ordering.ordering
@@ -880,6 +884,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             };
         }
 
+        clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("id", id);
         clientDatabaseConnection.AddParameter("currentIndex", data.CurrentIndex);
         clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
@@ -919,7 +924,32 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<bool>> MoveGroupAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data)
     {
-        return new ServiceResult<bool>(true);
+        if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
+        {
+            return new ServiceResult<bool>(false)
+            {
+                StatusCode = HttpStatusCode.BadRequest,
+                ErrorMessage = $"Either {nameof(data.EntityType)} or {nameof(data.LinkType)} must be provided."
+            };
+        }
+
+        // move group id to new ordering (one above or below the target group)
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("id", id);
+        clientDatabaseConnection.AddParameter("currentIndex", data.CurrentIndex);
+        clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
+        clientDatabaseConnection.AddParameter("entityType", data.EntityType);
+        clientDatabaseConnection.AddParameter("linkType", data.LinkType);
+        var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
+        
+        var query = $$"""
+                      UPDATE {{WiserTableNames.WiserEntityProperty}} SET ordering = ?newIndex WHERE id = ?id;
+                      """;
+
+        await clientDatabaseConnection.ExecuteAsync(query);
+        
+        // and call fix ordering again to give all properties correct ordering as well
+        return FixOrderingAsync(identity, data.EntityType, data.LinkType).Result;
     }
 
     /// <inheritdoc />
