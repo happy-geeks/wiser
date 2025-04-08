@@ -2949,7 +2949,8 @@ export class EntityTab {
         }
         entityProperties.inputType = 'Group';
         entityProperties.displayName = $("#groupName").val();
-        entityProperties.groupName = $("#groupName").val();
+        // the groupName should match the displayName, but the API will do that after it compares the displayName and groupName to determine the name has changed
+        entityProperties.groupName = entityProperties.groupName;
         entityProperties.width = this.groupWidth.value();
         entityProperties.options = {};
         entityProperties.options.minWidth = this.minWidth.value();
@@ -2973,6 +2974,7 @@ export class EntityTab {
                     data: JSON.stringify(entityProperties)
                 });
             }
+            // all groups should have an id, because of the auto group creation
             else {
                 await Wiser.api({
                     type: "POST",
@@ -4272,7 +4274,8 @@ this.dataSourceDataSelector.value(dataSelectorId);
         this.orientation.select((dataItem) => {
             return (dataItem.value || "").toLowerCase() === (groupOptions.orientation || "").toLowerCase();
         });
-        document.getElementById("showGroupName").checked = groupOptions.showName || false;
+        document.getElementById("showGroupName").checked = groupOptions.showName !== undefined ? groupOptions.showName : Boolean(resultSet.displayName);
+        console.log(`setEntityGroupProperties called with ${JSON.stringify(resultSet)}`);
     }
     // return array of of different input types from inputtypes enum
     createDataSourceFromEnum(list, useObjects = false) {
