@@ -575,7 +575,7 @@ CREATE TABLE IF NOT EXISTS `wiser_communication_generated`  (
   `wiser_item_files` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL COMMENT 'One or more IDs from wiser_itemfile that should be sent with the communication as attachments. Only works for e-mail communications.',
   `attempt_count` int NOT NULL DEFAULT 0,
   `last_attempt` datetime NULL,
-  `is_internal_error_mail` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'If the WTS was not able to send a communication after X tries, it will send an e-mail to notify us about the problem. For these e-mails, this column will be set to 1, so that we can use that to make sure we don\'t send too many errors.',
+  `is_internal_error_mail` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'If the WTS was not able to send a communication after X tries, it will send an e-mail to notify us about the problem. For these e-mails, this column will be set to 1, so that we can use that to make sure we dont send too many errors.',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_communication_id`(`communication_id`) USING BTREE,
   INDEX `idx_send_processed_date`(`send_date`, `processed_date`) USING BTREE,
@@ -920,6 +920,24 @@ CREATE TABLE IF NOT EXISTS `wiser_table_changes`  (
     `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     `last_update` datetime NOT NULL,
     PRIMARY KEY (`name`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for wiser_product_api
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `wiser_products_api`  (
+    `id` int NOT NULL AUTO_INCREMENT,
+    `wiser_id` int NOT NULL,
+    `version` mediumint NOT NULL,
+    `output` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
+    `removed` tinyint NOT NULL DEFAULT 0,
+    `added_on` datetime NULL DEFAULT NULL,
+    `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    `changed_on` datetime NULL DEFAULT NULL,
+    `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL, 
+    PRIMARY KEY (`id`) USING BTREE
+    INDEX `idx_removed`(`removed` ASC) USING BTREE,
+    INDEX `template_id`(`wiser_id` ASC) USING BTREE,
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
