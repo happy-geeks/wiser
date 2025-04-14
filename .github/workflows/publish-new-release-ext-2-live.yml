@@ -14,9 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Restore dependencies
-      run: dotnet restore
-
     - name: Add NuGet Sources
       run: dotnet nuget add source --username ${{ vars.NUGET_USERNAME }} --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name HappyHorizon "${{ vars.NUGET_SOURCE }}"
 
