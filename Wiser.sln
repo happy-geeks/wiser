@@ -23,7 +23,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{
 		.github\workflows\publish-new-releases-live-2.yml = .github\workflows\publish-new-releases-live-2.yml
 		.github\workflows\publish-new-releases-test-1.yml = .github\workflows\publish-new-releases-test-1.yml
 		.github\workflows\publish-new-releases-test-2.yml = .github\workflows\publish-new-releases-test-2.yml
-		.github\workflows\publish-to-docker.yml = .github\workflows\publish-to-docker.yml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{3E22C79F-099F-4CDA-82FB-76E9920392EE}"

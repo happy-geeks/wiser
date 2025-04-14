@@ -17,7 +17,7 @@ jobs:
       run: dotnet restore
 
     - name: Add NuGet Sources
-      run: dotnet nuget add source --username GilianJuice --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/happy-geeks/index.json"
+      run: dotnet nuget add source --username ${{ vars.NUGET_USERNAME }} --password ${{ secrets.HAPPYGEEKSNUGET }} --store-password-in-clear-text --name HappyHorizon "${{ vars.NUGET_SOURCE }}"
 
     - name: Add GCLC package
       run: |
@@ -72,4 +72,4 @@ jobs:
 
     - name: Remove NuGet Sources
       if: ${{ always() }}
-      run: dotnet nuget remove source github
+      run: dotnet nuget remove source HappyHorizon
