@@ -316,7 +316,8 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
             if (!String.IsNullOrEmpty(style.FormatBegin))
             {
-                combinedResult.Append(style.FormatBegin);
+                var formattedBegin = stringReplacementsService.DoReplacements(style.FormatBegin, result);
+                combinedResult.Append(formattedBegin);
             }
 
             foreach (var parsedObject in result.Children<JObject>())
@@ -350,7 +351,8 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
             if (!String.IsNullOrWhiteSpace(style.FormatEnd))
             {
-                combinedResult.Append(style.FormatEnd);
+                var formattedEnd = stringReplacementsService.DoReplacements(style.FormatEnd, result);
+                combinedResult.Append(formattedEnd);
             }
         }
 
