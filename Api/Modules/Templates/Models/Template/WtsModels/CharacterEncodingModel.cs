@@ -24,11 +24,7 @@ public class CharacterEncodingModel
         DataComponent = DataComponents.KendoTextBox
     )]
     [XmlIgnore]
-    public string CharacterSet
-    {
-        get;
-        set;
-    }
+    public string CharacterSet { get; set; }
     [XmlElement("CharacterSet")]
     public string CharacterSetXml
     {

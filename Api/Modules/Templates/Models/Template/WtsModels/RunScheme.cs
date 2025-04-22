@@ -8,9 +8,9 @@ using JetBrains.Annotations;
 
 namespace Api.Modules.Templates.Models.Template;
 
-    /// <summary>
-    /// A model for the run scheme settings of the template.
-    /// </summary>
+/// <summary>
+/// A model for the run scheme settings of the template.
+/// </summary>
 public class RunScheme
 {
     /// <summary>
@@ -55,22 +55,22 @@ public class RunScheme
     [XmlElement("Delay", DataType = "string")]
     [CanBeNull]
     [WtsProperty(
-         IsVisible = true,
-         Title = "Wachttijd",
-         Description = "De tijd tussen elke run. Formaat: uren:minuten:seconden",
-         ConfigurationTab = ConfigurationTab.Timers,
-         DataComponent = DataComponents.KendoTimePicker,
-         DependsOnField = "Type",
-         DependsOnValue = new [] {"Continuous"},
-         KendoOptions = """
-                        
-                                       {
-                                          "dateInput": "true",
-                                          "componentType": "modern",
-                                          "format": "HH:mm:ss"
-                                        }
-                                    
-                        """
+        IsVisible = true,
+        Title = "Wachttijd",
+        Description = "De tijd tussen elke run. Formaat: uren:minuten:seconden",
+        ConfigurationTab = ConfigurationTab.Timers,
+        DataComponent = DataComponents.KendoTimePicker,
+        DependsOnField = "Type",
+        DependsOnValue = new [] {"Continuous"},
+        KendoOptions = """
+                       
+                                      {
+                                         "dateInput": "true",
+                                         "componentType": "modern",
+                                         "format": "HH:mm:ss"
+                                       }
+                                   
+                       """
      )]
     public string Delay { get; set; }
 
@@ -211,10 +211,7 @@ public class RunScheme
     public int? DayOfWeek { get; set; }
 
     [XmlIgnore]
-    public bool DayOfWeekSpecified
-    {
-        get { return DayOfWeek.HasValue; }
-    }
+    public bool DayOfWeekSpecified => DayOfWeek.HasValue;
 
     /// <summary>
     /// The day of the month on which the run scheme should run.
@@ -269,10 +266,7 @@ public class RunScheme
     public bool? RunImmediately { get; set; }
 
     [XmlIgnore]
-    public bool RunImmediatelySpecified
-    {
-        get { return RunImmediately.HasValue; }
-    }
+    public bool RunImmediatelySpecified => RunImmediately.HasValue;
 
     /// <summary>
     /// The settings to be used for logging.
