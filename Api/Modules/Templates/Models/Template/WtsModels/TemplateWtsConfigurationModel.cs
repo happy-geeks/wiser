@@ -99,28 +99,28 @@ public class TemplateWtsConfigurationModel
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoGrid,
         Title = "Query",
-    AllowEdit = true, 
-    IdProperty = "Actionid",
-    UseDataSource = true,
-    KendoOptions = @"
-           {
-              ""resizable"": true,
-              ""height"": 280,
-              ""selectable"": true,
-              ""columns"": [
-                {
-                    ""field"": ""actionid"",
-                    ""title"": ""ID""
-                },
-                {
-                    ""field"": ""comment"",
-                    ""title"": ""Comment""
-                }
-              ]
-           }
-        "
-        
-    )]
+        AllowEdit = true, 
+        IdProperty = "Actionid",
+        UseDataSource = true,
+        KendoOptions = @"
+               {
+                  ""resizable"": true,
+                  ""height"": 280,
+                  ""selectable"": true,
+                  ""columns"": [
+                    {
+                        ""field"": ""actionid"",
+                        ""title"": ""ID""
+                    },
+                    {
+                        ""field"": ""comment"",
+                        ""title"": ""Comment""
+                    }
+                  ]
+               }
+            "
+            
+        )]
     public List<WtsQueryModel> Queries { get; set; }
 
     /// <summary>
@@ -145,12 +145,13 @@ public class TemplateWtsConfigurationModel
         IsVisible = true,
         IsDisabled = true,
         IsRequired = true,
-        Title = "extra data",
+        Title = "Extra data",
         Description = "Informatie die niet in het systeem is verwerkt. Voorkomt dataverlies. In een ideale situatie is dit veld leeg.",
         ConfigurationTab = ConfigurationTab.Service,
         DataComponent = DataComponents.KendoTextBox
     )]
-    public string ChildItemsExtraString {
+    public string ChildItemsExtraString 
+    {
         get
         {
             List<string> s = new List<string>();
@@ -163,14 +164,12 @@ public class TemplateWtsConfigurationModel
         }
         set
         {
-            
             List<string> listBack = value.Split(',').ToList();
             ChildItemsExtra= new List<XElement>();
             if (listBack.Count == 0 || string.IsNullOrWhiteSpace(listBack[0]))
             {
                 return;
             }
-
             listBack.ForEach(si=>ChildItemsExtra.Add(XElement.Parse(si)));
         }
     }

@@ -82,7 +82,7 @@ public class WtsPropertyAttribute : Attribute
     
     /// <summary>
     /// Declares if an textbox needs to be grayed out.
-    /// For example: an id fields need to be visible but can't be altered.
+    /// For example: an id fields needs to be visible but can't be altered.
     /// </summary>
     public bool IsDisabled { get; set; }
     
