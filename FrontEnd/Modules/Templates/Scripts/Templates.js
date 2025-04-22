@@ -772,7 +772,6 @@ const moduleSettings = {
          * @param {Object} [virtualItem=null] If the item is a virtual item, this parameter will contain the necessary data to open it.
          */
         async loadTemplate(id, virtualItem = null) {
-            
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const historyTab = this.mainTabStrip.element.find(".history-tab");
             const configTab = this.mainTabStrip.element.find(".config-tab");
@@ -781,7 +780,7 @@ const moduleSettings = {
                 this.templateSettings = {};
                 this.linkedTemplates = null;
                 this.templateHistory = null;
-
+                
                 document.getElementById("developmentTab").innerHTML = "";
                 document.getElementById("wtsConfigurationTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
@@ -791,7 +790,6 @@ const moduleSettings = {
             }
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
-
             try {
                 let promises;
 

@@ -81,14 +81,14 @@ public class WtsPropertyAttribute : Attribute
     public string[] DependsOnValue { get; set; }
     
     /// <summary>
-    /// Declares if an textbox needs to be grayedout.
-    /// For example: an id fields need to be visiable but can't be alterd
+    /// Declares if an textbox needs to be grayed out.
+    /// For example: an id fields need to be visible but can't be altered.
     /// </summary>
     public bool IsDisabled { get; set; }
     
     /// <summary>
-    /// if the value is set this field will be shown first. if multple fields have this attribute the lower numbers will be renderd first
-    /// Not currently in use
+    /// If the value is set this field will be shown first. When multiple fields have this attribute the lower numbers will be rendered first.
+    /// Not currently in use.
     /// </summary>
     public int CustomUiOrder { get; set; }
 }
