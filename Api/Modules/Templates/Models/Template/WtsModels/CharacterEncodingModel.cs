@@ -4,82 +4,82 @@ using Api.Modules.Templates.Enums;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
 
-    public class CharacterEncodingModel
-    {   
-        //if either of the 2 setting are equal to the default return null to reduce file size
-        [XmlIgnore]
-        private readonly string defaultCharacterSet = "utf8mb4";
-        [XmlIgnore]
-        private readonly string defaultCollation = "utf8mb4_general_ci";
-        
-        [XmlIgnore]
-        private string characterSet;
-        
-        [WtsProperty(
-            IsVisible = true,
-            IsRequired = false,
-            Title = "CharacterSet",
-            Description = "welke characterset moet gebruikt worden?",
-            ConfigurationTab = ConfigurationTab.Actions,
-            DataComponent = DataComponents.KendoTextBox
-        )]
-        [XmlIgnore]
-        public string CharacterSet
+public class CharacterEncodingModel
+{   
+    //If either of the two settings is equal to the default, return null to reduce file size.
+    [XmlIgnore]
+    private readonly string defaultCharacterSet = "utf8mb4";
+    [XmlIgnore]
+    private readonly string defaultCollation = "utf8mb4_general_ci";
+    
+    [XmlIgnore]
+    private string characterSet;
+    
+    [WtsProperty(
+        IsVisible = true,
+        IsRequired = false,
+        Title = "Karakterset",
+        Description = "Welke Karakterset moet gebruikt worden?",
+        ConfigurationTab = ConfigurationTab.Actions,
+        DataComponent = DataComponents.KendoTextBox
+    )]
+    [XmlIgnore]
+    public string CharacterSet
+    {
+        get;
+        set;
+    }
+    [XmlElement("CharacterSet")]
+    public string CharacterSetXml
+    {
+        get
         {
-            get;
-            set;
-        }
-        [XmlElement("CharacterSet")]
-        public string CharacterSetXml
-        {
-            get
+            if (string.IsNullOrWhiteSpace(CharacterSet)||CharacterSet==defaultCharacterSet)
             {
-                if (string.IsNullOrWhiteSpace(CharacterSet)||CharacterSet==defaultCharacterSet)
-                {
-                    return null;
-                }
-                return CharacterSet;
+                return null;
             }
-            set
+            return CharacterSet;
+        }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(CharacterSet))
             {
-                if (string.IsNullOrWhiteSpace(CharacterSet))
-                {
-                    CharacterSet = defaultCharacterSet;
-                }
+                CharacterSet = defaultCharacterSet;
+            }
 
-                CharacterSet = value;
-            }
+            CharacterSet = value;
         }
-        [XmlIgnore]
-        private string collation;
-        
-        [XmlIgnore]    
-        [WtsProperty(
-            IsVisible = true,
-            IsRequired = false,
-            Title = "Collation",
-            Description = "welke Collation moet gebruikt worden?",
-            ConfigurationTab = ConfigurationTab.Actions,
-            DataComponent = DataComponents.KendoTextBox
-        )]
-        public string Collation { get; set; }
-        [XmlElement("Collation")]
-        public string CollationXml
+    }
+    [XmlIgnore]
+    private string collation;
+    
+    [XmlIgnore]    
+    [WtsProperty(
+        IsVisible = true,
+        IsRequired = false,
+        Title = "Collation",
+        Description = "Welke Collation moet gebruikt worden?",
+        ConfigurationTab = ConfigurationTab.Actions,
+        DataComponent = DataComponents.KendoTextBox
+    )]
+    public string Collation { get; set; }
+    [XmlElement("Collation")]
+    public string CollationXml
+    {
+        get
         {
-            get
+            if (string.IsNullOrWhiteSpace(Collation)||Collation==defaultCollation)
             {
-                if (string.IsNullOrWhiteSpace(Collation)||Collation==defaultCollation)
-                {
-                    return null;
-                }
-                return Collation;
+                return null;
             }
-            set
+            return Collation;
+        }
+        set
+        {
+            if (string.IsNullOrWhiteSpace(Collation))
             {
-                if (string.IsNullOrWhiteSpace(Collation))
-                {
-                    Collation = defaultCollation;
-                }
+                Collation = defaultCollation;
+            }
 
                 Collation = value;
             }

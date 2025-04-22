@@ -52,12 +52,9 @@ export class WtsConfiguration {
             console.error("id is not set");
             return;
         }
-
         // Tell the user that the tab is loading
         this.base.toggleMainLoader(true);
-
         let templateSettings = null;
-
         // Get the data from the api
         try {
             templateSettings = await Wiser.api({
@@ -73,7 +70,6 @@ export class WtsConfiguration {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             return;
         }
-
         // Build the view
         try {
             await Wiser.api({
@@ -96,23 +92,19 @@ export class WtsConfiguration {
         this.initializeKendoComponents();
         this.initializeCodeMirror();
         this.bindEvents();
-
-
     }
-
+    
     initializeKendoComponents() {
         // Find all the kendo components and initialize them
         let kendoComponents = document.querySelectorAll("[data-kendo-component]");
         // Empty the array
         this.serviceInputFields = [];
-        
         // Loop through all the components
         for (let i = 0; i < kendoComponents.length; i++) {
             let component = $(kendoComponents[i]);
             let componentName = `${component.attr("data-kendo-component")}`;
-            
             //sets the value of a component name. and makes sure the first letter is lowercase
-            componentName=String(componentName).charAt(0).toLowerCase() + String(componentName).slice(1);
+            componentName=this.uncapitalizeFirstLetter(componentName);
             let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
             // Check if the options are set
@@ -120,39 +112,39 @@ export class WtsConfiguration {
                 componentOptions = {};
             } else {
                 componentOptions = JSON.parse(componentOptions);
-                // Check if dataSource is set, if so make it a object instead of a string to assign it to the component
+                // Check if dataSource is set, if so make it a object instead of a string to assign it to the component.
                 if (componentOptions.dataSource) {
                     componentOptions.dataSource = eval(componentOptions.dataSource);
                 }
-                // Check if a change event is set, if so make it a function
+                // Check if a change event is set, if so make it a function.
                 if (componentOptions.change) {
                     componentOptions.change = eval(componentOptions.change);
                 }
             }
             
-            // Add a list change event to the grid if it allows editing
+            // Add a list change event to the grid if it allows editing.
             if (component.attr("data-kendo-component") === "KendoGrid" && component.attr("allow-edit") === "true") {
                 componentOptions.change = eval("this.onListChange.bind(this)");
             }
 
-            // Check if the component has UseDataSource set to true
+            // Check if the component has UseDataSource set to true.
             if (component.attr("use-datasource") === "true") {
-                // Find the name of the property
+                // Find the name of the property.
                 let propertyName = this.uncapitalizeFirstLetter(component.attr("name"));
-                // Set the dataSource to the correct property
+                // Set the dataSource to the correct property.
                 componentOptions.dataSource = eval(`this.template.${propertyName}`);
             }
 
-            // Check if any other field depends on this field, if so add a change event
+            // Check if any other field depends on this field, if so add a change event.
             let isDependedOn = document.querySelectorAll(`[data-depend-on-field="${component.attr("name")}"]`);
             if (isDependedOn.length > 0) {
-                // Add a event listener to the options
+                // Add a event listener to the options.
                 componentOptions.change = eval("this.onDependFieldChange.bind(this)");
-                // Add an attribute to the component to indicate that it is depended on
+                // Add an attribute to the component to indicate that it is depended on.
                 component.attr("data-is-depended-on", true);
             }
 
-            // Make sure the method exists on componentSelector and if so create the component
+            // Make sure the method exists on componentSelector and if so create the component.
             if(componentName === "textArea"){
                 switch (componentTab) {
                     case "Service":
@@ -167,7 +159,7 @@ export class WtsConfiguration {
                 }
             }else if (component[componentName] && typeof component[componentName] === "function") {
                 let newComponent = component[componentName](componentOptions).data(componentName);
-                // Save the component and field so we can access it later
+                // Save the component and field so we can access it later.
                 switch (componentTab) {
                     case "Service":
                         this.serviceInputFields.push(component[0]);
@@ -187,14 +179,14 @@ export class WtsConfiguration {
                 return;
             }
 
-            // Check if the component allows editing
+            // Check if the component allows editing.
             if (component.attr("allow-edit") === "true") {
-                // Find the corresponding buttons and attach click events
+                // Find the corresponding buttons and attach click events.
                 let createButton = $(`#${component.attr('name')}CreateButton`);
                 let saveButton = $(`#${component.attr('name')}SaveButton`);
                 let deleteButton = $(`#${component.attr('name')}DeleteButton`);
 
-                // Check if the buttons exist
+                // Check if the buttons exist.
                 if (createButton.length > 0) {
                     createButton.on("click", this.onCreateButtonClick.bind(this));
                 }
@@ -207,33 +199,34 @@ export class WtsConfiguration {
             }
         }
 
-        // Loading is done, fire all change events
+        // Loading is done, fire all change events.
         this.fireAllChangeEvents();
     }
 
     initializeCodeMirror(){
         var a = async()=>{await Misc.ensureCodeMirror();}
         a();
-        //clear the array of editors
+        //clear the array of editors.
         this.editorSql=[]
 
-        //get all compononents that need to be codemirror instances 
+        //get all components that need to be codemirror instances.
         let CodeMirrorComponents = document.querySelectorAll("[data-wts-editor-type]");
         
         for (let i = 0; i < CodeMirrorComponents.length; i++) {
-            //create a code mirror instance
+            //create a code mirror instance.
             var editortmp = CodeMirror.fromTextArea(CodeMirrorComponents[i], {
                 mode: `${$(CodeMirrorComponents[i]).attr("data-wts-editor-type")}`,
                 lineNumbers: true
             });
-            //refresh the code mirror. needed to avoid ui errors
+            //refresh the code mirror. needed to avoid ui errors.
             editortmp.refresh();
-            //add the code mirror to a array for later access while mentaining a link to the original component
+            //add the code mirror to a array for later access while maintaining a link to the original component.
             this.editorSql.push(
                 {
                     editor: editortmp,
                     original: CodeMirrorComponents[i]
-                });
+                }
+            );
         }
     }
     
@@ -244,7 +237,7 @@ export class WtsConfiguration {
         elementsWithChangeEvent.forEach((changeEvent) => {
             let component = $(changeEvent);
             let componentName = `${component.attr("data-kendo-component")}`;
-            componentName=String(componentName).charAt(0).toLowerCase() + String(componentName).slice(1);
+            componentName=this.uncapitalizeFirstLetter(componentName);
 
             // Check if the component exists
             if (component[componentName] && typeof component[componentName] === "function") {
@@ -304,7 +297,6 @@ export class WtsConfiguration {
     }
 
     onSaveButtonClick(e) {
-        
         // Get the current tab name
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
@@ -388,9 +380,9 @@ export class WtsConfiguration {
             
             //check if an action if is used
             if('timeId' in selectedItem && 'order' in selectedItem){
-                let newActionId= selectedItem.timeId+"-"+selectedItem.order;
+                let newActionId= `${selectedItem.timeId}"-"${selectedItem.order}`;
                 idFieldValue = newActionId;
-                selectedItem.actionid = newActionId;
+                selectedItem.actionid = newActionId; 
             }
             
             if (dataSource.find((item) => {
@@ -406,7 +398,7 @@ export class WtsConfiguration {
             let idFieldElement = $(`[name="${idField}"]`);
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
             if('timeId' in selectedItem && 'order' in selectedItem){
-                let newActionId= selectedItem.timeId+"-"+selectedItem.order;
+                let newActionId= `${selectedItem.timeId}"-"${selectedItem.order}`;
                 idFieldValue = newActionId;
                 selectedItem.actionid = newActionId;
             }
@@ -735,11 +727,11 @@ export class WtsConfiguration {
     }
 
     capitaliseFirstLetter(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
+        return `${string.charAt(0).toUpperCase()}${string.slice(1)}`;
     }
 
     uncapitalizeFirstLetter(string) {
-        return string.charAt(0).toLowerCase() + string.slice(1);
+        return `${string.charAt(0).toLowerCase()}${string.slice(1)}`;
     }
 
     /**
