@@ -16,7 +16,6 @@ public class WtsQueryModel : ActionModel
     /// <summary>
     /// Gets or sets the query that will be used.
     /// </summary>
-    
     [XmlIgnore]
     [WtsProperty(
         IsVisible = true,
@@ -38,7 +37,7 @@ public class WtsQueryModel : ActionModel
     }
 
     /// <summary>
-    /// converts the query to a cdata section for loading/storing in the xml file
+    /// Converts the query to a cdata section for loading/storing in the xml file.
     /// </summary>
     [XmlElement("Query")]
     [JsonIgnore]
@@ -110,7 +109,8 @@ public class WtsQueryModel : ActionModel
         DataComponent = DataComponents.KendoCheckBox
     )]
     [XmlIgnore] 
-    public bool? UseTransaction {
+    public bool? UseTransaction 
+    {
         get
         {
             if (useTransaction == null||useTransaction.Value==false)
@@ -126,7 +126,8 @@ public class WtsQueryModel : ActionModel
     /// </summary>
     [XmlElement("UseTransaction")]
     [CanBeNull]
-    public string UseTransactionString {
+    public string UseTransactionString 
+    {
         get
         {
             if (useTransaction == null||useTransaction.Value==false)
@@ -144,5 +145,6 @@ public class WtsQueryModel : ActionModel
                 return;
             }
             useTransaction = bool.Parse(value);
-        } }
+        }
+    }
 }

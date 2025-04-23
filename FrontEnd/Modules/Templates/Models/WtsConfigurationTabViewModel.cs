@@ -6,7 +6,7 @@ namespace FrontEnd.Modules.Templates.Models;
 
 public class WtsConfigurationTabViewModel
 {
-    //note: class doesn't appear to currently be inuse
+    //note: class doesn't appear to currently be in use.
     public string ServiceName { get; set; }
     public string ConnectionString { get; set; }
     public LogSettings LogSettings { get; set; }

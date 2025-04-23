@@ -14,12 +14,10 @@ namespace FrontEnd.Modules.Templates.Controllers;
 public class TemplatesController(IBaseService baseService, IFrontEndDynamicContentService dynamicContentService)
     : Controller
 {
-
     public IActionResult Index([FromQuery]TemplateViewModel viewModel)
     {
         viewModel ??= new TemplateViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
-
         viewModel.Settings = defaultModel.Settings;
         viewModel.WiserVersion = defaultModel.WiserVersion;
         viewModel.SubDomain = defaultModel.SubDomain;
@@ -65,7 +63,6 @@ public class TemplatesController(IBaseService baseService, IFrontEndDynamicConte
             TemplateTypes.Query => "QuerySettings",
             _ => null
         };
-
         // ReSharper disable once Mvc.PartialViewNotResolved
         return PartialView("Tabs/DevelopmentTab", tabViewData);
     }
@@ -73,7 +70,6 @@ public class TemplatesController(IBaseService baseService, IFrontEndDynamicConte
     [HttpPost, Route("WtsConfigurationTab")]
     public IActionResult WtsConfigurationTab([FromBody]TemplateWtsConfigurationModel data)
     {
-        
         // ReSharper disable once Mvc.PartialViewNotResolved
         return PartialView("Tabs/WtsConfigurationTab", data);
     }

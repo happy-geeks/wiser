@@ -103,7 +103,7 @@ export class WtsConfiguration {
         for (let i = 0; i < kendoComponents.length; i++) {
             let component = $(kendoComponents[i]);
             let componentName = `${component.attr("data-kendo-component")}`;
-            //sets the value of a component name. and makes sure the first letter is lowercase
+            //Sets the value of a component name. and makes sure the first letter is lowercase.
             componentName=this.uncapitalizeFirstLetter(componentName);
             let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
@@ -231,7 +231,7 @@ export class WtsConfiguration {
     }
     
     fireAllChangeEvents() {
-        // Fire any change events that are set
+        // Fire any change events that are set.
         let elementsWithChangeEvent = document.querySelectorAll('[data-is-depended-on]');
 
         elementsWithChangeEvent.forEach((changeEvent) => {
@@ -239,7 +239,7 @@ export class WtsConfiguration {
             let componentName = `${component.attr("data-kendo-component")}`;
             componentName=this.uncapitalizeFirstLetter(componentName);
 
-            // Check if the component exists
+            // Check if the component exists.
             if (component[componentName] && typeof component[componentName] === "function") {
                 component[componentName]("trigger", "change");
             } else {
@@ -249,14 +249,14 @@ export class WtsConfiguration {
     }
 
     bindEvents() {
-        // Bind the save button
-        // (Currently used as a debugging button, will be replaced with the proper functionality)
-        // (To test saving the configuration, press ctrl + s)
+        // Bind the save button.
+        // (Currently used as a debugging button, will be replaced with the proper functionality.)
+        // (To test saving the configuration, press ctrl + s.)
         $("#saveButtonWtsConfiguration").on("click", this.getCurrentSettings.bind(this));
     }
 
     onCreateButtonClick(e) {
-        // Clear the input fields
+        // Clear the input fields.
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
@@ -264,21 +264,21 @@ export class WtsConfiguration {
 
         this.clearInputFieldsForTab(currentTabName);
 
-        // Find the corresponding grid in the corresponding KendoFields array
+        // Find the corresponding grid in the corresponding KendoFields array.
         let grid = this[`${currentTabName}KendoFields`].find((grid) => {
             return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
         });
 
-        // Clear the selected item
+        // Clear the selected item.
         grid.clearSelection();
 
-        // Find the id field related to the grid and set an according value
+        // Find the id field related to the grid and set an according value.
         let idField = grid.element[0].getAttribute("id-property");
         if (idField !== undefined && idField !== null) {
-            // Get the id field
+            // Get the id field.
             let idFieldElement = $(`[name="${idField}"]`);
 
-            // Check for the highest id in the datasource and add 1 to it
+            // Check for the highest id in the datasource and add 1 to it.
             let dataSource = this.template[this.uncapitalizeFirstLetter(grid.element[0].getAttribute("name"))];
             let highestId = 0;
             dataSource.forEach((item) => {
@@ -288,16 +288,16 @@ export class WtsConfiguration {
             });
             highestId++;
 
-            // Set the value of the id field
+            // Set the value of the id field.
             this.setValueOfElement(idFieldElement[0], highestId);
         }
 
-        // Fire any change events that are set
+        // Fire any change events that are set.
         this.fireAllChangeEvents();
     }
 
     onSaveButtonClick(e) {
-        // Get the current tab name
+        // Get the current tab name.
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
@@ -307,73 +307,73 @@ export class WtsConfiguration {
             editor.original.value = editor.editor.getValue();
         })
         
-        // Find the corresponding grid in the corresponding KendoFields array
+        // Find the corresponding grid in the corresponding KendoFields array.
         let grid = this[`${currentTabName}KendoFields`].find((grid) => {
             return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
         });
 
-        // Get the selected item
+        // Get the selected item.
         let selectedItem = grid.dataItem(grid.select());
 
-        // Find the name of the grid
+        // Find the name of the grid.
         let gridName = grid.element[0].getAttribute("name");
 
-        // Convert the name to camelCase
+        // Convert the name to camelCase.
         gridName = this.uncapitalizeFirstLetter(gridName);
 
-        // Get the datasource of the grid
+        // Get the datasource of the grid.
         let dataSource = this.template[gridName];
-        // The index of the selected item in the datasource
+        // The index of the selected item in the datasource.
         let indexOfSelectedItem = null;
 
-        // If there is a selected item, save the index of the selected item
+        // If there is a selected item, save the index of the selected item.
         if (selectedItem !== undefined && selectedItem !== null) {
             indexOfSelectedItem = grid.dataSource.indexOf(selectedItem);
         }
 
         selectedItem = {};
 
-        // Get all the input fields for the given tab
+        // Get all the input fields for the given tab.
         let inputFields = this[`${currentTabName}InputFields`];
-        // Loop through all the input fields
+        // Loop through all the input fields.
         inputFields.forEach((inputField) => {
-            // Get the name of the input field
+            // Get the name of the input field.
             let name = inputField.getAttribute("name");
 
-            // Ignore field if it is a grid
+            // Ignore field if it is a grid.
             if (inputField.getAttribute("data-kendo-component") === "KendoGrid") {
                 return;
             }
 
-            // Convert the name to camelCase
+            // Convert the name to camelCase.
             name = this.uncapitalizeFirstLetter(name);
 
-            // Get the value of the input field
+            // Get the value of the input field.
             let value = this.getValueOfElement(inputField);
 
-            // Convert value to the correct type if possible
+            // Convert value to the correct type if possible.
             if (inputField.getAttribute("data-kendo-component") === "KendoNumericTextBox") {
                 value = parseInt(value);
             }
 
-            // Find the trace of the input field
+            // Find the trace of the input field.
             let trace = inputField.getAttribute("trace");
 
-            // Remove the first part of the trace (the name of the grid)
+            // Remove the first part of the trace (the name of the grid).
             trace = trace.replace(`/${this.capitaliseFirstLetter(gridName)}`, "");
 
-            // If there is a trace, add the field to the data based on the trace
+            // If there is a trace, add the field to the data based on the trace.
             if (trace) {
                 selectedItem = this.addFieldToData(selectedItem, name, value, trace);
                 return;
             }
 
-            // Set the value of the selected item
+            // Set the value of the selected item.
             selectedItem[name] = value;
         });
-        // Error checking for using an id that is already in use
+        // Error checking for using an id that is already in use.
         if (indexOfSelectedItem === null) {
-            // For new items, check if the ID is already in use
+            // For new items, check if the ID is already in use.
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
@@ -393,7 +393,7 @@ export class WtsConfiguration {
             }
         }
         else {
-            // For existing items, check if the ID is already in use by another item
+            // For existing items, check if the ID is already in use by another item.
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
@@ -414,53 +414,53 @@ export class WtsConfiguration {
         
 
         if (indexOfSelectedItem != null && indexOfSelectedItem >= 0) {
-            dataSource[indexOfSelectedItem] = selectedItem; // Update the item
+            dataSource[indexOfSelectedItem] = selectedItem; // Update the item.
         }
         else {
-            dataSource.push(selectedItem); // Add the item
+            dataSource.push(selectedItem); // Add the item.
         }
-        // Refresh the grid
+        // Refresh the grid.
         grid.dataSource.read();
 
-        // Clear the input fields
+        // Clear the input fields.
         this.clearInputFieldsForTab(currentTabName);
 
-        // Fire any change events that are set
+        // Fire any change events that are set.
         this.fireAllChangeEvents();
     }
 
     onDeleteButtonClick(e) {
-        // Get the current tab name
+        // Get the current tab name.
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
         currentTabName = currentTabName.replace("tab", "");
 
-        // Find the corresponding grid in the corresponding KendoFields array
+        // Find the corresponding grid in the corresponding KendoFields array.
         let grid = this[`${currentTabName}KendoFields`].find((grid) => {
             return grid.element[0].getAttribute("name") === e.target.getAttribute("for-list");
         });
 
-        // Get the selected item
+        // Get the selected item.
         let selectedItem = grid.dataItem(grid.select());
 
         if (selectedItem === undefined || selectedItem === null) {
             return;
         }
 
-        // Find the name of the grid
+        // Find the name of the grid.
         let gridName = grid.element[0].getAttribute("name");
 
-        // Convert the name to camelCase
+        // Convert the name to camelCase.
         gridName = this.uncapitalizeFirstLetter(gridName);
 
-        // Get the datasource of the grid
+        // Get the datasource of the grid.
         let dataSource = this.template[gridName];
 
-        // Get the index of the selected item
+        // Get the index of the selected item.
         let indexOfSelectedItem = grid.dataSource.indexOf(selectedItem);
 
-        // Remove the item from the datasource
+        // Remove the item from the datasource.
         if (indexOfSelectedItem !== -1) {
             dataSource.splice(indexOfSelectedItem, 1);
         }
@@ -468,23 +468,23 @@ export class WtsConfiguration {
             console.error("Could not find the selected item in the datasource.");
         }
 
-        // Refresh the grid
+        // Refresh the grid.
         grid.dataSource.read();
 
-        // Clear the input fields
+        // Clear the input fields.
         this.clearInputFieldsForTab(currentTabName);
 
-        // Fire any change events that are set
+        // Fire any change events that are set.
         this.fireAllChangeEvents();
     }
 
     clearInputFieldsForTab(tab) {
-        // Find all the input fields for the given tab
+        // Find all the input fields for the given tab.
         let inputFields = this[`${tab}InputFields`];
-        // Loop through all the input fields
+        // Loop through all the input fields.
         inputFields.forEach((inputField) => {
-            // If the input field is a dropdownlist and is required, set the value to the first item
-            // Only run this if statement if .getAttribute is a function
+            // If the input field is a dropdownlist and is required, set the value to the first item.
+            // Only run this if statement if .getAttribute is a function.
             if (typeof inputField.getAttribute !== "function") {
                 return;
             }
@@ -494,10 +494,10 @@ export class WtsConfiguration {
                 this.setValueOfElement(inputField, options[0].value);
                 return;
             }
-            // Clear the value of the input field
+            // Clear the value of the input field.
             this.setValueOfElement(inputField, "");
         });
-        //clears the value of any codemirror instance
+        //Clears the value of any codemirror instance.
         this.editorSql.forEach((editor)=>{
             editor.editor.getDoc().setValue("");
         })
@@ -505,19 +505,18 @@ export class WtsConfiguration {
     }
 
     onListChange(e) {
-        // Check if the selected item is null
+        // Check if the selected item is null.
         if (e.sender.select() === null) {
             return;
         }
 
-        // Retrieve the selected item
+        // Retrieve the selected item.
         let selectedItem = e.sender.dataItem(e.sender.select());
 
-        // Get the current tab name
+        // Get the current tab name.
         let tabStrip = $("#tabStripConfiguration").data("kendoTabStrip");
         let currentTab = tabStrip.select();
         let currentTabName = $(currentTab).attr("aria-controls").toLowerCase();
-
         
         currentTabName = currentTabName.replace("tab", "");
 
@@ -525,13 +524,13 @@ export class WtsConfiguration {
 
         let inputFields = this[`${currentTabName}InputFields`];
 
-        // Set the values of the input fields
+        // Set the values of the input fields.
         this.findAndSetValuesOfInputFields(selectedItem, inputFields);
 
-        // Fire any change events that are set
+        // Fire any change events that are set.
         this.fireAllChangeEvents();
         
-        //updates the values of any code mirror instances
+        //Updates the values of any code mirror instances.
         this.editorSql.forEach((editor)=>{
             editor.editor.getDoc().setValue(editor.original.value);
         })
@@ -545,7 +544,7 @@ export class WtsConfiguration {
                 inputFields.forEach((inputField) => {
                     let name = inputField.getAttribute("name");
 
-                    // Convert the name to camelCase
+                    // Convert the name to camelCase.
                     name = this.uncapitalizeFirstLetter(name);
 
                     if (prop === name) {
@@ -557,28 +556,28 @@ export class WtsConfiguration {
     }
 
     onDependFieldChange(e) {
-        // Get the selected item
+        // Get the selected item.
         let selectedItem = (e.sender.dataItem(e.sender.select())).value;
 
-        // Find all fields that depend on this field
+        // Find all fields that depend on this field.
         let dependantFields = document.querySelectorAll(`[data-depend-on-field="${e.sender.element[0].getAttribute("name")}"]`);
 
-        // Loop through all the fields
+        // Loop through all the fields.
         dependantFields.forEach((dependantField) => {
-            // Get all the dependant values for this field
+            // Get all the dependant values for this field.
             let dependantValues = dependantField.getAttribute("data-depend-on-value");
 
-            // Split the values on a comma
+            // Split the values on a comma.
             dependantValues = dependantValues.split(",");
 
-            // Check if the selected item is in the dependant values
+            // Check if the selected item is in the dependant values.
             if (dependantValues.includes(selectedItem)) {
-                // Show the field
+                // Show the field.
                 this.showField(dependantField.getAttribute("data-kendo-component"), $(dependantField));
             } else {
-                // Hide the field
+                // Hide the field.
                 this.hideField(dependantField.getAttribute("data-kendo-component"), $(dependantField));
-                // Clear the value of the field
+                // Clear the value of the field.
                 this.setValueOfElement(dependantField, "");
             }
         });
@@ -595,7 +594,7 @@ export class WtsConfiguration {
                 ($(e).data("kendoCheckBox")).value(v);
                 break;
             case "KendoTimePicker":
-                e.value = v; // Using the value function from kendo doesn't set the correct value (Cuts off the last 2 digits)
+                e.value = v; // Using the value function from kendo doesn't set the correct value. (Cuts off the last 2 digits)
                 break;
             case "KendoNumericTextBox":
                 ($(e).data("kendoNumericTextBox")).value(v);
@@ -642,50 +641,50 @@ export class WtsConfiguration {
     }
 
     addFieldToData(data, name, value, trace) {
-        const traceParts = trace.split('/').filter(part => part !== ''); // Split the trace on / and remove empty parts
+        const traceParts = trace.split('/').filter(part => part !== ''); // Split the trace on / and remove empty parts.
         let currentObj = data;
 
         traceParts.forEach(part => {
             if (!currentObj[part]) {
-                currentObj[part] = {}; // Create the object if it doesn't exist
+                currentObj[part] = {}; // Create the object if it doesn't exist.
             }
-            currentObj = currentObj[part]; // Go to the next object
+            currentObj = currentObj[part]; // Go to the next object.
         });
 
-        currentObj[name] = value; // Add the value to the object
+        currentObj[name] = value; // Add the value to the object.
         return data;
     }
 
     getCurrentSettings() {
         let data = {};
 
-        // Get all the values from the service input fields
+        // Get all the values from the service input fields.
         this.serviceInputFields.forEach((inputField) => {
             let name = inputField.getAttribute("name");
             let trace = inputField.getAttribute("trace");
             let value = this.getValueOfElement(inputField);
 
             if (trace) {
-                // If there is a trace, add the field to the data based on the trace
+                // If there is a trace, add the field to the data based on the trace.
                 data = this.addFieldToData(data, name, value, trace);
             } else {
-                // If there is no trace, add the field to the data
+                // If there is no trace, add the field to the data.
                 data[name] = value;
             }
         });
 
         this.correctValues(this.template.runSchemes, this.timersInputFields);
 
-        // Manually add runschemes to the data
+        // Manually add runschemes to the data.
         data["RunSchemes"] = this.template.runSchemes;
         data["Queries"]= this.template.queries
 
         return data;
     }
 
-    // Recursively search through all the values of given object and corresponding inputfields and correct the values
-    // This is needed because the values are not always the correct type
-    // For example: the value of a dropdown is a empty string instead of being undefined
+    // Recursively search through all the values of given object and corresponding inputfields and correct the values.
+    // This is needed because the values are not always the correct type.
+    // For example: the value of a dropdown is a empty string instead of being undefined.
     correctValues(obj, inputFields) {
         for (let prop in obj) {
             if (typeof obj[prop] === "object") {
@@ -709,7 +708,7 @@ export class WtsConfiguration {
     }
 
     getValueOfElement(element) {
-        // Check what type of element it is
+        // Check what type of element it is.
         switch (element.tagName) {
             case "INPUT":
             case "TEXTAREA":

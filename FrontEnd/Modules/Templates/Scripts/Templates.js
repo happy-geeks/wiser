@@ -4,6 +4,7 @@ import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
 import "../Css/Measurements.css";
+// Disabled until we can complete this feature.
 //import {WtsConfiguration} from "./WtsConfiguration.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
@@ -775,7 +776,7 @@ const moduleSettings = {
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const historyTab = this.mainTabStrip.element.find(".history-tab");
             const configTab = this.mainTabStrip.element.find(".config-tab");
-
+            
             if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
                 this.templateSettings = {};
                 this.linkedTemplates = null;
@@ -792,7 +793,6 @@ const moduleSettings = {
             window.processing.addProcess(process);
             try {
                 let promises;
-
                 let templateSettings, linkedTemplates, templateHistory;
                 let isVirtualTemplate = false;
                 if (virtualItem !== null) {
@@ -813,7 +813,7 @@ const moduleSettings = {
                         linkedJavascript: [],
                         linkOptionsTemplates: []
                     };
-
+                    
                     // Retrieve parent ID so it can be set on the template settings.
                     const selectedTabIndex = this.treeViewTabStrip.select().index();
                     const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
@@ -846,7 +846,6 @@ const moduleSettings = {
 
                 // Load the different tabs.
                 promises = [];
-
                 // Development
                 promises.push(
                     Wiser.api({
