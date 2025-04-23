@@ -38,7 +38,7 @@
         <em>Informatie over hoe lang de service erover deed
             om te draaien komt hier te staan. Liefst in een
             grafiek met de laatste x-keer dat deze gedraaid
-            heeft. En of er fouten waren en zo ja welke</em>
+            heeft. En of er fouten waren en zo ja welke.</em>
     </div>
     <div id="loggingTab">
         <em>Hier worden de logs geopend van deze service.
@@ -49,7 +49,7 @@
 
 <footer>
     <div class="version-actions">
-        @* Commented out since it currently doesn't function *@
+        @* Commented out since it currently doesn't function. *@
         @* <button id="saveAndDeployToTestButtonWtsConfiguration" class="k-button k-primary" title="Opslaan &amp; deploy naar test-omgeving"><ins class="icon-cloud-up"></ins></button> *@
         <button id="saveButtonWtsConfiguration" class="k-button k-primary">Configuratie opslaan</button>
     </div>
@@ -59,7 +59,7 @@
 @functions {
     async Task RenderProperty(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
-        // If there is any dependsonvalue, we should create a comma seperated string of the values
+        // If there is any dependsonvalue, we should create a comma seperated string of the values.
         var dependsOnValue = "";
         if (attributes?.DependsOnValue != null)
         {
