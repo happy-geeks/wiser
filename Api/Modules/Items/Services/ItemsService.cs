@@ -66,6 +66,8 @@ public class ItemsService(
     IEntityPropertiesService entityPropertiesService,
     ILanguagesService languagesService,
     IGoogleTranslateService googleTranslateService,
+    ILinkTypesService linkTypesService,
+    IEntityTypesService entityTypesService,
     IHttpContextAccessor httpContextAccessor = null) : IItemsService,
     IScopedService
 {
@@ -654,7 +656,7 @@ public class ItemsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, ulong? parentId = null, int linkType = 1, bool alsoCreateInMainBranch = false)
+    public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, ulong? parentId = null, int linkType = 1, bool alsoCreateInMainBranch = false, string parentEntityType = null)
     {
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         var tenant = await wiserTenantsService.GetSingleAsync(identity);
@@ -698,14 +700,26 @@ public class ItemsService(
                 var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
 
                 // Check which Wiser item link table needs to be locked.
-                clientDatabaseConnection.AddParameter("parentId", parentId);
-                var queryResult = await clientDatabaseConnection.GetAsync($@"SELECT entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
-                var destinationEntityType = "";
-                if (queryResult.Rows.Count > 0)
+                if (String.IsNullOrWhiteSpace(parentEntityType))
                 {
-                    destinationEntityType = queryResult.Rows[0].Field<string>("entity_type");
+                    var allLinkTypes = await linkTypesService.GetAllLinkTypeSettingsAsync();
+                    var possibleLinkTypes = allLinkTypes.Where(x => x.Type == linkType && String.Equals(x.SourceEntityType, item.EntityType, StringComparison.OrdinalIgnoreCase)).ToList();
+                    clientDatabaseConnection.AddParameter("parentId", parentId);
+                    foreach (var settings in possibleLinkTypes)
+                    {
+                        var destinationTablePrefix = await entityTypesService.GetTablePrefixForEntityAsync(settings.DestinationEntityType);
+                        var queryResult = await clientDatabaseConnection.GetAsync($"SELECT entity_type FROM {destinationTablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
+                        if (queryResult.Rows.Count <= 0)
+                        {
+                            continue;
+                        }
+
+                        parentEntityType = queryResult.Rows[0].Field<string>("entity_type");
+                        break;
+                    }
                 }
-                var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(0, item.EntityType, destinationEntityType);
+
+                var linkTypeSettings = await linkTypesService.GetLinkTypeSettingsAsync(linkType, item.EntityType, parentEntityType);
                 var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
 
                 try
@@ -715,8 +729,8 @@ public class ItemsService(
                     await clientDatabaseConnection.ExecuteAsync($"LOCK TABLES {tablePrefix}{WiserTableNames.WiserItem} WRITE, {tablePrefix}{WiserTableNames.WiserItem} item READ, {WiserTableNames.WiserUserRoles} user_role READ, {WiserTableNames.WiserPermission} permission READ, {WiserTableNames.WiserEntity} entity READ, {WiserTableNames.WiserEntityProperty} property READ, {WiserTableNames.WiserLink} READ, {linkTablePrefix}{WiserTableNames.WiserItemLink} WRITE");
                     item.Id = await branchesService.GenerateNewIdAsync($"{tablePrefix}{WiserTableNames.WiserItem}", mainDatabaseConnection, clientDatabaseConnection);
 
-                    await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
-                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, saveHistory: false);
+                    await wiserItemsServiceMainBranch.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, parentEntityType: parentEntityType);
+                    newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, saveHistory: false, parentEntityType: parentEntityType);
                 }
                 finally
                 {
@@ -736,8 +750,8 @@ public class ItemsService(
             }
             else
             {
-                //Create the new item (with the link)
-                newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType);
+                // Create the new item (with the link).
+                newItem = await wiserItemsService.CreateAsync(item, parentId, userId: userId, username: username, encryptionKey: encryptionKey, createNewTransaction: false, linkTypeNumber: linkType, parentEntityType: parentEntityType);
             }
 
             result.NewItemId = newItem.EncryptedId;
@@ -750,7 +764,7 @@ public class ItemsService(
                 result.Icon = dataTable.Rows[0].Field<string>("icon");
             }
 
-            if (newItem.Details != null && newItem.Details.Any() && !createInBothDatabases)
+            if (newItem.Details != null && newItem.Details.Count != 0 && !createInBothDatabases)
             {
                 // Note: skipPermissionsCheck is set to true here, because otherwise the update permissions will be checked,
                 // but this is for creating an item and those permissions are already checked in the CreateAsync method that we call above.
@@ -1028,7 +1042,7 @@ public class ItemsService(
                 parameters.TryAdd(parameter.Key, value);
             }
         }
-        
+
         detailsQuery = detailsQuery.Replace("{itemId:decrypt(true)}", "?itemId", StringComparison.OrdinalIgnoreCase);
         detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
 
@@ -1048,7 +1062,7 @@ public class ItemsService(
                 parameters.TryAdd(dataRow.Field<string>("property_name"), dataRow.Field<string>("property_value"));
             }
         }
-        
+
         actionQuery = stringReplacementsService.DoReplacements(actionQuery, parameters, forQuery: true);
 
         // And finally execute the action button query.
@@ -2702,19 +2716,12 @@ public class ItemsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType = null)
+    public async Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType, string destinationEntityType)
     {
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-        var tenant  = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
+        var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType, destinationEntityType);
         var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
-
-        if (String.IsNullOrWhiteSpace(sourceEntityType))
-        {
-            sourceEntityType = linkTypeSettings.SourceEntityType;
-        }
-
-        var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
+        var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.SourceEntityType);
         var destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
 
         clientDatabaseConnection.ClearParameters();
@@ -2733,16 +2740,16 @@ public class ItemsService(
             }
 
             clientDatabaseConnection.AddParameter("parentId", destinationIds.First());
-            query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItem} SET parent_item_id = ?parentId WHERE id IN ({String.Join(",", sourceIds)})";
+            query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItem} SET parent_item_id = ?parentId WHERE id IN ({String.Join(",", sourceIds)})";
         }
         else
         {
             query = $"""
                      INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
-                                             SELECT source.id, destination.id, ?linkType
-                                             FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
-                                             JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
-                                             WHERE source.id IN ({String.Join(",", sourceIds)})
+                     SELECT source.id, destination.id, ?linkType
+                     FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
+                     JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
+                     WHERE source.id IN ({String.Join(",", sourceIds)})
                      """;
         }
 
@@ -2755,19 +2762,12 @@ public class ItemsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType = null)
+    public async Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType, string destinationEntityType)
     {
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-        var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType);
+        var linkTypeSettings = await wiserItemsService.GetLinkTypeSettingsAsync(linkType, sourceEntityType, destinationEntityType);
         var linkTablePrefix = wiserItemsService.GetTablePrefixForLink(linkTypeSettings);
-
-        if (String.IsNullOrWhiteSpace(sourceEntityType))
-        {
-            sourceEntityType = linkTypeSettings.SourceEntityType;
-        }
-
-        var tablePrefix = String.IsNullOrWhiteSpace(sourceEntityType) ? "" : await wiserItemsService.GetTablePrefixForEntityAsync(sourceEntityType);
+        var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.SourceEntityType);
 
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("linkType", linkType);
@@ -2784,11 +2784,11 @@ public class ItemsService(
                 };
             }
 
-            query = $@"UPDATE {tablePrefix}{WiserTableNames.WiserItem} SET parent_item_id = 0 WHERE id IN ({String.Join(",", sourceIds)})";
+            query = $"UPDATE {tablePrefix}{WiserTableNames.WiserItem} SET parent_item_id = 0 WHERE id IN ({String.Join(",", sourceIds)})";
         }
         else
         {
-            query = $@"DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} WHERE type = ?linkType AND destination_item_id IN ({String.Join(",", destinationIds)}) AND item_id IN ({String.Join(",", sourceIds)})";
+            query = $"DELETE FROM {linkTablePrefix}{WiserTableNames.WiserItemLink} WHERE type = ?linkType AND destination_item_id IN ({String.Join(",", destinationIds)}) AND item_id IN ({String.Join(",", sourceIds)})";
         }
 
         await clientDatabaseConnection.ExecuteAsync(query);

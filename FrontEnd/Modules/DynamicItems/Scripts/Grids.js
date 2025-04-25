@@ -1100,11 +1100,11 @@ export class Grids {
             if (customAction.doesDelete && !this.base.settings.permissions.canDelete) {
                 continue;
             }
-            
+
             const conditionAttribute = customAction.condition
                 ? `data-condition=${customAction.condition}`
                 : '';
-            
+
             const selector = gridSelector.replace(/#/g, "\\#");
 
             if (customAction.groupName) {
@@ -1118,7 +1118,7 @@ export class Grids {
 
                     groups.push(group);
                 }
-                
+
                 group.actions.push(`<a class='k-button k-button-icontext ${className}' href='\\#' ${conditionAttribute} onclick='return window.dynamicItems.fields.onSubEntitiesGridToolbarActionClick("${selector}", "${encryptedItemId}", "${propertyId}", ${JSON.stringify(customAction)}, event, "${entityType}")' style='${(kendo.htmlEncode(customAction.style || ""))}'><span>${customAction.text}</span></a>`);
             } else {
                 actionsWithoutGroups.push({
@@ -1329,8 +1329,9 @@ export class Grids {
      * @param {string} senderGridSelector The CSS selector to find the main element for the sub-entities-grid.
      * @param {boolean} showTitleField Whether or not to show the field where the user can edit the title/name of the new item.
      * @param {number} linkTypeNumber The link type number.
+     * @param {string} parentEntityType Optional: The entity type of the parent item. We need this to determine where and how to save the parent link.
      */
-    async onNewSubEntityClick(parentId, entityType, senderGridSelector, showTitleField, linkTypeNumber) {
+    async onNewSubEntityClick(parentId, entityType, senderGridSelector, showTitleField, linkTypeNumber, parentEntityType = null) {
         linkTypeNumber = linkTypeNumber || "";
 
         const senderGrid = $(senderGridSelector).data("kendoGrid");
@@ -1340,9 +1341,9 @@ export class Grids {
 
         try {
             // Create the new item.
-            const createItemResult = await this.base.createItem(entityType, parentId, "", linkTypeNumber);
+            const createItemResult = await this.base.createItem(entityType, parentId, "", linkTypeNumber, null, false, 0, false, parentEntityType);
             if (createItemResult) {
-                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, null, showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${this.base.getEntityTypeFriendlyName(entityType)} aanmaken`);
+                await this.base.windows.loadItemInWindow(true, createItemResult.itemIdPlain, createItemResult.itemId, entityType, "", showTitleField, senderGrid, { hideTitleColumn: !showTitleField }, createItemResult.linkId, `Nieuw(e) ${this.base.getEntityTypeFriendlyName(entityType)} aanmaken`);
             }
         } catch (exception) {
             console.error(exception);
@@ -1588,10 +1589,10 @@ export class Grids {
         conditionalButtons.each(async function () {
             const button = $(this);
             const condition = button.data('condition');
-            
+
             // Do not hide buttons by default.
             let shouldHide = false;
-            
+
             // Conditional check.
             if(condition) {
                 // Gather field data for each selected row in the grid.
@@ -1612,11 +1613,11 @@ export class Grids {
                     return func(...parameterValues);
                 });
             }
-            
+
             // Show or hide the action button based on the evaluated condition or default value.
             button.toggleClass('hidden', shouldHide || event.sender.select().length === 0);
         });
-        
+
         // Check whether to hide a button group when no buttons are visible in the group.
         for (let buttonGroup of event.sender.wrapper.find(".k-button-drop")) {
             const buttonGroupElement = $(buttonGroup);

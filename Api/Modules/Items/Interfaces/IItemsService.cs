@@ -61,8 +61,9 @@ public interface IItemsService
     /// <param name="parentId">Optional: The encrypted ID of the parent to create this item under.</param>
     /// <param name="linkType">Optional: The link type of the link to the parent.</param>
     /// <param name="alsoCreateInMainBranch">Optional: Whether to also create the item in the main branch. Default is <see langword="false"/>.</param>
+    /// <param name="parentEntityType">Optional: The entity type of the parent item. We need this to determine where and how to save the parent link.</param>
     /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
-    Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, ulong? parentId = null, int linkType = 1, bool alsoCreateInMainBranch = false);
+    Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, ulong? parentId = null, int linkType = 1, bool alsoCreateInMainBranch = false, string parentEntityType = null);
 
     /// <summary>
     /// Updates an item.
@@ -244,8 +245,9 @@ public interface IItemsService
     /// <param name="sourceIds">The IDs of the items that are being linked.</param>
     /// <param name="destinationIds">The IDs of the destination items.</param>
     /// <param name="linkType">The link type to use for all of the links.</param>
-    /// <param name="sourceEntityType">Optional: The entity type of the items that are being linked. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-    Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType = null);
+    /// <param name="sourceEntityType">The entity type of the items that are being linked. This is needed to be able to determine where and how to save the links.</param>
+    /// <param name="destinationEntityType">The entity type of the items that are being linked too. This is needed to be able to determine where and how to save the links.</param>
+    Task<ServiceResult<bool>> AddMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType, string destinationEntityType);
 
     /// <summary>
     /// Removed one or more links between items.
@@ -254,8 +256,9 @@ public interface IItemsService
     /// <param name="sourceIds">The IDs of the source items of the links to remove.</param>
     /// <param name="destinationIds">The IDs of the destination items.</param>
     /// <param name="linkType">The link type to use for all of the links.</param>
-    /// <param name="sourceEntityType">Optional: The entity type of the source items. This is needed when the item is saved in a different table than wiser_item. We can only look up the name of that table if we know the entity type beforehand.</param>
-    Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType = null);
+    /// <param name="sourceEntityType">The entity type of the items that are being linked. This is needed to be able to determine where and how to save the links.</param>
+    /// <param name="destinationEntityType">The entity type of the items that are being linked too. This is needed to be able to determine where and how to save the links.</param>
+    Task<ServiceResult<bool>> RemoveMultipleLinksAsync(ClaimsIdentity identity, List<ulong> sourceIds, List<ulong> destinationIds, int linkType, string sourceEntityType, string destinationEntityType);
 
     /// <summary>
     /// Translate all fields of an item into one or more other languages, using the Google Translation API.

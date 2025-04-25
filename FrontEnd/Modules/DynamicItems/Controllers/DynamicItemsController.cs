@@ -20,6 +20,7 @@ public class DynamicItemsController(IBaseService baseService) : Controller
         viewModel.Wiser1BaseUrl = defaultModel.Wiser1BaseUrl;
         viewModel.ApiAuthenticationUrl = defaultModel.ApiAuthenticationUrl;
         viewModel.ApiRoot = defaultModel.ApiRoot;
+        viewModel.ApiRootV4 = defaultModel.ApiRootV4;
         viewModel.LoadPartnerStyle = defaultModel.LoadPartnerStyle;
 
         if (!String.IsNullOrWhiteSpace(viewModel.SaveButtonText))
