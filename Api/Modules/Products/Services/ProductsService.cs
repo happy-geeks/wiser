@@ -253,7 +253,7 @@ LIMIT ?pageOffset , ?resultsPerPage";
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> RefreshProductsAlAsync(ClaimsIdentity identity, bool ignoreCoolDown = false)
+    public async Task<ServiceResult<JToken>> RefreshProductsAllAsync(ClaimsIdentity identity, bool ignoreCoolDown = false)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);

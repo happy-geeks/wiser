@@ -85,7 +85,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RefreshAll()
     {
-        return (await productsService.RefreshProductsAlAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
+        return (await productsService.RefreshProductsAllAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
     /// <summary>
