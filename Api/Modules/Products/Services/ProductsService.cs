@@ -131,8 +131,7 @@ public class ProductsService : IProductsService, IScopedService
     }
     
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, string callingUrl, string date,
-        int page = 0)
+    public async Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, string callingUrl, DateTime? date,  int page = 0)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
@@ -141,25 +140,14 @@ public class ProductsService : IProductsService, IScopedService
         DateTime productsSinceWithTime;
 
         // Check if a date was entered, if not take today.
-        var dateWasProvidedByUser = !string.IsNullOrEmpty(date);
+        var dateWasProvidedByUser = date != null;
 
         if (!dateWasProvidedByUser)
         {
-            date = DateTime.Now.ToString("yyyy-MM-dd");
+            date = DateTime.Now.Date;
         }
 
-        if (!DateTime.TryParse(date, out productsSinceWithTime))
-        {
-            var errorMsg = $"Wiser product api Output for product with date '{date}' is not a valid date.";
-            logger.LogError(errorMsg);
-            return new ServiceResult<JToken>
-            {
-                StatusCode = HttpStatusCode.BadRequest,
-                ErrorMessage = errorMsg
-            };
-        }
-
-        var productsSince = productsSinceWithTime.Date.AddMinutes(1);
+        productsSinceWithTime = date.Value.AddMinutes(1);
 
         // Setup up query and run it.
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -181,7 +169,7 @@ public class ProductsService : IProductsService, IScopedService
 
         const int resultsPerPage = 500;
 
-        clientDatabaseConnection.AddParameter("productChangesSince", productsSince.ToString("yyyy-MM-dd"));
+        clientDatabaseConnection.AddParameter("productChangesSince", productsSinceWithTime.ToString("yyyy-MM-dd"));
         clientDatabaseConnection.AddParameter("pageOffset", page * resultsPerPage);
         clientDatabaseConnection.AddParameter("resultsPerPage", resultsPerPage);
 

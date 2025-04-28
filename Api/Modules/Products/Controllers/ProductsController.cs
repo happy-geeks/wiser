@@ -1,4 +1,5 @@
-﻿using System.Net.Mime;
+﻿using System;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Modules.Products.Interfaces;
@@ -43,7 +44,7 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all products api result based on the date, if no date is given we just list todays changes., this function only retrieves the product api result, it does not generate it.
+    /// Get all products api result based on the date, if no date is given we just the changes of today., this function only retrieves the product api result, it does not generate it.
     /// </summary>
     /// <param name="date">Since this date we list the changes.</param>
     /// <param name="page">The page offset.</param>
@@ -53,7 +54,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAll([FromQuery] string date = "",[FromQuery] int page = 0)
+    public async Task<IActionResult> GetAll([FromQuery] DateTime? date = null, [FromQuery] int page = 0)
     {
         var callingUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}{HttpContext.Request.Path}";
         
@@ -91,7 +92,6 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Overwrite that overwrites api product settings for all products.
     /// </summary>
-    /// <param name="identity"></param>
     [HttpPost]
     [Route("api/v3/[controller]/OverwriteApiProductSettings")]
     [ProducesResponseType(StatusCodes.Status200OK)]

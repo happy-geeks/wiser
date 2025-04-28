@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -27,7 +28,7 @@ public interface IProductsService
     /// <param name="date"></param>
     /// <param name="page"></param>
     /// <returns>a json formatted list of all the products with pagination</returns>
-    public Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, string callingUrl, string date, int page = 0);
+    public Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, string callingUrl, DateTime? date, int page = 0);
 
     /// <summary>
     /// 
