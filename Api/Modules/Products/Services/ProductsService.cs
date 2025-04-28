@@ -26,40 +26,18 @@ namespace Api.Modules.Products.Services;
 /// <summary>
 /// Service for handling the product api related calls
 /// </summary>
-public class ProductsService : IProductsService, IScopedService
+public class ProductsService(
+    IDatabaseConnection clientDatabaseConnection,
+    IWiserItemsService wiserItemsService,
+    IQueriesService queriesService,
+    IStyledOutputService styledOutputService,
+    IDatabaseHelpersService databaseHelpersService,
+    ILogger<ProductsService> logger,
+    HttpContextAccessor httpContextAccessor)
+    : IProductsService, IScopedService
 {
-    private readonly IDatabaseConnection clientDatabaseConnection;
-    private readonly IWiserItemsService wiserItemsService;
-    private readonly IQueriesService queriesService;
-    private readonly IStyledOutputService styledOutputService;
-    private readonly IDatabaseHelpersService databaseHelpersService;
-    private readonly ILogger<ProductsService> logger;
-    private readonly HttpContextAccessor httpContextAccessor;
-
     private const string ProductApiPropertyTabName = "Product Api";
-
-    /// <summary>
-    /// Creates a new instance of <see cref="ProductsService"/>.
-    /// </summary>
-    public ProductsService(
-        IDatabaseConnection clientDatabaseConnection,
-        IWiserItemsService wiserItemsService,
-        IQueriesService queriesService,
-        IStyledOutputService styledOutputService,
-        IDatabaseHelpersService databaseHelpersService,
-        ILogger<ProductsService> logger,
-        HttpContextAccessor httpContextAccessor
-    )
-    {
-        this.clientDatabaseConnection = clientDatabaseConnection;
-        this.wiserItemsService = wiserItemsService;
-        this.queriesService = queriesService;
-        this.styledOutputService = styledOutputService;
-        this.databaseHelpersService = databaseHelpersService;
-        this.httpContextAccessor = httpContextAccessor;
-        this.logger = logger;
-    }
-
+    
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> GetProduct(ClaimsIdentity identity, ulong wiserId)
     {
