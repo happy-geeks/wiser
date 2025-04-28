@@ -351,6 +351,8 @@ public class WiserTenantsService : IWiserTenantsService, IScopedService
                     await command.ExecuteNonQueryAsync();
                     command.CommandText = addBranchSettingsModuleQuery;
                     await command.ExecuteNonQueryAsync();
+                    command.CommandText = addProductsApiSettingsQuery;
+                    await command.ExecuteNonQueryAsync();
 
                     if (isMultiLanguage)
                     {
