@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Products.Interfaces;
 
 /// <summary>
-/// 
+///
 /// </summary>
 public interface IProductsService
 {
@@ -21,17 +21,16 @@ public interface IProductsService
     public Task<ServiceResult<JToken>> GetProduct(ClaimsIdentity identity, ulong wiserId);
 
     /// <summary>
-    /// Gets a Json formatted list of all the products api's in the database that have a product api result generated.
+    /// Gets a Json formatted list of all the products apis in the database that have a product api result generated.
     /// </summary>
     /// <param name="identity"></param>
-    /// <param name="callingUrl"></param>
     /// <param name="date"></param>
     /// <param name="page"></param>
     /// <returns>a json formatted list of all the products with pagination</returns>
-    public Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, string callingUrl, DateTime? date, int page = 0);
+    public Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, DateTime? date, int page = 0);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="identity"></param>
     /// <param name="wiserId"></param>
@@ -40,7 +39,7 @@ public interface IProductsService
     public Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserId, bool ignoreCooldown = false);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="identity"></param>
     /// <param name="wiserId"></param>
@@ -49,7 +48,7 @@ public interface IProductsService
     public Task<ServiceResult<JToken>> RefreshProductAsync(ClaimsIdentity identity, ulong wiserId, bool ignoreCooldown = false);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="identity"></param>
     /// <param name="ignoreCooldown"></param>
@@ -57,7 +56,7 @@ public interface IProductsService
     public Task<ServiceResult<JToken>> RefreshProductsAlAsync(ClaimsIdentity identity, bool ignoreCooldown = false);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="identity"></param>
     /// <returns></returns>

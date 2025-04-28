@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using Api.Core.Services;
 using Api.Modules.Products.Interfaces;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
@@ -22,7 +24,7 @@ using NUglify.Helpers;
 namespace Api.Modules.Products.Services;
 
 /// <summary>
-/// Service for handling the product api related calls 
+/// Service for handling the product api related calls
 /// </summary>
 public class ProductsService : IProductsService, IScopedService
 {
@@ -32,6 +34,7 @@ public class ProductsService : IProductsService, IScopedService
     private readonly IStyledOutputService styledOutputService;
     private readonly IDatabaseHelpersService databaseHelpersService;
     private readonly ILogger<ProductsService> logger;
+    private readonly HttpContextAccessor httpContextAccessor;
 
     private const string ProductApiPropertyTabName = "Product Api";
     private const string ProductApiPropertyGroupName = "Product-Api";
@@ -43,7 +46,7 @@ public class ProductsService : IProductsService, IScopedService
         Query,
         StyledOutput
     };
-    
+
     private const string ProductApiProductPropertyDatasourceType = "wiser_product_api_datasource_type";
     private const string ProductApiProductPropertyStatic = "wiser_product_api_static";
     private const string ProductApiProductPropertyQueryId = "wiser_product_api_query_id";
@@ -68,7 +71,8 @@ public class ProductsService : IProductsService, IScopedService
         IQueriesService queriesService,
         IStyledOutputService styledOutputService,
         IDatabaseHelpersService databaseHelpersService,
-        ILogger<ProductsService> logger
+        ILogger<ProductsService> logger,
+        HttpContextAccessor httpContextAccessor
     )
     {
         this.clientDatabaseConnection = clientDatabaseConnection;
@@ -76,6 +80,7 @@ public class ProductsService : IProductsService, IScopedService
         this.queriesService = queriesService;
         this.styledOutputService = styledOutputService;
         this.databaseHelpersService = databaseHelpersService;
+        this.httpContextAccessor = httpContextAccessor;
         this.logger = logger;
     }
 
@@ -129,9 +134,9 @@ public class ProductsService : IProductsService, IScopedService
             };
         }
     }
-    
+
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, string callingUrl, DateTime? date,  int page = 0)
+    public async Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, DateTime? date,  int page = 0)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
@@ -201,19 +206,33 @@ LIMIT ?pageOffset , ?resultsPerPage";
 
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
-        // Generate the json object for the result.
-        var prevUrl = dateWasProvidedByUser
-            ? $"{callingUrl}?date={date}&page={page - 1}"
-            : $"{callingUrl}?page={page - 1}";
-        var nextUrl = dateWasProvidedByUser
-            ? $"{callingUrl}?date={date}&page={page + 1}"
-            : $"{callingUrl}?page={page + 1}";
+        // Generate the urls we need to return.
+        var pageUriBuilder = HttpContextHelpers.GetOriginalRequestUriBuilder(httpContextAccessor?.HttpContext);
 
+        var prevPageQueryString = HttpUtility.ParseQueryString(pageUriBuilder.Query);
+        var nextPageQueryString = HttpUtility.ParseQueryString(pageUriBuilder.Query);
+
+        if (dateWasProvidedByUser)
+        {
+            prevPageQueryString["date"]  = date?.ToString("yyyy-MM-dd");
+            nextPageQueryString["date"] = date?.ToString("yyyy-MM-dd");
+        }
+
+        prevPageQueryString["page"] = (page - 1).ToString();
+        nextPageQueryString["page"] = (page + 1).ToString();
+
+        pageUriBuilder.Query = prevPageQueryString?.ToString() ?? "";
+        var prevPageUrl = pageUriBuilder.ToString();
+
+        pageUriBuilder.Query = nextPageQueryString?.ToString() ?? "";
+        var nextPageUrl = pageUriBuilder.ToString();
+
+        // Generate the json object for the result.
         var jsonObject = new JObject
         {
             ["count"] = dataTable.Rows.Count,
-            ["previous"] = page > 0 ? prevUrl : "",
-            ["next"] = dataTable.Rows.Count < resultsPerPage ? "" : nextUrl,
+            ["previous"] = page > 0 ? prevPageUrl : "",
+            ["next"] = dataTable.Rows.Count < resultsPerPage ? "" : nextPageUrl,
             ["results"] = null
         };
 
@@ -255,10 +274,10 @@ LIMIT ?pageOffset , ?resultsPerPage";
         var dataTable = await clientDatabaseConnection.GetAsync(productsQuery);
         var ids = new List<ulong>();
         foreach (DataRow product in dataTable.Rows) ids.Add(product.Field<ulong>("id"));
-        
+
         return await RefreshProductsAsync(identity, ids, ignoreCoolDown);
     }
-    
+
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds,
         bool ignoreCoolDown = false)
@@ -342,7 +361,7 @@ LIMIT 256";
             var version = row.IsNull("version") ? 0 : row.Field<int>("version");
             var apiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id");
             var content = string.Empty;
-          
+
             List<KeyValuePair<string, object>> parameters = new List<KeyValuePair<string, object>>();
             parameters.Add(new KeyValuePair<string, object>("itemId,", wiserId));
 
@@ -353,7 +372,7 @@ LIMIT 256";
                     // Static text.
                     content = staticText;
                     break;
-                
+
                 case ProductApiPropertyDatasourceId.Query:
                     // Query.
                     try
@@ -376,7 +395,7 @@ LIMIT 256";
                         content = null;
                     }
                     break;
-                
+
                 case ProductApiPropertyDatasourceId.StyledOutput:
                     // Styled output.
                     try
@@ -399,7 +418,7 @@ LIMIT 256";
                     }
                     break;
             }
-            
+
             // Make a hash and do a quick compare.
             if (!content.IsNullOrWhiteSpace())
             {
@@ -432,13 +451,13 @@ LIMIT 256";
         {
             await AddProductApiEntriesAsync(identity,generatedData);
         }
-        
+
         // If we have entries that have not changed but were checked, update their refresh dates.
         if (noUpdates.Count > 0)
         {
             await UpdateProductApiEntries(identity,noUpdates,currentDateTime);
         }
-        
+
         return new ServiceResult<JToken>
         {
             StatusCode = HttpStatusCode.OK
@@ -456,10 +475,10 @@ LIMIT 256";
         var query = $@"
         UPDATE `wiser_products_api` SET `refresh_date` = {currentDateTime}
         WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )";
-        
+
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
-        
+
         try
         {
             await clientDatabaseConnection.ExecuteAsync(query);
@@ -570,7 +589,7 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
             foreach (DataRow row in missingDataTable.Rows)
             {
                 var wiserId = row.Field<ulong>("wiser_id");
-                
+
                 await SaveProductApiSettingsForProductAsync(wiserId, productEntityType,
                     globalSettingDatasourceType, globalSettingsQueryId, globalSettingsStyledOutputId,
                     globalSettingsStaticText);
@@ -588,7 +607,7 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
     public async Task<ServiceResult<JToken>> OverwriteApiProductSettingsForAllProductAsync(ClaimsIdentity identity)
     {
         await EnsureProductApiPropertiesAsync();
-        
+
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
 
@@ -605,7 +624,7 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
 SELECT item_id
 FROM wiser_itemdetail
 WHERE `key` = '{ProductApiProductPropertyDatasourceType}'";
-        
+
         var products = await clientDatabaseConnection.GetAsync(getIds);
 
         if (products.Rows.Count > 0)
@@ -619,13 +638,13 @@ WHERE `key` = '{ProductApiProductPropertyDatasourceType}'";
             foreach (DataRow row in products.Rows)
             {
                 var wiserId = row.Field<ulong>("item_id");
-                
+
                 await SaveProductApiSettingsForProductAsync(wiserId, productEntityType,
                     globalSettingDatasourceType, globalSettingsQueryId, globalSettingsStyledOutputId,
                     globalSettingsStaticText);
             }
         }
-        
+
         return new ServiceResult<JToken>
         {
             StatusCode = HttpStatusCode.OK
@@ -647,7 +666,7 @@ WHERE detail.key = '{settingName}' LIMIT 1";
 
         return dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<string>("value");
     }
-    
+
     // Helper function to generate the hash for the content.
     // Using md5 because its faster, never use this function for hashing something related to security,
     // This is for quick comparison only!
@@ -670,7 +689,7 @@ WHERE detail.key = '{settingName}' LIMIT 1";
     /// <summary>
     /// Saves the default settings for a given product.
     /// </summary>
-    private async Task SaveProductApiSettingsForProductAsync(ulong wiserId, string productEntityType, 
+    private async Task SaveProductApiSettingsForProductAsync(ulong wiserId, string productEntityType,
         string globalSettingDatasourceType,string globalSettingsQueryId, string globalSettingsStyledOutputId, string globalSettingsStaticText)
     {
         await wiserItemsService.SaveItemDetailAsync(
@@ -696,7 +715,7 @@ WHERE detail.key = '{settingName}' LIMIT 1";
                 Key = ProductApiProductPropertyStatic, Value = globalSettingsStaticText, GroupName = "general"
             }, wiserId, entityType: productEntityType, saveHistory: false);
     }
-    
+
     /// <summary>
     /// Function that makes inserts the product api entries into the database.
     /// </summary>
@@ -713,7 +732,7 @@ WHERE detail.key = '{settingName}' LIMIT 1";
 INSERT INTO `{WiserTableNames.WiserProductsApi}` (`wiser_id`, `version`, `output`, `added_by`, `hash`,`refresh_date`,`added_on`) 
 VALUES ('{item.WiserId}', '{item.Version}', '{item.Output}', '{item.AddedBy}', '{item.Hash}', '{item.RefreshDate}', '{item.AddedOn}'); ");
         }
-        
+
         try
         {
             return clientDatabaseConnection.ExecuteAsync(insertQuery.ToString());
