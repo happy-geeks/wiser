@@ -21,7 +21,7 @@ public class ProductApiModel
     public int Version { get; set; }
 
     /// <summary>
-    /// Gets or sets the output aka the content of the 
+    /// Gets or sets the output aka the results that came out of the query, styledoutput or static output.
     /// </summary>
     public string Output { get; set; }
 
