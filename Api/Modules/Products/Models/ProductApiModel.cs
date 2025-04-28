@@ -41,8 +41,7 @@ public class ProductApiModel
     public string AddedBy { get; set; }
     
     /// <summary>
-    /// Gets or sets whom/what added this entry when it was created.
-    /// </summary>
+    /// Gets or sets the last date when this entry was refreshed.
     public string RefreshDate { get; set; }
     
     /// <summary>
