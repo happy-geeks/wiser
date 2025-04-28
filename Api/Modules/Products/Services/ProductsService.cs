@@ -521,23 +521,23 @@ LIMIT 1;
             // We are missing the properties, we need to create them.
             var createPropertyQuery = $@"
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`,`data_query`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', 'general', 'empty', 'results', 'results', 510, '<pre>{{jsonResult}}</pre>', 100, 0, '{{}}', '.', ""{selectQueryForResultDisplay}"")
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'empty', 'results', 'results', 510, '<pre>{{jsonResult}}</pre>', 100, 0, '{{}}', '.', ""{selectQueryForResultDisplay}"")
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', 'general', 'combobox', 'DataSourceType', '{ProductApiProductPropertyDatasourceType}', 501, '0', 100, 0, '{{ \""useDropDownList\"": true, \""dataSource\"": [ {{ \""name\"": \""Static\"", \""id\"": \""0\"" }}, {{ \""name\"": \""Query\"", \""id\"": \""1\"" }}, {{ \""name\"": \""StyledOutput\"", \""id\"": \""2\"" }} ] }}', 'Het datasource type, dit bepaald welke output ge-called word per product')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'combobox', 'DataSourceType', '{ProductApiProductPropertyDatasourceType}', 501, '0', 100, 0, '{{ \""useDropDownList\"": true, \""dataSource\"": [ {{ \""name\"": \""Static\"", \""id\"": \""0\"" }}, {{ \""name\"": \""Query\"", \""id\"": \""1\"" }}, {{ \""name\"": \""StyledOutput\"", \""id\"": \""2\"" }} ] }}', 'Het datasource type, dit bepaald welke output ge-called word per product')
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`, `depends_on_field`, `depends_on_operator`, `depends_on_value`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', 'general', 'numeric-input', 'query id', '{ProductApiProductPropertyQueryId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductApiProductPropertyDatasourceType}', '=', '1')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'numeric-input', 'query id', '{ProductApiProductPropertyQueryId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductApiProductPropertyDatasourceType}', '=', '1')
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`, `depends_on_field`, `depends_on_operator`, `depends_on_value`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', 'general', 'numeric-input', 'styledoutput id', '{ProductApiProductPropertyStyledOutputId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductApiProductPropertyDatasourceType}', '=', '2')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'numeric-input', 'styledoutput id', '{ProductApiProductPropertyStyledOutputId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductApiProductPropertyDatasourceType}', '=', '2')
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`, `depends_on_field`, `depends_on_operator`, `depends_on_value`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', 'general', 'textbox', 'static text', '{ProductApiProductPropertyStatic}', 502, '{{ ""name"": ""notset""}}', 100, 100, '', 'De static text die gebruikt moet worden..', '{ProductApiProductPropertyDatasourceType}', '=', '0')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'textbox', 'static text', '{ProductApiProductPropertyStatic}', 502, '{{ ""name"": ""notset""}}', 100, 100, '', 'De static text die gebruikt moet worden..', '{ProductApiProductPropertyDatasourceType}', '=', '0')
 ON DUPLICATE KEY UPDATE id=id;
 ";
             await clientDatabaseConnection.ExecuteAsync(createPropertyQuery);
