@@ -38,14 +38,6 @@ public class ProductsService : IProductsService, IScopedService
 
     private const string ProductApiPropertyTabName = "Product Api";
 
-    enum ProductApiPropertyDatasourceId
-    {
-        StaticSource,
-        Query,
-        StyledOutput
-    };
-
-
     /// <summary>
     /// Creates a new instance of <see cref="ProductsService"/>.
     /// </summary>
@@ -67,7 +59,6 @@ public class ProductsService : IProductsService, IScopedService
         this.httpContextAccessor = httpContextAccessor;
         this.logger = logger;
     }
-
 
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> GetProduct(ClaimsIdentity identity, ulong wiserId)
@@ -350,14 +341,14 @@ LIMIT 256";
             parameters.Add(new KeyValuePair<string, object>("itemId,", wiserId));
 
             // Check if we have a valid output, if not we skip this one.
-            switch ((ProductApiPropertyDatasourceId)datasourceType)
+            switch ((ProductApiPropertyDataSources)datasourceType)
             {
-                case ProductApiPropertyDatasourceId.StaticSource:
+                case ProductApiPropertyDataSources.StaticSource:
                     // Static text.
                     content = staticText;
                     break;
 
-                case ProductApiPropertyDatasourceId.Query:
+                case ProductApiPropertyDataSources.Query:
                     // Query.
                     try
                     {
@@ -380,7 +371,7 @@ LIMIT 256";
                     }
                     break;
 
-                case ProductApiPropertyDatasourceId.StyledOutput:
+                case ProductApiPropertyDataSources.StyledOutput:
                     // Styled output.
                     try
                     {
