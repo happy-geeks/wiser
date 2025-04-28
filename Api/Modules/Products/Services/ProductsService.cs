@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using System.Web;
 using Api.Core.Services;
 using Api.Modules.Products.Interfaces;
+using Api.Modules.Products.Models;
 using Api.Modules.Queries.Interfaces;
-using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -37,8 +37,6 @@ public class ProductsService : IProductsService, IScopedService
     private readonly HttpContextAccessor httpContextAccessor;
 
     private const string ProductApiPropertyTabName = "Product Api";
-    private const string ProductApiPropertyGroupName = "Product-Api";
-    private const string ProductApiPropertyDatasource = "wiser_product_api_datasource";
 
     enum ProductApiPropertyDatasourceId
     {
@@ -47,20 +45,6 @@ public class ProductsService : IProductsService, IScopedService
         StyledOutput
     };
 
-    private const string ProductApiProductPropertyDatasourceType = "wiser_product_api_datasource_type";
-    private const string ProductApiProductPropertyStatic = "wiser_product_api_static";
-    private const string ProductApiProductPropertyQueryId = "wiser_product_api_query_id";
-    private const string ProductApiProductPropertyStyledOutputId = "wiser_product_api_styledoutput_id";
-
-    private const string ProductsApiPropertySelectProductsKey = "product_ids_query";
-    private const string ProductsApiPropertyEntityName = "product_entity_name";
-    private const string ProductsApiPropertyDatasourceType = "datasource_type";
-    private const string ProductsApiPropertyStatic = "datasource_static";
-    private const string ProductsApiPropertyQueryId = "datasource_query";
-    private const string ProductsApiPropertyStyledOutputId = "datasource_styledoutput";
-    private const string ProductsApiPropertyMinimalRefreshCoolDown = "minimal_refresh_cooldown";
-
-    private const string ProductsApiSettingsEntityName = "ProductsApiSettings";
 
     /// <summary>
     /// Creates a new instance of <see cref="ProductsService"/>.
@@ -159,7 +143,7 @@ public class ProductsService : IProductsService, IScopedService
         clientDatabaseConnection.ClearParameters();
 
         // Grab the select query from the product api settings.
-        var productsQuery = await GetGlobalSettingAsync(ProductsApiPropertySelectProductsKey);
+        var productsQuery = await GetGlobalSettingAsync(ProductsServiceConstants.PropertySelectProductsKey);
 
         if (productsQuery == null)
         {
@@ -263,7 +247,7 @@ LIMIT ?pageOffset , ?resultsPerPage";
         // (To prevent extra tabs for costumers that dont use this feature.)
         await EnsureProductApiPropertiesAsync();
 
-        var productsQuery = await GetGlobalSettingAsync(ProductsApiPropertySelectProductsKey);
+        var productsQuery = await GetGlobalSettingAsync(ProductsServiceConstants.PropertySelectProductsKey);
         if (productsQuery == null)
         {
             var errorMsg = $"Wiser product api cannot find the productsQuery for the product api.";
@@ -293,7 +277,7 @@ LIMIT ?pageOffset , ?resultsPerPage";
         // Check if for the requested ids there is a product version of the setting available in wiser_itemdetail (if not create it).
         await EnsureProductApiPropertyDetailsAsync(wiserIds);
 
-        var productEntityType = await GetGlobalSettingAsync(ProductsApiPropertyEntityName);
+        var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
             var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
@@ -301,7 +285,7 @@ LIMIT ?pageOffset , ?resultsPerPage";
             throw new KeyNotFoundException(errorMsg);
         }
 
-        var coolDown = await GetGlobalSettingAsync(ProductsApiPropertyMinimalRefreshCoolDown);
+        var coolDown = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown);
         if (coolDown == null)
         {
             var errorMsg = $"Wiser product api cannot find the cool down setting for the product api.";
@@ -318,17 +302,17 @@ item.id AS `wiser_id`,
 apis.hash AS `old_hash`,
 apis.version AS `version`,
 apis.id AS `api_entry_id`,
-DatasourceType.`value` AS `{ProductApiProductPropertyDatasourceType}`,
-DatasourceStatic.`value` AS `{ProductApiProductPropertyStatic}`,
-DatasourceQueryId.`value` AS `{ProductApiProductPropertyQueryId}`,
-DatasourceStyledId.`value` AS `{ProductsApiPropertyStyledOutputId}`,
+DatasourceType.`value` AS `{ProductsServiceConstants.ProductPropertyDatasourceType}`,
+DatasourceStatic.`value` AS `{ProductsServiceConstants.ProductPropertyStatic}`,
+DatasourceQueryId.`value` AS `{ProductsServiceConstants.ProductPropertyQueryId}`,
+DatasourceStyledId.`value` AS `{ProductsServiceConstants.PropertyStyledOutputId}`,
 item.`published_environment` AS `published_environment`
 
 FROM {WiserTableNames.WiserItem} `item`
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceType` ON `DatasourceType`.key = '{ProductApiProductPropertyDatasourceType}' AND `DatasourceType`.item_id = item.id
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStatic` ON `DatasourceStatic`.key = '{ProductApiProductPropertyStatic}' AND `DatasourceStatic`.item_id = item.id
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceQueryId` ON `DatasourceQueryId`.key = '{ProductApiProductPropertyQueryId}' AND `DatasourceQueryId`.item_id = item.id
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStyledId` ON `DatasourceStyledId`.key = '{ProductsApiPropertyStyledOutputId}' AND `DatasourceStyledId`.item_id = item.id
+LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceType` ON `DatasourceType`.key = '{ProductsServiceConstants.ProductPropertyDatasourceType}' AND `DatasourceType`.item_id = item.id
+LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStatic` ON `DatasourceStatic`.key = '{ProductsServiceConstants.ProductPropertyStatic}' AND `DatasourceStatic`.item_id = item.id
+LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceQueryId` ON `DatasourceQueryId`.key = '{ProductsServiceConstants.ProductPropertyQueryId}' AND `DatasourceQueryId`.item_id = item.id
+LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStyledId` ON `DatasourceStyledId`.key = '{ProductsServiceConstants.PropertyStyledOutputId}' AND `DatasourceStyledId`.item_id = item.id
 LEFT JOIN (
     SELECT  wiser_id, MAX(version) AS max_version
     FROM {WiserTableNames.WiserProductsApi}
@@ -353,10 +337,10 @@ LIMIT 256";
         {
             var wiserId = row.Field<ulong>("wiser_id");
             var publishedEnvironment = row.Field<int>("published_environment");
-            var datasourceType = int.Parse(row.Field<string>(ProductApiProductPropertyDatasourceType) ?? "0");
-            var staticText = row.Field<string>(ProductApiProductPropertyStatic);
-            var queryId = int.Parse(row.Field<string>(ProductApiProductPropertyQueryId) ?? "0");
-            var styledOutputId = int.Parse(row.Field<string>(ProductsApiPropertyStyledOutputId ) ?? "0");
+            var datasourceType = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0");
+            var staticText = row.Field<string>(ProductsServiceConstants.ProductPropertyStatic);
+            var queryId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0");
+            var styledOutputId = int.Parse(row.Field<string>(ProductsServiceConstants.PropertyStyledOutputId ) ?? "0");
             var oldHash = row.Field<string>("old_hash");
             var version = row.IsNull("version") ? 0 : row.Field<int>("version");
             var apiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id");
@@ -485,7 +469,7 @@ LIMIT 256";
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
+            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table. {e}";
             logger.LogError(errorMsg);
             throw new Exception(errorMsg);
         }
@@ -499,7 +483,7 @@ LIMIT 256";
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
 
-        var productEntityType = await GetGlobalSettingAsync(ProductsApiPropertyEntityName);
+        var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
             var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
@@ -532,19 +516,19 @@ VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', 
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'combobox', 'DataSourceType', '{ProductApiProductPropertyDatasourceType}', 501, '0', 100, 0, '{{ \""useDropDownList\"": true, \""dataSource\"": [ {{ \""name\"": \""Static\"", \""id\"": \""0\"" }}, {{ \""name\"": \""Query\"", \""id\"": \""1\"" }}, {{ \""name\"": \""StyledOutput\"", \""id\"": \""2\"" }} ] }}', 'Het datasource type, dit bepaald welke output ge-called word per product')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'combobox', 'DataSourceType', '{ProductsServiceConstants.ProductPropertyDatasourceType}', 501, '0', 100, 0, '{{ \""useDropDownList\"": true, \""dataSource\"": [ {{ \""name\"": \""Static\"", \""id\"": \""0\"" }}, {{ \""name\"": \""Query\"", \""id\"": \""1\"" }}, {{ \""name\"": \""StyledOutput\"", \""id\"": \""2\"" }} ] }}', 'Het datasource type, dit bepaald welke output ge-called word per product')
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`, `depends_on_field`, `depends_on_operator`, `depends_on_value`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'numeric-input', 'query id', '{ProductApiProductPropertyQueryId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductApiProductPropertyDatasourceType}', '=', '1')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'numeric-input', 'query id', '{ProductsServiceConstants.ProductPropertyQueryId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductsServiceConstants.ProductPropertyDatasourceType}', '=', '1')
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`, `depends_on_field`, `depends_on_operator`, `depends_on_value`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'numeric-input', 'styledoutput id', '{ProductApiProductPropertyStyledOutputId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductApiProductPropertyDatasourceType}', '=', '2')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'numeric-input', 'styledoutput id', '{ProductsServiceConstants.ProductPropertyStyledOutputId}', 502, '0', 100, 0, '{{""decimals"":0 , ""format"": ""#""}}', 'De id van de query die gebruikt moet worden.', '{ProductsServiceConstants.ProductPropertyDatasourceType}', '=', '2')
 ON DUPLICATE KEY UPDATE id=id;
 
 INSERT INTO `wiser_entityproperty` (`label_style`, `label_width`, `module_id`, `entity_name`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`,`ordering`, `default_value`, `width`, `height`, `options`, `explanation`, `depends_on_field`, `depends_on_operator`, `depends_on_value`) 
-VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'textbox', 'static text', '{ProductApiProductPropertyStatic}', 502, '{{ ""name"": ""notset""}}', 100, 100, '', 'De static text die gebruikt moet worden..', '{ProductApiProductPropertyDatasourceType}', '=', '0')
+VALUES ('normal', 0, 620, '{productEntityType}', '{ProductApiPropertyTabName}', '', 'textbox', 'static text', '{ProductsServiceConstants.ProductPropertyStatic}', 502, '{{ ""name"": ""notset""}}', 100, 100, '', 'De static text die gebruikt moet worden..', '{ProductsServiceConstants.ProductPropertyDatasourceType}', '=', '0')
 ON DUPLICATE KEY UPDATE id=id;
 ";
             await clientDatabaseConnection.ExecuteAsync(createPropertyQuery);
@@ -561,7 +545,7 @@ ON DUPLICATE KEY UPDATE id=id;
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
 
-        var productEntityType = await GetGlobalSettingAsync(ProductsApiPropertyEntityName);
+        var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
             var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
@@ -573,17 +557,17 @@ ON DUPLICATE KEY UPDATE id=id;
         var findMissingQuery = $@"
 SELECT item.id AS wiser_id
 FROM {WiserTableNames.WiserItem} `item`
-LEFT JOIN {WiserTableNames.WiserItemDetail} `detail` ON `detail`.key = '{ProductApiProductPropertyDatasourceType}' AND `detail`.item_id = item.id
+LEFT JOIN {WiserTableNames.WiserItemDetail} `detail` ON `detail`.key = '{ProductsServiceConstants.ProductPropertyDatasourceType}' AND `detail`.item_id = item.id
 WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.id IN ({string.Join(",", wiserIds)})
 ";
         var missingDataTable = await clientDatabaseConnection.GetAsync(findMissingQuery);
 
         if (missingDataTable.Rows.Count > 0)
         {
-            var globalSettingDatasourceType = await GetGlobalSettingAsync(ProductsApiPropertyDatasourceType);
-            var globalSettingsQueryId = await GetGlobalSettingAsync(ProductsApiPropertyQueryId);
-            var globalSettingsStyledOutputId = await GetGlobalSettingAsync(ProductsApiPropertyStyledOutputId);
-            var globalSettingsStaticText = await GetGlobalSettingAsync(ProductsApiPropertyStatic);
+            var globalSettingDatasourceType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyDatasourceType);
+            var globalSettingsQueryId = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyQueryId);
+            var globalSettingsStyledOutputId = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyStyledOutputId);
+            var globalSettingsStaticText = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyStatic);
 
             // If we have some missing details, we need to create them.
             foreach (DataRow row in missingDataTable.Rows)
@@ -611,7 +595,7 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
 
-        var productEntityType = await GetGlobalSettingAsync(ProductsApiPropertyEntityName);
+        var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
             var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
@@ -623,16 +607,16 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
         var getIds = $@"
 SELECT item_id
 FROM wiser_itemdetail
-WHERE `key` = '{ProductApiProductPropertyDatasourceType}'";
+WHERE `key` = '{ProductsServiceConstants.ProductPropertyDatasourceType}'";
 
         var products = await clientDatabaseConnection.GetAsync(getIds);
 
         if (products.Rows.Count > 0)
         {
-            var globalSettingDatasourceType = await GetGlobalSettingAsync(ProductsApiPropertyDatasourceType);
-            var globalSettingsQueryId = await GetGlobalSettingAsync(ProductsApiPropertyQueryId);
-            var globalSettingsStyledOutputId = await GetGlobalSettingAsync(ProductsApiPropertyStyledOutputId);
-            var globalSettingsStaticText = await GetGlobalSettingAsync(ProductsApiPropertyStatic);
+            var globalSettingDatasourceType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyDatasourceType);
+            var globalSettingsQueryId = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyQueryId);
+            var globalSettingsStyledOutputId = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyStyledOutputId);
+            var globalSettingsStaticText = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyStatic);
 
             // If we have some missing details, we need to create them.
             foreach (DataRow row in products.Rows)
@@ -659,7 +643,7 @@ WHERE `key` = '{ProductApiProductPropertyDatasourceType}'";
 
         var selectQuery = $@"
 SELECT `value` FROM {WiserTableNames.WiserItemDetail} detail 
-JOIN {WiserTableNames.WiserItem} item ON item.id = detail.item_id AND item.entity_type = '{ProductsApiSettingsEntityName}' 
+JOIN {WiserTableNames.WiserItem} item ON item.id = detail.item_id AND item.entity_type = '{ProductsServiceConstants.SettingsEntityName}' 
 WHERE detail.key = '{settingName}' LIMIT 1";
 
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
@@ -695,24 +679,24 @@ WHERE detail.key = '{settingName}' LIMIT 1";
         await wiserItemsService.SaveItemDetailAsync(
             new WiserItemDetailModel
             {
-                Key = ProductApiProductPropertyDatasourceType, Value = globalSettingDatasourceType,
+                Key = ProductsServiceConstants.ProductPropertyDatasourceType, Value = globalSettingDatasourceType,
                 GroupName = "general"
             }, wiserId, entityType: productEntityType, saveHistory: false);
         await wiserItemsService.SaveItemDetailAsync(
             new WiserItemDetailModel
             {
-                Key = ProductApiProductPropertyQueryId, Value = globalSettingsQueryId, GroupName = "general"
+                Key = ProductsServiceConstants.ProductPropertyQueryId, Value = globalSettingsQueryId, GroupName = "general"
             }, wiserId, entityType: productEntityType, saveHistory: false);
         await wiserItemsService.SaveItemDetailAsync(
             new WiserItemDetailModel
             {
-                Key = ProductApiProductPropertyStyledOutputId, Value = globalSettingsStyledOutputId,
+                Key = ProductsServiceConstants.ProductPropertyStyledOutputId, Value = globalSettingsStyledOutputId,
                 GroupName = "general"
             }, wiserId, entityType: productEntityType, saveHistory: false);
         await wiserItemsService.SaveItemDetailAsync(
             new WiserItemDetailModel
             {
-                Key = ProductApiProductPropertyStatic, Value = globalSettingsStaticText, GroupName = "general"
+                Key = ProductsServiceConstants.ProductPropertyStatic, Value = globalSettingsStaticText, GroupName = "general"
             }, wiserId, entityType: productEntityType, saveHistory: false);
     }
 
@@ -739,7 +723,7 @@ VALUES ('{item.WiserId}', '{item.Version}', '{item.Output}', '{item.AddedBy}', '
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
+            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table. {e}";
             logger.LogError(errorMsg);
             throw new Exception(errorMsg);
         }

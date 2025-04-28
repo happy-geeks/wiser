@@ -1,4 +1,4 @@
-﻿namespace Api.Modules.Queries.Models;
+﻿namespace Api.Modules.Products.Models;
 
 /// <summary>
 /// A model for a styledoutput within Wiser.
@@ -39,11 +39,12 @@ public class ProductApiModel
     /// Gets or sets whom/what added this entry when it was created.
     /// </summary>
     public string AddedBy { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the last date when this entry was refreshed.
+    /// </summary>
     public string RefreshDate { get; set; }
-    
+
     /// <summary>
     /// Gets or Sets the option field, this is a JSON style option string field that gets parsed for every run
     /// </summary>
