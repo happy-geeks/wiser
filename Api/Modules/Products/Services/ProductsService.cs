@@ -12,6 +12,7 @@ using Api.Modules.Products.Interfaces;
 using Api.Modules.Products.Models;
 using Api.Modules.Queries.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
+using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
@@ -374,7 +375,7 @@ LIMIT 256
             // Make a hash and do a quick compare.
             if (!content.IsNullOrWhiteSpace())
             {
-                var newHash = ComputeMd5Hash(content);
+                var newHash = content.ToSha512Simple();
                 if (newHash != oldHash)
                 {
                     ProductApiModel productApiModel = new ProductApiModel
@@ -623,25 +624,6 @@ WHERE detail.key = '{settingName}' LIMIT 1
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
         return dataTable.Rows.Count == 0 ? null : dataTable.Rows[0].Field<string>("value");
-    }
-
-    // Helper function to generate the hash for the content.
-    // Using md5 because its faster, never use this function for hashing something related to security,
-    // This is for quick comparison only!
-    private static string ComputeMd5Hash(string input)
-    {
-        using (MD5 md5 = MD5.Create())
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(input);
-            byte[] hashBytes = md5.ComputeHash(bytes);
-
-            // Convert hash to hexadecimal string
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in hashBytes)
-                sb.Append(b.ToString("x2"));
-
-            return sb.ToString();
-        }
     }
 
     /// <summary>
