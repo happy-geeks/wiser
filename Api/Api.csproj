@@ -99,8 +99,4 @@
     <PackageReference Include="Tinify" Version="1.6.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Modules\Products\Models\" />
-  </ItemGroup>
-
 </Project>
