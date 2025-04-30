@@ -742,6 +742,7 @@ public class ItemsService(
 
             result.NewItemId = newItem.EncryptedId;
             result.NewItemIdPlain = newItem.Id;
+            result.NewLinkId = newItem.NewLinkId;
 
             clientDatabaseConnection.AddParameter("entityType", newItem.EntityType);
             var dataTable = await clientDatabaseConnection.GetAsync($"SELECT icon FROM {WiserTableNames.WiserEntity} WHERE name = ?entityType");
@@ -1028,7 +1029,7 @@ public class ItemsService(
                 parameters.TryAdd(parameter.Key, value);
             }
         }
-        
+
         detailsQuery = detailsQuery.Replace("{itemId:decrypt(true)}", "?itemId", StringComparison.OrdinalIgnoreCase);
         detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
 
@@ -1048,7 +1049,7 @@ public class ItemsService(
                 parameters.TryAdd(dataRow.Field<string>("property_name"), dataRow.Field<string>("property_value"));
             }
         }
-        
+
         actionQuery = stringReplacementsService.DoReplacements(actionQuery, parameters, forQuery: true);
 
         // And finally execute the action button query.
