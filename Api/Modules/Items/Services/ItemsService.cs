@@ -1028,7 +1028,7 @@ public class ItemsService(
                 parameters.TryAdd(parameter.Key, value);
             }
         }
-        
+
         detailsQuery = detailsQuery.Replace("{itemId:decrypt(true)}", "?itemId", StringComparison.OrdinalIgnoreCase);
         detailsQuery = apiReplacementsService.DoIdentityReplacements(detailsQuery, identity, true);
 
@@ -1048,7 +1048,7 @@ public class ItemsService(
                 parameters.TryAdd(dataRow.Field<string>("property_name"), dataRow.Field<string>("property_value"));
             }
         }
-        
+
         actionQuery = stringReplacementsService.DoReplacements(actionQuery, parameters, forQuery: true);
 
         // And finally execute the action button query.
@@ -1912,7 +1912,7 @@ public class ItemsService(
                       
                                               # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                               LEFT JOIN {{WiserTableNames.WiserUserRoles}} AS user_role ON user_role.user_id = ?userId
-                                              LEFT JOIN {{WiserTableNames.WiserPermission}} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+                                              LEFT JOIN {{WiserTableNames.WiserPermission}} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id AND (permission.entity_name = item.entity_type OR permission.entity_name = '')
                       
                                               WHERE item.id = ?itemId
                                               AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
