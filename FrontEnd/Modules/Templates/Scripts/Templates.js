@@ -789,8 +789,10 @@ const moduleSettings = {
                 this.mainTabStrip.disable(configTab);
                 return;
             }
+            
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
+            
             try {
                 let promises;
                 let templateSettings, linkedTemplates, templateHistory;
@@ -846,6 +848,7 @@ const moduleSettings = {
 
                 // Load the different tabs.
                 promises = [];
+                
                 // Development
                 promises.push(
                     Wiser.api({
@@ -1193,6 +1196,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
+            
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {

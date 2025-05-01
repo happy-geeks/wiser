@@ -74,13 +74,14 @@ public abstract class ActionModel
     public string Actionid => ($"{TimeId}-{Order}");
     
     private string resultSetName;
+    
     /// <summary>
     /// Gets or sets the name that will be used to store the result set. An empty string represents null.
     /// </summary>
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "instel naam resultaat set",
+        Title = "Resultaatsetnaam",
         Description = "Indien de actie data moet retourneren als resultaat, geef hier de naam van de resultaatset op, laat dit anders leeg.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox
@@ -96,18 +97,18 @@ public abstract class ActionModel
     }
     
     private string useResultSet;
+    
     /// <summary>
     /// Gets or sets the name that will be used to get the result set. An empty string represents null.
     /// </summary>
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "ophaal naam resultaat set",
+        Title = "Gebruik resultaatset",
         Description = "Als er gebruik moet worden gemaakt van een eerder gedefinieerde resultaatset, geef hier de naam op; laat dit anders leeg.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox
     )]
-    
     [CanBeNull]
     public string UseResultSet
     {
@@ -118,6 +119,7 @@ public abstract class ActionModel
                 useResultSet = value;
             } 
     }
+    
     /// <summary>
     /// Gets or sets if this data should be hashed.
     /// </summary>
@@ -130,6 +132,7 @@ public abstract class ActionModel
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoCheckBox
     )]
+    
     public bool HashData { get; set; }
     
     /// <summary>
@@ -204,6 +207,7 @@ public abstract class ActionModel
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
+    
     public OnlyWithTypes OnlyWithTypes { get; set; }
     
     #region OnlyWithStatusCode
@@ -222,6 +226,7 @@ public abstract class ActionModel
     )]
     [CanBeNull]
     public string OnlyWithStatusCode_item { get; set; }
+    
     [XmlIgnore]
     [CanBeNull]
     [WtsProperty(
@@ -241,6 +246,7 @@ public abstract class ActionModel
             "
     )]
     public string OnlyWithStatusCode_code { get; set; }
+    
     [CanBeNull]
     [JsonIgnore]
     public XmlNode OnlyWithStatusCode
@@ -277,6 +283,7 @@ public abstract class ActionModel
     )]
     [CanBeNull]
     public string OnlyWithSuccessState_item { get; set; }
+    
     [XmlIgnore]
     [CanBeNull]
     [WtsProperty(
@@ -290,6 +297,7 @@ public abstract class ActionModel
         DependsOnValue = new [] {"OnlyWithSuccessState"}
     )]
     public string OnlyWithSuccessState_state { get; set; }
+    
     [CanBeNull]
     [JsonIgnore]
     public XmlNode OnlyWithSuccessState
@@ -327,6 +335,7 @@ public abstract class ActionModel
     )]
     [CanBeNull]
     public string OnlyWithValue_Source { get; set; }
+    
     [XmlIgnore]
     [CanBeNull]
     [WtsProperty(
@@ -340,6 +349,7 @@ public abstract class ActionModel
         DependsOnValue = new [] {"OnlyWithValue"}
     )]
     public string OnlyWithValue_Value { get; set; }
+    
     [CanBeNull]
     [JsonIgnore]
     public XmlNode OnlyWithValue
@@ -364,7 +374,6 @@ public abstract class ActionModel
     
     [CanBeNull]
     public LogSettings LogSettings { get; set; }
-    
 
     [XmlIgnore]
     private string comment { get; set; }

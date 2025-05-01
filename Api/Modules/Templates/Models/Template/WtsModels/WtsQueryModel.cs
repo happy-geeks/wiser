@@ -75,6 +75,7 @@ public class WtsQueryModel : ActionModel
     }
 
     private CharacterEncodingModel characterEncoding;
+    
     /// <summary>
     /// Gets or sets the character encoding settings. If the data is incomplete it will be null instead.
     /// </summary>
@@ -121,6 +122,7 @@ public class WtsQueryModel : ActionModel
         }
         set => useTransaction = value;
     }
+    
     /// <summary>
     /// Gets or sets if tranactions will be used.
     /// </summary>

@@ -18,6 +18,7 @@ public class TemplatesController(IBaseService baseService, IFrontEndDynamicConte
     {
         viewModel ??= new TemplateViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
+        
         viewModel.Settings = defaultModel.Settings;
         viewModel.WiserVersion = defaultModel.WiserVersion;
         viewModel.SubDomain = defaultModel.SubDomain;
@@ -63,6 +64,7 @@ public class TemplatesController(IBaseService baseService, IFrontEndDynamicConte
             TemplateTypes.Query => "QuerySettings",
             _ => null
         };
+        
         // ReSharper disable once Mvc.PartialViewNotResolved
         return PartialView("Tabs/DevelopmentTab", tabViewData);
     }
