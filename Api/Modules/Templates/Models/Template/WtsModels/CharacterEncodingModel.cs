@@ -9,6 +9,7 @@ public class CharacterEncodingModel
     //If either of the two settings is equal to the default, return null to reduce file size.
     [XmlIgnore]
     private readonly string defaultCharacterSet = "utf8mb4";
+    
     [XmlIgnore]
     private readonly string defaultCollation = "utf8mb4_general_ci";
     
@@ -25,6 +26,7 @@ public class CharacterEncodingModel
     )]
     [XmlIgnore]
     public string CharacterSet { get; set; }
+    
     [XmlElement("CharacterSet")]
     public string CharacterSetXml
     {
@@ -46,6 +48,7 @@ public class CharacterEncodingModel
             CharacterSet = value;
         }
     }
+    
     [XmlIgnore]
     private string collation;
     
@@ -59,6 +62,7 @@ public class CharacterEncodingModel
         DataComponent = DataComponents.KendoTextBox
     )]
     public string Collation { get; set; }
+    
     [XmlElement("Collation")]
     public string CollationXml
     {

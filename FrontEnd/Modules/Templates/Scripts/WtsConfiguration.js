@@ -47,14 +47,17 @@ export class WtsConfiguration {
         this.timersKendoFields = [];
         this.actionsInputFields = [];
         this.actionsKendoFields = [];
+        
         // Check to see if id is set
         if (id === undefined || id === null || id === 0) {
             console.error("id is not set");
             return;
         }
+        
         // Tell the user that the tab is loading
         this.base.toggleMainLoader(true);
         let templateSettings = null;
+        
         // Get the data from the api
         try {
             templateSettings = await Wiser.api({
@@ -70,6 +73,7 @@ export class WtsConfiguration {
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             return;
         }
+        
         // Build the view
         try {
             await Wiser.api({
@@ -380,7 +384,7 @@ export class WtsConfiguration {
             
             //check if an action if is used
             if('timeId' in selectedItem && 'order' in selectedItem){
-                let newActionId= `${selectedItem.timeId}"-"${selectedItem.order}`;
+                let newActionId= `${selectedItem.timeId}-${selectedItem.order}`;
                 idFieldValue = newActionId;
                 selectedItem.actionid = newActionId; 
             }
@@ -494,6 +498,7 @@ export class WtsConfiguration {
                 this.setValueOfElement(inputField, options[0].value);
                 return;
             }
+            
             // Clear the value of the input field.
             this.setValueOfElement(inputField, "");
         });
@@ -589,6 +594,7 @@ export class WtsConfiguration {
         }
 
         let type = e.getAttribute("data-kendo-component");
+        
         switch (type) {
             case "KendoCheckBox":
                 ($(e).data("kendoCheckBox")).value(v);
