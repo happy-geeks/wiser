@@ -834,7 +834,7 @@ export class Fields {
         const itemDetails = !itemId ? { encryptedId: this.base.settings.zeroEncrypted } : (await this.base.getItemDetails(itemId, entityType));
 
         const userParametersWithValues = {};
-        const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, selectedItems, senderGrid.element);
+        const success = await this.executeActionButtonActions(actionDetails.actions, userParametersWithValues, itemDetails, propertyId, entityType, selectedItems, senderGrid.element);
 
         if (senderGrid && senderGrid.element) {
             senderGrid.element.siblings(".grid-loader").removeClass("loading");
@@ -899,7 +899,7 @@ export class Fields {
 
             // Execute all actions that are configured for this button.
             const userParametersWithValues = {};
-            const success = await this.executeActionButtonActions(options.actions, userParametersWithValues, itemDetails, propertyId, [], button);
+            const success = await this.executeActionButtonActions(options.actions, userParametersWithValues, itemDetails, propertyId, entityType, [], button);
             event.sender.element.removeClass("loading");
             if (success && !options.disableSuccessMessages) {
                 this.base.notification.show({ message: `Alle acties zijn uitgevoerd.` }, "success");
@@ -1237,11 +1237,12 @@ export class Fields {
      * @param {any} userParametersWithValues An object in which to remember all variables that the user entered values for.
      * @param {any} mainItemDetails The details of the main item that contains the action button.
      * @param {number} propertyId The ID of the property/field that contains the action button.
+     * @param {string} entityType The entity type of the item that contains the action button.
      * @param {Array<any>} selectedItems Optional: If the action button is part of a grid, this parameter should contain all the selected items of that grid, so that the actions will be executed for all those items.
      * @returns {boolean} Whether the actions were all successful or not.
      * @param {any} element The action button or grid.
      */
-    async executeActionButtonActions(actions, userParametersWithValues, mainItemDetails, propertyId, selectedItems = [], element = null) {
+    async executeActionButtonActions(actions, userParametersWithValues, mainItemDetails, propertyId, entityType, selectedItems = [], element = null) {
         userParametersWithValues = userParametersWithValues || {};
 
         const getSuffixFromSelectedColumn = (selectedItem) => {
@@ -2262,7 +2263,7 @@ export class Fields {
                         if (kendoWindow.length === 0) {
                             // The opened item is in the main window.
                             const previouslySelectedTab = this.base.mainTabStrip.select().index();
-                            await this.base.loadItem(this.base.settings.initialItemId ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab);
+                            await this.base.loadItem(this.base.settings.initialItemId ? this.base.settings.initialItemId : this.base.selectedItem.id, previouslySelectedTab, entityType);
                         } else {
                             // The opened item is in a window.
                             const previouslySelectedTab = kendoWindow.find(".tabStripPopup").data("kendoTabStrip").select().index();
