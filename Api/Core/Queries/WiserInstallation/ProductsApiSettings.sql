@@ -19,16 +19,13 @@ UPDATE wiser_entity SET accepted_childtypes = CONCAT(accepted_childtypes, ',Prod
 
 -- Product default Api settings will live in the "stamgegevens" module, add it there.
 INSERT INTO `wiser_item` (entity_type, moduleid, title) VALUES ('map', '700', 'Products api settings');
-SET @settingsFolderId = LAST_INSERT_ID();    
+SET @settingsFolderId = LAST_INSERT_ID();
     
--- Add the link to the settings folder in the wiser link.
-INSERT INTO `wiser_itemlink` (`item_id`,`destination_item_id`, `type`) VALUES (@settingsFolderId, 0,1);
-
 -- Add an item for the settings.
 INSERT INTO `wiser_item` (unique_uuid, entity_type, parent_item_id, moduleid, title, added_by) VALUES ('default_products_api_settings', 'ProductsApiSettings', @settingsFolderId, 700, 'Standaard product api instellingen', 'Wiser');
 SET @newItemId = LAST_INSERT_ID();
 
--- Add the default settings so we have details filled in and that they can be used right way (instead of after the first time someone edits/saves them.    
+-- Add the default settings so we have details filled in and that they can be used right way (instead of after the first time someone edits/saves them.
 INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@newItemId, 'datasource_static', '{ \"name\": \"notset\"}');
 INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@newItemId, 'datasource_type', '0');
 INSERT INTO `wiser_itemdetail` (`item_id`, `key`, `value`) VALUES (@newItemId, 'minimal_refresh_cooldown', '180');
