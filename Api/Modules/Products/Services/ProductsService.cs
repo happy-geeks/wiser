@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Api.Core.Services;
+using Api.Modules.Products.Enums;
 using Api.Modules.Products.Interfaces;
 using Api.Modules.Products.Models;
 using Api.Modules.Queries.Interfaces;
@@ -40,7 +41,7 @@ public class ProductsService(
     private const string ProductApiPropertyTabName = "Product Api";
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> GetProduct(ClaimsIdentity identity, ulong wiserId)
+    public async Task<ServiceResult<JToken>> GetProductAsync(ClaimsIdentity identity, ulong wiserId)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
@@ -87,13 +88,12 @@ public class ProductsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, DateTime? date,  int page = 0)
+    public async Task<ServiceResult<JToken>> GetAllProductsAsync(ClaimsIdentity identity, DateTime? date,  int page = 0)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
 
         // Clean up and adjust date string.
-        DateTime productsSinceWithTime;
 
         // Check if a date was entered, if not take today.
         var dateWasProvidedByUser = date != null;
@@ -103,7 +103,7 @@ public class ProductsService(
             date = DateTime.Now.Date;
         }
 
-        productsSinceWithTime = date.Value.AddMinutes(1);
+        var productsSinceWithTime = date.Value.AddMinutes(1);
 
         // Setup up query and run it.
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
@@ -224,15 +224,13 @@ LIMIT ?pageOffset , ?resultsPerPage
         }
 
         var dataTable = await clientDatabaseConnection.GetAsync(productsQuery);
-        var ids = new List<ulong>();
-        foreach (DataRow product in dataTable.Rows) ids.Add(product.Field<ulong>("id"));
+        var ids = dataTable.Rows.Cast<DataRow>().Select(product => product.Field<ulong>("id")).ToList();
 
         return await RefreshProductsAsync(identity, ids, ignoreCoolDown);
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds,
-        bool ignoreCoolDown = false)
+    public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds, bool ignoreCoolDown = false)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
@@ -261,8 +259,9 @@ LIMIT ?pageOffset , ?resultsPerPage
             throw new KeyNotFoundException(errorMsg);
         }
 
-        var coolDownString =
-            ignoreCoolDown ? "" : $"AND apis.refresh_date < DATE_SUB(NOW(), INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL";
+        var coolDownString = ignoreCoolDown
+            ? ""
+            : $"AND apis.refresh_date < DATE_SUB(NOW(), INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL";
 
         var getApiDataQuery = $"""
 SELECT 
@@ -315,8 +314,8 @@ LIMIT 256
             var apiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id");
             var content = string.Empty;
 
-            List<KeyValuePair<string, object>> parameters = new List<KeyValuePair<string, object>>();
-            parameters.Add(new KeyValuePair<string, object>("itemId,", wiserId));
+            var parameters = new Dictionary<string,object>();
+            parameters.Add("itemId", wiserId);
 
             // Check if we have a valid output, if not we skip this one.
             switch ((ProductApiPropertyDataSources)datasourceType)
@@ -330,7 +329,7 @@ LIMIT 256
                     // Query.
                     try
                     {
-                        var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, queryId, false, parameters);
+                        var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, queryId, false, parameters.ToList());
 
                         if (queryResult.StatusCode == HttpStatusCode.OK)
                         {
@@ -353,7 +352,7 @@ LIMIT 256
                     // Styled output.
                     try
                     {
-                        var styledOutputResult = await styledOutputService.GetStyledOutputResultJsonAsync(identity, styledOutputId, parameters,false,500,0);
+                        var styledOutputResult = await styledOutputService.GetStyledOutputResultJsonAsync(identity, styledOutputId, parameters.ToList(),false,500,0);
                         if (styledOutputResult.StatusCode == HttpStatusCode.OK)
                         {
                             content = styledOutputResult.ModelObject.ToString();
@@ -408,7 +407,7 @@ LIMIT 256
         // If we have entries that have not changed but were checked, update their refresh dates.
         if (noUpdates.Count > 0)
         {
-            await UpdateProductApiEntries(identity,noUpdates,currentDateTime);
+            await UpdateProductApiEntriesAsync(identity,noUpdates,currentDateTime);
         }
 
         return new ServiceResult<JToken>
@@ -423,7 +422,7 @@ LIMIT 256
     /// <param name="identity">The identity of the user performing this command.</param>
     /// <param name="apiEntryIds">The id of the wiser product api entries we are trying to update.</param>
     /// <param name="currentDateTime">The id of the wiser product we are trying to read.</param>
-    private async Task UpdateProductApiEntries(ClaimsIdentity identity, ICollection<ulong> apiEntryIds, string currentDateTime)
+    private async Task UpdateProductApiEntriesAsync(ClaimsIdentity identity, ICollection<ulong> apiEntryIds, string currentDateTime)
     {
         var query = $"""
 UPDATE `wiser_products_api` SET `refresh_date` = {currentDateTime}
@@ -439,9 +438,12 @@ WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table. {e}";
-            logger.LogError(errorMsg);
-            throw new Exception(errorMsg);
+            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
+            if (errorMsg != null)
+            {
+                logger.LogError(e, errorMsg);
+                throw new Exception(errorMsg);
+            }
         }
     }
 
@@ -561,7 +563,7 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> OverwriteApiProductSettingsForAllProductAsync(ClaimsIdentity identity)
+    public async Task<ServiceResult<JToken>> SetDefaultSettingsOnAllProductsAsync(ClaimsIdentity identity)
     {
         await EnsureProductApiPropertiesAsync();
 
@@ -685,8 +687,8 @@ VALUES ('{item.WiserId}', '{item.Version}', '{item.Output}', '{item.AddedBy}', '
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table. {e}";
-            logger.LogError(errorMsg);
+            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
+            logger.LogError(e,errorMsg);
             throw new Exception(errorMsg);
         }
     }

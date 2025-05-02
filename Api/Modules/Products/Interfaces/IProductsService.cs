@@ -17,8 +17,8 @@ public interface IProductsService
     /// </summary>
     /// <param name="identity">The identity of the user performing this command.</param>
     /// <param name="wiserId">The id of the wiser product we are trying to read.</param>
-    /// <returns> The resulting api output or throws an error if not found.</returns>
-    public Task<ServiceResult<JToken>> GetProduct(ClaimsIdentity identity, ulong wiserId);
+    /// <returns>The resulting api output or throws an error if not found.</returns>
+    public Task<ServiceResult<JToken>> GetProductAsync(ClaimsIdentity identity, ulong wiserId);
 
     /// <summary>
     /// Gets a Json formatted list of all the products apis in the database that have a product api result generated.
@@ -27,7 +27,7 @@ public interface IProductsService
     /// <param name="date">The date for the last changed date. if not provided today will be used.</param>
     /// <param name="page">The page offset for the product result, if not provided page zero will be returned.</param>
     /// <returns>A json formatted list of all the products with pagination.</returns>
-    public Task<ServiceResult<JToken>> GetAllProducts(ClaimsIdentity identity, DateTime? date, int page = 0);
+    public Task<ServiceResult<JToken>> GetAllProductsAsync(ClaimsIdentity identity, DateTime? date, int page = 0);
 
     /// <summary>
     /// This function will call the RefreshProductsAsync function for the given ids.
@@ -49,7 +49,7 @@ public interface IProductsService
     public Task<ServiceResult<JToken>> RefreshProductAsync(ClaimsIdentity identity, ulong wiserId, bool ignoreCooldown = false);
 
     /// <summary>
-    /// This function will call the find 256 products and call the RefreshProductsAsync function on it based on cooldown time and last refresh time.
+    /// This function will find 256 products and call the RefreshProductsAsync function on it based on cooldown time and last refresh time.
     /// </summary>
     /// <param name="identity">The identity of the user performing this command.</param>
     /// <param name="ignoreCooldown">Ignore the cooldown check when refreshing.</param>
@@ -62,5 +62,5 @@ public interface IProductsService
     /// </summary>
     /// <param name="identity">The identity of the user performing this command.</param>
     /// <returns>Status 200(ok) or an exception if occured.</returns>
-    public Task<ServiceResult<JToken>> OverwriteApiProductSettingsForAllProductAsync(ClaimsIdentity identity);
+    public Task<ServiceResult<JToken>> SetDefaultSettingsOnAllProductsAsync(ClaimsIdentity identity);
 }

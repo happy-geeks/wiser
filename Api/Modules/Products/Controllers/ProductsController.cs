@@ -32,33 +32,27 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Get Product api result, this function only retrieves the product api result, it does not generate it.
     /// </summary>
-    /// <param name="wiserId"></param>
+    /// <param name="wiserId">Optional: If given an id it will return that entry for that product, regardless of given date or page offset.</param>
+    /// <param name="date">Optional: Since this date we list the changes.</param>
+    /// <param name="page">Optional: The page offset.</param>
     /// <returns></returns>
     [HttpGet]
-    [Route("get/{wiserId:int:required}")]
+    [Route("{wiserId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(ulong wiserId)
+    public async Task<IActionResult> Get(ulong wiserId, [FromQuery] DateTime? date = null, [FromQuery] int page = 0)
     {
-        return (await productsService.GetProduct((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
+        if (wiserId == 0)
+        {
+            return (await productsService.GetAllProductsAsync((ClaimsIdentity) User.Identity, date, page)).GetHttpResponseMessage();
+        }
+        return (await productsService.GetProductAsync((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
     }
 
     /// <summary>
     /// Get all products api result based on the date, if no date is given we just the changes of today., this function only retrieves the product api result, it does not generate it.
     /// </summary>
-    /// <param name="date">Since this date we list the changes.</param>
-    /// <param name="page">The page offset.</param>
-    /// <returns></returns>
-    [HttpGet]
-    [Route("getAll")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAll([FromQuery] DateTime? date = null, [FromQuery] int page = 0)
-    {
-        return (await productsService.GetAllProducts((ClaimsIdentity) User.Identity, date, page)).GetHttpResponseMessage();
-    }
 
     /// <summary>
     /// Refresh the product api result, this function updates the product api result but only 1.
@@ -70,34 +64,37 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Refresh(ulong wiserId)
+    public async Task<IActionResult> RefreshAsync(ulong wiserId)
     {
         return (await productsService.RefreshProductAsync((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
     }
 
     /// <summary>
-    /// Refreshes all the product api results, this function updates the product api result with a max of 256 each time its called.
+    /// Refreshes the product api results, function will refresh the first 256 products that are not up to date based on the cooldown time and last refresh time.
+    /// To update all products call this multiple times.
+    /// The intended use for this function is to be called by a cron job at intervals so we throttle the amount of products we refresh at once.
     /// </summary>
     [HttpPost]
-    [Route("refreshAll")]
+    [Route("refresh-all")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RefreshAll()
+    public async Task<IActionResult> RefreshAllAsync()
     {
         return (await productsService.RefreshProductsAllAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 
     /// <summary>
-    /// Overwrite that overwrites api product settings for all products.
+    /// This function is used to overwrite the default settings on each product, this is needed when a new set of default settings is setup and needs to be applied to existing products.
+    /// Note: this is a destructive function, it will overwrite all product api settings with the new settings regardless of what matches the current settings or not.
     /// </summary>
     [HttpPost]
-    [Route("OverwriteApiProductSettings")]
+    [Route("set-default-settings-on-all-products")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> OverwriteSettingsForAllProducts()
+    public async Task<IActionResult> SetDefaultSettingsOnAllProductsAsyncSetDefaultSettingsOnAllProductsAsync()
     {
-        return (await productsService.OverwriteApiProductSettingsForAllProductAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
+        return (await productsService.SetDefaultSettingsOnAllProductsAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
 }
