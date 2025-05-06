@@ -1,4 +1,4 @@
-﻿(() => {
+﻿(async () => {
 let field = $("#field_{propertyIdWithSuffix}");
 let options = {options};
 options.type = options.type || "text";
@@ -11,13 +11,13 @@ let codeMirrorSettings = {
     gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "CodeMirror-lint-markers"],
     lint: true,
 	extraKeys: {
-		"Ctrl-Q": function (cm) {
+		"Ctrl-Q": (cm) => {
 			cm.foldCode(cm.getCursor());
 		},
-		"F11": function (cm) {
+		"F11": (cm) => {
 			cm.setOption("fullScreen", !cm.getOption("fullScreen"));
 		},
-		"Esc": function (cm) {
+		"Esc": (cm) => {
 			if (cm.getOption("fullScreen")) cm.setOption("fullScreen", false);
 		},
 		"Ctrl-Space": "autocomplete"
@@ -47,11 +47,10 @@ switch (options.type.toLowerCase()) {
 
 if (codeMirrorSettings.mode) {
 	// Only load code mirror when we actually need it.
-	Misc.ensureCodeMirror().then(() => {
-        field.parent().removeAttr("class");
-		let codeMirrorInstance = CodeMirror.fromTextArea(field[0], codeMirrorSettings);
-		field.data("CodeMirrorInstance", codeMirrorInstance);
-	});
+    await Misc.ensureCodeMirror();
+    field.parent().removeAttr("class");
+    let codeMirrorInstance = CodeMirror.fromTextArea(field[0], codeMirrorSettings);
+    field.data("CodeMirrorInstance", codeMirrorInstance);
 }
 
 field.change(window.dynamicItems.fields.onFieldValueChange.bind(window.dynamicItems.fields)).keyup(window.dynamicItems.fields.onTextFieldKeyUp.bind(window.dynamicItems.fields));
