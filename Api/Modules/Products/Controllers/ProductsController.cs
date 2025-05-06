@@ -41,7 +41,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Get(ulong wiserId, [FromQuery] DateTime? date = null, [FromQuery] int page = 0)
+    public async Task<IActionResult> GetAsync(ulong wiserId, [FromQuery] DateTime? date = null, [FromQuery] int page = 0)
     {
         if (wiserId == 0)
         {
@@ -49,10 +49,6 @@ public class ProductsController : ControllerBase
         }
         return (await productsService.GetProductAsync((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
     }
-
-    /// <summary>
-    /// Get all products api result based on the date, if no date is given we just the changes of today., this function only retrieves the product api result, it does not generate it.
-    /// </summary>
 
     /// <summary>
     /// Refresh the product api result, this function updates the product api result but only 1.
@@ -93,7 +89,7 @@ public class ProductsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SetDefaultSettingsOnAllProductsAsyncSetDefaultSettingsOnAllProductsAsync()
+    public async Task<IActionResult> SetDefaultSettingsOnAllProductsAsync()
     {
         return (await productsService.SetDefaultSettingsOnAllProductsAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }

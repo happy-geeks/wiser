@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 namespace Api.Modules.Products.Interfaces;
 
 /// <summary>
-///
+/// Service for handling the product api related calls.
 /// </summary>
 public interface IProductsService
 {

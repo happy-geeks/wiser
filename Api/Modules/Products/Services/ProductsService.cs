@@ -26,7 +26,7 @@ using NUglify.Helpers;
 namespace Api.Modules.Products.Services;
 
 /// <summary>
-/// Service for handling the product api related calls
+/// Service for handling the product api related calls.
 /// </summary>
 public class ProductsService(
     IDatabaseConnection clientDatabaseConnection,
@@ -55,7 +55,8 @@ public class ProductsService(
 
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
-        // Check if we have a result, if not we inform the user its not there yet, they should generate it first.(don't lazy load/gen it).
+        // Check if we have a result, if not we inform the user it is not there yet,
+        // they should generate it first (don't lazy-load/generate it).
         if (dataTable.Rows.Count == 0)
         {
             var errorMsg = $"Wiser product api Output for product with id '{wiserId}' does not exist( did you not generate it yet?).";
@@ -93,8 +94,6 @@ public class ProductsService(
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
 
-        // Clean up and adjust date string.
-
         // Check if a date was entered, if not take today.
         var dateWasProvidedByUser = date != null;
 
@@ -131,30 +130,30 @@ public class ProductsService(
 
         // Make a temp table and store the call the select query into it, use this for a hard join with the product api table.
         var tempTableQuery = $"""
-DROP temporary table IF EXISTS wiser_temp_{WiserTableNames.WiserProductsApi}_ids;
-CREATE TEMPORARY TABLE wiser_temp_{WiserTableNames.WiserProductsApi}_ids ( wiser_id INT );
-INSERT INTO wiser_temp_{WiserTableNames.WiserProductsApi}_ids (wiser_id)
-{productsQuery}
-""";
+                              DROP temporary table IF EXISTS wiser_temp_{WiserTableNames.WiserProductsApi}_ids;
+                              CREATE TEMPORARY TABLE wiser_temp_{WiserTableNames.WiserProductsApi}_ids ( wiser_id INT );
+                              INSERT INTO wiser_temp_{WiserTableNames.WiserProductsApi}_ids (wiser_id)
+                              {productsQuery}
+                              """;
         await clientDatabaseConnection.ExecuteAsync(tempTableQuery);
 
         // Now get the actual product api data,
         // Debug note: when testing it is best to remove the hard join (tempids) with the temp table, this will give you all products.
         // Alternatively you can also copy the previous query and run it along with this one to test with the temp table in place.
         var selectQuery = $"""
-SELECT wp.wiser_id, wp.output
-FROM {WiserTableNames.WiserProductsApi} wp
-JOIN wiser_temp_{WiserTableNames.WiserProductsApi}_ids tempids ON tempids.wiser_id = wp.wiser_id
-JOIN (
-    SELECT  wiser_id, MAX(version) AS max_version
-    FROM {WiserTableNames.WiserProductsApi}
-    GROUP BY wiser_id
-) latest
-ON wp.wiser_id = latest.wiser_id 
-AND wp.version = latest.max_version
-WHERE added_on > ?productChangesSince
-LIMIT ?pageOffset , ?resultsPerPage
-""";
+                           SELECT wp.wiser_id, wp.output
+                           FROM {WiserTableNames.WiserProductsApi} wp
+                           JOIN wiser_temp_{WiserTableNames.WiserProductsApi}_ids tempids ON tempids.wiser_id = wp.wiser_id
+                           JOIN (
+                               SELECT  wiser_id, MAX(version) AS max_version
+                               FROM {WiserTableNames.WiserProductsApi}
+                               GROUP BY wiser_id
+                           ) latest
+                           ON wp.wiser_id = latest.wiser_id 
+                           AND wp.version = latest.max_version
+                           WHERE added_on > ?productChangesSince
+                           LIMIT ?pageOffset , ?resultsPerPage
+                           """;
 
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
