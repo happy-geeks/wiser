@@ -252,7 +252,7 @@ public class ItemsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]ulong? parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false, [FromQuery] string parentEntityType = null)
     {
-        return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId ?? 0, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
+        return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId ?? 0, linkType, alsoCreateInMainBranch, parentEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
