@@ -84,6 +84,7 @@ public class ClientDatabaseConnection : IDatabaseConnection, IScopedService
         this.logger = logger;
         this.webHostEnvironment = webHostEnvironment;
         instanceId = Guid.NewGuid();
+        sshSettingsForReading = this.gclSettings.DatabaseSshSettings;
     }
 
     /// <inheritdoc />
