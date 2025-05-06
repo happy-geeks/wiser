@@ -30,23 +30,32 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
-    /// Get Product api result, this function only retrieves the product api result, it does not generate it.
+    /// Get Product api result for all products, this function only retrieves the product api result, it does not generate it.
     /// </summary>
-    /// <param name="wiserId">Optional: If given an id it will return that entry for that product, regardless of given date or page offset.</param>
     /// <param name="date">Optional: Since this date we list the changes.</param>
     /// <param name="page">Optional: The page offset.</param>
-    /// <returns></returns>
+    /// <returns>The list with all products that were found with the given parameters.</returns>
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAllAsync([FromQuery] DateTime? date = null, [FromQuery] int page = 0)
+    {
+        return (await productsService.GetAllProductsAsync((ClaimsIdentity) User.Identity, date, page)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Get Product api result for a single product, this function only retrieves the product api result, it does not generate it.
+    /// </summary>
+    /// <param name="wiserId">If given an id it will return that entry for that product, regardless of given date or page offset.</param>
+    /// <returns>The details of the specified product, if it exists.</returns>
     [HttpGet]
     [Route("{wiserId:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAsync(ulong wiserId, [FromQuery] DateTime? date = null, [FromQuery] int page = 0)
+    public async Task<IActionResult> GetAsync(ulong wiserId)
     {
-        if (wiserId == 0)
-        {
-            return (await productsService.GetAllProductsAsync((ClaimsIdentity) User.Identity, date, page)).GetHttpResponseMessage();
-        }
         return (await productsService.GetProductAsync((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
     }
 
