@@ -21,6 +21,8 @@ public class BaseViewModel
 
     public string ApiRoot { get; set; }
 
+    public string ApiRootV4 { get; set; }
+
     public string CurrentDomain { get; set; }
 
     public string IsWiserFrontEndLogin { get; set; }

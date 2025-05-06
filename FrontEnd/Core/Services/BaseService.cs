@@ -13,8 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace FrontEnd.Core.Services;
 
-public class BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvironment webHostEnvironment, IOptions<FrontEndSettings> frontEndSettings, IOptions<GclSettings> gclSettings)
-    : IBaseService
+public class BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvironment webHostEnvironment, IOptions<FrontEndSettings> frontEndSettings, IOptions<GclSettings> gclSettings) : IBaseService
 {
     public const int Wiser1DebuggingPortNumber = 54405;
 
@@ -69,18 +68,13 @@ public class BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvir
             return $"http://{subDomain}:{Wiser1DebuggingPortNumber}/";
         }
 
-        if (requestUrl.Host.Contains("juicedev.nl", StringComparison.OrdinalIgnoreCase))
-        {
-            return $"http://{subDomain}.wiser.nl.juicedev.nl/";
-        }
-
         return $"https://{subDomain}.wiser.nl/";
     }
 
     /// <inheritdoc />
     public T CreateBaseViewModel<T>() where T : BaseViewModel
     {
-        var viewModel = (T)Activator.CreateInstance(typeof(T));
+        var viewModel = Activator.CreateInstance<T>();
         viewModel!.Settings = frontEndSettings;
         viewModel.WiserVersion = Assembly.GetEntryAssembly()?.GetName().Version;
         viewModel.SubDomain = GetSubDomain();
@@ -88,12 +82,13 @@ public class BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvir
         viewModel.Wiser1BaseUrl = GetWiser1Url();
         viewModel.ApiAuthenticationUrl = $"{frontEndSettings.ApiBaseUrl}connect/token";
         viewModel.ApiRoot = $"{frontEndSettings.ApiBaseUrl}api/v3/";
+        viewModel.ApiRootV4 = $"{frontEndSettings.ApiBaseUrl}api/v4/";
         viewModel.IsWiserFrontEndLogin = "true".EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true, true);
 
         if (httpContextAccessor.HttpContext != null)
         {
             viewModel.CurrentDomain = httpContextAccessor.HttpContext.Request.Host.Value;
-            viewModel.CurrentDomain = viewModel.CurrentDomain.Replace($"{viewModel.SubDomain}.", "");
+            viewModel.CurrentDomain = viewModel.CurrentDomain?.Replace($"{viewModel.SubDomain}.", "");
         }
 
         var partnerStylesDirectory = new DirectoryInfo(Path.Combine(webHostEnvironment.ContentRootPath, "Core/Css/partner"));

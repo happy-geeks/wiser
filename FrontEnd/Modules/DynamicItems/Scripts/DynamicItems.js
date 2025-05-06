@@ -180,6 +180,9 @@ const moduleSettings = {
             if (!this.settings.wiserApiRoot.endsWith("/")) {
                 this.settings.wiserApiRoot += "/";
             }
+            if (!this.settings.wiserApiRootV4.endsWith("/")) {
+                this.settings.wiserApiRootV4 += "/";
+            }
 
             // Get user data from API.
             const userData = await Wiser.getLoggedInUserData(this.settings.wiserApiRoot);
@@ -2099,12 +2102,14 @@ const moduleSettings = {
          * @param {string} name Optional: The name of the new item.
          * @param {number} linkTypeNumber Optional: The type number of the link between the new item and it's parent.
          * @param {any} data Optional: The data to save with the new item.
-         * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
+         * @param {boolean} skipUpdate Optional: By default the updateItem function will be called after creating the item, to save the data of the item. Set this parameter to true if you want to skip that step (if you have no other data to save).
          * @param {number} moduleId Optional: The id of the module in which the item should be created.
-         * @param {bool} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
+         * @param {boolean} alsoCreateInMainBranch Optional: Whether or not to create the item in the main branch as well to match IDs for merging later.
+         * @param {string} parentEntityType Optional: The entity type of the parent item. We need this to determine where and how to save the parent link.
+         * @returns {Object<string, any>} An object with the properties 'itemId', 'icon' and 'workflowResult'.
          */
-        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = null, alsoCreateInMainBranch = false) {
-            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId, alsoCreateInMainBranch);
+        async createItem(entityType, parentId, name, linkTypeNumber, data = [], skipUpdate = false, moduleId = 0, alsoCreateInMainBranch = false, parentEntityType = null) {
+            return Wiser.createItem(this.settings, entityType, parentId, name, linkTypeNumber, data, skipUpdate, moduleId, alsoCreateInMainBranch, parentEntityType);
         }
 
         /**

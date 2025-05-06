@@ -595,78 +595,90 @@ export class Windows {
 
             const promises = [];
             const addLinksRequest = {
-                encryptedSourceIds: [],
-                encryptedDestinationIds: [],
-                linkType: this.searchItemsWindowSettings.linkTypeNumber
+                sourceIds: [],
+                destinationIds: [],
+                linkType: this.searchItemsWindowSettings.linkTypeNumber,
+                sourceEntityType: this.searchItemsWindowSettings.currentItemIsSourceId ? this.searchItemsWindowSettings.currentEntityType : this.searchItemsWindowSettings.entityType,
+                destinationEntityType: this.searchItemsWindowSettings.currentItemIsSourceId ? this.searchItemsWindowSettings.entityType : this.searchItemsWindowSettings.currentEntityType
             };
+
             const removeLinksRequest = {
-                encryptedSourceIds: [],
-                encryptedDestinationIds: [],
-                linkType: this.searchItemsWindowSettings.linkTypeNumber
+                sourceIds: [],
+                destinationIds: [],
+                linkType: this.searchItemsWindowSettings.linkTypeNumber,
+                sourceEntityType: this.searchItemsWindowSettings.currentItemIsSourceId ? this.searchItemsWindowSettings.currentEntityType : this.searchItemsWindowSettings.entityType,
+                destinationEntityType: this.searchItemsWindowSettings.currentItemIsSourceId ? this.searchItemsWindowSettings.entityType : this.searchItemsWindowSettings.currentEntityType
             };
-            if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                addLinksRequest.sourceEntityType = this.searchItemsWindowSettings.currentEntityType;
-                removeLinksRequest.sourceEntityType = this.searchItemsWindowSettings.currentEntityType;
-            }           
+
             kendo.ui.progress(grid.element, true);
+
             for (let element of allItemsOnCurrentPage) {
                 const row = $(element);
                 const dataItem = grid.dataItem(row);
                 const isChecked = row.find("td > input[type=checkbox]").prop("checked");
+                const parentItemId = dataItem.parentItemId || dataItem.parentitemid || 0;
 
                 if (isChecked) {
-                    if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
-                        if (dataItem.parentItemId > 0 && dataItem.parentItemId !== this.searchItemsWindowSettings.plainParentId) {
-                            try {
-                                await Wiser.showConfirmDialog(`Let op! Dit item is al gekoppeld aan een ander item (ID ${dataItem.parentItemId}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`, "Koppeling vervangen", "Annuleren", "Vervangen");
-                            }
-                            catch {
-                                row.find("td > input[type=checkbox]").prop("checked", false);
-                                row.removeClass("k-state-selected");
-                                continue;
-                            }
-                        }
+                    if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length > 0) {
+                        continue;
+                    }
 
-                        if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                            if (addLinksRequest.encryptedSourceIds.length === 0) {
-                                addLinksRequest.encryptedSourceIds.push(this.searchItemsWindowSettings.parentId);
-                            }
-                            addLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
-                        } else {
-                            if (addLinksRequest.encryptedDestinationIds.length === 0) {
-                                addLinksRequest.encryptedDestinationIds.push(this.searchItemsWindowSettings.parentId);
-                            }
-                            addLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
+                    if (parentItemId > 0 && parentItemId !== this.searchItemsWindowSettings.plainParentId) {
+                        try {
+                            await Wiser.showConfirmDialog(`Let op! Dit item is al gekoppeld aan een ander item (ID ${parentItemId}). Als u op "OK" klikt, zal die koppeling vervangen worden door deze nieuwe koppeling.`, "Koppeling vervangen", "Annuleren", "Vervangen");
+                        } catch {
+                            row.find("td > input[type=checkbox]").prop("checked", false);
+                            row.removeClass("k-state-selected");
+                            continue;
                         }
                     }
-                } else {
-                    if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length > 0) {
-                        if (this.searchItemsWindowSettings.currentItemIsSourceId) {
-                            if (removeLinksRequest.encryptedSourceIds.length === 0) {
-                                removeLinksRequest.encryptedSourceIds.push(this.searchItemsWindowSettings.parentId);
-                            }
-                            removeLinksRequest.encryptedDestinationIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
-                        } else {
-                            if (removeLinksRequest.encryptedDestinationIds.length === 0) {
-                                removeLinksRequest.encryptedDestinationIds.push(this.searchItemsWindowSettings.parentId);
-                            }
-                            removeLinksRequest.encryptedSourceIds.push(dataItem.encryptedId || dataItem.encrypted_id || dataItem.encryptedid);
+
+                    if (this.searchItemsWindowSettings.currentItemIsSourceId) {
+                        if (addLinksRequest.sourceIds.length === 0) {
+                            addLinksRequest.sourceIds.push(this.searchItemsWindowSettings.plainParentId);
                         }
+
+                        addLinksRequest.destinationIds.push(dataItem.id);
+                    } else {
+                        if (addLinksRequest.destinationIds.length === 0) {
+                            addLinksRequest.destinationIds.push(this.searchItemsWindowSettings.plainParentId);
+                        }
+
+                        addLinksRequest.sourceIds.push(dataItem.id);
+                    }
+                } else {
+                    if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length === 0) {
+                        continue;
+                    }
+
+                    if (this.searchItemsWindowSettings.currentItemIsSourceId) {
+                        if (removeLinksRequest.sourceIds.length === 0) {
+                            removeLinksRequest.sourceIds.push(this.searchItemsWindowSettings.plainParentId);
+                        }
+
+                        removeLinksRequest.destinationIds.push(dataItem.id);
+                    } else {
+                        if (removeLinksRequest.destinationIds.length === 0) {
+                            removeLinksRequest.destinationIds.push(this.searchItemsWindowSettings.plainParentId);
+                        }
+
+                        removeLinksRequest.sourceIds.push(dataItem.id);
                     }
                 }
             }
 
-            if (addLinksRequest.encryptedSourceIds.length > 0 && addLinksRequest.encryptedDestinationIds.length > 0) {
+            if (addLinksRequest.sourceIds.length > 0 && addLinksRequest.destinationIds.length > 0) {
                 promises.push(Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}items/add-links?moduleId=${this.base.settings.moduleId}`,
+                    url: `${this.base.settings.wiserApiRootV4}items/add-links?moduleId=${this.base.settings.moduleId}`,
                     method: "POST",
                     contentType: "application/json",
                     data: JSON.stringify(addLinksRequest)
                 }));
             }
-            if (removeLinksRequest.encryptedSourceIds.length > 0 && removeLinksRequest.encryptedDestinationIds.length > 0) {
+
+            if (removeLinksRequest.sourceIds.length > 0 && removeLinksRequest.destinationIds.length > 0) {
                 promises.push(Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}items/remove-links?moduleId=${this.base.settings.moduleId}`,
+                    url: `${this.base.settings.wiserApiRootV4}items/remove-links?moduleId=${this.base.settings.moduleId}`,
                     method: "DELETE",
                     contentType: "application/json",
                     data: JSON.stringify(removeLinksRequest)

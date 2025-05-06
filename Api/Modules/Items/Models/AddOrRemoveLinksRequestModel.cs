@@ -36,4 +36,9 @@ public class AddOrRemoveLinksRequestModel
     /// Gets or sets the entity type of the source item(s).
     /// </summary>
     public string SourceEntityType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity type of the destination item(s).
+    /// </summary>
+    public string DestinationEntityType { get; set; }
 }

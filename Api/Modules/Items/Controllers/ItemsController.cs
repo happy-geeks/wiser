@@ -224,16 +224,17 @@ public class ItemsController : ControllerBase
     /// <param name="item">The item to create.</param>
     /// <param name="parentId">Optional: The encrypted ID of the parent to create this item under.</param>
     /// <param name="linkType">Optional: The link type of the link to the parent.</param>
-    /// <param name="alsoCreateInMainBranch"></param>
+    /// <param name="alsoCreateInMainBranch">Optional: Whether to also create the item in the main branch. Default is <see langword="false"/>.</param>
+    /// <param name="parentEntityType">Optional: The entity type of the parent item. We need this to determine where and how to save the parent link.</param>
     /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
     [HttpPost]
     [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
+    public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]string parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false, [FromQuery] string parentEntityType = null)
     {
         var identity = (ClaimsIdentity)User.Identity;
         var itemId = await wiserTenantsService.DecryptValue<ulong>(parentId, identity);
-        return (await itemsService.CreateAsync(item, identity, itemId, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
+        return (await itemsService.CreateAsync(item, identity, itemId, linkType, alsoCreateInMainBranch, parentEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -242,15 +243,16 @@ public class ItemsController : ControllerBase
     /// <param name="item">The item to create.</param>
     /// <param name="parentId">Optional: The ID of the parent to create this item under.</param>
     /// <param name="linkType">Optional: The link type of the link to the parent.</param>
-    /// <param name="alsoCreateInMainBranch"></param>
+    /// <param name="alsoCreateInMainBranch">Optional: Whether to also create the item in the main branch. Default is <see langword="false"/>.</param>
+    /// <param name="parentEntityType">Optional: The entity type of the parent item. We need this to determine where and how to save the parent link.</param>
     /// <returns>A CreateItemResultModel with information about the newly created item.</returns>
     [HttpPost]
     [Route("~/api/v4/[controller]")]
     [ProducesResponseType(typeof(CreateItemResultModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]ulong? parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false)
+    public async Task<IActionResult> PostAsync(WiserItemModel item, [FromQuery]ulong? parentId = null, [FromQuery]int linkType = 1, [FromQuery] bool alsoCreateInMainBranch = false, [FromQuery] string parentEntityType = null)
     {
-        return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId ?? 0, linkType, alsoCreateInMainBranch)).GetHttpResponseMessage();
+        return (await itemsService.CreateAsync(item, (ClaimsIdentity)User.Identity, parentId ?? 0, linkType, alsoCreateInMainBranch, parentEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -753,7 +755,7 @@ public class ItemsController : ControllerBase
             destinationIds.Add(decryptedDestinationId);
         }
 
-        return (await itemsService.AddMultipleLinksAsync(identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+        return (await itemsService.AddMultipleLinksAsync(identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType, data.DestinationEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -765,7 +767,7 @@ public class ItemsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AddMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
     {
-        return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+        return (await itemsService.AddMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType, data.DestinationEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -793,7 +795,7 @@ public class ItemsController : ControllerBase
             destinationIds.Add(decryptedDestinationId);
         }
 
-        return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+        return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, sourceIds, destinationIds, data.LinkType, data.SourceEntityType, data.DestinationEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
@@ -805,7 +807,7 @@ public class ItemsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> RemoveMultipleLinksAsync([FromBody]AddOrRemoveLinksRequestModel data)
     {
-        return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType)).GetHttpResponseMessage();
+        return (await itemsService.RemoveMultipleLinksAsync((ClaimsIdentity)User.Identity, data.SourceIds, data.DestinationIds, data.LinkType, data.SourceEntityType, data.DestinationEntityType)).GetHttpResponseMessage();
     }
 
     /// <summary>
