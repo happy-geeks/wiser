@@ -18,7 +18,7 @@ namespace Api.Modules.Templates.Models.Template.WtsModels;
 public abstract class ActionModel
 {
     /// <summary>
-    /// Gets or sets the time id, which is used to determine which timer should be connected to this action.
+    /// Gets or sets the time ID, which is used to determine which timer should be connected to this action.
     /// </summary>
     [XmlElement("TimeId", DataType = "int")]
     [WtsProperty(
@@ -58,15 +58,15 @@ public abstract class ActionModel
     public int Order { get; set; }
     
     /// <summary>
-    /// The action id is a combination between the time and order ids. This value has to be unique.
+    /// The action id is a combination between the time ID and order. This value has to be unique.
     /// </summary>
     [XmlIgnore]
     [WtsProperty(
         IsVisible = true,
         AllowEdit = false,
         IsRequired = false,
-        Title = "Actie id",
-        Description = "Een combinatie tussen de tijd id en de actie.",
+        Title = "Actie ID",
+        Description = "Een combinatie van het tijd ID en de order.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox,
         IsDisabled = true
@@ -82,7 +82,7 @@ public abstract class ActionModel
         IsVisible = true,
         IsRequired = false,
         Title = "Resultaatsetnaam",
-        Description = "Indien de actie data moet retourneren als resultaat, geef hier de naam van de resultaatset op, laat dit anders leeg.",
+        Description = "Als de actie data moet retourneren als resultaat, geef hier de naam van de resultaatset op, laat dit anders leeg.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox
     )]
@@ -99,7 +99,7 @@ public abstract class ActionModel
     private string useResultSet;
     
     /// <summary>
-    /// Gets or sets the name that will be used to get the result set. An empty string represents null.
+    /// Gets or sets the name that will be used to retrieve the result set. An empty string represents null.
     /// </summary>
     [WtsProperty(
         IsVisible = true,
@@ -142,8 +142,8 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = true,
-        Title = "Hash algoritme",
-        Description = "Als Hash Data is geselecteerd, geef hier het hash algoritme op.",
+        Title = "Hashalgoritme",
+        Description = "Als Hash data is geselecteerd, geef hier het hashalgoritme op.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
@@ -156,8 +156,8 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = true,
-        Title = "Hash representatie",
-        Description = "Als Hash Data is geselecteerd, geef hier de hash representatie op.",
+        Title = "Hashrepresentatie",
+        Description = "Als Hash data is geselecteerd, geef hier de hashrepresentatie op.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
@@ -216,9 +216,9 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "Status code bron",
+        Title = "Statuscode bron",
         UseDataSource = true,
-        Description = "De bron van de status code.",
+        Description = "De bron van de statuscode.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
@@ -232,8 +232,8 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "Status code",
-        Description = "De status code. (Werkt alleen met resultaten van een http api call.)",
+        Title = "Statuscode",
+        Description = "De statuscode. (Werkt alleen met resultaten van een HTTP API call.)",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoNumericTextBox,
         DependsOnField = "OnlyWithTypes",
@@ -273,9 +273,9 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "Succes code bron",
+        Title = "Succescode bron",
         UseDataSource = true,
-        Description = "De bron van de succes code.",
+        Description = "De bron van de succescode.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox,          
         DependsOnField = "OnlyWithTypes",
@@ -289,8 +289,8 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "Succes code",
-        Description = "De succes code. (Werkt alleen met resultaten van een ImportFile of GenerateFile.)",
+        Title = "Succescode",
+        Description = "De succescode. (Werkt alleen met resultaten van een ImportFile of GenerateFile.)",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
@@ -325,7 +325,7 @@ public abstract class ActionModel
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
-        Title = "Bron Waarde",
+        Title = "Bron waarde",
         UseDataSource = true,
         Description = "De bron van de waarde.",
         ConfigurationTab = ConfigurationTab.Actions,
@@ -342,7 +342,7 @@ public abstract class ActionModel
         IsVisible = true,
         IsRequired = false,
         Title = "Waarde",
-        Description = "De verwachte Waarde.",
+        Description = "De verwachte waarde.",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",

@@ -48,7 +48,7 @@ export class WtsConfiguration {
         this.actionsInputFields = [];
         this.actionsKendoFields = [];
         
-        // Check to see if id is set
+        // Check if the ID is set
         if (id === undefined || id === null || id === 0) {
             console.error("id is not set");
             return;
@@ -57,8 +57,8 @@ export class WtsConfiguration {
         // Tell the user that the tab is loading
         this.base.toggleMainLoader(true);
         let templateSettings = null;
-        
-        // Get the data from the api
+
+        // Get the data from the API
         try {
             templateSettings = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}templates/${id}/wtsconfiguration`,
@@ -83,7 +83,7 @@ export class WtsConfiguration {
                 data: JSON.stringify(templateSettings)
             }).then(async (response) => {
                 this.base.toggleMainLoader(false); // Hide the loader
-                document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the html to the tab
+                document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the HTML to the tab
                 $("#tabStripConfiguration").kendoTabStrip().data("kendoTabStrip"); // Initialize the tabstrip
             })
         }
@@ -107,20 +107,22 @@ export class WtsConfiguration {
         for (let i = 0; i < kendoComponents.length; i++) {
             let component = $(kendoComponents[i]);
             let componentName = `${component.attr("data-kendo-component")}`;
-            //Sets the value of a component name. and makes sure the first letter is lowercase.
+
+            // Set the value of the component name and ensure the first letter is lowercase.
             componentName=this.uncapitalizeFirstLetter(componentName);
             let componentTab = component.attr("data-kendo-tab");
             let componentOptions = component.attr("data-kendo-options");
+            
             // Check if the options are set
             if (componentOptions === undefined || componentOptions === null || componentOptions === "") {
                 componentOptions = {};
             } else {
                 componentOptions = JSON.parse(componentOptions);
-                // Check if dataSource is set, if so make it a object instead of a string to assign it to the component.
+                // Check if dataSource is set, if so, convert it to an object instead of a string before assigning it to the component.
                 if (componentOptions.dataSource) {
                     componentOptions.dataSource = eval(componentOptions.dataSource);
                 }
-                // Check if a change event is set, if so make it a function.
+                // Check if a change event is set, if so, convert it to a function.
                 if (componentOptions.change) {
                     componentOptions.change = eval(componentOptions.change);
                 }
@@ -142,9 +144,9 @@ export class WtsConfiguration {
             // Check if any other field depends on this field, if so add a change event.
             let isDependedOn = document.querySelectorAll(`[data-depend-on-field="${component.attr("name")}"]`);
             if (isDependedOn.length > 0) {
-                // Add a event listener to the options.
+                // Add an event listener to the options.
                 componentOptions.change = eval("this.onDependFieldChange.bind(this)");
-                // Add an attribute to the component to indicate that it is depended on.
+                // Add an attribute to the component to indicate it is being depended on.
                 component.attr("data-is-depended-on", true);
             }
 
@@ -210,21 +212,22 @@ export class WtsConfiguration {
     initializeCodeMirror(){
         var a = async()=>{await Misc.ensureCodeMirror();}
         a();
-        //clear the array of editors.
+        
+        //Clear the array of editors.
         this.editorSql=[]
 
-        //get all components that need to be codemirror instances.
+        // Get all components that need to be CodeMirror instances.
         let CodeMirrorComponents = document.querySelectorAll("[data-wts-editor-type]");
         
         for (let i = 0; i < CodeMirrorComponents.length; i++) {
-            //create a code mirror instance.
+            // Create a CodeMirror instance.
             var editortmp = CodeMirror.fromTextArea(CodeMirrorComponents[i], {
                 mode: `${$(CodeMirrorComponents[i]).attr("data-wts-editor-type")}`,
                 lineNumbers: true
             });
-            //refresh the code mirror. needed to avoid ui errors.
+            // Refresh the CodeMirror instance to avoid UI errors.
             editortmp.refresh();
-            //add the code mirror to a array for later access while maintaining a link to the original component.
+            // Add the CodeMirror instance to an array for later access while maintaining a link to the original component.
             this.editorSql.push(
                 {
                     editor: editortmp,
@@ -327,7 +330,7 @@ export class WtsConfiguration {
 
         // Get the datasource of the grid.
         let dataSource = this.template[gridName];
-        // The index of the selected item in the datasource.
+        // The index of the selected item in the data source.
         let indexOfSelectedItem = null;
 
         // If there is a selected item, save the index of the selected item.
@@ -381,8 +384,8 @@ export class WtsConfiguration {
             let idField = grid.element[0].getAttribute("id-property");
             let idFieldElement = $(`[name="${idField}"]`);
             let idFieldValue = parseInt(this.getValueOfElement(idFieldElement[0]));
-            
-            //check if an action if is used
+
+            // Check if an action ID is used
             if('timeId' in selectedItem && 'order' in selectedItem){
                 let newActionId= `${selectedItem.timeId}-${selectedItem.order}`;
                 idFieldValue = newActionId;
@@ -464,12 +467,12 @@ export class WtsConfiguration {
         // Get the index of the selected item.
         let indexOfSelectedItem = grid.dataSource.indexOf(selectedItem);
 
-        // Remove the item from the datasource.
+        // Remove the item from the data source.
         if (indexOfSelectedItem !== -1) {
             dataSource.splice(indexOfSelectedItem, 1);
         }
         else {
-            console.error("Could not find the selected item in the datasource.");
+            console.error("Could not find the selected item in the data source.");
         }
 
         // Refresh the grid.
@@ -502,7 +505,7 @@ export class WtsConfiguration {
             // Clear the value of the input field.
             this.setValueOfElement(inputField, "");
         });
-        //Clears the value of any codemirror instance.
+        // Clear the value of any CodeMirror instance.
         this.editorSql.forEach((editor)=>{
             editor.editor.getDoc().setValue("");
         })
@@ -535,7 +538,7 @@ export class WtsConfiguration {
         // Fire any change events that are set.
         this.fireAllChangeEvents();
         
-        //Updates the values of any code mirror instances.
+        //Update the values of any CodeMirror instances.
         this.editorSql.forEach((editor)=>{
             editor.editor.getDoc().setValue(editor.original.value);
         })
@@ -575,7 +578,7 @@ export class WtsConfiguration {
             // Split the values on a comma.
             dependantValues = dependantValues.split(",");
 
-            // Check if the selected item is in the dependant values.
+            // Check if the selected item is in the dependent values.
             if (dependantValues.includes(selectedItem)) {
                 // Show the field.
                 this.showField(dependantField.getAttribute("data-kendo-component"), $(dependantField));
@@ -647,7 +650,7 @@ export class WtsConfiguration {
     }
 
     addFieldToData(data, name, value, trace) {
-        const traceParts = trace.split('/').filter(part => part !== ''); // Split the trace on / and remove empty parts.
+        const traceParts = trace.split('/').filter(part => part !== ''); // Split the trace on '/' and remove empty parts.
         let currentObj = data;
 
         traceParts.forEach(part => {
@@ -681,7 +684,7 @@ export class WtsConfiguration {
 
         this.correctValues(this.template.runSchemes, this.timersInputFields);
 
-        // Manually add runschemes to the data.
+        // Manually add RunSchemes to the data.
         data["RunSchemes"] = this.template.runSchemes;
         data["Queries"]= this.template.queries
 
