@@ -8,13 +8,13 @@ using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
 /// <summary>
-/// A model for parsed xml of a template.
+/// A model for parsed XML of a template.
 /// </summary>
 [XmlRoot("Configuration", Namespace = "")]
 public class TemplateWtsConfigurationModel
 {
     /// <summary>
-    /// Gets or sets the service name of the editor value of the template.
+    /// Gets or sets the service name for the editor value of the template.
     /// </summary>
     [XmlElement("ServiceName"), WtsProperty(
         IsVisible = true,
@@ -27,31 +27,31 @@ public class TemplateWtsConfigurationModel
     public string ServiceName { get; set; }
 
     /// <summary>
-    /// Gets or sets the connection string of the editor value of the template.
+    /// Gets or sets the connection string for the editor value of the template.
     /// </summary>
     [XmlElement("ConnectionString"), WtsProperty(
          IsVisible = true,
          IsRequired = true,
          Title = "Connectiestring",
-         Description = "De connection string van de database",
+         Description = "De connectiestring van de database",
          ConfigurationTab = ConfigurationTab.Service,
          DataComponent = DataComponents.KendoTextBox
     )]
     public string ConnectionString { get; set; }
-
-    /// <summary>
-    /// Gets or sets the log settings for the configuration (Global if not overwritten).
-    /// </summary>
+    
     [WtsProperty(
          IsVisible = true,
          IsRequired = false,
-         Title = "Notificatie emails",
+         Title = "Notificatie e-mails",
          Description = "Stuurt een e-mail als de service faalt. Meerdere e-mailadressen kunnen worden gescheiden met een puntkomma.",
          ConfigurationTab = ConfigurationTab.Service,
          DataComponent = DataComponents.KendoTextBox
      )]
     public string ServiceFailedNotificationEmails { get; set; }
     
+    /// <summary>
+    /// Gets or sets the log settings for the configuration (Global if not overridden).
+    /// </summary>
     [WtsProperty(
         IsVisible = false,
         ConfigurationTab = ConfigurationTab.Service
@@ -59,7 +59,7 @@ public class TemplateWtsConfigurationModel
     public LogSettings LogSettings { get; set; }
 
     /// <summary>
-    /// Gets or sets the run schemes settings for the configuration.
+    /// Gets or sets the run scheme settings for the configuration.
     /// </summary>
     [WtsProperty(
         IsVisible = true,
@@ -124,7 +124,7 @@ public class TemplateWtsConfigurationModel
     public List<WtsQueryModel> Queries { get; set; }
 
     /// <summary>
-    /// Gets or sets the http api's in the configuration.
+    /// Gets or sets the HTTP APIs in the configuration.
     /// </summary>
     /*
      [XmlElement("HttpApi")]
@@ -139,7 +139,8 @@ public class TemplateWtsConfigurationModel
     public List<XElement> ChildItemsExtra { get; set; }
     
     /// <summary>
-    /// Gets or sets the all items the don't have a dedicated object/class in the current version system, intended to avoid dataloss. becarefull if you choose to edit these manualy
+    /// Gets or sets all items that don't have a dedicated object/class in the current version of the system.
+    /// Intended to avoid data loss. Be careful if you choose to edit these manually.
     /// </summary>
     [XmlIgnore, WtsProperty(
         IsVisible = true,

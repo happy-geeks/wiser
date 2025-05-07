@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
+
 [XmlType("Query")]
 public class WtsQueryModel : ActionModel
 {
@@ -37,7 +38,7 @@ public class WtsQueryModel : ActionModel
     }
 
     /// <summary>
-    /// Converts the query to a cdata section for loading/storing in the xml file.
+    /// Converts the query to a CDATA section for loading/storing in the XML file.
     /// </summary>
     [XmlElement("Query")]
     [JsonIgnore]
@@ -48,7 +49,7 @@ public class WtsQueryModel : ActionModel
     private string timeout;
     
     /// <summary>
-    /// Gets or sets the timeout in seconds. if the interger is 0 it will be null instead.
+    /// Gets or sets the timeout in seconds. If the integer is 0 it will be null instead.
     /// </summary>
     [WtsProperty(
         IsVisible = true,
@@ -68,7 +69,7 @@ public class WtsQueryModel : ActionModel
     public string Timeout {
         get
         {
-            if( timeout=="0" ) return null;
+            if(timeout == "0") return null;
             return timeout;
         }
         set => timeout = value;
@@ -77,7 +78,7 @@ public class WtsQueryModel : ActionModel
     private CharacterEncodingModel characterEncoding;
     
     /// <summary>
-    /// Gets or sets the character encoding settings. If the data is incomplete it will be null instead.
+    /// Gets or sets the character encoding settings. If the data is incomplete it will return null instead.
     /// </summary>
     public CharacterEncodingModel CharacterEncoding
     {
@@ -105,7 +106,7 @@ public class WtsQueryModel : ActionModel
         IsVisible = true,
         IsRequired = false,
         Title = "Gebruik transacties",
-        Description = "Selecteer als transacties gebruikt moeten worden in deze query?",
+        Description = "Selecteer of transacties gebruikt moeten worden in deze query?",
         ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoCheckBox
     )]
@@ -114,7 +115,7 @@ public class WtsQueryModel : ActionModel
     {
         get
         {
-            if (useTransaction == null||useTransaction.Value==false)
+            if (useTransaction == null || useTransaction.Value == false)
             {
                 return null;
             }
@@ -124,7 +125,7 @@ public class WtsQueryModel : ActionModel
     }
     
     /// <summary>
-    /// Gets or sets if tranactions will be used.
+    /// Gets or sets whether tranactions will be used.
     /// </summary>
     [XmlElement("UseTransaction")]
     [CanBeNull]
@@ -132,7 +133,7 @@ public class WtsQueryModel : ActionModel
     {
         get
         {
-            if (useTransaction == null||useTransaction.Value==false)
+            if (useTransaction == null || useTransaction.Value==false)
             {
                 return null;
             }

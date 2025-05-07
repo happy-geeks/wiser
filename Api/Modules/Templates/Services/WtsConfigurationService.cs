@@ -14,7 +14,7 @@ public class WtsConfigurationService : IWtsConfigurationService, IScopedService
     /// <inheritdoc />
     public TemplateWtsConfigurationModel ParseXmlToObject(string xml)
     {
-        //Add a root element if en empty xml is recieved. done to avoid errors on new files.
+        //Add a root element if an empty XML is recieved. Done to avoid errors on new files.
         if (string.IsNullOrWhiteSpace(xml))
         {
             xml = "<Configuration></Configuration>";

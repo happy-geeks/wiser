@@ -29,7 +29,7 @@
 
     <div id="actionsTab">
         <div class="formview compact">
-            @* This is currently commented out since the actions tab is not working yet *@
+            @* This is currently commented out since the actions tab is not working yet. *@
             @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}
         </div>
     </div>
@@ -284,7 +284,7 @@
             if (property.Name == "ChildItemsExtra") continue;
             var e = property.GetType();
             var attributes = property.GetCustomAttributes(typeof(WtsPropertyAttribute), false).Cast<WtsPropertyAttribute>().FirstOrDefault();
-            // Only render properties that have attributes and where isVisible is true
+            // Only render properties that have attributes and where IsVisible is true
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
             if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
             {
@@ -295,7 +295,7 @@
                 }
                 else
                 {
-                    // Check if we're sending a enum, if so also send the selected value
+                    // Check if we're sending an enum, if so also send the selected value
                     if (property.PropertyType.IsEnum)
                     {
                         if (IsFilled)
@@ -320,7 +320,7 @@
                 }
             }
 
-            // Check if property has child properties
+            // Check if the property has child properties
             if (!property.PropertyType.IsClass || property.PropertyType == typeof(string)) continue;
 
             // Only render child properties if the tab is the same as what is defined in the parameter
