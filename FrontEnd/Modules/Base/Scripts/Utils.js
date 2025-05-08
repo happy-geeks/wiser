@@ -1076,7 +1076,7 @@ export class Wiser {
             const parentIdUrlPart = parentId ? `&parentId=${encodeURIComponent(parentId)}` : "";
             const alsoCreateInMainBranchPart = alsoCreateInMainBranch ? "&alsoCreateInMainBranch=true" : ""; // Only add parameter if it has been set.
             const createItemResult = await Wiser.api({
-                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true${alsoCreateInMainBranchPart}&parentEntityType=${parentEntityType}`,
+                url: `${moduleSettings.wiserApiRoot}items?linkType=${linkTypeNumber || 0}${parentIdUrlPart}&isNewItem=true${alsoCreateInMainBranchPart}&parentEntityType=${parentEntityType ?? ""}`,
                 method: "POST",
                 contentType: "application/json",
                 dataType: "JSON",

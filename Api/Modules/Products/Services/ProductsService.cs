@@ -35,7 +35,7 @@ public class ProductsService(
     IStyledOutputService styledOutputService,
     IDatabaseHelpersService databaseHelpersService,
     ILogger<ProductsService> logger,
-    HttpContextAccessor httpContextAccessor)
+    IHttpContextAccessor httpContextAccessor)
     : IProductsService, IScopedService
 {
     private const string ProductApiPropertyTabName = "Product Api";
