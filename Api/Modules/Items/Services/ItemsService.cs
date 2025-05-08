@@ -656,7 +656,7 @@ public class ItemsService(
     }
 
         /// <inheritdoc />
-        public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, string encryptedParentId = null, int linkType = 1, bool alsoCreateInMainBranch = false, string parentEntityType = null)
+        public async Task<ServiceResult<CreateItemResultModel>> CreateAsync(WiserItemModel item, ClaimsIdentity identity, ulong? parentId = null, int linkType = 1, bool alsoCreateInMainBranch = false, string parentEntityType = null)
         {
             await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
             var tenant = await wiserTenantsService.GetSingleAsync(identity);
