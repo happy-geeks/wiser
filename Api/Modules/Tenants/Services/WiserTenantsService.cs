@@ -307,6 +307,7 @@ public class WiserTenantsService : IWiserTenantsService, IScopedService
                 var insertInitialDataConfiguratorQuery = !isConfigurator ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataConfigurator.sql");
                 var insertInitialDataMultiLanguageQuery = !isMultiLanguage ? "" : await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.InsertInitialDataMultiLanguage.sql");
                 var addBranchSettingsModuleQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.BranchSettingsModule.sql");
+                var addProductsApiSettingsQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.ProductsApiSettings.sql");
 
                 if (tenant.WiserSettings != null)
                 {
@@ -349,6 +350,8 @@ public class WiserTenantsService : IWiserTenantsService, IScopedService
                     command.CommandText = insertInitialDataQuery;
                     await command.ExecuteNonQueryAsync();
                     command.CommandText = addBranchSettingsModuleQuery;
+                    await command.ExecuteNonQueryAsync();
+                    command.CommandText = addProductsApiSettingsQuery;
                     await command.ExecuteNonQueryAsync();
 
                     if (isMultiLanguage)

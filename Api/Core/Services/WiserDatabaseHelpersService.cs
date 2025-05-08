@@ -44,6 +44,7 @@ public class WiserDatabaseHelpersService(
     private const string AddBranchSettingsModuleName = "wiser_add_branch_settings_module";
     private const string UpdateFileSecuritySettingsName = "wiser_update_file_security_settings";
     private const string AddPaymentMethodFilterProperties = "wiser_add_paymentmethod_filter_properties";
+    private const string AddProductsApiSettingsName = "wiser_add_products_api_settings";
 
     /// <summary>
     /// The list of tables that need to be updated first, because others depend on them.
@@ -93,6 +94,7 @@ public class WiserDatabaseHelpersService(
         RemoveVirtualColumnsName,
         AddBranchSettingsModuleName,
         AddPaymentMethodFilterProperties,
+        AddProductsApiSettingsName
     ];
 
     /// <summary>
@@ -111,7 +113,8 @@ public class WiserDatabaseHelpersService(
         new() {Name = TriggersName, LastUpdate = new DateTime(2025, 3, 27)},
         new() {Name = RemoveVirtualColumnsName, LastUpdate = new DateTime(2024, 9, 12)},
         new() {Name = AddBranchSettingsModuleName, LastUpdate = new DateTime(2024, 11, 18)},
-        new() {Name = UpdateFileSecuritySettingsName, LastUpdate = new DateTime(2025, 1, 12)}
+        new() {Name = UpdateFileSecuritySettingsName, LastUpdate = new DateTime(2025, 1, 12)},
+        new() {Name = AddProductsApiSettingsName, LastUpdate = new DateTime(2025, 4, 15)},
     ];
 
     /// <inheritdoc />
@@ -174,6 +177,9 @@ public class WiserDatabaseHelpersService(
                     break;
                 case AddPaymentMethodFilterProperties:
                     await AddPaymentMethodFilterPropertiesAsync(migrationsList);
+                    break;
+                case AddProductsApiSettingsName:
+                    await AddProductsApiSettingsAsync(migrationsList);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.");
@@ -267,6 +273,7 @@ public class WiserDatabaseHelpersService(
                     RemoveVirtualColumnsName => "Remove virtual columns on all wiser item detail tables",
                     AddBranchSettingsModuleName => "Add the branch settings module",
                     UpdateFileSecuritySettingsName => "Update file security settings",
+                    AddProductsApiSettingsName => "Add the settings for the products api",
                     _ when FirstPriorityTables.Contains(migration) || SecondPriorityTables.Contains(migration) => $"Table: {migrationDefinition.Name}",
                     _ => throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.")
                 },
@@ -276,6 +283,7 @@ public class WiserDatabaseHelpersService(
                     RemoveVirtualColumnsName => "Remove virtual columns on all wiser item detail tables. These columns were an experiment that did not work out (caused too many problems), so we want to delete them again.",
                     AddBranchSettingsModuleName => "Add the branch settings module. This is a new module that all tenants should have. This module is for configuring the default settings of branches and automatic merges of those branches.",
                     UpdateFileSecuritySettingsName => "Update file security settings. This migration will update the security settings for wiser item files. They used to be disabled by default, this will enable them by default. This is not fully backwards compatible, so this needs to be coordinated and tested properly before executing this migration.",
+                    AddProductsApiSettingsName => "Add the settings for the products api. This is a new module that all tenants should have. This module is for configuring the default settings of the products api.",
                     _ when FirstPriorityTables.Contains(migration) || SecondPriorityTables.Contains(migration) => $"Update the table definition of '{migrationDefinition.Name}' to add any new or updated columns or indexes.",
                     _ => throw new ArgumentOutOfRangeException(nameof(migration), migration, "Unknown migration name.")
                 },
@@ -483,6 +491,31 @@ public class WiserDatabaseHelpersService(
                                                      ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
                                                      """);
     }
+    
+    /// <summary>
+    /// Add the settings for the products api.
+    /// </summary>
+    /// <param name="migrationsList">The list of all migrations that have been done on the database and the dates and times when they have been done.</param>
+    private async Task AddProductsApiSettingsAsync(Dictionary<string, DateTime> migrationsList)
+    {
+        if (migrationsList.TryGetValue(AddProductsApiSettingsName, out var value) && value >= CustomMigrationDefinitions.Single(definition => definition.Name == AddProductsApiSettingsName).LastUpdate)
+        {
+            return;
+        }
+
+        var addProductsApiSettingsQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.ProductsApiSettings.sql");
+        await clientDatabaseConnection.ExecuteAsync(addProductsApiSettingsQuery);
+        
+        // Update wiser_table_changes.
+        clientDatabaseConnection.AddParameter("tableName", AddProductsApiSettingsName);
+        clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
+        await clientDatabaseConnection.ExecuteAsync($"""
+                                                     INSERT INTO {WiserTableNames.WiserTableChanges} (name, last_update) 
+                                                     VALUES (?tableName, ?lastUpdate) 
+                                                     ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
+                                                     """);
+    }
+
     
     /// <summary>
     /// Add properties used for filters
