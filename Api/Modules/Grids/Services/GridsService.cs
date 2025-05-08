@@ -920,11 +920,12 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                                                                 p.depends_on_action,
                                                                                 p.link_type > 0 AS isLinkProperty,
                                                                                 p.regex_validation,
-                                                                                p.mandatory
+                                                                                p.mandatory,
+                                                                                p.language_code
                                                                             FROM {WiserTableNames.WiserEntityProperty} p 
                                                                             WHERE (p.entity_name = ?entityType OR (p.link_type > 0 AND p.link_type = ?linkTypeNumber))
                                                                             AND p.visible_in_overview = 1
-                                                                            GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name)
+                                                                            GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name), p.language_code
                                                                             ORDER BY p.ordering
                                     """;
                 clientDatabaseConnection.ClearParameters();
@@ -937,7 +938,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 {
                     foreach (DataRow dataRow in columnsDataTable.Rows)
                     {
-                        var fieldName = dataRow.Field<string>("field").ToLowerInvariant().MakeJsonPropertyName();
+                        var fieldName = $"{dataRow.Field<string>("field")}_{dataRow.Field<string>("language_code")}".ToLowerInvariant().MakeJsonPropertyName();
                         if (reservedWordsArray.Contains(fieldName))
                         {
                             throw new Exception( $"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
@@ -1336,7 +1337,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                                                                                 END AS publishedEnvironment,
                                                                                                 i.title,
                                                                                                 i.entity_type AS entityType,
-                                            	                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
+                                                                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
                                                                                                 il.type AS linkTypeNumber,
                                                                                                 il.id AS linkId,
                                                                                                 i.added_on AS addedOn,
@@ -1357,7 +1358,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                             	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
                                             
                                                                                             LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
-                                                                                            LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
+                                                                                            LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
                                             
                                                                                             WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
                                                                                             {{versionWhereClause}}
@@ -1381,7 +1382,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                                                                                 END AS publishedEnvironment,
                                                                                                 i.title,
                                                                                                 i.entity_type AS entityType,
-                                            	                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
+                                                                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
                                                                                                 il.type AS linkTypeNumber,
                                                                                                 il.id AS linkId,
                                                                                                 i.added_on AS addedOn,
@@ -1402,7 +1403,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                             	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
                                             
                                                                                             JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.link_type = il.type AND p.visible_in_overview = 1
-                                                                                            JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLinkDetail}} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
+                                                                                            JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLinkDetail}} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
                                             
                                                                                             WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
                                                                                             {{versionWhereClause}}
@@ -1588,15 +1589,11 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                             continue;
                         }
 
-                        var fieldsList = fields.Split(["~~~"], StringSplitOptions.RemoveEmptyEntries).Select(f =>
-                        {
-                            var value = f.Split(['='], 2);
-                            return new Tuple<string, string>(value.Length > 0 ? value[0] : "", value.Length > 1 ? value[1] : "");
-                        });
+                        var fieldsList = JsonConvert.DeserializeObject<List<WiserItemDetailModel>>(fields);
 
-                        foreach (var (propertyName, propertyValue) in fieldsList)
+                        foreach (var detail in fieldsList)
                         {
-                            var name = propertyName?.ToLowerInvariant().MakeJsonPropertyName();
+                            var name = $"{detail.Key}_{detail.LanguageCode}".ToLowerInvariant().MakeJsonPropertyName();
                             if (String.IsNullOrWhiteSpace(name) || rowData.ContainsKey(name))
                             {
                                 continue;
@@ -1605,32 +1602,32 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                             var field = results.SchemaModel.Fields.FirstOrDefault(f => f.Key == name).Value;
                             if (field == null)
                             {
-                                rowData.Add(name, propertyValue);
+                                rowData.Add(name, detail.Value);
                             }
                             else
                             {
                                 switch (field.Type)
                                 {
                                     case "boolean":
-                                        rowData.Add(name, propertyValue.Equals("true", StringComparison.OrdinalIgnoreCase) || propertyValue.Equals("1", StringComparison.Ordinal));
+                                        rowData.Add(name, detail.Value.ToString().Equals("true", StringComparison.OrdinalIgnoreCase) || detail.Value.ToString().Equals("1", StringComparison.Ordinal));
                                         break;
                                     case "number":
-                                        if (UInt64.TryParse(propertyValue, out var longValue))
+                                        if (UInt64.TryParse(detail.Value.ToString(), out var longValue))
                                         {
                                             rowData.Add(name, longValue);
                                         }
-                                        else if (Decimal.TryParse(propertyValue.Replace(",", "."), NumberStyles.Any, new CultureInfo("en-US"), out var decimalValue))
+                                        else if (Decimal.TryParse(detail.Value.ToString().Replace(",", "."), NumberStyles.Any, new CultureInfo("en-US"), out var decimalValue))
                                         {
                                             rowData.Add(name, decimalValue);
                                         }
                                         else
                                         {
-                                            rowData.Add(name, propertyValue);
+                                            rowData.Add(name, detail.Value.ToString());
                                         }
 
                                         break;
                                     default:
-                                        rowData.Add(name, HandleFieldValue(name, propertyValue));
+                                        rowData.Add(name, HandleFieldValue(name, detail.Value.ToString()));
                                         break;
                                 }
                             }
