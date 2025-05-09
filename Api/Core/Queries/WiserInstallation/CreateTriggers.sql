@@ -810,8 +810,8 @@ END;
 DROP TRIGGER IF EXISTS `LinkDetailInsert`;
 CREATE TRIGGER `LinkDetailInsert` AFTER INSERT ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
-        VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,'',CONCAT_WS('',NEW.`value`,NEW.`long_value`), NEW.language_code, NEW.groupname);
+        INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+        VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', NEW.id, NEW.itemlink_id, IFNULL(@_username, USER()), NEW.`key`, '', CONCAT_WS('', NEW.`value`, NEW.`long_value`), NEW.language_code, NEW.groupname);
     END IF;
 END;
 
@@ -820,12 +820,34 @@ CREATE TRIGGER `LinkDetailUpdate` AFTER UPDATE ON `wiser_itemlinkdetail` FOR EAC
     DECLARE oldValue MEDIUMTEXT;
     DECLARE newValue MEDIUMTEXT;
 
-    IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        SET oldValue = CONCAT_WS('',OLD.`value`,OLD.`long_value`);
-        SET newValue = CONCAT_WS('',NEW.`value`,NEW.`long_value`);
-        IF newValue <> oldValue THEN
-            INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
-            VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',NEW.itemlink_id,IFNULL(@_username, USER()),NEW.`key`,oldValue,newValue, NEW.language_code, NEW.groupname);
+    SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
+    SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
+
+    IF OLD.`key` <> NEW.`key` THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'key', OLD.`key`, NEW.`key`);
+        END IF;
+    END IF;
+
+    IF OLD.`language_code` <> NEW.`language_code` THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
+        END IF;
+    END IF;
+
+    IF OLD.`groupname` <> NEW.`groupname` THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
+        END IF;
+    END IF;
+
+    IF oldvalue <> newValue THEN
+        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
+            INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', NEW.`id`, NEW.`itemlink_id`, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.`language_code`, NEW.`groupname`);
         END IF;
     END IF;
 END;
@@ -833,8 +855,8 @@ END;
 DROP TRIGGER IF EXISTS `LinkDetailDelete`;
 CREATE TRIGGER `LinkDetailDelete` AFTER DELETE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue, language_code, groupname)
-        VALUES ('UPDATE_ITEMLINKDETAIL','wiser_itemlinkdetail',OLD.itemlink_id,IFNULL(@_username, USER()),OLD.`key`,CONCAT_WS('',OLD.`value`,OLD.`long_value`),'', OLD.language_code, OLD.groupname);
+        INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+        VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', OLD.id, OLD.itemlink_id, IFNULL(@_username, USER()), OLD.`key`, CONCAT_WS('', OLD.`value`, OLD.`long_value`), '', OLD.language_code, OLD.groupname);
     END IF;
 END;
 
