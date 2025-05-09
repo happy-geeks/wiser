@@ -2717,9 +2717,9 @@ public class ItemsService(
             {
                 query = $"""
                          UPDATE {WiserTableNames.WiserItem}
-                                                     SET ordering = ordering - 1
-                                                     WHERE parent_item_id = ?sourceParentId
-                                                     AND ordering > ?oldOrderNumber
+                                             SET ordering = ordering - 1
+                                             WHERE parent_item_id = ?sourceParentId
+                                             AND ordering > ?oldOrderNumber
                          """;
             }
 
