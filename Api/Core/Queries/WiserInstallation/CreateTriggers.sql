@@ -1549,7 +1549,7 @@ CREATE TRIGGER `LinkSettingInsert` AFTER INSERT ON `wiser_link` FOR EACH ROW BEG
 
     IF IFNULL(NEW.`name`, '') <> '' THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
-        VALUES ('INSERT_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'name', NULL, NEW.`name`);
+        VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'name', NULL, NEW.`name`);
     END IF;
 
     IF IFNULL(NEW.`show_in_tree_view`, '') <> '' THEN
