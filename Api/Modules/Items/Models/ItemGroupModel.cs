@@ -20,6 +20,11 @@ namespace Api.Modules.Items.Models
         public int Width { get; set; } = 100;
 
         /// <summary>
+        /// Gets or sets the optional description of the property group.
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
         /// Gets or sets the minimum width of the group in pixels.
         /// </summary>
         public int MinimumWidth { get; set; } = 0;

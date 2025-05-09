@@ -2478,7 +2478,7 @@ export class EntityTab {
 
         console.log(`sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.id} - ${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.id} - ${destinationDataItem.ordering}) - ${destinationDataItem.type} -> ${event.statusClass}`);
 
-        // properties can be only be reordered within the same group and tab, so before or after another property 
+        // properties can be only be reordered within the same group and tab, so before or after another property
         if (sourceDataItem.type === "Property") {
             if (destinationDataItem.type === "Property" && sourceDataItem.tabName === destinationDataItem.tabName && sourceDataItem.groupName === destinationDataItem.groupName) {
                 return;
@@ -2519,9 +2519,9 @@ export class EntityTab {
             const oldIndex = sourceDataItem.ordering;
             // we use the new entity structure data to redraw the tree, so stop the tree from moving stuff around by itself
             event.preventDefault();
-            
+
             switch (sourceDataItem.type) {
-                case "Property": 
+                case "Property":
                     let newItemIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : 0) + (oldIndex > destinationDataItem.ordering ? 0 : -1);
                     await Wiser.api({
                         url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
@@ -2562,14 +2562,14 @@ export class EntityTab {
                         })
                     });
                     break;
-            }            
+            }
 
             // update the entity structure
             this.entityStructure = await Wiser.api({
                 url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/grouped-by-tab`,
                 method: "GET"
             });
-            
+
             console.log(`entityStructure after move: ${JSON.stringify(this.entityStructure)}`);
             // refresh treeview
             this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
@@ -2595,7 +2595,7 @@ export class EntityTab {
             if (sourceDataItem.type === "Property") {
                 this.propertiesTreeView.expand(this.propertiesTreeView.findByText(sourceDataItem.groupName));
             }
-            
+
         } catch (exception) {
             console.error(exception);
             kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit veld. De fout was:<br>${exception.responseText || exception.statusText}`);
@@ -2943,14 +2943,17 @@ export class EntityTab {
         entityProperties.moduleId = this.selectedEntityType.moduleId;
         entityProperties.entityType = this.entitiesCombobox.dataItem().name;
         entityProperties.linkType = 0;
-        entityProperties.tabName = this.selectedTabOrProperty.tabName;
+        entityProperties.tabName = groupItem.tabName;
         if (entityProperties.tabName === "Gegevens") {
             entityProperties.tabName = "";
         }
+        entityProperties.type = 'Group';
         entityProperties.inputType = 'Group';
         entityProperties.displayName = $("#groupName").val();
-        // the groupName should match the displayName, but the API will do that after it compares the displayName and groupName to determine the name has changed
-        entityProperties.groupName = entityProperties.groupName;
+        // the groupName should match the new displayName, but the API will do that after it compares the displayName and groupName to check if the name has changed
+        entityProperties.groupName = groupItem.displayName;
+        entityProperties.propertyName = entityProperties.tabName.concat('_', groupItem.displayName).toLowerCase();
+        entityProperties.explanation = $("#groupDescription").val();
         entityProperties.width = this.groupWidth.value();
         entityProperties.options = {};
         entityProperties.options.minWidth = this.minWidth.value();
@@ -4268,6 +4271,7 @@ this.dataSourceDataSelector.value(dataSelectorId);
     // set all group properties values to the group fields accordingly
     setEntityGroupProperties(resultSet) {
         $("#groupName").val(resultSet.displayName || "");
+        $("#groupDescription").val(resultSet.explanation || "");
         const groupOptions = JSON.parse(resultSet.options);
         this.groupWidth.value(resultSet.width);
         this.minWidth.value(groupOptions.minWidth);

@@ -386,7 +386,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
         // a new group name has been entered for this property, create it first
-        if (entityProperty.GroupID == 0)
+        if (entityProperty.Type == EntityPropertyModelTypes.Property && entityProperty.GroupID == 0)
         {
             var newGroup = new EntityPropertyModel()
             {
@@ -394,6 +394,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                 EntityType = entityProperty.EntityType,
                 TabName = entityProperty.TabName,
                 GroupName = entityProperty.GroupName,
+                Explanation = entityProperty.Explanation,
                 InputType = EntityPropertyInputTypes.Group,
                 DisplayName = entityProperty.GroupName,
                 PropertyName = $"{entityProperty.TabName.ToLower()}_{entityProperty.GroupName.ToLower()}",
@@ -406,7 +407,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             // now we have the new group, use that group id
             entityProperty.GroupID = newGroup.Id;
         }
-        
+
         // if we are changing the name on a group entity, we need to update the group_name column on all properties in this group as well
         // in the future we might be able to get rid of the group_name column because we added the group_id
         bool updateGroupNameOfProperties = false;
@@ -416,7 +417,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             entityProperty.GroupName = entityProperty.DisplayName;
             entityProperty.PropertyName = $"{entityProperty.TabName.ToLower()}_{entityProperty.GroupName.ToLower()}";
         }
-        
+
         // do the update on the group or property
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
@@ -966,13 +967,13 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         clientDatabaseConnection.AddParameter("entityType", data.EntityType);
         clientDatabaseConnection.AddParameter("linkType", data.LinkType);
         var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
-        
+
         var query = $$"""
                       UPDATE {{WiserTableNames.WiserEntityProperty}} SET ordering = ?newIndex WHERE id = ?id;
                       """;
 
         await clientDatabaseConnection.ExecuteAsync(query);
-        
+
         // and call fix ordering again to give all properties correct ordering as well
         return FixOrderingAsync(identity, data.EntityType, data.LinkType).Result;
     }

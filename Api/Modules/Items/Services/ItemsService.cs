@@ -1304,9 +1304,10 @@ public class ItemsService(
             if (group == null)
             {
                 group = new ItemGroupModel { Name = groupName };
-                var groupOptions = dataRow.Field<string>("group_options") ?? "";
+                var groupOptions = dataRow.Field<string>("options") ?? "";
                 var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
-                group.Width = Convert.ToInt32(dataRow.Field<short?>("group_width") ?? group.Width);
+                group.Width = Convert.ToInt32(dataRow.Field<short?>("width") ?? group.Width);
+                group.Description = dataRow.Field<string>("explanation") ?? "";
                 group.MinimumWidth = goObject.ContainsKey("minWidth") ? goObject.Value<int>("minWidth") : group.MinimumWidth;
                 group.Orientation = goObject.ContainsKey("orientation") ? goObject.Value<string>("orientation") : group.Orientation;
                 group.ShowName = goObject.ContainsKey("showName") ? goObject.Value<bool>("showName") : group.ShowName && !String.IsNullOrEmpty(groupName);
@@ -1838,6 +1839,10 @@ public class ItemsService(
                     else
                     {
                         tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\" {groupStyle}><h3>{group.Name.HtmlEncode()}</h3>");
+                        if (!String.IsNullOrEmpty(group.Description))
+                        {
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"form-hint\" style=\"padding-left: 8px;padding-bottom: 8px;\">{group.Description.HtmlEncode()}</div>");
+                        }
                     }
 
                     tab.HtmlTemplateBuilder.Append(group.HtmlTemplateBuilder);
