@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <PackageId>HappyHorizon.Wiser.Api</PackageId>
-    <Version>3.6.2504.1</Version>
+    <Version>3.6.2505.1</Version>
     <Authors>Happy Horizon B.V.</Authors>
     <Company>Happy Horizon B.V.</Company>
     <Product>Wiser API</Product>
 	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>3.6.2504.1</AssemblyVersion>
-    <FileVersion>3.6.2504.1</FileVersion>
+    <AssemblyVersion>3.6.2505.1</AssemblyVersion>
+    <FileVersion>3.6.2505.1</FileVersion>
 	<LangVersion>default</LangVersion>
 	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
