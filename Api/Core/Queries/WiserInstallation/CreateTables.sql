@@ -273,8 +273,8 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile`  (
 -- Table structure for wiser_itemfile_archive
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0,
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `content` longblob NULL,
   `content_url` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
@@ -284,7 +284,7 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
   `added_by` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `property_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
-  `itemlink_id` bigint NOT NULL DEFAULT 0,
+  `itemlink_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `protected` tinyint NOT NULL DEFAULT 1,
   `ordering` int NOT NULL DEFAULT 0,
   `extra_data` mediumtext,
@@ -298,9 +298,9 @@ CREATE TABLE IF NOT EXISTS `wiser_itemfile_archive`  (
 -- ----------------------------
 -- NOTE: When changing columns, make sure to also change the triggers for this table!
 CREATE TABLE IF NOT EXISTS `wiser_itemlink`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0,
-  `destination_item_id` bigint NOT NULL DEFAULT 0,
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
+  `destination_item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `ordering` mediumint NOT NULL DEFAULT 1,
   `type` mediumint NOT NULL DEFAULT 1,
   `added_on` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
@@ -316,9 +316,9 @@ CREATE TABLE IF NOT EXISTS `wiser_itemlink`  (
 -- Table structure for wiser_itemlink_archive
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_itemlink_archive`  (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0,
-  `destination_item_id` bigint NOT NULL DEFAULT 0,
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
+  `destination_item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `ordering` mediumint NOT NULL DEFAULT 1,
   `type` mediumint NOT NULL DEFAULT 1,
   `added_on` timestamp(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
@@ -410,7 +410,7 @@ CREATE TABLE IF NOT EXISTS `wiser_module`  (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_parent_updates`  (
     `id` int NOT NULL AUTO_INCREMENT,
-    `target_id` bigint NULL DEFAULT NULL,
+    `target_id` bigint UNSIGNED NULL DEFAULT NULL,
     `changed_on` datetime NULL DEFAULT NULL,
     `changed_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
     `target_table` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
@@ -483,7 +483,7 @@ CREATE TABLE IF NOT EXISTS `wiser_user_auth_token`  (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `selector` varchar(32) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   `hashed_validator` varchar(150) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
-  `user_id` bigint(20) NULL DEFAULT NULL,
+  `user_id` bigint UNSIGNED NULL DEFAULT NULL,
   `expires` datetime NULL DEFAULT NULL,
   `refresh_token` varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
   `ticket` mediumtext CHARACTER SET utf8 COLLATE utf8_general_ci NULL,
@@ -551,7 +551,7 @@ CREATE TABLE `wiser_communication`  (
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `wiser_communication_generated`  (
   `id` int NOT NULL AUTO_INCREMENT,
-  `item_id` bigint NOT NULL DEFAULT 0,
+  `item_id` bigint UNSIGNED NOT NULL DEFAULT 0,
   `communication_id` int NOT NULL DEFAULT 0,
   `receiver` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
   `receiver_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
@@ -640,7 +640,7 @@ CREATE TABLE IF NOT EXISTS `wiser_import` (
   `success` tinyint(1) NULL DEFAULT NULL,
   `errors` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
   `data` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
-  `user_id` bigint NOT NULL COMMENT 'The ID of the user that created this import task',
+  `user_id` bigint UNSIGNED NOT NULL COMMENT 'The ID of the user that created this import task',
   `customer_id` int NOT NULL,
   `server_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT 'The name of the server on which this import task was created',
   `sub_domain` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT 'The wiser sub domain that the user was on when starting the import.',

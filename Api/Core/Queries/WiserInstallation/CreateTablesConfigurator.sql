@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemlinkdetail_archive`  (
 -- Table structure for configurations_wiser_itemfile
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `configurations_wiser_itemfile` (
-    `id` bigint NOT NULL AUTO_INCREMENT,
+    `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
     `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
     `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
     `content` longblob NULL,
@@ -155,7 +155,7 @@ CREATE TABLE IF NOT EXISTS `configurations_wiser_itemfile` (
 -- Table structure for configurations_wiser_itemfile_archive`
 -- ----------------------------
 CREATE TABLE IF NOT EXISTS `configurations_wiser_itemfile_archive`  (
-    `id` bigint NOT NULL AUTO_INCREMENT,
+    `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
     `item_id` bigint UNSIGNED NOT NULL DEFAULT 0 COMMENT 'let op: dit is het item_id van de content',
     `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
     `content` longblob NULL,
