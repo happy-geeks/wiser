@@ -1304,14 +1304,6 @@ public class ItemsService(
             if (group == null)
             {
                 group = new ItemGroupModel { Name = groupName };
-                var groupOptions = dataRow.Field<string>("options") ?? "";
-                var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
-                group.Width = Convert.ToInt32(dataRow.Field<short?>("width") ?? group.Width);
-                group.Description = dataRow.Field<string>("explanation") ?? "";
-                group.MinimumWidth = goObject.ContainsKey("minWidth") ? goObject.Value<int>("minWidth") : group.MinimumWidth;
-                group.Orientation = goObject.ContainsKey("orientation") ? goObject.Value<string>("orientation") : group.Orientation;
-                group.ShowName = goObject.ContainsKey("showName") ? goObject.Value<bool>("showName") : group.ShowName && !String.IsNullOrEmpty(groupName);
-                group.Collapsible = goObject.ContainsKey("collapsible") ? goObject.Value<bool>("collapsible") : group.Collapsible;
                 tab.Groups.Add(group);
             }
 
@@ -1471,6 +1463,14 @@ public class ItemsService(
             // Setup any extra attributes.
             switch (fieldType.ToLowerInvariant())
             {
+                case "group":
+                    group.Width = Convert.ToInt32(dataRow.Field<short?>("width") ?? group.Width);
+                    group.Description = dataRow.Field<string>("explanation") ?? "";
+                    group.MinimumWidth = optionsObject.ContainsKey("minWidth") ? optionsObject.Value<int>("minWidth") : group.MinimumWidth;
+                    group.Orientation = optionsObject.ContainsKey("orientation") ? optionsObject.Value<string>("orientation") : group.Orientation;
+                    group.ShowName = optionsObject.ContainsKey("showName") ? optionsObject.Value<bool>("showName") : group.ShowName && !String.IsNullOrEmpty(groupName);
+                    group.Collapsible = optionsObject.ContainsKey("collapsible") ? optionsObject.Value<bool>("collapsible") : group.Collapsible;
+                    continue;
                 case "checkbox":
                     if ((!String.IsNullOrWhiteSpace(value) && Int32.TryParse(value, out var intValue) && intValue > 0) || (String.IsNullOrWhiteSpace(value) && Int32.TryParse(defaultValue, out intValue) && intValue > 0))
                     {
@@ -1826,7 +1826,7 @@ public class ItemsService(
                     }
                     string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
                     string minWidth = $"min-width: {group.MinimumWidth}px;";
-                    string display = "display: " + (group.Orientation == "vertical" ? "block;" : "ruby;");
+                    string display = "display: " + (group.Orientation == "vertical" ? "block;" : "flex;");
                     string margin = group.Width < 100 ? "margin: 5px; " : "";
                     string border = group.Width < 100 ? "border-right: 2px solid white; " : "";
                     string padding = group.Width < 100 ? "padding: 20px 10px; " : "";
