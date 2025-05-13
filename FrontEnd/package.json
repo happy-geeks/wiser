@@ -20,7 +20,7 @@
     "codemirror": "^5.65.10",
     "codemirror-lint-eslint": "^1.0.1",
     "csslint": "^1.0.5",
-    "diff": "^7.0.0",
+    "diff": "^8.0.1",
     "diff2html": "^3.4.51",
     "jshint": "^2.13.6",
     "jszip": "^3.10.1",
