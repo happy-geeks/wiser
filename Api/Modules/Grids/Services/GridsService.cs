@@ -1269,7 +1269,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                                 END AS publishedEnvironment,
                                                 i.title,
                                                 i.entity_type AS entityType,
-                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
+                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
                                                 ?linkTypeNumber AS linkTypeNumber,
                                                 0 AS linkId,
                                                 i.added_on AS addedOn,
@@ -1525,7 +1525,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                         foreach (var detail in fieldsList)
                         {
-                            var name = $"{detail.Key}_{detail.LanguageCode}".ToLowerInvariant().MakeJsonPropertyName();
+                            var nameParts = new List<string> {detail.Key, detail.LanguageCode};
+                            var name = String.Join("_", nameParts.Where(x => !String.IsNullOrWhiteSpace(x))).ToLowerInvariant().MakeJsonPropertyName();
                             if (String.IsNullOrWhiteSpace(name) || rowData.ContainsKey(name))
                             {
                                 continue;
@@ -1538,28 +1539,29 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                             }
                             else
                             {
+                                var detailValueAsString = detail.Value?.ToString() ?? "";
                                 switch (field.Type)
                                 {
                                     case "boolean":
-                                        rowData.Add(name, detail.Value.ToString().Equals("true", StringComparison.OrdinalIgnoreCase) || detail.Value.ToString().Equals("1", StringComparison.Ordinal));
+                                        rowData.Add(name, detailValueAsString.Equals("true", StringComparison.OrdinalIgnoreCase) || detailValueAsString.Equals("1", StringComparison.Ordinal));
                                         break;
                                     case "number":
-                                        if (UInt64.TryParse(detail.Value.ToString(), out var longValue))
+                                        if (UInt64.TryParse(detailValueAsString, out var longValue))
                                         {
                                             rowData.Add(name, longValue);
                                         }
-                                        else if (Decimal.TryParse(detail.Value.ToString().Replace(",", "."), NumberStyles.Any, new CultureInfo("en-US"), out var decimalValue))
+                                        else if (Decimal.TryParse(detailValueAsString.Replace(",", "."), NumberStyles.Any, new CultureInfo("en-US"), out var decimalValue))
                                         {
                                             rowData.Add(name, decimalValue);
                                         }
                                         else
                                         {
-                                            rowData.Add(name, detail.Value.ToString());
+                                            rowData.Add(name, detailValueAsString);
                                         }
 
                                         break;
                                     default:
-                                        rowData.Add(name, HandleFieldValue(name, detail.Value.ToString()));
+                                        rowData.Add(name, HandleFieldValue(name, detailValueAsString));
                                         break;
                                 }
                             }
