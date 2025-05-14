@@ -939,7 +939,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 {
                     foreach (DataRow dataRow in columnsDataTable.Rows)
                     {
-                        var fieldName = $"{dataRow.Field<string>("field")}_{dataRow.Field<string>("language_code")}".ToLowerInvariant().MakeJsonPropertyName();
+                        var nameParts = new List<string> {dataRow.Field<string>("field"), dataRow.Field<string>("language_code")};
+                        var fieldName = String.Join("_", nameParts.Where(x => !String.IsNullOrWhiteSpace(x))).ToLowerInvariant().MakeJsonPropertyName();
                         if (reservedWordsArray.Contains(fieldName))
                         {
                             throw new Exception($"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
