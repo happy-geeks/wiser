@@ -18,7 +18,7 @@ public class ExternalCacheService : IExternalCacheService, IScopedService
     public async Task<ServiceResult<bool>> ClearCacheAsync(ClearCacheSettingsModel settings)
     {
         // Check if we have all the settings we need.
-        if (String.IsNullOrWhiteSpace(settings?.Url) || !settings.Areas.Any())
+        if (String.IsNullOrWhiteSpace(settings?.Url) || settings.Areas.Count == 0)
         {
             return new ServiceResult<bool>
             {

@@ -87,7 +87,7 @@ public class MeasurementsDataService : IMeasurementsDataService, IScopedService
         }
 
         var whereClauseString = "";
-        if (whereClause.Any())
+        if (whereClause.Count != 0)
         {
             whereClauseString = $"AND {String.Join(" AND ", whereClause)}";
         }

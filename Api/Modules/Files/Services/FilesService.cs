@@ -735,7 +735,7 @@ public class FilesService : IFilesService, IScopedService
         if (!String.IsNullOrWhiteSpace(fileUrl))
         {
             var (_, ftpSettings) = await GetFtpSettingsAsync(identity, itemLinkId, propertyName, itemId);
-            if (ftpSettings.Any())
+            if (ftpSettings.Count != 0)
             {
                 foreach (var ftp in ftpSettings)
                 {

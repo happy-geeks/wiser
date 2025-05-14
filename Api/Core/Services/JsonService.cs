@@ -27,7 +27,7 @@ public class JsonService : IJsonService, ITransientService
     /// <inheritdoc />
     public void EncryptValuesInJson(JToken jsonObject, string encryptionKey, List<string> extraPropertiesToEncrypt = null)
     {
-        if (apiSettings.JsonPropertiesToAlwaysEncrypt == null || !apiSettings.JsonPropertiesToAlwaysEncrypt.Any())
+        if (apiSettings.JsonPropertiesToAlwaysEncrypt == null || apiSettings.JsonPropertiesToAlwaysEncrypt.Count == 0)
         {
             // No point in executing this function if there are no properties to encrypt.
             return;

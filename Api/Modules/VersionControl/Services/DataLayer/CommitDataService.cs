@@ -225,7 +225,7 @@ public class CommitDataService : ICommitDataService, IScopedService
 	    data.Id = (int) await databaseConnection.InsertRecordAsync(query);
 
 	    databaseConnection.AddParameter("commitId", data.Id);
-	    if (data.Templates != null && data.Templates.Any())
+	    if (data.Templates != null && data.Templates.Count != 0)
 	    {
 		    var queries = new List<string>();
 		    var queryParts = new List<string>();
@@ -245,7 +245,7 @@ public class CommitDataService : ICommitDataService, IScopedService
 		    await databaseConnection.ExecuteAsync(String.Join(Environment.NewLine, queries));
 	    }
 
-	    if (data.DynamicContents != null && data.DynamicContents.Any())
+	    if (data.DynamicContents != null && data.DynamicContents.Count != 0)
 	    {
 		    var queries = new List<string>();
 		    var queryParts = new List<string>();

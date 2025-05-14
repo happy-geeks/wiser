@@ -42,6 +42,7 @@ namespace Api.Modules.Grids.Services;
 public class GridsService(IItemsService itemsService, IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, ILogger<GridsService> logger, IStringReplacementsService stringReplacementsService, IApiReplacementsService apiReplacementsService, IOptions<ApiSettings> apiSettings) : IGridsService, IScopedService
 {
     private readonly ApiSettings apiSettings = apiSettings.Value;
+
     private static readonly List<string> ItemColumns =
     [
         "id",
@@ -108,11 +109,11 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
             {
                 versionJoinClause = $$"""
                                       # Only get the latest version of an item.
-                                                                              LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}}{0} AS otherVersion ON otherVersion.original_item_id > 0 AND i.original_item_id > 0 AND otherVersion.original_item_id = i.original_item_id AND (otherVersion.changed_on > i.changed_on OR (otherVersion.changed_on = i.changed_on AND otherVersion.id > i.id))
+                                      LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}}{0} AS otherVersion ON otherVersion.original_item_id > 0 AND i.original_item_id > 0 AND otherVersion.original_item_id = i.original_item_id AND (otherVersion.changed_on > i.changed_on OR (otherVersion.changed_on = i.changed_on AND otherVersion.id > i.id))
                                       """;
                 subQueryVersionJoinClause = $$"""
                                               # Only get the latest version of an item.
-                                                                                      LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}}{0} AS otherVersion ON otherVersion.original_item_id > 0 AND i.originalItemId > 0 AND otherVersion.original_item_id = i.originalItemId AND (otherVersion.changed_on > i.changedOn OR (otherVersion.changed_on = i.changedOn AND otherVersion.id > i.id))
+                                              LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}}{0} AS otherVersion ON otherVersion.original_item_id > 0 AND i.originalItemId > 0 AND otherVersion.original_item_id = i.originalItemId AND (otherVersion.changed_on > i.changedOn OR (otherVersion.changed_on = i.changedOn AND otherVersion.id > i.id))
                                               """;
                 versionWhereClause = "AND otherVersion.id IS NULL";
             }
@@ -155,8 +156,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 {
                     countQuery = $"""
                                   SELECT COUNT(*) FROM (
-                                                                          {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
-                                                                      ) AS x
+                                      {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
+                                  ) AS x
                                   """;
                 }
             }
@@ -187,7 +188,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
             }
             catch (Exception exception)
             {
-                logger.LogError($"An error occurred while deserializing the options for a LinkOverview grid. PropertyId: {propertyId}, itemId: {itemId}, options: {gridOptionsValue}, error: {exception}");
+                logger.LogError(exception, "An error occurred while deserializing the options for a LinkOverview grid. PropertyId: {PropertyId}, itemId: {ItemId}, options: {GridOptionsValue}", propertyId, itemId, gridOptionsValue);
             }
         }
 
@@ -200,7 +201,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
             // For link overview mode it's possible to enter custom queries, use those if entered.
             case EntityGridModes.LinkOverview when !String.IsNullOrWhiteSpace(selectQuery):
             {
-                forceAddColumns = !results.Columns.Any();
+                forceAddColumns = results.Columns.Count == 0;
 
                 if (results.Columns.All(c => c.Selectable == false))
                 {
@@ -271,15 +272,15 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                 selectQuery = $$"""
                                 SELECT 
-                                	id AS id,
-                                	changed_on AS changedon,
-                                	tablename AS tablename,
-                                	item_id AS itemid,
-                                	action AS action,
-                                	changed_by AS changedby,
-                                	field AS field,
-                                	oldvalue AS oldvalue,
-                                	newvalue AS newvalue
+                                    id AS id,
+                                    changed_on AS changedon,
+                                    tablename AS tablename,
+                                    item_id AS itemid,
+                                    action AS action,
+                                    changed_by AS changedby,
+                                    field AS field,
+                                    oldvalue AS oldvalue,
+                                    newvalue AS newvalue
                                 FROM {{WiserTableNames.WiserHistory}}
 
                                 WHERE item_id = ?itemid
@@ -318,37 +319,37 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                 countQuery = $$"""
                                SELECT COUNT(*)
-                                                                   FROM {{WiserTableNames.WiserItem}} i
-                               
-                                                                   JOIN {{WiserTableNames.WiserItemDetail}} AS dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({due_date}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {due_date_filter}[endif] 
-                                                                   [if({checked_date_has_filter}!1)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({checked_date_has_filter}=1)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {checked_date_filter}[endif] 
-                                                                   [if({sender_has_filter}!1)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({sender_has_filter}=1)]AND sender.`value` {sender_filter}[endif] 
-                                                                   JOIN {{WiserTableNames.WiserItemDetail}} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({receiver_has_filter}=1)]AND receiver.`value` {receiver_filter}[endif] 
-                                                                   JOIN {{WiserTableNames.WiserItemDetail}} content ON content.item_id = i.id AND content.`key` = 'content' [if({content_has_filter}=1)]AND content.`value` {content_filter}[endif] 
-                               
-                                                                   WHERE i.entity_type = 'agendering'
+                               FROM {{WiserTableNames.WiserItem}} i
+
+                               JOIN {{WiserTableNames.WiserItemDetail}} AS dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({due_date}!)]AND dueDate.`value` IS NOT NULL AND dueDate.`value` <> '' AND DATE(dueDate.`value`) {due_date_filter}[endif] 
+                               [if({checked_date_has_filter}!1)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({checked_date_has_filter}=1)]AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {checked_date_filter}[endif] 
+                               [if({sender_has_filter}!1)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({sender_has_filter}=1)]AND sender.`value` {sender_filter}[endif] 
+                               JOIN {{WiserTableNames.WiserItemDetail}} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({receiver_has_filter}=1)]AND receiver.`value` {receiver_filter}[endif] 
+                               JOIN {{WiserTableNames.WiserItemDetail}} content ON content.item_id = i.id AND content.`key` = 'content' [if({content_has_filter}=1)]AND content.`value` {content_filter}[endif] 
+
+                               WHERE i.entity_type = 'agendering'
                                """;
 
                 selectQuery = $$"""
                                 SELECT
-                                	                                    i.id,
-                                	                                    i.id AS encryptedId_encrypt_withdate,
-                                	                                    STR_TO_DATE(dueDate.`value`, '%Y-%m-%d %H:%i:%s') AS dueDate,
-                                	                                    STR_TO_DATE(checkedDate.`value`, '%Y-%m-%d %H:%i:%s') AS checkedDate,
-                                	                                    IFNULL(sender.`value`, '') AS sender,
-                                	                                    receiver.`value` AS receiver,
-                                	                                    content.`value` AS content
-                                                                    FROM {{WiserTableNames.WiserItem}} i
-                                
-                                                                    JOIN {{WiserTableNames.WiserItemDetail}} dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({dueDate}!)]AND dueDate.`value` <> ''AND DATE(dueDate.`value`) {dueDate_filter}[endif] 
-                                                                    [if({checkedDate}=)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({checkedDate}!)]AND dueDate.`value` IS NOT NULL AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {checkedDate_filter}[endif] 
-                                                                    [if({sender}=)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({sender}!)]AND sender.`value` {sender_filter}[endif] 
-                                                                    JOIN {{WiserTableNames.WiserItemDetail}} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({receiver}!)]AND receiver.`value` {receiver_filter}[endif] 
-                                                                    JOIN {{WiserTableNames.WiserItemDetail}} content ON content.item_id = i.id AND content.`key` = 'content' [if({content}!)]AND content.`value` {content_filter}[endif] 
-                                
-                                                                    WHERE i.entity_type = 'agendering'
-                                                                    {sort}
-                                                                    {limit}
+                                    i.id,
+                                    i.id AS encryptedId_encrypt_withdate,
+                                    STR_TO_DATE(dueDate.`value`, '%Y-%m-%d %H:%i:%s') AS dueDate,
+                                    STR_TO_DATE(checkedDate.`value`, '%Y-%m-%d %H:%i:%s') AS checkedDate,
+                                    IFNULL(sender.`value`, '') AS sender,
+                                    receiver.`value` AS receiver,
+                                    content.`value` AS content
+                                FROM {{WiserTableNames.WiserItem}} i
+
+                                JOIN {{WiserTableNames.WiserItemDetail}} dueDate ON dueDate.item_id = i.id AND dueDate.`key` = 'agendering_date' [if({dueDate}!)]AND dueDate.`value` <> ''AND DATE(dueDate.`value`) {dueDate_filter}[endif] 
+                                [if({checkedDate}=)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} checkedDate ON checkedDate.item_id = i.id AND checkedDate.`key` = 'checkedon' [if({checkedDate}!)]AND dueDate.`value` IS NOT NULL AND checkedDate.`value` IS NOT NULL AND checkedDate.`value` <> '' AND DATE(checkedDate.`value`) {checkedDate_filter}[endif] 
+                                [if({sender}=)]LEFT [endif]JOIN {{WiserTableNames.WiserItemDetail}} sender ON sender.item_id = i.id AND sender.`key` = 'placed_by_id' [if({sender}!)]AND sender.`value` {sender_filter}[endif] 
+                                JOIN {{WiserTableNames.WiserItemDetail}} receiver ON receiver.item_id = i.id AND receiver.`key` = 'userid' [if({receiver}!)]AND receiver.`value` {receiver_filter}[endif] 
+                                JOIN {{WiserTableNames.WiserItemDetail}} content ON content.item_id = i.id AND content.`key` = 'content' [if({content}!)]AND content.`value` {content_filter}[endif] 
+
+                                WHERE i.entity_type = 'agendering'
+                                {sort}
+                                {limit}
                                 """;
 
                 (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY dueDate DESC", tablePrefix: tablePrefix);
@@ -399,8 +400,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 {
                     countQuery = $"""
                                   SELECT COUNT(*) FROM (
-                                                                              {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
-                                                                          ) AS x
+                                      {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
+                                  ) AS x
                                   """;
                 }
 
@@ -443,7 +444,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 results.Columns.Add(new GridColumn {Field = "addedby", Title = "Aangemaakt door"});
                 results.Columns.Add(new GridColumn {Field = "moreinfo", Title = "Overige info"});
 
-                if (options?.Filter?.Filters == null || !options.Filter.Filters.Any())
+                if (options?.Filter?.Filters == null || options.Filter.Filters.Count == 0)
                 {
                     return new ServiceResult<GridSettingsAndDataModel>
                     {
@@ -460,122 +461,122 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                     // Filtering on specific field(s).
                     countQuery = $$"""
                                    SELECT COUNT(*)
-                                                                           FROM (
-                                                                               SELECT DISTINCT i.id
-                                                                               FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                                                               JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                   
-                                                                               {{String.Format(versionJoinClause, "")}}
-                                   
-                                                                               # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                   	                                        LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                   	                                        LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                   
-                                                                               {filters}
-                                                                               WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
-                                                                               [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
-                                                                               [if({added_by}!)]AND i.added_by {added_by_filter}[endif]
-                                                                               [if({changed_by}!)]AND i.changed_by {changed_by_filter}[endif]
-                                                                               [if({id}!)]AND i.id {id_filter}[endif]
-                                                                               {{versionWhereClause}}
-                                                                               AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                               AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                   FROM (
+                                       SELECT DISTINCT i.id
+                                       FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+                                       JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                       {{String.Format(versionJoinClause, "")}}
+
+                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                          LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                          LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                       {filters}
+                                       WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
+                                       [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
+                                       [if({added_by}!)]AND i.added_by {added_by_filter}[endif]
+                                       [if({changed_by}!)]AND i.changed_by {changed_by_filter}[endif]
+                                       [if({id}!)]AND i.id {id_filter}[endif]
+                                       {{versionWhereClause}}
+                                       AND (?entityType = '' OR i.entity_type = ?entityType)
+                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
                                    """;
 
                     selectQuery = $$"""
                                     SELECT 
-                                    	                                        i.id,
-                                    	                                        i.id AS encryptedId_encrypt_withdate,
-                                                                                i.title,
-                                    	                                        i.entity_type AS entityType,
-                                    	                                        i.moduleId,
-                                    	                                        i.added_on AS addedOn,
-                                    	                                        i.added_by AS addedBy,
-                                    	                                        e.icon,
-                                    	                                        e.color,
-                                    	                                        '' AS more_info
-                                                                            FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                                                            JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                    
-                                                                            {{String.Format(versionJoinClause, "")}}
-                                    
-                                                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                    	                                    LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                    	                                    LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                    
-                                                                            {filters}
-                                                                            WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
-                                                                            [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
-                                                                            [if({addedBy}!)]AND i.added_by {addedBy_filter}[endif]
-                                                                            [if({changedBy}!)]AND i.changed_by {changedBy_filter}[endif]
-                                                                            [if({id}!)]AND i.id {id_filter}[endif]
-                                                                            {{versionWhereClause}}
-                                                                            AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                    
-                                                                            GROUP BY i.id
+                                        i.id,
+                                        i.id AS encryptedId_encrypt_withdate,
+                                        i.title,
+                                        i.entity_type AS entityType,
+                                        i.moduleId,
+                                        i.added_on AS addedOn,
+                                        i.added_by AS addedBy,
+                                        e.icon,
+                                        e.color,
+                                        '' AS more_info
+                                    FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+                                    JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                    {{String.Format(versionJoinClause, "")}}
+
+                                    # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                    LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                    LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                    {filters}
+                                    WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
+                                    [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
+                                    [if({addedBy}!)]AND i.added_by {addedBy_filter}[endif]
+                                    [if({changedBy}!)]AND i.changed_by {changedBy_filter}[endif]
+                                    [if({id}!)]AND i.id {id_filter}[endif]
+                                    {{versionWhereClause}}
+                                    AND (?entityType = '' OR i.entity_type = ?entityType)
+                                    AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                    GROUP BY i.id
                                     """;
 
                     if (removedFilter == null || removedFilter.Value == "1")
                     {
                         countQuery += $$"""
-                                        
-                                                                                    UNION
-                                                                                    SELECT DISTINCT i.id
-                                                                                    FROM {{tablePrefix}}{{WiserTableNames.WiserItem}}{{WiserTableNames.ArchiveSuffix}} i
-                                                                                    JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                        
-                                                                                    {{String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}}
-                                        
-                                                                                    # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                        	                                        LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                        	                                        LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                        
-                                                                                    {filters}
-                                                                                    WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
-                                                                                    [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
-                                                                                    [if({addedBy}!)]AND i.added_by {addedBy_filter}[endif]
-                                                                                    [if({changedBy}!)]AND i.changed_by {changedBy_filter}[endif]
-                                                                                    [if({id}!)]AND i.id {id_filter}[endif]
-                                                                                    {{versionWhereClause}}
-                                                                                    AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                                    AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                        UNION
+                                        SELECT DISTINCT i.id
+                                        FROM {{tablePrefix}}{{WiserTableNames.WiserItem}}{{WiserTableNames.ArchiveSuffix}} i
+                                        JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                        {{String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}}
+
+                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                        LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                        LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                        {filters}
+                                        WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
+                                        [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
+                                        [if({addedBy}!)]AND i.added_by {addedBy_filter}[endif]
+                                        [if({changedBy}!)]AND i.changed_by {changedBy_filter}[endif]
+                                        [if({id}!)]AND i.id {id_filter}[endif]
+                                        {{versionWhereClause}}
+                                        AND (?entityType = '' OR i.entity_type = ?entityType)
+                                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
                                         """;
 
                         selectQuery += $$"""
-                                         
-                                                                                     UNION ALL
-                                                                                     SELECT 
-                                         	                                            i.id,
-                                         	                                            i.id AS encryptedId_encrypt_withdate,
-                                                                                         i.title,
-                                         	                                            i.entity_type AS entityType,
-                                         	                                            i.moduleId,
-                                         	                                            i.added_on AS addedOn,
-                                         	                                            i.added_by AS addedBy,
-                                         	                                            e.icon,
-                                         	                                            e.color,
-                                         	                                            'Dit item is verwijderd' AS more_info
-                                                                                     FROM {{tablePrefix}}{{WiserTableNames.WiserItem}}{{WiserTableNames.ArchiveSuffix}} i
-                                                                                     JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                         
-                                                                                     {{String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}}
-                                         
-                                                                                     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                         	                                        LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                         	                                        LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                         
-                                                                                     {filters}
-                                                                                     WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
-                                                                                     [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
-                                                                                     [if({addedBy}!)]AND i.added_by {addedBy_filter}[endif]
-                                                                                     [if({changedBy}!)]AND i.changed_by {changedBy_filter}[endif]
-                                                                                     [if({id}!)]AND i.id {id_filter}[endif]
-                                                                                     {{versionWhereClause}}
-                                                                                     AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                                     AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                         
-                                                                                     GROUP BY i.id
+
+                                         UNION ALL
+                                         SELECT 
+                                             i.id,
+                                             i.id AS encryptedId_encrypt_withdate,
+                                             i.title,
+                                             i.entity_type AS entityType,
+                                             i.moduleId,
+                                             i.added_on AS addedOn,
+                                             i.added_by AS addedBy,
+                                             e.icon,
+                                             e.color,
+                                             'Dit item is verwijderd' AS more_info
+                                         FROM {{tablePrefix}}{{WiserTableNames.WiserItem}}{{WiserTableNames.ArchiveSuffix}} i
+                                         JOIN {{WiserTableNames.WiserEntity}} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                         {{String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}}
+
+                                         # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                         LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                         LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                         {filters}
+                                         WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
+                                         [if({uniqueUuid}!)]AND i.unique_uuid {uniqueUuid_filter}[endif]
+                                         [if({addedBy}!)]AND i.added_by {addedBy_filter}[endif]
+                                         [if({changedBy}!)]AND i.changed_by {changedBy_filter}[endif]
+                                         [if({id}!)]AND i.id {id_filter}[endif]
+                                         {{versionWhereClause}}
+                                         AND (?entityType = '' OR i.entity_type = ?entityType)
+                                         AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                         GROUP BY i.id
                                          """;
                     }
 
@@ -586,192 +587,192 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                     // Generic searching on everything.
                     countQuery = $"""
                                   SELECT COUNT(*) 
-                                                                          FROM (
-                                                                              SELECT i.id
-                                                                              FROM {tablePrefix}{WiserTableNames.WiserItem} i
-                                                                              JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                  
-                                                                              {String.Format(versionJoinClause, "")}
-                                  
-                                                                              # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                  	                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                  	                                        LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                  
-                                                                              WHERE i.title LIKE CONCAT(?search, '%')
-                                                                              {versionWhereClause}
-                                                                              AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                              AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                  
-                                                                              UNION
-                                  
-                                                                              SELECT i.id
-                                                                              FROM {tablePrefix}{WiserTableNames.WiserItemDetail} id
-                                                                              JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                              JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                  
-                                                                              {String.Format(versionJoinClause, "")}
-                                  
-                                                                              # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                  	                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                  	                                        LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                  
-                                                                              WHERE id.`value` LIKE CONCAT(?search, '%')
-                                                                              {versionWhereClause}
-                                                                              AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                              GROUP BY i.id
+                                  FROM (
+                                      SELECT i.id
+                                      FROM {tablePrefix}{WiserTableNames.WiserItem} i
+                                      JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                      {String.Format(versionJoinClause, "")}
+
+                                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                      LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                      LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                      WHERE i.title LIKE CONCAT(?search, '%')
+                                      {versionWhereClause}
+                                      AND (?entityType = '' OR i.entity_type = ?entityType)
+                                      AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                      UNION
+
+                                      SELECT i.id
+                                      FROM {tablePrefix}{WiserTableNames.WiserItemDetail} id
+                                      JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
+                                      JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                      {String.Format(versionJoinClause, "")}
+
+                                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                      LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                      LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                      WHERE id.`value` LIKE CONCAT(?search, '%')
+                                      {versionWhereClause}
+                                      AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                      GROUP BY i.id
                                   """;
 
                     selectQuery = $"""
                                    SELECT 
-                                   	                                        i.id,
-                                   	                                        i.id AS encryptedId_encrypt_withdate,
-                                                                               i.title,
-                                   	                                        i.entity_type AS entityType,
-                                   	                                        i.moduleId,
-                                   	                                        i.added_on AS addedOn,
-                                   	                                        i.added_by AS addedBy,
-                                   	                                        e.icon,
-                                   	                                        e.color,
-                                   	                                        '' AS moreInfo
-                                                                           FROM {tablePrefix}{WiserTableNames.WiserItem} i
-                                                                           JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                   
-                                                                           {String.Format(versionJoinClause, "")}
-                                   
-                                                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                   	                                    LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                   	                                    LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                   
-                                                                           WHERE i.title LIKE CONCAT(?search, '%')
-                                                                           {versionWhereClause}
-                                                                           AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                   
-                                                                           UNION
-                                   
-                                                                           SELECT
-                                   	                                        i.id,
-                                   	                                        i.id AS encryptedId_encrypt_withdate,
-                                                                               i.title,
-                                   	                                        i.entity_type AS entityType,
-                                   	                                        i.moduleId,
-                                   	                                        i.added_on AS addedOn,
-                                   	                                        i.added_by AS addedby,
-                                   	                                        e.icon,
-                                   	                                        e.color,
-                                   	                                        '' AS moreInfo
-                                                                           FROM {tablePrefix}{WiserTableNames.WiserItemDetail} id
-                                                                           JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                           JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                   
-                                                                           {String.Format(versionJoinClause, "")}
-                                   
-                                                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                   	                                    LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                   	                                    LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                   
-                                                                           WHERE id.`value` LIKE CONCAT(?search, '%')
-                                                                           {versionWhereClause}
-                                                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                           GROUP BY i.id
+                                       i.id,
+                                       i.id AS encryptedId_encrypt_withdate,
+                                       i.title,
+                                       i.entity_type AS entityType,
+                                       i.moduleId,
+                                       i.added_on AS addedOn,
+                                       i.added_by AS addedBy,
+                                       e.icon,
+                                       e.color,
+                                       '' AS moreInfo
+                                   FROM {tablePrefix}{WiserTableNames.WiserItem} i
+                                   JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                   {String.Format(versionJoinClause, "")}
+
+                                   # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                   LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                   LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                   WHERE i.title LIKE CONCAT(?search, '%')
+                                   {versionWhereClause}
+                                   AND (?entityType = '' OR i.entity_type = ?entityType)
+                                   AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                   UNION
+
+                                   SELECT
+                                       i.id,
+                                       i.id AS encryptedId_encrypt_withdate,
+                                       i.title,
+                                       i.entity_type AS entityType,
+                                       i.moduleId,
+                                       i.added_on AS addedOn,
+                                       i.added_by AS addedby,
+                                       e.icon,
+                                       e.color,
+                                       ' AS moreInfo
+                                   FROM {tablePrefix}{WiserTableNames.WiserItemDetail} id
+                                   JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
+                                   JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                   {String.Format(versionJoinClause, "")}
+
+                                   # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                   LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                   LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                   WHERE id.`value` LIKE CONCAT(?search, '%')
+                                   {versionWhereClause}
+                                   AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                   GROUP BY i.id
                                    """;
 
                     if (removedFilter == null || removedFilter.Value == "1")
                     {
                         countQuery += $"""
-                                       
-                                                                                       UNION
-                                       
-                                                                                       SELECT i.id
-                                                                                       FROM {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i
-                                                                                       JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                       
-                                                                                       {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
-                                       
-                                                                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                       	                                            LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       	                                            LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                       
-                                                                                       WHERE i.title LIKE CONCAT(?search, '%')
-                                                                                       {versionWhereClause}
-                                                                                       AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                       
-                                                                                       UNION
-                                       
-                                                                                       SELECT i.id
-                                                                                       FROM {tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix} id
-                                                                                       JOIN {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                                       JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                       
-                                                                                       {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
-                                       
-                                                                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                       	                                            LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       	                                            LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                       
-                                                                                       WHERE id.`value` LIKE CONCAT(?search, '%')
-                                                                                       {versionWhereClause}
-                                                                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                       GROUP BY i.id
+
+                                       UNION
+
+                                       SELECT i.id
+                                       FROM {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i
+                                       JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                       {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
+
+                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                       LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                       WHERE i.title LIKE CONCAT(?search, '%')
+                                       {versionWhereClause}
+                                       AND (?entityType = '' OR i.entity_type = ?entityType)
+                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                       UNION
+
+                                       SELECT i.id
+                                       FROM {tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix} id
+                                       JOIN {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
+                                       JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                       {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
+
+                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                       LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                       WHERE id.`value` LIKE CONCAT(?search, '%')
+                                       {versionWhereClause}
+                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                       GROUP BY i.id
                                        """;
 
                         selectQuery = $"""
-                                       
-                                                                                   UNION
-                                       
-                                                                                   SELECT 
-                                       	                                            i.id,
-                                       	                                            i.id AS encryptedId_encrypt_withdate,
-                                                                                       i.title,
-                                       	                                            i.entity_type AS entityType,
-                                       	                                            i.moduleId,
-                                       	                                            i.added_on AS addedOn,
-                                       	                                            i.added_by AS addedBy,
-                                       	                                            e.icon,
-                                       	                                            e.color,
-                                       	                                            'Dit item is verwijderd' AS moreInfo
-                                                                                   FROM {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i
-                                                                                   JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                       
-                                                                                   {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
-                                       
-                                                                                   # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                       	                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       	                                        LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                       
-                                                                                   WHERE i.title LIKE CONCAT(?search, '%')
-                                                                                   {versionWhereClause}
-                                                                                   AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                                   AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                       
-                                                                                   UNION
-                                       
-                                                                                   SELECT
-                                       	                                            i.id,
-                                       	                                            i.id AS encryptedId_encrypt_withdate,
-                                                                                       i.title,
-                                       	                                            i.entity_type AS entityType,
-                                       	                                            i.moduleId,
-                                       	                                            i.added_on AS addedOn,
-                                       	                                            i.added_by AS addedBy,
-                                       	                                            e.icon,
-                                       	                                            e.color,
-                                       	                                            '' AS moreInfo
-                                                                                   FROM {tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix} id
-                                                                                   JOIN {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
-                                                                                   JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
-                                       
-                                                                                   {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
-                                       
-                                                                                   # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                       	                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       	                                        LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                       
-                                                                                   WHERE id.`value` LIKE CONCAT(?search, '%')
-                                                                                   {versionWhereClause}
-                                                                                   AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                   GROUP BY i.id
+
+                                       UNION
+
+                                       SELECT 
+                                           i.id,
+                                           i.id AS encryptedId_encrypt_withdate,
+                                           i.title,
+                                           i.entity_type AS entityType,
+                                           i.moduleId,
+                                           i.added_on AS addedOn,
+                                           i.added_by AS addedBy,
+                                           e.icon,
+                                           e.color,
+                                           'Dit item is verwijderd' AS moreInfo
+                                       FROM {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i
+                                       JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                       {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
+
+                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                       LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                       WHERE i.title LIKE CONCAT(?search, '%')
+                                       {versionWhereClause}
+                                       AND (?entityType = '' OR i.entity_type = ?entityType)
+                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+
+                                       UNION
+
+                                       SELECT
+                                           i.id,
+                                           i.id AS encryptedId_encrypt_withdate,
+                                           i.title,
+                                           i.entity_type AS entityType,
+                                           i.moduleId,
+                                           i.added_on AS addedOn,
+                                           i.added_by AS addedBy,
+                                           e.icon,
+                                           e.color,
+                                           '' AS moreInfo
+                                       FROM {tablePrefix}{WiserTableNames.WiserItemDetail}{WiserTableNames.ArchiveSuffix} id
+                                       JOIN {tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
+                                       JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
+
+                                       {String.Format(versionJoinClause, WiserTableNames.ArchiveSuffix)}
+
+                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                       LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                       WHERE id.`value` LIKE CONCAT(?search, '%')
+                                       {versionWhereClause}
+                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                       GROUP BY i.id
                                        """;
                     }
 
@@ -838,28 +839,28 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                 countQuery = $$"""
                                SELECT COUNT(*)
-                                                               FROM {{tablePrefix}}{{WiserTableNames.WiserItemDetail}}
-                                                               WHERE item_id = ?itemId
-                                                               AND groupname = ?groupName
-                                                               [if({key_has_filter}!)]AND `key` {key_filter}[endif]
-                                                               [if({value_has_filter}!)]AND `value` {value_filter}[endif]
-                                                               [if({languageCode_has_filter}!)]AND `language_code` {languageCode_filter}[endif]
+                               FROM {{tablePrefix}}{{WiserTableNames.WiserItemDetail}}
+                               WHERE item_id = ?itemId
+                               AND groupname = ?groupName
+                               [if({key_has_filter}!)]AND `key` {key_filter}[endif]
+                               [if({value_has_filter}!)]AND `value` {value_filter}[endif]
+                               [if({languageCode_has_filter}!)]AND `language_code` {languageCode_filter}[endif]
                                """;
 
                 selectQuery = $$"""
                                 SELECT
-                                                                    id,
-                                                                    language_code AS languageCode,
-                                                                    `key`,
-                                	                                CONCAT_WS('', `value`, long_value) AS `value`
-                                                                FROM {{tablePrefix}}{{WiserTableNames.WiserItemDetail}}
-                                                                WHERE item_id = ?itemId
-                                                                AND groupname = ?groupName
-                                                                [if({key_has_filter}!)]AND `key` {key_filter}[endif]
-                                                                [if({value_has_filter}!)]AND `value` {value_filter}[endif]
-                                                                [if({languageCode_has_filter}!)]AND `language_code` {languageCode_filter}[endif]
-                                                                {sort}
-                                                                {limit}
+                                    id,
+                                    language_code AS languageCode,
+                                    `key`,
+                                    CONCAT_WS('', `value`, long_value) AS `value`
+                                FROM {{tablePrefix}}{{WiserTableNames.WiserItemDetail}}
+                                WHERE item_id = ?itemId
+                                AND groupname = ?groupName
+                                [if({key_has_filter}!)]AND `key` {key_filter}[endif]
+                                [if({value_has_filter}!)]AND `value` {value_filter}[endif]
+                                [if({languageCode_has_filter}!)]AND `language_code` {languageCode_filter}[endif]
+                                {sort}
+                                {limit}
                                 """;
 
                 (selectQuery, countQuery) = BuildGridQueries(options, selectQuery, countQuery, identity, "ORDER BY language_code ASC, `key` ASC", tablePrefix: tablePrefix);
@@ -878,7 +879,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
             default:
             {
                 // Normal grid data.
-                var hasColumnsFromOptions = results.Columns.Any();
+                var hasColumnsFromOptions = results.Columns.Count != 0;
                 if (!hasColumnsFromOptions)
                 {
                     var filterable = new Dictionary<string, object> {{"extra", true}};
@@ -909,30 +910,30 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                 var columnsQuery = $"""
                                     SELECT  
-                                    	                                        IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name) AS field,
-                                                                                p.display_name AS title,
-                                                                                p.overview_width AS width,
-                                                                                p.inputtype,
-                                                                                p.options,
-                                                                                p.readonly,
-                                                                                p.data_query,
-                                                                                p.depends_on_field,
-                                                                                p.depends_on_action,
-                                                                                p.link_type > 0 AS isLinkProperty,
-                                                                                p.regex_validation,
-                                                                                p.mandatory,
-                                                                                p.language_code
-                                                                            FROM {WiserTableNames.WiserEntityProperty} p 
-                                                                            WHERE (p.entity_name = ?entityType OR (p.link_type > 0 AND p.link_type = ?linkTypeNumber))
-                                                                            AND p.visible_in_overview = 1
-                                                                            GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name), p.language_code
-                                                                            ORDER BY p.ordering
+                                        IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name) AS field,
+                                        p.display_name AS title,
+                                        p.overview_width AS width,
+                                        p.inputtype,
+                                        p.options,
+                                        p.readonly,
+                                        p.data_query,
+                                        p.depends_on_field,
+                                        p.depends_on_action,
+                                        p.link_type > 0 AS isLinkProperty,
+                                        p.regex_validation,
+                                        p.mandatory,
+                                        p.language_code
+                                    FROM {WiserTableNames.WiserEntityProperty} p 
+                                    WHERE (p.entity_name = ?entityType OR (p.link_type > 0 AND p.link_type = ?linkTypeNumber))
+                                    AND p.visible_in_overview = 1
+                                    GROUP BY IF(p.property_name IS NULL OR p.property_name = '', p.display_name, p.property_name), p.language_code
+                                    ORDER BY p.ordering
                                     """;
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("entityType", entityType);
                 clientDatabaseConnection.AddParameter("linkTypeNumber", linkTypeNumber);
                 var columnsDataTable = await clientDatabaseConnection.GetAsync(columnsQuery);
-                var reservedWordsArray = new[] { "abstract","arguments","await","boolean","break","byte","case","catch","char","class","const","continue","debugger","default","delete","do","double","else","enum","eval","export","extends","false","final","finally","float","for","function","goto","if","implements","import","in","instanceof","int","interface","let","long","native","new","null","package","private","protected","public","return","short","static","super","switch","synchronized","this","throw","throws","transient","true","try","typeof","var","void","volatile","while","with","yield" };
+                var reservedWordsArray = new[] {"abstract", "arguments", "await", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger", "default", "delete", "do", "double", "else", "enum", "eval", "export", "extends", "false", "final", "finally", "float", "for", "function", "goto", "if", "implements", "import", "in", "instanceof", "int", "interface", "let", "long", "native", "new", "null", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "true", "try", "typeof", "var", "void", "volatile", "while", "with", "yield"};
 
                 if (columnsDataTable.Rows.Count > 0)
                 {
@@ -941,7 +942,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                         var fieldName = $"{dataRow.Field<string>("field")}_{dataRow.Field<string>("language_code")}".ToLowerInvariant().MakeJsonPropertyName();
                         if (reservedWordsArray.Contains(fieldName))
                         {
-                            throw new Exception( $"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
+                            throw new Exception($"{fieldName}(variable: fieldName) is a reserved Javascript keyword");
                         }
 
                         var field = new FieldModel
@@ -993,13 +994,13 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                             case "date-time picker":
                                 field.Type = "date";
 
-                                if (!fieldOptions.ContainsKey("type"))
+                                if (!fieldOptions.TryGetValue("type", out var fieldOption))
                                 {
                                     column.Format = "{0:dd-MM-yyyy HH:mm:ss}";
                                 }
                                 else
                                 {
-                                    switch (fieldOptions["type"])
+                                    switch (fieldOption)
                                     {
                                         case "date":
                                             column.Format = "{0:dd-MM-yyyy}";
@@ -1049,18 +1050,17 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                     {
                                         foreach (DataRow dataSourceRow in comboBoxDataTable.Rows)
                                         {
-                                            var text = dataSourceRow[comboBoxDataTable.Columns.Count > 1 ? 1 : 0]?.ToString();
+                                            var textColumnIndex = comboBoxDataTable.Columns.Count > 1 ? 1 : 0;
                                             dataSource.Add(new DataSourceItemModel
                                             {
                                                 Value = dataSourceRow[0],
-                                                Text = text
+                                                Text = dataSourceRow.IsNull(textColumnIndex) ? null : dataSourceRow[textColumnIndex].ToString()
                                             });
                                         }
                                     }
                                 }
-                                else if (fieldOptions.ContainsKey("entityType"))
+                                else if (fieldOptions.TryGetValue("entityType", out var entityTypeForComboBoxData))
                                 {
-                                    var entityTypeForComboBoxData = fieldOptions["entityType"];
                                     var query = $"SELECT id, title FROM {WiserTableNames.WiserItem} WHERE entity_type = ?entityTypeForComboBoxData ORDER BY title ASC";
                                     clientDatabaseConnection.AddParameter("entityTypeForComboBoxData", entityTypeForComboBoxData);
                                     var entityTypeDataTable = await clientDatabaseConnection.GetAsync(query);
@@ -1068,11 +1068,11 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                     {
                                         foreach (DataRow dataSourceRow in entityTypeDataTable.Rows)
                                         {
-                                            var text = dataSourceRow[entityTypeDataTable.Columns.Count > 1 ? 1 : 0]?.ToString();
+                                            var textColumnIndex = entityTypeDataTable.Columns.Count > 1 ? 1 : 0;
                                             dataSource.Add(new DataSourceItemModel
                                             {
                                                 Value = dataSourceRow[0],
-                                                Text = text
+                                                Text = dataSourceRow.IsNull(textColumnIndex) ? null : dataSourceRow[textColumnIndex].ToString()
                                             });
                                         }
                                     }
@@ -1126,109 +1126,109 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                     {
                         countQuery = $$"""
                                        SELECT SUM(x.count)
-                                                                                   FROM (
-                                                                                       # Count all items where the original_item_id is not 0 and only count one version of each item.
-                                                                                       # This is done in 2 queries, because that is a lot faster that counting everything in a single query.
-                                                                                       SELECT COUNT(DISTINCT i.id) AS count
-                                                                                       FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                       
-                                                                                       {filters}
-                                       
-                                                                                       {{String.Format(versionJoinClause, "")}}
-                                       
-                                                                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                       	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                       	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                       
-                                                                                       WHERE i.entity_type = ?entityType
-                                                                                       AND i.published_environment >= 0
-                                                                                       AND i.original_item_id > 0
-                                                                                       {{versionWhereClause}}
-                                                                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                       AND i.id <> ?itemId
-                                                                                       [if({hasWhere}=1)]AND ({where})[endif]
-                                       
-                                                                                       UNION ALL
-                                       
-                                                                                       # Count all items with original_item_id = 0, which means those items have no other versions.
-                                                                                       SELECT COUNT(DISTINCT i.id) AS count
-                                                                                       FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                       
-                                                                                       {filters}
-                                       
-                                                                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                       	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                       	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                       
-                                                                                       WHERE i.entity_type = ?entityType
-                                                                                       AND i.published_environment >= 0
-                                                                                       AND i.original_item_id = 0
-                                                                                       AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                       AND i.id <> ?itemId
-                                                                                       [if({hasWhere}=1)]AND ({where})[endif]
-                                                                                   ) AS x
+                                       FROM (
+                                           # Count all items where the original_item_id is not 0 and only count one version of each item.
+                                           # This is done in 2 queries, because that is a lot faster that counting everything in a single query.
+                                           SELECT COUNT(DISTINCT i.id) AS count
+                                           FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+
+                                           {filters}
+
+                                           {{String.Format(versionJoinClause, "")}}
+
+                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                              LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                              LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                           WHERE i.entity_type = ?entityType
+                                           AND i.published_environment >= 0
+                                           AND i.original_item_id > 0
+                                           {{versionWhereClause}}
+                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                           AND i.id <> ?itemId
+                                           [if({hasWhere}=1)]AND ({where})[endif]
+
+                                           UNION ALL
+
+                                           # Count all items with original_item_id = 0, which means those items have no other versions.
+                                           SELECT COUNT(DISTINCT i.id) AS count
+                                           FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+
+                                           {filters}
+
+                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                              LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                              LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                           WHERE i.entity_type = ?entityType
+                                           AND i.published_environment >= 0
+                                           AND i.original_item_id = 0
+                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                           AND i.id <> ?itemId
+                                           [if({hasWhere}=1)]AND ({where})[endif]
+                                       ) AS x
                                        """;
 
                         selectQuery = $$"""
                                         SELECT
-                                        	                                            GROUP_CONCAT(CONCAT(id.`key`, '=', IFNULL(idt.`value`, id.`value`), '') SEPARATOR '~~~') AS `fields`,
-                                                                                        i.*
-                                                                                    FROM (
-                                                                                        # Sub query so that we can first limit the items, then get all fields of those remaining items and group by item.
-                                                                                        # If we don't do this, MySQL will first get all items to group them, then it will add the limit, which is a lot slower.
-                                                                                        SELECT 
-                                        	                                                i.id,
-                                        	                                                i.id AS encryptedId_encrypt_withdate,
-                                                                                            i.original_item_id AS originalItemId,
-                                        	                                                i.title,
-                                                                                            CASE i.published_environment
-                                            	                                                WHEN 0 THEN 'onzichtbaar'
-                                                                                                WHEN 1 THEN 'dev'
-                                                                                                WHEN 2 THEN 'test'
-                                                                                                WHEN 3 THEN 'acceptatie'
-                                                                                                WHEN 4 THEN 'live'
-                                                                                            END AS publishedEnvironment,
-                                                                                            i.entity_type AS entityType,
-                                                                                            i.added_on AS addedOn,
-                                                                                            i.added_by AS addedBy,
-                                                                                            i.changed_on AS changedOn,
-                                                                                            i.changed_by AS changedBy,
-                                                                                            i.parent_item_id AS parentItemId
-                                                                                        FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                        
-                                                                                        {filters}
-                                                                                        {joinsForSorting}
-                                        
-                                                                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                        	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                        	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                                                                        
-                                                                                        WHERE i.entity_type = ?entityType
-                                                                                        AND i.published_environment >= 0
-                                                                                        AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                        AND i.id <> ?itemId
-                                                                                        [if({hasWhere}=1)]AND ({where})[endif]
-                                        
-                                                                                        GROUP BY IF(i.original_item_id > 0, i.original_item_id, i.id)
-                                                                                        {sort}
-                                                                                        {limit}
-                                                                                    ) AS i
-                                        
-                                                                                    {{String.Format(subQueryVersionJoinClause, "")}}
-                                        
-                                                                                    LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entityType AND p.visible_in_overview = 1
-                                                                                    LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
-                                                                                    LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} idt ON idt.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND idt.`key` = CONCAT(p.property_name, '_input')) OR ((p.property_name IS NULL OR p.property_name = '') AND idt.`key` = CONCAT(p.display_name, '_input')))
-                                        
-                                                                                    # We need to sort here again, otherwise the outer query will return a different ordering than the sub query.
-                                                                                    # But we also need to sort in the sub query, otherwise the limit will return the wrong set of rows.
-                                                                                    {joinsForSorting}
-                                        
-                                                                                    WHERE TRUE
-                                                                                    {{versionWhereClause}}
-                                        
-                                                                                    GROUP BY i.id
-                                                                                    {sort}
+                                            GROUP_CONCAT(CONCAT(id.`key`, '=', IFNULL(idt.`value`, id.`value`), '') SEPARATOR '~~~') AS `fields`,
+                                            i.*
+                                        FROM (
+                                            # Sub query so that we can first limit the items, then get all fields of those remaining items and group by item.
+                                            # If we don't do this, MySQL will first get all items to group them, then it will add the limit, which is a lot slower.
+                                            SELECT 
+                                                i.id,
+                                                i.id AS encryptedId_encrypt_withdate,
+                                                i.original_item_id AS originalItemId,
+                                                i.title,
+                                                CASE i.published_environment
+                                                    WHEN 0 THEN 'onzichtbaar'
+                                                    WHEN 1 THEN 'dev'
+                                                    WHEN 2 THEN 'test'
+                                                    WHEN 3 THEN 'acceptatie'
+                                                    WHEN 4 THEN 'live'
+                                                END AS publishedEnvironment,
+                                                i.entity_type AS entityType,
+                                                i.added_on AS addedOn,
+                                                i.added_by AS addedBy,
+                                                i.changed_on AS changedOn,
+                                                i.changed_by AS changedBy,
+                                                i.parent_item_id AS parentItemId
+                                            FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+
+                                            {filters}
+                                            {joinsForSorting}
+
+                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                            
+                                            WHERE i.entity_type = ?entityType
+                                            AND i.published_environment >= 0
+                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                            AND i.id <> ?itemId
+                                            [if({hasWhere}=1)]AND ({where})[endif]
+
+                                            GROUP BY IF(i.original_item_id > 0, i.original_item_id, i.id)
+                                            {sort}
+                                            {limit}
+                                        ) AS i
+
+                                        {{String.Format(subQueryVersionJoinClause, "")}}
+
+                                        LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entityType AND p.visible_in_overview = 1
+                                        LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` = p.property_name) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` = p.display_name))
+                                        LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} idt ON idt.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND idt.`key` = CONCAT(p.property_name, '_input')) OR ((p.property_name IS NULL OR p.property_name = '') AND idt.`key` = CONCAT(p.display_name, '_input')))
+
+                                        # We need to sort here again, otherwise the outer query will return a different ordering than the sub query.
+                                        # But we also need to sort in the sub query, otherwise the limit will return the wrong set of rows.
+                                        {joinsForSorting}
+
+                                        WHERE TRUE
+                                        {{versionWhereClause}}
+
+                                        GROUP BY i.id
+                                        {sort}
                                         """;
                         break;
                     }
@@ -1238,183 +1238,183 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                         {
                             countQuery = $$"""
                                            SELECT COUNT(DISTINCT i.id)
-                                                                                           FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                                                                           {filters}
-                                           
-                                                                                           {{versionJoinClause}}
-                                           
-                                                                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                           	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                           	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                           
-                                                                                           WHERE i.parent_item_id = ?itemId
-                                                                                           {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}}
-                                                                                           {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
-                                                                                           {{versionWhereClause}}
-                                                                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                           [if({hasWhere}=1)]AND ({where})[endif]
+                                           FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+                                           {filters}
+
+                                           {{versionJoinClause}}
+
+                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                           LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                           LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                           WHERE i.parent_item_id = ?itemId
+                                           {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}}
+                                           {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
+                                           {{versionWhereClause}}
+                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                           [if({hasWhere}=1)]AND ({where})[endif]
                                            """;
 
                             selectQuery = $$"""
                                             SELECT
-                                            	                                                i.id,
-                                            	                                                i.id AS encryptedId_encrypt_withdate,
-                                                                                                i.unique_uuid AS uniqueUuid,
-                                                                                                CASE i.published_environment
-                                                	                                                WHEN 0 THEN 'onzichtbaar'
-                                                                                                    WHEN 1 THEN 'dev'
-                                                                                                    WHEN 2 THEN 'test'
-                                                                                                    WHEN 3 THEN 'acceptatie'
-                                                                                                    WHEN 4 THEN 'live'
-                                                                                                END AS publishedEnvironment,
-                                                                                                i.title,
-                                                                                                i.entity_type AS entityType,
-                                            	                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
-                                                                                                ?linkTypeNumber AS linkTypeNumber,
-                                                                                                0 AS linkId,
-                                                                                                i.added_on AS addedOn,
-                                                                                                i.added_by AS addedBy,
-                                                                                                i.changed_on AS changedOn,
-                                                                                                i.changed_by AS changedBy,
-                                                                                                i.ordering AS `{{GclCoreConstants.LinkOrderingFieldName}}`
-                                                                                            FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
-                                            
-                                                                                            {filters}
-                                                                                            {joinsForSorting}
-                                            
-                                                                                            {{versionJoinClause}}
-                                            
-                                                                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                            	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                            
-                                                                                            LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
-                                                                                            LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
-                                            
-                                                                                            WHERE i.parent_item_id = ?itemId
-                                                                                            {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}}
-                                                                                            {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
-                                                                                            {{versionWhereClause}}
-                                                                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                            [if({hasWhere}=1)]AND ({where})[endif]
-                                                                                            GROUP BY i.id
-                                                                                            {sort}
-                                                                                            {limit}
+                                                i.id,
+                                                i.id AS encryptedId_encrypt_withdate,
+                                                i.unique_uuid AS uniqueUuid,
+                                                CASE i.published_environment
+                                                    WHEN 0 THEN 'onzichtbaar'
+                                                    WHEN 1 THEN 'dev'
+                                                    WHEN 2 THEN 'test'
+                                                    WHEN 3 THEN 'acceptatie'
+                                                    WHEN 4 THEN 'live'
+                                                END AS publishedEnvironment,
+                                                i.title,
+                                                i.entity_type AS entityType,
+                                                GROUP_CONCAT(CONCAT(id.`key`, '=', id.`value`, '') SEPARATOR '~~~') AS fields,
+                                                ?linkTypeNumber AS linkTypeNumber,
+                                                0 AS linkId,
+                                                i.added_on AS addedOn,
+                                                i.added_by AS addedBy,
+                                                i.changed_on AS changedOn,
+                                                i.changed_by AS changedBy,
+                                                i.ordering AS `{{GclCoreConstants.LinkOrderingFieldName}}`
+                                            FROM {{tablePrefix}}{{WiserTableNames.WiserItem}} i
+
+                                            {filters}
+                                            {joinsForSorting}
+
+                                            {{versionJoinClause}}
+
+                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                            LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
+                                            LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
+
+                                            WHERE i.parent_item_id = ?itemId
+                                            {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}}
+                                            {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
+                                            {{versionWhereClause}}
+                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                            [if({hasWhere}=1)]AND ({where})[endif]
+                                            GROUP BY i.id
+                                            {sort}
+                                            {limit}
                                             """;
                         }
                         else
                         {
                             countQuery = $$"""
                                            SELECT COUNT(DISTINCT i.id)
-                                                                                           FROM {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}} il
-                                                                                           JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}} i ON i.id = il.{{(currentItemIsSourceId ? "destination_item_id" : "item_id")}} {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}} {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
-                                                                                           {filters}
-                                           
-                                                                                           {{String.Format(versionJoinClause, "")}}
-                                           
-                                                                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                           	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                           	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                           
-                                                                                           WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
-                                                                                           {{versionWhereClause}}
-                                                                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                           {{(linkTypeNumber <= 0 ? "" : "AND il.type = ?linkTypeNumber")}}
-                                                                                           [if({hasWhere}=1)]AND ({where})[endif]
+                                           FROM {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}} il
+                                           JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}} i ON i.id = il.{{(currentItemIsSourceId ? "destination_item_id" : "item_id")}} {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}} {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
+                                           {filters}
+
+                                           {{String.Format(versionJoinClause, "")}}
+
+                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                           LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                           LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                           WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
+                                           {{versionWhereClause}}
+                                           AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                           {{(linkTypeNumber <= 0 ? "" : "AND il.type = ?linkTypeNumber")}}
+                                           [if({hasWhere}=1)]AND ({where})[endif]
                                            """;
 
                             selectQuery = $$"""
                                             SELECT
-                                            	                                                i.id,
-                                            	                                                i.id AS encryptedId_encrypt_withdate,
-                                                                                                i.unique_uuid AS uniqueUuid,
-                                                                                                CASE i.published_environment
-                                                	                                                WHEN 0 THEN 'onzichtbaar'
-                                                                                                    WHEN 1 THEN 'dev'
-                                                                                                    WHEN 2 THEN 'test'
-                                                                                                    WHEN 3 THEN 'acceptatie'
-                                                                                                    WHEN 4 THEN 'live'
-                                                                                                END AS publishedEnvironment,
-                                                                                                i.title,
-                                                                                                i.entity_type AS entityType,
-                                                                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
-                                                                                                il.type AS linkTypeNumber,
-                                                                                                il.id AS linkId,
-                                                                                                i.added_on AS addedOn,
-                                                                                                i.added_by AS addedBy,
-                                                                                                i.changed_on AS changedOn,
-                                                                                                i.changed_by AS changedBy,
-                                                                                                il.ordering AS `{{GclCoreConstants.LinkOrderingFieldName}}`
-                                                                                            FROM {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}} il
-                                                                                            JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}} i ON i.id = il.{{(currentItemIsSourceId ? "destination_item_id" : "item_id")}} {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}} {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
-                                            
-                                                                                            {filters}
-                                                                                            {joinsForSorting}
-                                            
-                                                                                            {{String.Format(versionJoinClause, "")}}
-                                            
-                                                                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                            	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                            
-                                                                                            LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
-                                                                                            LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
-                                            
-                                                                                            WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
-                                                                                            {{versionWhereClause}}
-                                                                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                            {{(linkTypeNumber <= 0 ? "" : "AND il.type = ?linkTypeNumber")}}
-                                                                                            [if({hasWhere}=1)]AND ({where})[endif]
-                                                                                            GROUP BY i.id
-                                            
-                                                                                            UNION
-                                            
-                                                                                            SELECT
-                                            	                                                i.id,
-                                            	                                                i.id AS encryptedId_encrypt_withdate,
-                                                                                                i.unique_uuid AS uniqueUuid,
-                                                                                                CASE i.published_environment
-                                                	                                                WHEN 0 THEN 'onzichtbaar'
-                                                                                                    WHEN 1 THEN 'dev'
-                                                                                                    WHEN 2 THEN 'test'
-                                                                                                    WHEN 3 THEN 'acceptatie'
-                                                                                                    WHEN 4 THEN 'live'
-                                                                                                END AS publishedEnvironment,
-                                                                                                i.title,
-                                                                                                i.entity_type AS entityType,
-                                                                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
-                                                                                                il.type AS linkTypeNumber,
-                                                                                                il.id AS linkId,
-                                                                                                i.added_on AS addedOn,
-                                                                                                i.added_by AS addedBy,
-                                                                                                i.changed_on AS changedOn,
-                                                                                                i.changed_by AS changedBy,
-                                                                                                il.ordering AS `{{GclCoreConstants.LinkOrderingFieldName}}`
-                                                                                            FROM {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}} il
-                                                                                            JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}} i ON i.id = il.{{(currentItemIsSourceId ? "destination_item_id" : "item_id")}} {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}} {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
-                                            
-                                                                                            {filters}
-                                                                                            {joinsForSorting}
-                                            
-                                                                                            {{String.Format(versionJoinClause, "")}}
-                                            
-                                                                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
-                                            	                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            	                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
-                                            
-                                                                                            JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.link_type = il.type AND p.visible_in_overview = 1
-                                                                                            JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLinkDetail}} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
-                                            
-                                                                                            WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
-                                                                                            {{versionWhereClause}}
-                                                                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
-                                                                                            {{(linkTypeNumber <= 0 ? "" : "AND il.type = ?linkTypeNumber")}}
-                                                                                            [if({hasWhere}=1)]AND ({where})[endif]
-                                            
-                                                                                            GROUP BY i.id
-                                            
-                                                                                            {sort}
-                                                                                            {limit}
+                                                i.id,
+                                                i.id AS encryptedId_encrypt_withdate,
+                                                i.unique_uuid AS uniqueUuid,
+                                                CASE i.published_environment
+                                                    WHEN 0 THEN 'onzichtbaar'
+                                                    WHEN 1 THEN 'dev'
+                                                    WHEN 2 THEN 'test'
+                                                    WHEN 3 THEN 'acceptatie'
+                                                    WHEN 4 THEN 'live'
+                                                END AS publishedEnvironment,
+                                                i.title,
+                                                i.entity_type AS entityType,
+                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
+                                                il.type AS linkTypeNumber,
+                                                il.id AS linkId,
+                                                i.added_on AS addedOn,
+                                                i.added_by AS addedBy,
+                                                i.changed_on AS changedOn,
+                                                i.changed_by AS changedBy,
+                                                il.ordering AS `{{GclCoreConstants.LinkOrderingFieldName}}`
+                                            FROM {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}} il
+                                            JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}} i ON i.id = il.{{(currentItemIsSourceId ? "destination_item_id" : "item_id")}} {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}} {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
+
+                                            {filters}
+                                            {joinsForSorting}
+
+                                            {{String.Format(versionJoinClause, "")}}
+
+                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                            LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
+                                            LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
+
+                                            WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
+                                            {{versionWhereClause}}
+                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                            {{(linkTypeNumber <= 0 ? "" : "AND il.type = ?linkTypeNumber")}}
+                                            [if({hasWhere}=1)]AND ({where})[endif]
+                                            GROUP BY i.id
+
+                                            UNION
+
+                                            SELECT
+                                                i.id,
+                                                i.id AS encryptedId_encrypt_withdate,
+                                                i.unique_uuid AS uniqueUuid,
+                                                CASE i.published_environment
+                                                    WHEN 0 THEN 'onzichtbaar'
+                                                    WHEN 1 THEN 'dev'
+                                                    WHEN 2 THEN 'test'
+                                                    WHEN 3 THEN 'acceptatie'
+                                                    WHEN 4 THEN 'live'
+                                                END AS publishedEnvironment,
+                                                i.title,
+                                                i.entity_type AS entityType,
+                                                IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', CONCAT_WS('', id.`value`, id.long_value), 'languageCode', id.language_code))) AS fields,
+                                                il.type AS linkTypeNumber,
+                                                il.id AS linkId,
+                                                i.added_on AS addedOn,
+                                                i.added_by AS addedBy,
+                                                i.changed_on AS changedOn,
+                                                i.changed_by AS changedBy,
+                                                il.ordering AS `{{GclCoreConstants.LinkOrderingFieldName}}`
+                                            FROM {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}} il
+                                            JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}} i ON i.id = il.{{(currentItemIsSourceId ? "destination_item_id" : "item_id")}} {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}} {{(moduleId <= 0 ? "" : "AND i.moduleid = ?moduleId")}}
+
+                                            {filters}
+                                            {joinsForSorting}
+
+                                            {{String.Format(versionJoinClause, "")}}
+
+                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
+                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+
+                                            JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.link_type = il.type AND p.visible_in_overview = 1
+                                            JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLinkDetail}} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
+
+                                            WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
+                                            {{versionWhereClause}}
+                                            AND (permission.id IS NULL OR (permission.permissions & 1) > 0)
+                                            {{(linkTypeNumber <= 0 ? "" : "AND il.type = ?linkTypeNumber")}}
+                                            [if({hasWhere}=1)]AND ({where})[endif]
+
+                                            GROUP BY i.id
+
+                                            {sort}
+                                            {limit}
                                             """;
                         }
 
@@ -1440,80 +1440,12 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
         if (!hasPredefinedSchema)
         {
-            BuildGridSchema(dataTable, results, !forceAddColumns && results.Columns != null && results.Columns.Any());
+            BuildGridSchema(dataTable, results, !forceAddColumns && results.Columns != null && results.Columns.Count != 0);
         }
 
         if (dataTable == null || dataTable.Rows.Count == 0)
         {
             return new ServiceResult<GridSettingsAndDataModel>(results);
-        }
-
-        object HandleFieldValue(string fieldName, object value)
-        {
-            var field = fieldsInformation.FirstOrDefault(f => f.Field.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
-
-            if (field.InputType != null)
-            {
-                switch (field.InputType.ToLowerInvariant())
-                {
-                    case "secure-input":
-                        if (String.IsNullOrWhiteSpace(value?.ToString()))
-                        {
-                            break;
-                        }
-
-                        var securityMethod = "JCL_SHA512";
-
-                        if (field.Options.ContainsKey(GclCoreConstants.SecurityMethodKey))
-                        {
-                            securityMethod = field.Options[GclCoreConstants.SecurityMethodKey]?.ToString()?.ToUpperInvariant();
-                        }
-
-                        var securityKey = "";
-                        if (securityMethod.InList("JCL_AES", "AES"))
-                        {
-                            if (field.Options.ContainsKey(GclCoreConstants.SecurityKeyKey))
-                            {
-                                securityKey = field.Options[GclCoreConstants.SecurityKeyKey]?.ToString();
-                            }
-
-                            if (String.IsNullOrEmpty(securityKey))
-                            {
-                                securityKey = encryptionKey;
-                            }
-                        }
-
-                        switch (securityMethod)
-                        {
-                            case "JCL_AES":
-                                try
-                                {
-                                    value = value.ToString().DecryptWithAesWithSalt(securityKey);
-                                }
-                                catch (Exception exception)
-                                {
-                                    logger.LogError($"Error while trying to decrypt value '{value}' for field '{field.Field}': {exception}");
-                                }
-
-                                break;
-                            case "AES":
-                                try
-                                {
-                                    value = value.ToString().DecryptWithAes(securityKey);
-                                }
-                                catch (Exception exception)
-                                {
-                                    logger.LogError($"Error while trying to decrypt value '{value}' for field '{field.Field}': {exception}");
-                                }
-
-                                break;
-                        }
-
-                        break;
-                }
-            }
-
-            return value;
         }
 
         if (!dataTable.Columns.Contains("fields"))
@@ -1671,13 +1603,82 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
             }
         }
 
-
         if (extraJavascript.Length > 0)
         {
             results.ExtraJavascript = extraJavascript.ToString();
         }
 
         return new ServiceResult<GridSettingsAndDataModel>(results);
+
+        object HandleFieldValue(string fieldName, object value)
+        {
+            var field = fieldsInformation.FirstOrDefault(f => f.Field.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
+
+            if (field.InputType == null)
+            {
+                return value;
+            }
+
+            switch (field.InputType.ToLowerInvariant())
+            {
+                case "secure-input":
+                    if (String.IsNullOrWhiteSpace(value?.ToString()))
+                    {
+                        break;
+                    }
+
+                    var securityMethod = "JCL_SHA512";
+
+                    if (field.Options.TryGetValue(GclCoreConstants.SecurityMethodKey, out var option))
+                    {
+                        securityMethod = option?.ToString()?.ToUpperInvariant();
+                    }
+
+                    var securityKey = "";
+                    if (securityMethod.InList("JCL_AES", "AES"))
+                    {
+                        if (field.Options.TryGetValue(GclCoreConstants.SecurityKeyKey, out var fieldOption))
+                        {
+                            securityKey = fieldOption?.ToString();
+                        }
+
+                        if (String.IsNullOrEmpty(securityKey))
+                        {
+                            securityKey = encryptionKey;
+                        }
+                    }
+
+                    switch (securityMethod)
+                    {
+                        case "JCL_AES":
+                            try
+                            {
+                                value = value.ToString().DecryptWithAesWithSalt(securityKey);
+                            }
+                            catch (Exception exception)
+                            {
+                                logger.LogError("Error while trying to decrypt value '{Value}' for field '{FieldField}': {Exception}", value, field.Field, exception);
+                            }
+
+                            break;
+                        case "AES":
+                            try
+                            {
+                                value = value.ToString().DecryptWithAes(securityKey);
+                            }
+                            catch (Exception exception)
+                            {
+                                logger.LogError("Error while trying to decrypt value '{Value}' for field '{FieldField}': {Exception}", value, field.Field, exception);
+                            }
+
+                            break;
+                    }
+
+                    break;
+            }
+
+            return value;
+        }
     }
 
     /// <inheritdoc />
@@ -1742,8 +1743,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
         {
             countQuery = $"""
                           SELECT COUNT(*) FROM (
-                                                              {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
-                                                          ) AS x
+                              {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
+                          ) AS x
                           """;
         }
 
@@ -1764,7 +1765,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
         // Get the actual data for the grid.
         dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
-        BuildGridSchema(dataTable, results, results.Columns != null && results.Columns.Any());
+        BuildGridSchema(dataTable, results, results.Columns != null && results.Columns.Count != 0);
         FillGridData(dataTable, results, identity, IdentityHelpers.IsTestEnvironment(identity), tenant.ModelObject);
 
         if (results.ClientSidePaging || String.IsNullOrWhiteSpace(countQuery))
@@ -1784,8 +1785,6 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
         string tablePrefix = null)
     {
         tablePrefix ??= "";
-
-        // Note that this function contains ' ?? ""' after every Replace. This is because that function returns null if the input string is an empty string, which would cause lots of problems in the rest of the code.
         fieldMappings ??= [];
 
         selectQuery = apiReplacementsService.DoIdentityReplacements(selectQuery ?? "", identity, true);
@@ -1793,7 +1792,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
         if (options == null)
         {
-            selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", defaultSort, StringComparison.OrdinalIgnoreCase).Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
+            selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", defaultSort, StringComparison.OrdinalIgnoreCase).Replace("{filters}", "", StringComparison.OrdinalIgnoreCase);
         }
         else
         {
@@ -1816,11 +1815,11 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 counter++;
 
                 // Old way of filtering:
-                selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
-                countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+                countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}_{filter.Operator.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
 
-                selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
-                countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
+                countQuery = countQuery.Replace($"{{{filter.Field.ToMySqlSafeValue(false)}}}", filter.Value.ToMySqlSafeValue(false), StringComparison.OrdinalIgnoreCase);
 
                 // New way of filtering.
                 string @operator;
@@ -1985,7 +1984,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                     clientDatabaseConnection.AddParameter(parameterName, value);
                 }
 
-                if (fieldMap == null || !fieldMap.Ignore)
+                if (fieldMap is not {Ignore: true})
                 {
                     if (fieldMap is {AddToWhereInsteadOfJoin: true} || ItemColumns.Any(c => c.Equals(fieldName, StringComparison.OrdinalIgnoreCase)))
                     {
@@ -1997,28 +1996,28 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                     }
                 }
 
-                selectQuery = selectQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase) ?? "";
-                countQuery = countQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase) ?? "";
-                selectQuery = selectQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase) ?? "";
-                countQuery = countQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase);
+                countQuery = countQuery.Replace($"{{{fieldName}_filter}}", $" {@operator} {parameterInWhere}", StringComparison.OrdinalIgnoreCase);
+                selectQuery = selectQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase);
+                countQuery = countQuery.Replace($"{{{fieldName}_has_filter}}", "1", StringComparison.OrdinalIgnoreCase);
                 return counter;
             }
 
 
             if (options.Take <= 0)
             {
-                selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase);
             }
             else
             {
                 clientDatabaseConnection.AddParameter("skip", options.Skip);
                 clientDatabaseConnection.AddParameter("take", options.Take);
-                selectQuery = selectQuery.Replace("{limit}", "LIMIT ?skip, ?take", StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace("{limit}", "LIMIT ?skip, ?take", StringComparison.OrdinalIgnoreCase);
             }
 
-            if (options.Sort == null || !options.Sort.Any())
+            if (options.Sort == null || options.Sort.Count == 0)
             {
-                selectQuery = selectQuery.Replace("{sort}", defaultSort ?? "", StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace("{sort}", defaultSort ?? "", StringComparison.OrdinalIgnoreCase);
             }
             else
             {
@@ -2056,7 +2055,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 selectQuery = selectQuery.Replace("{sort}", $"ORDER BY {String.Join(", ", options.Sort.Select(s => $"{(!shouldCreateJoinsForSorting || ItemColumns.Any(x => x.Equals(s.Field, StringComparison.OrdinalIgnoreCase)) ? $"`{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`" : $"CONCAT_WS('', `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`value`, `{s.Field.UnmakeJsonPropertyName().ToMySqlSafeValue(false)}`.`long_value`)")} {s.Dir.ToMySqlSafeValue(false).ToUpperInvariant()}"))}", StringComparison.OrdinalIgnoreCase) ?? "";
             }
 
-            if (options.Filter?.Filters == null || !options.Filter.Filters.Any())
+            if (options.Filter?.Filters == null || options.Filter.Filters.Count == 0)
             {
                 selectQuery = selectQuery.Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
                 countQuery = countQuery.Replace("{filters}", "", StringComparison.OrdinalIgnoreCase) ?? "";
@@ -2086,17 +2085,17 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 selectQuery = selectQuery.Replace("{filters}", filtersQuery.ToString(), StringComparison.OrdinalIgnoreCase) ?? "";
                 countQuery = countQuery.Replace("{filters}", filtersQuery.ToString(), StringComparison.OrdinalIgnoreCase) ?? "";
 
-                selectQuery = selectQuery.Replace("{hasWhere}", whereClause.Any() ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
-                countQuery = countQuery.Replace("{hasWhere}", whereClause.Any() ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
+                selectQuery = selectQuery.Replace("{hasWhere}", whereClause.Count != 0 ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
+                countQuery = countQuery.Replace("{hasWhere}", whereClause.Count != 0 ? "1" : "0", StringComparison.OrdinalIgnoreCase) ?? "";
 
-                if (!whereClause.Any(x => x.Item2.Any()))
+                if (whereClause.All(x => x.Item2.Count == 0))
                 {
                     selectQuery = selectQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
                     countQuery = countQuery.Replace("{where}", "TRUE", StringComparison.OrdinalIgnoreCase) ?? "";
                 }
                 else
                 {
-                    var value = String.Join($" {logic} ", whereClause.Select(x => !x.Item2.Any() ? "" : $"({String.Join($" {x.Item1} ", x.Item2)})").Where(x => !String.IsNullOrWhiteSpace(x)));
+                    var value = String.Join($" {logic} ", whereClause.Select(x => x.Item2.Count == 0 ? "" : $"({String.Join($" {x.Item1} ", x.Item2)})").Where(x => !String.IsNullOrWhiteSpace(x)));
                     selectQuery = selectQuery.Replace("{where}", value, StringComparison.OrdinalIgnoreCase) ?? "";
                     countQuery = countQuery.Replace("{where}", value, StringComparison.OrdinalIgnoreCase) ?? "";
                 }
@@ -2175,7 +2174,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
             // Deserialize the options of the grid into our model.
             results = await GridSettingsAndDataModelFromFieldOptionsAsync(propertyId, gridConfiguration, itemId);
-            hasPredefinedColumns = results.Columns.Any();
+            hasPredefinedColumns = results.Columns.Count != 0;
         }
 
         // If the count query is empty and the select query contains a limit, build a count query based on the select query without the limit and sort.
@@ -2183,8 +2182,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
         {
             countQuery = $"""
                           SELECT COUNT(*) FROM (
-                                                              {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
-                                                          ) AS x
+                              {selectQuery.Replace("{limit}", "", StringComparison.OrdinalIgnoreCase).Replace("{sort}", "", StringComparison.OrdinalIgnoreCase).Trim(';')}
+                          ) AS x
                           """;
         }
 
@@ -2253,14 +2252,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                     var dataTable = await clientDatabaseConnection.GetAsync(column.DataQuery);
                     if (dataTable.Rows.Count > 0)
                     {
-                        foreach (DataRow dataRow in dataTable.Rows)
-                        {
-                            dataSource.Add(new DataSourceItemModel
-                            {
-                                Value = dataRow[0],
-                                Text = dataRow[1]?.ToString()
-                            });
-                        }
+                        dataSource.AddRange(dataTable.Rows.Cast<DataRow>().Select(dataRow => new DataSourceItemModel {Value = dataRow[0], Text = dataRow.IsNull(1) ? null : dataRow[1].ToString()}));
                     }
                 }
 
@@ -2269,7 +2261,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
         }
         catch (Exception exception)
         {
-            logger.LogError($"An error occurred while deserializing the options for a grid. PropertyId: {propertyId}, itemId: {itemId}, options: {rawOptions}, error: {exception}");
+            logger.LogError(exception, "An error occurred while deserializing the options for a grid. PropertyId: {PropertyId}, itemId: {ItemId}, options: {RawOptions}", propertyId, itemId, rawOptions);
         }
 
         return results;
@@ -2310,10 +2302,10 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                         rowData.Add(columnName, dataRow[dataColumn.ColumnName]);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
-                    rowData[columnName] = $"[Decrypt Error]";
-                    logger.LogWarning($"[Decrypt Error] {ex.Message}", ex);
+                    rowData[columnName] = "[Error]";
+                    logger.LogWarning(exception, "An error occurred while converting the value of column '{columnName}'", dataColumn.ColumnName);
                 }
             }
         }
@@ -2393,9 +2385,8 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                 return errorResult;
             }
 
-            insertQuery = DoReplacementsForGridMutationQuery(identity, encryptedId, data,  insertQuery, itemId);
+            insertQuery = DoReplacementsForGridMutationQuery(identity, encryptedId, data, insertQuery, itemId);
 
-            // TODO: Make ID field configurable?
             data["id"] = await clientDatabaseConnection.InsertRecordAsync(insertQuery, false);
 
             return new ServiceResult<Dictionary<string, object>>(data);

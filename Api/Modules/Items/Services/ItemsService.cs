@@ -103,7 +103,7 @@ public class ItemsService(
             clientDatabaseConnection.AddParameter("entityType", input.EntityType);
         }
 
-        if (input.Details != null && input.Details.Any())
+        if (input.Details != null && input.Details.Count != 0)
         {
             for (var index = 0; index < input.Details.Count; index++)
             {
@@ -155,7 +155,7 @@ public class ItemsService(
                                                               OR (permission_item.permissions IS NULL AND permission_module.permissions IS NULL)
                                                           )
                           
-                                                          {(!whereClause.Any() ? "" : $"AND {String.Join(" AND ", whereClause)}")}
+                                                          {(whereClause.Count == 0 ? "" : $"AND {String.Join(" AND ", whereClause)}")}
                           """;
 
         var dataTable = await clientDatabaseConnection.GetAsync(countQuery);
@@ -221,7 +221,7 @@ public class ItemsService(
                                              OR (permission_item.permissions IS NULL AND permission_module.permissions IS NULL)
                                          )
                      
-                                         {(!whereClause.Any() ? "" : $"AND {String.Join(" AND ", whereClause)}")}
+                                         {(whereClause.Count == 0 ? "" : $"AND {String.Join(" AND ", whereClause)}")}
                      
                                          GROUP BY item.id
                      					ORDER BY IFNULL(item.changed_on, item.added_on) DESC
@@ -479,7 +479,7 @@ public class ItemsService(
 
             // Copy links.
             var linksToKeep = new List<ulong>();
-            if (!linksWithDedicatedTables.Any())
+            if (linksWithDedicatedTables.Count == 0)
             {
                 query = $"""
                          SELECT
@@ -569,11 +569,11 @@ public class ItemsService(
             // Delete links that have been removed.
             if (!createNewItem)
             {
-                var wherePart = !linksToKeep.Any() ? "" : $" AND link.id NOT IN ({String.Join(",", linksToKeep)})";
+                var wherePart = linksToKeep.Count == 0 ? "" : $" AND link.id NOT IN ({String.Join(",", linksToKeep)})";
                 clientDatabaseConnection.ClearParameters();
                 clientDatabaseConnection.AddParameter("id", item.Id);
 
-                if (!linksWithDedicatedTables.Any())
+                if (linksWithDedicatedTables.Count == 0)
                 {
                     query = $@"DELETE FROM {WiserTableNames.WiserItemLink} AS link WHERE (link.item_id = ?id OR link.destination_item_id = ?id) {wherePart};";
                 }
@@ -2219,7 +2219,7 @@ public class ItemsService(
 
         var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
         var linkTypesToHideFromTreeView = allLinkTypeSettings.Where(x => !x.ShowInTreeView).Select(x => x.Type).ToList();
-        if (!linkTypesToHideFromTreeView.Any())
+        if (linkTypesToHideFromTreeView.Count == 0)
         {
             // Just to make it easier in the queries below.
             linkTypesToHideFromTreeView.Add(-1);
@@ -2389,7 +2389,7 @@ public class ItemsService(
         }
 
         // Skip the rest of the function if we have no results.
-        if (!results.Any())
+        if (results.Count == 0)
         {
             return new ServiceResult<List<TreeViewItemModel>>(results);
         }
@@ -2831,7 +2831,7 @@ public class ItemsService(
             // Get all item details that can be translated.
             var wiserItem = await wiserItemsService.GetItemDetailsAsync(itemId, userId: userId, entityType: settings.EntityType);
             var detailsWithSourceLanguage = wiserItem.Details.Where(detail => String.Equals(detail.LanguageCode, settings.SourceLanguageCode, StringComparison.OrdinalIgnoreCase) && detail.Value != null).ToList();
-            if (!detailsWithSourceLanguage.Any())
+            if (detailsWithSourceLanguage.Count == 0)
             {
                 return new ServiceResult<bool>
                 {
@@ -2876,7 +2876,7 @@ public class ItemsService(
             }
 
             // If the user didn't supply any destination languages, get all languages from Wiser and use those.
-            if (settings.TargetLanguageCodes == null || !settings.TargetLanguageCodes.Any())
+            if (settings.TargetLanguageCodes == null || settings.TargetLanguageCodes.Count == 0)
             {
                 var languages = await languagesService.GetAllLanguagesAsync();
                 settings.TargetLanguageCodes = languages.Select(language => language.Code).ToList();
@@ -2891,7 +2891,7 @@ public class ItemsService(
                 }
 
                 // Translate normal texts.
-                if (textPropertiesToTranslate.Any())
+                if (textPropertiesToTranslate.Count != 0)
                 {
                     var translations = await googleTranslateService.TranslateTextAsync(textPropertiesToTranslate.Select(detail => detail.Value.ToString()), targetLanguageCode, settings.SourceLanguageCode);
                     if (translations.StatusCode != HttpStatusCode.OK)
@@ -2913,7 +2913,7 @@ public class ItemsService(
                 }
 
                 // Translate HTML fields.
-                if (htmlPropertiesToTranslate.Any())
+                if (htmlPropertiesToTranslate.Count != 0)
                 {
                     var translations = await googleTranslateService.TranslateHtmlAsync(htmlPropertiesToTranslate.Select(detail => detail.Value.ToString()), targetLanguageCode, settings.SourceLanguageCode);
                     if (translations.StatusCode != HttpStatusCode.OK)
@@ -2969,19 +2969,19 @@ public class ItemsService(
         clientDatabaseConnection.AddParameter("searchInTitle", data.SearchInTitle);
         clientDatabaseConnection.AddParameter("searchEverywhere", data.SearchEverywhere);
         clientDatabaseConnection.AddParameter("userId", IdentityHelpers.GetWiserUserId(identity));
-        clientDatabaseConnection.AddParameter("hasSearchFields", searchFields.Any());
+        clientDatabaseConnection.AddParameter("hasSearchFields", searchFields.Count != 0);
 
         var searchQueryPart = new StringBuilder();
         if (!String.IsNullOrWhiteSpace(data.SearchValue))
         {
-            if (searchFields.Any())
+            if (searchFields.Count != 0)
             {
                 searchQueryPart.AppendLine($"(detail.key IN (${String.Join(",", searchFields.Select(f => f.ToMySqlSafeValue(true)))}) AND detail.value LIKE CONCAT('%', ?searchValue, '%'))");
             }
 
             if (data.SearchInTitle)
             {
-                if (searchFields.Any())
+                if (searchFields.Count != 0)
                 {
                     searchQueryPart.Append("OR ");
                 }

@@ -71,7 +71,10 @@ public class Tests
 
                 return;
             }
-            catch { }
+            catch (NoSuchElementException)
+            {
+                // Ignore NoSuchElementException.
+            }
 
             Thread.Sleep(100);
             timeoutCount += 100;
@@ -108,7 +111,10 @@ public class Tests
                     }
                 }
             }
-            catch { }
+            catch (NoSuchElementException)
+            {
+                // Ignore NoSuchElementException.
+            }
 
             Thread.Sleep(100);
             timeoutCount += 100;
@@ -120,6 +126,9 @@ public class Tests
     /// </summary>
     private void LoginWiserUser()
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(testSettings.WiserAccountName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(testSettings.WiserAccountPassword);
+
         WaitTillElementIsFound(By.CssSelector("#loginForm .btn"));
         driver.FindElement(By.Id("username")).SendKeys(testSettings.WiserAccountName);
         driver.FindElement(By.Id("password")).SendKeys(testSettings.WiserAccountPassword);
@@ -171,6 +180,10 @@ public class Tests
             Assert.That(driver.FindElements(By.ClassName("sub-title")).Count, Is.EqualTo(0));
 
             // Login as Admin user.
+            ArgumentException.ThrowIfNullOrWhiteSpace(testSettings.WiserAdminAccountName);
+            ArgumentException.ThrowIfNullOrWhiteSpace(testSettings.WiserAdminAccountPassword);
+            ArgumentException.ThrowIfNullOrWhiteSpace(testSettings.WiserAccountName);
+
             driver.FindElement(By.Id("username")).SendKeys(testSettings.WiserAdminAccountName);
             driver.FindElement(By.Id("password")).SendKeys(testSettings.WiserAdminAccountPassword);
             driver.FindElement(By.CssSelector("#loginForm .btn-primary")).Click();
@@ -289,7 +302,6 @@ public class Tests
 
                 element.Click();
                 WaitTillElementIsFound(By.Id("field_2394"));
-                var a = driver.FindElement(By.Id("field_2394")).GetDomAttribute("value");
                 Assert.That(driver.FindElement(By.Id("field_2394")).GetDomAttribute("value"), Is.EqualTo("Test value"));
 
                 // Open delete window.

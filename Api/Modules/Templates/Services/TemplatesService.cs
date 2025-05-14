@@ -206,7 +206,7 @@ public class TemplatesService : ITemplatesService, IScopedService
         queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
         queryTemplate.Content = stringReplacementsService.DoHttpRequestReplacements(queryTemplate.Content, true);
 
-        if (requestPostData != null && requestPostData.Keys.Any())
+        if (requestPostData != null && requestPostData.Keys.Count != 0)
         {
             queryTemplate.Content = stringReplacementsService.DoReplacements(queryTemplate.Content, requestPostData, true);
         }

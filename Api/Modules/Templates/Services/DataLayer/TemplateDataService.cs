@@ -635,7 +635,7 @@ public class TemplateDataService : ITemplateDataService, IScopedService
         }
 
         // Delete any external files that are not in the new list.
-        if (externalFilesToDelete.Any())
+        if (externalFilesToDelete.Count != 0)
         {
             query = $"DELETE FROM {WiserTableNames.WiserTemplateExternalFiles} WHERE id IN ({String.Join(",", externalFilesToDelete)})";
             await clientDatabaseConnection.ExecuteAsync(query);

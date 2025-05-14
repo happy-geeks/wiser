@@ -257,7 +257,7 @@ public class ReviewDataService : IReviewDataService, IScopedService
 
         review.Id = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserCommitReviews, review.Id);
 
-        if (review.RequestedUsers == null || !review.RequestedUsers.Any())
+        if (review.RequestedUsers == null || review.RequestedUsers.Count == 0)
         {
             return review;
         }

@@ -18,7 +18,7 @@ public static class IdentityHelpers
     public static string GetRoles(ClaimsIdentity claimsIdentity)
     {
         var roleClaims = claimsIdentity?.Claims.Where(claim => claim.Type == ClaimTypes.Role).Select(claim => claim.Value).ToList();
-        if (roleClaims == null || !roleClaims.Any())
+        if (roleClaims == null || roleClaims.Count == 0)
         {
             return null;
         }

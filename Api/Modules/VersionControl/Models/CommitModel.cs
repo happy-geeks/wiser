@@ -101,17 +101,17 @@ public class CommitModel
     /// <summary>
     /// Gets whether this commit has been fully deployed to test.
     /// </summary>
-    public bool IsTest => (!Templates.Any() || Templates.All(t => t.IsTest)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsTest));
+    public bool IsTest => (Templates.Count == 0 || Templates.All(t => t.IsTest)) && (DynamicContents.Count == 0 || DynamicContents.All(d => d.IsTest));
 
     /// <summary>
     /// Gets whether this commit has been fully deployed to test.
     /// </summary>
-    public bool IsAcceptance => (!Templates.Any() || Templates.All(t => t.IsAcceptance)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsAcceptance));
+    public bool IsAcceptance => (Templates.Count == 0 || Templates.All(t => t.IsAcceptance)) && (DynamicContents.Count == 0 || DynamicContents.All(d => d.IsAcceptance));
 
     /// <summary>
     /// Gets whether this commit has been fully deployed to test.
     /// </summary>
-    public bool IsLive => (!Templates.Any() || Templates.All(t => t.IsLive)) && (!DynamicContents.Any() || DynamicContents.All(d => d.IsLive));
+    public bool IsLive => (Templates.Count == 0 || Templates.All(t => t.IsLive)) && (DynamicContents.Count == 0 || DynamicContents.All(d => d.IsLive));
 
     /// <summary>
     /// 0 if commit is not submitted for review, 1 if review is pending, 2 if review is accepted, 3 if review is denied.
