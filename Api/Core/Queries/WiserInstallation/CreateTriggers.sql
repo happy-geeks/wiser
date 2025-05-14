@@ -1837,6 +1837,11 @@ CREATE TRIGGER `UserRoleInsert` AFTER INSERT ON `wiser_user_roles` FOR EACH ROW 
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_USER_ROLE', 'wiser_user_roles', NEW.id, IFNULL(@_username, USER()), 'role_id', NULL, NEW.`role_id`);
     END IF;
+
+    IF IFNULL(NEW.`ip_addresses`, '') <> '' THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_USER_ROLE', 'wiser_user_roles', NEW.id, IFNULL(@_username, USER()), 'ip_addresses', NULL, NEW.`ip_addresses`);
+    END IF;
 END;
 
 DROP TRIGGER IF EXISTS `UserRoleUpdate`;
@@ -1849,6 +1854,11 @@ CREATE TRIGGER `UserRoleUpdate` AFTER UPDATE ON `wiser_user_roles` FOR EACH ROW 
     IF IFNULL(NEW.`role_id`, '') <> IFNULL(OLD.`role_id`, '') THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_USER_ROLE', 'wiser_user_roles', NEW.id, IFNULL(@_username, USER()), 'role_id', OLD.`role_id`, NEW.`role_id`);
+    END IF;
+
+    IF IFNULL(NEW.`ip_addresses`, '') <> IFNULL(OLD.`ip_addresses`, '') THEN
+        INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
+        VALUES ('UPDATE_USER_ROLE', 'wiser_user_roles', NEW.id, IFNULL(@_username, USER()), 'ip_addresses', OLD.`ip_addresses`, NEW.`ip_addresses`);
     END IF;
 END;
 
