@@ -46,7 +46,7 @@ public class WtsPropertyAttribute : Attribute
     /// <summary>
     /// The kendo component to use for the field.
     /// </summary>
-    public KendoComponents KendoComponent { get; set; }
+    public DataComponents DataComponent { get; set; }
 
     /// <summary>
     /// The kendo options to use for the field.
@@ -79,4 +79,16 @@ public class WtsPropertyAttribute : Attribute
     /// This requires the property DependsOnField to be set.
     /// </summary>
     public string[] DependsOnValue { get; set; }
+    
+    /// <summary>
+    /// Indicates whether a textbox should be grayed out.
+    /// For example: an ID field that must be visible but not editable.
+    /// </summary>
+    public bool IsDisabled { get; set; }
+    
+    /// <summary>
+    /// If set, this field will be shown first. When multiple fields have this attribute, lower numbers are rendered first.
+    /// Not currently in use.
+    /// </summary>
+    public int CustomUiOrder { get; set; }
 }
