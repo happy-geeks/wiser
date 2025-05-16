@@ -20,7 +20,7 @@ UPDATE wiser_entity SET accepted_childtypes = CONCAT(accepted_childtypes, ',Prod
 -- Product default Api settings will live in the "stamgegevens" module, add it there.
 INSERT INTO `wiser_item` (entity_type, moduleid, title) VALUES ('map', '700', 'Products api settings');
 SET @settingsFolderId = LAST_INSERT_ID();
-    
+
 -- Add an item for the settings.
 INSERT INTO `wiser_item` (unique_uuid, entity_type, parent_item_id, moduleid, title, added_by) VALUES ('default_products_api_settings', 'ProductsApiSettings', @settingsFolderId, 700, 'Standaard product api instellingen', 'Wiser');
 SET @newItemId = LAST_INSERT_ID();

@@ -1,7 +1,7 @@
 ﻿namespace Api.Modules.Products.Models;
 
 /// <summary>
-/// A model for a styledoutput within Wiser.
+/// A model for product api within Wiser.
 /// </summary>
 public class ProductApiModel
 {

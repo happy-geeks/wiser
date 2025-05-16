@@ -21,6 +21,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.DataSelector.Models;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -74,14 +75,14 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         this.logger = logger;
         this.branchesService = branchesService;
     }
-        
+
     /// <inheritdoc />
     public async Task<int> GetStyledOutputIdFromNameAsync(string name)
     {
         var formatQuery = $"SELECT id FROM `wiser_styled_output` WHERE `name` = {name.ToMySqlSafeValue(true)} LIMIT 1";
-            
+
         var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
-            
+
         if (dataTable.Rows.Count == 0)
         {
             return -1;
@@ -583,5 +584,134 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         cachedQueries.Add(queryId, query.ModelObject.Query);
 
         return query.ModelObject.Query;
+    }
+
+    //<inheritdoc />
+    public async Task<Dictionary<ulong,string>> GetMultiStyledOutputResultsAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<ulong> itemIds, List<KeyValuePair<string, object>> parameters)
+    {
+        var usedIds = new List<int>();
+
+        if (usedIds.Contains(id))
+        {
+            throw new Exception($"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}");
+        }
+
+        usedIds.Add(id);
+
+        StyledOutputModel style;
+
+        try
+        {
+            style = await GetCachedStyleAsync(id);
+        }
+        catch (Exception e)
+        {
+            throw new Exception($"Wiser Styled Output with ID '{id}' does not exist.", e);
+        }
+
+        if (style.QueryId < 0)
+        {
+            throw new Exception($"Wiser Styled Output with ID '{id}' does not have a valid query setup.");
+        }
+
+        if (!allowedFormats.Contains(style.ReturnType))
+        {
+            throw new Exception($"Wiser Styled Output with ID '{id}' is not setup for JSON response.");
+        }
+
+        try
+        {
+            var isAllowed = await QueryIsAllowedAsync(style.QueryId, identity);
+            if (!isAllowed)
+            {
+                var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
+                logger.LogError(errorMsg);
+
+                throw new Exception(errorMsg);
+            }
+        }
+        catch (Exception e)
+        {
+            var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
+            logger.LogError(errorMsg);
+            throw;
+        }
+
+        // This styled output has settings to parse.
+        if (!String.IsNullOrWhiteSpace(style.Options))
+        {
+            var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(style.Options);
+
+            if (optionsObject.MaxResultsPerPage > 0)
+            {
+                maxResultsPerPage = optionsObject.MaxResultsPerPage;
+            }
+
+            performanceLogging = optionsObject.LogTiming;
+        }
+
+        var query = await GetCachedQueryAsync(style.QueryId, identity);
+
+        clientDatabaseConnection.ClearParameters();
+
+        var isMainBranch = await branchesService.IsMainBranchAsync(identity);
+        clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"), isMainBranch.ModelObject);
+
+        parameters ??= [];
+
+        foreach (var parameter in parameters)
+        {
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key), parameter.Value);
+        }
+
+        var results = new Dictionary<ulong, string>();
+
+        query = query.Replace("{ids}", "(" + string.Join(",", itemIds) + ")");
+
+        var dataTable = await clientDatabaseConnection.GetAsync(query);
+        var result = dataTable.ToJsonArray(skipNullValues: true);
+
+        for (int i = 0; i < dataTable.Rows.Count; i++)
+        {
+            var builder = new StringBuilder();
+            if (!String.IsNullOrEmpty(style.FormatBegin))
+            {
+                var formattedBegin = stringReplacementsService.DoReplacements(style.FormatBegin, result[i]);
+                builder.Append(formattedBegin);
+            }
+
+            // replace simple string info
+            var itemValue = stringReplacementsService.DoReplacements(style.FormatItem, result[i]);
+
+            // Replace if then else logic.
+            itemValue = replacementsMediator.EvaluateTemplate(itemValue);
+
+            // Replace recursive inline styles.
+            var inlineResult =
+                await HandleInlineStyleElementsAsync(identity, itemValue, parameters, false, 500, 0, usedIds, id);
+
+            if (inlineResult.StatusCode == HttpStatusCode.OK)
+            {
+                itemValue = inlineResult.ModelObject;
+            }
+
+            builder.Append(itemValue);
+
+            if (i != dataTable.Rows.Count - 1)
+            {
+                builder.Append(ItemSeparatorString);
+            }
+
+
+            if (!String.IsNullOrWhiteSpace(style.FormatEnd))
+            {
+                var formattedEnd = stringReplacementsService.DoReplacements(style.FormatEnd, result[i]);
+                builder.Append(formattedEnd);
+            }
+
+            results.Add(dataTable.Rows[i].Field<ulong>("inputId"), builder.ToString());
+        }
+
+        return results;
     }
 }

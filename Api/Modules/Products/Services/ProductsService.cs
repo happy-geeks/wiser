@@ -301,90 +301,114 @@ LIMIT 256
         var currentDateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         var noUpdates = new List<ulong>();
 
-        // Depending on the type, run the parsing and store the result in the product api table.
-        foreach (DataRow row in dataTable.Rows)
+        // Depending on the type, gather data so we may perform it in groups if needed.
+
+        var processedData = new Dictionary<int, ProductApiDataProcessingModel>();
+        var uniqueStyledOutputIds = new HashSet<int>();
+
+        for (var i = 0; i < dataTable.Rows.Count; i++)
         {
-            var wiserId = row.Field<ulong>("wiser_id");
-            var publishedEnvironment = row.Field<int>("published_environment");
-            var datasourceType = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0");
-            var staticText = row.Field<string>(ProductsServiceConstants.ProductPropertyStatic);
-            var queryId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0");
-            var styledOutputId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyStyledOutputId ) ?? "0");
-            var oldHash = row.Field<string>("old_hash");
-            var version = row.IsNull("version") ? 0 : row.Field<int>("version");
-            var apiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id");
-            var content = string.Empty;
+            DataRow row = dataTable.Rows[i];
 
-            var parameters = new Dictionary<string,object>();
-            parameters.Add("itemId", wiserId);
-
-            // Check if we have a valid output, if not we skip this one.
-            switch ((ProductApiPropertyDataSources)datasourceType)
+            var data = new ProductApiDataProcessingModel
             {
-                case ProductApiPropertyDataSources.StaticSource:
-                    // Static text.
-                    content = staticText;
-                    break;
+                DataRowIndex = i,
+                WiserId = row.Field<ulong>("wiser_id"),
+                PublishedEnvironment = row.Field<int>("published_environment"),
+                DatasourceType = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0"),
+                StaticText = row.Field<string>(ProductsServiceConstants.ProductPropertyStatic),
+                QueryId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0"),
+                StyledOutputId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyStyledOutputId ) ?? "0"),
+                OldHash = row.Field<string>("old_hash"),
+                Version = row.IsNull("version") ? 0 : row.Field<int>("version"),
+                ApiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id"),
+                Output = string.Empty
+            };
 
-                case ProductApiPropertyDataSources.Query:
-                    // Query.
-                    try
-                    {
-                        var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, queryId, false, parameters.ToList());
-
-                        if (queryResult.StatusCode == HttpStatusCode.OK)
-                        {
-                            content = queryResult.ModelObject.ToString();
-                        }
-                        else
-                        {
-                            logger.LogWarning($"issue creating product api with query for wiseritem '{wiserId}' running query '{queryId}' - {queryResult.StatusCode}");
-                            content = null;
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        logger.LogWarning(exception, $"issue creating product api with query for wiseritem '{wiserId}' running query '{queryId}'");
-                        content = null;
-                    }
-                    break;
-
-                case ProductApiPropertyDataSources.StyledOutput:
-                    // Styled output.
-                    try
-                    {
-                        var styledOutputResult = await styledOutputService.GetStyledOutputResultJsonAsync(identity, styledOutputId, parameters.ToList(),false,500,0);
-                        if (styledOutputResult.StatusCode == HttpStatusCode.OK)
-                        {
-                            content = styledOutputResult.ModelObject.ToString();
-                        }
-                        else
-                        {
-                            logger.LogWarning($"issue creating product api with styledoutput for wiseritem '{wiserId}' running styledoutput '{styledOutputId}' - {styledOutputResult.StatusCode}");
-                            content = null;
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        logger.LogWarning(exception, $"issue creating product api with styled out for wiseritem '{wiserId}' running styledoutput id '{styledOutputId}'");
-                        content = null;
-                    }
-                    break;
+            if (data.DatasourceType == (int)ProductApiPropertyDataSources.StyledOutput)
+            {
+                // We need to group the styled output ids, so we can do them in one go.
+                uniqueStyledOutputIds.Add(data.StyledOutputId);
             }
 
-            // Make a hash and do a quick compare.
-            if (!content.IsNullOrWhiteSpace())
+            processedData.Add(i, data);
+        }
+
+        // Process the static data, this is not grouped together yet.
+        for (var i = 0; i < processedData.Count; i++)
+        {
+            if (processedData[i].DatasourceType == (int)ProductApiPropertyDataSources.StaticSource)
             {
-                var newHash = content.ToSha512Simple();
-                if (newHash != oldHash)
+                processedData[i].Output = processedData[i].StaticText;
+            }
+        }
+
+        // Process the query data, this is not grouped together yet.
+        for (var i = 0; i < processedData.Count; i++)
+        {
+            if (processedData[i].DatasourceType != (int)ProductApiPropertyDataSources.Query)
+            {
+                break;
+            }
+
+            var parameters = new Dictionary<string,object>();
+            parameters.Add("itemId", processedData[i].WiserId);
+
+            try
+            {
+                var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, processedData[i].QueryId, false, parameters.ToList());
+
+                if (queryResult.StatusCode == HttpStatusCode.OK)
+                {
+                    processedData[i].Output = queryResult.ModelObject.ToString();
+                }
+                else
+                {
+                    logger.LogWarning($"issue creating product api with query for wiseritem '{processedData[i].WiserId}' running query '{processedData[i].QueryId}' - {queryResult.StatusCode}");
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"issue creating product api with query for wiseritem '{processedData[i].WiserId}' running query '{processedData[i].QueryId}'");
+            }
+        } string[] allowedFormats = { "JSON" };
+
+
+        // Process the styled output data, this is grouped together.
+        foreach (var styledOutputId in uniqueStyledOutputIds)
+        {
+            var itemIds = processedData.Where(x => x.Value.StyledOutputId == styledOutputId).Select(x => x.Value.WiserId).ToList();
+            var parameters = new Dictionary<string,object>();
+
+            try
+            {
+                var styledOutputResults = await styledOutputService.GetMultiStyledOutputResultsAsync(identity,allowedFormats, styledOutputId, itemIds, parameters.ToList());
+
+                foreach (var styledOutputResult in styledOutputResults)
+                {
+                    processedData.First(x => x.Value.WiserId == styledOutputResult.Key).Value.Output = styledOutputResult.Value;
+                }
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"issue creating product api with styled out for wiseritems '{itemIds}' running styledoutput id '{styledOutputId}'");
+            }
+        }
+
+        for (var i = 0; i < processedData.Count; i++)
+        {
+            if (!processedData[i].Output.IsNullOrWhiteSpace())
+            {
+                processedData[i].NewHash = processedData[i].Output.ToSha512Simple();
+                if (processedData[i].NewHash != processedData[i].OldHash)
                 {
                     ProductApiModel productApiModel = new ProductApiModel
                     {
-                        WiserId = wiserId,
-                        Version = version + 1,
-                        Output = content,
-                        Hash = newHash,
-                        Removed = publishedEnvironment <= 0,
+                        WiserId = processedData[i].WiserId,
+                        Version = processedData[i].Version + 1,
+                        Output = processedData[i].Output,
+                        Hash = processedData[i].NewHash,
+                        Removed = processedData[i].PublishedEnvironment <= 0,
                         AddedBy = "productApiRefresh",
                         AddedOn = currentDateTime,
                         RefreshDate = currentDateTime
@@ -394,7 +418,7 @@ LIMIT 256
                 }
                 else
                 {
-                    noUpdates.Add(apiEntryId);
+                    noUpdates.Add(processedData[i].ApiEntryId);
                 }
             }
         }
