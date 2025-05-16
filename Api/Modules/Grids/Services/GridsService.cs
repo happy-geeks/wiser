@@ -1172,7 +1172,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                         selectQuery = $$"""
                                         SELECT
-                                            GROUP_CONCAT(CONCAT(id.`key`, '=', IFNULL(idt.`value`, id.`value`), '') SEPARATOR '~~~') AS `fields`,
+                                            IF(COUNT(id.id) = 0, NULL, JSON_ARRAYAGG(JSON_OBJECT('key', id.`key`, 'value', IFNULL(idt.`value`, id.`value`), 'languageCode', id.language_code))) AS fields,
                                             i.*
                                         FROM (
                                             # Sub query so that we can first limit the items, then get all fields of those remaining items and group by item.
