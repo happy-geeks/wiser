@@ -10,11 +10,13 @@ using System.Web;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Products.Enums;
+using Api.Modules.Products.Exceptions;
 using Api.Modules.Products.Interfaces;
 using Api.Modules.Products.Models;
 using Api.Modules.Queries.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 using GeeksCoreLibrary.Core.Enums;
+using GeeksCoreLibrary.Core.Exceptions;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -303,8 +305,7 @@ LIMIT 256
 
         // Depending on the type, gather data so we may perform it in groups if needed.
 
-        var processedData = new Dictionary<int, ProductApiDataProcessingModel>();
-        var uniqueStyledOutputIds = new HashSet<int>();
+        var processedData = new List<ProductApiDataProcessingModel>();
 
         for (var i = 0; i < dataTable.Rows.Count; i++)
         {
@@ -315,111 +316,69 @@ LIMIT 256
                 DataRowIndex = i,
                 WiserId = row.Field<ulong>("wiser_id"),
                 PublishedEnvironment = row.Field<int>("published_environment"),
-                DatasourceType = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0"),
+                DatasourceType = (ProductApiPropertyDataSources)int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0"),
                 StaticText = row.Field<string>(ProductsServiceConstants.ProductPropertyStatic),
-                QueryId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0"),
-                StyledOutputId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyStyledOutputId ) ?? "0"),
+                QueryId = Int32.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0"),
+                StyledOutputId = Int32.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyStyledOutputId ) ?? "0"),
                 OldHash = row.Field<string>("old_hash"),
                 Version = row.IsNull("version") ? 0 : row.Field<int>("version"),
                 ApiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id"),
-                Output = string.Empty
+                Output = String.Empty
             };
 
-            if (data.DatasourceType == (int)ProductApiPropertyDataSources.StyledOutput)
-            {
-                // We need to group the styled output ids, so we can do them in one go.
-                uniqueStyledOutputIds.Add(data.StyledOutputId);
-            }
-
-            processedData.Add(i, data);
+            processedData.Add(data);
         }
 
-        // Process the static data, this is not grouped together yet.
-        for (var i = 0; i < processedData.Count; i++)
+        var groupedProcessedData = processedData.GroupBy(d => d.DatasourceType);
+        foreach (var group in groupedProcessedData)
         {
-            if (processedData[i].DatasourceType == (int)ProductApiPropertyDataSources.StaticSource)
+            switch (group.Key)
             {
-                processedData[i].Output = processedData[i].StaticText;
-            }
-        }
+                case ProductApiPropertyDataSources.StaticSource:
+                    await ProcessGroupedDataStaticAsync(identity, group);
+                    break;
 
-        // Process the query data, this is not grouped together yet.
-        for (var i = 0; i < processedData.Count; i++)
-        {
-            if (processedData[i].DatasourceType != (int)ProductApiPropertyDataSources.Query)
-            {
-                break;
-            }
+                case ProductApiPropertyDataSources.Query:
+                    await ProcessGroupedDataQueryAsync(identity, group);
+                    break;
 
-            var parameters = new Dictionary<string,object>();
-            parameters.Add("itemId", processedData[i].WiserId);
-
-            try
-            {
-                var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, processedData[i].QueryId, false, parameters.ToList());
-
-                if (queryResult.StatusCode == HttpStatusCode.OK)
-                {
-                    processedData[i].Output = queryResult.ModelObject.ToString();
-                }
-                else
-                {
-                    logger.LogWarning($"issue creating product api with query for wiseritem '{processedData[i].WiserId}' running query '{processedData[i].QueryId}' - {queryResult.StatusCode}");
-                }
-            }
-            catch (Exception exception)
-            {
-                logger.LogWarning(exception, $"issue creating product api with query for wiseritem '{processedData[i].WiserId}' running query '{processedData[i].QueryId}'");
-            }
-        } string[] allowedFormats = { "JSON" };
-
-
-        // Process the styled output data, this is grouped together.
-        foreach (var styledOutputId in uniqueStyledOutputIds)
-        {
-            var itemIds = processedData.Where(x => x.Value.StyledOutputId == styledOutputId).Select(x => x.Value.WiserId).ToList();
-            var parameters = new Dictionary<string,object>();
-
-            try
-            {
-                var styledOutputResults = await styledOutputService.GetMultiStyledOutputResultsAsync(identity,allowedFormats, styledOutputId, itemIds, parameters.ToList());
-
-                foreach (var styledOutputResult in styledOutputResults)
-                {
-                    processedData.First(x => x.Value.WiserId == styledOutputResult.Key).Value.Output = styledOutputResult.Value;
-                }
-            }
-            catch (Exception exception)
-            {
-                logger.LogWarning(exception, $"issue creating product api with styled out for wiseritems '{itemIds}' running styledoutput id '{styledOutputId}'");
-            }
-        }
-
-        for (var i = 0; i < processedData.Count; i++)
-        {
-            if (!processedData[i].Output.IsNullOrWhiteSpace())
-            {
-                processedData[i].NewHash = processedData[i].Output.ToSha512Simple();
-                if (processedData[i].NewHash != processedData[i].OldHash)
-                {
-                    ProductApiModel productApiModel = new ProductApiModel
+                case ProductApiPropertyDataSources.StyledOutput:
+                    var groupedStyledOutputs = group.GroupBy(x => x.StyledOutputId);
+                    foreach (var styledOutputGroup in groupedStyledOutputs)
                     {
-                        WiserId = processedData[i].WiserId,
-                        Version = processedData[i].Version + 1,
-                        Output = processedData[i].Output,
-                        Hash = processedData[i].NewHash,
-                        Removed = processedData[i].PublishedEnvironment <= 0,
-                        AddedBy = "productApiRefresh",
-                        AddedOn = currentDateTime,
-                        RefreshDate = currentDateTime
-                    };
-                    // We have a new hash, we need to update the product api table.
-                    generatedData.Add(productApiModel);
-                }
-                else
+                        await ProcessGroupedDataStyledOutputAsync(identity, styledOutputGroup);
+                    }
+                    break;
+
+                default:
+                    const string errorMsg = "unknown type found in product api data processing";
+                    logger.LogError(errorMsg);
+                    throw new ProductsApiException(errorMsg);
+            }
+        }
+
+        foreach (var t in processedData.Where(t => !t.Output.IsNullOrWhiteSpace()))
+        {
+            t.NewHash = t.Output.ToSha512Simple();
+            if (t.NewHash != t.OldHash)
+            {
+                ProductApiModel productApiModel = new ProductApiModel
                 {
-                    noUpdates.Add(processedData[i].ApiEntryId);
-                }
+                    WiserId = t.WiserId,
+                    Version = t.Version + 1,
+                    Output = t.Output,
+                    Hash = t.NewHash,
+                    Removed = t.PublishedEnvironment <= 0,
+                    AddedBy = "productApiRefresh",
+                    AddedOn = currentDateTime,
+                    RefreshDate = currentDateTime
+                };
+                // We have a new hash, we need to update the product api table.
+                generatedData.Add(productApiModel);
+            }
+            else
+            {
+                noUpdates.Add(t.ApiEntryId);
             }
         }
 
@@ -442,6 +401,86 @@ LIMIT 256
     }
 
     /// <summary>
+    /// Helper function to process the grouped data for a group of styled output with the same id.
+    /// </summary>
+    /// <param name="identity">The identity of the user performing this command.</param>
+    /// <param name="group">The group being processed.</param>
+    private async Task ProcessGroupedDataStyledOutputAsync(ClaimsIdentity identity, IGrouping<int, ProductApiDataProcessingModel> group)
+    {
+        var styledOutputId = group.Key;
+
+        // For now we only support Json as output format, this could change in the future.
+        string[] allowedFormats = { "JSON" };
+
+        var itemIds = group.Where(x => x.StyledOutputId == styledOutputId).Select(x => x.WiserId).ToList();
+        var parameters = new Dictionary<string,object>();
+
+        try
+        {
+            var styledOutputResults = await styledOutputService.GetMultiStyledOutputResultsAsync(identity, allowedFormats, styledOutputId, itemIds, parameters.ToList());
+
+            foreach (var styledOutputResult in styledOutputResults)
+            {
+                group.Single(x => x.WiserId == styledOutputResult.Key).Output = styledOutputResult.Value;
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, $"issue creating product api with styled out for wiseritems '{itemIds}' running styledoutput id '{styledOutputId}'");
+        }
+
+    }
+
+    /// <summary>
+    /// Helper function to process the grouped data for queries.
+    /// </summary>
+    /// <param name="identity">The identity of the user performing this command.</param>
+    /// <param name="group">The group being processed.</param>
+    private async Task ProcessGroupedDataQueryAsync(ClaimsIdentity identity, IGrouping<ProductApiPropertyDataSources, ProductApiDataProcessingModel> group)
+    {
+        group.ForEach(async void (t) =>
+        {
+            try
+            {
+                var parameters = new Dictionary<string, object> { { "itemId", t.WiserId } };
+                var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, t.QueryId, false, parameters.ToList());
+
+                if (queryResult.StatusCode == HttpStatusCode.OK)
+                {
+                    t.Output = queryResult.ModelObject.ToString();
+                }
+                else
+                {
+                    logger.LogWarning($"issue creating product api with query for wiseritem '{t.WiserId}' running query '{t.QueryId}' - {queryResult.StatusCode}");
+                }
+
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"issue creating product api with query for wiseritem '{t.WiserId}' running query '{t.QueryId}'");
+            }
+        });
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Helper function to process the grouped data for static text.
+    /// </summary>
+    /// <param name="identity">The identity of the user performing this command.</param>
+    /// <param name="group">The group being processed.</param>
+    private async Task ProcessGroupedDataStaticAsync(ClaimsIdentity identity, IGrouping<ProductApiPropertyDataSources, ProductApiDataProcessingModel> group)
+    {
+        group.ForEach(t =>
+        {
+            t.Output = t.StaticText;
+            t.NewHash = t.Output.ToSha512Simple();
+        });
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
     /// Helper function to update the last check date on the given product api entries with the given timestamp.
     /// </summary>
     /// <param name="identity">The identity of the user performing this command.</param>
@@ -450,7 +489,7 @@ LIMIT 256
     private async Task UpdateProductApiEntriesAsync(ClaimsIdentity identity, ICollection<ulong> apiEntryIds, string currentDateTime)
     {
         var query = $"""
-UPDATE `wiser_products_api` SET `refresh_date` = {currentDateTime}
+UPDATE `wiser_products_api` SET `refresh_date` = "{currentDateTime}"
 WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
 """;
 
@@ -467,7 +506,7 @@ WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
             if (errorMsg != null)
             {
                 logger.LogError(e, errorMsg);
-                throw new Exception(errorMsg);
+                throw new ProductsApiException(errorMsg);
             }
         }
     }
@@ -681,7 +720,7 @@ WHERE detail.key = '{settingName}' LIMIT 1
         {
             var errorMsg = $"Wiser product api encountered a problem running the setup script.";
             logger.LogError(e, errorMsg);
-            throw new Exception(errorMsg);
+            throw new ProductsApiException(errorMsg);
         }
     }
 
@@ -755,7 +794,7 @@ WHERE detail.key = '{settingName}' LIMIT 1
         {
             var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
             logger.LogError(e,errorMsg);
-            throw new Exception(errorMsg);
+            throw new ProductsApiException(errorMsg);
         }
     }
 }

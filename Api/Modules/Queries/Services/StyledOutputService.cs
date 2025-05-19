@@ -21,7 +21,6 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
-using GeeksCoreLibrary.Modules.DataSelector.Models;
 using GeeksCoreLibrary.Modules.GclReplacements.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -145,6 +144,34 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         }
     }
 
+    private bool CheckForInUseIds(List<int> inUseStyleIds, int id, out string errorMsg)
+    {
+        errorMsg = "";
+
+        if (inUseStyleIds == null)
+        {
+            return false;
+        }
+
+        if (!inUseStyleIds.Contains(id)) return false;
+
+        errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {inUseStyleIds}";
+        logger.LogError(errorMsg);
+
+        return true;
+    }
+
+    private StyledOutputModel StripNewlinesAndTabsOnStyle(StyledOutputModel input)
+    {
+        return new StyledOutputModel
+        {
+            FormatBegin = input.FormatBegin.Replace("\r\n","").Replace("\n","").Replace("\t",""),
+            FormatItem = input.FormatItem.Replace("\r\n","").Replace("\n","").Replace("\t",""),
+            FormatEnd = input.FormatEnd.Replace("\r\n","").Replace("\n","").Replace("\t",""),
+            FormatEmpty = input.FormatEmpty.Replace("\r\n","").Replace("\n","").Replace("\t","")
+        };
+    }
+
     /// <summary>
     /// Private function for handling styled output elements.
     /// </summary>
@@ -162,16 +189,12 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     {
         var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
 
-        if (usedIds.Contains(id))
+        if (CheckForInUseIds(usedIds, id, out var idErrorMsg))
         {
-            var errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}";
-
-            logger.LogError(errorMsg);
-
             return new ServiceResult<string>
             {
                 StatusCode = HttpStatusCode.LoopDetected,
-                ErrorMessage = errorMsg
+                ErrorMessage = idErrorMsg
             };
         }
 
@@ -196,10 +219,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
         if (stripNewlinesAndTabs)
         {
-            style.FormatBegin = style.FormatBegin.Replace("\r\n","").Replace("\n","").Replace("\t","");
-            style.FormatItem = style.FormatItem.Replace("\r\n","").Replace("\n","").Replace("\t","");
-            style.FormatEnd = style.FormatEnd.Replace("\r\n","").Replace("\n","").Replace("\t","");
-            style.FormatEmpty = style.FormatEmpty.Replace("\r\n","").Replace("\n","").Replace("\t","");
+            style = StripNewlinesAndTabsOnStyle(style);
         }
 
         if (style.QueryId < 0)
@@ -586,7 +606,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         return query.ModelObject.Query;
     }
 
-    //<inheritdoc />
+    ///<inheritdoc />
     public async Task<Dictionary<ulong,string>> GetMultiStyledOutputResultsAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<ulong> itemIds, List<KeyValuePair<string, object>> parameters)
     {
         var usedIds = new List<int>();
@@ -626,7 +646,6 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             {
                 var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
                 logger.LogError(errorMsg);
-
                 throw new Exception(errorMsg);
             }
         }
@@ -655,7 +674,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         clientDatabaseConnection.ClearParameters();
 
         var isMainBranch = await branchesService.IsMainBranchAsync(identity);
-        clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"), isMainBranch.ModelObject);
+        clientDatabaseConnection.AddParameter("isMainBranch", isMainBranch.ModelObject);
 
         parameters ??= [];
 

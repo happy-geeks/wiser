@@ -1,4 +1,7 @@
-﻿namespace Api.Modules.Products.Models;
+﻿using System.Data;
+using Api.Modules.Products.Enums;
+
+namespace Api.Modules.Products.Models;
 
 /// <summary>
 /// A container for processing data as we parse it, so we can save results or group operations together.
@@ -6,7 +9,7 @@
 public class ProductApiDataProcessingModel
 {
     /// <summary>
-    /// Gets or sets the id.
+    /// Gets or sets the index of the corresponding <see cref="DataRow" /> in the <see cref="DataTable"/>.
     /// </summary>
     public int DataRowIndex { get; set; }
 
@@ -38,7 +41,7 @@ public class ProductApiDataProcessingModel
     /// <summary>
     /// Gets or Sets the Type we use for the datasource.
     /// </summary>
-    public int DatasourceType { get; set; }
+    public ProductApiPropertyDataSources DatasourceType { get; set; }
 
     /// <summary>
     /// Gets or Sets the static text when used.
