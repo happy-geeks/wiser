@@ -12,6 +12,7 @@ using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
+using Api.Modules.Queries.Exceptions;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -613,7 +614,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
         if (usedIds.Contains(id))
         {
-            throw new Exception($"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}");
+            throw new StyledOutputCyclicReferenceException($"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}");
         }
 
         usedIds.Add(id);
@@ -624,19 +625,19 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         {
             style = await GetCachedStyleAsync(id);
         }
-        catch (Exception e)
+        catch (KeyNotFoundException e)
         {
-            throw new Exception($"Wiser Styled Output with ID '{id}' does not exist.", e);
+            throw new KeyNotFoundException($"Wiser Styled Output with ID '{id}' does not exist.", e);
         }
 
         if (style.QueryId < 0)
         {
-            throw new Exception($"Wiser Styled Output with ID '{id}' does not have a valid query setup.");
+            throw new StyledOutputNoValidQuerySetupException($"Wiser Styled Output with ID '{id}' does not have a valid query setup.");
         }
 
         if (!allowedFormats.Contains(style.ReturnType))
         {
-            throw new Exception($"Wiser Styled Output with ID '{id}' is not setup for JSON response.");
+            throw new StyledOutputNoValidJsonSetupException($"Wiser Styled Output with ID '{id}' is not setup for JSON response.");
         }
 
         try
@@ -646,13 +647,13 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             {
                 var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
                 logger.LogError(errorMsg);
-                throw new Exception(errorMsg);
+                throw new StyledOutputNotAllowedException(errorMsg);
             }
         }
-        catch (Exception e)
+        catch (UnauthorizedAccessException e)
         {
             var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
-            logger.LogError(errorMsg);
+            logger.LogError(errorMsg,e);
             throw;
         }
 
