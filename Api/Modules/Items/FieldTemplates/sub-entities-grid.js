@@ -1,10 +1,10 @@
-﻿(() => {
+﻿(async () => {
     const field = $("#overviewGrid{propertyIdWithSuffix}");
     const loader = field.closest(".item").find(".grid-loader");
     let options = {options};
     const customQueryGrid = options.customQuery === true;
-    const kendoComponent;
-    const isFirstLoad = true;
+    let kendoComponent;
+    let isFirstLoad = true;
     let height = "{height}" || undefined;
     let linkTypeParameter = "";
     if (options.linkTypeNumber) {
@@ -12,8 +12,8 @@
     }
 
     let readonly = {readonly};
-    const rowIndex = null;
-    const cellIndex = null;
+    let rowIndex = null;
+    let cellIndex = null;
     let editCount = 0;
     let hideCheckboxColumn = !options.checkboxes || options.checkboxes === "false" || options.checkboxes <= 0;
     const usingDataSelector = !!options.dataSelectorId;
@@ -24,210 +24,211 @@
     }
 
     if (customQueryGrid) {
-        Wiser.api({
+        let customQueryResults = Wiser.api({
             url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}`
-        }).then((customQueryResults) => {
-            if (customQueryResults.extraJavascript) {
-                jQuery.globalEval(customQueryResults.extraJavascript);
-            }
-
-            if (!hideCheckboxColumn) {
-                customQueryResults.columns.splice(0, 0, {
-                    selectable: true,
-                    width: "30px"
-                });
-            }
-
-            if (!options.disableOpeningOfItems) {
-                if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
-                    // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                    options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
-                }
-            }
-
-            if (!options.hideCommandColumn) {
-                let commandColumnWidth = 0;
-                let commands = [];
-
-                if (!options.disableOpeningOfItems) {
-                    commandColumnWidth += 60;
-
-                    commands.push({
-                        name: "openDetails",
-                        iconClass: "k-icon k-i-hyperlink-open",
-                        text: "",
-                        title: "Item openen",
-                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
-                    });
-
-                    if (options.allowOpeningOfItemsInNewTab) {
-                        commandColumnWidth += 60;
-
-                        commands.push({
-                            name: "openDetailsInNewTab",
-                            iconClass: "k-icon k-i-window",
-                            text: "",
-                            title: "Item openen in nieuwe tab",
-                            click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
-                        });
-                    }
-                }
-
-                if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
-                    commandColumnWidth += 60;
-
-                    commands.push({
-                        name: "remove",
-                        text: "",
-                        iconClass: "k-icon k-i-delete",
-                        click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
-                    });
-                } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
-                    commandColumnWidth += 120;
-
-                    commands.push("destroy");
-                }
-
-                if (commands.length > 0) {
-                    customQueryResults.columns.push({
-                        title: "&nbsp;",
-                        width: commandColumnWidth,
-                        command: commands
-                    });
-                }
-            }
-
-            generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
         });
-    } else {
-        let done = (gridSettings) => {
-            if (usingDataSelector) {
-                gridSettings = {
-                    data: gridSettings,
-                    columns: options.columns
-                };
-            }
 
-            if (gridSettings.extraJavascript) {
-                jQuery.globalEval(gridSettings.extraJavascript);
-            }
-
-            // Add most columns here.
-            if (gridSettings.columns && gridSettings.columns.length) {
-                for (let i = 0; i < gridSettings.columns.length; i++) {
-                    const column = gridSettings.columns[i];
-
-                    switch ((column.field || "").toLowerCase()) {
-                        case "":
-                            column.hidden = hideCheckboxColumn;
-                            break;
-                        case "id":
-                            column.hidden = options.hideIdColumn || false;
-                            break;
-                        case "link_id":
-                        case "linkid":
-                            column.hidden = options.hideLinkIdColumn || false;
-                            break;
-                        case "entity_type":
-                        case "entitytype":
-                            column.hidden = options.hideTypeColumn || false;
-                            break;
-                        case "published_environment":
-                        case "publishedenvironment":
-                            column.hidden = options.hideEnvironmentColumn || false;
-                            break;
-                        case "title":
-                            column.hidden = options.hideTitleColumn || false;
-                            break;
-                        case "added_on":
-                        case "addedon":
-                            column.hidden = !options.showAddedOnColumn;
-                            break;
-                        case "added_by":
-                        case "addedby":
-                            column.hidden = !options.showAddedByColumn;
-                            break;
-                        case "changed_on":
-                        case "changedon":
-                            column.hidden = !options.showChangedOnColumn;
-                            break;
-                        case "changed_by":
-                        case "changedby":
-                            column.hidden = !options.showChangedByColumn;
-                            break;
-                    }
-                }
-            }
-
-            if (!options.disableOpeningOfItems) {
-                if (gridSettings.schemaModel && gridSettings.schemaModel.fields) {
-                    // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
-                    options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encrypted_id || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemaModel.fields.idencrypted);
-                }
-            }
-
-            // Add command columns separately, because of the click event that we can't do properly server-side.
-            if (!options.hideCommandColumn) {
-                let commandColumnWidth = 0;
-                let commands = [];
-
-                if (!options.disableOpeningOfItems && !options.fieldGroupName) {
-                    commandColumnWidth += 60;
-                    commands.push({
-                        name: "openDetails",
-                        iconClass: "k-icon k-i-hyperlink-open",
-                        text: "",
-                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
-                    });
-
-                    if (options.allowOpeningOfItemsInNewTab) {
-                        commandColumnWidth += 60;
-
-                        commands.push({
-                            name: "openDetailsInNewTab",
-                            iconClass: "k-icon k-i-window",
-                            text: "",
-                            click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
-                        });
-                    }
-                }
-
-                if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off" && !options.fieldGroupName) {
-                    commandColumnWidth += 60;
-
-                    commands.push({
-                        name: "remove",
-                        text: "",
-                        iconClass: "k-icon k-i-delete",
-                        click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
-                    });
-                }
-
-                if (gridSettings.columns && commands.length > 0) {
-                    gridSettings.columns.push({
-                        title: "&nbsp;",
-                        width: commandColumnWidth,
-                        command: commands
-                    });
-                }
-            }
-
-            generateGrid(gridSettings.data, gridSettings.schemaModel, gridSettings.columns);
+        if (customQueryResults.extraJavascript) {
+                jQuery.globalEval(customQueryResults.extraJavascript);
         }
 
+        if (!hideCheckboxColumn) {
+            customQueryResults.columns.splice(0, 0, {
+                selectable: true,
+                width: "30px"
+            });
+        }
+
+        if (!options.disableOpeningOfItems) {
+            if (customQueryResults.schemaModel && customQueryResults.schemaModel.fields) {
+                // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
+                options.disableOpeningOfItems = !(customQueryResults.schemaModel.fields.encryptedId || customQueryResults.schemaModel.fields.encrypted_id || customQueryResults.schemaModel.fields.encryptedid || customQueryResults.schemaModel.fields.idencrypted);
+            }
+        }
+
+        if (!options.hideCommandColumn) {
+            let commandColumnWidth = 0;
+            let commands = [];
+
+            if (!options.disableOpeningOfItems) {
+                commandColumnWidth += 60;
+
+                commands.push({
+                    name: "openDetails",
+                    iconClass: "k-icon k-i-hyperlink-open",
+                    text: "",
+                    title: "Item openen",
+                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
+                });
+
+                if (options.allowOpeningOfItemsInNewTab) {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "openDetailsInNewTab",
+                        iconClass: "k-icon k-i-window",
+                        text: "",
+                        title: "Item openen in nieuwe tab",
+                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    });
+                }
+            }
+
+            if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off") {
+                commandColumnWidth += 60;
+
+                commands.push({
+                    name: "remove",
+                    text: "",
+                    iconClass: "k-icon k-i-delete",
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                });
+            } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
+                commandColumnWidth += 120;
+
+                commands.push("destroy");
+            }
+
+            if (commands.length > 0) {
+                customQueryResults.columns.push({
+                    title: "&nbsp;",
+                    width: commandColumnWidth,
+                    command: commands
+                });
+            }
+        }
+
+        generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
+    } else {
+        let result = null;
+
         if (usingDataSelector) {
-            Wiser.api({
+           result = await Wiser.api({
                 url: `${window.dynamicItems.settings.getItemsUrl}?trace=false&encryptedDataSelectorId=${encodeURIComponent(options.dataSelectorId)}&itemId=${encodeURIComponent("{itemIdEncrypted}")}`,
                 contentType: "application/json"
-            }).then(done);
+            });
         } else {
-            Wiser.api({
+            result = Wiser.api({
                 url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                 method: "POST",
                 contentType: "application/json"
-            }).then(done);
+            });
         }
+
+        if (usingDataSelector) {
+            gridSettings = {
+                data: gridSettings,
+                columns: options.columns
+            };
+        }
+
+        if (gridSettings.extraJavascript) {
+            jQuery.globalEval(gridSettings.extraJavascript);
+        }
+
+        // Add most columns here.
+        if (gridSettings.columns && gridSettings.columns.length) {
+            for (let i = 0; i < gridSettings.columns.length; i++) {
+                const column = gridSettings.columns[i];
+
+                switch ((column.field || "").toLowerCase()) {
+                    case "":
+                        column.hidden = hideCheckboxColumn;
+                        break;
+                    case "id":
+                        column.hidden = options.hideIdColumn || false;
+                        break;
+                    case "link_id":
+                    case "linkid":
+                        column.hidden = options.hideLinkIdColumn || false;
+                        break;
+                    case "entity_type":
+                    case "entitytype":
+                        column.hidden = options.hideTypeColumn || false;
+                        break;
+                    case "published_environment":
+                    case "publishedenvironment":
+                        column.hidden = options.hideEnvironmentColumn || false;
+                        break;
+                    case "title":
+                        column.hidden = options.hideTitleColumn || false;
+                        break;
+                    case "added_on":
+                    case "addedon":
+                        column.hidden = !options.showAddedOnColumn;
+                        break;
+                    case "added_by":
+                    case "addedby":
+                        column.hidden = !options.showAddedByColumn;
+                        break;
+                    case "changed_on":
+                    case "changedon":
+                        column.hidden = !options.showChangedOnColumn;
+                        break;
+                    case "changed_by":
+                    case "changedby":
+                        column.hidden = !options.showChangedByColumn;
+                        break;
+                }
+            }
+        }
+
+        if (!options.disableOpeningOfItems) {
+            if (gridSettings.schemaModel && gridSettings.schemaModel.fields) {
+                // If there is no field for encrypted ID, don't allow the user to open items, they'd just get an error.
+                options.disableOpeningOfItems = !(gridSettings.schemaModel.fields.encryptedId || gridSettings.schemaModel.fields.encrypted_id || gridSettings.schemaModel.fields.encryptedid || gridSettings.schemaModel.fields.idencrypted);
+            }
+        }
+
+        // Add command columns separately, because of the click event that we can't do properly server-side.
+        if (!options.hideCommandColumn) {
+            let commandColumnWidth = 0;
+            let commands = [];
+
+            if (!options.disableOpeningOfItems && !options.fieldGroupName) {
+                commandColumnWidth += 60;
+                commands.push({
+                    name: "openDetails",
+                    iconClass: "k-icon k-i-hyperlink-open",
+                    text: "",
+                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, false); }
+                });
+
+                if (options.allowOpeningOfItemsInNewTab) {
+                    commandColumnWidth += 60;
+
+                    commands.push({
+                        name: "openDetailsInNewTab",
+                        iconClass: "k-icon k-i-window",
+                        text: "",
+                        click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    });
+                }
+            }
+
+            if (!readonly && options.deletionOfItems && options.deletionOfItems.toLowerCase() !== "off" && !options.fieldGroupName) {
+                commandColumnWidth += 60;
+
+                commands.push({
+                    name: "remove",
+                    text: "",
+                    iconClass: "k-icon k-i-delete",
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                });
+            }
+
+            if (gridSettings.columns && commands.length > 0) {
+                gridSettings.columns.push({
+                    title: "&nbsp;",
+                    width: commandColumnWidth,
+                    command: commands
+                });
+            }
+        }
+
+        generateGrid(gridSettings.data, gridSettings.schemaModel, gridSettings.columns);
     }
+
     async function generateGrid(data, model, columns) {
         let toolbar = [];
         if (!options.toolbar || !options.toolbar.hideExportButton) {
@@ -322,7 +323,7 @@
             field.empty();
         }
 
-        const editable;
+        let editable;
         if (readonly === true) {
             editable = false;
         } else if (options.editable) {
@@ -337,7 +338,7 @@
             };
         }
 
-        const dataBindingType;
+        let dataBindingType;
         let filtersChanged = false;
         const kendoGridOptions = $.extend(true, {
             dataSource: {
@@ -345,7 +346,7 @@
                 serverFiltering: !!options.serverFiltering,
                 sort: customQueryGrid ? undefined : {field: "__ordering", dir: "asc"},
                 transport: {
-                    read: (transportOptions) => {
+                    read: async (transportOptions) => {
                         try {
                             loader.addClass("loading");
 
@@ -357,12 +358,14 @@
                             }
 
                             if (customQueryGrid) {
-                                Wiser.api({
-                                    url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids-with-filters/{propertyId}${linkTypeParameter}`,
-                                    method: "POST",
-                                    contentType: "application/json",
-                                    data: JSON.stringify(transportOptions.data)
-                                }).then((customQueryResults) => {
+                                try {
+                                    let customQueryResults = Wiser.api({
+                                        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids-with-filters/{propertyId}${linkTypeParameter}`,
+                                        method: "POST",
+                                        contentType: "application/json",
+                                        data: JSON.stringify(transportOptions.data)}
+                                    );
+
                                     if (customQueryResults.data) {
                                         for (let i = 0; i < customQueryResults.data.length; i++) {
                                             const row = customQueryResults.data[i];
@@ -374,23 +377,27 @@
 
                                     transportOptions.success(customQueryResults.data);
                                     loader.removeClass("loading");
-                                }).catch((error) => {
+                                }
+                                catch (error)
+                                {
                                     transportOptions.error(error);
                                     loader.removeClass("loading");
-                                });
+                                }
                             } else {
-                                Wiser.api({
-                                    url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
-                                    method: "POST",
-                                    contentType: "application/json",
-                                    data: JSON.stringify(transportOptions.data)
-                                }).then((gridSettings) => {
+                                try {
+                                    let gridSettings = Wiser.api({
+                                        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
+                                        method: "POST",
+                                        contentType: "application/json",
+                                        data: JSON.stringify(transportOptions.data)
+                                    });
                                     transportOptions.success(gridSettings.data);
                                     loader.removeClass("loading");
-                                }).catch((error) => {
+                                }
+                                catch(error) {
                                     transportOptions.error(error);
                                     loader.removeClass("loading");
-                                });
+                                }
                             }
                         } catch (exception) {
                             console.error(exception);
@@ -399,7 +406,7 @@
                             transportOptions.error(exception);
                         }
                     },
-                    update: (transportOptions) => {
+                    update: async (transportOptions) => {
                         try {
                             if (readonly === true) {
                                 return;
@@ -407,27 +414,28 @@
 
                             loader.addClass("loading");
 
-                            if (customQueryGrid) {
-                                Wiser.api({
+                            try {
+                                let customQueryGrid = await Wiser.api({
                                     url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                     method: "PUT",
                                     contentType: "application/json",
                                     dataType: "json",
                                     data: JSON.stringify(transportOptions.data)
-                                }).then((result) => {
-                                    // notify the data source that the request succeeded
-                                    transportOptions.success(result);
-                                    loader.removeClass("loading");
-                                }).catch((jqXHR, textStatus, errorThrown) => {
-                                    console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
-                                    loader.removeClass("loading");
-                                    // notify the data source that the request failed
-                                    kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                    // notify the data source that the request failed
-                                    transportOptions.error(jqXHR);
                                 });
 
+                                // notify the data source that the request succeeded
+                                transportOptions.success(result);
+                                loader.removeClass("loading");
                                 return;
+                            }
+                            catch (errorThrown)
+                            {
+                                console.error("UPDATE FAIL", errorThrown);
+                                loader.removeClass("loading");
+                                // notify the data source that the request failed
+                                kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
+                                // notify the data source that the request failed
+                                transportOptions.error(errorThrown);
                             }
 
                             let itemModel = {
@@ -529,13 +537,15 @@
                                 }
                             }
 
-                            Wiser.api({
-                                url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
-                                method: "PUT",
-                                contentType: "application/json",
-                                dataType: "json",
-                                data: JSON.stringify(itemModel)
-                            }).then((result) => {
+                            try {
+                                let result = await Wiser.api({
+                                    url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
+                                    method: "PUT",
+                                    contentType: "application/json",
+                                    dataType: "json",
+                                    data: JSON.stringify(itemModel)
+                                });
+
                                 if (transportOptions.data && transportOptions.data.details) {
                                     for (let i = 0; i < transportOptions.data.details.length; i++) {
                                         const currentField = transportOptions.data.details[i];
@@ -554,13 +564,14 @@
                                     kendoComponent.dataSource.read();
                                 }
                                 loader.removeClass("loading");
-                            }).catch((jqXHR, textStatus, errorThrown) => {
-                                console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
+                            }
+                            catch (errorThrown) {
+                                console.error("UPDATE FAIL", errorThrown);
                                 loader.removeClass("loading");
                                 // notify the data source that the request failed
                                 kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                transportOptions.error(jqXHR);
-                            });
+                                transportOptions.error(errorThrown);
+                            }
                         } catch (exception) {
                             console.error(exception);
                             loader.removeClass("loading");
@@ -568,7 +579,7 @@
                             transportOptions.error(exception);
                         }
                     },
-                    create: (transportOptions) => {
+                    create: async (transportOptions) => {
                         try {
                             if (readonly === true) {
                                 return;
@@ -588,13 +599,15 @@
                                 }
                                 itemModel.details.push(transportOptions.data);
 
-                                Wiser.api({
-                                    url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
-                                    method: "PUT",
-                                    contentType: "application/json",
-                                    dataType: "json",
-                                    data: JSON.stringify(itemModel)
-                                }).then((result) => {
+                                try {
+                                    let result = await Wiser.api({
+                                        url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "json",
+                                        data: JSON.stringify(itemModel)
+                                    });
+
                                     if (transportOptions.data && transportOptions.data.details) {
                                         for (let i = 0; i < transportOptions.data.details.length; i++) {
                                             const currentField = transportOptions.data.details[i];
@@ -609,32 +622,36 @@
                                     // notify the data source that the request succeeded
                                     transportOptions.success(transportOptions.data);
                                     loader.removeClass("loading");
-                                }).catch((jqXHR, textStatus, errorThrown) => {
-                                    console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
+                                }
+                                catch (errorthrown) {
+                                    console.error("UPDATE FAIL", errorThrown);
                                     loader.removeClass("loading");
                                     // notify the data source that the request failed
                                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                    transportOptions.error(jqXHR);
-                                });
+                                    transportOptions.error(errorThrown);
+                                }
                             } else if (customQueryGrid) {
                                 loader.addClass("loading");
 
-                                Wiser.api({
-                                    url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
-                                    method: "POST",
-                                    contentType: "application/json",
-                                    dataType: "json",
-                                    data: JSON.stringify(transportOptions.data)
-                                }).then((result) => {
+                                try{
+                                    let result = await Wiser.api({
+                                        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
+                                        method: "POST",
+                                        contentType: "application/json",
+                                        dataType: "json",
+                                        data: JSON.stringify(transportOptions.data)
+                                    });
+
                                     // notify the data source that the request succeeded
                                     transportOptions.success(result);
                                     loader.removeClass("loading");
-                                }).catch((jqXHR, textStatus, errorThrown) => {
+                                }
+                                catch (errorThrown) {
                                     // notify the data source that the request failed
-                                    transportOptions.error(jqXHR);
+                                    transportOptions.error(errorThrown);
                                     loader.removeClass("loading");
                                     kendo.alert("Er is iets fout gegaan tijdens het aanmaken van een item.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                });
+                                }
                             }
                         } catch (exception) {
                             console.error(exception);
@@ -643,7 +660,7 @@
                             transportOptions.error(exception);
                         }
                     },
-                    destroy: (transportOptions) => {
+                    destroy: async (transportOptions) => {
                         try {
                             if (readonly === true) {
                                 return;
@@ -664,13 +681,15 @@
                                 transportOptions.data.key = "";
                                 itemModel.details.push(transportOptions.data);
 
-                                Wiser.api({
-                                    url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
-                                    method: "PUT",
-                                    contentType: "application/json",
-                                    dataType: "json",
-                                    data: JSON.stringify(itemModel)
-                                }).then((result) => {
+                                try {
+                                    let result = Wiser.api({
+                                        url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
+                                        method: "PUT",
+                                        contentType: "application/json",
+                                        dataType: "json",
+                                        data: JSON.stringify(itemModel)
+                                    });
+
                                     if (transportOptions.data && transportOptions.data.details) {
                                         for (let i = 0; i < transportOptions.data.details.length; i++) {
                                             const currentField = transportOptions.data.details[i];
@@ -685,32 +704,36 @@
                                     // notify the data source that the request succeeded
                                     transportOptions.success(transportOptions.data);
                                     loader.removeClass("loading");
-                                }).catch((jqXHR, textStatus, errorThrown) => {
-                                    console.error("UPDATE FAIL", textStatus, errorThrown, jqXHR);
+                                }
+                                catch (errorThrown) {
+                                    console.error("UPDATE FAIL", errorThrown);
                                     loader.removeClass("loading");
                                     // notify the data source that the request failed
                                     kendo.alert("Er is iets fout gegaan tijdens het opslaan van het veld '{title}'.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                    transportOptions.error(jqXHR);
-                                });
+                                    transportOptions.error(errorThrown);
+                                }
                             } else if (customQueryGrid) {
                                 loader.addClass("loading");
 
-                                Wiser.api({
-                                    url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
-                                    method: "DELETE",
-                                    contentType: "application/json",
-                                    dataType: "json",
-                                    data: JSON.stringify(transportOptions.data)
-                                }).then((result) => {
+                                try {
+                                    let result = await Wiser.api({
+                                        url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
+                                        method: "DELETE",
+                                        contentType: "application/json",
+                                        dataType: "json",
+                                        data: JSON.stringify(transportOptions.data)
+                                    });
+
                                     // notify the data source that the request succeeded
                                     transportOptions.success(result);
                                     loader.removeClass("loading");
-                                }).catch((jqXHR, textStatus, errorThrown) => {
+                                }
+                                catch (errorThrown) {
                                     // notify the data source that the request failed
-                                    transportOptions.error(jqXHR);
+                                    transportOptions.error(errorThrown);
                                     loader.removeClass("loading");
                                     kendo.alert("Er is iets fout gegaan tijdens het verwijderen van deze regel.<br>" + (errorThrown ? errorThrown : "Probeer het a.u.b. nogmaals, of neem contact op met ons."));
-                                });
+                                }
                             }
                         } catch (exception) {
                             console.error(exception);
@@ -788,7 +811,7 @@
                     const row = $(this).closest("tr");
                     const columnIndex = $(this).closest("td").index();
                     if (columnIndex < 0 || columnIndex >= columns.length) {
-                        console.warn("Found progress bar in column " + columnIndex.toString() + " but couldn't find the corresponding column in grid.options.columns.");
+                        console.warn(`Found progress bar in column ${columnIndex.toString()} but couldn't find the corresponding column in grid.options.columns.`);
                         return;
                     }
 
@@ -889,8 +912,7 @@
         kendoComponent.thead.kendoTooltip({
             filter: "th",
             content: (event) => {
-                var target = event.target; // element for which the tooltip is shown
-                return $(target).text();
+                return event.target.text();
             }
         });
 
@@ -910,10 +932,10 @@
             kendoComponent.table.kendoSortable({
                 autoScroll: true,
                 hint: (element) => {
-                    var table = kendoComponent.table.clone(); // Clone the Grid table.
-                    var wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
+                    let table = kendoComponent.table.clone(); // Clone the Grid table.
+                    let wrapperWidth = kendoComponent.wrapper.width(); // Get the Grid width.
                     let wrapper = $("<div class='k-grid k-widget'></div>").width(wrapperWidth);
-                    const hint;
+                    let hint;
 
                     table.find("thead").remove(); // Remove the Grid header from the hint.
                     table.find("tbody").empty(); // Remove the existing rows from the hint.
@@ -932,10 +954,10 @@
                 filter: ">tbody >tr",
                 change: (e) => {
                     // Kendo starts ordering with 0, but wiser starts with 1.
-                    var oldIndex = e.oldIndex + 1; // The old position.
-                    var newIndex = e.newIndex + 1; // The new position.
-                    const view = kendoComponent.dataSource.view();
-                    var dataItem = kendoComponent.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
+                    let oldIndex = e.oldIndex + 1; // The old position.
+                    let newIndex = e.newIndex + 1; // The new position.
+                    let view = kendoComponent.dataSource.view();
+                    let dataItem = kendoComponent.dataSource.getByUid(e.item.data("uid")); // Retrieve the moved dataItem.
 
                     dataItem.__ordering = newIndex; // Update the order
                     dataItem.dirty = true;
