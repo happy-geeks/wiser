@@ -69,9 +69,11 @@ export class WtsConfiguration {
         }
         catch (e) {
             console.error(e);
-            this.base.toggleMainLoader(false); // Hide the loader
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
             return;
+        }
+        finally {
+            this.base.toggleMainLoader(false); // Hide the loader
         }
         
         // Build the view
@@ -83,15 +85,16 @@ export class WtsConfiguration {
                 data: JSON.stringify(templateSettings)
             })
             
-            this.base.toggleMainLoader(false); // Hide the loader
             document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the HTML to the tab
             $("#tabStripConfiguration").kendoTabStrip().data("kendoTabStrip"); // Initialize the tabstrip
             
         }
         catch (e) {
             console.error(e);
-            this.base.toggleMainLoader(false); // Hide the loader
             kendo.alert("Er is iets fout gegaan. Sluit a.u.b. deze module, open deze daarna opnieuw en probeer het vervolgens opnieuw. Of neem contact op als dat niet werkt.");
+        }
+        finally {
+            this.base.toggleMainLoader(false); // Hide the loader
         }
 
         this.initializeKendoComponents();
