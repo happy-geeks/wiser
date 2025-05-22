@@ -18,20 +18,20 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
-           
+            @* @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, ""); *@
+            
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
+            @* @{ RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }*@
         </div>
     </div>
 
     <div id="actionsTab">
         <div class="formview compact">
             @* This is currently commented out since the actions tab is not working yet. *@
-            @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}
+            @*@{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}*@
         </div>
     </div>
 

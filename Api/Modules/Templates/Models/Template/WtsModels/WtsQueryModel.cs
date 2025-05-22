@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Drawing.Printing;
 using System.Runtime.InteropServices.JavaScript;
 using System.Xml;
@@ -46,7 +47,7 @@ public class WtsQueryModel : ActionModel
     
     [XmlIgnore]
     [CanBeNull]
-    private string timeout;
+    private int? timeout;
     
     /// <summary>
     /// Gets or sets the timeout in seconds. If the integer is 0 it will be null instead.
@@ -66,10 +67,10 @@ public class WtsQueryModel : ActionModel
                 "
     )]
     [CanBeNull]
-    public string Timeout {
+    public int? Timeout {
         get
         {
-            if(timeout == "0") return null;
+            if(timeout == 0) return null;
             return timeout;
         }
         set => timeout = value;

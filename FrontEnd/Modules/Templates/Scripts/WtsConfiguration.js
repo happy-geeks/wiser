@@ -76,16 +76,17 @@ export class WtsConfiguration {
         
         // Build the view
         try {
-            await Wiser.api({
+            let response = await Wiser.api({
                 method: "POST",
                 contentType: "application/json",
                 url: "/Modules/Templates/WtsConfigurationTab",
                 data: JSON.stringify(templateSettings)
-            }).then(async (response) => {
-                this.base.toggleMainLoader(false); // Hide the loader
-                document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the HTML to the tab
-                $("#tabStripConfiguration").kendoTabStrip().data("kendoTabStrip"); // Initialize the tabstrip
             })
+            
+            this.base.toggleMainLoader(false); // Hide the loader
+            document.getElementById("wtsConfigurationTab").innerHTML = response; // Add the HTML to the tab
+            $("#tabStripConfiguration").kendoTabStrip().data("kendoTabStrip"); // Initialize the tabstrip
+            
         }
         catch (e) {
             console.error(e);
@@ -94,7 +95,7 @@ export class WtsConfiguration {
         }
 
         this.initializeKendoComponents();
-        this.initializeCodeMirror();
+        await this.initializeCodeMirror();
         this.bindEvents();
     }
     
@@ -209,9 +210,8 @@ export class WtsConfiguration {
         this.fireAllChangeEvents();
     }
 
-    initializeCodeMirror(){
-        var a = async()=>{await Misc.ensureCodeMirror();}
-        a();
+    async initializeCodeMirror(){
+        await Misc.ensureCodeMirror();
         
         //Clear the array of editors.
         this.editorSql=[]
