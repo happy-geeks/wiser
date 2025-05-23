@@ -775,24 +775,26 @@ const moduleSettings = {
         async loadTemplate(id, virtualItem = null) {
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const historyTab = this.mainTabStrip.element.find(".history-tab");
-
+            const configTab = this.mainTabStrip.element.find(".config-tab");
+            
             if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
                 this.templateSettings = {};
                 this.linkedTemplates = null;
                 this.templateHistory = null;
-
+                
                 document.getElementById("developmentTab").innerHTML = "";
+                document.getElementById("wtsConfigurationTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
                 this.mainTabStrip.disable(historyTab);
+                this.mainTabStrip.disable(configTab);
                 return;
             }
-
+            
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
-
+            
             try {
                 let promises;
-
                 let templateSettings, linkedTemplates, templateHistory;
                 let isVirtualTemplate = false;
                 if (virtualItem !== null) {
@@ -813,7 +815,7 @@ const moduleSettings = {
                         linkedJavascript: [],
                         linkOptionsTemplates: []
                     };
-
+                    
                     // Retrieve parent ID so it can be set on the template settings.
                     const selectedTabIndex = this.treeViewTabStrip.select().index();
                     const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
@@ -846,7 +848,7 @@ const moduleSettings = {
 
                 // Load the different tabs.
                 promises = [];
-
+                
                 // Development
                 promises.push(
                     Wiser.api({
@@ -1194,7 +1196,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
-
+            
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {

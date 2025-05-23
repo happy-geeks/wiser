@@ -13,10 +13,12 @@ public class HttpApiModel : ActionModel
     public string OAuth { get; set; }
 
     public bool? SingleRequest { get; set; }
+
     [XmlIgnore]
     public bool SingleRequestSpecified => SingleRequest.HasValue;
 
     public bool? IgnoreSslValidationErrors { get; set; }
+
     [XmlIgnore]
     public bool IgnoreSslValidationErrorsSpecified => IgnoreSslValidationErrors.HasValue;
 
