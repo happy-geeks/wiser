@@ -10,11 +10,11 @@ using System.Web;
 using Api.Core.Helpers;
 using Api.Core.Services;
 using Api.Modules.Products.Enums;
+using Api.Modules.Products.Exceptions;
 using Api.Modules.Products.Interfaces;
 using Api.Modules.Products.Models;
 using Api.Modules.Queries.Interfaces;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
-using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Extensions;
 using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
@@ -91,7 +91,7 @@ public class ProductsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> GetAllProductsAsync(ClaimsIdentity identity, DateTime? date,  int page = 0)
+    public async Task<ServiceResult<JToken>> GetAllProductsAsync(ClaimsIdentity identity, DateTime? date, int page = 0)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
@@ -115,7 +115,7 @@ public class ProductsService(
 
         if (productsQuery == null)
         {
-            var errorMsg = $"Wiser product api cannot find the query to select the product ids.";
+            var errorMsg = "Wiser product api cannot find the query to select the product ids.";
             logger.LogError(errorMsg);
             return new ServiceResult<JToken>
             {
@@ -167,17 +167,17 @@ public class ProductsService(
 
         if (dateWasProvidedByUser)
         {
-            prevPageQueryString["date"]  = date?.ToString("yyyy-MM-dd");
-            nextPageQueryString["date"] = date?.ToString("yyyy-MM-dd");
+            prevPageQueryString["date"] = date.Value.ToString("yyyy-MM-dd");
+            nextPageQueryString["date"] = date.Value.ToString("yyyy-MM-dd");
         }
 
         prevPageQueryString["page"] = (page - 1).ToString();
         nextPageQueryString["page"] = (page + 1).ToString();
 
-        pageUriBuilder.Query = prevPageQueryString?.ToString() ?? "";
+        pageUriBuilder.Query = prevPageQueryString.ToString() ?? "";
         var prevPageUrl = pageUriBuilder.ToString();
 
-        pageUriBuilder.Query = nextPageQueryString?.ToString() ?? "";
+        pageUriBuilder.Query = nextPageQueryString.ToString() ?? "";
         var nextPageUrl = pageUriBuilder.ToString();
 
         // Generate the json object for the result.
@@ -213,13 +213,13 @@ public class ProductsService(
 
         // Check if the properties for the product api are set up, if not we need to create them.
         // We do this here because we only want these properties present when the product api is used.
-        // (To prevent extra tabs for costumers that dont use this feature.)
-        await EnsureProductApiPropertiesAsync(identity);
+        // (To prevent extra tabs for costumers that don't use this feature.)
+        await EnsureProductApiPropertiesAsync();
 
         var productsQuery = await GetGlobalSettingAsync(ProductsServiceConstants.PropertySelectProductsKey);
         if (productsQuery == null)
         {
-            var errorMsg = $"Wiser product api cannot find the productsQuery for the product api.";
+            var errorMsg = "Wiser product api cannot find the productsQuery for the product api.";
             logger.LogError(errorMsg);
             throw new KeyNotFoundException(errorMsg);
         }
@@ -238,8 +238,8 @@ public class ProductsService(
 
         // Check if the properties for the product api are set up, if not we need to create them.
         // We do this here because we only want these properties present when the product api is used.
-        // (To prevent extra tabs for costumers that dont use this feature.)
-        await EnsureProductApiPropertiesAsync(identity);
+        // (To prevent extra tabs for costumers that don't use this feature.)
+        await EnsureProductApiPropertiesAsync();
 
         // Check if for the requested ids there is a product version of the setting available in wiser_itemdetail (if not create it).
         await EnsureProductApiPropertyDetailsAsync(wiserIds);
@@ -247,7 +247,7 @@ public class ProductsService(
         var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
-            var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
+            var errorMsg = "Wiser product api cannot find the entity type for the product api.";
             logger.LogError(errorMsg);
             throw new KeyNotFoundException(errorMsg);
         }
@@ -255,7 +255,7 @@ public class ProductsService(
         var coolDown = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown);
         if (coolDown == null)
         {
-            var errorMsg = $"Wiser product api cannot find the cool down setting for the product api.";
+            var errorMsg = "Wiser product api cannot find the cool down setting for the product api.";
             logger.LogError(errorMsg);
             throw new KeyNotFoundException(errorMsg);
         }
@@ -265,34 +265,34 @@ public class ProductsService(
             : $"AND apis.refresh_date < DATE_SUB(NOW(), INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL";
 
         var getApiDataQuery = $"""
-SELECT 
-item.id AS `wiser_id`,
-apis.hash AS `old_hash`,
-apis.version AS `version`,
-apis.id AS `api_entry_id`,
-DatasourceType.`value` AS `{ProductsServiceConstants.ProductPropertyDatasourceType}`,
-DatasourceStatic.`value` AS `{ProductsServiceConstants.ProductPropertyStatic}`,
-DatasourceQueryId.`value` AS `{ProductsServiceConstants.ProductPropertyQueryId}`,
-DatasourceStyledId.`value` AS `{ProductsServiceConstants.ProductPropertyStyledOutputId}`,
-item.`published_environment` AS `published_environment`
+                               SELECT 
+                               item.id AS `wiser_id`,
+                               apis.hash AS `old_hash`,
+                               apis.version AS `version`,
+                               apis.id AS `api_entry_id`,
+                               DatasourceType.`value` AS `{ProductsServiceConstants.ProductPropertyDatasourceType}`,
+                               DatasourceStatic.`value` AS `{ProductsServiceConstants.ProductPropertyStatic}`,
+                               DatasourceQueryId.`value` AS `{ProductsServiceConstants.ProductPropertyQueryId}`,
+                               DatasourceStyledId.`value` AS `{ProductsServiceConstants.ProductPropertyStyledOutputId}`,
+                               item.`published_environment` AS `published_environment`
 
-FROM {WiserTableNames.WiserItem} `item`
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceType` ON `DatasourceType`.key = '{ProductsServiceConstants.ProductPropertyDatasourceType}' AND `DatasourceType`.item_id = item.id
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStatic` ON `DatasourceStatic`.key = '{ProductsServiceConstants.ProductPropertyStatic}' AND `DatasourceStatic`.item_id = item.id
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceQueryId` ON `DatasourceQueryId`.key = '{ProductsServiceConstants.ProductPropertyQueryId}' AND `DatasourceQueryId`.item_id = item.id
-LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStyledId` ON `DatasourceStyledId`.key = '{ProductsServiceConstants.ProductPropertyStyledOutputId}' AND `DatasourceStyledId`.item_id = item.id
-LEFT JOIN (
-    SELECT  wiser_id, MAX(version) AS max_version
-    FROM {WiserTableNames.WiserProductsApi}
-    GROUP BY wiser_id
-) latest_version ON latest_version.wiser_id = item.id
-LEFT JOIN {WiserTableNames.WiserProductsApi} apis ON apis.wiser_id = item.id AND apis.version = latest_version.max_version 
- 
-WHERE item.entity_type = '{productEntityType}' 
-  {coolDownString}
-  AND item.id IN ({string.Join(",", wiserIds)})
-LIMIT 256
-""";
+                               FROM {WiserTableNames.WiserItem} `item`
+                               LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceType` ON `DatasourceType`.key = '{ProductsServiceConstants.ProductPropertyDatasourceType}' AND `DatasourceType`.item_id = item.id
+                               LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStatic` ON `DatasourceStatic`.key = '{ProductsServiceConstants.ProductPropertyStatic}' AND `DatasourceStatic`.item_id = item.id
+                               LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceQueryId` ON `DatasourceQueryId`.key = '{ProductsServiceConstants.ProductPropertyQueryId}' AND `DatasourceQueryId`.item_id = item.id
+                               LEFT JOIN  {WiserTableNames.WiserItemDetail} `DatasourceStyledId` ON `DatasourceStyledId`.key = '{ProductsServiceConstants.ProductPropertyStyledOutputId}' AND `DatasourceStyledId`.item_id = item.id
+                               LEFT JOIN (
+                                   SELECT  wiser_id, MAX(version) AS max_version
+                                   FROM {WiserTableNames.WiserProductsApi}
+                                   GROUP BY wiser_id
+                               ) latest_version ON latest_version.wiser_id = item.id
+                               LEFT JOIN {WiserTableNames.WiserProductsApi} apis ON apis.wiser_id = item.id AND apis.version = latest_version.max_version 
+                                
+                               WHERE item.entity_type = '{productEntityType}' 
+                                 {coolDownString}
+                                 AND item.id IN ({String.Join(",", wiserIds)})
+                               LIMIT 256
+                               """;
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         var dataTable = await clientDatabaseConnection.GetAsync(getApiDataQuery);
 
@@ -301,114 +301,95 @@ LIMIT 256
         var currentDateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         var noUpdates = new List<ulong>();
 
-        // Depending on the type, run the parsing and store the result in the product api table.
-        foreach (DataRow row in dataTable.Rows)
+        // Depending on the type, gather data so we may perform it in groups if needed.
+        var processedData = new List<ProductApiDataProcessingModel>();
+
+        for (var i = 0; i < dataTable.Rows.Count; i++)
         {
-            var wiserId = row.Field<ulong>("wiser_id");
-            var publishedEnvironment = row.Field<int>("published_environment");
-            var datasourceType = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0");
-            var staticText = row.Field<string>(ProductsServiceConstants.ProductPropertyStatic);
-            var queryId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0");
-            var styledOutputId = int.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyStyledOutputId ) ?? "0");
-            var oldHash = row.Field<string>("old_hash");
-            var version = row.IsNull("version") ? 0 : row.Field<int>("version");
-            var apiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id");
-            var content = string.Empty;
+            var row = dataTable.Rows[i];
 
-            var parameters = new Dictionary<string,object>();
-            parameters.Add("itemId", wiserId);
+            var data = new ProductApiDataProcessingModel
+            {
+                DataRowIndex = i,
+                WiserId = row.Field<ulong>("wiser_id"),
+                PublishedEnvironment = row.Field<int>("published_environment"),
+                DatasourceType = (ProductApiPropertyDataSources) Int32.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyDatasourceType) ?? "0"),
+                StaticText = row.Field<string>(ProductsServiceConstants.ProductPropertyStatic),
+                QueryId = Int32.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyQueryId) ?? "0"),
+                StyledOutputId = Int32.Parse(row.Field<string>(ProductsServiceConstants.ProductPropertyStyledOutputId) ?? "0"),
+                OldHash = row.Field<string>("old_hash"),
+                Version = row.IsNull("version") ? 0 : row.Field<int>("version"),
+                ApiEntryId = row.IsNull("api_entry_id") ? 0 : row.Field<ulong>("api_entry_id"),
+                Output = String.Empty
+            };
 
-            // Check if we have a valid output, if not we skip this one.
-            switch ((ProductApiPropertyDataSources)datasourceType)
+            processedData.Add(data);
+        }
+
+        var groupedProcessedData = processedData.GroupBy(d => d.DatasourceType);
+        foreach (var group in groupedProcessedData)
+        {
+            switch (group.Key)
             {
                 case ProductApiPropertyDataSources.StaticSource:
-                    // Static text.
-                    content = staticText;
+                    await ProcessGroupedDataStaticAsync(group);
                     break;
 
                 case ProductApiPropertyDataSources.Query:
-                    // Query.
-                    try
-                    {
-                        var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, queryId, false, parameters.ToList());
-
-                        if (queryResult.StatusCode == HttpStatusCode.OK)
-                        {
-                            content = queryResult.ModelObject.ToString();
-                        }
-                        else
-                        {
-                            logger.LogWarning($"issue creating product api with query for wiseritem '{wiserId}' running query '{queryId}' - {queryResult.StatusCode}");
-                            content = null;
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        logger.LogWarning(exception, $"issue creating product api with query for wiseritem '{wiserId}' running query '{queryId}'");
-                        content = null;
-                    }
+                    await ProcessGroupedDataQueryAsync(identity, group);
                     break;
 
                 case ProductApiPropertyDataSources.StyledOutput:
-                    // Styled output.
-                    try
+                    var groupedStyledOutputs = group.GroupBy(x => x.StyledOutputId);
+                    foreach (var styledOutputGroup in groupedStyledOutputs)
                     {
-                        var styledOutputResult = await styledOutputService.GetStyledOutputResultJsonAsync(identity, styledOutputId, parameters.ToList(),false,500,0);
-                        if (styledOutputResult.StatusCode == HttpStatusCode.OK)
-                        {
-                            content = styledOutputResult.ModelObject.ToString();
-                        }
-                        else
-                        {
-                            logger.LogWarning($"issue creating product api with styledoutput for wiseritem '{wiserId}' running styledoutput '{styledOutputId}' - {styledOutputResult.StatusCode}");
-                            content = null;
-                        }
+                        await ProcessGroupedDataStyledOutputAsync(identity, styledOutputGroup);
                     }
-                    catch (Exception exception)
-                    {
-                        logger.LogWarning(exception, $"issue creating product api with styled out for wiseritem '{wiserId}' running styledoutput id '{styledOutputId}'");
-                        content = null;
-                    }
-                    break;
-            }
 
-            // Make a hash and do a quick compare.
-            if (!content.IsNullOrWhiteSpace())
+                    break;
+
+                default:
+                    const string errorMsg = "unknown type found in product api data processing";
+                    logger.LogError(errorMsg);
+                    throw new ProductsApiException(errorMsg);
+            }
+        }
+
+        foreach (var t in processedData.Where(t => !t.Output.IsNullOrWhiteSpace()))
+        {
+            t.NewHash = t.Output.ToSha512Simple();
+            if (t.NewHash != t.OldHash)
             {
-                var newHash = content.ToSha512Simple();
-                if (newHash != oldHash)
+                var productApiModel = new ProductApiModel
                 {
-                    ProductApiModel productApiModel = new ProductApiModel
-                    {
-                        WiserId = wiserId,
-                        Version = version + 1,
-                        Output = content,
-                        Hash = newHash,
-                        Removed = publishedEnvironment <= 0,
-                        AddedBy = "productApiRefresh",
-                        AddedOn = currentDateTime,
-                        RefreshDate = currentDateTime
-                    };
-                    // We have a new hash, we need to update the product api table.
-                    generatedData.Add(productApiModel);
-                }
-                else
-                {
-                    noUpdates.Add(apiEntryId);
-                }
+                    WiserId = t.WiserId,
+                    Version = t.Version + 1,
+                    Output = t.Output,
+                    Hash = t.NewHash,
+                    Removed = t.PublishedEnvironment <= 0,
+                    AddedBy = "productApiRefresh",
+                    AddedOn = currentDateTime,
+                    RefreshDate = currentDateTime
+                };
+                // We have a new hash, we need to update the product api table.
+                generatedData.Add(productApiModel);
+            }
+            else
+            {
+                noUpdates.Add(t.ApiEntryId);
             }
         }
 
         // If we have new date lets make new versions.
         if (generatedData.Count > 0)
         {
-            await AddProductApiEntriesAsync(identity,generatedData);
+            await AddProductApiEntriesAsync(generatedData);
         }
 
         // If we have entries that have not changed but were checked, update their refresh dates.
         if (noUpdates.Count > 0)
         {
-            await UpdateProductApiEntriesAsync(identity,noUpdates,currentDateTime);
+            await UpdateProductApiEntriesAsync(noUpdates, currentDateTime);
         }
 
         return new ServiceResult<JToken>
@@ -418,17 +399,91 @@ LIMIT 256
     }
 
     /// <summary>
-    /// Helper function to update the last check date on the given product api entries with the given timestamp.
+    /// Helper function to process the grouped data for a group of styled output with the same id.
     /// </summary>
     /// <param name="identity">The identity of the user performing this command.</param>
+    /// <param name="group">The group being processed.</param>
+    private async Task ProcessGroupedDataStyledOutputAsync(ClaimsIdentity identity, IGrouping<int, ProductApiDataProcessingModel> group)
+    {
+        var styledOutputId = group.Key;
+
+        // For now, we only support Json as output format, this could change in the future.
+        string[] allowedFormats = ["JSON"];
+
+        var itemIds = group.Where(x => x.StyledOutputId == styledOutputId).Select(x => x.WiserId).ToList();
+
+        try
+        {
+            var styledOutputResults = await styledOutputService.GetMultiStyledOutputResultsAsync(identity, allowedFormats, styledOutputId, itemIds, []);
+
+            foreach (var styledOutputResult in styledOutputResults)
+            {
+                group.Single(x => x.WiserId == styledOutputResult.Key).Output = styledOutputResult.Value;
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, $"issue creating product api with styled out for wiseritems '{itemIds}' running styledoutput id '{styledOutputId}'");
+        }
+    }
+
+    /// <summary>
+    /// Helper function to process the grouped data for queries.
+    /// </summary>
+    /// <param name="identity">The identity of the user performing this command.</param>
+    /// <param name="group">The group being processed.</param>
+    private async Task ProcessGroupedDataQueryAsync(ClaimsIdentity identity, IGrouping<ProductApiPropertyDataSources, ProductApiDataProcessingModel> group)
+    {
+        foreach (var processingModel in group)
+        {
+            try
+            {
+                var parameters = new Dictionary<string, object> {{"itemId", processingModel.WiserId}};
+                var queryResult = await queriesService.GetQueryResultAsJsonAsync(identity, processingModel.QueryId, false, parameters.ToList());
+
+                if (queryResult.StatusCode == HttpStatusCode.OK)
+                {
+                    processingModel.Output = queryResult.ModelObject.ToString();
+                }
+                else
+                {
+                    logger.LogWarning($"issue creating product api with query for wiseritem '{processingModel.WiserId}' running query '{processingModel.QueryId}' - {queryResult.StatusCode}");
+                }
+
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(exception, $"issue creating product api with query for wiseritem '{processingModel.WiserId}' running query '{processingModel.QueryId}'");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Helper function to process the grouped data for static text.
+    /// </summary>
+    /// <param name="group">The group being processed.</param>
+    private async Task ProcessGroupedDataStaticAsync(IGrouping<ProductApiPropertyDataSources, ProductApiDataProcessingModel> group)
+    {
+        group.ForEach(t =>
+        {
+            t.Output = t.StaticText;
+            t.NewHash = t.Output.ToSha512Simple();
+        });
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Helper function to update the last check date on the given product api entries with the given timestamp.
+    /// </summary>
     /// <param name="apiEntryIds">The id of the wiser product api entries we are trying to update.</param>
     /// <param name="currentDateTime">The id of the wiser product we are trying to read.</param>
-    private async Task UpdateProductApiEntriesAsync(ClaimsIdentity identity, ICollection<ulong> apiEntryIds, string currentDateTime)
+    private async Task UpdateProductApiEntriesAsync(ICollection<ulong> apiEntryIds, string currentDateTime)
     {
         var query = $"""
-UPDATE `wiser_products_api` SET `refresh_date` = {currentDateTime}
-WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
-""";
+                     UPDATE `wiser_products_api` SET `refresh_date` = "{currentDateTime}"
+                     WHERE `wiser_id` IN ( {String.Join(",", apiEntryIds)} )
+                     """;
 
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
@@ -439,11 +494,11 @@ WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
+            var errorMsg = "Wiser product api encountered a problem adding new entries to the table.";
             if (errorMsg != null)
             {
                 logger.LogError(e, errorMsg);
-                throw new Exception(errorMsg);
+                throw new ProductsApiException(errorMsg);
             }
         }
     }
@@ -451,7 +506,7 @@ WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
     /// <summary>
     /// This function checks and if needed creates the product api properties in the database.
     /// </summary>
-    private async Task EnsureProductApiPropertiesAsync(ClaimsIdentity identity)
+    private async Task EnsureProductApiPropertiesAsync()
     {
         await clientDatabaseConnection.EnsureOpenConnectionForWritingAsync();
         clientDatabaseConnection.ClearParameters();
@@ -460,7 +515,7 @@ WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
         if (productEntityType == null)
         {
             // We don't have default settings, run the setup script
-            await RunProductsApiSetupScript(identity);
+            await RunProductsApiSetupScript();
 
             // Retrieve the product entity type now that we made them.
             productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
@@ -468,16 +523,16 @@ WHERE `wiser_id` IN ( {string.Join(",", apiEntryIds)} )
             // If we still don't have a product entity type, we throw an error.
             if (productEntityType == null)
             {
-                var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
+                var errorMsg = "Wiser product api cannot find the entity type for the product api.";
                 logger.LogError(errorMsg);
                 throw new KeyNotFoundException(errorMsg);
             }
         }
 
         var selectQuery = $"""
-SELECT id FROM {WiserTableNames.WiserEntityProperty} property 
-WHERE property.tab_name = '{ProductApiPropertyTabName}' AND property.entity_name = '{productEntityType}'
-""";
+                           SELECT id FROM {WiserTableNames.WiserEntityProperty} property 
+                           WHERE property.tab_name = '{ProductApiPropertyTabName}' AND property.entity_name = '{productEntityType}'
+                           """;
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
         if (dataTable.Rows.Count == 0)
@@ -533,18 +588,18 @@ ON DUPLICATE KEY UPDATE id=id;
         var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
-            var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
+            var errorMsg = "Wiser product api cannot find the entity type for the product api.";
             logger.LogError(errorMsg);
             throw new KeyNotFoundException(errorMsg);
         }
 
         // Let's see if there are any products without details ( we assume that if datasource_type is there all details are saved).
         var findMissingQuery = $"""
-SELECT item.id AS wiser_id
-FROM {WiserTableNames.WiserItem} `item`
-LEFT JOIN {WiserTableNames.WiserItemDetail} `detail` ON `detail`.key = '{ProductsServiceConstants.ProductPropertyDatasourceType}' AND `detail`.item_id = item.id
-WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.id IN ({string.Join(",", wiserIds)})
-""";
+                                SELECT item.id AS wiser_id
+                                FROM {WiserTableNames.WiserItem} `item`
+                                LEFT JOIN {WiserTableNames.WiserItemDetail} `detail` ON `detail`.key = '{ProductsServiceConstants.ProductPropertyDatasourceType}' AND `detail`.item_id = item.id
+                                WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.id IN ({String.Join(",", wiserIds)})
+                                """;
         var missingDataTable = await clientDatabaseConnection.GetAsync(findMissingQuery);
 
         if (missingDataTable.Rows.Count > 0)
@@ -569,13 +624,13 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> RefreshProductAsync(ClaimsIdentity identity, ulong wiserId, bool ignoreCoolDown = false)
     {
-        return await RefreshProductsAsync(identity, [wiserId],ignoreCoolDown);
+        return await RefreshProductsAsync(identity, [wiserId], ignoreCoolDown);
     }
 
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> SetDefaultSettingsOnAllProductsAsync(ClaimsIdentity identity)
     {
-        await EnsureProductApiPropertiesAsync(identity);
+        await EnsureProductApiPropertiesAsync();
 
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
@@ -583,17 +638,17 @@ WHERE detail.`id` IS NULL AND item.entity_type = '{productEntityType}' AND item.
         var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
         if (productEntityType == null)
         {
-            var errorMsg = $"Wiser product api cannot find the entity type for the product api.";
+            var errorMsg = "Wiser product api cannot find the entity type for the product api.";
             logger.LogError(errorMsg);
             throw new KeyNotFoundException(errorMsg);
         }
 
         // Fetch the ids of all product api's based on if the datasourcetype is found.
         var getIds = $"""
-SELECT item_id
-FROM wiser_itemdetail
-WHERE `key` = '{ProductsServiceConstants.ProductPropertyDatasourceType}'
-""";
+                      SELECT item_id
+                      FROM wiser_itemdetail
+                      WHERE `key` = '{ProductsServiceConstants.ProductPropertyDatasourceType}'
+                      """;
 
         var products = await clientDatabaseConnection.GetAsync(getIds);
 
@@ -631,10 +686,10 @@ WHERE `key` = '{ProductsServiceConstants.ProductPropertyDatasourceType}'
         clientDatabaseConnection.AddParameter("settingName", settingName);
 
         var selectQuery = $"""
-SELECT `value` FROM {WiserTableNames.WiserItemDetail} detail 
-JOIN {WiserTableNames.WiserItem} item ON item.id = detail.item_id AND item.entity_type = '{ProductsServiceConstants.SettingsEntityName}' 
-WHERE detail.key = '{settingName}' LIMIT 1
-""";
+                           SELECT `value` FROM {WiserTableNames.WiserItemDetail} detail 
+                           JOIN {WiserTableNames.WiserItem} item ON item.id = detail.item_id AND item.entity_type = '{ProductsServiceConstants.SettingsEntityName}' 
+                           WHERE detail.key = '{settingName}' LIMIT 1
+                           """;
 
         var dataTable = await clientDatabaseConnection.GetAsync(selectQuery);
 
@@ -644,7 +699,7 @@ WHERE detail.key = '{settingName}' LIMIT 1
     /// <summary>
     /// Helper function to create global settings for the product api when they don't exist yet.
     /// </summary>
-    private async Task RunProductsApiSetupScript(ClaimsIdentity identity)
+    private async Task RunProductsApiSetupScript()
     {
         await clientDatabaseConnection.EnsureOpenConnectionForWritingAsync();
         clientDatabaseConnection.ClearParameters();
@@ -655,17 +710,21 @@ WHERE detail.key = '{settingName}' LIMIT 1
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem running the setup script.";
+            var errorMsg = "Wiser product api encountered a problem running the setup script.";
             logger.LogError(e, errorMsg);
-            throw new Exception(errorMsg);
+            throw new ProductsApiException(errorMsg);
         }
     }
 
     /// <summary>
     /// Saves the default settings for a given product.
     /// </summary>
-    private async Task SaveProductApiSettingsForProductAsync(ulong wiserId, string productEntityType,
-        string globalSettingDatasourceType,string globalSettingsQueryId, string globalSettingsStyledOutputId, string globalSettingsStaticText)
+    private async Task SaveProductApiSettingsForProductAsync(ulong wiserId,
+        string productEntityType,
+        string globalSettingDatasourceType,
+        string globalSettingsQueryId,
+        string globalSettingsStyledOutputId,
+        string globalSettingsStaticText)
     {
         await wiserItemsService.SaveItemDetailAsync(
             new WiserItemDetailModel
@@ -699,9 +758,8 @@ WHERE detail.key = '{settingName}' LIMIT 1
     /// <summary>
     /// Function that makes inserts the product api entries into the database.
     /// </summary>
-    /// <param name="identity">The identity of the user performing this command.</param>
     /// <param name="items">A list of api models that need to be added to the dababase.</param>
-    private Task AddProductApiEntriesAsync(ClaimsIdentity identity, IList<ProductApiModel> items)
+    private Task AddProductApiEntriesAsync(IList<ProductApiModel> items)
     {
         var insertQuery = new StringBuilder();
 
@@ -716,11 +774,10 @@ WHERE detail.key = '{settingName}' LIMIT 1
             clientDatabaseConnection.AddParameter($"refresh_date{index}", item.RefreshDate);
             clientDatabaseConnection.AddParameter($"added_on{index}", item.AddedOn);
 
-            insertQuery.Append
-            ($"""
-              INSERT INTO `{WiserTableNames.WiserProductsApi}` (`wiser_id`, `version`, `output`, `added_by`, `hash`,`refresh_date`,`added_on`) 
-              VALUES (?wiserId{index}, ?version{index}, ?output{index}, ?added_by{index}, ?hash{index}, ?refresh_date{index}, ?added_on{index});
-              """);
+            insertQuery.Append($"""
+                                INSERT INTO `{WiserTableNames.WiserProductsApi}` (`wiser_id`, `version`, `output`, `added_by`, `hash`,`refresh_date`,`added_on`) 
+                                VALUES (?wiserId{index}, ?version{index}, ?output{index}, ?added_by{index}, ?hash{index}, ?refresh_date{index}, ?added_on{index});
+                                """);
         }
 
         try
@@ -729,9 +786,9 @@ WHERE detail.key = '{settingName}' LIMIT 1
         }
         catch (Exception e)
         {
-            var errorMsg = $"Wiser product api encountered a problem adding new entries to the table.";
-            logger.LogError(e,errorMsg);
-            throw new Exception(errorMsg);
+            var errorMsg = "Wiser product api encountered a problem adding new entries to the table.";
+            logger.LogError(e, errorMsg);
+            throw new ProductsApiException(errorMsg);
         }
     }
 }

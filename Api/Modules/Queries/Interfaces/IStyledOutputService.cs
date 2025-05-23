@@ -30,4 +30,15 @@ public interface IStyledOutputService
     /// <param name="inUseStyleIds">used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null</param>
     /// <returns>The results of the query .</returns>
     Task<ServiceResult<JToken>> GetStyledOutputResultJsonAsync(ClaimsIdentity identity, int id, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page = 0, List<int> inUseStyleIds = null);
+
+    /// <summary>
+    /// Handles multiple styled output elements at once (needed for the products api).
+    /// </summary>
+    /// <param name="identity">The identity for the connection.</param>
+    /// <param name="allowedFormats">The types that can be processed, for endpoint this is only JSON, sub elements also support RAW.</param>
+    /// <param name="id">The ID of the starting point of the requested styled output.</param>
+    /// <param name="itemIds">A list of item/product ids that need to be used for the multi request.</param>
+    /// <param name="parameters">The parameters send along to the database connection.</param>
+    /// <returns>Returns a dictionary with the ids and outputs.</returns>
+    Task<Dictionary<ulong,string>> GetMultiStyledOutputResultsAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<ulong> itemIds, List<KeyValuePair<string, object>> parameters);
 }

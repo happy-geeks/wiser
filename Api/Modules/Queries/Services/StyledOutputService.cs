@@ -12,6 +12,7 @@ using Api.Core.Helpers;
 using Api.Core.Models;
 using Api.Core.Services;
 using Api.Modules.Branches.Interfaces;
+using Api.Modules.Queries.Exceptions;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
@@ -74,14 +75,14 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         this.logger = logger;
         this.branchesService = branchesService;
     }
-        
+
     /// <inheritdoc />
     public async Task<int> GetStyledOutputIdFromNameAsync(string name)
     {
         var formatQuery = $"SELECT id FROM `wiser_styled_output` WHERE `name` = {name.ToMySqlSafeValue(true)} LIMIT 1";
-            
+
         var dataTable = await clientDatabaseConnection.GetAsync(formatQuery);
-            
+
         if (dataTable.Rows.Count == 0)
         {
             return -1;
@@ -144,6 +145,34 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         }
     }
 
+    private bool CheckForInUseIds(List<int> inUseStyleIds, int id, out string errorMsg)
+    {
+        errorMsg = "";
+
+        if (inUseStyleIds == null)
+        {
+            return false;
+        }
+
+        if (!inUseStyleIds.Contains(id)) return false;
+
+        errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {inUseStyleIds}";
+        logger.LogError(errorMsg);
+
+        return true;
+    }
+
+    private StyledOutputModel StripNewlinesAndTabsOnStyle(StyledOutputModel input)
+    {
+        return new StyledOutputModel
+        {
+            FormatBegin = input.FormatBegin.Replace("\r\n","").Replace("\n","").Replace("\t",""),
+            FormatItem = input.FormatItem.Replace("\r\n","").Replace("\n","").Replace("\t",""),
+            FormatEnd = input.FormatEnd.Replace("\r\n","").Replace("\n","").Replace("\t",""),
+            FormatEmpty = input.FormatEmpty.Replace("\r\n","").Replace("\n","").Replace("\t","")
+        };
+    }
+
     /// <summary>
     /// Private function for handling styled output elements.
     /// </summary>
@@ -161,16 +190,12 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     {
         var usedIds = inUseStyleIds == null ? new List<int>() : new List<int>(inUseStyleIds);
 
-        if (usedIds.Contains(id))
+        if (CheckForInUseIds(usedIds, id, out var idErrorMsg))
         {
-            var errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}";
-
-            logger.LogError(errorMsg);
-
             return new ServiceResult<string>
             {
                 StatusCode = HttpStatusCode.LoopDetected,
-                ErrorMessage = errorMsg
+                ErrorMessage = idErrorMsg
             };
         }
 
@@ -195,10 +220,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
         if (stripNewlinesAndTabs)
         {
-            style.FormatBegin = style.FormatBegin.Replace("\r\n","").Replace("\n","").Replace("\t","");
-            style.FormatItem = style.FormatItem.Replace("\r\n","").Replace("\n","").Replace("\t","");
-            style.FormatEnd = style.FormatEnd.Replace("\r\n","").Replace("\n","").Replace("\t","");
-            style.FormatEmpty = style.FormatEmpty.Replace("\r\n","").Replace("\n","").Replace("\t","");
+            style = StripNewlinesAndTabsOnStyle(style);
         }
 
         if (style.QueryId < 0)
@@ -583,5 +605,133 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         cachedQueries.Add(queryId, query.ModelObject.Query);
 
         return query.ModelObject.Query;
+    }
+
+    ///<inheritdoc />
+    public async Task<Dictionary<ulong,string>> GetMultiStyledOutputResultsAsync(ClaimsIdentity identity, string[] allowedFormats, int id, List<ulong> itemIds, List<KeyValuePair<string, object>> parameters)
+    {
+        var usedIds = new List<int>();
+
+        if (usedIds.Contains(id))
+        {
+            throw new StyledOutputCyclicReferenceException($"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {usedIds}");
+        }
+
+        usedIds.Add(id);
+
+        StyledOutputModel style;
+
+        try
+        {
+            style = await GetCachedStyleAsync(id);
+        }
+        catch (KeyNotFoundException e)
+        {
+            throw new KeyNotFoundException($"Wiser Styled Output with ID '{id}' does not exist.", e);
+        }
+
+        if (style.QueryId < 0)
+        {
+            throw new StyledOutputNoValidQuerySetupException($"Wiser Styled Output with ID '{id}' does not have a valid query setup.");
+        }
+
+        if (!allowedFormats.Contains(style.ReturnType))
+        {
+            throw new StyledOutputNoValidJsonSetupException($"Wiser Styled Output with ID '{id}' is not setup for JSON response.");
+        }
+
+        try
+        {
+            var isAllowed = await QueryIsAllowedAsync(style.QueryId, identity);
+            if (!isAllowed)
+            {
+                var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
+                logger.LogError(errorMsg);
+                throw new StyledOutputNotAllowedException(errorMsg);
+            }
+        }
+        catch (UnauthorizedAccessException e)
+        {
+            var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
+            logger.LogError(errorMsg,e);
+            throw;
+        }
+
+        // This styled output has settings to parse.
+        if (!String.IsNullOrWhiteSpace(style.Options))
+        {
+            var optionsObject = JsonConvert.DeserializeObject<StyledOutputOptionModel>(style.Options);
+
+            if (optionsObject.MaxResultsPerPage > 0)
+            {
+                maxResultsPerPage = optionsObject.MaxResultsPerPage;
+            }
+
+            performanceLogging = optionsObject.LogTiming;
+        }
+
+        var query = await GetCachedQueryAsync(style.QueryId, identity);
+
+        clientDatabaseConnection.ClearParameters();
+
+        var isMainBranch = await branchesService.IsMainBranchAsync(identity);
+        clientDatabaseConnection.AddParameter("isMainBranch", isMainBranch.ModelObject);
+
+        parameters ??= [];
+
+        foreach (var parameter in parameters)
+        {
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key), parameter.Value);
+        }
+
+        var results = new Dictionary<ulong, string>();
+
+        query = query.Replace("{ids}", "(" + string.Join(",", itemIds) + ")");
+
+        var dataTable = await clientDatabaseConnection.GetAsync(query);
+        var result = dataTable.ToJsonArray(skipNullValues: true);
+
+        for (int i = 0; i < dataTable.Rows.Count; i++)
+        {
+            var builder = new StringBuilder();
+            if (!String.IsNullOrEmpty(style.FormatBegin))
+            {
+                var formattedBegin = stringReplacementsService.DoReplacements(style.FormatBegin, result[i]);
+                builder.Append(formattedBegin);
+            }
+
+            // replace simple string info
+            var itemValue = stringReplacementsService.DoReplacements(style.FormatItem, result[i]);
+
+            // Replace if then else logic.
+            itemValue = replacementsMediator.EvaluateTemplate(itemValue);
+
+            // Replace recursive inline styles.
+            var inlineResult =
+                await HandleInlineStyleElementsAsync(identity, itemValue, parameters, false, 500, 0, usedIds, id);
+
+            if (inlineResult.StatusCode == HttpStatusCode.OK)
+            {
+                itemValue = inlineResult.ModelObject;
+            }
+
+            builder.Append(itemValue);
+
+            if (i != dataTable.Rows.Count - 1)
+            {
+                builder.Append(ItemSeparatorString);
+            }
+
+
+            if (!String.IsNullOrWhiteSpace(style.FormatEnd))
+            {
+                var formattedEnd = stringReplacementsService.DoReplacements(style.FormatEnd, result[i]);
+                builder.Append(formattedEnd);
+            }
+
+            results.Add(dataTable.Rows[i].Field<ulong>("inputId"), builder.ToString());
+        }
+
+        return results;
     }
 }
