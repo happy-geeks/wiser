@@ -60,6 +60,9 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
     private readonly Dictionary<int, List<Stopwatch>> timings = new Dictionary<int, List<Stopwatch>>();
 
+    private readonly Dictionary<StyledOutputBuildIn, Func<string[], StyledOutputBuildIn, Task<string>>> styleParsers =
+        new Dictionary<StyledOutputBuildIn, Func<string[], StyledOutputBuildIn, Task<string>>>();
+
     /// <summary>
     /// Creates a new instance of <see cref="StyledOutputService"/>.
     /// </summary>
@@ -74,6 +77,14 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         this.replacementsMediator = replacementsMediator;
         this.logger = logger;
         this.branchesService = branchesService;
+
+        // Initialize the style parsers.
+        styleParsers.Add(StyledOutputConstants.SingleDetail,ParseSingleResult);
+        styleParsers.Add(StyledOutputConstants.SingleDetailArrayElm, ParseSingleResult);
+        styleParsers.Add(StyledOutputConstants.LanguageDetail, ParseSingleResult);
+        styleParsers.Add(StyledOutputConstants.MultiDetail, ParseMutliresults);
+        styleParsers.Add(StyledOutputConstants.Singlelinked, ParseSingleResult);
+        styleParsers.Add(StyledOutputConstants.SinglelinkedArrayElm, ParseSingleResult);
     }
 
     /// <inheritdoc />
@@ -223,19 +234,6 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             style = StripNewlinesAndTabsOnStyle(style);
         }
 
-        if (style.QueryId < 0)
-        {
-            var errorMsg = $"Wiser Styled Output with ID '{id}' does not have a valid query setup.";
-
-            logger.LogError(errorMsg);
-
-            return new ServiceResult<string>
-            {
-                StatusCode = HttpStatusCode.NotFound,
-                ErrorMessage = errorMsg
-            };
-        }
-
         if (!allowedFormats.Contains(style.ReturnType))
         {
             var errorMsg = $"Wiser Styled Output with ID '{id}' is not setup for JSON response";
@@ -254,7 +252,8 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             var isAllowed = await QueryIsAllowedAsync(style.QueryId, identity);
             if (!isAllowed)
             {
-                var errorMsg = $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
+                var errorMsg =
+                    $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute query '{style.QueryId}'";
                 logger.LogError(errorMsg);
 
                 return new ServiceResult<string>
@@ -289,53 +288,67 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         }
 
         var query = await GetCachedQueryAsync(style.QueryId, identity);
-
-        clientDatabaseConnection.ClearParameters();
-
-        var pageResultCount = Math.Min(maxResultsPerPage, resultsPerPage);
-
-        var isMainBranch = await branchesService.IsMainBranchAsync(identity);
-
-        clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
-        clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"), page * pageResultCount);
-        clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"), pageResultCount);
-        clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"), isMainBranch.ModelObject);
-
-        parameters ??= [];
-
-        foreach (var parameter in parameters)
-        {
-            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key), parameter.Value);
-        }
-
         var combinedResult = new StringBuilder("");
+        JArray result = null;
 
-        if (performanceLogging)
+        if (!String.IsNullOrEmpty(query))
         {
-            if (callingParentId < 0)
+            clientDatabaseConnection.ClearParameters();
+
+            var pageResultCount = Math.Min(maxResultsPerPage, resultsPerPage);
+
+            var isMainBranch = await branchesService.IsMainBranchAsync(identity);
+
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("page"), page);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("pageOffset"),
+                page * pageResultCount);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("resultsPerPage"),
+                pageResultCount);
+            clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName("isMainBranch"),
+                isMainBranch.ModelObject);
+
+            parameters ??= [];
+
+            foreach (var parameter in parameters)
             {
-                timings.Clear();
+                clientDatabaseConnection.AddParameter(DatabaseHelpers.CreateValidParameterName(parameter.Key),
+                    parameter.Value);
             }
 
-            if (!timings.ContainsKey(id))
+            if (performanceLogging)
             {
-                timings.Add(id, []);
+                if (callingParentId < 0)
+                {
+                    timings.Clear();
+                }
+
+                if (!timings.ContainsKey(id))
+                {
+                    timings.Add(id, []);
+                }
+
+                timings[id].Add(new Stopwatch());
+                timings[id].Last().Start();
             }
 
-            timings[id].Add(new Stopwatch());
-            timings[id].Last().Start();
+            var dataTable = await clientDatabaseConnection.GetAsync(query);
+            result = dataTable.ToJsonArray(skipNullValues: true);
+        }
+        else
+        {
+            result = new JArray(
+                new JObject
+                {
+                    ["defaultEntry"] = 1,
+                });
         }
 
-        var dataTable = await clientDatabaseConnection.GetAsync(query);
-
-        if (dataTable.Rows.Count == 0)
+        if (result.Count == 0)
         {
             combinedResult.Append(style.FormatEmpty);
         }
         else
         {
-            var result = dataTable.ToJsonArray(skipNullValues: true);
-
             if (!String.IsNullOrEmpty(style.FormatBegin))
             {
                 var formattedBegin = stringReplacementsService.DoReplacements(style.FormatBegin, result);
@@ -424,13 +437,13 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     /// <param name="inUseStyleIds">Used for making sure no higher level styles are causing a cyclic reference in recursive calls, this can be left null.</param>
     /// <param name="callingParentId">calling parent is the id of styledoutput calling the styledoutput we are calling now, for users this can always be -1 indicating it has no parent.</param>
     /// <returns>Returns the updated string with replacements applied.</returns>
-    private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null, int callingParentId = -1)
+        private async Task<ServiceResult<string>> HandleInlineStyleElementsAsync(ClaimsIdentity identity, string itemValue, List<KeyValuePair<string, object>> parameters, bool stripNewlinesAndTabs, int resultsPerPage, int page, List<int> inUseStyleIds = null, int callingParentId = -1)
     {
         var index = 0;
 
         while (index < itemValue.Length)
         {
-            var startIndex = itemValue.IndexOf("{StyledOutput", index, StringComparison.OrdinalIgnoreCase);
+            var startIndex = itemValue.IndexOf(StyledOutputConstants.DefaultStartKeyWord, index, StringComparison.OrdinalIgnoreCase);
             index = startIndex + 1;
 
             if (index <= 0)
@@ -439,7 +452,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
                 break;
             }
 
-            var endIndex = itemValue.IndexOf("}", startIndex, StringComparison.OrdinalIgnoreCase) + 1;
+            var endIndex = itemValue.IndexOf(StyledOutputConstants.DefaultEndKeyWord, startIndex, StringComparison.OrdinalIgnoreCase) + 1;
 
             if (endIndex <= 0)
             {
@@ -449,32 +462,41 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
             var styleString = itemValue.Substring(startIndex, endIndex - startIndex);
             var sections = styleString.Substring(1,styleString.Length - 2).Split('~');
-            var subStyleId = sections.Length > 1 ? Int32.Parse(sections[1]) : - 1;
 
-            if (subStyleId < 0)
+            var parser = styleParsers.FirstOrDefault(item => item.Key.Key == sections[0]);
+
+            if (parser.Key != null)
             {
-                continue;
-            }
-
-            var subParameters = new List<KeyValuePair<string, object>>();
-            subParameters.AddRange(parameters);
-
-            // Note: skip 0,1 since this is the inline element itself and its value then move per 2 'key' and 'value'.
-            for (var i = 2; i < sections.Length - 1; i += 2)
-            {
-                subParameters.Add(new KeyValuePair<string, object>(sections[i], sections[i + 1]));
-            }
-
-            var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
-
-            if (subResult.StatusCode == HttpStatusCode.OK)
-            {
-                itemValue = itemValue.Replace(styleString, subResult.ModelObject);
+                 itemValue = await parser.Value(sections, parser.Key);
             }
             else
             {
-                // Something went wrong, return the error from the sub-query.
-                return subResult;
+                var subStyleId = sections.Length > 1 ? Int32.Parse(sections[1]) : - 1;
+
+                if (subStyleId < 0)
+                {
+                    continue;
+                }
+
+                var subParameters = new List<KeyValuePair<string, object>>();
+                subParameters.AddRange(parameters);
+
+                // Note: skip 0,1 since this is the inline element itself and its value then move per 2 'key' and 'value'.
+                for (var i = 2; i < sections.Length - 1; i += 2)
+                {
+                    subParameters.Add(new KeyValuePair<string, object>(sections[i], sections[i + 1]));
+                }
+
+                var subResult = await GetStyledOutputResultAsync(identity, AllowedSubFormats, subStyleId, subParameters, stripNewlinesAndTabs, resultsPerPage, page, inUseStyleIds, callingParentId);
+                if (subResult.StatusCode == HttpStatusCode.OK)
+                {
+                    itemValue = itemValue.Replace(styleString, subResult.ModelObject);
+                }
+                else
+                {
+                    // Something went wrong, return the error from the sub-query.
+                    return subResult;
+                }
             }
         }
 
@@ -540,7 +562,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         style.FormatEnd = dataTable.Rows[0].Field<string>("format_end");
         style.FormatEmpty = dataTable.Rows[0].Field<string>("format_empty");
         style.ReturnType = dataTable.Rows[0].Field<string>("return_type");
-        style.QueryId = dataTable.Rows[0].Field<int>("query_id");
+        style.QueryId = dataTable.Rows[0].Field<int?>("query_id") ?? -1;
         style.Options = dataTable.Rows[0].Field<string>("options");
 
         cachedStyles.Add(id,style);
@@ -556,6 +578,12 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     /// <returns>Returns true or throws an exception when not allowed.</returns>
     private async Task<bool> QueryIsAllowedAsync(int queryId, ClaimsIdentity identity)
     {
+        if (queryId < 0)
+        {
+            // No query needed, return true.
+            return true;
+        }
+
         if (cachedQueryPermission.Contains(queryId))
         {
             return true;
@@ -583,6 +611,12 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     /// <returns>Returns the query string.</returns>
     private async Task<string> GetCachedQueryAsync(int queryId, ClaimsIdentity identity)
     {
+        if ( queryId < 0)
+        {
+            // No query needed, return empty string.
+            return "";
+        }
+
         if (cachedQueries.TryGetValue(queryId, out var query))
         {
             return query;
@@ -628,11 +662,6 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         catch (KeyNotFoundException e)
         {
             throw new KeyNotFoundException($"Wiser Styled Output with ID '{id}' does not exist.", e);
-        }
-
-        if (style.QueryId < 0)
-        {
-            throw new StyledOutputNoValidQuerySetupException($"Wiser Styled Output with ID '{id}' does not have a valid query setup.");
         }
 
         if (!allowedFormats.Contains(style.ReturnType))
@@ -707,8 +736,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             itemValue = replacementsMediator.EvaluateTemplate(itemValue);
 
             // Replace recursive inline styles.
-            var inlineResult =
-                await HandleInlineStyleElementsAsync(identity, itemValue, parameters, false, 500, 0, usedIds, id);
+            var inlineResult = await HandleInlineStyleElementsAsync(identity, itemValue, parameters, false, 500, 0, usedIds, id);
 
             if (inlineResult.StatusCode == HttpStatusCode.OK)
             {
@@ -733,5 +761,81 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// Private function for handling results that only have a single row (so no need for stringing values together).
+    /// </summary>
+    /// <param name="inputSections">The ID of the query.</param>
+    /// <param name="buildIn">The identity for the connection.</param>
+    /// <returns>Returns the formatted string according to the results.</returns>
+    private async Task<string> ParseSingleResult(string[] inputSections, StyledOutputBuildIn buildIn)
+    {
+        if (inputSections.Length != 4)
+        {
+            throw new StyledOutputInvalidStyleOutputpException($"Wiser Styled Output has an invalid {buildIn.Key} element");
+        }
+
+        clientDatabaseConnection.ClearParameters();
+
+        clientDatabaseConnection.AddParameter("styled_name", inputSections[3]);
+        clientDatabaseConnection.AddParameter("styled_key", inputSections[2]);
+        clientDatabaseConnection.AddParameter("styled_id", inputSections[1]);
+
+        var dataTable = await clientDatabaseConnection.GetAsync(buildIn.Query);
+
+        if (dataTable.Rows.Count == 0)
+        {
+           return "";
+        }
+
+        var result = dataTable.ToJsonArray(skipNullValues: true);
+        return stringReplacementsService.DoReplacements(buildIn.UnitLayout, result);
+    }
+
+    /// <summary>
+    /// Private function for handling results that might have multiple rows to process.
+    /// </summary>
+    /// <param name="inputSections">The ID of the query.</param>
+    /// <param name="buildIn">The identity for the connection.</param>
+    /// <returns>Returns the formatted string according to the results.</returns>
+    private async Task<string> ParseMutliresults(string[] inputSections, StyledOutputBuildIn buildIn)
+    {
+        if (inputSections.Length != 4)
+        {
+            throw new StyledOutputInvalidStyleOutputpException($"Wiser Styled Output has an invalid {buildIn.Key} element");
+        }
+
+        clientDatabaseConnection.ClearParameters();
+
+        clientDatabaseConnection.AddParameter("styled_name", inputSections[3]);
+        clientDatabaseConnection.AddParameter("styled_key", inputSections[2]);
+        clientDatabaseConnection.AddParameter("styled_id", inputSections[1]);
+
+        var dataTable = await clientDatabaseConnection.GetAsync(buildIn.Query);
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return "";
+        }
+
+        var result = dataTable.ToJsonArray(skipNullValues: true);
+
+        var returnValue = stringReplacementsService.DoReplacements(buildIn.BeginLayout, result);
+
+        for (int i = 0; i < result.Count; i++)
+        {
+            var itemValue = stringReplacementsService.DoReplacements(buildIn.UnitLayout, result[i]);
+            returnValue += itemValue;
+
+            if (i != result.Count - 1)
+            {
+                returnValue += ItemSeparatorString;
+            }
+        }
+
+        returnValue += stringReplacementsService.DoReplacements(buildIn.EndLayout, result);
+
+        return returnValue;
     }
 }
