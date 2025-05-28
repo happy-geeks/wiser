@@ -482,7 +482,7 @@ public class ProductsService(
     {
         var query = $"""
                      UPDATE `wiser_products_api` SET `refresh_date` = "{currentDateTime}"
-                     WHERE `wiser_id` IN ( {String.Join(",", apiEntryIds)} )
+                     WHERE `id` IN ( {String.Join(",", apiEntryIds)} )
                      """;
 
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
