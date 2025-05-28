@@ -1562,7 +1562,7 @@ public class TemplateDataService : ITemplateDataService, IScopedService
                      SELECT template.*
                      FROM {WiserTableNames.WiserTemplate} AS template
                      LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
-                     WHERE template.template_type = 7
+                     WHERE template.template_type = {(int)TemplateTypes.Directory}
                      AND otherVersion.id IS NULL;
                      """;
         var templateData = await clientDatabaseConnection.GetAsync(query);
