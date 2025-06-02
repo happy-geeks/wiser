@@ -361,11 +361,11 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         }
 
         return new ServiceResult<EntityPropertyModel>(entityProperty);
-     }
+    }
 
-     /// <inheritdoc />
-     public async Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty)
-     {
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> UpdateAsync(ClaimsIdentity identity, int id, EntityPropertyModel entityProperty)
+    {
         if (entityProperty == null || (String.IsNullOrWhiteSpace(entityProperty.EntityType) && entityProperty.LinkType <= 0))
         {
             return new ServiceResult<bool>
@@ -962,11 +962,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         // move group id to new ordering (one above or below the target group)
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("id", id);
-        clientDatabaseConnection.AddParameter("currentIndex", data.CurrentIndex);
         clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
-        clientDatabaseConnection.AddParameter("entityType", data.EntityType);
-        clientDatabaseConnection.AddParameter("linkType", data.LinkType);
-        var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
 
         var query = $$"""
                       UPDATE {{WiserTableNames.WiserEntityProperty}} SET ordering = ?newIndex WHERE id = ?id;
