@@ -1549,12 +1549,20 @@ public class TemplateDataService : ITemplateDataService, IScopedService
     /// <inheritdoc />
     public async Task DeployToBranchAsync(List<int> templateIds, TenantModel branch)
     {
-        // First get the templates that need to be deployed.
+        // First get the templates that need to be deployed, including all folders to keep them up-to-date.
         var query = $"""
                      SELECT template.*
                      FROM {WiserTableNames.WiserTemplate} AS template
                      LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
                      WHERE template.template_id IN ({String.Join(", ", templateIds)})
+                     AND otherVersion.id IS NULL
+                     
+                     UNION ALL
+                     
+                     SELECT template.*
+                     FROM {WiserTableNames.WiserTemplate} AS template
+                     LEFT JOIN {WiserTableNames.WiserTemplate} AS otherVersion ON otherVersion.template_id = template.template_id AND otherVersion.version > template.version
+                     WHERE template.template_type = {(int)TemplateTypes.Directory}
                      AND otherVersion.id IS NULL;
                      """;
         var templateData = await clientDatabaseConnection.GetAsync(query);
