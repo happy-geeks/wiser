@@ -193,7 +193,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
         // Check if all items are of the correct entity type if there are any items that are imported according to the settings
-        if (allItemIds.Any() && importRequest.ImportSettings.Any())
+        if (allItemIds.Count != 0 && importRequest.ImportSettings.Count != 0)
         {
             dataTable = await clientDatabaseConnection.GetAsync($"SELECT id, entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", allItemIds)})");
             if (dataTable.Rows.Count > 0)
@@ -202,7 +202,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 existingItemIds = allRows.Select(dataRow => dataRow.Field<ulong>("id")).ToList();
 
                 var itemsWithWrongEntityType = allRows.Where(dataRow => !String.Equals(entityType, dataRow.Field<string>("entity_type"), StringComparison.OrdinalIgnoreCase)).Select(dataRow => $"{dataRow.Field<ulong>("id")} ({dataRow.Field<string>("entity_type")})").ToList();
-                if (itemsWithWrongEntityType.Any())
+                if (itemsWithWrongEntityType.Count != 0)
                 {
                     importResult.Failed += 1U;
                     importResult.Errors.Add($"Can't do import because the following items have a different entity type than the selected type ({entityType}): {String.Join(", ", itemsWithWrongEntityType)}");
@@ -216,7 +216,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         var itemIdsFromLinks = new List<ulong>();
         itemIdsFromLinks.AddRange(importData.SelectMany(i => i.Links.Select(l => l.ItemId)).Where(i => i > 0 && !itemIdsFromLinks.Contains(i)));
         itemIdsFromLinks.AddRange(importData.SelectMany(i => i.Links.Select(l => l.DestinationItemId)).Where(i => i > 0 && !itemIdsFromLinks.Contains(i)));
-        if (itemIdsFromLinks.Any())
+        if (itemIdsFromLinks.Count != 0)
         {
             allItemIds.AddRange(itemIdsFromLinks.Where(x => !allItemIds.Contains(x)));
 
@@ -318,7 +318,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             }
 
             // Check if all items exist in the database.
-            foreach (var (currentTablePrefix, itemIds) in tablesWithItems.Where(x => x.Value.Any()))
+            foreach (var (currentTablePrefix, itemIds) in tablesWithItems.Where(x => x.Value.Count != 0))
             {
                 dataTable = await clientDatabaseConnection.GetAsync($"SELECT id FROM {currentTablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", itemIds)})");
                 if (dataTable.Rows.Count > 0)
@@ -330,7 +330,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
 
         // Check if all files the user is trying to import are for existing items.
         var itemIdsFromFiles = importData.SelectMany(i => i.Files.Select(f => f.ItemId)).Where(i => i > 0 && !allItemIds.Contains(i)).ToList();
-        if (itemIdsFromFiles.Any())
+        if (itemIdsFromFiles.Count != 0)
         {
             allItemIds.AddRange(itemIdsFromFiles);
             dataTable = await clientDatabaseConnection.GetAsync($"SELECT id FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", itemIdsFromFiles)})");
@@ -343,7 +343,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
 
         // Return error if 1 or more items don't exist.
         var missingItems = allItemIds.Except(existingItemIds).ToList();
-        if (missingItems.Any())
+        if (missingItems.Count != 0)
         {
             importResult.Failed += 1U;
             importResult.Errors.Add($"Can't do import because the following items don't exist: {String.Join(", ", missingItems)}");
@@ -947,7 +947,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
 
     private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox, string subDomain, ClaimsIdentity identity, TenantModel tenant)
     {
-        if (comboBox.Values != null && comboBox.Values.Any())
+        if (comboBox.Values != null && comboBox.Values.Count != 0)
         {
             // Already have the values, don't get them again.
             return;

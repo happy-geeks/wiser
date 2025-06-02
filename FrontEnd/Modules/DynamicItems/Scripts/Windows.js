@@ -616,7 +616,7 @@ export class Windows {
                 const row = $(element);
                 const dataItem = grid.dataItem(row);
                 const isChecked = row.find("td > input[type=checkbox]").prop("checked");
-                const parentItemId = dataItem.parentItemId || dataItem.parentitemid || 0;
+                const parentItemId = dataItem.parentItemId || dataItem.parentitemid || dataItem.parent_item_id || 0;
 
                 if (isChecked) {
                     if (alreadyLinkedItems.filter((item) => (item.id || item[`ID_${this.searchItemsWindowSettings.entityType}`]) === dataItem.id).length > 0) {

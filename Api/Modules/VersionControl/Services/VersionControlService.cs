@@ -120,7 +120,7 @@ public class VersionControlService : IVersionControlService, IScopedService
                 var dynamicContents = await versionControlDataService.GetDynamicContentFromCommitAsync(commitId);
 
                 // Deploy the templates that are part of the commit to the branch.
-                if (templates.Any())
+                if (templates.Count != 0)
                 {
                     var templateResult = await templatesService.DeployToBranchAsync(identity, templates.Select(template => template.TemplateId).ToList(), branchId);
 
@@ -136,7 +136,7 @@ public class VersionControlService : IVersionControlService, IScopedService
                 }
 
                 // Deploy the dynamic contents that are part of the commit to the branch.
-                if (dynamicContents.Any())
+                if (dynamicContents.Count != 0)
                 {
                     var dynamicContentResult = await dynamicContentService.DeployToBranchAsync(identity, dynamicContents.Select(dynamicContent => dynamicContent.DynamicContentId).ToList(), branchId);
 

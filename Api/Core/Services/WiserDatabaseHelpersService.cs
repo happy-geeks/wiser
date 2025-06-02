@@ -110,7 +110,7 @@ public class WiserDatabaseHelpersService(
     /// </summary>
     private static readonly List<WiserTableDefinitionModel> CustomMigrationDefinitions =
     [
-        new() {Name = TriggersName, LastUpdate = new DateTime(2025, 3, 27)},
+        new() {Name = TriggersName, LastUpdate = new DateTime(2025, 5, 14)},
         new() {Name = RemoveVirtualColumnsName, LastUpdate = new DateTime(2024, 9, 12)},
         new() {Name = AddBranchSettingsModuleName, LastUpdate = new DateTime(2024, 11, 18)},
         new() {Name = UpdateFileSecuritySettingsName, LastUpdate = new DateTime(2025, 1, 12)},
@@ -491,7 +491,7 @@ public class WiserDatabaseHelpersService(
                                                      ON DUPLICATE KEY UPDATE last_update = VALUES(last_update)
                                                      """);
     }
-    
+
     /// <summary>
     /// Add the settings for the products api.
     /// </summary>
@@ -505,7 +505,7 @@ public class WiserDatabaseHelpersService(
 
         var addProductsApiSettingsQuery = await ResourceHelpers.ReadTextResourceFromAssemblyAsync("Api.Core.Queries.WiserInstallation.ProductsApiSettings.sql");
         await clientDatabaseConnection.ExecuteAsync(addProductsApiSettingsQuery);
-        
+
         // Update wiser_table_changes.
         clientDatabaseConnection.AddParameter("tableName", AddProductsApiSettingsName);
         clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);
@@ -516,7 +516,7 @@ public class WiserDatabaseHelpersService(
                                                      """);
     }
 
-    
+
     /// <summary>
     /// Add properties used for filters
     /// </summary>
@@ -541,7 +541,7 @@ public class WiserDatabaseHelpersService(
                  INSERT IGNORE INTO {WiserTableNames.WiserEntityProperty} (`module_id`, `entity_name`, `link_type`, `tab_name`, `group_name`, `inputtype`, `display_name`, `property_name`, `explanation`, `ordering`, `regex_validation`, `mandatory`, `readonly`, `default_value`, `css`, `width`, `height`, `options`, `data_query`, `action_query`, `search_query`, `search_count_query`, `grid_delete_query`, `grid_insert_query`, `grid_update_query`, `depends_on_field`, `depends_on_operator`, `depends_on_value`, `language_code`, `custom_script`, `also_save_seo_value`, `depends_on_action`, `save_on_change`, `extended_explanation`, `label_style`, `label_width`, `enable_aggregation`, `aggregate_options`, `access_key`, `visibility_path_regex`) VALUES (0, 'WiserPaymentMethod', 0, '', '', 'input', 'Url Regex', 'paymentmethodurlregex', 'Regex waarmee bepaald kan worden of de betaalmethode op het url moet worden getoond. Dit gebruikt het seo pad en de query parameters. Als het leeg is dan is het zichtbaar op elk URL', 10, '', 0, 0, '', NULL, 0, 0, '', '', '', '', '', '', '', '', '', NULL, '', '', '', 0, NULL, 0, 0, 'normal', '0', 0, '', '', '');
                  """);
         }
-        
+
         // Update wiser_table_changes.
         clientDatabaseConnection.AddParameter("tableName", AddPaymentMethodFilterProperties);
         clientDatabaseConnection.AddParameter("lastUpdate", DateTime.Now);

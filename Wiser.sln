@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub", "GitHub", "{13812A
 		.gitignore = .gitignore
 		.github\dependabot.yml = .github\dependabot.yml
 		.github\pull_request_template.md = .github\pull_request_template.md
+		.github\CODEOWNERS = .github\CODEOWNERS
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflows", "Workflows", "{4D72169F-B343-4E64-8F0E-62B1089A97FB}"

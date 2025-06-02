@@ -574,7 +574,7 @@ public class BranchesService : IBranchesService, IScopedService
             var currentLinkTypeSettings = allLinkTypeSettings.Where(l => l.Type == linkType).ToList();
 
             // If there are no settings for this link, we assume that the links are from items in the normal wiser_item table and not a table with a prefix.
-            if (!currentLinkTypeSettings.Any())
+            if (currentLinkTypeSettings.Count == 0)
             {
                 // Check if the source item exists in this table.
                 var sourceEntityType = await GetEntityTypeFromIdAsync(sourceId, "", mySqlConnection);
@@ -1254,13 +1254,13 @@ public class BranchesService : IBranchesService, IScopedService
             }
 
             // If we somehow still don't have a last merge date, then we can't check for merge conflicts. This should never happen under normal circumstances.
-            if (lastMergeDate.HasValue && (settings.ConflictSettings == null || !settings.ConflictSettings.Any()))
+            if (lastMergeDate.HasValue && (settings.ConflictSettings == null || settings.ConflictSettings.Count == 0))
             {
                 var conflicts = new List<MergeConflictModel>();
                 await GetAllChangesFromBranchAsync(branchConnection, conflicts, settings);
                 await FindConflictsInMainBranchAsync(mainConnection, branchConnection, conflicts, lastMergeDate.Value, settings);
                 result.Conflicts = conflicts.Where(conflict => conflict.ChangeDateInMain.HasValue).ToList();
-                if (result.Conflicts.Any())
+                if (result.Conflicts.Count != 0)
                 {
                     result.Success = false;
                     return new ServiceResult<MergeBranchResultModel>(result);

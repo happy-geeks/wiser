@@ -1002,19 +1002,13 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         // First we need to get the ordering number of the destination location.
         var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
-        string sqlFunction;
 
-        switch (data.DropPosition)
+        string sqlFunction = data.DropPosition switch
         {
-            case TreeViewDropPositions.Before:
-                sqlFunction = "MIN";
-                break;
-            case TreeViewDropPositions.After:
-                sqlFunction = "MAX";
-                break;
-            default:
-                throw new ArgumentOutOfRangeException($"DropPosition {data.DropPosition} is not supported.");
-        }
+            TreeViewDropPositions.Before => "MIN",
+            TreeViewDropPositions.After => "MAX",
+            _ => throw new ArgumentOutOfRangeException($"DropPosition {data.DropPosition} is not supported.")
+        };
 
         var query = $@"SELECT {sqlFunction}(ordering) AS ordering FROM {WiserTableNames.WiserEntityProperty} WHERE {whereClause} AND tab_name = ?destinationTabName";
         var dataTable = await clientDatabaseConnection.GetAsync(query);
@@ -1099,219 +1093,135 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
     private static FilterOperators? ToFilterOperator(string value)
     {
-        switch (value)
+        return value switch
         {
-            case null:
-                return null;
-            case "eq":
-                return FilterOperators.Equals;
-            case "neq":
-                return FilterOperators.NotEquals;
-            case "contains":
-                return FilterOperators.Contains;
-            case "doesnotcontain":
-                return FilterOperators.DoesNotContain;
-            case "startswith":
-                return FilterOperators.StartsWith;
-            case "doesnotstartwith":
-                return FilterOperators.DoesNotStartWith;
-            case "endswith":
-                return FilterOperators.EndsWith;
-            case "doesnotendwith":
-                return FilterOperators.DoesNotEndWith;
-            case "isempty":
-                return FilterOperators.IsEmpty;
-            case "isnotempty":
-                return FilterOperators.IsNotEmpty;
-            case "gte":
-                return FilterOperators.GreaterThanOrEqualTo;
-            case "gt":
-                return FilterOperators.GreaterThan;
-            case "lte":
-                return FilterOperators.LessThanOrEqualTo;
-            case "lt":
-                return FilterOperators.LessThan;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-        }
+            null or "" => null,
+            "eq" => FilterOperators.Equals,
+            "neq" => FilterOperators.NotEquals,
+            "contains" => FilterOperators.Contains,
+            "doesnotcontain" => FilterOperators.DoesNotContain,
+            "startswith" => FilterOperators.StartsWith,
+            "doesnotstartwith" => FilterOperators.DoesNotStartWith,
+            "endswith" => FilterOperators.EndsWith,
+            "doesnotendwith" => FilterOperators.DoesNotEndWith,
+            "isempty" => FilterOperators.IsEmpty,
+            "isnotempty" => FilterOperators.IsNotEmpty,
+            "gte" => FilterOperators.GreaterThanOrEqualTo,
+            "gt" => FilterOperators.GreaterThan,
+            "lte" => FilterOperators.LessThanOrEqualTo,
+            "lt" => FilterOperators.LessThan,
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
     }
 
     private static string ToDatabaseValue(FilterOperators? value)
     {
-        switch (value)
+        return value switch
         {
-            case null:
-                return null;
-            case FilterOperators.Equals:
-                return "eq";
-            case FilterOperators.NotEquals:
-                return "neq";
-            case FilterOperators.Contains:
-                return "contains";
-            case FilterOperators.DoesNotContain:
-                return "doesnotcontain";
-            case FilterOperators.StartsWith:
-                return "startswith";
-            case FilterOperators.DoesNotStartWith:
-                return "doesnotstartwith";
-            case FilterOperators.EndsWith:
-                return "endswith";
-            case FilterOperators.DoesNotEndWith:
-                return "doesnotendwith";
-            case FilterOperators.IsEmpty:
-                return "isempty";
-            case FilterOperators.IsNotEmpty:
-                return "isnotempty";
-            case FilterOperators.GreaterThanOrEqualTo:
-                return "gte";
-            case FilterOperators.GreaterThan:
-                return "gt";
-            case FilterOperators.LessThanOrEqualTo:
-                return "lte";
-            case FilterOperators.LessThan:
-                return "lt";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-        }
+            null => null,
+            FilterOperators.Equals => "eq",
+            FilterOperators.NotEquals => "neq",
+            FilterOperators.Contains => "contains",
+            FilterOperators.DoesNotContain => "doesnotcontain",
+            FilterOperators.StartsWith => "startswith",
+            FilterOperators.DoesNotStartWith => "doesnotstartwith",
+            FilterOperators.EndsWith => "endswith",
+            FilterOperators.DoesNotEndWith => "doesnotendwith",
+            FilterOperators.IsEmpty => "isempty",
+            FilterOperators.IsNotEmpty => "isnotempty",
+            FilterOperators.GreaterThanOrEqualTo => "gte",
+            FilterOperators.GreaterThan => "gt",
+            FilterOperators.LessThanOrEqualTo => "lte",
+            FilterOperators.LessThan => "lt",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
     }
 
     private static EntityPropertyLabelStyles? ToLabelStyle(string value)
     {
-        switch (value?.ToLowerInvariant())
+        return value?.ToLowerInvariant() switch
         {
-            case null:
-                return null;
-            case "normal":
-                return EntityPropertyLabelStyles.Normal;
-            case "inline":
-                return EntityPropertyLabelStyles.Inline;
-            case "float":
-                return EntityPropertyLabelStyles.Float;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-        }
+            null => null,
+            "normal" => EntityPropertyLabelStyles.Normal,
+            "inline" => EntityPropertyLabelStyles.Inline,
+            "float" => EntityPropertyLabelStyles.Float,
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
     }
 
     private static string ToDatabaseValue(EntityPropertyLabelStyles? value)
     {
-        switch (value)
+        return value switch
         {
-            case null:
-                return "normal";
-            case EntityPropertyLabelStyles.Normal:
-                return "normal";
-            case EntityPropertyLabelStyles.Inline:
-                return "inline";
-            case EntityPropertyLabelStyles.Float:
-                return "float";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-        }
+            null => "normal",
+            EntityPropertyLabelStyles.Normal => "normal",
+            EntityPropertyLabelStyles.Inline => "inline",
+            EntityPropertyLabelStyles.Float => "float",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
     }
 
     private static DependencyActions? ToDependencyAction(string value)
     {
-        switch (value?.ToLowerInvariant())
+        return value?.ToLowerInvariant() switch
         {
-            case null:
-            case "":
-                return null;
-            case "toggle-visibility":
-                return DependencyActions.ToggleVisibility;
-            case "toggle-mandatory":
-                return DependencyActions.ToggleMandatory;
-            case "refresh":
-                return DependencyActions.Refresh;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-        }
+            null or "" => null,
+            "toggle-visibility" => DependencyActions.ToggleVisibility,
+            "toggle-mandatory" => DependencyActions.ToggleMandatory,
+            "refresh" => DependencyActions.Refresh,
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
     }
 
     private static string ToDatabaseValue(DependencyActions? value)
     {
-        switch (value)
+        return value switch
         {
-            case null:
-                return null;
-            case DependencyActions.ToggleVisibility:
-                return "toggle-visibility";
-            case DependencyActions.ToggleMandatory:
-                return "toggle-mandatory";
-            case DependencyActions.Refresh:
-                return "refresh";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-        }
+            null => null,
+            DependencyActions.ToggleVisibility => "toggle-visibility",
+            DependencyActions.ToggleMandatory => "toggle-mandatory",
+            DependencyActions.Refresh => "refresh",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
     }
 
     private static string ToDatabaseValue(EntityPropertyInputTypes value)
     {
-        switch (value)
+        return value switch
         {
-            case EntityPropertyInputTypes.Input:
-                return "input";
-            case EntityPropertyInputTypes.SecureInput:
-                return "secure-input";
-            case EntityPropertyInputTypes.TextBox:
-                return "textbox";
-            case EntityPropertyInputTypes.RadioButton:
-                return "radiobutton";
-            case EntityPropertyInputTypes.CheckBox:
-                return "checkbox";
-            case EntityPropertyInputTypes.ComboBox:
-                return "combobox";
-            case EntityPropertyInputTypes.MultiSelect:
-                return "multiselect";
-            case EntityPropertyInputTypes.NumericInput:
-                return "numeric-input";
-            case EntityPropertyInputTypes.FileUpload:
-                return "file-upload";
-            case EntityPropertyInputTypes.HtmlEditor:
-                return "HTMLeditor";
-            case EntityPropertyInputTypes.QueryBuilder:
-                return "querybuilder";
-            case EntityPropertyInputTypes.DateTimePicker:
-                return "date-time picker";
-            case EntityPropertyInputTypes.ImageCoordinates:
-                return "imagecoords";
-            case EntityPropertyInputTypes.ImageUpload:
-                return "image-upload";
-            case EntityPropertyInputTypes.GpsLocation:
-                return "gpslocation";
-            case EntityPropertyInputTypes.DateRange:
-                return "daterange";
-            case EntityPropertyInputTypes.SubEntitiesGrid:
-                return "sub-entities-grid";
-            case EntityPropertyInputTypes.ItemLinker:
-                return "item-linker";
-            case EntityPropertyInputTypes.ColorPicker:
-                return "color-picker";
-            case EntityPropertyInputTypes.AutoIncrement:
-                return "auto-increment";
-            case EntityPropertyInputTypes.LinkedItem:
-                return "linked-item";
-            case EntityPropertyInputTypes.ActionButton:
-                return "action-button";
-            case EntityPropertyInputTypes.DataSelector:
-                return "data-selector";
-            case EntityPropertyInputTypes.Chart:
-                return "chart";
-            case EntityPropertyInputTypes.Scheduler:
-                return "scheduler";
-            case EntityPropertyInputTypes.TimeLine:
-                return "timeline";
-            case EntityPropertyInputTypes.Empty:
-                return "empty";
-            case EntityPropertyInputTypes.Qr:
-                return "qr";
-            case EntityPropertyInputTypes.Iframe:
-                return "iframe";
-            case EntityPropertyInputTypes.Group:
-                return "group";
-            default:
-                throw new ArgumentOutOfRangeException(nameof(value), value, null);
-            }
-        }
+            EntityPropertyInputTypes.Input => "input",
+            EntityPropertyInputTypes.SecureInput => "secure-input",
+            EntityPropertyInputTypes.TextBox => "textbox",
+            EntityPropertyInputTypes.RadioButton => "radiobutton",
+            EntityPropertyInputTypes.CheckBox => "checkbox",
+            EntityPropertyInputTypes.ComboBox => "combobox",
+            EntityPropertyInputTypes.MultiSelect => "multiselect",
+            EntityPropertyInputTypes.NumericInput => "numeric-input",
+            EntityPropertyInputTypes.FileUpload => "file-upload",
+            EntityPropertyInputTypes.HtmlEditor => "HTMLeditor",
+            EntityPropertyInputTypes.QueryBuilder => "querybuilder",
+            EntityPropertyInputTypes.DateTimePicker => "date-time picker",
+            EntityPropertyInputTypes.ImageCoordinates => "imagecoords",
+            EntityPropertyInputTypes.ImageUpload => "image-upload",
+            EntityPropertyInputTypes.GpsLocation => "gpslocation",
+            EntityPropertyInputTypes.DateRange => "daterange",
+            EntityPropertyInputTypes.SubEntitiesGrid => "sub-entities-grid",
+            EntityPropertyInputTypes.ItemLinker => "item-linker",
+            EntityPropertyInputTypes.ColorPicker => "color-picker",
+            EntityPropertyInputTypes.AutoIncrement => "auto-increment",
+            EntityPropertyInputTypes.LinkedItem => "linked-item",
+            EntityPropertyInputTypes.ActionButton => "action-button",
+            EntityPropertyInputTypes.DataSelector => "data-selector",
+            EntityPropertyInputTypes.Chart => "chart",
+            EntityPropertyInputTypes.Scheduler => "scheduler",
+            EntityPropertyInputTypes.TimeLine => "timeline",
+            EntityPropertyInputTypes.Empty => "empty",
+            EntityPropertyInputTypes.Qr => "qr",
+            EntityPropertyInputTypes.Iframe => "iframe",
+            EntityPropertyInputTypes.Group => "group",
+            _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+        };
+    }
 
     private static EntityPropertyModel FromDataRow(DataRow dataRow)
     {

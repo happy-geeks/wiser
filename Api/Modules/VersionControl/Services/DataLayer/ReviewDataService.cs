@@ -121,18 +121,26 @@ public class ReviewDataService : IReviewDataService, IScopedService
                 }
             }
 
-            if (!row.IsNull("comment_id"))
+            if (row.IsNull("comment_id"))
             {
-                review.Comments.Add(new ReviewCommentModel
-                {
-                    ReviewId = review.Id,
-                    Id = row.Field<int>("comment_id"),
-                    AddedOn = row.Field<DateTime>("comment_added_on"),
-                    AddedBy = row.Field<long>("comment_added_by"),
-                    AddedByName = row.Field<string>("comment_added_by_name"),
-                    Text = row.Field<string>("comment_text")
-                });
+                continue;
             }
+
+            var commentId = row.Field<int>("comment_id");
+            if (review.Comments.Any(c => c.Id == commentId))
+            {
+                continue;
+            }
+
+            review.Comments.Add(new ReviewCommentModel
+            {
+                ReviewId = review.Id,
+                Id = commentId,
+                AddedOn = row.Field<DateTime>("comment_added_on"),
+                AddedBy = row.Field<long>("comment_added_by"),
+                AddedByName = row.Field<string>("comment_added_by_name"),
+                Text = row.Field<string>("comment_text")
+            });
         }
 
         return results;
@@ -249,7 +257,7 @@ public class ReviewDataService : IReviewDataService, IScopedService
 
         review.Id = await databaseConnection.InsertOrUpdateRecordBasedOnParametersAsync(WiserTableNames.WiserCommitReviews, review.Id);
 
-        if (review.RequestedUsers == null || !review.RequestedUsers.Any())
+        if (review.RequestedUsers == null || review.RequestedUsers.Count == 0)
         {
             return review;
         }

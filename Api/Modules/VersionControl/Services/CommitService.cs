@@ -73,7 +73,7 @@ public class CommitService : ICommitService, IScopedService
             };
         }
 
-        if (isNewCommit && (data.Templates == null || !data.Templates.Any()) && (data.DynamicContents == null || !data.DynamicContents.Any()))
+        if (isNewCommit && (data.Templates == null || data.Templates.Count == 0) && (data.DynamicContents == null || data.DynamicContents.Count == 0))
         {
             return new ServiceResult<CommitModel>
             {
@@ -93,7 +93,7 @@ public class CommitService : ICommitService, IScopedService
         ]);
 
         // Don't allow commits to live if there are any pending reviews.
-        if (data.Environment == Environments.Live && data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
+        if (data.Environment == Environments.Live && data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Count != 0)
         {
             return new ServiceResult<CommitModel>
             {
@@ -122,7 +122,7 @@ public class CommitService : ICommitService, IScopedService
             }
 
             // Create a review request.
-            if (data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Any())
+            if (data.ReviewRequestedUsers != null && data.ReviewRequestedUsers.Count != 0)
             {
                 await reviewService.RequestReviewForCommitAsync(identity, result.Id, data.ReviewRequestedUsers);
             }
