@@ -102,5 +102,4 @@ public class WtsPropertyAttribute : Attribute
     /// </summary>
     public string DropDownListDataVariableName { get; set; }
     
-    
 }
