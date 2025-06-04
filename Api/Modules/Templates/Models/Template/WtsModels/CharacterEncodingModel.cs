@@ -21,7 +21,7 @@ public class CharacterEncodingModel
         IsRequired = false,
         Title = "Karakterset",
         Description = "Welke Karakterset moet gebruikt worden?",
-        ConfigurationTab = ConfigurationTab.Actions,
+        ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.KendoTextBox
     )]
     [XmlIgnore]
@@ -58,7 +58,7 @@ public class CharacterEncodingModel
         IsRequired = false,
         Title = "Collation",
         Description = "Welke Collation moet gebruikt worden?",
-        ConfigurationTab = ConfigurationTab.Actions,
+        ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.KendoTextBox
     )]
     public string Collation { get; set; }

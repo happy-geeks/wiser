@@ -25,7 +25,7 @@ public class WtsQueryModel : ActionModel
         Title = "Query",
         Description = "De query die moet worden uitgevoerd.",
         UseDataSource = true,
-        ConfigurationTab = ConfigurationTab.Actions,
+        ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.TextArea
     )]
     public string Query
@@ -57,7 +57,7 @@ public class WtsQueryModel : ActionModel
         IsRequired = false,
         Title = "Time out",
         Description = "Hoeveel seconden tot de time-out? 0 betekent geen time out.",
-        ConfigurationTab = ConfigurationTab.Actions,
+        ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.KendoNumericTextBox,
         KendoOptions = @"
                    {
@@ -108,7 +108,7 @@ public class WtsQueryModel : ActionModel
         IsRequired = false,
         Title = "Gebruik transacties",
         Description = "Selecteer of transacties gebruikt moeten worden in deze query?",
-        ConfigurationTab = ConfigurationTab.Actions,
+        ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.KendoCheckBox
     )]
     [XmlIgnore] 

@@ -7,6 +7,7 @@ using Api.Modules.Templates.Enums;
 using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
+
 /// <summary>
 /// A model for parsed XML of a template.
 /// </summary>
@@ -96,7 +97,7 @@ public class TemplateWtsConfigurationModel
     [XmlElement("Query")]
     [WtsProperty(
         IsVisible = true,
-        ConfigurationTab = ConfigurationTab.Actions,
+        ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.KendoGrid,
         Title = "Query",
         AllowEdit = true, 
@@ -126,13 +127,43 @@ public class TemplateWtsConfigurationModel
     /// <summary>
     /// Gets or sets the HTTP APIs in the configuration.
     /// </summary>
-    /*
-     [XmlElement("HttpApi")]
+    
+    private List<HttpApiModel> httpApis;
+    
+    [XmlElement("HttpApi")]
     [WtsProperty(
-        IsVisible = false,
-        ConfigurationTab = ConfigurationTab.Actions
+        IsVisible = true,
+        ConfigurationTab = ConfigurationTab.HttpApis,
+        DataComponent = DataComponents.KendoGrid,
+        Title = "HTTP API's",
+        Description = "",
+        AllowEdit = true, 
+        IdProperty = "Actionid",
+        UseDataSource = true,
+        KendoOptions = @"
+           {
+              ""height"": 280,
+                ""persistSelection"": true,
+              ""sortable"": true,
+              ""selectable"": true,
+              ""columns"": [
+                {
+                    ""field"": ""actionid"",
+                    ""title"": ""ID""
+                },
+                {
+                    ""field"": ""comment"",
+                    ""title"": ""Comment""
+                }
+              ]
+           }
+        "
     )]
-    public List<HttpApiModel> HttpApis { get; set; }*/
+    public List<HttpApiModel> HttpApis
+    {
+        get => httpApis;
+        set => httpApis = value;
+    }
     
     [XmlAnyElement]
     [JsonIgnore]
@@ -158,7 +189,7 @@ public class TemplateWtsConfigurationModel
             List<string> s = new List<string>();
             if (ChildItemsExtra == null)
             {
-                ChildItemsExtra=new List<XElement>();
+                ChildItemsExtra = new List<XElement>();
             }
             ChildItemsExtra.ForEach(x => s.Add(x.ToString()));
             return string.Join(",", s);;
@@ -166,12 +197,9 @@ public class TemplateWtsConfigurationModel
         set
         {
             List<string> listBack = value.Split(',').ToList();
-            ChildItemsExtra= new List<XElement>();
-            if (listBack.Count == 0 || string.IsNullOrWhiteSpace(listBack[0]))
-            {
-                return;
-            }
-            listBack.ForEach(si=>ChildItemsExtra.Add(XElement.Parse(si)));
+            ChildItemsExtra = new List<XElement>();
+            if (listBack.Count == 0 || string.IsNullOrWhiteSpace(listBack[0])) return;
+            listBack.ForEach(si => ChildItemsExtra.Add(XElement.Parse(si)));
         }
     }
 }

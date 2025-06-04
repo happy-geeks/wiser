@@ -12,26 +12,32 @@
     <ul class="k-tabstrip-items k-reset" role="none">
         <li class="service-tab k-state-active" data-name="wts-service">Service</li>
         <li class="timers-tab" data-name="wts-timers">Timers</li>
-        <li class="actions-tab" data-name="wts-actions">Actions</li>
+        <li class="actions-tab" data-name="wts-actions">Queries</li>
+        <li class="httpapis-tab" data-name="wts-httpapis">HttpApis</li>
         <li class="statistic-tab" data-name="wts-statistic">Statistiek</li>
         <li class="logging-tab" data-name="wts-logging">Logging</li>
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @* @{RenderProperties(Model, Model.GetType(), ConfigurationTab.Service, true, ""); *@
+            @{RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Service, true, ""); }
             
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @* @{ RenderProperties(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }*@
+        @{ RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }
         </div>
     </div>
 
-    <div id="actionsTab">
+    <div id="queriesTab">
         <div class="formview compact">
-            @* This is currently commented out since the actions tab is not working yet. *@
-            @*@{RenderProperties(Model, Model.GetType(), ConfigurationTab.Actions, true, "");}*@
+            @{RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Queries, true, "");}
+        </div>
+    </div>
+    
+    <div id="httpApisTab">
+        <div class="formview compact">
+            @{RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.HttpApis, true, "");}
         </div>
     </div>
 
@@ -58,7 +64,7 @@
 
 
 @functions {
-    async Task RenderProperty(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
+    async Task RenderPropertyAsync(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
         // If there is any dependsonvalue, we should create a comma seperated string of the values.
         var dependsOnValue = "";
@@ -222,6 +228,8 @@
                             data-kendo-options="@attributes?.KendoOptions"
                             data-depend-on-field="@attributes?.DependsOnField"
                             data-depend-on-value="@dependsOnValue"
+                            drop-down-list-data-source ="@attributes?.DropDownListDataSource"
+                            drop-down-list-data-variable-name ="@attributes?.DropDownListDataVariableName"
                             is-required="@attributes?.IsRequired.ToString().ToLower()"
                             use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
                         >
@@ -274,16 +282,17 @@
         </div>
     }
 
-    void RenderProperties(object data, Type type, string tab, bool IsFilled, string trace)
+    async Task RenderPropertiesAsync(object data, Type type, string tab, bool isFilled, string trace)
     {
         if (type == typeof(XmlCDataSection)||type ==typeof(XmlNode))
         {
             return;
         }
-        foreach (var property in type.GetProperties())
+        
+        <div class="group" data-group-name="@type.Name">
+        @foreach (var property in type.GetProperties())
         {
             if (property.Name == "ChildItemsExtra") continue;
-            var e = property.GetType();
             var attributes = property.GetCustomAttributes(typeof(WtsPropertyAttribute), false).Cast<WtsPropertyAttribute>().FirstOrDefault();
             // Only render properties that have attributes and where IsVisible is true
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
@@ -292,31 +301,32 @@
                 
                 if (data is IList list)
                 {
-                    RenderProperty(null, property, attributes, null, tab, trace);
+                    await RenderPropertyAsync(null, property, attributes, null, tab, trace);
                 }
                 else
                 {
                     // Check if we're sending an enum, if so also send the selected value
                     if (property.PropertyType.IsEnum)
                     {
-                        if (IsFilled)
+                        if (isFilled)
                         {
-                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab, trace);
+                            await RenderPropertyAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, data?.GetType().GetProperty(property.Name)?.GetValue(data, null).ToString(), tab, trace);
                         }
                         else
                         {
-                            RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
+                            await RenderPropertyAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                         }
                         continue;
                     }
                     // Check if we should send the data
-                    if (IsFilled)
+                    if (isFilled)
                     {
-                        RenderProperty(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
+                        await RenderPropertyAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property, attributes, null, tab, trace);
                     }
                     else
                     {
-                        RenderProperty(null, property, attributes, null, tab, trace);
+                        await RenderPropertyAsync(null, property, attributes, null, tab, trace);
+                        //await RenderPropertyAsync(null, property, attributes, null, tab, trace);
                     }
                 }
             }
@@ -335,24 +345,24 @@
                 if (!genericTypes.Any()) continue; // If there are no generic types, continue to the next property
                 var listType = genericTypes[0];
                 // Get the list from the data
+                var tmp = data?.GetType();
                 var dataList = data?.GetType().GetProperty(property.Name)?.GetValue(data, null) as IList;
-                RenderProperties(dataList, listType, tab, false, trace + $"/{property?.Name}");
+                await RenderPropertiesAsync(dataList, listType, tab, false, trace + $"/{property?.Name}");
             }
             else
             {
                 if (data is IList list)
                 {
                     // Since data is a list, we should let the function know that we shouldn't fill any data
-                    RenderProperties(null, property.PropertyType, tab, false, trace + $"/{property?.Name}");
+                    await RenderPropertiesAsync(null, property.PropertyType, tab, false, trace + $"/{property?.Name}");
                 }
                 else
                 {
                     // Render the properties of the class
-                    RenderProperties(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property?.Name}");
-
-                    
+                    await RenderPropertiesAsync(data?.GetType().GetProperty(property.Name)?.GetValue(data, null), property.PropertyType, tab, true, trace + $"/{property?.Name}");
                 }
             }
         }
+        </div>
     }
 }

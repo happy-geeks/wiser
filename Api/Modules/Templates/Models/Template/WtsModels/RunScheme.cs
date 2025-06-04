@@ -83,7 +83,7 @@ public class RunScheme
     [WtsProperty(
         IsVisible = true,
         Title = "Tijd",
-        Description = "De tijd waarop de timer moet worden uitgevoerd (Formaat: uren:minuten:seconden)",
+        Description = "De tijd waarop de timer moet worden uitgevoerd. (Formaat: uren:minuten:seconden)",
         ConfigurationTab = ConfigurationTab.Timers,
         DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",

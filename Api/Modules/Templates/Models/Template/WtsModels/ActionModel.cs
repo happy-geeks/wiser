@@ -26,14 +26,18 @@ public abstract class ActionModel
         IsRequired = false,
         Title = "Tijd ID",
         Description = "Het tijd ID wordt gebruikt om de koppeling met de timer te maken. Zorg ervoor dat dit ID gelijk is aan dat van de timer.",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoNumericTextBox,
-        KendoOptions = @"
-               {
-                  ""format"": ""#"",
-                  ""decimals"": 0
-                }
-            "
+        DataComponent = DataComponents.KendoDropDownList,
+        DropDownListDataSource = "runSchemes",
+        DropDownListDataVariableName = "timeId",
+        KendoOptions = """
+                                      {
+                                         "format": "#",
+                                         "decimals": 0,
+                                         "dataSource": [],
+                                         "dataTextField": "text",
+                                         "dataValueField": "value"
+                                      }
+                       """
     )]
     public int TimeId { get; set; }
     
@@ -46,7 +50,6 @@ public abstract class ActionModel
         IsRequired = false,
         Title = "Volgorde",
         Description = "Geeft de volgorde aan waarin de acties worden uitgevoerd.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoNumericTextBox,
         KendoOptions = @"
                {
@@ -67,7 +70,6 @@ public abstract class ActionModel
         IsRequired = false,
         Title = "Actie ID",
         Description = "Een combinatie van het tijd ID en de order.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox,
         IsDisabled = true
     )]
@@ -83,7 +85,6 @@ public abstract class ActionModel
         IsRequired = false,
         Title = "Resultaatsetnaam",
         Description = "Als de actie data moet retourneren als resultaat, geef hier de naam van de resultaatset op, laat dit anders leeg.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox
     )]
     [CanBeNull]
@@ -99,14 +100,13 @@ public abstract class ActionModel
     private string useResultSet;
     
     /// <summary>
-    /// Gets or sets the name that will be used to retrieve the result set. An empty string represents null.
+    /// Gets or sets the name that will be used to get the result set. An empty string represents null.
     /// </summary>
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
         Title = "Gebruik resultaatset",
         Description = "Als er gebruik moet worden gemaakt van een eerder gedefinieerde resultaatset, geef hier de naam op; laat dit anders leeg.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox
     )]
     [CanBeNull]
@@ -129,7 +129,6 @@ public abstract class ActionModel
         IsRequired = false,
         Title = "Hash data",
         Description = "Vink het vakje aan om de data te hashen.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoCheckBox
     )]
     
@@ -144,7 +143,6 @@ public abstract class ActionModel
         IsRequired = true,
         Title = "Hashalgoritme",
         Description = "Als Hash data is geselecteerd, geef hier het hashalgoritme op.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
     public HashAlgorithms HashAlgorithm { get; set; }
@@ -158,7 +156,6 @@ public abstract class ActionModel
         IsRequired = true,
         Title = "Hashrepresentatie",
         Description = "Als Hash data is geselecteerd, geef hier de hashrepresentatie op.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
     public HashRepresentations HashRepresentation { get; set; }
@@ -204,174 +201,89 @@ public abstract class ActionModel
         IsRequired = true,
         Title = "Alleen uitvoeren als",
         Description = "Voer alleen de resultaatset uit die specifieke waarden/toestanden bevat. Het benodigde veld is afhankelijk van de oorsprong van de resultaatset, zie de WTS wiki voor meet informatie.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
     
     public OnlyWithTypes OnlyWithTypes { get; set; }
     
-    #region OnlyWithStatusCode
-
-    [XmlIgnore]
-    [WtsProperty(
-        IsVisible = true,
-        IsRequired = false,
-        Title = "Statuscode bron",
-        UseDataSource = true,
-        Description = "De bron van de statuscode.",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoTextBox,
-        DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithStatusCode"}
-    )]
-    [CanBeNull]
-    public string OnlyWithStatusCode_item { get; set; }
+    private ResultSetConditionCodeModel onlyWithStatusCodeModel { get; set; }=new ResultSetConditionCodeModel();
     
     [XmlIgnore]
-    [CanBeNull]
-    [WtsProperty(
-        IsVisible = true,
-        IsRequired = false,
-        Title = "Statuscode",
-        Description = "De statuscode. (Werkt alleen met resultaten van een HTTP API call.)",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoNumericTextBox,
-        DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithStatusCode"},
-        KendoOptions = @"
-               {
-                  ""format"": ""#"",
-                  ""decimals"": 0
-                }
-            "
-    )]
-    public string OnlyWithStatusCode_code { get; set; }
+    public ResultSetConditionCodeModel OnlyWithStatusCodeModel {
+        get
+        {
+            return onlyWithStatusCodeModel;
+        }
+        set=> onlyWithStatusCodeModel=value;
+    }
     
-    [CanBeNull]
+    [XmlElement("OnlyWithStatusCode")]
     [JsonIgnore]
     public XmlNode OnlyWithStatusCode
     {
         get
-        {   
-            if (OnlyWithStatusCode_item==null||OnlyWithStatusCode_code==null)return null;
-            if (OnlyWithTypes != OnlyWithTypes.OnlyWithStatusCode) return null;
-            return new XmlDocument().CreateCDataSection($"{OnlyWithStatusCode_item},{OnlyWithStatusCode_code}");
+        {
+            return onlyWithStatusCodeModel.GetModel(OnlyWithTypes);
         }
         set
         {
-            if (value==null || value.Value== null)return;
-            string[] r = value.Value.Split(',');
-            OnlyWithStatusCode_item = r[0];
-            OnlyWithStatusCode_code = r.Length > 1 ? r[1] : "";
+            OnlyWithTypes? result = onlyWithStatusCodeModel.SetModel(value);
+            if (result!=null)OnlyWithTypes = result.Value;
         }
     }
-    #endregion
-
-    #region OnlyWithSuccessState
-
-    [XmlIgnore]
-    [WtsProperty(
-        IsVisible = true,
-        IsRequired = false,
-        Title = "Succescode bron",
-        UseDataSource = true,
-        Description = "De bron van de succescode.",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoTextBox,          
-        DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithSuccessState"}
-    )]
-    [CanBeNull]
-    public string OnlyWithSuccessState_item { get; set; }
+    
+    private ResultSetConditonSuccessStatusModel onlyWithSuccessStatusModel { get; set; }=new ResultSetConditonSuccessStatusModel();
     
     [XmlIgnore]
-    [CanBeNull]
-    [WtsProperty(
-        IsVisible = true,
-        IsRequired = false,
-        Title = "Succescode",
-        Description = "De succescode. (Werkt alleen met resultaten van een ImportFile of GenerateFile.)",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoTextBox,
-        DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithSuccessState"}
-    )]
-    public string OnlyWithSuccessState_state { get; set; }
-    
-    [CanBeNull]
+    public ResultSetConditonSuccessStatusModel OnlyWithSuccessStatusModel {
+        get
+        {
+            return onlyWithSuccessStatusModel;
+        }
+        set=> onlyWithSuccessStatusModel=value;
+    }
+    [XmlElement("OnlyWithSuccessState")]
     [JsonIgnore]
-    public XmlNode OnlyWithSuccessState
+    public XmlNode OnlyWithSuccessStatus
     {
         get
-        {   
-            if (OnlyWithSuccessState_item==null||OnlyWithSuccessState_state==null)return null;
-            if (OnlyWithTypes != OnlyWithTypes.OnlyWithSuccessState) return null;
-            return new XmlDocument().CreateCDataSection($"{OnlyWithSuccessState_item},{OnlyWithSuccessState_state}");
+        {
+            return onlyWithSuccessStatusModel.GetModel(OnlyWithTypes);
         }
         set
         {
-            if (value==null || value.Value== null)return;
-            string[] r = value.Value.Split(',');
-            OnlyWithSuccessState_item = r[0];
-            OnlyWithSuccessState_state = r.Length > 1 ? r[1] : "";
+            OnlyWithTypes? result = onlyWithSuccessStatusModel.SetModel(value);
+            if (result!=null) OnlyWithTypes = result.Value;
         }
     }
 
-    #endregion
-
-    #region OnlyWithValue
-
+   [XmlIgnore]
+    private ResultSetConditionValueModel onlyWithValueModel { get; set; }=new ResultSetConditionValueModel();
+   
     [XmlIgnore]
-    [WtsProperty(
-        IsVisible = true,
-        IsRequired = false,
-        Title = "Bron waarde",
-        UseDataSource = true,
-        Description = "De bron van de waarde.",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoTextBox,
-        DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithValue"}
-    )]
-    [CanBeNull]
-    public string OnlyWithValue_Source { get; set; }
+    public ResultSetConditionValueModel OnlyWithValueModel {
+        get
+        {
+            return onlyWithValueModel;
+        }
+        set=> onlyWithValueModel=value;
+    }
     
-    [XmlIgnore]
-    [CanBeNull]
-    [WtsProperty(
-        IsVisible = true,
-        IsRequired = false,
-        Title = "Waarde",
-        Description = "De verwachte waarde.",
-        ConfigurationTab = ConfigurationTab.Actions,
-        DataComponent = DataComponents.KendoTextBox,
-        DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithValue"}
-    )]
-    public string OnlyWithValue_Value { get; set; }
-    
-    [CanBeNull]
+    [XmlElement("OnlyWithValue")]
     [JsonIgnore]
     public XmlNode OnlyWithValue
     {
         get
-        {   
-            if (OnlyWithValue_Source==null||OnlyWithValue_Value==null)return null;
-            if (OnlyWithTypes != OnlyWithTypes.OnlyWithValue) return null;
-            return new XmlDocument().CreateCDataSection($"{OnlyWithValue_Source},{OnlyWithValue_Value}");
+        {
+            return onlyWithValueModel.GetModel(OnlyWithTypes);
         }
         set
         {
-            if (value==null || value.Value== null)return;
-            string[] r = value.Value.Split(',');
-            OnlyWithValue_Source = r[0];
-            OnlyWithValue_Value = r.Length > 1 ? r[1] : "";
+            OnlyWithTypes? result = onlyWithValueModel.SetModel(value);
+            if (result!=null) OnlyWithTypes = result.Value;
         }
     }
 
-    #endregion
-    
-    
     [CanBeNull]
     public LogSettings LogSettings { get; set; }
 
@@ -386,7 +298,6 @@ public abstract class ActionModel
         IsRequired = false,
         Title = "Commentaar",
         Description = "Wordt gebruikt voor documentatie, heeft geen effect op de actie zelf.",
-        ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoTextBox
     )]
     [CanBeNull]

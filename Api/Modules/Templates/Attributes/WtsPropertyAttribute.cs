@@ -91,4 +91,16 @@ public class WtsPropertyAttribute : Attribute
     /// Not currently in use.
     /// </summary>
     public int CustomUiOrder { get; set; }
+    
+    /// <summary>
+    /// Path within the template is needed if the drop boxes might need to be changed or are dynamic.
+    /// </summary>
+    public string DropDownListDataSource { get; set; }
+    
+    /// <summary>
+    /// Variable name to look for within the object found at the DropDownListDataSource is needed if the drop boxes might need to be changed or are dynamic.
+    /// </summary>
+    public string DropDownListDataVariableName { get; set; }
+    
+    
 }
