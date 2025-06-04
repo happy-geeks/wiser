@@ -48,9 +48,9 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             };
         }
 
+        // If the user entered an email address, we need to change it for the user.
         var subDomain = IdentityHelpers.GetSubDomain(identity);
         var userId = IdentityHelpers.GetWiserUserId(identity);
-
         if (!String.IsNullOrWhiteSpace(importRequest.EmailAddress))
         {
             await usersService.ChangeEmailAddressAsync(userId, subDomain, importRequest.EmailAddress, identity);
@@ -71,19 +71,18 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
 
         // Turn the bytes into a string.
         var fileContents = Encoding.UTF8.GetString(fileBytes);
-
         var comboBoxFields = new List<ComboBoxDataModel>();
         var linkComboBoxFields = new Dictionary<int, List<ComboBoxDataModel>>();
         var properties = new List<(string PropertyName, string LanguageCode, string InputType, JObject Options)>();
         var linkProperties = new List<(string PropertyName, string LanguageCode, string InputType, JObject Options)>();
 
+        // Get all properties for the entity type, so that we can check if the import file contains the correct columns and data types.
         clientDatabaseConnection.AddParameter("entityType", entityType);
         var dataTable = await clientDatabaseConnection.GetAsync($"""
                                                                  SELECT property_name, display_name, options, inputtype, data_query, language_code
                                                                  FROM {WiserTableNames.WiserEntityProperty}
                                                                  WHERE entity_name = ?entityType
                                                                  """);
-
         if (dataTable.Rows.Count > 0)
         {
             foreach (DataRow dataRow in dataTable.Rows)
@@ -111,26 +110,21 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
 
         var importData = new List<ImportDataModel>();
 
+        // Process the data from the uploaded file, use IExcelService to read the file if it is an Excel file, otherwise use TextFieldParser to read the CSV file.
         if (importRequest.FilePath.EndsWith(".xlsx", StringComparison.InvariantCultureIgnoreCase))
         {
             var headerFields = excelService.GetColumnNames(importRequest.FilePath).ToArray();
-            var headerResult = CheckHeader(headerFields, importResult);
+            var (result, idIndex) = CheckHeader(headerFields, importResult);
 
-            if (headerResult.result != null)
+            if (result != null)
             {
-                return headerResult.result;
+                return result;
             }
 
-            var idIndex = headerResult.idIndex;
             var rows = excelService.GetLines(importRequest.FilePath,  headerFields.Length, true, true);
             var rowsHandled = 0;
-            foreach (var row in rows)
+            foreach (var row in rows.TakeWhile(row => rowsHandled <= ImportLimit))
             {
-                if (rowsHandled > ImportLimit)
-                {
-                    break;
-                }
-
                 await ProcessLineAsync(importResult, row.ToArray(), identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties);
                 rowsHandled++;
             }
@@ -138,21 +132,21 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         else
         {
             using var stringReader = new StringReader(fileContents);
-            using var reader = new TextFieldParser(stringReader);
-            reader.Delimiters = [";"];
-            reader.TextFieldType = FieldType.Delimited;
-            reader.HasFieldsEnclosedInQuotes = true;
+            using var textFieldParser = new TextFieldParser(stringReader);
+            textFieldParser.Delimiters = [";"];
+            textFieldParser.TextFieldType = FieldType.Delimited;
+            textFieldParser.HasFieldsEnclosedInQuotes = true;
 
             string[] headerFields = null;
             var firstLine = true;
             var rowsHandled = 0;
             var idIndex = -1;
 
-            while (!reader.EndOfData)
+            while (!textFieldParser.EndOfData)
             {
                 if (firstLine)
                 {
-                    headerFields = reader.ReadFields();
+                    headerFields = textFieldParser.ReadFields();
                     firstLine = false;
                     var headerResult = CheckHeader(headerFields, importResult);
 
@@ -172,7 +166,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
 
                 rowsHandled += 1;
 
-                var lineFields = reader.ReadFields();
+                var lineFields = textFieldParser.ReadFields();
                 await ProcessLineAsync(importResult, lineFields, identity, moduleId, linkComboBoxFields, linkProperties, importData, idIndex, entityType, headerFields, importRequest, comboBoxFields, properties);
             }
         }
@@ -187,7 +181,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         var allItemIds = importData.Where(i => i.Item.Id > 0).Select(i => i.Item.Id).ToList();
         var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(entityType);
 
-        // Check if all items are of the correct entity type if there are any items that are imported according to the settings
+        // Check if all items are of the correct entity type if there are any items that are imported according to the settings.
         if (allItemIds.Count != 0 && importRequest.ImportSettings.Count != 0)
         {
             dataTable = await clientDatabaseConnection.GetAsync($"SELECT id, entity_type FROM {tablePrefix}{WiserTableNames.WiserItem} WHERE id IN ({String.Join(",", allItemIds)})");
@@ -253,37 +247,41 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                                 tablePrefixes.Add(linkSetting.SourceEntityType, sourceEntityTablePrefix);
                             }
 
-                            if (!tablesWithItems.ContainsKey(sourceEntityTablePrefix))
+                            if (!tablesWithItems.TryGetValue(sourceEntityTablePrefix, out var itemIds))
                             {
-                                tablesWithItems.Add(sourceEntityTablePrefix, []);
+                                itemIds = [];
+                                tablesWithItems.Add(sourceEntityTablePrefix, itemIds);
                             }
 
                             // Add the item ID for a temporary list, so that we can get all items at once later.
-                            if (!tablesWithItems[sourceEntityTablePrefix].Contains(link.ItemId))
+                            if (!itemIds.Contains(link.ItemId))
                             {
-                                tablesWithItems[sourceEntityTablePrefix].Add(link.ItemId);
+                                itemIds.Add(link.ItemId);
                             }
                         }
 
-                        if (link.DestinationItemId > 0)
+                        if (link.DestinationItemId <= 0)
                         {
-                            // Get the table prefix, if we don't know it yet for the current entity type.
-                            if (!tablePrefixes.TryGetValue(linkSetting.DestinationEntityType, out var destinationEntityTablePrefix))
-                            {
-                                destinationEntityTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSetting.DestinationEntityType);
-                                tablePrefixes.Add(linkSetting.DestinationEntityType, destinationEntityTablePrefix);
-                            }
+                            continue;
+                        }
 
-                            if (!tablesWithItems.ContainsKey(destinationEntityTablePrefix))
-                            {
-                                tablesWithItems.Add(destinationEntityTablePrefix, []);
-                            }
+                        // Get the table prefix, if we don't know it yet for the current entity type.
+                        if (!tablePrefixes.TryGetValue(linkSetting.DestinationEntityType, out var destinationEntityTablePrefix))
+                        {
+                            destinationEntityTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkSetting.DestinationEntityType);
+                            tablePrefixes.Add(linkSetting.DestinationEntityType, destinationEntityTablePrefix);
+                        }
 
-                            // Add the item ID for a temporary list, so that we can get all items at once later.
-                            if (!tablesWithItems[destinationEntityTablePrefix].Contains(link.DestinationItemId))
-                            {
-                                tablesWithItems[destinationEntityTablePrefix].Add(link.DestinationItemId);
-                            }
+                        if (!tablesWithItems.TryGetValue(destinationEntityTablePrefix, out var destinationItemIds))
+                        {
+                            destinationItemIds = ([]);
+                            tablesWithItems.Add(destinationEntityTablePrefix, destinationItemIds);
+                        }
+
+                        // Add the item ID for a temporary list, so that we can get all items at once later.
+                        if (!destinationItemIds.Contains(link.DestinationItemId))
+                        {
+                            destinationItemIds.Add(link.DestinationItemId);
                         }
                     }
 
@@ -351,6 +349,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             return new ServiceResult<ImportResultModel>(importResult);
         }
 
+        // All checks passed, we can now insert the import data into the database, so that the WTS can pick it up from here.
         var wiserImportId = 0;
         try
         {
@@ -377,6 +376,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             logger.LogError(exception, "Failed to insert import data into database.");
         }
 
+        // Always add the import log, even if the import failed, so that we can see what went wrong.
         try
         {
             clientDatabaseConnection.ClearParameters();
@@ -398,17 +398,18 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             logger.LogError(exception, "Failed to insert import log into database.");
         }
 
+        // If the import ID is 0, it means the import failed, and we can't continue.
         if (wiserImportId == 0)
         {
             return new ServiceResult<ImportResultModel>(importResult);
         }
 
-        // Extract the images zip to a place where the WTS can find them.
         if (String.IsNullOrWhiteSpace(importRequest.ImagesFileName) && String.IsNullOrWhiteSpace(importRequest.ImagesFilePath))
         {
             return new ServiceResult<ImportResultModel>(importResult);
         }
 
+        // Extract the images zip to a place where the WTS can find them.
         var basePath = $@"C:\temp\WTS Import\{tenant.TenantId}\{wiserImportId}\";
 
         var imagesDirectory = new DirectoryInfo(basePath);
@@ -427,6 +428,189 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         }
 
         return new ServiceResult<ImportResultModel>(importResult);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<DeleteItemsConfirmModel>> PrepareDeleteItemsAsync(ClaimsIdentity identity, DeleteItemsRequestModel deleteItemsRequest)
+    {
+        // Get all lines, skip first line containing column names.
+        var fileLines = (await File.ReadAllLinesAsync(deleteItemsRequest.FilePath)).Skip(1);
+
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("entityName", deleteItemsRequest.EntityName);
+        clientDatabaseConnection.AddParameter("propertyName", deleteItemsRequest.PropertyName);
+
+        var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(deleteItemsRequest.EntityName);
+
+        // Build the query based on a delete by id or by property.
+        var whereClause = deleteItemsRequest.PropertyName == "id"
+            ? CreatePrepareDeleteQueryBottomForId(fileLines)
+            : CreatePrepareDeleteQueryBottomForProperty(fileLines, tablePrefix);
+        var query = $"""
+                     SELECT item.id
+                     FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
+                     {whereClause}
+                     """;
+        var dataTable = await clientDatabaseConnection.GetAsync(query);
+
+        var itemsToDelete = new DeleteItemsConfirmModel
+        {
+            EntityType = deleteItemsRequest.EntityName,
+            Ids = []
+        };
+
+        foreach (DataRow dataRow in dataTable.Rows)
+        {
+            itemsToDelete.Ids.Add(dataRow.Field<ulong>("id"));
+        }
+
+        return new ServiceResult<DeleteItemsConfirmModel>(itemsToDelete);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> DeleteItemsAsync(ClaimsIdentity identity, DeleteItemsConfirmModel deleteItemsConfirm)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var userId = IdentityHelpers.GetWiserUserId(identity);
+        var userName = $"Import ({IdentityHelpers.GetName(identity)})";
+
+        await wiserItemsService.DeleteAsync(deleteItemsConfirm.Ids, userId: userId, username: userName, entityType: deleteItemsConfirm.EntityType);
+        return new ServiceResult<bool>(true);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinksAsync(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest)
+    {
+        // Get all lines, skip first line containing column names.
+        var fileLines = (await File.ReadAllLinesAsync(deleteLinksRequest.FilePath)).Skip(1).ToList();
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        clientDatabaseConnection.ClearParameters();
+
+        var linksToDelete = new List<DeleteLinksConfirmModel>();
+
+        switch (deleteLinksRequest.DeleteLinksType)
+        {
+            case DeleteLinksTypes.Single:
+                linksToDelete.Add(await CreateQueryForSingleColumn(fileLines, deleteLinksRequest));
+                break;
+            case DeleteLinksTypes.Multiple:
+                linksToDelete.AddRange(await CreateQueryForMultipleColumns(fileLines, deleteLinksRequest));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(deleteLinksRequest.DeleteLinksType), deleteLinksRequest.DeleteLinksType.ToString(), null);
+        }
+
+        return new ServiceResult<List<DeleteLinksConfirmModel>>(linksToDelete);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> DeleteLinksAsync(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        try
+        {
+            var userId = IdentityHelpers.GetWiserUserId(identity);
+            var userName = $"Import ({IdentityHelpers.GetName(identity)})";
+
+            await clientDatabaseConnection.BeginTransactionAsync();
+
+            foreach (var deleteLinksConfirm in deleteLinksConfirms)
+            {
+                if (deleteLinksConfirm.Ids.Count == 0)
+                {
+                    continue;
+                }
+
+                if (deleteLinksConfirm.UseParentId)
+                {
+                    await wiserItemsService.RemoveParentLinkOfItemsAsync(deleteLinksConfirm.Ids, deleteLinksConfirm.SourceEntityType, deleteLinksConfirm.SourceIds, deleteLinksConfirm.DestinationEntityType, deleteLinksConfirm.DestinationIds, userName, userId);
+                }
+                else
+                {
+                    await wiserItemsService.RemoveItemLinksByIdAsync(deleteLinksConfirm.Ids, deleteLinksConfirm.SourceEntityType, deleteLinksConfirm.SourceIds, deleteLinksConfirm.DestinationEntityType, deleteLinksConfirm.DestinationIds, userName, userId);
+                }
+            }
+
+            await clientDatabaseConnection.CommitTransactionAsync();
+
+            return new ServiceResult<bool>(true);
+        }
+        catch
+        {
+            await clientDatabaseConnection.RollbackTransactionAsync(false);
+            throw;
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityPropertiesAsync(ClaimsIdentity identity, string entityName = null, int linkType = 0)
+    {
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
+        clientDatabaseConnection.AddParameter("linkType", linkType);
+
+        const string query = $"""
+                              SELECT property.id, property.display_name, property.property_name, property.language_code, property.inputtype, property.`options`, property.ordering
+                              FROM (
+                                  SELECT
+                                      0 AS id,
+                                      'Item naam' AS display_name,
+                                      'itemTitle' AS property_name,
+                                      '' AS language_code,
+                                      'input' AS inputtype,
+                                      '' AS `options`,
+                                      1 AS ordering,
+                                      0 AS base_order
+                                  FROM DUAL
+                                  WHERE ?entityName <> ''
+                                  UNION
+                                  SELECT
+                                      id,
+                                      CONCAT(
+                                          IF(display_name = '', property_name, display_name),
+                                          IF(
+                                              language_code <> '',
+                                              CONCAT(' (', language_code, ')'),
+                                              ''
+                                          )
+                                      ) AS display_name,
+                                      IF(property_name = '', display_name, property_name) AS property_name,
+                                      language_code,
+                                      inputtype,
+                                      IF(inputtype = 'image-upload', `options`, '') AS `options`,
+                                      ordering AS ordering,
+                                      1 AS base_order
+                                  FROM `{WiserTableNames.WiserEntityProperty}`
+                                  WHERE entity_name = ?entityName OR (?linkType > 0 AND link_type = ?linkType)
+                                  ORDER BY base_order, display_name
+                              ) AS property
+                              """;
+        var getPropertiesResult = await clientDatabaseConnection.GetAsync(query);
+
+        if (getPropertiesResult.Rows.Count == 0)
+        {
+            return new ServiceResult<IEnumerable<EntityPropertyModel>>(null);
+        }
+
+        var entityProperties = new List<EntityPropertyModel>(getPropertiesResult.Rows.Count);
+        entityProperties.AddRange(getPropertiesResult.Rows.Cast<DataRow>()
+            .Select(entityPropertyDataRow => new EntityPropertyModel
+            {
+                Id = Convert.ToInt32(entityPropertyDataRow["id"]),
+                DisplayName = entityPropertyDataRow.Field<string>("display_name"),
+                PropertyName = entityPropertyDataRow.Field<string>("property_name"),
+                LanguageCode = entityPropertyDataRow.Field<string>("language_code"),
+                InputType = EntityPropertyHelper.ToInputType(entityPropertyDataRow.Field<string>("inputtype")),
+                Options = entityPropertyDataRow.Field<string>("options") ?? String.Empty,
+                Ordering = Convert.ToInt32(entityPropertyDataRow["ordering"])
+            }));
+
+        return new ServiceResult<IEnumerable<EntityPropertyModel>>(entityProperties);
     }
 
     /// <summary>
@@ -634,9 +818,10 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 continue;
             }
 
-            if (!linkComboBoxFields.ContainsKey(itemLink.Type))
+            if (!linkComboBoxFields.TryGetValue(itemLink.Type, out var currentLinkComboBoxFields))
             {
-                linkComboBoxFields.Add(itemLink.Type, []);
+                currentLinkComboBoxFields = [];
+                linkComboBoxFields.Add(itemLink.Type, currentLinkComboBoxFields);
                 clientDatabaseConnection.AddParameter("linkType", itemLink.Type);
                 var dataTable = await clientDatabaseConnection.GetAsync($"""
                                                                          SELECT property_name, display_name, options, inputtype, data_query, language_code
@@ -669,7 +854,6 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 }
             }
 
-            var currentLinkComboBoxFields = linkComboBoxFields[itemLink.Type];
             var propertyName = linkDetailSettings["propertyName"] as string;
             var isImageField = (bool)linkDetailSettings["isImageField"];
             var allowMultipleImages = (bool)linkDetailSettings["allowMultipleImages"];
@@ -758,6 +942,18 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         }
     }
 
+    /// <summary>
+    /// Validates and handles the value of a field based on its input type.
+    /// This will add any validation errors to the <see cref="ImportResultModel"/> if the value is invalid.
+    /// It will also convert the value to the correct format for Wiser, if necessary.
+    /// </summary>
+    /// <param name="properties">The complete list of properties of the specified entity type.</param>
+    /// <param name="propertyName">The name of the property/field to handle.</param>
+    /// <param name="languageCode">The language code of the property/field.</param>
+    /// <param name="importResult">The <see cref="ImportResultModel"/> to store the final result in.</param>
+    /// <param name="importColumnName">The column name in the import file.</param>
+    /// <param name="value">The value from the import file.</param>
+    /// <returns><c>true</c> if the value was handled successfully, <c>false</c> if it was not valid and should not be imported.</returns>
     private static bool HandleFieldValue(List<(string PropertyName, string LanguageCode, string InputType, JObject Options)> properties, string propertyName, string languageCode, ImportResultModel importResult, string importColumnName, ref string value)
     {
         var property = properties.FirstOrDefault(p => String.Equals(p.PropertyName, propertyName, StringComparison.OrdinalIgnoreCase) && String.Equals(p.LanguageCode, languageCode, StringComparison.OrdinalIgnoreCase));
@@ -828,18 +1024,12 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                     return false;
                 }
 
-                switch (property.Options.Value<string>("type")?.ToLowerInvariant() ?? "")
+                value = (property.Options.Value<string>("type")?.ToLowerInvariant() ?? "") switch
                 {
-                    case "date":
-                        value = parsedDateTime.ToString("yyyy-MM-dd");
-                        break;
-                    case "time":
-                        value = parsedDateTime.ToString("HH:mm:ss");
-                        break;
-                    default:
-                        value = parsedDateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                        break;
-                }
+                    "date" => parsedDateTime.ToString("yyyy-MM-dd"),
+                    "time" => parsedDateTime.ToString("HH:mm:ss"),
+                    _ => parsedDateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                };
 
                 break;
         }
@@ -848,11 +1038,10 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
     }
 
     /// <summary>
-    /// Checks if the first three bytes of a byte array are the same as the UTF-8 BOM. If they are, they are removed
-    /// This will return the original array if there are no BOM bytes
+    /// Checks if the first three bytes of a byte array are the same as the UTF-8 BOM. If they are, they are removed.
     /// </summary>
-    /// <param name="fileBytes"></param>
-    /// <returns></returns>
+    /// <param name="fileBytes">The byte array to use.</param>
+    /// <returns>The byte array without UTF-8 BOM bytes.</returns>
     private static byte[] RemoveUtf8BomBytes(byte[] fileBytes)
     {
         var utf8BomBytes = new byte[] { 0xEF, 0xBB, 0xBF };
@@ -869,6 +1058,20 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         return newByteArray;
     }
 
+    /// <summary>
+    /// Validates and handles the value of a combobox field.
+    /// This will add any validation errors to the <see cref="ImportResultModel"/> if the value is invalid.
+    /// It will also convert the value to the correct format for Wiser, if necessary.
+    /// </summary>
+    /// <param name="comboBoxFields">The complete list of all combobox fields of the specified entity type.</param>
+    /// <param name="languageCode">The language code of the property/field.</param>
+    /// <param name="importItem">The <see cref="ImportDataModel"/> of the row/item that is being handled.</param>
+    /// <param name="details">The list of <see cref="WiserItemDetailModel"/> to import.</param>
+    /// <param name="propertyName">The name of the property/field to handle.</param>
+    /// <param name="value">The value from the import file.</param>
+    /// <param name="importResult">The <see cref="ImportResultModel"/> to store the final result in.</param>
+    /// <param name="isLinkProperty">Whether the current property is for wiser_itemlinkdetail instead of wiser_itemdetail.</param>
+    /// <returns>The value to save in wiser_itemdetail or wiser_itemlinkdetail.</returns>
     private async Task<string> HandleComboBoxFieldAsync(List<ComboBoxDataModel> comboBoxFields,
         string languageCode,
         ImportDataModel importItem,
@@ -943,6 +1146,12 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         return value;
     }
 
+    /// <summary>
+    /// Create a list of values that a combobox can have.
+    /// This will use the settings of the combobox to determine how to get the values.
+    /// </summary>
+    /// <param name="comboBox">The combobox to get the values for.</param>
+    /// <exception cref="NotImplementedException">When using a combobox that uses a data selector, which isn't supported yet.</exception>
     private async Task AddComboBoxValuesAsync(ComboBoxDataModel comboBox)
     {
         comboBox.Values ??= new Dictionary<string, string>();
@@ -1043,79 +1252,6 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 comboBox.Values.Add(jsonToken.Value<string>(valueField), jsonToken.Value<string>(textField));
             }*/
         }
-    }
-
-    /// <inheritdoc />
-    public async Task<ServiceResult<DeleteItemsConfirmModel>> PrepareDeleteItemsAsync(ClaimsIdentity identity, DeleteItemsRequestModel deleteItemsRequest)
-    {
-        // Get all lines, skip first line containing column names.
-        var fileLines = (await File.ReadAllLinesAsync(deleteItemsRequest.FilePath)).Skip(1);
-
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-        clientDatabaseConnection.ClearParameters();
-        clientDatabaseConnection.AddParameter("entityName", deleteItemsRequest.EntityName);
-        clientDatabaseConnection.AddParameter("propertyName", deleteItemsRequest.PropertyName);
-
-        var tablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(deleteItemsRequest.EntityName);
-
-        // Build the query based on a delete by id or by property.
-        var whereClause = deleteItemsRequest.PropertyName == "id"
-            ? CreatePrepareDeleteQueryBottomForId(fileLines)
-            : CreatePrepareDeleteQueryBottomForProperty(fileLines, tablePrefix);
-        var query = $"""
-                     SELECT item.id
-                     FROM {tablePrefix}{WiserTableNames.WiserItem} AS item
-                     {whereClause}
-                     """;
-        var dataTable = await clientDatabaseConnection.GetAsync(query);
-
-        var itemsToDelete = new DeleteItemsConfirmModel
-        {
-            EntityType = deleteItemsRequest.EntityName,
-            Ids = []
-        };
-
-        foreach (DataRow dataRow in dataTable.Rows)
-        {
-            itemsToDelete.Ids.Add(dataRow.Field<ulong>("id"));
-        }
-
-        return new ServiceResult<DeleteItemsConfirmModel>(itemsToDelete);
-    }
-
-    /// <inheritdoc />
-    public async Task<ServiceResult<bool>> DeleteItemsAsync(ClaimsIdentity identity, DeleteItemsConfirmModel deleteItemsConfirm)
-    {
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-
-        var userId = IdentityHelpers.GetWiserUserId(identity);
-        var userName = $"Import ({IdentityHelpers.GetName(identity)})";
-
-        await wiserItemsService.DeleteAsync(deleteItemsConfirm.Ids, userId: userId, username: userName, entityType: deleteItemsConfirm.EntityType);
-        return new ServiceResult<bool>(true);
-    }
-
-    /// <inheritdoc />
-    public async Task<ServiceResult<List<DeleteLinksConfirmModel>>> PrepareDeleteLinksAsync(ClaimsIdentity identity, DeleteLinksRequestModel deleteLinksRequest)
-    {
-        // Get all lines, skip first line containing column names.
-        var fileLines = (await File.ReadAllLinesAsync(deleteLinksRequest.FilePath)).Skip(1).ToList();
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-        clientDatabaseConnection.ClearParameters();
-
-        var linksToDelete = new List<DeleteLinksConfirmModel>();
-
-        switch (deleteLinksRequest.DeleteLinksType)
-        {
-            case DeleteLinksTypes.Single:
-                linksToDelete.Add(await CreateQueryForSingleColumn(fileLines, deleteLinksRequest));
-                break;
-            case DeleteLinksTypes.Multiple:
-                linksToDelete.AddRange(await CreateQueryForMultipleColumns(fileLines, deleteLinksRequest));
-                break;
-        }
-
-        return new ServiceResult<List<DeleteLinksConfirmModel>>(linksToDelete);
     }
 
     /// <summary>
@@ -1378,113 +1514,5 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         }
 
         return result;
-    }
-
-    /// <inheritdoc />
-    public async Task<ServiceResult<bool>> DeleteLinksAsync(ClaimsIdentity identity, List<DeleteLinksConfirmModel> deleteLinksConfirms)
-    {
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-
-        try
-        {
-            var userId = IdentityHelpers.GetWiserUserId(identity);
-            var userName = $"Import ({IdentityHelpers.GetName(identity)})";
-
-            await clientDatabaseConnection.BeginTransactionAsync();
-
-            foreach (var deleteLinksConfirm in deleteLinksConfirms)
-            {
-                if (deleteLinksConfirm.Ids.Count == 0)
-                {
-                    continue;
-                }
-
-                if (deleteLinksConfirm.UseParentId)
-                {
-                    await wiserItemsService.RemoveParentLinkOfItemsAsync(deleteLinksConfirm.Ids, deleteLinksConfirm.SourceEntityType, deleteLinksConfirm.SourceIds, deleteLinksConfirm.DestinationEntityType, deleteLinksConfirm.DestinationIds, userName, userId);
-                }
-                else
-                {
-                    await wiserItemsService.RemoveItemLinksByIdAsync(deleteLinksConfirm.Ids, deleteLinksConfirm.SourceEntityType, deleteLinksConfirm.SourceIds, deleteLinksConfirm.DestinationEntityType, deleteLinksConfirm.DestinationIds, userName, userId);
-                }
-            }
-
-            await clientDatabaseConnection.CommitTransactionAsync();
-
-            return new ServiceResult<bool>(true);
-        }
-        catch
-        {
-            await clientDatabaseConnection.RollbackTransactionAsync(false);
-            throw;
-        }
-    }
-
-    /// <inheritdoc />
-    public async Task<ServiceResult<IEnumerable<EntityPropertyModel>>> GetEntityPropertiesAsync(ClaimsIdentity identity, string entityName = null, int linkType = 0)
-    {
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-
-        clientDatabaseConnection.ClearParameters();
-        clientDatabaseConnection.AddParameter("entityName", entityName ?? String.Empty);
-        clientDatabaseConnection.AddParameter("linkType", linkType);
-
-        const string query = $"""
-                              SELECT property.id, property.display_name, property.property_name, property.language_code, property.inputtype, property.`options`, property.ordering
-                              FROM (
-                                  SELECT
-                                      0 AS id,
-                                      'Item naam' AS display_name,
-                                      'itemTitle' AS property_name,
-                                      '' AS language_code,
-                                      'input' AS inputtype,
-                                      '' AS `options`,
-                                      1 AS ordering,
-                                      0 AS base_order
-                                  FROM DUAL
-                                  WHERE ?entityName <> ''
-                                  UNION
-                                  SELECT
-                                      id,
-                                      CONCAT(
-                                          IF(display_name = '', property_name, display_name),
-                                          IF(
-                                              language_code <> '',
-                                              CONCAT(' (', language_code, ')'),
-                                              ''
-                                          )
-                                      ) AS display_name,
-                                      IF(property_name = '', display_name, property_name) AS property_name,
-                                      language_code,
-                                      inputtype,
-                                      IF(inputtype = 'image-upload', `options`, '') AS `options`,
-                                      ordering AS ordering,
-                                      1 AS base_order
-                                  FROM `{WiserTableNames.WiserEntityProperty}`
-                                  WHERE entity_name = ?entityName OR (?linkType > 0 AND link_type = ?linkType)
-                                  ORDER BY base_order, display_name
-                              ) AS property
-                              """;
-        var getPropertiesResult = await clientDatabaseConnection.GetAsync(query);
-
-        if (getPropertiesResult.Rows.Count == 0)
-        {
-            return new ServiceResult<IEnumerable<EntityPropertyModel>>(null);
-        }
-
-        var entityProperties = new List<EntityPropertyModel>(getPropertiesResult.Rows.Count);
-        entityProperties.AddRange(getPropertiesResult.Rows.Cast<DataRow>()
-            .Select(entityPropertyDataRow => new EntityPropertyModel
-            {
-                Id = Convert.ToInt32(entityPropertyDataRow["id"]),
-                DisplayName = entityPropertyDataRow.Field<string>("display_name"),
-                PropertyName = entityPropertyDataRow.Field<string>("property_name"),
-                LanguageCode = entityPropertyDataRow.Field<string>("language_code"),
-                InputType = EntityPropertyHelper.ToInputType(entityPropertyDataRow.Field<string>("inputtype")),
-                Options = entityPropertyDataRow.Field<string>("options") ?? String.Empty,
-                Ordering = Convert.ToInt32(entityPropertyDataRow["ordering"])
-            }));
-
-        return new ServiceResult<IEnumerable<EntityPropertyModel>>(entityProperties);
     }
 }
