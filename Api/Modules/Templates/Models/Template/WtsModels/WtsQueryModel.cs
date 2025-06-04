@@ -130,6 +130,7 @@ public class WtsQueryModel : ActionModel
     /// </summary>
     [XmlElement("UseTransaction")]
     [CanBeNull]
+    [JsonIgnore]
     public string UseTransactionString 
     {
         get

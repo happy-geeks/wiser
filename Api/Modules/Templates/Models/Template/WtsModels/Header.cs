@@ -43,5 +43,5 @@ public class Header
     public string UseResultSet { get; set; }
     
     [XmlIgnore]
-    public string uid { get; set; } = Guid.NewGuid().ToString();
+    public string ID { get; set; } = Guid.NewGuid().ToString();
 }

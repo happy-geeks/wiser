@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
 
-public class ResultSetConditonSuccessStatusModel: ResultSetConditionModel
+public class ResultSetConditionSuccessStatusModel: ResultSetConditionModel
 {
     [XmlIgnore]
     [WtsProperty(

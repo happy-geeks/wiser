@@ -1,6 +1,7 @@
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
+using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
 
@@ -13,9 +14,6 @@ public class CharacterEncodingModel
     [XmlIgnore]
     private readonly string defaultCollation = "utf8mb4_general_ci";
     
-    [XmlIgnore]
-    private string characterSet;
-    
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
@@ -27,6 +25,7 @@ public class CharacterEncodingModel
     [XmlIgnore]
     public string CharacterSet { get; set; }
     
+    [JsonIgnore]
     [XmlElement("CharacterSet")]
     public string CharacterSetXml
     {
@@ -49,9 +48,6 @@ public class CharacterEncodingModel
         }
     }
     
-    [XmlIgnore]
-    private string collation;
-    
     [XmlIgnore]    
     [WtsProperty(
         IsVisible = true,
@@ -64,6 +60,7 @@ public class CharacterEncodingModel
     public string Collation { get; set; }
     
     [XmlElement("Collation")]
+    [JsonIgnore]
     public string CollationXml
     {
         get

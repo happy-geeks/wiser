@@ -73,7 +73,7 @@ public abstract class ActionModel
         DataComponent = DataComponents.KendoTextBox,
         IsDisabled = true
     )]
-    public string Actionid => ($"{TimeId}-{Order}");
+    public string ActionId => ($"{TimeId}-{Order}");
     
     private string resultSetName;
     
@@ -232,10 +232,10 @@ public abstract class ActionModel
         }
     }
     
-    private ResultSetConditonSuccessStatusModel onlyWithSuccessStatusModel { get; set; }=new ResultSetConditonSuccessStatusModel();
+    private ResultSetConditionSuccessStatusModel onlyWithSuccessStatusModel { get; set; }=new ResultSetConditionSuccessStatusModel();
     
     [XmlIgnore]
-    public ResultSetConditonSuccessStatusModel OnlyWithSuccessStatusModel {
+    public ResultSetConditionSuccessStatusModel OnlyWithSuccessStatusModel {
         get
         {
             return onlyWithSuccessStatusModel;

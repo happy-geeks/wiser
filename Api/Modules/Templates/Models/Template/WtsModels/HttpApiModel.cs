@@ -133,7 +133,7 @@ public class HttpApiModel : ActionModel
         ConfigurationTab = ConfigurationTab.HttpApis,
         DataComponent = DataComponents.KendoGrid,
         AllowEdit = true,
-        IdProperty = "uid",
+        IdProperty = "ID",
         UseDataSource = true,
         KendoOptions = @"
            {

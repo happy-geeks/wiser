@@ -356,7 +356,7 @@ export class WtsConfiguration {
         let newActionId = this.GetActionIdFromCurrentInputfields(inputFields, gridName);
         const regex = /^\d+-\d+$/;
 
-        if (selectedItem == null || (selectedItem["actionid"] && selectedItem["actionid"] !== newActionId)) {
+        if (selectedItem == null || (selectedItem["actionId"] && selectedItem["actionId"] !== newActionId)) {
 
             if (!regex.test(newActionId) && newActionId !== null) {
                 kendo.alert("De action id is niet correct");
@@ -394,7 +394,7 @@ export class WtsConfiguration {
             if (inputField.getAttribute("data-kendo-component") === "KendoNumericTextBox") {
                 value = parseInt(value);
             }
-            if (name === "actionid") {
+            if (name === "actionId") {
                 let newActionId = `${selectedItem.timeId}-${selectedItem.order}`
                 this.setValueOfElement(inputField, newActionId);
                 selectedItem[name] = newActionId;

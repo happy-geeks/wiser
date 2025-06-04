@@ -110,7 +110,7 @@ public class TemplateWtsConfigurationModel
                   ""selectable"": true,
                   ""columns"": [
                     {
-                        ""field"": ""actionid"",
+                        ""field"": ""actionId"",
                         ""title"": ""ID""
                     },
                     {
@@ -148,7 +148,7 @@ public class TemplateWtsConfigurationModel
               ""selectable"": true,
               ""columns"": [
                 {
-                    ""field"": ""actionid"",
+                    ""field"": ""actionId"",
                     ""title"": ""ID""
                 },
                 {
@@ -163,43 +163,5 @@ public class TemplateWtsConfigurationModel
     {
         get => httpApis;
         set => httpApis = value;
-    }
-    
-    [XmlAnyElement]
-    [JsonIgnore]
-    public List<XElement> ChildItemsExtra { get; set; }
-    
-    /// <summary>
-    /// Gets or sets all items that don't have a dedicated object/class in the current version of the system.
-    /// Intended to avoid data loss. Be careful if you choose to edit these manually.
-    /// </summary>
-    [XmlIgnore, WtsProperty(
-        IsVisible = true,
-        IsDisabled = true,
-        IsRequired = true,
-        Title = "Extra data",
-        Description = "Informatie die niet in het systeem is verwerkt. Voorkomt dataverlies. In een ideale situatie is dit veld leeg.",
-        ConfigurationTab = ConfigurationTab.Service,
-        DataComponent = DataComponents.KendoTextBox
-    )]
-    public string ChildItemsExtraString 
-    {
-        get
-        {
-            List<string> s = new List<string>();
-            if (ChildItemsExtra == null)
-            {
-                ChildItemsExtra = new List<XElement>();
-            }
-            ChildItemsExtra.ForEach(x => s.Add(x.ToString()));
-            return string.Join(",", s);;
-        }
-        set
-        {
-            List<string> listBack = value.Split(',').ToList();
-            ChildItemsExtra = new List<XElement>();
-            if (listBack.Count == 0 || string.IsNullOrWhiteSpace(listBack[0])) return;
-            listBack.ForEach(si => ChildItemsExtra.Add(XElement.Parse(si)));
-        }
     }
 }
