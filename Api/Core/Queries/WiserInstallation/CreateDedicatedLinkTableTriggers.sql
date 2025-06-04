@@ -105,38 +105,30 @@ END;
 
 DROP TRIGGER IF EXISTS `{LinkType}_LinkDetailUpdate`;
 CREATE TRIGGER `{LinkType}_LinkDetailUpdate` AFTER UPDATE ON `{LinkType}_wiser_itemlinkdetail` FOR EACH ROW BEGIN
-    DECLARE oldValue MEDIUMTEXT;
-    DECLARE newValue MEDIUMTEXT;
+    DECLARE oldValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+    DECLARE newValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
-    SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
-    SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
+    SET oldValue = CONVERT(CONCAT_WS('', OLD.`value`, OLD.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
+    SET newValue = CONVERT(CONCAT_WS('', NEW.`value`, NEW.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
 
-    IF OLD.`key` <> NEW.`key` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'key', OLD.`key`, NEW.`key`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`key` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`key` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'key', OLD.`key`, NEW.`key`);
     END IF;
 
-    IF OLD.`language_code` <> NEW.`language_code` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`language_code` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`language_code` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
     END IF;
 
-    IF OLD.`groupname` <> NEW.`groupname` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`groupname` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`groupname` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
     END IF;
 
-    IF oldvalue <> newValue THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
-            VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', NEW.`id`, NEW.`itemlink_id`, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.`language_code`, NEW.`groupname`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND oldvalue <> newValue THEN
+        INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+        VALUES ('UPDATE_ITEMLINKDETAIL', '{LinkType}_wiser_itemlinkdetail', NEW.`id`, NEW.`itemlink_id`, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.`language_code`, NEW.`groupname`);
     END IF;
 END;
 
