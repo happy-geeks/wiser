@@ -547,7 +547,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                     }
                     else
                     {
-                        var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item.Details, propertyName, lineFields[i], importResult, subDomain, identity, tenant, false);
+                        var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item, propertyName, lineFields[i], importResult, subDomain, identity, tenant, false);
                         if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
                         {
                             continue;
@@ -560,7 +560,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                             LanguageCode = languageCode
                         };
 
-                        importItem.Item.Details.Add(itemDetail);
+                        importItem.Item.SetDetail(itemDetail);
                     }
                 }
             }
@@ -685,7 +685,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             }
             else if (!String.IsNullOrWhiteSpace(propertyName))
             {
-                var value = await HandleComboBoxFieldAsync(currentLinkComboBoxFields, languageCode, importItem, itemLink.Details, propertyName, lineFields[i], importResult, subDomain, identity, tenant, true);
+                var value = await HandleComboBoxFieldAsync(currentLinkComboBoxFields, languageCode, importItem, itemLink, propertyName, lineFields[i], importResult, subDomain, identity, tenant, true);
                 if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
                 {
                     continue;
@@ -699,7 +699,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                     LanguageCode = languageCode
                 };
 
-                itemLink.Details.Add(itemDetail);
+                itemLink.SetDetail(itemDetail);
             }
         }
 
@@ -871,7 +871,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
     private async Task<string> HandleComboBoxFieldAsync(List<ComboBoxDataModel> comboBoxFields,
         string languageCode,
         ImportDataModel importItem,
-        List<WiserItemDetailModel> details,
+        WiserItemBaseModel detailsItem,
         string propertyName,
         string value,
         ImportResultModel importResult,
@@ -912,7 +912,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             names.Add(keyValuePair.Value);
         }
 
-        details.Add(new WiserItemDetailModel
+        detailsItem.SetDetail(new WiserItemDetailModel
         {
             IsLinkProperty = isLinkProperty,
             Key = propertyName + "_input",
