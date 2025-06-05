@@ -1,11 +1,8 @@
 @using System.Collections
 @using System.Reflection
 @using System.Xml
-@using System.Xml.Linq
 @using Api.Modules.Templates.Attributes
 @using Api.Modules.Templates.Enums
-@using DocumentFormat.OpenXml.Office2010.ExcelAc
-@using FrontEnd.Modules.Templates.Models
 @using Newtonsoft.Json.Linq
 @model Api.Modules.Templates.Models.Template.WtsModels.TemplateWtsConfigurationModel;
 <div id="tabStripConfiguration" class="k-tabstrip-items-wrapper">
@@ -19,25 +16,22 @@
     </ul>
     <div id="serviceTab">
         <div class="formview compact">
-            @{RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Service, true, ""); }
-            
+            @{await RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Service, true, "");}
         </div>
     </div>
     <div id="timersTab">
         <div class="formview compact">
-            @{ RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Timers, true, ""); }
+            @{await RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Timers, true, "");}
         </div>
     </div>
-
     <div id="queriesTab">
         <div class="formview compact">
-            @{RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Queries, true, "");}
+            @{await RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.Queries, true, "");}
         </div>
     </div>
-    
     <div id="httpApisTab">
         <div class="formview compact">
-            @{RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.HttpApis, true, "");}
+            @{await RenderPropertiesAsync(Model, Model.GetType(), ConfigurationTab.HttpApis, true, "");}
         </div>
     </div>
 
@@ -62,22 +56,22 @@
     </div>
 </footer>
 
-
 @functions {
+    #pragma warning disable CS1998
     async Task RenderPropertyAsync(object data, PropertyInfo property, WtsPropertyAttribute attributes, string selectedValue, string tab, string trace)
     {
         // If there is any dependsonvalue, we should create a comma seperated string of the values.
         var dependsOnValue = "";
         if (attributes?.DependsOnValue != null)
         {
-            dependsOnValue = string.Join(",", attributes.DependsOnValue);
+            dependsOnValue = String.Join(",", attributes.DependsOnValue);
         }
         <div class="item">
             @switch (attributes?.DataComponent)
             {
-                    case DataComponents.TextArea:
-                        <h4><label>@attributes?.Title</label></h4>
-                        <span>
+                case DataComponents.TextArea:
+                    <h4><label>@attributes?.Title</label></h4>
+                    <span>
                         <textarea
                                 type="text"
                                 name="@property.Name"
@@ -93,9 +87,9 @@
                                 is-required="@attributes?.IsRequired.ToString().ToLower()"
                                 use-datasource="@attributes?.UseDataSource.ToString().ToLower()"
                             ></textarea>
-                            <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
-                        </span>
-                        break;
+                        <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
+                    </span>
+                    break;
                 case DataComponents.KendoTextBox:
                     <h4><label>@attributes?.Title</label></h4>
                     <span>
@@ -288,7 +282,7 @@
         {
             return;
         }
-        
+
         <div class="group" data-group-name="@type.Name">
         @foreach (var property in type.GetProperties())
         {
@@ -298,7 +292,7 @@
             // Or when the KendoTab is null, since that means it should be rendered on all tabs
             if (attributes != null && attributes.IsVisible && attributes.ConfigurationTab == tab || attributes != null && attributes.IsVisible && attributes.ConfigurationTab == null)
             {
-                
+
                 if (data is IList list)
                 {
                     await RenderPropertyAsync(null, property, attributes, null, tab, trace);
