@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using GclCoreConstants = GeeksCoreLibrary.Core.Models.Constants;
 
 namespace Api.Modules.Pdfs.Services;
 
@@ -74,7 +75,7 @@ public class PdfsService : IPdfService, IScopedService
         }
 
         // Create temporary directory if it doesn't exist yet.
-        var pdfDirectory = Path.Combine(webHostEnvironment.WebRootPath, "/App_Data/temp/", tenant.ModelObject.Id.ToString());
+        var pdfDirectory = Path.Combine(webHostEnvironment.WebRootPath, GclCoreConstants.AppDataDirectoryName, "PdfTemp", tenant.ModelObject.Id.ToString());
         if (!Directory.Exists(pdfDirectory))
         {
             Directory.CreateDirectory(pdfDirectory);
@@ -84,7 +85,7 @@ public class PdfsService : IPdfService, IScopedService
         var fileLocation = Path.Combine(pdfDirectory, data.FileName);
         await using (var fileStream = new FileStream(fileLocation, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
         {
-            await fileStream.WriteAsync(pdfResult.FileContents, 0, pdfResult.FileContents.Length);
+            await fileStream.WriteAsync(pdfResult.FileContents.AsMemory(0, pdfResult.FileContents.Length));
         }
 
         return new ServiceResult<string>(fileLocation);
@@ -135,7 +136,7 @@ public class PdfsService : IPdfService, IScopedService
         }
 
         using var saveStream = new MemoryStream();
-        mergeResultPdfDocument?.Save(saveStream);
+        mergeResultPdfDocument.Save(saveStream);
         return new ServiceResult<byte[]>(saveStream.ToArray());
     }
 }
