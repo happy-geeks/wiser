@@ -1,18 +1,25 @@
 using System.IO;
+using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.Template.WtsModels;
 using GeeksCoreLibrary.Core.DependencyInjection.Interfaces;
 
 namespace Api.Modules.Templates.Services;
-
 /// <inheritdoc cref="IWtsConfigurationService" />
 public class WtsConfigurationService : IWtsConfigurationService, IScopedService
 {
     /// <inheritdoc />
     public TemplateWtsConfigurationModel ParseXmlToObject(string xml)
     {
+        //Add a root element if an empty XML is recieved. Done to avoid errors on new files.
+        if (string.IsNullOrWhiteSpace(xml))
+        {
+            xml = "<Configuration></Configuration>";
+        }
+        
         // TODO: Check if this is still needed.
         // For backwards compatibility, we need to remove queries elements from the xml.
         // This is because query elements are now allowed to exist within configuration instead of just configuration > queries.

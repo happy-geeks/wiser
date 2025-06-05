@@ -5,5 +5,6 @@ public class ConfigurationTab
 {
     public const string Service = "Service";
     public const string Timers = "Timers";
-    public const string Actions = "Actions";
+    public const string Queries = "Queries";
+    public const string HttpApis = "HttpApis";
 }

@@ -4,8 +4,7 @@ import "../../Base/Scripts/Processing.js";
 import {TemplateConnectedUsers} from "./TemplateConnectedUsers.js";
 import "../Css/Templates.css";
 import "../Css/Measurements.css";
-// Disabled until we can complete this feature.
-//import {WtsConfiguration} from "./WtsConfiguration.js";
+import {WtsConfiguration} from "./WtsConfiguration.js";
 
 require("@progress/kendo-ui/js/kendo.notification.js");
 require("@progress/kendo-ui/js/kendo.button.js");
@@ -107,7 +106,7 @@ const moduleSettings = {
             // Other.
             this.mainLoader = null;
             this.connectedUsers = new TemplateConnectedUsers(this);
-            //this.wtsConfiguration = new WtsConfiguration(this);
+            this.wtsConfiguration = new WtsConfiguration(this);
 
             // Set the Kendo culture to Dutch. TODO: Base this on the language in Wiser.
             kendo.culture("nl-NL");
@@ -464,7 +463,7 @@ const moduleSettings = {
                     const templateType = this.templateSettings.type ? this.templateSettings.type.toUpperCase() : "UNKNOWN";
                     // Prevent loading the configuration tab if the template is not an XML template.
                     if (templateType === "XML") {
-                        //this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
+                        this.wtsConfiguration.reloadWtsConfigurationTab(this.selectedId);
                     }
                     break;
             }
@@ -775,24 +774,26 @@ const moduleSettings = {
         async loadTemplate(id, virtualItem = null) {
             const dynamicContentTab = this.mainTabStrip.element.find(".dynamic-tab");
             const historyTab = this.mainTabStrip.element.find(".history-tab");
-
+            const configTab = this.mainTabStrip.element.find(".config-tab");
+            
             if (id <= 0 && (virtualItem === null || virtualItem.templateType === 0)) {
                 this.templateSettings = {};
                 this.linkedTemplates = null;
                 this.templateHistory = null;
-
+                
                 document.getElementById("developmentTab").innerHTML = "";
+                document.getElementById("wtsConfigurationTab").innerHTML = "";
                 this.mainTabStrip.disable(dynamicContentTab);
                 this.mainTabStrip.disable(historyTab);
+                this.mainTabStrip.disable(configTab);
                 return;
             }
-
+            
             const process = `onTreeViewSelect_${Date.now()}`;
             window.processing.addProcess(process);
-
+            
             try {
                 let promises;
-
                 let templateSettings, linkedTemplates, templateHistory;
                 let isVirtualTemplate = false;
                 if (virtualItem !== null) {
@@ -813,7 +814,7 @@ const moduleSettings = {
                         linkedJavascript: [],
                         linkOptionsTemplates: []
                     };
-
+                    
                     // Retrieve parent ID so it can be set on the template settings.
                     const selectedTabIndex = this.treeViewTabStrip.select().index();
                     const selectedTabContentElement = this.treeViewTabStrip.contentElement(selectedTabIndex);
@@ -846,7 +847,7 @@ const moduleSettings = {
 
                 // Load the different tabs.
                 promises = [];
-
+                
                 // Development
                 promises.push(
                     Wiser.api({
@@ -1194,7 +1195,7 @@ const moduleSettings = {
 
             const editorElement = $(".editor");
             const editorType = editorElement.data("editorType");
-
+            
             if (editorType === "text/html") {
                 // HTML editor
                 const insertDynamicContentTool = {
