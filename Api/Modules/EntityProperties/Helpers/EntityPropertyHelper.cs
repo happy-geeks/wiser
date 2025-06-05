@@ -8,7 +8,7 @@ public class EntityPropertyHelper
 #pragma warning restore CS1591
 {
     /// <summary>
-    /// Converts a string to its equivalent <see cref="EntityPropertyInputTypes"/> enum value. 
+    /// Converts a string to its equivalent <see cref="EntityPropertyInputTypes"/> enum value.
     /// </summary>
     /// <param name="value">The string to convert.</param>
     /// <returns>One of the values of <see cref="EntityPropertyInputTypes"/>.</returns>
@@ -46,6 +46,8 @@ public class EntityPropertyHelper
             "empty" => EntityPropertyInputTypes.Empty,
             "qr" => EntityPropertyInputTypes.Qr,
             "iframe" => EntityPropertyInputTypes.Iframe,
+            // Temporarily map group to Empty, until group input type is implemented.
+            "group" => EntityPropertyInputTypes.Empty,
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
         };
     }
