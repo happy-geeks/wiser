@@ -22,7 +22,7 @@ public class RunScheme
         Title = "Type",
         Description = "Het type van de timer",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.DropDownList
+        DataComponent = DataComponents.KendoDropDownList
     )]
     public RunSchemeTypes Type { get; set; }
 
@@ -35,7 +35,7 @@ public class RunScheme
         Title = "TimeId",
         Description = "Het unieke id van de timer",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.NumericTextBox,
+        DataComponent = DataComponents.KendoNumericTextBox,
         KendoOptions = """
                        
                                       {
@@ -59,9 +59,9 @@ public class RunScheme
         Title = "Wachttijd",
         Description = "De tijd tussen elke run. Formaat: uren:minuten:seconden",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.TimePicker,
+        DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = ["Continuous"],
+        DependsOnValue = new [] {"Continuous"},
         KendoOptions = """
                        
                                       {
@@ -71,7 +71,7 @@ public class RunScheme
                                        }
                                    
                        """
-    )]
+     )]
     public string Delay { get; set; }
 
     /// <summary>
@@ -83,11 +83,11 @@ public class RunScheme
     [WtsProperty(
         IsVisible = true,
         Title = "Tijd",
-        Description = "De tijd waarop de timer moet worden uitgevoerd (Formaat: uren:minuten:seconden)",
+        Description = "De tijd waarop de timer moet worden uitgevoerd. (Formaat: uren:minuten:seconden)",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.TimePicker,
+        DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = ["Daily", "Weekly", "Monthly"],
+        DependsOnValue = new [] {"Daily", "Weekly", "Monthly"},
         KendoOptions = """
                        
                                       {
@@ -110,9 +110,9 @@ public class RunScheme
         Title = "Starttijd",
         Description = "De tijd vanaf wanneer de acties van deze timer worden uitgevoerd",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.TimePicker,
+        DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = ["Continuous"],
+        DependsOnValue = new [] {"Continuous"},
         KendoOptions = """
                        
                                       {
@@ -135,9 +135,9 @@ public class RunScheme
         Title = "Stoptijd",
         Description = "De tijd tot wanneer de acties van deze timer worden uitgevoerd",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.TimePicker,
+        DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = ["Continuous"],
+        DependsOnValue = new [] {"Continuous"},
         KendoOptions = """
                        
                                       {
@@ -159,7 +159,7 @@ public class RunScheme
         Title = "Skip dagen",
         Description = "Of de timer niet moet worden uitgevoerd op bepaalde dagen (Bijvoorbeeld: 1,2,3,4,5,6,7)",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.TextBox,
+        DataComponent = DataComponents.KendoTextBox,
         KendoOptions = """
                        
                                       {
@@ -185,7 +185,7 @@ public class RunScheme
         Title = "Dag van de week",
         Description = "De dag van de week waarop de timer moet worden uitgevoerd (Bijvoorbeeld: 1 = maandag, 2 = dinsdag, etc.)",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.DropDownList,
+        DataComponent = DataComponents.KendoDropDownList,
         KendoOptions = """
                        
                                       {
@@ -206,7 +206,7 @@ public class RunScheme
                                    
                        """,
         DependsOnField = "Type",
-        DependsOnValue = ["Weekly"]
+        DependsOnValue = new [] {"Weekly"}
     )]
     public int? DayOfWeek { get; set; }
 
@@ -221,7 +221,7 @@ public class RunScheme
         Title = "Dag van de maand",
         Description = "De dag van de maand waarop de timer wordt uitgevoerd (bijv. 1 = 1e dag). Als de dag niet bestaat, wordt de laatste dag van de maand gebruikt.",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.NumericTextBox,
+        DataComponent = DataComponents.KendoNumericTextBox,
         KendoOptions = """
                        
                                       {
@@ -238,6 +238,7 @@ public class RunScheme
     [XmlIgnore]
     public bool DayOfMonthSpecified => DayOfMonth.HasValue;
 
+
     /// <summary>
     /// Whether to run the run scheme on the weekend.
     /// </summary>
@@ -245,12 +246,13 @@ public class RunScheme
         IsVisible = true,
         Description = "Timer niet uitvoeren in het weekend",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.CheckBox
+        DataComponent = DataComponents.KendoCheckBox
     )]
     public bool? SkipWeekend { get; set; }
 
     [XmlIgnore]
     public bool SkipWeekendSpecified => SkipWeekend.HasValue;
+
 
     /// <summary>
     /// If the run scheme should be run immediately on start up of the wts.
@@ -259,7 +261,7 @@ public class RunScheme
         IsVisible = true,
         Description = "Timer uitvoeren bij opstarten van de WTS",
         ConfigurationTab = ConfigurationTab.Timers,
-        KendoComponent = KendoComponents.CheckBox
+        DataComponent = DataComponents.KendoCheckBox
     )]
     public bool? RunImmediately { get; set; }
 

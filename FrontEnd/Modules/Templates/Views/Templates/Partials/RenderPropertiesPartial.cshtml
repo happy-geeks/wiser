@@ -10,9 +10,9 @@
         : "";
 
     <div class="item">
-        @switch (attributes?.KendoComponent)
+        @switch (attributes?.DataComponent)
         {
-            case KendoComponents.TextBox:
+            case DataComponents.KendoTextBox:
                 <h4><label>@attributes.Title</label></h4>
                 <span>
                     <input
@@ -20,7 +20,7 @@
                         name="@property.Name"
                         value="@(data ?? "")"
                         data-kendo-tab="@Model.Tab"
-                        data-kendo-component="@KendoComponents.TextBox"
+                        data-kendo-component="@DataComponents.KendoTextBox"
                         data-kendo-options="@attributes.KendoOptions"
                         data-depend-on-field="@attributes.DependsOnField"
                         data-depend-on-value="@dependsOnValue"
@@ -30,7 +30,7 @@
                     <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                 </span>
                 break;
-            case KendoComponents.NumericTextBox:
+            case DataComponents.KendoNumericTextBox:
                 <h4><label>@attributes.Title</label></h4>
                 <span>
                     <input
@@ -38,7 +38,7 @@
                         name="@property.Name"
                         value="@(data ?? "")"
                         data-kendo-tab="@Model.Tab"
-                        data-kendo-component="@KendoComponents.NumericTextBox"
+                        data-kendo-component="@DataComponents.KendoNumericTextBox"
                         data-kendo-options="@attributes.KendoOptions"
                         data-depend-on-field="@attributes.DependsOnField"
                         data-depend-on-value="@dependsOnValue"
@@ -48,13 +48,13 @@
                     <div class="form-hint form-hint-align-left"><span>@attributes.Description</span></div>
                 </span>
                 break;
-            case KendoComponents.CheckBox:
+            case DataComponents.KendoCheckBox:
                 <label class="checkbox">
                     <input
                         type="checkbox"
                         name="@property.Name"
                         data-kendo-tab="@Model.Tab"
-                        data-kendo-component="@KendoComponents.CheckBox"
+                        data-kendo-component="@DataComponents.KendoCheckBox"
                         data-kendo-options="@attributes.KendoOptions"
                         data-depend-on-field="@attributes.DependsOnField"
                         data-depend-on-value="@dependsOnValue"

@@ -42,6 +42,7 @@ using Microsoft.Extensions.Logging;
 using MySqlConnector;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NUglify.Helpers;
 using GclCoreConstants = GeeksCoreLibrary.Core.Models.Constants;
 
 namespace Api.Modules.Items.Services;
@@ -3184,7 +3185,7 @@ public class ItemsService(
                 ItemLinkId = originalItemDetail.ItemLinkId
             };
 
-            wiserItem.Details.Add(targetLanguageDetail);
+            wiserItem.SetDetail(targetLanguageDetail);
         }
         else if (!String.IsNullOrWhiteSpace(targetLanguageDetail.Value?.ToString()))
         {
