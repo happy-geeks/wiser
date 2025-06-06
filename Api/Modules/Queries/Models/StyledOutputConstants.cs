@@ -18,11 +18,11 @@ public class StyledOutputConstants
     /// <summary>
     /// buildIn specs for 'SingleDetail'
     /// </summary>
-    public static readonly StyledOutputBuildIn SingleDetail = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn SingleDetail = new StyledOutputBuiltIn {
         Key = "StyledOutputSingleDetail",
         Query = @"
 SELECT
-    ?styled_name as `result_name`,
+    ?styled_name AS `result_name`,
     IFNULL(detail.`value`, '') AS `result_value`
 FROM wiser_itemdetail detail
 WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key LIMIT 1;
@@ -35,11 +35,11 @@ WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key LIMIT 1;
     /// <summary>
     /// buildIn specs for 'SingleDetailArrayElm'
     /// </summary>
-    public static readonly StyledOutputBuildIn SingleDetailArrayElm = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn SingleDetailArrayElm = new StyledOutputBuiltIn {
         Key = "StyledOutputSingleDetailArrayElm",
         Query = @"
 SELECT
-    ?styled_name as `result_name`,
+    ?styled_name AS `result_name`,
     IFNULL(detail.`value`, '') AS `result_value`
 FROM wiser_itemdetail detail
 WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key LIMIT 1;
@@ -53,11 +53,11 @@ WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key LIMIT 1;
     /// <summary>
     /// buildIn specs for 'MultiDetail'
     /// </summary>
-    public static readonly StyledOutputBuildIn MultiDetail = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn MultiDetail = new StyledOutputBuiltIn {
         Key = "StyledOutputMultiDetail",
         Query = @"
 SELECT
-    ?styled_name as `result_name`,
+    ?styled_name AS `result_name`,
     IFNULL(detail.`value`, '') AS `result_value`
 FROM wiser_itemdetail detail
 WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key;
@@ -76,11 +76,11 @@ WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key;
     /// <summary>
     /// buildIn specs for 'MultiDetail'
     /// </summary>
-    public static readonly StyledOutputBuildIn MultiDetailArrayElm = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn MultiDetailArrayElm = new StyledOutputBuiltIn {
         Key = "StyledOutputMultiDetailArrayElm",
         Query = @"
 SELECT
-    ?styled_name as `result_name`,
+    ?styled_name AS `result_name`,
     IFNULL(detail.`value`, '') AS `result_value`
 FROM wiser_itemdetail detail
 WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key;
@@ -101,11 +101,11 @@ WHERE detail.item_id = ?styled_id AND detail.`key` = ?styled_key;
     /// buildIn specs for 'LanguageDetail'
     /// Note: This version assumes nl-vr-fr, in a future version we might want to make this more dynamic.
     /// </summary>
-    public static readonly StyledOutputBuildIn LanguageDetail = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn LanguageDetail = new StyledOutputBuiltIn {
         Key = "StyledOutputLanguageDetail",
         Query = @"
 SELECT
-    ?styled_name as `result_name`,
+    ?styled_name AS `result_name`,
     IFNULL(detail_nl.`value`, '') AS `result_value_nl`,
     IFNULL(detail_vl.`value`, '') AS `result_value_vl`,
     IFNULL(detail_fr.`value`, '') AS `result_value_fr`
@@ -130,11 +130,11 @@ WHERE detail.item_id = ?styled_id AND detail.key = ?styled_key LIMIT 1;
     /// buildIn specs for 'LanguageDetail'
     /// Note: This version assumes nl-vr-fr, in a future version we might want to make this more dynamic.
     /// </summary>
-    public static readonly StyledOutputBuildIn LanguageDetailArrayElm = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn LanguageDetailArrayElm = new StyledOutputBuiltIn {
         Key = "StyledOutputLanguageDetail",
         Query = @"
 SELECT
-    ?styled_name as `result_name`,
+    ?styled_name AS `result_name`,
     IFNULL(detail_nl.`value`, '') AS `result_value_nl`,
     IFNULL(detail_vl.`value`, '') AS `result_value_vl`,
     IFNULL(detail_fr.`value`, '') AS `result_value_fr`
@@ -160,11 +160,11 @@ WHERE detail.item_id = ?styled_id AND detail.key = ?styled_key LIMIT 1;
     /// <summary>
     /// buildIn specs for 'Singlelinked'
     /// </summary>
-    public static readonly StyledOutputBuildIn Singlelinked = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn Singlelinked = new StyledOutputBuiltIn {
         Key = "StyledOutputSingleLinked",
         Query = @"
-SSELECT
-  ?styled_name as `result_name`,
+SELECT
+  ?styled_name AS `result_name`,
   value_item.title AS `value`
 FROM wiser_itemlink `link`
 JOIN wiser_item value_item ON value_item.id = `link`.item_id 
@@ -178,11 +178,11 @@ WHERE link.destination_item_id = ?styled_id AND link.type = ?styled_key
     /// <summary>
     /// buildIn specs for 'SinglelinkedArrayElm'
     /// </summary>
-    public static readonly StyledOutputBuildIn SinglelinkedArrayElm = new StyledOutputBuildIn {
+    public static readonly StyledOutputBuiltIn SinglelinkedArrayElm = new StyledOutputBuiltIn {
         Key = "StyledOutputSingleLinkedArrayElm",
         Query = @"
-SSELECT
-  ?styled_name as `result_name`,
+SELECT
+  ?styled_name AS `result_name`,
   value_item.title AS `value`
 FROM wiser_itemlink `link`
 JOIN wiser_item value_item ON value_item.id = `link`.item_id 
