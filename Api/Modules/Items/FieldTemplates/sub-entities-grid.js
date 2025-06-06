@@ -8,7 +8,7 @@
     let height = "{height}" || undefined;
     let linkTypeParameter = "";
     if (options.linkTypeNumber) {
-        linkTypeParameter = "?linkTypeNumber=" + encodeURIComponent(options.linkTypeNumber || "0");
+        linkTypeParameter = `?linkTypeNumber=${encodeURIComponent(options.linkTypeNumber || "0")}`
     }
 
     let readonly = {readonly};
@@ -24,7 +24,7 @@
     }
 
     if (customQueryGrid) {
-        let customQueryResults = Wiser.api({
+        let customQueryResults = await Wiser.api({
             url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}${linkTypeParameter}`
         });
 
@@ -108,7 +108,7 @@
                 contentType: "application/json"
             });
         } else {
-            result = Wiser.api({
+            result = await Wiser.api({
                 url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                 method: "POST",
                 contentType: "application/json"
@@ -293,28 +293,29 @@
 
         if (columns && columns.length) {
             for (let i = 0; i < columns.length; i++) {
-                (() => {
-                    const column = columns[i];
-                    const editable = column.editable;
-                    if (column.field && customQueryGrid) {
-                        column.field = column.field.toLowerCase();
-                    }
+                (
+                    function () {
+                        const column = columns[i];
+                        const editable = column.editable;
+                        if (column.field && customQueryGrid) {
+                            column.field = column.field.toLowerCase();
+                        }
 
-                    if (typeof column.editable === "boolean") {
-                        column.editable = (event) => {
-                            return editable;
-                        };
-                    } else if (column.editable) {
-                        console.warn("Column '" + (column.field || "") + "' has an invalid value in property 'editable':", column.editable);
-                        delete column.editable;
-                    }
+                        if (typeof column.editable === "boolean") {
+                            column.editable = (event) => {
+                                return editable;
+                            };
+                        } else if (column.editable) {
+                            console.warn("Column '" + (column.field || "") + "' has an invalid value in property 'editable':", column.editable);
+                            delete column.editable;
+                        }
 
-                    if (!column.editor) {
-                        return;
-                    }
+                        if (!column.editor) {
+                            return;
+                        }
 
-                    column.editor = window.dynamicItems.grids[columns[i].editor];
-                }());
+                        column.editor = window.dynamicItems.grids[columns[i].editor];
+                    }());
             }
         }
 
@@ -359,7 +360,7 @@
 
                             if (customQueryGrid) {
                                 try {
-                                    let customQueryResults = Wiser.api({
+                                    let customQueryResults = await Wiser.api({
                                         url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids-with-filters/{propertyId}${linkTypeParameter}`,
                                         method: "POST",
                                         contentType: "application/json",
@@ -385,7 +386,7 @@
                                 }
                             } else {
                                 try {
-                                    let gridSettings = Wiser.api({
+                                    let gridSettings = await Wiser.api({
                                         url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                                         method: "POST",
                                         contentType: "application/json",
@@ -682,7 +683,7 @@
                                 itemModel.details.push(transportOptions.data);
 
                                 try {
-                                    let result = Wiser.api({
+                                    let result = await Wiser.api({
                                         url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
                                         method: "PUT",
                                         contentType: "application/json",
