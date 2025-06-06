@@ -2375,7 +2375,7 @@ export class EntityTab {
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
             method: "GET"
         });
-        console.log(`entityStructure: ${JSON.stringify(this.entityStructure)}`);
+
         this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
             data: this.entityStructure,
             schema: {
@@ -2410,7 +2410,6 @@ export class EntityTab {
         const index = selectedElement.index();
         const dataItem = event.sender.dataItem(selectedElement);
         this.selectedTabOrProperty = dataItem;
-        console.log(`onPropertiesTreeViewChange called with dataItem ${JSON.stringify(dataItem)}`);
 
         if (dataItem.type === "Group") {
             $("#EntityTabStrip-2 .property-pane").hide();
@@ -2476,8 +2475,6 @@ export class EntityTab {
             return;
         }
 
-        console.log(`sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.id} - ${sourceDataItem.ordering}) - ${sourceDataItem.type} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.id} - ${destinationDataItem.ordering}) - ${destinationDataItem.type} -> ${event.statusClass}`);
-
         // properties can be only be reordered within the same group and tab, so before or after another property
         if (sourceDataItem.type === "Property") {
             if (destinationDataItem.type === "Property" && sourceDataItem.tabName === destinationDataItem.tabName && sourceDataItem.groupName === destinationDataItem.groupName) {
@@ -2513,8 +2510,6 @@ export class EntityTab {
         try {
             const sourceDataItem = event.sender.dataItem(event.sourceNode);
             const destinationDataItem = event.sender.dataItem(event.destinationNode);
-
-            console.log(`onPropertiesTreeViewDrop: sourceDataItem ${sourceDataItem.displayName} (${sourceDataItem.ordering}) - ${sourceDataItem.type} -> ${event.dropPosition} -> destinationDataItem ${destinationDataItem.displayName} (${destinationDataItem.ordering}) - ${destinationDataItem.type}`);
 
             const oldIndex = sourceDataItem.ordering;
             // we use the new entity structure data to redraw the tree, so stop the tree from moving stuff around by itself
@@ -2570,7 +2565,6 @@ export class EntityTab {
                 method: "GET"
             });
 
-            console.log(`entityStructure after move: ${JSON.stringify(this.entityStructure)}`);
             // refresh treeview
             this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
                 data: this.entityStructure,
@@ -2631,7 +2625,6 @@ export class EntityTab {
     }
 
     async getEntityFieldPropertiesOfSelected(id, selectedEntityName, selectedTabName) {
-        console.log(`Getting properties of entity ${id} - ${selectedEntityName}`);
         if (id === 0 && this.selectedTabOrProperty.type === "Group") {
             this.selectedEntityProperty = {
                 type: "Group",
@@ -2666,8 +2659,6 @@ export class EntityTab {
                 }
             }));
         }
-
-        console.log(`SELECTED ENTITY: ${JSON.stringify(this.selectedEntityProperty)}`);
 
         // first set all properties to default;
         this.setEntityFieldPropertiesToDefault();
@@ -2963,7 +2954,6 @@ export class EntityTab {
         entityProperties.options = JSON.stringify(entityProperties.options);
         entityProperties.accessKey = "";
         entityProperties.visibilityPathRegex = "";
-        console.log(`Saving group entity to database: ${JSON.stringify(entityProperties)}`);
 
         document.querySelector(".loaderWrap").classList.add("active");
 

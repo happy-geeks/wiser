@@ -1825,24 +1825,20 @@ public class ItemsService(
                     {
                         continue;
                     }
+                    string groupClass = group.Width < 100 ? "class=\"item-group-thin\"" : "class=\"item-group\"";
+
                     string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
                     string minWidth = $"min-width: {group.MinimumWidth}px;";
                     string display = "display: " + (group.Orientation == "vertical" ? "block;" : "flex;");
-                    string margin = group.Width < 100 ? "margin: 5px; " : "";
-                    string border = group.Width < 100 ? "border-right: 2px solid white; " : "";
-                    string padding = group.Width < 100 ? "padding: 20px 10px; " : "";
-                    string groupStyle = $"style=\"{width}{minWidth}{display}{margin}{padding}{border} background: var(--item-bg-color);\"";
+                    string groupStyle = $"style=\"{width}{minWidth}{display}\"";
 
-                    if (String.IsNullOrEmpty(group.Name) || group.ShowName == false)
+                    tab.HtmlTemplateBuilder.Append($"<div {groupClass} {groupStyle}>");
+                    if (!String.IsNullOrEmpty(group.Name) && group.ShowName)
                     {
-                        tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\" {groupStyle}>");
-                    }
-                    else
-                    {
-                        tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\" {groupStyle}><h3>{group.Name.HtmlEncode()}</h3>");
+                        tab.HtmlTemplateBuilder.Append($"<h3>{group.Name.HtmlEncode()}</h3>");
                         if (!String.IsNullOrEmpty(group.Description))
                         {
-                            tab.HtmlTemplateBuilder.Append($"<div class=\"form-hint\" style=\"padding-left: 8px;padding-bottom: 8px;\">{group.Description.HtmlEncode()}</div>");
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"form-hint\">{group.Description.HtmlEncode()}</div>");
                         }
                     }
 
