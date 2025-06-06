@@ -3,7 +3,7 @@
 /// <summary>
 /// A model for a StyledOutputBuildIn within StyledOutput used for storing build in query/keyword and layout combinations.
 /// </summary>
-public class StyledOutputBuildIn
+public class StyledOutputBuiltIn
 {
     /// <summary>
     /// The key used to identify the 'command' in a styled output.
