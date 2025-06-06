@@ -252,7 +252,7 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'module_id', OLD.`module_id`, NEW.`module_id`);
         END IF;
 
-        IF IFNULL(NEW.`entity_name`, '') <> IFNULL(OLD.`entity_name`, '') THEN
+        IF CONVERT(IFNULL(NEW.`entity_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`entity_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'entity_name', OLD.`entity_name`, NEW.`entity_name`);
         END IF;
@@ -272,32 +272,32 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'overview_width', OLD.`overview_width`, NEW.`overview_width`);
         END IF;
 
-        IF IFNULL(NEW.`tab_name`, '') <> IFNULL(OLD.`tab_name`, '') THEN
+        IF CONVERT(IFNULL(NEW.`tab_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`tab_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'tab_name', OLD.`tab_name`, NEW.`tab_name`);
         END IF;
 
-        IF IFNULL(NEW.`group_name`, '') <> IFNULL(OLD.`group_name`, '') THEN
+        IF CONVERT(IFNULL(NEW.`group_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`group_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'group_name', OLD.`group_name`, NEW.`group_name`);
         END IF;
 
-        IF IFNULL(NEW.`inputtype`, '') <> IFNULL(OLD.`inputtype`, '') THEN
+        IF CONVERT(IFNULL(NEW.`inputtype`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`inputtype`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'inputtype', OLD.`inputtype`, NEW.`inputtype`);
         END IF;
 
-        IF IFNULL(NEW.`display_name`, '') <> IFNULL(OLD.`display_name`, '') THEN
+        IF CONVERT(IFNULL(NEW.`display_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`display_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'display_name', OLD.`display_name`, NEW.`display_name`);
         END IF;
 
-        IF IFNULL(NEW.`property_name`, '') <> IFNULL(OLD.`property_name`, '') THEN
+        IF CONVERT(IFNULL(NEW.`property_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`property_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'property_name', OLD.`property_name`, NEW.`property_name`);
         END IF;
 
-        IF IFNULL(NEW.`explanation`, '') <> IFNULL(OLD.`explanation`, '') THEN
+        IF CONVERT(IFNULL(NEW.`explanation`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`explanation`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'explanation', OLD.`explanation`, NEW.`explanation`);
         END IF;
@@ -307,7 +307,7 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'ordering', OLD.`ordering`, NEW.`ordering`);
         END IF;
 
-        IF IFNULL(NEW.`regex_validation`, '') <> IFNULL(OLD.`regex_validation`, '') THEN
+        IF CONVERT(IFNULL(NEW.`regex_validation`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`regex_validation`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'regex_validation', OLD.`regex_validation`, NEW.`regex_validation`);
         END IF;
@@ -322,17 +322,17 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'readonly', OLD.`readonly`, NEW.`readonly`);
         END IF;
 
-        IF IFNULL(NEW.`default_value`, '') <> IFNULL(OLD.`default_value`, '') THEN
+        IF CONVERT(IFNULL(NEW.`default_value`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`default_value`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'default_value', OLD.`default_value`, NEW.`default_value`);
         END IF;
 
-        IF IFNULL(NEW.`automation`, '') <> IFNULL(OLD.`automation`, '') THEN
+        IF CONVERT(IFNULL(NEW.`automation`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`automation`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'automation', OLD.`automation`, NEW.`automation`);
         END IF;
 
-        IF IFNULL(NEW.`css`, '') <> IFNULL(OLD.`css`, '') THEN
+        IF CONVERT(IFNULL(NEW.`css`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`css`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'css', OLD.`css`, NEW.`css`);
         END IF;
@@ -347,67 +347,67 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'height', OLD.`height`, NEW.`height`);
         END IF;
 
-        IF IFNULL(NEW.`options`, '') <> IFNULL(OLD.`options`, '') THEN
+        IF CONVERT(IFNULL(NEW.`options`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`options`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'options', OLD.`options`, NEW.`options`);
         END IF;
 
-        IF IFNULL(NEW.`data_query`, '') <> IFNULL(OLD.`data_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`data_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`data_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'data_query', OLD.`data_query`, NEW.`data_query`);
         END IF;
 
-        IF IFNULL(NEW.`action_query`, '') <> IFNULL(OLD.`action_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`action_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`action_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'action_query', OLD.`action_query`, NEW.`action_query`);
         END IF;
 
-        IF IFNULL(NEW.`search_query`, '') <> IFNULL(OLD.`search_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`search_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`search_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'search_query', OLD.`search_query`, NEW.`search_query`);
         END IF;
 
-        IF IFNULL(NEW.`search_count_query`, '') <> IFNULL(OLD.`search_count_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`search_count_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`search_count_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'search_count_query', OLD.`search_count_query`, NEW.`search_count_query`);
         END IF;
 
-        IF IFNULL(NEW.`grid_delete_query`, '') <> IFNULL(OLD.`grid_delete_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`grid_delete_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`grid_delete_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'grid_delete_query', OLD.`grid_delete_query`, NEW.`grid_delete_query`);
         END IF;
 
-        IF IFNULL(NEW.`grid_insert_query`, '') <> IFNULL(OLD.`grid_insert_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`grid_insert_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`grid_insert_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'grid_insert_query', OLD.`grid_insert_query`, NEW.`grid_insert_query`);
         END IF;
 
-        IF IFNULL(NEW.`grid_update_query`, '') <> IFNULL(OLD.`grid_update_query`, '') THEN
+        IF CONVERT(IFNULL(NEW.`grid_update_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`grid_update_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'grid_update_query', OLD.`grid_update_query`, NEW.`grid_update_query`);
         END IF;
 
-        IF IFNULL(NEW.`depends_on_field`, '') <> IFNULL(OLD.`depends_on_field`, '') THEN
+        IF CONVERT(IFNULL(NEW.`depends_on_field`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`depends_on_field`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'depends_on_field', OLD.`depends_on_field`, NEW.`depends_on_field`);
         END IF;
 
-        IF IFNULL(NEW.`depends_on_operator`, '') <> IFNULL(OLD.`depends_on_operator`, '') THEN
+        IF CONVERT(IFNULL(NEW.`depends_on_operator`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`depends_on_operator`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'depends_on_operator', OLD.`depends_on_operator`, NEW.`depends_on_operator`);
         END IF;
 
-        IF IFNULL(NEW.`depends_on_value`, '') <> IFNULL(OLD.`depends_on_value`, '') THEN
+        IF CONVERT(IFNULL(NEW.`depends_on_value`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`depends_on_value`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'depends_on_value', OLD.`depends_on_value`, NEW.`depends_on_value`);
         END IF;
 
-        IF IFNULL(NEW.`language_code`, '') <> IFNULL(OLD.`language_code`, '') THEN
+        IF CONVERT(IFNULL(NEW.`language_code`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`language_code`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'language_code', OLD.`language_code`, NEW.`language_code`);
         END IF;
 
-        IF IFNULL(NEW.`custom_script`, '') <> IFNULL(OLD.`custom_script`, '') THEN
+        IF CONVERT(IFNULL(NEW.`custom_script`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`custom_script`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'custom_script', OLD.`custom_script`, NEW.`custom_script`);
         END IF;
@@ -417,7 +417,7 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'also_save_seo_value', OLD.`also_save_seo_value`, NEW.`also_save_seo_value`);
         END IF;
 
-        IF IFNULL(NEW.`depends_on_action`, '') <> IFNULL(OLD.`depends_on_action`, '') THEN
+        IF CONVERT(IFNULL(NEW.`depends_on_action`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`depends_on_action`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'depends_on_action', OLD.`depends_on_action`, NEW.`depends_on_action`);
         END IF;
@@ -432,7 +432,7 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'extended_explanation', OLD.`extended_explanation`, NEW.`extended_explanation`);
         END IF;
 
-        IF IFNULL(NEW.`label_style`, '') <> IFNULL(OLD.`label_style`, '') THEN
+        IF CONVERT(IFNULL(NEW.`label_style`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`label_style`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'label_style', OLD.`label_style`, NEW.`label_style`);
         END IF;
@@ -447,17 +447,17 @@ CREATE TRIGGER `EntityPropertyUpdate` AFTER UPDATE ON `wiser_entityproperty` FOR
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'enable_aggregation', OLD.`enable_aggregation`, NEW.`enable_aggregation`);
         END IF;
 
-        IF IFNULL(NEW.`aggregate_options`, '') <> IFNULL(OLD.`aggregate_options`, '') THEN
+        IF CONVERT(IFNULL(NEW.`aggregate_options`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`aggregate_options`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'aggregate_options', OLD.`aggregate_options`, NEW.`aggregate_options`);
         END IF;
 
-        IF IFNULL(NEW.`access_key`, '') <> IFNULL(OLD.`access_key`, '') THEN
+        IF CONVERT(IFNULL(NEW.`access_key`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`access_key`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'access_key', OLD.`access_key`, NEW.`access_key`);
         END IF;
 
-        IF IFNULL(NEW.`visibility_path_regex`, '') <> IFNULL(OLD.`visibility_path_regex`, '') THEN
+        IF CONVERT(IFNULL(NEW.`visibility_path_regex`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`visibility_path_regex`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
             VALUES ('UPDATE_ENTITYPROPERTY', 'wiser_entityproperty', NEW.id, IFNULL(@_username, USER()), 'visibility_path_regex', OLD.`visibility_path_regex`, NEW.`visibility_path_regex`);
         END IF;
@@ -543,12 +543,12 @@ DROP TRIGGER IF EXISTS `ItemUpdate`;
 CREATE TRIGGER `ItemUpdate` AFTER UPDATE ON `wiser_item` FOR EACH ROW
 BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        IF IFNULL(NEW.`unique_uuid`, '') <> IFNULL(OLD.`unique_uuid`, '') THEN
+        IF CONVERT(IFNULL(NEW.`unique_uuid`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`unique_uuid`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'unique_uuid',OLD.`unique_uuid`,NEW.`unique_uuid`);
         END IF;
 
-        IF IFNULL(NEW.`entity_type`, '') <> IFNULL(OLD.`entity_type`, '') THEN
+        IF CONVERT(IFNULL(NEW.`entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'entity_type',OLD.`entity_type`,NEW.`entity_type`);
         END IF;
@@ -568,7 +568,7 @@ BEGIN
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'readonly',OLD.`readonly`,NEW.`readonly`);
         END IF;
 
-        IF IFNULL(NEW.`title`, '') <> IFNULL(OLD.`title`, '') THEN
+        IF CONVERT(IFNULL(NEW.`title`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`title`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','wiser_item',NEW.`id`,IFNULL(@_username, USER()),'title',OLD.`title`,NEW.`title`);
         END IF;
@@ -639,31 +639,25 @@ END;
 
 DROP TRIGGER IF EXISTS `DetailUpdate`;
 CREATE TRIGGER `DetailUpdate` AFTER UPDATE ON `wiser_itemdetail` FOR EACH ROW BEGIN
-    DECLARE oldValue MEDIUMTEXT;
-    DECLARE newValue MEDIUMTEXT;
+    DECLARE oldValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+    DECLARE newValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
-    SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
-    SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
+    SET oldValue = CONVERT(CONCAT_WS('', OLD.`value`, OLD.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
+    SET newValue = CONVERT(CONCAT_WS('', NEW.`value`, NEW.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
 
-    IF OLD.`key` <> NEW.`key` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'key', OLD.`key`, NEW.`key`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`key` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`key` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'key', OLD.`key`, NEW.`key`);
     END IF;
 
-    IF OLD.`language_code` <> NEW.`language_code` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`language_code` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`language_code` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
     END IF;
 
-    IF OLD.`groupname` <> NEW.`groupname` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`groupname` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`groupname` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEM_DETAIL', 'wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
     END IF;
 
     IF oldvalue <> newValue THEN
@@ -817,38 +811,30 @@ END;
 
 DROP TRIGGER IF EXISTS `LinkDetailUpdate`;
 CREATE TRIGGER `LinkDetailUpdate` AFTER UPDATE ON `wiser_itemlinkdetail` FOR EACH ROW BEGIN
-    DECLARE oldValue MEDIUMTEXT;
-    DECLARE newValue MEDIUMTEXT;
+    DECLARE oldValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+    DECLARE newValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
-    SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
-    SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
+    SET oldValue = CONVERT(CONCAT_WS('', OLD.`value`, OLD.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
+    SET newValue = CONVERT(CONCAT_WS('', NEW.`value`, NEW.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
 
-    IF OLD.`key` <> NEW.`key` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'key', OLD.`key`, NEW.`key`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`key` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`key` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'key', OLD.`key`, NEW.`key`);
     END IF;
 
-    IF OLD.`language_code` <> NEW.`language_code` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`language_code` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`language_code` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
     END IF;
 
-    IF OLD.`groupname` <> NEW.`groupname` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`groupname` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`groupname` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', IFNULL(@_username, USER()), OLD.id, OLD.itemlink_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
     END IF;
 
-    IF oldvalue <> newValue THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
-            VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', NEW.`id`, NEW.`itemlink_id`, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.`language_code`, NEW.`groupname`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND oldvalue <> newValue THEN
+        INSERT INTO wiser_history (action, tablename, target_id, item_id, changed_by, field, oldvalue, newvalue, language_code, groupname)
+        VALUES ('UPDATE_ITEMLINKDETAIL', 'wiser_itemlinkdetail', NEW.`id`, NEW.`itemlink_id`, IFNULL(@_username, USER()), NEW.`key`, oldValue, newValue, NEW.`language_code`, NEW.`groupname`);
     END IF;
 END;
 
@@ -1105,42 +1091,42 @@ END;
 
 DROP TRIGGER IF EXISTS `ModuleUpdate`;
 CREATE TRIGGER `ModuleUpdate` AFTER UPDATE ON `wiser_module` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`custom_query`, '') <> IFNULL(OLD.`custom_query`, '') THEN
+    IF CONVERT(IFNULL(NEW.`custom_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`custom_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'custom_query', OLD.`custom_query`, NEW.`custom_query`);
     END IF;
 
-    IF IFNULL(NEW.`count_query`, '') <> IFNULL(OLD.`count_query`, '') THEN
+    IF CONVERT(IFNULL(NEW.`count_query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`count_query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'count_query', OLD.`count_query`, NEW.`count_query`);
     END IF;
 
-    IF IFNULL(NEW.`options`, '') <> IFNULL(OLD.`options`, '') THEN
+    IF CONVERT(IFNULL(NEW.`options`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`options`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'options', OLD.`options`, NEW.`options`);
     END IF;
 
-    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
     END IF;
 
-    IF IFNULL(NEW.`icon`, '') <> IFNULL(OLD.`icon`, '') THEN
+    IF CONVERT(IFNULL(NEW.`icon`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`icon`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'icon', OLD.`icon`, NEW.`icon`);
     END IF;
 
-    IF IFNULL(NEW.`color`, '') <> IFNULL(OLD.`color`, '') THEN
+    IF CONVERT(IFNULL(NEW.`color`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`color`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'color', OLD.`color`, NEW.`color`);
     END IF;
 
-    IF IFNULL(NEW.`type`, '') <> IFNULL(OLD.`type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'type', OLD.`type`, NEW.`type`);
     END IF;
 
-    IF IFNULL(NEW.`group`, '') <> IFNULL(OLD.`group`, '') THEN
+    IF CONVERT(IFNULL(NEW.`group`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`group`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_MODULE', 'wiser_module', NEW.id, IFNULL(@_username, USER()), 'group', OLD.`group`, NEW.`group`);
     END IF;
@@ -1183,12 +1169,12 @@ END;
 
 DROP TRIGGER IF EXISTS `QueryUpdate`;
 CREATE TRIGGER `QueryUpdate` AFTER UPDATE ON `wiser_query` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`description`, '') <> IFNULL(OLD.`description`, '') THEN
+    IF CONVERT(IFNULL(NEW.`description`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`description`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'description', OLD.`description`, NEW.`description`);
     END IF;
 
-    IF IFNULL(NEW.`query`, '') <> IFNULL(OLD.`query`, '') THEN
+    IF CONVERT(IFNULL(NEW.`query`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`query`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_QUERY', 'wiser_query', NEW.id, IFNULL(@_username, USER()), 'query', OLD.`query`, NEW.`query`);
     END IF;
@@ -1356,7 +1342,7 @@ END;
 
 DROP TRIGGER IF EXISTS `EntityUpdate`;
 CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
     END IF;
@@ -1366,22 +1352,22 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'module_id', OLD.`module_id`, NEW.`module_id`);
     END IF;
 
-    IF IFNULL(NEW.`accepted_childtypes`, '') <> IFNULL(OLD.`accepted_childtypes`, '') THEN
+    IF CONVERT(IFNULL(NEW.`accepted_childtypes`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`accepted_childtypes`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'accepted_childtypes', OLD.`accepted_childtypes`, NEW.`accepted_childtypes`);
     END IF;
 
-    IF IFNULL(NEW.`icon`, '') <> IFNULL(OLD.`icon`, '') THEN
+    IF CONVERT(IFNULL(NEW.`icon`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`icon`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon', OLD.`icon`, NEW.`icon`);
     END IF;
 
-    IF IFNULL(NEW.`icon_expanded`, '') <> IFNULL(OLD.`icon_expanded`, '') THEN
+    IF CONVERT(IFNULL(NEW.`icon_expanded`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`icon_expanded`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon_expanded', OLD.`icon_expanded`, NEW.`icon_expanded`);
     END IF;
 
-    IF IFNULL(NEW.`icon_add`, '') <> IFNULL(OLD.`icon_add`, '') THEN
+    IF CONVERT(IFNULL(NEW.`icon_add`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`icon_add`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'icon_add', OLD.`icon_add`, NEW.`icon_add`);
     END IF;
@@ -1391,27 +1377,27 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_in_tree_view', OLD.`show_in_tree_view`, NEW.`show_in_tree_view`);
     END IF;
 
-    IF IFNULL(NEW.`query_after_insert`, '') <> IFNULL(OLD.`query_after_insert`, '') THEN
+    IF CONVERT(IFNULL(NEW.`query_after_insert`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`query_after_insert`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_after_insert', OLD.`query_after_insert`, NEW.`query_after_insert`);
     END IF;
 
-    IF IFNULL(NEW.`query_after_update`, '') <> IFNULL(OLD.`query_after_update`, '') THEN
+    IF CONVERT(IFNULL(NEW.`query_after_update`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`query_after_update`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_after_update', OLD.`query_after_update`, NEW.`query_after_update`);
     END IF;
 
-    IF IFNULL(NEW.`query_before_update`, '') <> IFNULL(OLD.`query_before_update`, '') THEN
+    IF CONVERT(IFNULL(NEW.`query_before_update`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`query_before_update`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_before_update', OLD.`query_before_update`, NEW.`query_before_update`);
     END IF;
 
-    IF IFNULL(NEW.`query_before_delete`, '') <> IFNULL(OLD.`query_before_delete`, '') THEN
+    IF CONVERT(IFNULL(NEW.`query_before_delete`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`query_before_delete`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'query_before_delete', OLD.`query_before_delete`, NEW.`query_before_delete`);
     END IF;
 
-    IF IFNULL(NEW.`color`, '') <> IFNULL(OLD.`color`, '') THEN
+    IF CONVERT(IFNULL(NEW.`color`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`color`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'color', OLD.`color`, NEW.`color`);
     END IF;
@@ -1456,12 +1442,12 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'show_title_field', OLD.`show_title_field`, NEW.`show_title_field`);
     END IF;
 
-    IF IFNULL(NEW.`friendly_name`, '') <> IFNULL(OLD.`friendly_name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`friendly_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`friendly_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'friendly_name', OLD.`friendly_name`, NEW.`friendly_name`);
     END IF;
 
-    IF IFNULL(NEW.`default_ordering`, '') <> IFNULL(OLD.`default_ordering`, '') THEN
+    IF CONVERT(IFNULL(NEW.`default_ordering`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`default_ordering`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'default_ordering', OLD.`default_ordering`, NEW.`default_ordering`);
     END IF;
@@ -1476,12 +1462,12 @@ CREATE TRIGGER `EntityUpdate` AFTER UPDATE ON `wiser_entity` FOR EACH ROW BEGIN
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'enable_multiple_environments', OLD.`enable_multiple_environments`, NEW.`enable_multiple_environments`);
     END IF;
 
-    IF IFNULL(NEW.`dedicated_table_prefix`, '') <> IFNULL(OLD.`dedicated_table_prefix`, '') THEN
+    IF CONVERT(IFNULL(NEW.`dedicated_table_prefix`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`dedicated_table_prefix`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'dedicated_table_prefix', OLD.`dedicated_table_prefix`, NEW.`dedicated_table_prefix`);
     END IF;
 
-    IF IFNULL(NEW.`store_type`, '') <> IFNULL(OLD.`store_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`store_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`store_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ENTITY', 'wiser_entity', NEW.id, IFNULL(@_username, USER()), 'store_type', OLD.`store_type`, NEW.`store_type`);
     END IF;
@@ -1524,17 +1510,17 @@ END;
 
 DROP TRIGGER IF EXISTS `FieldTemplateUpdate`;
 CREATE TRIGGER `FieldTemplateUpdate` AFTER UPDATE ON `wiser_field_templates` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`field_type`, '') <> IFNULL(OLD.`field_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`field_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`field_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_FIELD_TEMPLATE', 'wiser_field_templates', NEW.id, IFNULL(@_username, USER()), 'field_type', OLD.`field_type`, NEW.`field_type`);
     END IF;
 
-    IF IFNULL(NEW.`field_type`, '') <> IFNULL(OLD.`field_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`field_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`field_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_FIELD_TEMPLATE', 'wiser_field_templates', NEW.id, IFNULL(@_username, USER()), 'field_type', OLD.`field_type`, NEW.`field_type`);
     END IF;
 
-    IF IFNULL(NEW.`script_template`, '') <> IFNULL(OLD.`script_template`, '') THEN
+    IF CONVERT(IFNULL(NEW.`script_template`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`script_template`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_FIELD_TEMPLATE', 'wiser_field_templates', NEW.id, IFNULL(@_username, USER()), 'script_template', OLD.`script_template`, NEW.`script_template`);
     END IF;
@@ -1617,17 +1603,17 @@ CREATE TRIGGER `LinkSettingUpdate` AFTER UPDATE ON `wiser_link` FOR EACH ROW BEG
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'type', OLD.`type`, NEW.`type`);
     END IF;
 
-    IF IFNULL(NEW.`destination_entity_type`, '') <> IFNULL(OLD.`destination_entity_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`destination_entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`destination_entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'destination_entity_type', OLD.`destination_entity_type`, NEW.`destination_entity_type`);
     END IF;
 
-    IF IFNULL(NEW.`connected_entity_type`, '') <> IFNULL(OLD.`connected_entity_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`connected_entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`connected_entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'connected_entity_type', OLD.`connected_entity_type`, NEW.`connected_entity_type`);
     END IF;
 
-    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
     END IF;
@@ -1642,12 +1628,12 @@ CREATE TRIGGER `LinkSettingUpdate` AFTER UPDATE ON `wiser_link` FOR EACH ROW BEG
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'show_in_data_selector', OLD.`show_in_data_selector`, NEW.`show_in_data_selector`);
     END IF;
 
-    IF IFNULL(NEW.`relationship`, '') <> IFNULL(OLD.`relationship`, '') THEN
+    IF CONVERT(IFNULL(NEW.`relationship`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`relationship`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'relationship', OLD.`relationship`, NEW.`relationship`);
     END IF;
 
-    IF IFNULL(NEW.`duplication`, '') <> IFNULL(OLD.`duplication`, '') THEN
+    IF CONVERT(IFNULL(NEW.`duplication`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`duplication`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_LINK_SETTING', 'wiser_link', NEW.id, IFNULL(@_username, USER()), 'duplication', OLD.`duplication`, NEW.`duplication`);
     END IF;
@@ -1740,7 +1726,7 @@ CREATE TRIGGER `PermissionUpdate` AFTER UPDATE ON `wiser_permission` FOR EACH RO
         VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'role_id', OLD.`role_id`, NEW.`role_id`);
     END IF;
 
-    IF IFNULL(NEW.`entity_name`, '') <> IFNULL(OLD.`entity_name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`entity_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`entity_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'entity_name', OLD.`entity_name`, NEW.`entity_name`);
     END IF;
@@ -1780,7 +1766,7 @@ CREATE TRIGGER `PermissionUpdate` AFTER UPDATE ON `wiser_permission` FOR EACH RO
         VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'endpoint_url', OLD.`endpoint_url`, NEW.`endpoint_url`);
     END IF;
 
-    IF IFNULL(NEW.`endpoint_http_method`, '') <> IFNULL(OLD.`endpoint_http_method`, '') THEN
+    IF CONVERT(IFNULL(NEW.`endpoint_http_method`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`endpoint_http_method`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_PERMISSION', 'wiser_permission', NEW.id, IFNULL(@_username, USER()), 'endpoint_http_method', OLD.`endpoint_http_method`, NEW.`endpoint_http_method`);
     END IF;
@@ -1808,7 +1794,7 @@ END;
 
 DROP TRIGGER IF EXISTS `RoleUpdate`;
 CREATE TRIGGER `RoleUpdate` AFTER UPDATE ON `wiser_roles` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`role_name`, '') <> IFNULL(OLD.`role_name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`role_name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`role_name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_ROLE', 'wiser_roles', NEW.id, IFNULL(@_username, USER()), 'role_name', OLD.`role_name`, NEW.`role_name`);
     END IF;
@@ -1856,7 +1842,7 @@ CREATE TRIGGER `UserRoleUpdate` AFTER UPDATE ON `wiser_user_roles` FOR EACH ROW 
         VALUES ('UPDATE_USER_ROLE', 'wiser_user_roles', NEW.id, IFNULL(@_username, USER()), 'role_id', OLD.`role_id`, NEW.`role_id`);
     END IF;
 
-    IF IFNULL(NEW.`ip_addresses`, '') <> IFNULL(OLD.`ip_addresses`, '') THEN
+    IF CONVERT(IFNULL(NEW.`ip_addresses`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`ip_addresses`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_USER_ROLE', 'wiser_user_roles', NEW.id, IFNULL(@_username, USER()), 'ip_addresses', OLD.`ip_addresses`, NEW.`ip_addresses`);
     END IF;
@@ -1894,17 +1880,17 @@ END;
 
 DROP TRIGGER IF EXISTS `ApiConnectionUpdate`;
 CREATE TRIGGER `ApiConnectionUpdate` AFTER UPDATE ON `wiser_api_connection` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_API_CONNECTION', 'wiser_api_connection', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
     END IF;
 
-    IF IFNULL(NEW.`options`, '') <> IFNULL(OLD.`options`, '') THEN
+    IF CONVERT(IFNULL(NEW.`options`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`options`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_API_CONNECTION', 'wiser_api_connection', NEW.id, IFNULL(@_username, USER()), 'options', OLD.`options`, NEW.`options`);
     END IF;
 
-    IF IFNULL(NEW.`authentication_data`, '') <> IFNULL(OLD.`authentication_data`, '') THEN
+    IF CONVERT(IFNULL(NEW.`authentication_data`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`authentication_data`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_API_CONNECTION', 'wiser_api_connection', NEW.id, IFNULL(@_username, USER()), 'authentication_data', OLD.`authentication_data`, NEW.`authentication_data`);
     END IF;
@@ -1967,7 +1953,7 @@ END;
 
 DROP TRIGGER IF EXISTS `DataSelectorUpdate`;
 CREATE TRIGGER `DataSelectorUpdate` AFTER UPDATE ON `wiser_data_selector` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
     END IF;
@@ -1977,17 +1963,17 @@ CREATE TRIGGER `DataSelectorUpdate` AFTER UPDATE ON `wiser_data_selector` FOR EA
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'removed', OLD.`removed`, NEW.`removed`);
     END IF;
 
-    IF IFNULL(NEW.`module_selection`, '') <> IFNULL(OLD.`module_selection`, '') THEN
+    IF CONVERT(IFNULL(NEW.`module_selection`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`module_selection`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'module_selection', OLD.`module_selection`, NEW.`module_selection`);
     END IF;
 
-    IF IFNULL(NEW.`request_json`, '') <> IFNULL(OLD.`request_json`, '') THEN
+    IF CONVERT(IFNULL(NEW.`request_json`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`request_json`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'request_json', OLD.`request_json`, NEW.`request_json`);
     END IF;
 
-    IF IFNULL(NEW.`saved_json`, '') <> IFNULL(OLD.`saved_json`, '') THEN
+    IF CONVERT(IFNULL(NEW.`saved_json`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`saved_json`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_DATA_SELECTOR', 'wiser_data_selector', NEW.id, IFNULL(@_username, USER()), 'saved_json', OLD.`saved_json`, NEW.`saved_json`);
     END IF;
@@ -2105,11 +2091,11 @@ END;
 
 DROP TRIGGER IF EXISTS `CommunicationUpdate`;
 CREATE TRIGGER `CommunicationUpdate` AFTER UPDATE ON `wiser_communication` FOR EACH ROW BEGIN
-    IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+    IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'name', OLD.`name`, NEW.`name`);
     END IF;
-    IF IFNULL(NEW.`receiver_list`, '') <> IFNULL(OLD.`receiver_list`, '') THEN
+    IF CONVERT(IFNULL(NEW.`receiver_list`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`receiver_list`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'receiver_list', OLD.`receiver_list`, NEW.`receiver_list`);
     END IF;
@@ -2129,35 +2115,35 @@ CREATE TRIGGER `CommunicationUpdate` AFTER UPDATE ON `wiser_communication` FOR E
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'content_query_id', OLD.`content_query_id`, NEW.`content_query_id`);
     END IF;
-    IF IFNULL(NEW.`settings`, '') <> IFNULL(OLD.`settings`, '') THEN
+    IF CONVERT(IFNULL(NEW.`settings`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`settings`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'settings', OLD.`settings`, NEW.`settings`);
     END IF;
-    IF IFNULL(NEW.`send_trigger_type`, '') <> IFNULL(OLD.`send_trigger_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`send_trigger_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`send_trigger_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'send_trigger_type', OLD.`send_trigger_type`, NEW.`send_trigger_type`);
     END IF;
-    IF IFNULL(NEW.`trigger_start`, '') <> IFNULL(OLD.`trigger_start`, '') THEN
+    IF CONVERT(IFNULL(NEW.`trigger_start`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`trigger_start`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_start', OLD.`trigger_start`, NEW.`trigger_start`);
     END IF;
-    IF IFNULL(NEW.`trigger_end`, '') <> IFNULL(OLD.`trigger_end`, '') THEN
+    IF CONVERT(IFNULL(NEW.`trigger_end`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`trigger_end`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_end', OLD.`trigger_end`, NEW.`trigger_end`);
     END IF;
-    IF IFNULL(NEW.`trigger_time`, '') <> IFNULL(OLD.`trigger_time`, '') THEN
+    IF CONVERT(IFNULL(NEW.`trigger_time`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`trigger_time`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_time', OLD.`trigger_time`, NEW.`trigger_time`);
     END IF;
-    IF IFNULL(NEW.`trigger_period_value`, '') <> IFNULL(OLD.`trigger_period_value`, '') THEN
+    IF CONVERT(IFNULL(NEW.`trigger_period_value`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`trigger_period_value`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_period_value', OLD.`trigger_period_value`, NEW.`trigger_period_value`);
     END IF;
-    IF IFNULL(NEW.`trigger_period_type`, '') <> IFNULL(OLD.`trigger_period_type`, '') THEN
+    IF CONVERT(IFNULL(NEW.`trigger_period_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`trigger_period_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_period_type', OLD.`trigger_period_type`, NEW.`trigger_period_type`);
     END IF;
-    IF IFNULL(NEW.`trigger_week_days`, '') <> IFNULL(OLD.`trigger_week_days`, '') THEN
+    IF CONVERT(IFNULL(NEW.`trigger_week_days`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`trigger_week_days`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
         INSERT INTO wiser_history (action, tablename, item_id, changed_by, field, oldvalue, newvalue)
         VALUES ('UPDATE_COMMUNICATION', 'wiser_communication', NEW.id, IFNULL(@_username, USER()), 'trigger_week_days', OLD.`trigger_week_days`, NEW.`trigger_week_days`);
     END IF;
@@ -2226,27 +2212,27 @@ END;
 DROP TRIGGER IF EXISTS `StyledOutputUpdate`;
 CREATE TRIGGER `StyledOutputUpdate` AFTER UPDATE ON `wiser_styled_output` FOR EACH ROW BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        IF IFNULL(NEW.`name`, '') <> IFNULL(OLD.`name`, '') THEN
+        IF CONVERT(IFNULL(NEW.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`name`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'name',OLD.`name`,NEW.`name`);
         END IF;
 
-        IF IFNULL(NEW.`format_begin`, '') <> IFNULL(OLD.`format_begin`, '') THEN
+        IF CONVERT(IFNULL(NEW.`format_begin`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`format_begin`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_begin',OLD.`format_begin`,NEW.`format_begin`);
         END IF;
 
-        IF IFNULL(NEW.`format_item`, '') <> IFNULL(OLD.`format_item`, '') THEN
+        IF CONVERT(IFNULL(NEW.`format_item`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`format_item`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_item',OLD.`format_item`,NEW.`format_item`);
         END IF;
 
-        IF IFNULL(NEW.`format_end`, '') <> IFNULL(OLD.`format_end`, '') THEN
+        IF CONVERT(IFNULL(NEW.`format_end`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`format_end`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_end',OLD.`format_end`,NEW.`format_end`);
         END IF;
 
-        IF IFNULL(NEW.`format_empty`, '') <> IFNULL(OLD.`format_empty`, '') THEN
+        IF CONVERT(IFNULL(NEW.`format_empty`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`format_empty`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'format_empty',OLD.`format_empty`,NEW.`format_empty`);
         END IF;
@@ -2256,7 +2242,7 @@ CREATE TRIGGER `StyledOutputUpdate` AFTER UPDATE ON `wiser_styled_output` FOR EA
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'query_id',OLD.`query_id`,NEW.`query_id`);
         END IF;
 
-        IF IFNULL(NEW.`return_type`, '') <> IFNULL(OLD.`return_type`, '') THEN
+        IF CONVERT(IFNULL(NEW.`return_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`return_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_STYLED_OUTPUT','wiser_styled_output',NEW.`id`,IFNULL(@_username, USER()),'return_type',OLD.`return_type`,NEW.`return_type`);
         END IF;
@@ -2325,12 +2311,12 @@ CREATE TRIGGER `EasyObjectUpdate` AFTER UPDATE ON `easy_objects` FOR EACH ROW BE
             VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'typenr', OLD.`typenr`, NEW.`typenr`);
         END IF;
 
-        IF IFNULL(NEW.`key`, '') <> IFNULL(OLD.`key`, '') THEN
+        IF CONVERT(IFNULL(NEW.`key`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`key`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
             VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'key', OLD.`key`, NEW.`key`);
         END IF;
 
-        IF IFNULL(NEW.`value`, '') <> IFNULL(OLD.`value`, '') THEN
+        IF CONVERT(IFNULL(NEW.`value`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`value`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
             VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'value', OLD.`value`, NEW.`value`);
         END IF;
@@ -2345,7 +2331,7 @@ CREATE TRIGGER `EasyObjectUpdate` AFTER UPDATE ON `easy_objects` FOR EACH ROW BE
             VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'active', OLD.`active`, NEW.`active`);
         END IF;
 
-        IF IFNULL(NEW.`description`, '') <> IFNULL(OLD.`description`, '') THEN
+        IF CONVERT(IFNULL(NEW.`description`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`description`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action, tablename, item_id, changed_by, field,oldvalue, newvalue)
             VALUES ('UPDATE_EASY_OBJECT', 'easy_objects', NEW.`id`, IFNULL(@_username, USER()), 'description', OLD.`description`, NEW.`description`);
         END IF;
