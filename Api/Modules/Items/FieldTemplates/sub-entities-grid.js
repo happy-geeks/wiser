@@ -100,15 +100,15 @@
 
         generateGrid(customQueryResults.data, customQueryResults.schemaModel, customQueryResults.columns);
     } else {
-        let result = null;
+        let gridSettings = null;
 
         if (usingDataSelector) {
-           result = await Wiser.api({
+            gridSettings = await Wiser.api({
                 url: `${window.dynamicItems.settings.getItemsUrl}?trace=false&encryptedDataSelectorId=${encodeURIComponent(options.dataSelectorId)}&itemId=${encodeURIComponent("{itemIdEncrypted}")}`,
                 contentType: "application/json"
             });
         } else {
-            result = await Wiser.api({
+            gridSettings = await Wiser.api({
                 url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/entity-grids/${encodeURIComponent(options.entityType || "{entityType}")}?propertyId={propertyId}${linkTypeParameter.replace("?", "&")}&mode=${gridMode.toString()}&fieldGroupName=${encodeURIComponent(options.fieldGroupName || "")}&currentItemIsSourceId=${(options.currentItemIsSourceId || false).toString()}`,
                 method: "POST",
                 contentType: "application/json"
