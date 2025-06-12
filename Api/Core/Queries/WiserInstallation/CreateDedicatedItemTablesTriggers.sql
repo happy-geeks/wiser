@@ -62,12 +62,12 @@ DROP TRIGGER IF EXISTS `{tablePrefix}ItemUpdate`;
 CREATE TRIGGER `{tablePrefix}ItemUpdate` AFTER UPDATE ON `{tablePrefix}wiser_item` FOR EACH ROW
 BEGIN
     IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-        IF IFNULL(NEW.`unique_uuid`, '') <> IFNULL(OLD.`unique_uuid`, '') THEN
+        IF CONVERT(IFNULL(NEW.`unique_uuid`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`unique_uuid`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','{tablePrefix}wiser_item',NEW.`id`,IFNULL(@_username, USER()),'unique_uuid',OLD.`unique_uuid`,NEW.`unique_uuid`);
         END IF;
 
-        IF IFNULL(NEW.`entity_type`, '') <> IFNULL(OLD.`entity_type`, '') THEN
+        IF CONVERT(IFNULL(NEW.`entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`entity_type`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','{tablePrefix}wiser_item',NEW.`id`,IFNULL(@_username, USER()),'entity_type',OLD.`entity_type`,NEW.`entity_type`);
         END IF;
@@ -87,7 +87,7 @@ BEGIN
             VALUES ('UPDATE_ITEM','{tablePrefix}wiser_item',NEW.`id`,IFNULL(@_username, USER()),'readonly',OLD.`readonly`,NEW.`readonly`);
         END IF;
 
-        IF IFNULL(NEW.`title`, '') <> IFNULL(OLD.`title`, '') THEN
+        IF CONVERT(IFNULL(NEW.`title`, '') USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(IFNULL(OLD.`title`, '') USING utf8mb4) COLLATE utf8mb4_bin THEN
             INSERT INTO wiser_history (action,tablename,item_id,changed_by,field,oldvalue,newvalue)
             VALUES ('UPDATE_ITEM','{tablePrefix}wiser_item',NEW.`id`,IFNULL(@_username, USER()),'title',OLD.`title`,NEW.`title`);
         END IF;
@@ -149,31 +149,25 @@ END;
 
 DROP TRIGGER IF EXISTS `{tablePrefix}DetailUpdate`;
 CREATE TRIGGER `{tablePrefix}DetailUpdate` AFTER UPDATE ON `{tablePrefix}wiser_itemdetail` FOR EACH ROW BEGIN
-    DECLARE oldValue MEDIUMTEXT;
-    DECLARE newValue MEDIUMTEXT;
+    DECLARE oldValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+    DECLARE newValue MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
-    SET oldValue = CONCAT_WS('', OLD.`value`, OLD.`long_value`);
-    SET newValue = CONCAT_WS('', NEW.`value`, NEW.`long_value`);
+    SET oldValue = CONVERT(CONCAT_WS('', OLD.`value`, OLD.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
+    SET newValue = CONVERT(CONCAT_WS('', NEW.`value`, NEW.`long_value`) USING utf8mb4) COLLATE utf8mb4_bin;
 
-    IF OLD.`key` <> NEW.`key` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEM_DETAIL', '{tablePrefix}wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'key', OLD.`key`,NEW.`key`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`key` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`key` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEM_DETAIL', '{tablePrefix}wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'key', OLD.`key`,NEW.`key`);
     END IF;
 
-    IF OLD.`language_code` <> NEW.`language_code` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEM_DETAIL', '{tablePrefix}wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`language_code` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`language_code` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEM_DETAIL', '{tablePrefix}wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'language_code', OLD.`language_code`, NEW.`language_code`);
     END IF;
 
-    IF OLD.`groupname` <> NEW.`groupname` THEN
-        IF IFNULL(@saveHistory, TRUE) = TRUE THEN
-            INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
-            VALUES ('UPDATE_ITEM_DETAIL', '{tablePrefix}wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
-        END IF;
+    IF IFNULL(@saveHistory, TRUE) = TRUE AND CONVERT(OLD.`groupname` USING utf8mb4) COLLATE utf8mb4_bin <> CONVERT(NEW.`groupname` USING utf8mb4) COLLATE utf8mb4_bin THEN
+        INSERT INTO wiser_history (action, tablename, changed_by, target_id, item_id, field, oldvalue, newvalue)
+        VALUES ('UPDATE_ITEM_DETAIL', '{tablePrefix}wiser_itemdetail', IFNULL(@_username, USER()), OLD.id, OLD.item_id, 'groupname', OLD.`groupname`, NEW.`groupname`);
     END IF;
 
     IF oldValue <> newValue THEN

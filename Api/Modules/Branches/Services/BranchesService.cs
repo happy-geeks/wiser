@@ -171,15 +171,18 @@ public class BranchesService : IBranchesService, IScopedService
             newTenant.Database.Host = settings.DatabaseHost;
             settings.DatabaseHost = settings.DatabaseHost.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
         }
+
         if (settings.DatabasePort is > 0)
         {
             newTenant.Database.PortNumber = settings.DatabasePort.Value;
         }
+
         if (!String.IsNullOrWhiteSpace(settings.DatabaseUsername))
         {
             newTenant.Database.Username = settings.DatabaseUsername;
             settings.DatabaseUsername = settings.DatabaseUsername.EncryptWithAesWithSalt(currentTenant.EncryptionKey, useSlowerButMoreSecureMethod: true);
         }
+
         if (!String.IsNullOrWhiteSpace(settings.DatabasePassword))
         {
             newTenant.Database.Password = settings.DatabasePassword.EncryptWithAesWithSalt(apiSettings.DatabasePasswordEncryptionKey);
@@ -309,7 +312,6 @@ public class BranchesService : IBranchesService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<ChangesAvailableForMergingModel>> GetChangesAsync(ClaimsIdentity identity, int id, List<string> entityTypes)
     {
-        entityTypes ??= [];
         var currentTenant = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
 
         var result = new ChangesAvailableForMergingModel();
@@ -405,244 +407,7 @@ public class BranchesService : IBranchesService, IScopedService
         var createdLinks = new Dictionary<LinkSettingsModel, int>();
         var updatedLinks = new Dictionary<LinkSettingsModel, int>();
         var deletedLinks = new Dictionary<LinkSettingsModel, int>();
-
-        // Local function that adds an item to one of the 3 lists above, to keep track of how many items have been created/updated/deleted.
-        void AddItemToMutationList(ICollection<(string TablePrefix, string EntityType, ulong ItemId)> list, string tablePrefix, ulong itemId, string entityType = null)
-        {
-            var item = list.SingleOrDefault(x => x.TablePrefix == tablePrefix && x.ItemId == itemId);
-            if (item.ItemId > 0)
-            {
-                if (!String.IsNullOrWhiteSpace(entityType) && String.IsNullOrWhiteSpace(item.EntityType))
-                {
-                    item.EntityType = entityType;
-                }
-
-                return;
-            }
-
-            list.Add((tablePrefix, entityType, itemId));
-        }
-
-        // Local function that adds a setting to one of the 3 lists above, to keep track of how many items have been created/updated/deleted.
-        void AddSettingToMutationList(IDictionary<WiserSettingTypes, List<ulong>> list, WiserSettingTypes settingType, ulong settingId)
-        {
-            if (!list.ContainsKey(settingType))
-            {
-                list.Add(settingType, []);
-            }
-
-            if (list[settingType].Contains(settingId))
-            {
-                return;
-            }
-
-            list[settingType].Add(settingId);
-        }
-
-        // Local function that adds a link type to one of the 3 lists above, to keep track of how many links have been created/updated/deleted.
-        void AddLinkTypeToMutationList(IDictionary<LinkSettingsModel, int> list, LinkSettingsModel linkSettingsModel)
-        {
-            var link = list.SingleOrDefault(x => (linkSettingsModel.Id > 0 && x.Key.Id == linkSettingsModel.Id) || (x.Key.Id == 0 && x.Key.Type == linkSettingsModel.Type && x.Key.SourceEntityType == linkSettingsModel.SourceEntityType && x.Key.DestinationEntityType == linkSettingsModel.DestinationEntityType));
-
-            if (link.Key == null)
-            {
-                list.Add(linkSettingsModel, 1);
-            }
-            else
-            {
-                list[link.Key]++;
-            }
-        }
-
-        // Local function to get a model for counting changes in Wiser settings.
-        SettingsChangesModel GetOrAddWiserSettingCounter(WiserSettingTypes settingType)
-        {
-            var settingsChangesModel = result.Settings.FirstOrDefault(setting => setting.Type == settingType);
-            if (settingsChangesModel != null)
-            {
-                return settingsChangesModel;
-            }
-
-            settingsChangesModel = new SettingsChangesModel
-            {
-                Type = settingType,
-                DisplayName = settingType switch
-                {
-                    WiserSettingTypes.ApiConnection => "Verbindingen met API's",
-                    WiserSettingTypes.DataSelector => "Dataselectors",
-                    WiserSettingTypes.Entity => "Entiteiten",
-                    WiserSettingTypes.EntityProperty => "Velden van entiteiten",
-                    WiserSettingTypes.FieldTemplates => "Templates van velden",
-                    WiserSettingTypes.Link => "Koppelingen",
-                    WiserSettingTypes.Module => "Modules",
-                    WiserSettingTypes.Permission => "Rechten",
-                    WiserSettingTypes.Query => "Query's",
-                    WiserSettingTypes.Role => "Rollen",
-                    WiserSettingTypes.UserRole => "Koppelingen tussen gebruikers en rollen",
-                    WiserSettingTypes.StyledOutput => "Styled output (Wiser API query output configuraties)",
-                    WiserSettingTypes.EasyObjects => "Objecten (easy_objects)",
-                    _ => throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null)
-                }
-            };
-
-            result.Settings.Add(settingsChangesModel);
-
-            return settingsChangesModel;
-        }
-
-        // Local function to get a model for counting changes in an entity type.
-        async Task<EntityChangesModel> GetOrAddEntityTypeCounterAsync(string entityType)
-        {
-            entityType ??= "unknown";
-
-            var entityChangesModel = result.Entities.FirstOrDefault(setting => String.Equals(setting.EntityType, entityType, StringComparison.OrdinalIgnoreCase));
-            if (entityChangesModel != null)
-            {
-                return entityChangesModel;
-            }
-
-            var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType);
-            entityChangesModel = new EntityChangesModel
-            {
-                EntityType = entityType,
-                DisplayName = entityType == "unknown" ? "Onbekend" : entityTypeSettings.DisplayName
-            };
-
-            if (String.IsNullOrWhiteSpace(entityChangesModel.DisplayName))
-            {
-                entityChangesModel.DisplayName = entityType;
-            }
-
-            result.Entities.Add(entityChangesModel);
-
-            return entityChangesModel;
-        }
-
-        LinkTypeChangesModel GetOrAddLinkTypeCounter(LinkSettingsModel linkSettingsModel)
-        {
-            var linkTypeCounter = result.LinkTypes.FirstOrDefault(setting => setting.Type == linkSettingsModel.Type && setting.SourceEntityType == linkSettingsModel.SourceEntityType && setting.DestinationEntityType == linkSettingsModel.DestinationEntityType);
-            if (linkTypeCounter != null)
-            {
-                return linkTypeCounter;
-            }
-
-            result.LinkTypes.Add(new LinkTypeChangesModel
-            {
-                Id = linkSettingsModel.Id,
-                Type = linkSettingsModel.Type,
-                SourceEntityType = linkSettingsModel.SourceEntityType,
-                DestinationEntityType = linkSettingsModel.DestinationEntityType,
-                DisplayName = String.IsNullOrWhiteSpace(linkSettingsModel.Name) ? $"{linkSettingsModel.SourceEntityType}To{linkSettingsModel.DestinationEntityType}" : linkSettingsModel.Name
-            });
-
-            return result.LinkTypes.Last();
-        }
-
-        // Local function to get the entity type of an item.
         var idToEntityTypeMappings = new Dictionary<ulong, string>();
-
-        async Task<string> GetEntityTypeFromIdAsync(ulong itemId, string tablePrefix, MySqlConnection branchconnection)
-        {
-            if (idToEntityTypeMappings.TryGetValue(itemId, out var async))
-            {
-                return async;
-            }
-
-            // Get the entity type from [prefix]wiser_item or [prefix]wiser_itemarchive if it doesn't exist in the first one.
-            var getEntityTypeDataTable = new DataTable();
-            await using (var environmentCommand = branchconnection.CreateCommand())
-            {
-                environmentCommand.Parameters.AddWithValue("id", itemId);
-                environmentCommand.CommandText = $"""
-                                                  SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}` WHERE id = ?id
-                                                  UNION ALL
-                                                  SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
-                                                  LIMIT 1
-                                                  """;
-                using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
-                environmentAdapter.Fill(getEntityTypeDataTable);
-            }
-
-            var entityType = getEntityTypeDataTable.Rows.Count == 0 ? null : getEntityTypeDataTable.Rows[0].Field<string>("entity_type");
-            idToEntityTypeMappings.Add(itemId, entityType);
-            return entityType;
-        }
-
-        // Get the entity types and table prefixes for both items in a link.
-        async Task<(LinkSettingsModel LinkSettings, string SourceTablePrefix, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes)
-        {
-            var currentLinkTypeSettings = allLinkTypeSettings.Where(l => l.Type == linkType).ToList();
-
-            // If there are no settings for this link, we assume that the links are from items in the normal wiser_item table and not a table with a prefix.
-            if (currentLinkTypeSettings.Count == 0)
-            {
-                // Check if the source item exists in this table.
-                var sourceEntityType = await GetEntityTypeFromIdAsync(sourceId, "", mySqlConnection);
-
-                // Check if the destination item exists in this table.
-                var destinationEntityType = await GetEntityTypeFromIdAsync(destinationId, "", mySqlConnection);
-
-                return (new LinkSettingsModel { Type = linkType, SourceEntityType = sourceEntityType, DestinationEntityType = destinationEntityType }, "", "");
-            }
-
-            // It's possible that there are multiple link types that use the same number, so we have to check all of them.
-            foreach (var linkTypeSettings in currentLinkTypeSettings)
-            {
-                if (!tablePrefixes.TryGetValue(linkTypeSettings.SourceEntityType, out var sourceTablePrefix))
-                {
-                    sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.SourceEntityType);
-                    tablePrefixes.Add(linkTypeSettings.SourceEntityType, sourceTablePrefix);
-                }
-
-                if (!tablePrefixes.TryGetValue(linkTypeSettings.DestinationEntityType, out var destinationTablePrefix))
-                {
-                    destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
-                    tablePrefixes.Add(linkTypeSettings.DestinationEntityType, destinationTablePrefix);
-                }
-
-                // Check if the source item exists in this table.
-                var sourceEntityType = await GetEntityTypeFromIdAsync(sourceId, sourceTablePrefix, mySqlConnection);
-                if (!String.Equals(sourceEntityType, linkTypeSettings.SourceEntityType, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                // Check if the destination item exists in this table.
-                var destinationEntityType = await GetEntityTypeFromIdAsync(destinationId, destinationTablePrefix, mySqlConnection);
-                if (!String.Equals(destinationEntityType, linkTypeSettings.DestinationEntityType, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                // If we reached this point, it means we found the correct link type and entity types.
-                return (linkTypeSettings, sourceTablePrefix, destinationTablePrefix);
-            }
-
-            return null;
-        }
-
-        // Local function to get the type number, source item ID and the destination item ID from a link.
-        async Task<(int Type, ulong SourceItemId, ulong DestinationItemId)?> GetDataFromLinkAsync(ulong linkId, string tablePrefix, MySqlConnection connection)
-        {
-            var linkDataTable = new DataTable();
-            await using var linkCommand = connection.CreateCommand();
-            linkCommand.Parameters.AddWithValue("id", linkId);
-            linkCommand.CommandText = $"""
-                                       SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}` WHERE id = ?id
-                                       UNION ALL
-                                       SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
-                                       LIMIT 1
-                                       """;
-            using var linkAdapter = new MySqlDataAdapter(linkCommand);
-            linkAdapter.Fill(linkDataTable);
-
-            if (linkDataTable.Rows.Count == 0)
-            {
-                return null;
-            }
-
-            return (linkDataTable.Rows[0].Field<int>("type"), Convert.ToUInt64(linkDataTable.Rows[0]["item_id"]), Convert.ToUInt64(linkDataTable.Rows[0]["destination_item_id"]));
-        }
 
         // Count all changed items and settings (if a single item has been changed multiple times, we count only one change).
         var times = new Dictionary<string, (int count, TimeSpan totalTime)>();
@@ -894,7 +659,7 @@ public class BranchesService : IBranchesService, IScopedService
                         var sourceItemId = Convert.ToUInt64(newValue);
                         var split = field.Split(',');
                         var type = Int32.Parse(split[0]);
-                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, destinationItemId, type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, destinationItemId, type, branchConnection, allLinkTypeSettings, tablePrefixes, idToEntityTypeMappings);
                         if (linkData == null)
                         {
                             break;
@@ -915,7 +680,7 @@ public class BranchesService : IBranchesService, IScopedService
                         }
 
                         // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes, idToEntityTypeMappings);
                         if (!entityData.HasValue)
                         {
                             break;
@@ -929,7 +694,7 @@ public class BranchesService : IBranchesService, IScopedService
                     {
                         var sourceItemId = UInt64.Parse(oldValue!);
                         var linkType = Int32.Parse(field);
-                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, linkType, branchConnection, allLinkTypeSettings, tablePrefixes);
+                        var linkData = await GetEntityTypesOfLinkAsync(sourceItemId, itemId, linkType, branchConnection, allLinkTypeSettings, tablePrefixes, idToEntityTypeMappings);
                         if (linkData == null)
                         {
                             break;
@@ -960,7 +725,7 @@ public class BranchesService : IBranchesService, IScopedService
                         }
 
                         // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes, idToEntityTypeMappings);
                         if (!entityData.HasValue)
                         {
                             break;
@@ -986,8 +751,8 @@ public class BranchesService : IBranchesService, IScopedService
                     }
                     case "UPDATE_FILE":
                     {
-                        ulong itemIdFromFile = 0;
-                        ulong linkIdFromFile = 0;
+                        ulong itemIdFromFile;
+                        ulong linkIdFromFile;
                         if (!filesData.TryGetValue(tableName, out var fileDictionary) || !fileDictionary.TryGetValue(itemId, out var fileData))
                         {
                             var fileDataTable = new DataTable();
@@ -1031,7 +796,7 @@ public class BranchesService : IBranchesService, IScopedService
                         }
 
                         // Then get the entity types of those IDs.
-                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes);
+                        var entityData = await GetEntityTypesOfLinkAsync(linkData.Value.SourceItemId, linkData.Value.DestinationItemId, linkData.Value.Type, branchConnection, allLinkTypeSettings, tablePrefixes, idToEntityTypeMappings);
                         if (!entityData.HasValue)
                         {
                             break;
@@ -1058,10 +823,9 @@ public class BranchesService : IBranchesService, IScopedService
                 }
             }
 
-            if (times.ContainsKey(action))
+            if (times.TryGetValue(action, out var value))
             {
-                var (count, totalTime) = times[action];
-                times[action] = (count + 1, totalTime + actionStopwatch.Elapsed);
+                times[action] = (value.count + 1, value.totalTime + actionStopwatch.Elapsed);
             }
             else
             {
@@ -1073,15 +837,16 @@ public class BranchesService : IBranchesService, IScopedService
 
         // Add the counters to the results.
         actionStopwatch.Start();
+
         foreach (var item in createdItems)
         {
             var entityType = item.EntityType;
             if (String.IsNullOrWhiteSpace(entityType))
             {
-                entityType = await GetEntityTypeFromIdAsync(item.ItemId, item.TablePrefix, branchConnection);
+                entityType = await GetEntityTypeFromIdAsync(item.ItemId, item.TablePrefix, branchConnection, idToEntityTypeMappings);
             }
 
-            (await GetOrAddEntityTypeCounterAsync(entityType)).Created++;
+            (await GetOrAddEntityTypeCounterAsync(entityType, result)).Created++;
         }
 
         times.Add("createdItemsCounters", (1, actionStopwatch.Elapsed));
@@ -1092,10 +857,10 @@ public class BranchesService : IBranchesService, IScopedService
             var entityType = item.EntityType;
             if (String.IsNullOrWhiteSpace(entityType))
             {
-                entityType = await GetEntityTypeFromIdAsync(item.ItemId, item.TablePrefix, branchConnection);
+                entityType = await GetEntityTypeFromIdAsync(item.ItemId, item.TablePrefix, branchConnection, idToEntityTypeMappings);
             }
 
-            (await GetOrAddEntityTypeCounterAsync(entityType)).Updated++;
+            (await GetOrAddEntityTypeCounterAsync(entityType, result)).Updated++;
         }
 
         times.Add("updatedItemsCounters", (1, actionStopwatch.Elapsed));
@@ -1106,10 +871,10 @@ public class BranchesService : IBranchesService, IScopedService
             var entityType = item.EntityType;
             if (String.IsNullOrWhiteSpace(entityType))
             {
-                entityType = await GetEntityTypeFromIdAsync(item.ItemId, item.TablePrefix, branchConnection);
+                entityType = await GetEntityTypeFromIdAsync(item.ItemId, item.TablePrefix, branchConnection, idToEntityTypeMappings);
             }
 
-            (await GetOrAddEntityTypeCounterAsync(entityType)).Deleted++;
+            (await GetOrAddEntityTypeCounterAsync(entityType, result)).Deleted++;
         }
 
         times.Add("deletedItemsCounters", (1, actionStopwatch.Elapsed));
@@ -1117,7 +882,7 @@ public class BranchesService : IBranchesService, IScopedService
         actionStopwatch.Restart();
         foreach (var setting in createdSettings)
         {
-            GetOrAddWiserSettingCounter(setting.Key).Created = setting.Value.Count;
+            GetOrAddWiserSettingCounter(setting.Key, result).Created = setting.Value.Count;
         }
 
         times.Add("createdSettingsCounters", (1, actionStopwatch.Elapsed));
@@ -1125,7 +890,7 @@ public class BranchesService : IBranchesService, IScopedService
         actionStopwatch.Restart();
         foreach (var setting in updatedSettings)
         {
-            GetOrAddWiserSettingCounter(setting.Key).Updated = setting.Value.Count;
+            GetOrAddWiserSettingCounter(setting.Key, result).Updated = setting.Value.Count;
         }
 
         times.Add("updatedSettingsCounters", (1, actionStopwatch.Elapsed));
@@ -1133,7 +898,7 @@ public class BranchesService : IBranchesService, IScopedService
         actionStopwatch.Restart();
         foreach (var setting in deletedSettings)
         {
-            GetOrAddWiserSettingCounter(setting.Key).Deleted = setting.Value.Count;
+            GetOrAddWiserSettingCounter(setting.Key, result).Deleted = setting.Value.Count;
         }
 
         times.Add("deletedSettingsCounters", (1, actionStopwatch.Elapsed));
@@ -1142,7 +907,7 @@ public class BranchesService : IBranchesService, IScopedService
         actionStopwatch.Restart();
         foreach (var link in createdLinks)
         {
-            GetOrAddLinkTypeCounter(link.Key).Created = link.Value;
+            GetOrAddLinkTypeCounter(link.Key, result).Created = link.Value;
         }
 
         times.Add("createdLinksCounters", (1, actionStopwatch.Elapsed));
@@ -1150,7 +915,7 @@ public class BranchesService : IBranchesService, IScopedService
         actionStopwatch.Restart();
         foreach (var link in updatedLinks)
         {
-            GetOrAddLinkTypeCounter(link.Key).Updated = link.Value;
+            GetOrAddLinkTypeCounter(link.Key, result).Updated = link.Value;
         }
 
         times.Add("updatedLinksCounters", (1, actionStopwatch.Elapsed));
@@ -1158,7 +923,7 @@ public class BranchesService : IBranchesService, IScopedService
         actionStopwatch.Restart();
         foreach (var link in deletedLinks)
         {
-            GetOrAddLinkTypeCounter(link.Key).Deleted = link.Value;
+            GetOrAddLinkTypeCounter(link.Key, result).Deleted = link.Value;
         }
 
         times.Add("deletedLinksCounters", (1, actionStopwatch.Elapsed));
@@ -1374,6 +1139,358 @@ public class BranchesService : IBranchesService, IScopedService
         {
             StatusCode = HttpStatusCode.NoContent
         };
+    }
+
+    /// <inheritdoc />
+    public async Task<ulong?> GetMappedIdAsync(ulong id, bool idIsFromBranch = true)
+    {
+        await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
+
+        clientDatabaseConnection.AddParameter("id", id);
+        var dataTable = await clientDatabaseConnection.GetAsync($"""
+                                                                     SELECT  {(idIsFromBranch ? "production_id" : "our_id")} AS mappedId
+                                                                     FROM {WiserTableNames.WiserIdMappings}
+                                                                     WHERE {(idIsFromBranch ? "our_id" : "production_id")} = ?id
+                                                                 """);
+
+        return dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("mappedId") : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
+    {
+        var query = $"SELECT MAX(id) AS id FROM {tableName}";
+
+        var dataTable = await mainDatabaseConnection.GetAsync(query);
+        var maxMainId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+
+        if (branchDatabase == null)
+        {
+            return maxMainId + 1;
+        }
+
+        dataTable = await branchDatabase.GetAsync(query);
+        var maxBranchId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
+        return Math.Max(maxMainId, maxBranchId) + 1;
+
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<IDatabaseConnection>> GetBranchDatabaseConnectionAsync(IServiceScope scope, ClaimsIdentity identity, int branchId)
+    {
+        if (branchId <= 0)
+        {
+            return new ServiceResult<IDatabaseConnection>(clientDatabaseConnection);
+        }
+
+        var currentTenant = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
+        var selectedEnvironmentTenant = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
+
+        // Only allow users to get the entities of their own branches.
+        if (currentTenant.TenantId != selectedEnvironmentTenant.TenantId)
+        {
+            return new ServiceResult<IDatabaseConnection>
+            {
+                StatusCode = HttpStatusCode.Forbidden
+            };
+        }
+
+        var connectionString = wiserTenantsService.GenerateConnectionStringFromTenant(selectedEnvironmentTenant);
+        var branchDatabaseConnection = scope.ServiceProvider.GetService<IDatabaseConnection>();
+        await branchDatabaseConnection.ChangeConnectionStringsAsync(connectionString);
+        return new ServiceResult<IDatabaseConnection>(branchDatabaseConnection);
+    }
+
+    /// <summary>
+    /// Function that adds an item to one of the item lists for finding conflicts when merging a branch, to keep track of how many items have been created/updated/deleted.
+    /// </summary>
+    /// <param name="list">The list of Wiser items to add the mutation to.</param>
+    /// <param name="tablePrefix">The prefix for wiser_item tables.</param>
+    /// <param name="itemId">The ID of the corresponding Wiser item.</param>
+    /// <param name="entityType">The type of item.</param>
+    private static void AddItemToMutationList(List<(string TablePrefix, string EntityType, ulong ItemId)> list, string tablePrefix, ulong itemId, string entityType = null)
+    {
+        var item = list.SingleOrDefault(x => x.TablePrefix == tablePrefix && x.ItemId == itemId);
+        if (item.ItemId > 0)
+        {
+            if (!String.IsNullOrWhiteSpace(entityType) && String.IsNullOrWhiteSpace(item.EntityType))
+            {
+                item.EntityType = entityType;
+            }
+
+            return;
+        }
+
+        list.Add((tablePrefix, entityType, itemId));
+    }
+
+    /// <summary>
+    /// Function that adds a setting to one of the item lists for finding conflicts when merging a branch, to keep track of how many items have been created/updated/deleted.
+    /// </summary>
+    /// <param name="list">The list of Wiser settings/configuration to add the mutation to.</param>
+    /// <param name="settingType">The type of setting/configuration.</param>
+    /// <param name="settingId">The unique ID for the setting.</param>
+    private static void AddSettingToMutationList(Dictionary<WiserSettingTypes, List<ulong>> list, WiserSettingTypes settingType, ulong settingId)
+    {
+        if (!list.TryGetValue(settingType, out var settingIds))
+        {
+            settingIds = [];
+            list.Add(settingType, settingIds);
+        }
+
+        if (settingIds.Contains(settingId))
+        {
+            return;
+        }
+
+        settingIds.Add(settingId);
+    }
+
+    /// <summary>
+    /// Function that adds a link to one of the item lists for finding conflicts when merging a branch, to keep track of how many items have been created/updated/deleted.
+    /// </summary>
+    /// <param name="list">The list of Wiser item links to add the mutation to.</param>
+    /// <param name="linkSettingsModel">The link settings model to add.</param>
+    private static void AddLinkTypeToMutationList(Dictionary<LinkSettingsModel, int> list, LinkSettingsModel linkSettingsModel)
+    {
+        var link = list.SingleOrDefault(x => (linkSettingsModel.Id > 0 && x.Key.Id == linkSettingsModel.Id) || (x.Key.Id == 0 && x.Key.Type == linkSettingsModel.Type && x.Key.SourceEntityType == linkSettingsModel.SourceEntityType && x.Key.DestinationEntityType == linkSettingsModel.DestinationEntityType));
+
+        if (link.Key == null)
+        {
+            list.Add(linkSettingsModel, 1);
+        }
+        else
+        {
+            list[link.Key]++;
+        }
+    }
+
+    /// <summary>
+    /// Function to get a model for counting changes in Wiser settings.
+    /// </summary>
+    /// <param name="settingType">The type of setting.</param>
+    /// <param name="changesAvailableForMerging">The <see cref="ChangesAvailableForMergingModel"/> that will contain the final results.</param>
+    /// <returns>The <see cref="SettingsChangesModel"/> for this setting.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">When an unsupported setting type has been used.</exception>
+    private static SettingsChangesModel GetOrAddWiserSettingCounter(WiserSettingTypes settingType, ChangesAvailableForMergingModel changesAvailableForMerging)
+    {
+        var settingsChangesModel = changesAvailableForMerging.Settings.FirstOrDefault(setting => setting.Type == settingType);
+        if (settingsChangesModel != null)
+        {
+            return settingsChangesModel;
+        }
+
+        settingsChangesModel = new SettingsChangesModel
+        {
+            Type = settingType,
+            DisplayName = settingType switch
+            {
+                WiserSettingTypes.ApiConnection => "Verbindingen met API's",
+                WiserSettingTypes.DataSelector => "Dataselectors",
+                WiserSettingTypes.Entity => "Entiteiten",
+                WiserSettingTypes.EntityProperty => "Velden van entiteiten",
+                WiserSettingTypes.FieldTemplates => "Templates van velden",
+                WiserSettingTypes.Link => "Koppelingen",
+                WiserSettingTypes.Module => "Modules",
+                WiserSettingTypes.Permission => "Rechten",
+                WiserSettingTypes.Query => "Query's",
+                WiserSettingTypes.Role => "Rollen",
+                WiserSettingTypes.UserRole => "Koppelingen tussen gebruikers en rollen",
+                WiserSettingTypes.StyledOutput => "Styled output (Wiser API query output configuraties)",
+                WiserSettingTypes.EasyObjects => "Objecten (easy_objects)",
+                _ => throw new ArgumentOutOfRangeException(nameof(settingType), settingType, null)
+            }
+        };
+
+        changesAvailableForMerging.Settings.Add(settingsChangesModel);
+
+        return settingsChangesModel;
+    }
+
+    /// <summary>
+    /// Function to get a model for counting changes in an entity type.
+    /// </summary>
+    /// <param name="entityType">The entity type of the item.</param>
+    /// <param name="changesAvailableForMerging">The <see cref="ChangesAvailableForMergingModel"/> that will contain the final results.</param>
+    /// <returns>The <see cref="EntityChangesModel"/> for this setting.</returns>
+    private async Task<EntityChangesModel> GetOrAddEntityTypeCounterAsync(string entityType, ChangesAvailableForMergingModel changesAvailableForMerging)
+    {
+        entityType ??= "unknown";
+
+        var entityChangesModel = changesAvailableForMerging.Entities.FirstOrDefault(setting => String.Equals(setting.EntityType, entityType, StringComparison.OrdinalIgnoreCase));
+        if (entityChangesModel != null)
+        {
+            return entityChangesModel;
+        }
+
+        var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync(entityType);
+        entityChangesModel = new EntityChangesModel
+        {
+            EntityType = entityType,
+            DisplayName = entityType == "unknown" ? "Onbekend" : entityTypeSettings.DisplayName
+        };
+
+        if (String.IsNullOrWhiteSpace(entityChangesModel.DisplayName))
+        {
+            entityChangesModel.DisplayName = entityType;
+        }
+
+        changesAvailableForMerging.Entities.Add(entityChangesModel);
+
+        return entityChangesModel;
+    }
+
+    /// <summary>
+    /// Gets a link counter if it exists, or creates a new one if it doesn't.
+    /// </summary>
+    /// <param name="linkSettingsModel">The settings for the current link type.</param>
+    /// <param name="changesAvailableForMerging">The <see cref="ChangesAvailableForMergingModel"/> that will contain the final results.</param>
+    /// <returns>The <see cref="LinkTypeChangesModel"/> for this setting.</returns>
+    private static LinkTypeChangesModel GetOrAddLinkTypeCounter(LinkSettingsModel linkSettingsModel, ChangesAvailableForMergingModel changesAvailableForMerging)
+    {
+        var linkTypeCounter = changesAvailableForMerging.LinkTypes.FirstOrDefault(setting => setting.Type == linkSettingsModel.Type && setting.SourceEntityType == linkSettingsModel.SourceEntityType && setting.DestinationEntityType == linkSettingsModel.DestinationEntityType);
+        if (linkTypeCounter != null)
+        {
+            return linkTypeCounter;
+        }
+
+        changesAvailableForMerging.LinkTypes.Add(new LinkTypeChangesModel
+        {
+            Id = linkSettingsModel.Id,
+            Type = linkSettingsModel.Type,
+            SourceEntityType = linkSettingsModel.SourceEntityType,
+            DestinationEntityType = linkSettingsModel.DestinationEntityType,
+            DisplayName = String.IsNullOrWhiteSpace(linkSettingsModel.Name) ? $"{linkSettingsModel.SourceEntityType}To{linkSettingsModel.DestinationEntityType}" : linkSettingsModel.Name
+        });
+
+        return changesAvailableForMerging.LinkTypes.Last();
+    }
+
+    /// <summary>
+    /// Function to get the entity type of an item.
+    /// </summary>
+    /// <param name="itemId">The ID of the item.</param>
+    /// <param name="tablePrefix">The prefix of the table that contains the item.</param>
+    /// <param name="branchConnection">The connection to the branch database.</param>
+    /// <param name="idToEntityTypeMappings">The cache of mapping item IDs to entity types.</param>
+    /// <returns>The entity type of the given ID, if it can be found.</returns>
+    private static async Task<string> GetEntityTypeFromIdAsync(ulong itemId, string tablePrefix, MySqlConnection branchConnection, Dictionary<ulong, string> idToEntityTypeMappings)
+    {
+        if (idToEntityTypeMappings.TryGetValue(itemId, out var entityType))
+        {
+            return entityType;
+        }
+
+        // Get the entity type from [prefix]wiser_item or [prefix]wiser_itemarchive if it doesn't exist in the first one.
+        var getEntityTypeDataTable = new DataTable();
+        await using (var environmentCommand = branchConnection.CreateCommand())
+        {
+            environmentCommand.Parameters.AddWithValue("id", itemId);
+            environmentCommand.CommandText = $"""
+                                              SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}` WHERE id = ?id
+                                              UNION ALL
+                                              SELECT entity_type FROM `{tablePrefix}{WiserTableNames.WiserItem}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
+                                              LIMIT 1
+                                              """;
+            using var environmentAdapter = new MySqlDataAdapter(environmentCommand);
+            environmentAdapter.Fill(getEntityTypeDataTable);
+        }
+
+        entityType = getEntityTypeDataTable.Rows.Count == 0 ? null : getEntityTypeDataTable.Rows[0].Field<string>("entity_type");
+        idToEntityTypeMappings.Add(itemId, entityType);
+        return entityType;
+    }
+
+    /// <summary>
+    /// Get the entity types and table prefixes for both items in a link.
+    /// </summary>
+    /// <param name="sourceId">The ID of the source item.</param>
+    /// <param name="destinationId">The ID of the destination item.</param>
+    /// <param name="linkType">The type number of the link.</param>
+    /// <param name="mySqlConnection">The connection to the branch database.</param>
+    /// <param name="allLinkTypeSettings">The list with settings of all link types.</param>
+    /// <param name="tablePrefixes">The cached list of table prefixes.</param>
+    /// <param name="idToEntityTypeMappings">The cache of mapping item IDs to entity types.</param>
+    /// <returns>Settings and table prefixes for the link type.</returns>
+    private async Task<(LinkSettingsModel LinkSettings, string SourceTablePrefix, string DestinationTablePrefix)?> GetEntityTypesOfLinkAsync(ulong sourceId, ulong destinationId, int linkType, MySqlConnection mySqlConnection, List<LinkSettingsModel> allLinkTypeSettings, Dictionary<string, string> tablePrefixes, Dictionary<ulong, string> idToEntityTypeMappings)
+    {
+        var currentLinkTypeSettings = allLinkTypeSettings.Where(l => l.Type == linkType).ToList();
+
+        // If there are no settings for this link, we assume that the links are from items in the normal wiser_item table and not a table with a prefix.
+        if (currentLinkTypeSettings.Count == 0)
+        {
+            // Check if the source item exists in this table.
+            var sourceEntityType = await GetEntityTypeFromIdAsync(sourceId, "", mySqlConnection, idToEntityTypeMappings);
+
+            // Check if the destination item exists in this table.
+            var destinationEntityType = await GetEntityTypeFromIdAsync(destinationId, "", mySqlConnection, idToEntityTypeMappings);
+
+            return (new LinkSettingsModel {Type = linkType, SourceEntityType = sourceEntityType, DestinationEntityType = destinationEntityType}, "", "");
+        }
+
+        // It's possible that there are multiple link types that use the same number, so we have to check all of them.
+        foreach (var linkTypeSettings in currentLinkTypeSettings)
+        {
+            if (!tablePrefixes.TryGetValue(linkTypeSettings.SourceEntityType, out var sourceTablePrefix))
+            {
+                sourceTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.SourceEntityType);
+                tablePrefixes.Add(linkTypeSettings.SourceEntityType, sourceTablePrefix);
+            }
+
+            if (!tablePrefixes.TryGetValue(linkTypeSettings.DestinationEntityType, out var destinationTablePrefix))
+            {
+                destinationTablePrefix = await wiserItemsService.GetTablePrefixForEntityAsync(linkTypeSettings.DestinationEntityType);
+                tablePrefixes.Add(linkTypeSettings.DestinationEntityType, destinationTablePrefix);
+            }
+
+            // Check if the source item exists in this table.
+            var sourceEntityType = await GetEntityTypeFromIdAsync(sourceId, sourceTablePrefix, mySqlConnection, idToEntityTypeMappings);
+            if (!String.Equals(sourceEntityType, linkTypeSettings.SourceEntityType, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Check if the destination item exists in this table.
+            var destinationEntityType = await GetEntityTypeFromIdAsync(destinationId, destinationTablePrefix, mySqlConnection, idToEntityTypeMappings);
+            if (!String.Equals(destinationEntityType, linkTypeSettings.DestinationEntityType, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // If we reached this point, it means we found the correct link type and entity types.
+            return (linkTypeSettings, sourceTablePrefix, destinationTablePrefix);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Function to get the type number, source item ID and the destination item ID from a link.
+    /// </summary>
+    /// <param name="linkId">The ID of the link.</param>
+    /// <param name="tablePrefix">The prefix for wiser_itemlink tables that is used for this link type.</param>
+    /// <param name="connection">The connection to the branch database.</param>
+    /// <returns>The type number, ID of the source item and ID of the destination item.</returns>
+    private static async Task<(int Type, ulong SourceItemId, ulong DestinationItemId)?> GetDataFromLinkAsync(ulong linkId, string tablePrefix, MySqlConnection connection)
+    {
+        var linkDataTable = new DataTable();
+        await using var linkCommand = connection.CreateCommand();
+        linkCommand.Parameters.AddWithValue("id", linkId);
+        linkCommand.CommandText = $"""
+                                   SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}` WHERE id = ?id
+                                   UNION ALL
+                                   SELECT type, item_id, destination_item_id FROM `{tablePrefix}{WiserTableNames.WiserItemLink}{WiserTableNames.ArchiveSuffix}` WHERE id = ?id
+                                   LIMIT 1
+                                   """;
+        using var linkAdapter = new MySqlDataAdapter(linkCommand);
+        linkAdapter.Fill(linkDataTable);
+
+        if (linkDataTable.Rows.Count == 0)
+        {
+            return null;
+        }
+
+        return (linkDataTable.Rows[0].Field<int>("type"), Convert.ToUInt64(linkDataTable.Rows[0]["item_id"]), Convert.ToUInt64(linkDataTable.Rows[0]["destination_item_id"]));
     }
 
     /// <summary>
@@ -1635,12 +1752,12 @@ public class BranchesService : IBranchesService, IScopedService
     /// <param name="mergeBranchSettings">The settings that say what things to merge.</param>
     private async Task FindConflictsInMainBranchAsync(MySqlConnection mainConnection, MySqlConnection branchConnection, List<MergeConflictModel> conflicts, DateTime lastMergeDate, MergeBranchSettingsModel mergeBranchSettings)
     {
+        var allLinkTypeSettings = await wiserItemsService.GetAllLinkTypeSettingsAsync();
         var moduleNames = new Dictionary<ulong, string>();
         var entityTypes = new Dictionary<ulong, string>();
         var items = new Dictionary<ulong, (string Title, string EntityType, int ModuleId)>();
         var links = new Dictionary<ulong, int>();
         var entityTypeSettings = new Dictionary<string, EntitySettingsModel>();
-        var linkTypeSettings = new Dictionary<int, LinkSettingsModel>();
         var entityProperties = new Dictionary<ulong, string>();
         var queryNames = new Dictionary<ulong, string>();
         var fieldTypes = new Dictionary<ulong, string>();
@@ -1690,30 +1807,12 @@ public class BranchesService : IBranchesService, IScopedService
                 continue;
             }
 
-            // Local function for getting the display name of an object, this uses a dictionary to cache the names in memory.
-            async Task<string> GetDisplayNameAsync(IDictionary<ulong, string> cache, string nameColumn = "name")
-            {
-                if (cache.ContainsKey(conflict!.ObjectId))
-                {
-                    return cache[conflict.ObjectId];
-                }
-
-                await using var branchCommand = branchConnection.CreateCommand();
-                branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
-                branchCommand.CommandText = $"SELECT {nameColumn} FROM {conflict.TableName} WHERE id = ?id";
-                var moduleDataTable = new DataTable();
-                using var adapter = new MySqlDataAdapter(branchCommand);
-                adapter.Fill(moduleDataTable);
-                cache.Add(conflict.ObjectId, moduleDataTable.Rows.Count == 0 ? $"Onbekend, #{conflict.ObjectId}" : moduleDataTable.Rows[0].Field<string>(nameColumn));
-                return cache[conflict.ObjectId];
-            }
-
             switch (action)
             {
                 // Changes to Wiser settings.
                 case "UPDATE_ENTITYPROPERTY":
                 {
-                    if (!entityProperties.ContainsKey(conflict.ObjectId))
+                    if (!entityProperties.TryGetValue(conflict.ObjectId, out var name))
                     {
                         await using var branchCommand = branchConnection.CreateCommand();
                         branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
@@ -1722,38 +1821,39 @@ public class BranchesService : IBranchesService, IScopedService
                         using var adapter = new MySqlDataAdapter(branchCommand);
                         adapter.Fill(entityPropertyDataTable);
 
-                        var name = new StringBuilder($"Onbekend, #{conflict.ObjectId}");
+                        var nameBuilder = new StringBuilder($"Onbekend, #{conflict.ObjectId}");
                         if (entityPropertyDataTable.Rows.Count > 0)
                         {
-                            name = new StringBuilder(entityPropertyDataTable.Rows[0].Field<string>("display_name"));
+                            nameBuilder = new StringBuilder(entityPropertyDataTable.Rows[0].Field<string>("display_name"));
                             var languageCode = entityPropertyDataTable.Rows[0].Field<string>("language_code");
                             if (!String.IsNullOrWhiteSpace(languageCode))
                             {
-                                name.Append($" ({languageCode})");
+                                nameBuilder.Append($" ({languageCode})");
                             }
 
-                            name.Append($" van {entityPropertyDataTable.Rows[0].Field<string>("entity_name")}");
+                            nameBuilder.Append($" van {entityPropertyDataTable.Rows[0].Field<string>("entity_name")}");
                         }
 
-                        entityProperties.Add(conflict.ObjectId, name.ToString());
+                        name = nameBuilder.ToString();
+                        entityProperties.Add(conflict.ObjectId, name);
                     }
 
-                    conflict.Title = entityProperties[conflict.ObjectId];
+                    conflict.Title = name;
                     break;
                 }
                 case "UPDATE_MODULE":
                 {
-                    conflict.Title = await GetDisplayNameAsync(moduleNames);
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, moduleNames);
                     break;
                 }
                 case "UPDATE_QUERY":
                 {
-                    conflict.Title = await GetDisplayNameAsync(queryNames, "description");
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, queryNames, "description");
                     break;
                 }
                 case "UPDATE_ENTITY":
                 {
-                    if (!entityTypes.ContainsKey(conflict.ObjectId))
+                    if (!entityTypes.TryGetValue(conflict.ObjectId, out var name))
                     {
                         await using var branchCommand = branchConnection.CreateCommand();
                         branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
@@ -1762,7 +1862,7 @@ public class BranchesService : IBranchesService, IScopedService
                         using var adapter = new MySqlDataAdapter(branchCommand);
                         adapter.Fill(entityDataTable);
 
-                        var name = $"Onbekend, #{conflict.ObjectId}";
+                        name = $"Onbekend, #{conflict.ObjectId}";
                         if (entityDataTable.Rows.Count > 0)
                         {
                             name = entityDataTable.Rows[0].Field<string>("friendly_name");
@@ -1775,17 +1875,17 @@ public class BranchesService : IBranchesService, IScopedService
                         entityTypes.Add(conflict.ObjectId, name);
                     }
 
-                    conflict.Title = entityTypes[conflict.ObjectId];
+                    conflict.Title = value;
                     break;
                 }
                 case "UPDATE_FIELD_TEMPLATE":
                 {
-                    conflict.Title = await GetDisplayNameAsync(fieldTypes, "field_type");
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, fieldTypes, "field_type");
                     break;
                 }
                 case "UPDATE_LINK_SETTING":
                 {
-                    conflict.Title = await GetDisplayNameAsync(linkSettings);
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, linkSettings);
                     break;
                 }
                 case "UPDATE_PERMISSION":
@@ -1798,12 +1898,12 @@ public class BranchesService : IBranchesService, IScopedService
                 }
                 case "UPDATE_API_CONNECTION":
                 {
-                    conflict.Title = await GetDisplayNameAsync(apiConnections);
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, apiConnections);
                     break;
                 }
                 case "UPDATE_DATA_SELECTOR":
                 {
-                    conflict.Title = await GetDisplayNameAsync(dataSelectors);
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, dataSelectors);
                     break;
                 }
 
@@ -1811,7 +1911,7 @@ public class BranchesService : IBranchesService, IScopedService
                 case "UPDATE_ITEM":
                 {
                     // Get the title and entity type of the item.
-                    if (!items.ContainsKey(conflict.ObjectId))
+                    if (!items.TryGetValue(conflict.ObjectId, out var itemInformation))
                     {
                         await using var branchCommand = branchConnection.CreateCommand();
                         branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
@@ -1820,21 +1920,19 @@ public class BranchesService : IBranchesService, IScopedService
                         using var adapter = new MySqlDataAdapter(branchCommand);
                         adapter.Fill(entityDataTable);
 
-                        var entityType = "unknown";
-                        var title = $"Onbekend, #{conflict.ObjectId}";
-                        var moduleId = 0;
+                        itemInformation = ("unknown", $"Onbekend, #{conflict.ObjectId}", 0);
                         if (entityDataTable.Rows.Count > 0)
                         {
-                            title = entityDataTable.Rows[0].Field<string>("title");
-                            entityType = entityDataTable.Rows[0].Field<string>("entity_type");
-                            moduleId = entityDataTable.Rows[0].Field<int>("moduleid");
+                            itemInformation.Title = entityDataTable.Rows[0].Field<string>("title");
+                            itemInformation.EntityType = entityDataTable.Rows[0].Field<string>("entity_type");
+                            itemInformation.ModuleId = entityDataTable.Rows[0].Field<int>("moduleid");
                         }
 
-                        items.Add(conflict.ObjectId, (title, entityType, moduleId));
+                        items.Add(conflict.ObjectId, itemInformation);
                     }
 
-                    conflict.Title = items[conflict.ObjectId].Title;
-                    conflict.Type = items[conflict.ObjectId].EntityType;
+                    conflict.Title = itemInformation.Title;
+                    conflict.Type = itemInformation.EntityType;
 
                     // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
                     if (!mergeBranchSettings.Entities.Any(x => String.Equals(x.Type, conflict.Type, StringComparison.OrdinalIgnoreCase) && x.Update))
@@ -1843,18 +1941,19 @@ public class BranchesService : IBranchesService, IScopedService
                     }
 
                     // Get the display name for the entity type.
-                    if (!entityTypeSettings.ContainsKey(items[conflict.ObjectId].EntityType))
+                    if (!entityTypeSettings.TryGetValue(itemInformation.EntityType, out var entityTypeSetting))
                     {
-                        entityTypeSettings.Add(items[conflict.ObjectId].EntityType, await wiserItemsService.GetEntityTypeSettingsAsync(items[conflict.ObjectId].EntityType));
+                        entityTypeSetting = await wiserItemsService.GetEntityTypeSettingsAsync(itemInformation.EntityType);
+                        entityTypeSettings.Add(itemInformation.EntityType, entityTypeSetting);
                     }
 
-                    conflict.TypeDisplayName = entityTypeSettings[items[conflict.ObjectId].EntityType].DisplayName;
+                    conflict.TypeDisplayName = entityTypeSetting.DisplayName;
 
                     // Get the display name for the field.
                     var languageCode = dataRow.Field<string>("language_code");
                     var fieldName = dataRow.Field<string>("field");
                     var fieldKey = $"{conflict.Type}_{fieldName}_{languageCode}";
-                    if (!fieldDisplayNames.ContainsKey(fieldKey))
+                    if (!fieldDisplayNames.TryGetValue(fieldKey, out var displayName))
                     {
                         await using var branchCommand = branchConnection.CreateCommand();
                         branchCommand.Parameters.AddWithValue("fieldName", fieldName);
@@ -1865,7 +1964,7 @@ public class BranchesService : IBranchesService, IScopedService
                         using var adapter = new MySqlDataAdapter(branchCommand);
                         adapter.Fill(entityDataTable);
 
-                        var displayName = "";
+                        displayName = "";
                         if (entityDataTable.Rows.Count > 0)
                         {
                             displayName = entityDataTable.Rows[0].Field<string>("display_name");
@@ -1887,7 +1986,7 @@ public class BranchesService : IBranchesService, IScopedService
                 case "CHANGE_LINK":
                 {
                     // Get the type number and name of the link.
-                    if (!links.ContainsKey(conflict.ObjectId))
+                    if (!links.TryGetValue(conflict.ObjectId, out var linkType))
                     {
                         await using var branchCommand = branchConnection.CreateCommand();
                         branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
@@ -1896,41 +1995,31 @@ public class BranchesService : IBranchesService, IScopedService
                         using var adapter = new MySqlDataAdapter(branchCommand);
                         adapter.Fill(entityDataTable);
 
-                        var type = 0;
-                        if (entityDataTable.Rows.Count > 0)
+                        if (entityDataTable.Rows.Count == 0)
                         {
-                            type = entityDataTable.Rows[0].Field<int>("type");
+                            // No link found, skip this conflict.
+                            continue;
                         }
 
-                        links.Add(conflict.ObjectId, type);
+                        links.Add(conflict.ObjectId, linkType);
                     }
 
-                    // Get the display name for the link type.
-                    if (!linkTypeSettings.ContainsKey(links[conflict.ObjectId]))
-                    {
-                        var settings = await wiserItemsService.GetLinkTypeSettingsAsync(links[conflict.ObjectId]);
-                        if (String.IsNullOrWhiteSpace(settings.Name))
-                        {
-                            settings.Name = links[conflict.ObjectId].ToString();
-                        }
-
-                        linkTypeSettings.Add(links[conflict.ObjectId], settings);
-                    }
+                    var settingsOfLinkType = allLinkTypeSettings.Where(x => x.Type == linkType).ToList();
 
                     // No need to check for conflicts if the user doesn't want to synchronise changes of this type.
-                    if (!mergeBranchSettings.Entities.Any(x => (String.Equals(x.Type, linkTypeSettings[links[conflict.ObjectId]].SourceEntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(x.Type, linkTypeSettings[links[conflict.ObjectId]].DestinationEntityType, StringComparison.OrdinalIgnoreCase)) && x.Update))
+                    if (!settingsOfLinkType.Any(settings => mergeBranchSettings.Entities.Any(x => (String.Equals(x.Type, settings.SourceEntityType, StringComparison.OrdinalIgnoreCase) || String.Equals(x.Type, settings.DestinationEntityType, StringComparison.OrdinalIgnoreCase)) && x.Update)))
                     {
                         continue;
                     }
 
-                    conflict.Type = links[conflict.ObjectId].ToString();
-                    conflict.TypeDisplayName = linkTypeSettings[links[conflict.ObjectId]].Name;
+                    conflict.Type = linkType.ToString();
+                    conflict.TypeDisplayName = String.Join(" / ", settingsOfLinkType.Select(x => x.Name));
 
                     // Get the display name for the field.
                     var languageCode = dataRow.Field<string>("language_code");
                     var fieldName = dataRow.Field<string>("field");
                     var fieldKey = $"{conflict.Type}_{fieldName}_{languageCode}";
-                    if (!fieldDisplayNames.ContainsKey(fieldKey))
+                    if (!fieldDisplayNames.TryGetValue(fieldKey, out var displayName))
                     {
                         await using var branchCommand = branchConnection.CreateCommand();
                         branchCommand.Parameters.AddWithValue("fieldName", fieldName);
@@ -1941,7 +2030,6 @@ public class BranchesService : IBranchesService, IScopedService
                         using var adapter = new MySqlDataAdapter(branchCommand);
                         adapter.Fill(entityDataTable);
 
-                        var displayName = "";
                         if (entityDataTable.Rows.Count > 0)
                         {
                             displayName = entityDataTable.Rows[0].Field<string>("display_name");
@@ -1955,12 +2043,12 @@ public class BranchesService : IBranchesService, IScopedService
                         fieldDisplayNames.Add(fieldKey, displayName);
                     }
 
-                    conflict.FieldDisplayName = fieldDisplayNames[fieldKey];
+                    conflict.FieldDisplayName = displayName;
                     break;
                 }
                 case "UPDATE_FILE":
                 {
-                    conflict.Title = await GetDisplayNameAsync(linkSettings, "file_name");
+                    conflict.Title = await GetDisplayNameAsync(conflict, branchConnection, linkSettings, "file_name");
                     break;
                 }
                 default:
@@ -1975,62 +2063,30 @@ public class BranchesService : IBranchesService, IScopedService
         }
     }
 
-    /// <inheritdoc />
-    public async Task<ulong?> GetMappedIdAsync(ulong id, bool idIsFromBranch = true)
+    /// <summary>
+    /// Function for getting the display name of an object, this uses a dictionary to cache the names in memory.
+    /// </summary>
+    /// <param name="conflict">The <see cref="MergeConflictModel"/> of the current conflict.</param>
+    /// <param name="branchConnection">The connection to the branch database.</param>
+    /// <param name="cache">The cache of display names.</param>
+    /// <param name="nameColumn">The column in the database table that contains the display name.</param>
+    /// <returns>The display name of the object.</returns>
+    private static async Task<string> GetDisplayNameAsync(MergeConflictModel conflict, MySqlConnection branchConnection, Dictionary<ulong, string> cache, string nameColumn = "name")
     {
-        await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserIdMappings]);
-
-        clientDatabaseConnection.AddParameter("id", id);
-        var dataTable = await clientDatabaseConnection.GetAsync($"""
-                                                                                 SELECT {(idIsFromBranch ? "production_id" : "our_id")} AS mappedId
-                                                                                 FROM {WiserTableNames.WiserIdMappings}
-                                                                                 WHERE {(idIsFromBranch ? "our_id" : "production_id")} = ?id
-                                                                 """);
-
-        return dataTable.Rows.Count > 0 ? dataTable.Rows[0].Field<ulong>("mappedId") : null;
-    }
-
-    /// <inheritdoc />
-    public async Task<ulong> GenerateNewIdAsync(string tableName, IDatabaseConnection mainDatabaseConnection, IDatabaseConnection branchDatabase)
-    {
-        var query = $"SELECT MAX(id) AS id FROM {tableName}";
-
-        var dataTable = await mainDatabaseConnection.GetAsync(query);
-        var maxMainId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
-
-        if (branchDatabase != null)
+        if (cache.TryGetValue(conflict!.ObjectId, out var entityTypeName))
         {
-            dataTable = await branchDatabase.GetAsync(query);
-            var maxBranchId = dataTable.Rows.Count > 0 ? Convert.ToUInt64(dataTable.Rows[0]["id"]) : 0UL;
-            return Math.Max(maxMainId, maxBranchId) + 1;
+            return entityTypeName;
         }
 
-        return maxMainId + 1;
-    }
+        await using var branchCommand = branchConnection.CreateCommand();
+        branchCommand.Parameters.AddWithValue("id", conflict.ObjectId);
+        branchCommand.CommandText = $"SELECT {nameColumn} FROM {conflict.TableName} WHERE id = ?id";
+        var moduleDataTable = new DataTable();
+        using var adapter = new MySqlDataAdapter(branchCommand);
+        adapter.Fill(moduleDataTable);
 
-    /// <inheritdoc />
-    public async Task<ServiceResult<IDatabaseConnection>> GetBranchDatabaseConnectionAsync(IServiceScope scope, ClaimsIdentity identity, int branchId)
-    {
-        if (branchId <= 0)
-        {
-            return new ServiceResult<IDatabaseConnection>(clientDatabaseConnection);
-        }
-
-        var currentTenant = (await wiserTenantsService.GetSingleAsync(identity, true)).ModelObject;
-        var selectedEnvironmentTenant = (await wiserTenantsService.GetSingleAsync(branchId, true)).ModelObject;
-
-        // Only allow users to get the entities of their own branches.
-        if (currentTenant.TenantId != selectedEnvironmentTenant.TenantId)
-        {
-            return new ServiceResult<IDatabaseConnection>
-            {
-                StatusCode = HttpStatusCode.Forbidden
-            };
-        }
-
-        var connectionString = wiserTenantsService.GenerateConnectionStringFromTenant(selectedEnvironmentTenant);
-        var branchDatabaseConnection = scope.ServiceProvider.GetService<IDatabaseConnection>();
-        await branchDatabaseConnection.ChangeConnectionStringsAsync(connectionString);
-        return new ServiceResult<IDatabaseConnection>(branchDatabaseConnection);
+        entityTypeName = moduleDataTable.Rows.Count == 0 ? $"Onbekend, #{conflict.ObjectId}" : moduleDataTable.Rows[0].Field<string>(nameColumn);
+        cache.Add(conflict.ObjectId, entityTypeName);
+        return entityTypeName;
     }
 }

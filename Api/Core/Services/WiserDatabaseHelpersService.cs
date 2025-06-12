@@ -110,7 +110,7 @@ public class WiserDatabaseHelpersService(
     /// </summary>
     private static readonly List<WiserTableDefinitionModel> CustomMigrationDefinitions =
     [
-        new() {Name = TriggersName, LastUpdate = new DateTime(2025, 5, 14)},
+        new() {Name = TriggersName, LastUpdate = new DateTime(2025, 6, 4)},
         new() {Name = RemoveVirtualColumnsName, LastUpdate = new DateTime(2024, 9, 12)},
         new() {Name = AddBranchSettingsModuleName, LastUpdate = new DateTime(2024, 11, 18)},
         new() {Name = UpdateFileSecuritySettingsName, LastUpdate = new DateTime(2025, 1, 12)},
