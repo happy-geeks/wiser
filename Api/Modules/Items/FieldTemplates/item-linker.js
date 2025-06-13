@@ -188,7 +188,7 @@ Wiser.api({
                     name: "openDetailsInNewTab",
                     iconClass: "k-icon k-i-window",
                     text: "",
-                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, kendoComponent, options, true); }
+                    click: (event) => { window.dynamicItems.grids.onShowDetailsClick(event, grid, options, true); }
                 });
             }
         }
@@ -200,7 +200,7 @@ Wiser.api({
                 name: "remove",
                 text: "",
                 iconClass: "k-icon k-i-delete",
-                click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options, false); }
+                click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, grid, options.deletionOfItems, options, false); }
             });
         }
 

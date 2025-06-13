@@ -81,7 +81,7 @@
                     name: "remove",
                     text: "",
                     iconClass: "k-icon k-i-delete",
-                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, kendoComponent, options.deletionOfItems, options); }
                 });
             } else if (!readonly && customQueryGrid && options.hasCustomDeleteQuery) {
                 commandColumnWidth += 120;
@@ -213,7 +213,7 @@
                     name: "remove",
                     text: "",
                     iconClass: "k-icon k-i-delete",
-                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, this, options.deletionOfItems, options); }
+                    click: (event) => { window.dynamicItems.grids.onDeleteItemClick(event, kendoComponent, options.deletionOfItems, options); }
                 });
             }
 
@@ -808,9 +808,9 @@
                 }
 
                 // Setup any progress bars.
-                event.sender.tbody.find(".progress").each((e) => {
-                    const row = $(this).closest("tr");
-                    const columnIndex = $(this).closest("td").index();
+                event.sender.tbody.find(".progress").each(e => {
+                    const row = $(e).closest("tr");
+                    const columnIndex = $(e).closest("td").index();
                     if (columnIndex < 0 || columnIndex >= columns.length) {
                         console.warn(`Found progress bar in column ${columnIndex.toString()} but couldn't find the corresponding column in grid.options.columns.`);
                         return;
@@ -821,7 +821,7 @@
                     const value = parseInt(model[column.field]) || 0;
                     column.progressBarSettings = column.progressBarSettings || {};
 
-                    const progressBar = $(this).kendoProgressBar({
+                    const progressBar = $(e).kendoProgressBar({
                         max: column.progressBarSettings.maxProgress || 100,
                         value: value
                     }).data("kendoProgressBar");

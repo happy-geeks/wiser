@@ -1743,9 +1743,7 @@ const moduleSettings = {
             const subPropertySelectWidget = subPropertySelect.getKendoMultiSelect();
 
             subEntitySelectWidget.setDataSource({
-                data: this.allEntityTypes.map((entityType) => {
-                    return { text: entityType, value: entityType };
-                })
+                data: this.allEntityTypes
             });
             subEntitySelectWidget.bind("cascade", async (e) => {
                 const response = await Wiser.api({
