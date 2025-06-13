@@ -10,7 +10,7 @@ public class ItemHtmlAndScriptModel
     /// <summary>
     /// Gets or sets the list of tabs for this item.
     /// </summary>
-    public List<ItemTabOrGroupModel> Tabs { get; set; } = [];
+    public List<ItemTabModel> Tabs { get; set; } = [];
 
     /// <summary>
     /// Gets or sets whether the user is allowed to read this item.

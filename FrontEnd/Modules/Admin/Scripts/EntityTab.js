@@ -9,7 +9,7 @@ export class EntityTab {
         this.selectedEntityProperty = null;
         this.fieldOptions = {};
         this.selectedTabOrProperty = null;
-
+        this.entityStructure = null;
         this.initialize();
     }
 
@@ -69,7 +69,7 @@ export class EntityTab {
 
                 if (addType === "entityProperty") {
                     const dataItem = this.selectedTabOrProperty;
-                    if (!dataItem || dataItem.isTab) {
+                    if (!dataItem || dataItem.Type === "Tab" || dataItem.Type === "Group") {
                         this.base.showNotification("notification", "Kies a.u.b. eerst een veld om te verwijderen", "error");
                         return;
                     }
@@ -104,7 +104,7 @@ export class EntityTab {
                     title: "Kopieren naar andere talen",
                     closable: true,
                     modal: true,
-                    content: `<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?</p> 
+                    content: `<p>Wilt u de nieuwe velden toevoegen aan de 'Gegevens' tab, of een tab per taal maken?</p>
 <div class="form-hint">
     <p>Gegevens tab: de velden voor de verschillende talen komen onder elkaar te staan in de tab 'gegevens</p>
     <p>Tab per taalcode: er komt een tab per taalcode, bijvoorbeeld 'NL, EN, etc.'</p>
@@ -123,7 +123,7 @@ export class EntityTab {
         $(".duplicateEntityPropertyButton").kendoButton({
             click: () => {
                 const dataItem = this.selectedTabOrProperty;
-                if (!dataItem || dataItem.isTab) {
+                if (!dataItem || dataItem.Type === "Tab" || dataItem.Type === "Group") {
                     return;
                 }
 
@@ -303,7 +303,7 @@ export class EntityTab {
 
             let tabName = "";
             if (this.selectedTabOrProperty) {
-                tabName = this.selectedTabOrProperty.isTab ? this.selectedTabOrProperty.name : this.selectedTabOrProperty.tabName;
+                tabName = this.selectedTabOrProperty.Type === "Tab" ? this.selectedTabOrProperty.name : this.selectedTabOrProperty.tabName;
             }
 
             const promises = [];
@@ -541,7 +541,8 @@ export class EntityTab {
 
         // Hide the tabstrip initially, show it when the user selects an entity.
         this.entityTabStrip.wrapper.hide();
-        $("#EntityTabStrip-2 .right-pane").hide();
+        $("#EntityTabStrip-2 .property-pane").hide();
+        $("#EntityTabStrip-2 .group-pane").hide();
 
         //NUBERIC FIELDS
         this.widthInTable = $("#widthIfVisible").kendoNumericTextBox({
@@ -599,6 +600,16 @@ export class EntityTab {
         }).data("kendoNumericTextBox");
 
         this.multiSelectMainImageId = $("#multiSelectMainImageId").kendoNumericTextBox({
+            decimals: 0,
+            format: "#"
+        }).data("kendoNumericTextBox");
+
+        this.groupWidth = $("#groupWidth").kendoNumericTextBox({
+            decimals: 0,
+            format: "# \\%"
+        }).data("kendoNumericTextBox");
+
+        this.minWidth = $("#minWidth").kendoNumericTextBox({
             decimals: 0,
             format: "#"
         }).data("kendoNumericTextBox");
@@ -1294,7 +1305,7 @@ export class EntityTab {
         }).data("kendoComboBox");
 
         //Combobox for the "Groep" combobox
-        this.groupNameComboBox = $("#groupName").kendoComboBox({
+        this.groupNameComboBox = $("#parentGroup").kendoComboBox({
             clearButton: false,
             dataTextField: "groupName",
             dataValueField: "groupName"
@@ -1689,6 +1700,15 @@ export class EntityTab {
                 { text: "30%", value: 30 },
                 { text: "40%", value: 40 },
                 { text: "50%", value: 50 }
+            ]
+        }).data("kendoDropDownList");
+
+        this.orientation = $("#orientation").kendoDropDownList({
+            dataTextField: "text",
+            dataValueField: "value",
+            dataSource: [
+                { text: "Horizontaal", value: "Horizontal" },
+                { text: "Verticaal", value: "Vertical" }
             ]
         }).data("kendoDropDownList");
 
@@ -2187,6 +2207,7 @@ export class EntityTab {
                     } else if (gridDataItem.type === actionTypes.APICALL.id) {
                         const actionButtonApiCallShowResponse = popUpHtml.find("#actionButtonApiCallShowResponse");
                         document.getElementById("actionButtonApiCallIterative").checked = gridDataItem.action.iterative;
+
                         actionButtonApiCallShowResponse[0].checked = gridDataItem.action.showResponse;
                         actionButtonApiCallShowResponse[0].dispatchEvent(new Event("change"));
                         document.getElementById("actionButtonApiCallShowResponseTitle").value = gridDataItem.action.showResponseTitle ?? "";
@@ -2350,19 +2371,27 @@ export class EntityTab {
 
         $("#entityView .delBtn").toggleClass("hidden", !selectedItem.id);
 
-        const tabsAndFields = await Wiser.api({
+        this.entityStructure = await Wiser.api({
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(selectedItem.name)}/grouped-by-tab`,
             method: "GET"
         });
+
         this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
-            data: tabsAndFields,
+            data: this.entityStructure,
             schema: {
                 model: {
-                    children: "properties"
+                    children: {
+                        schema: {
+                            data: "properties",
+                            model: {
+                                children: "properties"
+                            }
+                        }
+                    }
                 }
             }
         }));
-        this.tabNameProperty.setDataSource(tabsAndFields.filter((value) => value.isTab === true));
+        this.tabNameProperty.setDataSource(this.entityStructure.filter((value) => value.type === "Tab"));
 
         // Refresh code mirrors, otherwise they won't work properly because they were invisible when they were initialized.
         this.queryAfterInsert.refresh();
@@ -2381,27 +2410,31 @@ export class EntityTab {
         const index = selectedElement.index();
         const dataItem = event.sender.dataItem(selectedElement);
         this.selectedTabOrProperty = dataItem;
-        if (dataItem.isTab) {
-            $("#EntityTabStrip-2 .right-pane").hide();
-            return;
+
+        if (dataItem.type === "Group") {
+            $("#EntityTabStrip-2 .property-pane").hide();
+            $("#EntityTabStrip-2 .group-pane").show();
+        }
+        else if (dataItem.type === "Property") {
+            $("#EntityTabStrip-2 .group-pane").hide();
+            $("#EntityTabStrip-2 .property-pane").show();
         }
 
-        $("#EntityTabStrip-2 .right-pane").show();
         const selectedEntityName = dataItem.entityType;
-        const selectedTabName = dataItem.tabName;
-        if (this.lastSelectedProperty === index && this.lastSelectedTabname === selectedTabName && !this.isSaveSelect) {
+        const selectedEntityId = dataItem.id === 0 ? `${dataItem.tabName}-${dataItem.name}` : dataItem.id;
+        const selectedTabName = dataItem.tabName === "Gegevens" ? "" : dataItem.tabName;
+        if (this.lastSelectedProperty === selectedEntityId && !this.isSaveSelect) {
             this.base.openDialog("Item opnieuw openen", "Wilt u dit item opnieuw openen? (u raakt gewijzigde gegevens kwijt)", this.base.kendoPromptType.CONFIRM).then(() => {
                 // get properties if user accepts to overwrite possible changes made to the same item
                 this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabName);
             });
         } else {
             this.isSaveSelect = false;
-            this.lastSelectedProperty = index;
-            this.lastSelectedTabname = selectedTabName;
+            this.lastSelectedProperty = selectedEntityId;
             await this.getEntityFieldPropertiesOfSelected(dataItem.id, selectedEntityName, selectedTabName);
         }
 
-        // Refresh code mirror isntances, otherwise they won't work properly because they were initialized while they were invisible.
+        // Refresh code mirror instances, otherwise they won't work properly because they were initialized while they were invisible.
         this.scriptField.refresh();
         this.optionsJsonField.refresh();
         this.queryField.refresh();
@@ -2427,35 +2460,41 @@ export class EntityTab {
 
         const dropTarget = $(event.dropTarget);
         let destinationNode = dropTarget.closest("li.k-item");
-        if (dropTarget.hasClass("k-mid")) {
-            // If the dropTarget is an element with class k-mid we need to go higher, because those elements are located inside an li.k-item instead of after/before them.
-            destinationNode = destinationNode.parentsUntil("li.k-item");
-        }
-        if (event.statusClass === "i-insert-down" || (event.statusClass === "i-insert-middle" && (dropTarget.hasClass("k-bot") || dropTarget.hasClass("k-in")))) {
-            // If the statusClass is i-insert-down, it means we are adding the item below the destination, so we need to check it's parent.
-            destinationNode = destinationNode.parentsUntil("li.k-item");
-        }
 
         const sourceDataItem = event.sender.dataItem(event.sourceNode);
-        const destinationDataItem = event.sender.dataItem(destinationNode) || { isRoot: true, isTab: false };
-
-        sourceDataItem.isRoot = false;
-        sourceDataItem.isTab = sourceDataItem.isTab || false;
-        destinationDataItem.isRoot = destinationDataItem.isRoot || false;
-        destinationDataItem.isTab = destinationDataItem.isTab || false;
+        const destinationDataItem = event.sender.dataItem(destinationNode) || { type: "Root" };
 
         if (!sourceDataItem) {
             console.warn("Source data item not found.");
             event.setStatusClass("k-i-cancel");
             return;
         }
-
-        if ((!sourceDataItem.isTab && destinationDataItem.isTab) || (sourceDataItem.isTab && destinationDataItem.isRoot) || (!sourceDataItem.isTab && destinationDataItem.isRoot)) {
+        // we don't allow drag & dropping to change item parents, only reorder amongst siblings
+        if (event.statusClass === "i-plus") {
+            event.setStatusClass("k-i-cancel");
             return;
         }
 
-        // Tell the kendo tree view to deny the drag to this item, if the current item is another field.
-        // Fields can only be dragged to tabs and tabs can only be dragged into the root.
+        // properties can be only be reordered within the same group and tab, so before or after another property
+        if (sourceDataItem.type === "Property") {
+            if (destinationDataItem.type === "Property" && sourceDataItem.tabName === destinationDataItem.tabName && sourceDataItem.groupName === destinationDataItem.groupName) {
+                return;
+            }
+        }
+        // groups can be only be reordered within the same tab
+        else if (sourceDataItem.type === "Group") {
+            if (destinationDataItem.type === "Group" && sourceDataItem.tabName === destinationDataItem.tabName) {
+                return;
+            }
+        }
+        // tabs can be only be reordered amongst other tabs
+        else if (sourceDataItem.type === "Tab") {
+            if (destinationDataItem.type === "Tab") {
+                return;
+            }
+        }
+
+        // Tell the kendo tree view to deny the drag in any other case
         event.setStatusClass("k-i-cancel");
     }
 
@@ -2472,53 +2511,85 @@ export class EntityTab {
             const sourceDataItem = event.sender.dataItem(event.sourceNode);
             const destinationDataItem = event.sender.dataItem(event.destinationNode);
 
-            let sourceTabName = sourceDataItem.isTab ? sourceDataItem.name : sourceDataItem.tabName;
-            sourceTabName = sourceTabName === "Gegevens" ? "" : sourceTabName;
-            let destinationTabName = destinationDataItem.isTab ? destinationDataItem.name : destinationDataItem.tabName;
-            destinationTabName = destinationTabName === "Gegevens" ? "" : destinationTabName;
-
-            if (sourceDataItem.isTab) {
-                return Wiser.api({
-                    url: `${this.base.settings.wiserApiRoot}entity-properties/move-tab`,
-                    method: "PUT",
-                    contentType: "application/json",
-                    data: JSON.stringify({
-                        currentTabName: sourceTabName,
-                        destinationTabName: destinationTabName,
-                        entityType: this.entitiesCombobox.dataItem().name,
-                        dropPosition: event.dropPosition
-                    })
-                });
-            }
-
             const oldIndex = sourceDataItem.ordering;
-            let newIndex = destinationDataItem.ordering;
+            // we use the new entity structure data to redraw the tree, so stop the tree from moving stuff around by itself
+            event.preventDefault();
 
-            switch (event.dropPosition) {
-                case "over":
-                    if (destinationDataItem) {
-                        destinationDataItem.set("expanded", true);
-                        newIndex = event.sender.dataItem(event.destinationNode.querySelector("ul li:last-child")).ordering;
-                    }
+            switch (sourceDataItem.type) {
+                case "Property":
+                    let newItemIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : 0) + (oldIndex > destinationDataItem.ordering ? 0 : -1);
+                    await Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
+                        method: "PUT",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            currentIndex: oldIndex,
+                            newIndex: newItemIndex,
+                            id: sourceDataItem.id,
+                            entityType: this.entitiesCombobox.dataItem().name
+                        })
+                    });
                     break;
-                case "after":
-                    newIndex++;
+                case "Group":
+                    let newGroupIndex = destinationDataItem.ordering + (event.dropPosition === "after" ? 1 : -1);
+                    await Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move-group`,
+                        method: "PUT",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            currentIndex: oldIndex,
+                            newIndex: newGroupIndex,
+                            id: sourceDataItem.id,
+                            entityType: this.entitiesCombobox.dataItem().name
+                        })
+                    });
+                    break;
+                case "Tab":
+                    await Wiser.api({
+                        url: `${this.base.settings.wiserApiRoot}entity-properties/move-tab`,
+                        method: "PUT",
+                        contentType: "application/json",
+                        data: JSON.stringify({
+                            currentTabName: sourceDataItem.name === "Gegevens" ? "" : sourceDataItem.name,
+                            destinationTabName: destinationDataItem.name === "Gegevens" ? "" : destinationDataItem.name,
+                            entityType: this.entitiesCombobox.dataItem().name,
+                            dropPosition: event.dropPosition
+                        })
+                    });
                     break;
             }
 
-            return Wiser.api({
-                url: `${this.base.settings.wiserApiRoot}entity-properties/${sourceDataItem.id}/move`,
-                method: "PUT",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    currentIndex: oldIndex,
-                    newIndex: newIndex,
-                    id: sourceDataItem.id,
-                    currentTabName: sourceTabName,
-                    newTabName: destinationTabName,
-                    entityType: this.entitiesCombobox.dataItem().name
-                })
+            // update the entity structure
+            this.entityStructure = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/grouped-by-tab`,
+                method: "GET"
             });
+
+            // refresh treeview
+            this.propertiesTreeView.setDataSource(new kendo.data.HierarchicalDataSource({
+                data: this.entityStructure,
+                schema: {
+                    model: {
+                        children: {
+                            schema: {
+                                data: "properties",
+                                model: {
+                                    children: "properties"
+                                }
+                            }
+                        }
+                    }
+                }
+            }));
+
+            // refreshing the treeview data collapsed everything, expand the relevant tab/group again
+            if (sourceDataItem.type !== "Tab") {
+                this.propertiesTreeView.expand(this.propertiesTreeView.findByText(sourceDataItem.tabName));
+            }
+            if (sourceDataItem.type === "Property") {
+                this.propertiesTreeView.expand(this.propertiesTreeView.findByText(sourceDataItem.groupName));
+            }
+
         } catch (exception) {
             console.error(exception);
             kendo.alert(`Er is iets fout gegaan met het verplaatsen van dit veld. De fout was:<br>${exception.responseText || exception.statusText}`);
@@ -2538,7 +2609,14 @@ export class EntityTab {
         this.setEntityPropertiesToDefault();
         this.setEntityProperties(resultSet);
 
-        // Make sure all fields have proper ascending ordering numbers, otherwise dragging & dropping to change the order of fields won't work properly.
+        // Make sure all property groups exist in the database for this entity, since they were added later
+        await Wiser.api({
+            type: "PUT",
+            url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/create-property-groups`,
+            contentType: "application/json"
+        });
+
+        // Make sure all groups and fields have proper ascending ordering numbers, otherwise dragging & dropping to change the order of fields won't work properly.
         await Wiser.api({
             type: "PUT",
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/fix-ordering`,
@@ -2547,33 +2625,50 @@ export class EntityTab {
     }
 
     async getEntityFieldPropertiesOfSelected(id, selectedEntityName, selectedTabName) {
-        this.selectedEntityProperty = await Wiser.api({
-            url: `${this.base.settings.wiserApiRoot}entity-properties/${id}`,
-            method: "GET",
-            contentType: 'application/json'
-        });
-
-        this.groupNameComboBox.setDataSource(new kendo.data.DataSource({
-            transport: {
-                read: {
-                    url: `${this.base.settings.serviceRoot}/GET_GROUPNAME_FOR_SELECTION?selectedEntityName=${encodeURIComponent(selectedEntityName)}&selectedTabName=${encodeURIComponent(selectedTabName)}`
-                }
+        if (id === 0 && this.selectedTabOrProperty.type === "Group") {
+            this.selectedEntityProperty = {
+                type: "Group",
+                displayName: this.selectedTabOrProperty.name,
+                ordering: this.selectedTabOrProperty.ordering,
+                width: 100,
+                options: "{ \"minWidth\": 0, \"orientation\": \"horizontal\", \"showName\": true }"
             }
-        }));
+        }
+        else {
+            this.selectedEntityProperty = await Wiser.api({
+                url: `${this.base.settings.wiserApiRoot}entity-properties/${id}`,
+                method: "GET",
+                contentType: 'application/json'
+            });
+        }
 
-        this.dependencyFields.setDataSource(new kendo.data.DataSource({
-            transport: {
-                read: {
-                    url: `${this.base.settings.serviceRoot}/GET_OPTIONS_FOR_DEPENDENCY?entityName=${encodeURIComponent(selectedEntityName)}`
+        if (this.selectedEntityProperty.type === "Property") {
+            this.groupNameComboBox.setDataSource(new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: `${this.base.settings.serviceRoot}/GET_GROUPNAME_FOR_SELECTION?selectedEntityName=${encodeURIComponent(selectedEntityName)}&selectedTabName=${encodeURIComponent(selectedTabName)}`
+                    }
                 }
-            }
-        }));
+            }));
+
+            this.dependencyFields.setDataSource(new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: `${this.base.settings.serviceRoot}/GET_OPTIONS_FOR_DEPENDENCY?entityName=${encodeURIComponent(selectedEntityName)}`
+                    }
+                }
+            }));
+        }
 
         // first set all properties to default;
         this.setEntityFieldPropertiesToDefault();
 
         // then set all the properties accordingly
-        this.setEntityFieldProperties(this.selectedEntityProperty);
+        if (this.selectedEntityProperty.type === "Property") {
+            this.setEntityFieldProperties(this.selectedEntityProperty);
+        } else if (this.selectedEntityProperty.type === "Group") {
+            this.setEntityGroupProperties(this.selectedEntityProperty);
+        }
     }
 
     // actions handled before save, such as checks
@@ -2726,7 +2821,12 @@ export class EntityTab {
 
             this.isSaveSelect = true;
             // if everything went right, we move on to the save function.
-            await this.saveEntityFieldProperties();
+
+            if (this.selectedEntityProperty.type === "Property") {
+                await this.saveEntityFieldProperties();
+            } else if (this.selectedEntityProperty.type === "Group") {
+                await this.saveEntityGroupProperties();
+            }
         }
     }
 
@@ -2825,12 +2925,86 @@ export class EntityTab {
         }
     }
 
+    // save group properties to database
+    async saveEntityGroupProperties() {
+        const entityProperties = new EntityPropertyModel();
+        let groupItem = this.selectedTabOrProperty;
+        entityProperties.id = groupItem.id;
+        entityProperties.uid = groupItem.uid;
+        entityProperties.moduleId = this.selectedEntityType.moduleId;
+        entityProperties.entityType = this.entitiesCombobox.dataItem().name;
+        entityProperties.linkType = 0;
+        entityProperties.tabName = groupItem.tabName;
+        if (entityProperties.tabName === "Gegevens") {
+            entityProperties.tabName = "";
+        }
+        entityProperties.type = 'Group';
+        entityProperties.inputType = 'Group';
+        entityProperties.displayName = $("#groupName").val();
+        // the groupName should match the new displayName, but the API will do that after it compares the displayName and groupName to check if the name has changed
+        entityProperties.groupName = groupItem.displayName;
+        entityProperties.propertyName = entityProperties.tabName.concat('_', groupItem.displayName).toLowerCase();
+        entityProperties.explanation = $("#groupDescription").val();
+        entityProperties.width = this.groupWidth.value();
+        entityProperties.options = {};
+        entityProperties.options.minWidth = this.minWidth.value();
+        entityProperties.options.orientation = this.orientation.value();
+        entityProperties.options.showName = $("#showGroupName").is(":checked");
+        entityProperties.ordering = this.selectedEntityProperty.ordering;
+        entityProperties.options = JSON.stringify(entityProperties.options);
+        entityProperties.accessKey = "";
+        entityProperties.visibilityPathRegex = "";
+
+        document.querySelector(".loaderWrap").classList.add("active");
+
+        try {
+            // save to database
+            if (entityProperties.id > 0) {
+                await Wiser.api({
+                    type: "PUT",
+                    url: `${this.base.settings.wiserApiRoot}entity-properties/${entityProperties.id}`,
+                    contentType: "application/json",
+                    data: JSON.stringify(entityProperties)
+                });
+            }
+            // all groups should have an id, because of the auto group creation
+            else {
+                await Wiser.api({
+                    type: "POST",
+                    url: `${this.base.settings.wiserApiRoot}entity-properties`,
+                    contentType: "application/json",
+                    data: JSON.stringify(entityProperties)
+                });
+            }
+
+            this.base.showNotification("notification", `Groep succesvol aangepast`, "success");
+            await this.afterSave(entityProperties);
+        }
+        catch (exception) {
+            console.error("Error while saving initial values", exception);
+            this.base.showNotification("notification", `Groep is niet succesvol aangepast, probeer het opnieuw`, "error");
+        }
+        document.querySelector(".loaderWrap").classList.remove("active");
+    }
+
+    getEntityGroupId(tabName, groupName) {
+        const tab = this.entityStructure.find(({name}) => name === tabName);
+        if (tab) {
+            const group = tab.properties.find(({name}) => name === groupName);
+            if (group) {
+                return group.id;
+            }
+        }
+        return "0";
+    }
+
     // save entity properties to database
     async saveEntityFieldProperties() {
         // create entity property model
         const entityProperties = new EntityPropertyModel();
         let dataItem = this.selectedTabOrProperty;
         entityProperties.id = dataItem.id;
+        entityProperties.uid = dataItem.uid;
         entityProperties.moduleId = this.selectedEntityType.moduleId;
         entityProperties.entityType = this.entitiesCombobox.dataItem().name;
         entityProperties.linkType = 0;
@@ -2839,6 +3013,7 @@ export class EntityTab {
             entityProperties.tabName = "";
         }
         entityProperties.groupName = this.groupNameComboBox.value();
+        entityProperties.groupId = getEntityGroupId(this.tabNameProperty.value(), this.groupNameComboBox.value());
         entityProperties.inputType = this.inputTypeSelector.value();
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
@@ -3295,10 +3470,20 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
         const tabNode = this.propertiesTreeView.findByUid(tabDataItem.uid);
         this.propertiesTreeView.expand(tabNode);
 
-        // Then we can select the property itself.
-        const fieldDataItem = this.propertiesTreeView.dataSource.get(property.id);
-        const propertyNode = this.propertiesTreeView.findByUid(fieldDataItem.uid);
-        this.propertiesTreeView.select(propertyNode);
+        if (property.type === "Group") {
+            // can't use property.id here because not all groups have an id (will get one after saving)
+            const groupNode = this.propertiesTreeView.findByText(property.displayName);
+            this.propertiesTreeView.select(groupNode);
+        }
+        else if (property.type === "Property") {
+            // we find the group by name, names are unique per tab and only the correct tab should be expanded
+            const groupNode = this.propertiesTreeView.findByText(property.groupName);
+            this.propertiesTreeView.expand(groupNode);
+
+            const propertyItem = this.propertiesTreeView.dataSource.get(property.id);
+            const propertyNode = this.propertiesTreeView.findByUid(propertyItem.uid);
+            this.propertiesTreeView.select(propertyNode);
+        }
     }
 
     /**
@@ -3480,6 +3665,7 @@ entityProperties.options.saveValueAsItemLink = document.getElementById("saveValu
 
         // set options field to default, empty object
         this.fieldOptions = {};
+
     }
 
     setEntityProperties(resultSet) {
@@ -4072,6 +4258,19 @@ this.dataSourceDataSelector.value(dataSelectorId);
         this.optionsJsonField.refresh();
     }
 
+    // set all group properties values to the group fields accordingly
+    setEntityGroupProperties(resultSet) {
+        $("#groupName").val(resultSet.displayName || "");
+        $("#groupDescription").val(resultSet.explanation || "");
+        const groupOptions = JSON.parse(resultSet.options);
+        this.groupWidth.value(resultSet.width);
+        this.minWidth.value(groupOptions.minWidth);
+        this.orientation.select((dataItem) => {
+            return (dataItem.value || "").toLowerCase() === (groupOptions.orientation || "").toLowerCase();
+        });
+        document.getElementById("showGroupName").checked = groupOptions.showName !== undefined ? groupOptions.showName : Boolean(resultSet.displayName);
+        console.log(`setEntityGroupProperties called with ${JSON.stringify(resultSet)}`);
+    }
     // return array of of different input types from inputtypes enum
     createDataSourceFromEnum(list, useObjects = false) {
         const returnVal = [];
