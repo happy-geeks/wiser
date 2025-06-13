@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
+using Api.Modules.EntityProperties.Enums;
 
 namespace Api.Modules.Items.Models
 {
@@ -31,9 +32,8 @@ namespace Api.Modules.Items.Models
 
         /// <summary>
         /// Gets or sets the stack orientation of the items in the group.
-        /// Options are "Horizontal" or "Vertical"
         /// </summary>
-        public string Orientation { get; set; } = "Horizontal";
+        public EntityGroupOrientation Orientation { get; set; } = EntityGroupOrientation.Horizontal;
 
         /// <summary>
         /// Gets or sets if the group is collapsible.

@@ -1707,8 +1707,8 @@ export class EntityTab {
             dataTextField: "text",
             dataValueField: "value",
             dataSource: [
-                { text: "Horizontaal", value: "horizontal" },
-                { text: "Verticaal", value: "vertical" }
+                { text: "Horizontaal", value: "Horizontal" },
+                { text: "Verticaal", value: "Vertical" }
             ]
         }).data("kendoDropDownList");
 

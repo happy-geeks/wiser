@@ -142,10 +142,10 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                 Name = dataRow.Field<string>("display_name"),
                 Ordering = dataRow.Field<short>("ordering"),
                 Width = dataRow.Field<short>("width"),
-                MinimumWidth = goObject.Value<int>("minWidth"),
-                Orientation = goObject.Value<string>("orientation"),
-                ShowName = goObject.Value<bool>("showName"),
-                Collapsible = goObject.Value<bool>("collapsible"),
+                MinimumWidth = goObject.Value<int?>("minWidth") ?? 0,
+                Orientation = goObject["orientation"]?.ToObject<EntityGroupOrientation?>() ?? EntityGroupOrientation.Horizontal,
+                ShowName = goObject.Value<bool?>("showName") ?? true,
+                Collapsible = goObject.Value<bool?>("collapsible") ?? false,
             });
         }
         return new ServiceResult<Dictionary<int, EntityPropertyGroupModel>>(results);
@@ -537,12 +537,12 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             clientDatabaseConnection.AddParameter("id", entityProperty.Id);
             clientDatabaseConnection.AddParameter("name", entityProperty.DisplayName);
             // set the group_name column for all properties that are in this group
-            var query2 = $$"""
-                           UPDATE {{WiserTableNames.WiserEntityProperty}} properties
-                           SET properties.group_name = ?name WHERE properties.group_id = ?id AND properties.inputtype <> 'group'
-                           """;
+            query = $"""
+                    UPDATE {WiserTableNames.WiserEntityProperty} properties
+                    SET properties.group_name = ?name WHERE properties.group_id = ?id AND properties.inputtype <> 'group'
+                    """;
 
-            await clientDatabaseConnection.ExecuteAsync(query2);
+            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         return new ServiceResult<bool>(true)
@@ -857,13 +857,13 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         await clientDatabaseConnection.ExecuteAsync(query);
 
         // set the group_id column for all existing non-group properties to the ids of the freshly created groups
-        var query2 = $$"""
-                       UPDATE {{WiserTableNames.WiserEntityProperty}} properties
-                       LEFT JOIN {{WiserTableNames.WiserEntityProperty}} grp ON grp.group_name = properties.group_name AND grp.entity_name = properties.entity_name AND grp.tab_name = properties.tab_name AND grp.inputtype = 'group'
-                       SET properties.group_id = grp.id WHERE properties.{{whereClause}} AND properties.inputtype <> 'group' AND properties.group_id IS NULL
-                       """;
+        query = $"""
+                   UPDATE {WiserTableNames.WiserEntityProperty} properties
+                   LEFT JOIN {WiserTableNames.WiserEntityProperty} grp ON grp.group_name = properties.group_name AND grp.entity_name = properties.entity_name AND grp.tab_name = properties.tab_name AND grp.inputtype = 'group'
+                   SET properties.group_id = grp.id WHERE properties.{whereClause} AND properties.inputtype <> 'group' AND properties.group_id IS NULL
+                   """;
 
-        await clientDatabaseConnection.ExecuteAsync(query2);
+        await clientDatabaseConnection.ExecuteAsync(query);
 
         return new ServiceResult<bool>(true)
         {
@@ -964,14 +964,11 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         clientDatabaseConnection.AddParameter("id", id);
         clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
 
-        var query = $$"""
-                      UPDATE {{WiserTableNames.WiserEntityProperty}} SET ordering = ?newIndex WHERE id = ?id;
-                      """;
-
+        var query = $"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex WHERE id = ?id;";
         await clientDatabaseConnection.ExecuteAsync(query);
 
         // and call fix ordering again to give all properties correct ordering as well
-        return FixOrderingAsync(identity, data.EntityType, data.LinkType).Result;
+        return await FixOrderingAsync(identity, data.EntityType, data.LinkType);
     }
 
     /// <inheritdoc />

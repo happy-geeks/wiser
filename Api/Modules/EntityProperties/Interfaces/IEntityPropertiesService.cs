@@ -98,8 +98,8 @@ public interface IEntityPropertiesService
     /// Creates property group entries in the database for a specific entity type or link type, if they didn't exist already
     /// </summary>
     /// <param name="identity">The identity of the authenticated user.</param>
-    /// <param name="entityType">Optional: The entity type to fix the ordering for. Leave empty if you want to do it for link fields instead of entity fields.</param>
-    /// <param name="linkType">Optional: The link type to fix the ordering for. Leave empty if you want to do it for entity fields instead of link fields.</param>
+    /// <param name="entityType">Optional: The entity type to create property groups for. Leave empty if you want to do it for link fields instead of entity fields.</param>
+    /// <param name="linkType">Optional: The link type to create property groups for. Leave empty if you want to do it for entity fields instead of link fields.</param>
     Task<ServiceResult<bool>> AddPropertyGroupsAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0);
 
     /// <summary>
@@ -120,7 +120,7 @@ public interface IEntityPropertiesService
     /// <param name="id">The ID of the entity property</param>
     /// <param name="data">Data required to do the move.</param>
     Task<ServiceResult<bool>> MovePropertyAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data);
-    
+
     /// <summary>
     /// Move an entity property group to a new position.
     /// </summary>

@@ -32,7 +32,7 @@ public class EntityPropertyGroupModel
     /// Gets or sets the name of the tab the property is shown in.
     /// </summary>
     public string TabName { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the order the property is shown in.
     /// </summary>
@@ -49,9 +49,9 @@ public class EntityPropertyGroupModel
     public int MinimumWidth { get; set; }
 
     /// <summary>
-    /// Gets or sets the stacking orientation of the properties inside the property group. Options are 'Horizontal' and 'Vertical'.
+    /// Gets or sets the stacking orientation of the properties inside the property group.
     /// </summary>
-    public string Orientation { get; set; }
+    public EntityGroupOrientation Orientation { get; set; }
 
     /// <summary>
     /// Gets or sets if the property group can be collapsed in the interface.

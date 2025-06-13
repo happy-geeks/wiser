@@ -182,7 +182,7 @@ public class EntityPropertiesController : ControllerBase
     {
         return (await entityPropertiesService.MovePropertyAsync((ClaimsIdentity)User.Identity, id, data)).GetHttpResponseMessage();
     }
-    
+
     /// <summary>
     /// Move an entity property group to a new position.
     /// </summary>
@@ -235,7 +235,7 @@ public class EntityPropertiesController : ControllerBase
     /// <summary>
     /// Creates property group entries in the database for a specific entity type, if they didn't exist already
     /// </summary>
-    /// <param name="entityType">The entity type to fix the ordering for.</param>
+    /// <param name="entityType">The entity type to create property groups for.</param>
     [HttpPut]
     [Route("{entityType}/create-property-groups")]
     [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
@@ -247,7 +247,7 @@ public class EntityPropertiesController : ControllerBase
     /// <summary>
     /// Creates property group entries in the database for a specific link type, if they didn't exist already
     /// </summary>
-    /// <param name="linkType">The link type to fix the ordering for.</param>
+    /// <param name="linkType">The link type to create property groups for.</param>
     [HttpPut]
     [Route("{linkType:int}/create-property-groups")]
     [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]

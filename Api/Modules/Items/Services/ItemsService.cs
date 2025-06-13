@@ -1467,10 +1467,10 @@ public class ItemsService(
                 case "group":
                     group.Width = Convert.ToInt32(dataRow.Field<short?>("width") ?? group.Width);
                     group.Description = dataRow.Field<string>("explanation") ?? "";
-                    group.MinimumWidth = optionsObject.ContainsKey("minWidth") ? optionsObject.Value<int>("minWidth") : group.MinimumWidth;
-                    group.Orientation = optionsObject.ContainsKey("orientation") ? optionsObject.Value<string>("orientation") : group.Orientation;
-                    group.ShowName = optionsObject.ContainsKey("showName") ? optionsObject.Value<bool>("showName") : group.ShowName && !String.IsNullOrEmpty(groupName);
-                    group.Collapsible = optionsObject.ContainsKey("collapsible") ? optionsObject.Value<bool>("collapsible") : group.Collapsible;
+                    group.MinimumWidth = optionsObject.Value<int?>("minWidth") ?? group.MinimumWidth;
+                    group.Orientation = optionsObject["orientation"]?.ToObject<EntityGroupOrientation?>() ?? group.Orientation;// optionsObject.Value<EntityGroupOrientation?>("orientation") ?? group.Orientation;
+                    group.ShowName = optionsObject.Value<bool?>("showName") ?? group.ShowName && !String.IsNullOrEmpty(groupName);
+                    group.Collapsible = optionsObject.Value<bool?>("collapsible") ?? group.Collapsible;
                     continue;
                 case "checkbox":
                     if ((!String.IsNullOrWhiteSpace(value) && Int32.TryParse(value, out var intValue) && intValue > 0) || (String.IsNullOrWhiteSpace(value) && Int32.TryParse(defaultValue, out intValue) && intValue > 0))
@@ -1829,7 +1829,7 @@ public class ItemsService(
 
                     string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
                     string minWidth = $"min-width: {group.MinimumWidth}px;";
-                    string display = "display: " + (group.Orientation == "vertical" ? "block;" : "flex;");
+                    string display = "display: " + (group.Orientation == EntityGroupOrientation.Vertical ? "block;" : "flex;");
                     string groupStyle = $"style=\"{width}{minWidth}{display}\"";
 
                     tab.HtmlTemplateBuilder.Append($"<div {groupClass} {groupStyle}>");
