@@ -200,7 +200,7 @@ public class TemplatesService : ITemplatesService, IScopedService
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
 
         // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         var queryTemplate = GetQueryTemplate(0, templateName);
         queryTemplate.Content = apiReplacementsService.DoIdentityReplacements(queryTemplate.Content, identity, true);
