@@ -79,12 +79,12 @@ public class StyledOutputService : IStyledOutputService, IScopedService
         this.branchesService = branchesService;
 
         // Initialize the style parsers.
-        styleParsers.Add(StyledOutputConstants.SingleDetail, ParseSingleResult);
-        styleParsers.Add(StyledOutputConstants.SingleDetailArrayElm, ParseSingleResult);
-        styleParsers.Add(StyledOutputConstants.LanguageDetail, ParseSingleResult);
-        styleParsers.Add(StyledOutputConstants.MultiDetail, ParseMutliresults);
-        styleParsers.Add(StyledOutputConstants.Singlelinked, ParseSingleResult);
-        styleParsers.Add(StyledOutputConstants.SinglelinkedArrayElm, ParseSingleResult);
+        styleParsers.Add(StyledOutputConstants.SingleDetail, ParseSingleResultAsync);
+        styleParsers.Add(StyledOutputConstants.SingleDetailArrayElm, ParseSingleResultAsync);
+        styleParsers.Add(StyledOutputConstants.LanguageDetail, ParseSingleResultAsync);
+        styleParsers.Add(StyledOutputConstants.MultiDetail, ParseMutliresultsAsync);
+        styleParsers.Add(StyledOutputConstants.Singlelinked, ParseSingleResultAsync);
+        styleParsers.Add(StyledOutputConstants.SinglelinkedArrayElm, ParseSingleResultAsync);
     }
 
     /// <inheritdoc />
