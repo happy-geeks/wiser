@@ -22,6 +22,7 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUglify.Helpers;
 
@@ -394,6 +395,7 @@ public class ProductsService(
 
         return new ServiceResult<JToken>
         {
+            ModelObject = JsonConvert.SerializeObject(new ProductApiRefreshResult(generatedData.Count, noUpdates.Count, dataTable.Rows.Count == 0)),
             StatusCode = HttpStatusCode.OK
         };
     }
