@@ -944,7 +944,7 @@ export class WtsConfiguration {
                 this.checkItemForActionsIds(actionIds, currentobject[prop]);
             }
             if ('timeId' in currentobject && 'order' in currentobject) {
-                let newActionId = `${currentobject.actionid}`;
+                let newActionId = `${currentobject.actionId}`;
                 actionIds.push(newActionId);
             }
         }
