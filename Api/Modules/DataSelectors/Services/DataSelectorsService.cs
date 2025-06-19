@@ -25,7 +25,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using GclDataSelectors = GeeksCoreLibrary.Modules.DataSelector.Interfaces;
- 
+
 namespace Api.Modules.DataSelectors.Services;
 
 /// <summary>
@@ -72,155 +72,97 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         clientDatabaseConnection.AddParameter("entityName", entityName);
         clientDatabaseConnection.AddParameter("forExportMode", forExportMode);
 
-        var dataTable = await clientDatabaseConnection.GetAsync("""
-                                                                
-                                                                                SELECT
-                                                                                    CONCAT(
-                                                                                        property.`value`,
-                                                                                        IF(
-                                                                                            ?forExportMode = 1 AND property.languageCode <> '',
-                                                                                            CONCAT('_', property.languageCode),
-                                                                                            ''
-                                                                                        )
-                                                                                    ) AS `value`,
-                                                                                    property.entityName,
-                                                                                    CONCAT_WS(' - ', NULLIF(property.tabName, ''), property.displayName) AS displayName,
-                                                                                    property.`value` AS propertyName,
-                                                                                    IF(?forExportMode = TRUE, property.languageCode, '') AS languageCode
-                                                                                FROM (
-                                                                                    # ID.
-                                                                                    SELECT 'id' AS `value`, ?entityName AS entityName, 'ID' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '0' AS sort
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # Encrypted ID.
-                                                                                    SELECT 'idencrypted' AS `value`, ?entityName AS entityName, 'Versleuteld ID' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '1' AS sort
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # Unique ID.
-                                                                                    SELECT 'unique_uuid' AS `value`, ?entityName AS entityName, 'Uniek ID' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '2' AS sort
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # Title.
-                                                                                    SELECT 'itemtitle' AS `value`, ?entityName AS entityName, 'Item titel' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '3' AS sort
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # Changed on.
-                                                                                    SELECT 'changed_on' AS `value`, ?entityName AS entityName, 'Gewijzigd op' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '4' AS sort
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # Changed by.
-                                                                                    SELECT 'changed_by' AS `value`, ?entityName AS entityName, 'Gewijzigd door' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '5' AS sort
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # Entity properties.
-                                                                                    (SELECT
-                                                                                        IF(property_name = '', CreateJsonSafeProperty(display_name), property_name) AS `value`,
-                                                                                        entity_name AS entityName,
-                                                                                        CONCAT(
-                                                                                            IF(
-                                                                                                # Check if there are more than one properties with the same property name.
-                                                                                                COUNT(*) > 1,
-                                                                                                # If True; Use the property name with the character capitalizted to create the display name.
-                                                                                                CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)),
-                                                                                                # If False; Use the property's own display name.
-                                                                                                IF(
-                                                                                                    ?forExportMode = FALSE AND language_code <> '',
-                                                                                                    CONCAT(' (', language_code, ')'),
-                                                                                                    display_name
-                                                                                                )
-                                                                                            ),
-                                                                                            IF(
-                                                                                                ?forExportMode = TRUE AND language_code <> '',
-                                                                                                CONCAT(' (', language_code, ')'),
-                                                                                                ''
-                                                                                            )
-                                                                                        ) AS displayName,
-                                                                                        language_code AS languageCode,
-                                                                                        tab_name AS tabName,
-                                                                                        1 AS dynamicField,
-                                                                                        IF(COUNT(*) > 1, CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)), display_name) AS sort
-                                                                                    FROM wiser_entityproperty
-                                                                                    WHERE
-                                                                                        entity_name = ?entityName
-                                                                                        # Some entities should be ignored due to their input types.
-                                                                                        AND inputtype NOT IN (
-                                                                                            'action-button',
-                                                                                            'auto-increment',
-                                                                                            'button',
-                                                                                            'chart',
-                                                                                            'data-selector',
-                                                                                            'empty',
-                                                                                            'file-upload',
-                                                                                            'grid',
-                                                                                            'image-upload',
-                                                                                            'item-linker',
-                                                                                            'linked-item',
-                                                                                            'querybuilder',
-                                                                                            'scheduler',
-                                                                                            'sub-entities-grid',
-                                                                                            'timeline'
-                                                                                        )
-                                                                                    GROUP BY `value`, IF(?forExportMode = TRUE, language_code, NULL))
-                                                                
-                                                                                    UNION
-                                                                
-                                                                                    # SEO variants of the entity properties.
-                                                                                    (SELECT
-                                                                                        CONCAT(IF(property_name = '', CreateJsonSafeProperty(display_name), property_name), '_SEO') AS `value`,
-                                                                                        entity_name AS entityName,
-                                                                                        CONCAT(
-                                                                                            IF(
-                                                                                                # Check if there are more than one properties with the same property name.
-                                                                                                COUNT(*) > 1,
-                                                                                                # If True; Use the property name with the character capitalizted to create the display name.
-                                                                                                CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)),
-                                                                                                # If False; Use the property's own display name.
-                                                                                                display_name
-                                                                                            ),
-                                                                                            IF(
-                                                                                                language_code <> '',
-                                                                                                CONCAT(' (', language_code, ')'),
-                                                                                                ''
-                                                                                            ),
-                                                                                            ' (SEO)'
-                                                                                        ) AS displayName,
-                                                                                        language_code AS languageCode,
-                                                                                        tab_name AS tabName,
-                                                                                        1 AS dynamicField,
-                                                                                        CONCAT(IF(COUNT(*) > 1, CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)), display_name), ' (SEO)') AS sort
-                                                                                    FROM wiser_entityproperty
-                                                                                    WHERE
-                                                                                        entity_name = ?entityName
-                                                                                        # Some entities should be ignored due to their input types.
-                                                                                        AND inputtype NOT IN (
-                                                                                            'action-button',
-                                                                                            'auto-increment',
-                                                                                            'button',
-                                                                                            'chart',
-                                                                                            'data-selector',
-                                                                                            'empty',
-                                                                                            'file-upload',
-                                                                                            'grid',
-                                                                                            'image-upload',
-                                                                                            'item-linker',
-                                                                                            'linked-item',
-                                                                                            'querybuilder',
-                                                                                            'scheduler',
-                                                                                            'sub-entities-grid',
-                                                                                            'timeline'
-                                                                                        )
-                                                                                        AND also_save_seo_value = 1
-                                                                                    GROUP BY `value`, IF(?forExportMode = TRUE, language_code, NULL))
-                                                                                ) AS property
-                                                                                # Static fields first, then order by the 'sort' value.
-                                                                                ORDER BY property.dynamicField, property.sort
-                                                                """);
+        const string query = $"""
+                              SELECT
+                                  CONCAT(property.`value`, IF(?forExportMode = 1 AND property.languageCode <> '', CONCAT('_', property.languageCode), '')) AS `value`,
+                                  property.entityName,
+                                  CONCAT_WS(' - ', NULLIF(property.tabName, ''), property.displayName) AS displayName,
+                                  property.`value` AS propertyName,
+                                  IF(?forExportMode = TRUE, property.languageCode, '') AS languageCode
+                              FROM (
+                                  SELECT 'id' AS `value`, ?entityName AS entityName, 'ID' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '0' AS sort
+                                  UNION SELECT 'idencrypted' AS `value`, ?entityName AS entityName, 'Versleuteld ID' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '1' AS sort
+                                  UNION SELECT 'unique_uuid' AS `value`, ?entityName AS entityName, 'Uniek ID' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '2' AS sort
+                                  UNION SELECT 'itemtitle' AS `value`, ?entityName AS entityName, 'Item titel' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '3' AS sort
+                                  UNION SELECT 'changed_on' AS `value`, ?entityName AS entityName, 'Gewijzigd op' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '4' AS sort
+                                  UNION SELECT 'changed_by' AS `value`, ?entityName AS entityName, 'Gewijzigd door' AS displayName, '' AS languageCode, NULL AS tabName, 0 AS dynamicField, '5' AS sort
+                                  
+                                  UNION
+
+                                  # Entity properties.
+                                  (
+                                      SELECT
+                                          IF(property_name = '', CreateJsonSafeProperty(display_name), property_name) AS `value`,
+                                          entity_name AS entityName,
+                                          CONCAT(
+                                              IF(
+                                                  # Check if there are more than one properties with the same property name.
+                                                  COUNT(*) > 1,
+                                                  # If True; Use the property name with the character capitalized to create the display name.
+                                                  CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)),
+                                                  # If False; Use the property's own display name.
+                                                  IF(
+                                                      ?forExportMode = FALSE AND language_code <> '',
+                                                      CONCAT(' (', language_code, ')'),
+                                                      display_name
+                                                  )
+                                              ),
+                                              IF(
+                                                  ?forExportMode = TRUE AND language_code <> '',
+                                                  CONCAT(' (', language_code, ')'),
+                                                  ''
+                                              )
+                                          ) AS displayName,
+                                          language_code AS languageCode,
+                                          tab_name AS tabName,
+                                          1 AS dynamicField,
+                                          IF(COUNT(*) > 1, CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)), display_name) AS sort
+                                      FROM {WiserTableNames.WiserEntityProperty}
+                                      WHERE entity_name = ?entityName
+                                      # Some entities should be ignored due to their input types.
+                                      AND inputtype NOT IN ('action-button', 'auto-increment', 'button', 'chart', 'data-selector', 'empty', 'file-upload', 'grid', 'image-upload', 'item-linker', 'linked-item', 'querybuilder', 'scheduler', 'sub-entities-grid', 'timeline')
+                                      GROUP BY `value`, IF(?forExportMode = TRUE, language_code, NULL)
+                                  )
+
+                                  UNION
+
+                                  # SEO variants of the entity properties.
+                                  (
+                                      SELECT
+                                          CONCAT(IF(property_name = '', CreateJsonSafeProperty(display_name), property_name), '_SEO') AS `value`,
+                                          entity_name AS entityName,
+                                          CONCAT(
+                                              IF(
+                                                  # Check if there are more than one properties with the same property name.
+                                                  COUNT(*) > 1,
+                                                  # If True; Use the property name with the character capitalized to create the display name.
+                                                  CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)),
+                                                  # If False; Use the property's own display name.
+                                                  display_name
+                                              ),
+                                              IF(
+                                                  language_code <> '',
+                                                  CONCAT(' (', language_code, ')'),
+                                                  ''
+                                              ),
+                                              ' (SEO)'
+                                          ) AS displayName,
+                                          language_code AS languageCode,
+                                          tab_name AS tabName,
+                                          1 AS dynamicField,
+                                          CONCAT(IF(COUNT(*) > 1, CONCAT(UPPER(SUBSTR(property_name, 1, 1)), SUBSTR(property_name, 2)), display_name), ' (SEO)') AS sort
+                                      FROM {WiserTableNames.WiserEntityProperty}
+                                      WHERE entity_name = ?entityName
+                                      # Some entities should be ignored due to their input types.
+                                      AND inputtype NOT IN ('action-button', 'auto-increment', 'button', 'chart', 'data-selector', 'empty', 'file-upload', 'grid', 'image-upload', 'item-linker', 'linked-item', 'querybuilder', 'scheduler', 'sub-entities-grid', 'timeline')
+                                      AND also_save_seo_value = 1
+                                      GROUP BY `value`, IF(?forExportMode = TRUE, language_code, NULL)
+                                  )
+                              ) AS property
+                              # Static fields first, then order by the 'sort' value.
+                              ORDER BY property.dynamicField, property.sort
+                              """;
+        var dataTable = await clientDatabaseConnection.GetAsync(query);
 
         var results = new List<DataSelectorEntityPropertyModel>();
         if (dataTable.Rows.Count == 0)
@@ -246,15 +188,17 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserDataSelector]);
 
-        var whereClauses = new List<string> { "removed = 0" };
+        var whereClauses = new List<string> {"removed = 0"};
         if (forExportModule)
         {
             whereClauses.Add("show_in_export_module = 1");
         }
+
         if (forCommunicationModule)
         {
             whereClauses.Add("show_in_communication_module = 1");
         }
+
         if (forRendering)
         {
             whereClauses.Add("available_for_rendering = 1");
@@ -295,12 +239,9 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
     public async Task<ServiceResult<int>> SaveAsync(ClaimsIdentity identity, DataSelectorModel data)
     {
         var tenant = await wiserTenantsService.GetSingleAsync(identity);
-        var entityTypeSettings = await wiserItemsService.GetEntityTypeSettingsAsync("Query");
-        var tablePrefix = wiserItemsService.GetTablePrefixForEntity(entityTypeSettings);
-            
-        var isOnBranch = !branchesService.IsMainBranch(tenant.ModelObject).ModelObject; 
+        var isOnBranch = !branchesService.IsMainBranch(tenant.ModelObject).ModelObject;
         var mainTenant = await wiserTenantsService.GetSingleAsync(tenant.ModelObject.TenantId, true);
-            
+
         if (isOnBranch)
         {
             // When we are on a branch always create the id on both branch and main database.
@@ -308,28 +249,18 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
             var mainDatabaseConnection = scope.ServiceProvider.GetRequiredService<IDatabaseConnection>();
             var mainBranchConnectionString = wiserTenantsService.GenerateConnectionStringFromTenant(mainTenant.ModelObject);
             await mainDatabaseConnection.ChangeConnectionStringsAsync(mainBranchConnectionString);
-                
-            data.Id  = (int)await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, mainDatabaseConnection, clientDatabaseConnection);
-                
-            try
-            {
-                await LockTables(mainDatabaseConnection);
-                await LockTables(clientDatabaseConnection);
-                await SaveAsyncOnDataBase(mainDatabaseConnection, data, identity);
-                await SaveAsyncOnDataBase(clientDatabaseConnection, data, identity);
-            }
-            finally
-            {
-                await UnlockTables(mainDatabaseConnection);
-                await UnlockTables(clientDatabaseConnection);
-            }
+
+            data.Id = (int) await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, mainDatabaseConnection, clientDatabaseConnection);
+
+            await SaveAsync(mainDatabaseConnection, data);
+            await SaveAsync(clientDatabaseConnection, data);
         }
         else
         {
-            data.Id = (int)await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, clientDatabaseConnection);
-            await SaveAsyncOnDataBase(clientDatabaseConnection, data, identity);
+            data.Id = (int) await branchesService.GenerateNewIdAsync(WiserTableNames.WiserDataSelector, clientDatabaseConnection);
+            await SaveAsync(clientDatabaseConnection, data);
         }
-            
+
         return new ServiceResult<int>(data.Id);
     }
 
@@ -356,8 +287,8 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         return new ServiceResult<DataSelectorSignatureResultModel>(result);
     }
-        
-    private async Task<ServiceResult<int>> SaveAsyncOnDataBase(IDatabaseConnection targetDatabase, DataSelectorModel data, ClaimsIdentity identity)
+
+    private async Task SaveAsync(IDatabaseConnection targetDatabase, DataSelectorModel data)
     {
         await targetDatabase.EnsureOpenConnectionForReadingAsync();
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserDataSelector]);
@@ -373,24 +304,20 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         targetDatabase.AddParameter("availableForBranches", data.AvailableForBranches);
 
         int result;
-        var dataTable = await targetDatabase.GetAsync($@"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
+        var dataTable = await targetDatabase.GetAsync($"SELECT id FROM `{WiserTableNames.WiserDataSelector}` WHERE name = ?name");
         if (dataTable.Rows.Count == 0)
         {
-            var tenant = await wiserTenantsService.GetSingleAsync(identity);
-            using var scope = serviceProvider.CreateScope();
-                
-            var insertQuery =
-                $"""
-                 INSERT INTO {WiserTableNames.WiserDataSelector} ( id, name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
-                                                                                                     VALUES ({data.Id}, ?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)
-                 """;
+            var insertQuery = $"""
+                               INSERT INTO {WiserTableNames.WiserDataSelector} (id, name, request_json, saved_json, show_in_export_module, available_for_rendering, default_template, show_in_communication_module, show_in_dashboard, available_for_branches)
+                               VALUES ({data.Id}, ?name, ?requestJson, ?savedJson, ?showInExportModule, ?availableForRendering, ?defaultTemplate, ?showInCommunicationModule, ?showInDashboard, ?availableForBranches)
+                               """;
             await targetDatabase.InsertRecordAsync(insertQuery);
             result = data.Id;
         }
         else
         {
             result = dataTable.Rows[0].Field<int>("id");
-            await targetDatabase.ExecuteAsync($@"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard, available_for_branches = ?availableForBranches WHERE name = ?name");
+            await targetDatabase.ExecuteAsync($"UPDATE `{WiserTableNames.WiserDataSelector}` SET request_json = ?requestJson, saved_json = ?savedJson, show_in_export_module = ?showInExportModule, available_for_rendering = ?availableForRendering, default_template = ?defaultTemplate, show_in_communication_module = ?showInCommunicationModule, show_in_dashboard = ?showInDashboard, available_for_branches = ?availableForBranches WHERE name = ?name");
         }
 
         targetDatabase.AddParameter("id", result);
@@ -404,7 +331,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         // Add the permissions for the roles that have been marked. Will only add new ones to preserve limited permissions.
         var query = $"""
                      INSERT IGNORE INTO `{WiserTableNames.WiserPermission}` (role_id, data_selector_id, permissions)
-                                 VALUES(?roleId, ?id, 15)
+                     VALUES(?roleId, ?id, 15)
                      """;
 
         foreach (var role in data.AllowedRoles.Split(","))
@@ -417,8 +344,6 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         targetDatabase.AddParameter("roles_with_permissions", data.AllowedRoles);
         query = $"DELETE FROM `{WiserTableNames.WiserPermission}` WHERE data_selector_id = ?id AND data_selector_id != 0 AND NOT FIND_IN_SET(role_id, ?roles_with_permissions)";
         await targetDatabase.ExecuteAsync(query);
-
-        return new ServiceResult<int>(result);
     }
 
     /// <inheritdoc />
@@ -436,44 +361,6 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         return new ServiceResult<JArray>(jsonResult);
     }
-        
-    private async Task<bool> LockTables(IDatabaseConnection targetDatabase)
-    {
-        try
-        {
-            var lockQuery = $"""
-                             LOCK TABLES
-                             {WiserTableNames.WiserTableChanges} WRITE,
-                             {WiserTableNames.WiserDataSelector} WRITE,
-                             {WiserTableNames.WiserDataSelector} item READ,
-                             {WiserTableNames.WiserUserRoles} user_role READ,
-                             {WiserTableNames.WiserPermission} permission READ,
-                             {WiserTableNames.WiserPermission} WRITE,
-                             {WiserTableNames.WiserIdMappings} WRITE
-                             """;
-
-            await targetDatabase.ExecuteAsync(lockQuery);
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    private async Task<bool> UnlockTables(IDatabaseConnection targetDatabase)
-    {
-        try
-        {
-            var unlockQuery = "UNLOCK TABLES";
-            await targetDatabase.ExecuteAsync(unlockQuery);
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
 
     /// <inheritdoc />
     public async Task<ServiceResult<string>> GetQueryAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity)
@@ -487,7 +374,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         var queryId = 0;
         var dataSelectorId = 0;
@@ -543,7 +430,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         var (jsonResult, statusCode, error) = await GetJsonResponseAsync(data, identity);
         if (statusCode != HttpStatusCode.OK)
@@ -580,7 +467,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         // This is for backwards compatibility, a lot of queries in wiser_query contain {itemId_decrypt_withdate}, but the GCL expects something like {itemId:decrypt(true)}.
         // To not have to change all queries for all our tenants, we made this workaround so that old queries still work. The GCL will replace everything from httpContext.Items automatically.
@@ -614,7 +501,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         var (result, statusCode, error) = await gclDataSelectorsService.ToPdfAsync(data);
         if (statusCode != HttpStatusCode.OK)
@@ -628,7 +515,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         return new ServiceResult<FileContentResult>(result);
     }
-        
+
     /// <inheritdoc />
     public async Task<ServiceResult<byte[]>> ToCsvAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity, char separator)
     {
@@ -641,7 +528,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         // Set the encryption key for the GCL internally. The GCL can't know which key to use otherwise.
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         var (jsonResult, statusCode, error) = await GetJsonResponseAsync(data, identity);
         if (statusCode != HttpStatusCode.OK)
@@ -652,10 +539,10 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
                 ErrorMessage = error
             };
         }
-            
+
         var csvBody = csvService.JsonArrayToCsv(jsonResult);
         var buffer = Encoding.UTF8.GetBytes(csvBody);
-            
+
         return new ServiceResult<byte[]>(buffer);
     }
 
@@ -666,6 +553,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         {
             data.FileName = defaultFileName;
         }
+
         data.FileName = Path.ChangeExtension(data.FileName, extension);
 
         var fileResult = new FileContentResult(result.ModelObject, contentType)
@@ -683,6 +571,7 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
         {
             data.FileName = defaultFileName;
         }
+
         data.FileName = Path.ChangeExtension(data.FileName, extension);
 
         result.ModelObject.FileDownloadName = data.FileName;
@@ -716,15 +605,9 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
     private async Task<(JArray Result, HttpStatusCode StatusCode, string Error)> GetJsonResponseAsync(WiserDataSelectorRequestModel data, ClaimsIdentity identity)
     {
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext == null)
-        {
-            throw new Exception("HttpContext.Current is null, can't proceed.");
-        }
-
         // Set the encryption key for the JCL internally. The JCL can't know which key to use otherwise.
         var tenant = (await wiserTenantsService.GetSingleAsync(identity)).ModelObject;
-        GclSettings.Current.ExpiringEncryptionKey = tenant.EncryptionKey;
+        GclRequestContext.CurrentExpiringEncryptionKey = tenant.EncryptionKey;
 
         var queryId = 0;
         var dataSelectorId = 0;
@@ -807,10 +690,15 @@ public class DataSelectorsService : IDataSelectorsService, IScopedService
 
         // Combine object to key value pair.
         var combinedResult = new JObject();
-
         foreach (var item in response.Result)
         {
-            combinedResult.Add(item["key"].ToString(), item["value"]);
+            var key = item["key"]?.ToString();
+            if (String.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            combinedResult.Add(key, item["value"]);
         }
 
         return new ServiceResult<JToken>(combinedResult);
