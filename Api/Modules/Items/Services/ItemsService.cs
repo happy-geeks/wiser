@@ -146,7 +146,7 @@ public class ItemsService(
                           
                                                           # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                           	                            LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                          	                            LEFT JOIN {WiserTableNames.WiserPermission} permission_item ON permission_item.role_id = user_role.role_id AND permission_item.item_id = item.id
+                          	                            LEFT JOIN {WiserTableNames.WiserPermission} permission_item ON permission_item.role_id = user_role.role_id AND permission_item.item_id = item.id AND (permission_item.entity_name = item.entity_type OR permission_item.entity_name = '')
                                                           LEFT JOIN {WiserTableNames.WiserPermission} permission_module ON permission_module.role_id = user_role.role_id AND permission_module.module_id = item.moduleid
                           
                                                           WHERE item.published_environment >= 1
@@ -212,7 +212,7 @@ public class ItemsService(
                      
                                          # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                      	                LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                     	                LEFT JOIN {WiserTableNames.WiserPermission} permission_item ON permission_item.role_id = user_role.role_id AND permission_item.item_id = item.id
+                     	                LEFT JOIN {WiserTableNames.WiserPermission} permission_item ON permission_item.role_id = user_role.role_id AND permission_item.item_id = item.id AND (permission_item.entity_name = item.entity_type OR permission_item.entity_name = '')
                                          LEFT JOIN {WiserTableNames.WiserPermission} permission_module ON permission_module.role_id = user_role.role_id AND permission_module.module_id = item.moduleid
                      
                                          WHERE item.published_environment >= 1
@@ -2281,7 +2281,7 @@ public class ItemsService(
 
                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                      LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id AND (permission.entity_name = item.entity_type OR permission.entity_name = '')
 
                      # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
                      LEFT JOIN {parentTablePrefix}{WiserTableNames.WiserItem} parent_item ON parent_item.id = link_parent.destination_item_id
@@ -2360,7 +2360,7 @@ public class ItemsService(
 
                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                      LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id
+                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = item.id AND (permission.entity_name = item.entity_type OR permission.entity_name = '')
 
                      # Only get items that should actually be shown, based on accepted_childtypes from wiser_entity.
                      LEFT JOIN {parentTablePrefix}{WiserTableNames.WiserItem} parent_item ON parent_item.id = item.parent_item_id
@@ -2425,7 +2425,7 @@ public class ItemsService(
                  
                                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                      LEFT JOIN {WiserTableNames.WiserUserRoles} AS user_role ON user_role.user_id = ?userId
-                                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = child.id
+                                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = user_role.role_id AND permission.item_id = child.id AND (permission.entity_name = child.entity_type OR permission.entity_name = '')
                  
                                      WHERE item.id IN ({String.Join(",", results.Select(i => i.PlainItemId))})
                                      AND item.moduleid = ?moduleId
@@ -3007,7 +3007,7 @@ public class ItemsService(
 
                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                      LEFT JOIN {WiserTableNames.WiserUserRoles} AS userRole ON userRole.user_id = ?userId
-                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = userRole.role_id AND permission.item_id = item.id
+                     LEFT JOIN {WiserTableNames.WiserPermission} AS permission ON permission.role_id = userRole.role_id AND permission.item_id = item.id AND (permission.entity_name = item.entity_type OR permission.entity_name = '')
 
                      WHERE (permission.id IS NULL OR (permission.permissions & 1) > 0)
                      AND item.entity_type = ?entityType
