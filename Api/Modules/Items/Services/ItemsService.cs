@@ -1468,7 +1468,7 @@ public class ItemsService(
                     group.Width = Convert.ToInt32(dataRow.Field<short?>("width") ?? group.Width);
                     group.Description = dataRow.Field<string>("explanation") ?? "";
                     group.MinimumWidth = optionsObject.Value<int?>("minWidth") ?? group.MinimumWidth;
-                    group.Orientation = optionsObject["orientation"]?.ToObject<EntityGroupOrientation?>() ?? group.Orientation;// optionsObject.Value<EntityGroupOrientation?>("orientation") ?? group.Orientation;
+                    group.Orientation = optionsObject["orientation"]?.ToObject<EntityGroupOrientation?>() ?? group.Orientation;
                     group.ShowName = optionsObject.Value<bool?>("showName") ?? group.ShowName && !String.IsNullOrEmpty(groupName);
                     group.Collapsible = optionsObject.Value<bool?>("collapsible") ?? group.Collapsible;
                     continue;
