@@ -416,7 +416,7 @@
                             loader.addClass("loading");
 
                             try {
-                                let customQueryGrid = await Wiser.api({
+                                let result = await Wiser.api({
                                     url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent("{itemIdEncrypted}")}/grids/{propertyId}`,
                                     method: "PUT",
                                     contentType: "application/json",
@@ -540,7 +540,7 @@
 
                             try {
                                 let result = await Wiser.api({
-                                    url: window.dynamicItems.settings.wiserApiRoot + "items/" + encodeURIComponent(encryptedId),
+                                    url: `${window.dynamicItems.settings.wiserApiRoot}items/${encodeURIComponent(encryptedId)}`,
                                     method: "PUT",
                                     contentType: "application/json",
                                     dataType: "json",
