@@ -470,7 +470,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                           LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                          LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                          LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                        {filters}
                                        WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
@@ -502,7 +502,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                     # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                     LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                    LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                    LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                     {filters}
                                     WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
@@ -530,7 +530,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                         # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                         LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                        LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                        LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                         {filters}
                                         WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
@@ -564,7 +564,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                          # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                          LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                         LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                         LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                          {filters}
                                          WHERE [if({title}!)]i.title {title_filter}[else]TRUE[endif] 
@@ -596,7 +596,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                       LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                      LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                      LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                       WHERE i.title LIKE CONCAT(?search, '%')
                                       {versionWhereClause}
@@ -614,7 +614,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                       # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                       LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                      LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                      LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                       WHERE id.`value` LIKE CONCAT(?search, '%')
                                       {versionWhereClause}
@@ -641,7 +641,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                    # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                    LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                   LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                   LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                    WHERE i.title LIKE CONCAT(?search, '%')
                                    {versionWhereClause}
@@ -660,7 +660,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                        i.added_by AS addedby,
                                        e.icon,
                                        e.color,
-                                       ' AS moreInfo
+                                       '' AS moreInfo
                                    FROM {tablePrefix}{WiserTableNames.WiserItemDetail} id
                                    JOIN {tablePrefix}{WiserTableNames.WiserItem} i ON i.id = id.item_id AND (?entityType = '' OR i.entity_type = ?entityType)
                                    JOIN {WiserTableNames.WiserEntity} e ON e.name = i.entity_type AND e.show_in_search = 1
@@ -669,7 +669,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                    # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                    LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                   LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                   LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                    WHERE id.`value` LIKE CONCAT(?search, '%')
                                    {versionWhereClause}
@@ -691,7 +691,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                        WHERE i.title LIKE CONCAT(?search, '%')
                                        {versionWhereClause}
@@ -709,7 +709,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                        WHERE id.`value` LIKE CONCAT(?search, '%')
                                        {versionWhereClause}
@@ -717,7 +717,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
                                        GROUP BY i.id
                                        """;
 
-                        selectQuery = $"""
+                        selectQuery += $"""
 
                                        UNION
 
@@ -739,7 +739,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                        WHERE i.title LIKE CONCAT(?search, '%')
                                        {versionWhereClause}
@@ -767,7 +767,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                        # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                        LEFT JOIN {WiserTableNames.WiserUserRoles} user_role ON user_role.user_id = ?userId
-                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                       LEFT JOIN {WiserTableNames.WiserPermission} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                        WHERE id.`value` LIKE CONCAT(?search, '%')
                                        {versionWhereClause}
@@ -1139,7 +1139,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                               LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                              LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                              LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                            WHERE i.entity_type = ?entityType
                                            AND i.published_environment >= 0
@@ -1159,7 +1159,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                               LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                              LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                              LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                            WHERE i.entity_type = ?entityType
                                            AND i.published_environment >= 0
@@ -1202,7 +1202,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                             # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                             LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
                                             
                                             WHERE i.entity_type = ?entityType
                                             AND i.published_environment >= 0
@@ -1246,7 +1246,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                           LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                           LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                            WHERE i.parent_item_id = ?itemId
                                            {{(String.IsNullOrEmpty(entityType) ? "" : "AND FIND_IN_SET(i.entity_type, ?entityType)")}}
@@ -1287,7 +1287,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                             # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                             LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                             LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
                                             LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = i.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input'))))
@@ -1315,7 +1315,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                            # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                            LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                           LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                           LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                            WHERE il.{{(currentItemIsSourceId ? "item_id" : "destination_item_id")}} = ?itemId
                                            {{versionWhereClause}}
@@ -1356,7 +1356,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                             # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                             LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                             LEFT JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.entity_name = i.entity_type AND p.visible_in_overview = 1
                                             LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}} id ON id.item_id = il.item_id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
@@ -1401,7 +1401,7 @@ public class GridsService(IItemsService itemsService, IWiserTenantsService wiser
 
                                             # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
                                             LEFT JOIN {{WiserTableNames.WiserUserRoles}} user_role ON user_role.user_id = ?userId
-                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id
+                                            LEFT JOIN {{WiserTableNames.WiserPermission}} permission ON permission.role_id = user_role.role_id AND permission.item_id = i.id AND (permission.entity_name = i.entity_type OR permission.entity_name = '')
 
                                             JOIN {{WiserTableNames.WiserEntityProperty}} p ON p.link_type = il.type AND p.visible_in_overview = 1
                                             JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLinkDetail}} id ON id.itemlink_id = il.id AND ((p.property_name IS NOT NULL AND p.property_name <> '' AND id.`key` IN(p.property_name, CONCAT(p.property_name, '_input'))) OR ((p.property_name IS NULL OR p.property_name = '') AND id.`key` IN(p.display_name, CONCAT(p.property_name, '_input')))) AND id.language_code = p.language_code
