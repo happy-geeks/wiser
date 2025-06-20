@@ -850,7 +850,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                         SELECT property.module_id, property.entity_name, property.tab_name, MIN(property.ordering) - 1 AS ordering, property.group_name,
                         (SELECT MIN(ordering) FROM {{WiserTableNames.WiserEntityProperty}} tab WHERE property.entity_name = tab.entity_name AND property.tab_name = tab.tab_name) AS tabOrder
                         FROM {{WiserTableNames.WiserEntityProperty}} property
-                        WHERE property.{{whereClause}} AND property.inputtype <> 'group' AND property.group_id IS NULL
+                        WHERE property.{{whereClause}} AND property.inputtype <> 'group' AND property.group_id = 0
                         GROUP BY property.tab_name, property.group_name ORDER BY tabOrder, ordering ASC) unknownGroups
                       """;
 
@@ -860,7 +860,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         query = $"""
                    UPDATE {WiserTableNames.WiserEntityProperty} properties
                    LEFT JOIN {WiserTableNames.WiserEntityProperty} grp ON grp.group_name = properties.group_name AND grp.entity_name = properties.entity_name AND grp.tab_name = properties.tab_name AND grp.inputtype = 'group'
-                   SET properties.group_id = grp.id WHERE properties.{whereClause} AND properties.inputtype <> 'group' AND properties.group_id IS NULL
+                   SET properties.group_id = grp.id WHERE properties.{whereClause} AND properties.inputtype <> 'group' AND properties.group_id = 0
                    """;
 
         await clientDatabaseConnection.ExecuteAsync(query);
