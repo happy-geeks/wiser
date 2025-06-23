@@ -9,9 +9,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="GeeksCoreLibrary" Version="5.3.2506.6" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.5" />
-        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.5" />
+        <PackageReference Include="GeeksCoreLibrary" Version="5.3.2506.7" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.6" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageReference Include="NUnit" Version="4.3.2" />
         <PackageReference Include="NUnit3TestAdapter" Version="5.0.0" />
