@@ -169,14 +169,26 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         {
              Id = x.Key,
              Name = x.Key,
-             Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
+             Properties = x.GroupBy(y => y.GroupName).Select(y =>
              {
-                 Id = allGroups.ModelObject[y.First().GroupID].Id,
-                 EntityType = entityName,
-                 Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
-                 TabName = x.Key,
-                 Properties = y.ToList(),
-                 Ordering = allGroups.ModelObject[y.First().GroupID].Ordering
+                 if (!allGroups.ModelObject.TryGetValue(y.First().GroupID, out var group))
+                 {
+                     group = new EntityPropertyGroupModel
+                     {
+                         Id = 0,
+                         Name = String.Empty
+                     };
+                 }
+
+                 return new EntityPropertyGroupModel
+                 {
+                     Id = group.Id,
+                     EntityType = entityName,
+                     Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
+                     TabName = x.Key,
+                     Properties = y.ToList(),
+                     Ordering = group.Ordering
+                 };
              }).ToList()
         }).ToList();
 
