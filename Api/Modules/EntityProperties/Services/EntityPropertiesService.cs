@@ -1256,7 +1256,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             AlsoSaveSeoValue = Convert.ToBoolean(dataRow["also_save_seo_value"]),
             SaveOnChange = Convert.ToBoolean(dataRow["save_on_change"]),
             LabelStyle = ToLabelStyle(dataRow.Field<string>("label_style")),
-            LabelWidth = dataRow.IsNull("label_width") ? 0 : Convert.ToInt32(dataRow["label_width"]),
+            LabelWidth = Int32.TryParse(dataRow.Field<string>("label_width"), out var labelWidth) ? labelWidth : 0,
             Overview = new EntityPropertyOverviewModel
             {
                 Visible = Convert.ToBoolean(dataRow["visible_in_overview"]),
