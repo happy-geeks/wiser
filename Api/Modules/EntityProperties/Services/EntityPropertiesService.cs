@@ -19,8 +19,6 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySqlConnector;
 using Constants = GeeksCoreLibrary.Modules.Languages.Models.Constants;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.EntityProperties.Services;
 
@@ -76,10 +74,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         var result = FromDataRow(dataTable.Rows[0]);
 
-        if (result.InputType == EntityPropertyInputTypes.Group)
-        {
-            result.Type = EntityPropertyModelTypes.Group;
-        }
         return new ServiceResult<EntityPropertyModel>(result);
     }
 
@@ -92,7 +86,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         var query = $"""
                      SELECT *
                                                  FROM {WiserTableNames.WiserEntityProperty}
-                                                 WHERE entity_name = ?entityName AND inputtype <> 'group'
+                                                 WHERE entity_name = ?entityName
                                                  {(onlyEntityTypesWithDisplayName ? "AND display_name IS NOT NULL AND display_name <> ''" : "")}
                                                  {(onlyEntityTypesWithPropertyName ? "AND property_name IS NOT NULL AND property_name <> ''" : "")}
                                                  ORDER BY {(orderByName ? "display_name" : "ordering")} ASC
@@ -119,44 +113,11 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         return new ServiceResult<List<EntityPropertyModel>>(results);
     }
 
-    private async Task<ServiceResult<Dictionary<int, EntityPropertyGroupModel>>> GetPropertyGroupsOfEntity(ClaimsIdentity identity, string entityType, bool orderByName = false)
-    {
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-        clientDatabaseConnection.ClearParameters();
-        clientDatabaseConnection.AddParameter("entityName", entityType);
-        var query = $@"SELECT *
-                        FROM {WiserTableNames.WiserEntityProperty}
-                        WHERE entity_name = ?entityName AND inputtype = 'group'
-                        ORDER BY {(orderByName ? "display_name" : "ordering")} ASC";
-        var dataTable = await clientDatabaseConnection.GetAsync(query);
-
-        var results = new Dictionary<int, EntityPropertyGroupModel>();
-        foreach (DataRow dataRow in dataTable.Rows)
-        {
-            var groupOptions = dataRow.Field<string>("options") ?? "";
-            var goObject = JObject.Parse(String.IsNullOrWhiteSpace(groupOptions) ? "{}" : groupOptions);
-
-            results.Add(dataRow.Field<int>("id"), new()
-            {
-                Id = dataRow.Field<int>("id"),
-                Name = dataRow.Field<string>("display_name"),
-                Ordering = dataRow.Field<short>("ordering"),
-                Width = dataRow.Field<short>("width"),
-                MinimumWidth = goObject.Value<int?>("minWidth") ?? 0,
-                Orientation = goObject["orientation"]?.ToObject<EntityGroupOrientation?>() ?? EntityGroupOrientation.Horizontal,
-                ShowName = goObject.Value<bool?>("showName") ?? true,
-                Collapsible = goObject.Value<bool?>("collapsible") ?? false,
-            });
-        }
-        return new ServiceResult<Dictionary<int, EntityPropertyGroupModel>>(results);
-    }
-
     /// <inheritdoc />
     public async Task<ServiceResult<List<EntityPropertyTabModel>>> GetPropertiesOfEntityGroupedByTabAsync(ClaimsIdentity identity, string entityName)
     {
-        var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, true, false, false);
-        var allGroups = await GetPropertyGroupsOfEntity(identity, entityName);
-        if (allProperties.StatusCode != HttpStatusCode.OK || allGroups.StatusCode != HttpStatusCode.OK)
+        var allProperties = await GetPropertiesOfEntityAsync(identity, entityName, false, false, false, false);
+        if (allProperties.StatusCode != HttpStatusCode.OK)
         {
             return new ServiceResult<List<EntityPropertyTabModel>>
             {
@@ -167,17 +128,9 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         var tabs = allProperties.ModelObject.GroupBy(x => x.TabName).Select(x => new EntityPropertyTabModel
         {
-             Id = x.Key,
-             Name = x.Key,
-             Properties = x.GroupBy(y => y.GroupName).Select(y => new EntityPropertyGroupModel
-             {
-                 Id = allGroups.ModelObject[y.First().GroupID].Id,
-                 EntityType = entityName,
-                 Name = String.IsNullOrEmpty(y.Key) ? "Groep" : y.Key,
-                 TabName = x.Key,
-                 Properties = y.ToList(),
-                 Ordering = allGroups.ModelObject[y.First().GroupID].Ordering
-             }).ToList()
+            Id = x.Key,
+            Name = x.Key,
+            Properties = x.ToList()
         }).ToList();
 
         return new ServiceResult<List<EntityPropertyTabModel>>(tabs);
@@ -246,8 +199,8 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         clientDatabaseConnection.AddParameter("label_width", entityProperty.LabelWidth.ToString());
         clientDatabaseConnection.AddParameter("enable_aggregation", entityProperty.EnableAggregation);
         clientDatabaseConnection.AddParameter("aggregate_options", entityProperty.AggregateOptions);
-        clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey ?? "");
-        clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex ?? "");
+        clientDatabaseConnection.AddParameter("access_key", entityProperty.AccessKey);
+        clientDatabaseConnection.AddParameter("visibility_path_regex", entityProperty.VisibilityPathRegex);
 
         var query = $"""
                      SET @_username = ?username;
@@ -380,45 +333,11 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             return new ServiceResult<bool>
             {
                 StatusCode = HttpStatusCode.BadRequest,
-                ErrorMessage = $"PropertyName is required. InputType = {entityProperty.InputType}"
+                ErrorMessage = "PropertyName is required."
             };
         }
+
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-
-        // a new group name has been entered for this property, create it first
-        if (entityProperty.Type == EntityPropertyModelTypes.Property && entityProperty.GroupID == 0)
-        {
-            var newGroup = new EntityPropertyModel()
-            {
-                ModuleId = entityProperty.ModuleId,
-                EntityType = entityProperty.EntityType,
-                TabName = entityProperty.TabName,
-                GroupName = entityProperty.GroupName,
-                Explanation = entityProperty.Explanation,
-                InputType = EntityPropertyInputTypes.Group,
-                DisplayName = entityProperty.GroupName,
-                PropertyName = $"{entityProperty.TabName.ToLower()}_{entityProperty.GroupName.ToLower()}",
-                Ordering = entityProperty.Ordering - 1,
-                Width = 100,
-                Options = "{}"
-            };
-
-            await CreateAsync(identity, newGroup);
-            // now we have the new group, use that group id
-            entityProperty.GroupID = newGroup.Id;
-        }
-
-        // if we are changing the name on a group entity, we need to update the group_name column on all properties in this group as well
-        // in the future we might be able to get rid of the group_name column because we added the group_id
-        bool updateGroupNameOfProperties = false;
-        if (entityProperty.Type == EntityPropertyModelTypes.Group && entityProperty.DisplayName != entityProperty.GroupName)
-        {
-            updateGroupNameOfProperties = true;
-            entityProperty.GroupName = entityProperty.DisplayName;
-            entityProperty.PropertyName = $"{entityProperty.TabName.ToLower()}_{entityProperty.GroupName.ToLower()}";
-        }
-
-        // do the update on the group or property
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("username", IdentityHelpers.GetUserName(identity, true));
         clientDatabaseConnection.AddParameter("id", id);
@@ -428,7 +347,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         clientDatabaseConnection.AddParameter("overview_width", entityProperty.Overview?.Width ?? 100);
         clientDatabaseConnection.AddParameter("tab_name", entityProperty.TabName ?? "");
         clientDatabaseConnection.AddParameter("group_name", entityProperty.GroupName ?? "");
-        clientDatabaseConnection.AddParameter("group_id", entityProperty.GroupID);
         clientDatabaseConnection.AddParameter("inputtype", ToDatabaseValue(entityProperty.InputType));
         clientDatabaseConnection.AddParameter("display_name", entityProperty.DisplayName ?? "");
         clientDatabaseConnection.AddParameter("property_name", entityProperty.PropertyName ?? "");
@@ -474,7 +392,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                          overview_width = ?overview_width,
                          tab_name = ?tab_name,
                          group_name = ?group_name,
-                         group_id = ?group_id,
                          inputtype = ?inputtype,
                          display_name = ?display_name,
                          property_name = ?property_name,
@@ -529,20 +446,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             }
 
             throw;
-        }
-
-        if (updateGroupNameOfProperties)
-        {
-            clientDatabaseConnection.ClearParameters();
-            clientDatabaseConnection.AddParameter("id", entityProperty.Id);
-            clientDatabaseConnection.AddParameter("name", entityProperty.DisplayName);
-            // set the group_name column for all properties that are in this group
-            query = $"""
-                    UPDATE {WiserTableNames.WiserEntityProperty} properties
-                    SET properties.group_name = ?name WHERE properties.group_id = ?id AND properties.inputtype <> 'group'
-                    """;
-
-            await clientDatabaseConnection.ExecuteAsync(query);
         }
 
         return new ServiceResult<bool>(true)
@@ -802,8 +705,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
     /// <inheritdoc />
     public async Task<ServiceResult<bool>> FixOrderingAsync(ClaimsIdentity identity, string entityType = null, int linkType = 0)
     {
-        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
-        clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("entityType", entityType);
         clientDatabaseConnection.AddParameter("linkType", linkType);
         var whereClause = linkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
@@ -817,12 +718,10 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
                      		(@orderingNumber := @orderingNumber + 1) AS ordering
                      	FROM (
                      		SELECT
-                     			id,
-                     			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} tab WHERE property.entity_name = tab.entity_name AND property.tab_name = tab.tab_name) AS tabOrder,
-                     			(SELECT MIN(ordering) FROM {WiserTableNames.WiserEntityProperty} grp WHERE property.entity_name = grp.entity_name AND property.tab_name = grp.tab_name AND property.group_name = grp.group_name AND grp.inputtype = 'group') AS groupOrder
-                     		FROM {WiserTableNames.WiserEntityProperty} property
+                     			id
+                     		FROM {WiserTableNames.WiserEntityProperty}
                      		WHERE {whereClause}
-                     		ORDER BY tabOrder, groupOrder, inputtype != 'group', ordering ASC
+                     		ORDER BY ordering ASC
                      	) AS x
                      ) AS ordering ON ordering.id = property.id
                      SET property.ordering = ordering.ordering
@@ -910,16 +809,17 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             };
         }
 
-        clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("id", id);
         clientDatabaseConnection.AddParameter("currentIndex", data.CurrentIndex);
         clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
         clientDatabaseConnection.AddParameter("entityType", data.EntityType);
         clientDatabaseConnection.AddParameter("linkType", data.LinkType);
+        clientDatabaseConnection.AddParameter("newTabName", data.NewTabName);
+        clientDatabaseConnection.AddParameter("currentTabName", data.CurrentTabName);
 
         var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
 
-        var query = new StringBuilder($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex WHERE id = ?id;");
+        var query = new StringBuilder($"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex, tab_name = ?newTabName WHERE id = ?id;");
         if (data.NewIndex < data.CurrentIndex)
         {
             query.AppendLine($"""
@@ -945,30 +845,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         await clientDatabaseConnection.ExecuteAsync(query.ToString());
         return new ServiceResult<bool>(true);
-    }
-
-    /// <inheritdoc />
-    public async Task<ServiceResult<bool>> MoveGroupAsync(ClaimsIdentity identity, int id, MoveEntityPropertyRequestModel data)
-    {
-        if (data == null || (String.IsNullOrWhiteSpace(data.EntityType) && data.LinkType <= 0))
-        {
-            return new ServiceResult<bool>(false)
-            {
-                StatusCode = HttpStatusCode.BadRequest,
-                ErrorMessage = $"Either {nameof(data.EntityType)} or {nameof(data.LinkType)} must be provided."
-            };
-        }
-
-        // move group id to new ordering (one above or below the target group)
-        clientDatabaseConnection.ClearParameters();
-        clientDatabaseConnection.AddParameter("id", id);
-        clientDatabaseConnection.AddParameter("newIndex", data.NewIndex);
-
-        var query = $"UPDATE {WiserTableNames.WiserEntityProperty} SET ordering = ?newIndex WHERE id = ?id;";
-        await clientDatabaseConnection.ExecuteAsync(query);
-
-        // and call fix ordering again to give all properties correct ordering as well
-        return await FixOrderingAsync(identity, data.EntityType, data.LinkType);
     }
 
     /// <inheritdoc />
@@ -1215,7 +1091,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             EntityPropertyInputTypes.Empty => "empty",
             EntityPropertyInputTypes.Qr => "qr",
             EntityPropertyInputTypes.Iframe => "iframe",
-            EntityPropertyInputTypes.Group => "group",
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
         };
     }
@@ -1231,7 +1106,6 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             PropertyName = dataRow.Field<string>("property_name"),
             LanguageCode = dataRow.Field<string>("language_code"),
             TabName = dataRow.Field<string>("tab_name"),
-            GroupID = dataRow.Field<int?>("group_id") ?? 0,
             GroupName = dataRow.Field<string>("group_name"),
             InputType = EntityPropertyHelper.ToInputType(dataRow.Field<string>("inputtype")),
             DisplayName = dataRow.Field<string>("display_name"),

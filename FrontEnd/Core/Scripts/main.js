@@ -105,7 +105,7 @@ class Main {
         this.api.interceptors.response.use(undefined, async (error) => {
             return new Promise(async (resolve, reject) => {
                 // Automatically re-authenticate with refresh token if login token expired or logout if that doesn't work or it is otherwise invalid.
-                if (error.response && error.response.status === 401 && !stopRetrying) {
+                if (error.response.status === 401 && !stopRetrying) {
                     // If we ever get an unauthorized, logout the user.
                     if (error.response.config.url === "/connect/token") {
                         this.vueApp.$store.dispatch(AUTH_LOGOUT);

@@ -255,16 +255,7 @@ dd {
 	border-bottom: 2px solid var(--white-color);
 }
 
-.item-group-thin {
-    margin: 5px;
-	flex-wrap: wrap;
-	padding: 20px 10px;
-	border-bottom: 2px solid var(--white-color);
-	border-right: 2px solid var(--white-color);
-}
-
-.item-group h3,
-.item-group-thin h3 {
+.item-group h3 {
 	color: var(--primary-color);
 	display: block;
 	padding: 6px 8px;
@@ -274,13 +265,6 @@ dd {
 	width: 100%;
 	margin-bottom: 10px;
 }
-
-.item-group .form-hint,
-.item-group-thin .form-hint {
-    padding-left: 8px;
-    padding-bottom: 8px;
-}
-
 .item {
 	border: none;
 	position: relative;

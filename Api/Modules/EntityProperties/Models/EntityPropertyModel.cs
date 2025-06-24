@@ -19,11 +19,6 @@ public class EntityPropertyModel
     public int ModuleId { get; set; }
 
     /// <summary>
-    /// This just indicates that the current item is a property. This makes it easier for our javascript code to check what it is working with.
-    /// </summary>
-    public EntityPropertyModelTypes Type { get; set; } = EntityPropertyModelTypes.Property;
-
-    /// <summary>
     /// Gets or sets the name of the entity.
     /// </summary>
     public string EntityType { get; set; }
@@ -48,11 +43,6 @@ public class EntityPropertyModel
     /// Gets or sets the name of the tab the property is shown in.
     /// </summary>
     public string TabName { get; set; }
-
-    /// <summary>
-    /// Gets or sets the id of the group the property is in (used by new custom group feature).
-    /// </summary>
-    public int GroupID { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the group the property is in.

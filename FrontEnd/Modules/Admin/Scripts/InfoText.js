@@ -48,7 +48,7 @@
             { name: "languageCode", text: "Vul een taalcode in, zoals nl-NL" },
             { name: "displayName", text: "Vul hier de naam in" },
             { name: "propertyName", text: "Vul hier de eigenschap naam in" },
-            { name: "parentGroup", text: "Hier een nieuwe groepnaam invoeren of een bestaande groepnaam selecteren uit de lijst"},
+            { name: "groupName", text: "Hier een nieuwe groepnaam invoeren of een bestaande groepnaam selecteren uit de lijst"},
             { name: "tabName", text: "Hier een nieuwe tabnaam invoeren of een bestaande tabnaam selecteren uit de lijst" },
             { name: "width", text: "Vul de breedte van het veld in" },
             { name: "height", text: "Vul de hoogte van het veld in" },
