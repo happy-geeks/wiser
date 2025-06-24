@@ -184,6 +184,19 @@ public class EntityPropertiesController : ControllerBase
     }
 
     /// <summary>
+    /// Move an entity property group to a new position.
+    /// </summary>
+    /// <param name="id">The ID of the entity property group</param>
+    /// <param name="data">Data required to do the move.</param>
+    [HttpPut]
+    [Route("{id}/move-group")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> MovePropertyGroupAsync(int id, MoveEntityPropertyRequestModel data)
+    {
+        return (await entityPropertiesService.MoveGroupAsync((ClaimsIdentity)User.Identity, id, data)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
     /// Move an entity tab with all it's properties to a new position.
     /// </summary>
     /// <param name="data">Data required to do the move.</param>
@@ -217,5 +230,29 @@ public class EntityPropertiesController : ControllerBase
     public async Task<IActionResult> FixOrderingAsync(int linkType)
     {
         return (await entityPropertiesService.FixOrderingAsync((ClaimsIdentity)User.Identity, linkType: linkType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Creates property group entries in the database for a specific entity type, if they didn't exist already
+    /// </summary>
+    /// <param name="entityType">The entity type to create property groups for.</param>
+    [HttpPut]
+    [Route("{entityType}/create-property-groups")]
+    [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CreatePropertyGroupsAsync(string entityType)
+    {
+        return (await entityPropertiesService.AddPropertyGroupsAsync((ClaimsIdentity)User.Identity, entityType)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Creates property group entries in the database for a specific link type, if they didn't exist already
+    /// </summary>
+    /// <param name="linkType">The link type to create property groups for.</param>
+    [HttpPut]
+    [Route("{linkType:int}/create-property-groups")]
+    [ProducesResponseType(typeof(List<EntityPropertyModel>), StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> CreatePropertyGroupsAsync(int linkType)
+    {
+        return (await entityPropertiesService.AddPropertyGroupsAsync((ClaimsIdentity)User.Identity, linkType: linkType)).GetHttpResponseMessage();
     }
 }

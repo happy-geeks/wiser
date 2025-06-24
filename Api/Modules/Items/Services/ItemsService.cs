@@ -228,7 +228,7 @@ public class ItemsService(
                      					ORDER BY IFNULL(item.changed_on, item.added_on) DESC
                                          LIMIT {(input.Page - 1) * input.PageSize}, {input.PageSize}
                                      ) AS x
-                                     LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr')
+                                     LEFT JOIN {WiserTableNames.WiserEntityProperty} AS property ON property.entity_name = x.entity_type AND property.inputtype NOT IN ('file-upload', 'querybuilder', 'grid', 'button', 'image-upload', 'sub-entities-grid', 'item-linker', 'linked-item', 'action-button', 'data-selector', 'chart', 'scheduler', 'timeline', 'empty', 'qr', 'group')
                                      LEFT JOIN {WiserTableNames.WiserItemDetail} AS field ON field.item_id = x.id AND field.`key` = IFNULL(property.property_name, property.display_name) AND field.language_code = property.language_code
                                      GROUP BY x.id
                      				ORDER BY IFNULL(x.changed_on, x.added_on) DESC
@@ -710,6 +710,7 @@ public class ItemsService(
                     {
                         var destinationTablePrefix = await entityTypesService.GetTablePrefixForEntityAsync(settings.DestinationEntityType);
                         var queryResult = await clientDatabaseConnection.GetAsync($"SELECT entity_type FROM {destinationTablePrefix}{WiserTableNames.WiserItem} WHERE id = ?parentId", true);
+
                         if (queryResult.Rows.Count <= 0)
                         {
                             continue;
@@ -1050,6 +1051,7 @@ public class ItemsService(
         // Execute the query to get the details of the current item.
         clientDatabaseConnection.AddParameter("itemId", itemId);
         var dataTable = await clientDatabaseConnection.GetAsync(detailsQuery);
+
         // Do replacements on the data query with the details of the current item.
         if (dataTable.Rows.Count > 0)
         {
@@ -1194,9 +1196,10 @@ public class ItemsService(
                           	                            e.save_on_change, files.JSON AS filesJSON, 0 AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
                           	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
                           	                            IF(e.readonly > 0 OR i.readonly > 0 OR SUM(IF(permission.permissions IS NULL OR (permission.permissions & 4) > 0, 1, 0)) = 0, TRUE, FALSE) AS readonly,
-                          	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex
+                          	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex, g.width AS group_width, g.options AS group_options
                                                       FROM {{WiserTableNames.WiserEntityProperty}} e
                                                       JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}}{0} i ON i.id = ?itemId AND i.entity_type = e.entity_name
+                                                      LEFT JOIN {{WiserTableNames.WiserEntityProperty}} g ON g.id = e.group_id
                                                       LEFT JOIN {{WiserTableNames.WiserFieldTemplates}} t ON t.field_type = e.inputtype
                                                       LEFT JOIN {{tablePrefix}}{{WiserTableNames.WiserItemDetail}}{0} d ON d.item_id = ?itemId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                                       # TODO: Find a more efficient way to load images and files?
@@ -1227,10 +1230,11 @@ public class ItemsService(
                           	                            e.save_on_change, files.JSON AS filesJSON, il.id AS itemLinkId, e.regex_validation, e.mandatory, e.language_code,
                           	                            # A user can have multiple roles. So we need to check if they have at least one role that has update rights. If it doesn't, then the field should be readonly.
                           	                            IF(e.readonly > 0 OR SUM(IF(permission.permissions IS NULL OR (permission.permissions & 4) > 0, 1, 0)) = 0, TRUE, FALSE) AS readonly, 
-                          	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex
+                          	                            e.custom_script, permission.permissions, i.readonly AS itemIsReadOnly, e.visibility_path_regex, g.width AS group_width, g.options AS group_options
                                                       FROM {{WiserTableNames.WiserEntityProperty}} e
                                                       JOIN {{tablePrefix}}{{WiserTableNames.WiserItem}}{0} i ON i.id = ?itemId
                                                       JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLink}}{0} il ON il.id = ?itemLinkId AND il.type = e.link_type
+                                                      LEFT JOIN {{WiserTableNames.WiserEntityProperty}} g ON g.id = e.group_id
                                                       LEFT JOIN {{WiserTableNames.WiserFieldTemplates}} t ON t.field_type = e.inputtype
                                                       LEFT JOIN {{linkTablePrefix}}{{WiserTableNames.WiserItemLinkDetail}}{0} d ON d.itemlink_id = ?itemLinkId AND ((e.property_name IS NOT NULL AND e.property_name <> '' AND d.`key` = e.property_name) OR ((e.property_name IS NULL OR e.property_name = '') AND d.`key` = e.display_name)) AND d.language_code = e.language_code
                                                       # TODO: Find a more efficient way to load images and files?
@@ -1292,7 +1296,7 @@ public class ItemsService(
             var tab = results.Tabs.FirstOrDefault(r => r.Name.Equals(tabName, StringComparison.OrdinalIgnoreCase));
             if (tab == null)
             {
-                tab = new ItemTabOrGroupModel { Name = tabName };
+                tab = new ItemTabModel { Name = tabName };
                 results.Tabs.Add(tab);
             }
 
@@ -1300,7 +1304,7 @@ public class ItemsService(
             var group = tab.Groups.FirstOrDefault(g => g.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase));
             if (group == null)
             {
-                group = new ItemTabOrGroupModel { Name = groupName };
+                group = new ItemGroupModel { Name = groupName };
                 tab.Groups.Add(group);
             }
 
@@ -1460,6 +1464,14 @@ public class ItemsService(
             // Setup any extra attributes.
             switch (fieldType.ToLowerInvariant())
             {
+                case "group":
+                    group.Width = Convert.ToInt32(dataRow.Field<short?>("width") ?? group.Width);
+                    group.Description = dataRow.Field<string>("explanation") ?? "";
+                    group.MinimumWidth = optionsObject.Value<int?>("minWidth") ?? group.MinimumWidth;
+                    group.Orientation = optionsObject["orientation"]?.ToObject<EntityGroupOrientation?>() ?? group.Orientation;
+                    group.ShowName = optionsObject.Value<bool?>("showName") ?? group.ShowName && !String.IsNullOrEmpty(groupName);
+                    group.Collapsible = optionsObject.Value<bool?>("collapsible") ?? group.Collapsible;
+                    continue;
                 case "checkbox":
                     if ((!String.IsNullOrWhiteSpace(value) && Int32.TryParse(value, out var intValue) && intValue > 0) || (String.IsNullOrWhiteSpace(value) && Int32.TryParse(defaultValue, out intValue) && intValue > 0))
                     {
@@ -1809,13 +1821,25 @@ public class ItemsService(
             {
                 foreach (var group in tab.Groups)
                 {
-                    if (String.IsNullOrEmpty(group.Name))
+                    if (group.HtmlTemplateBuilder.Length == 0)
                     {
-                        tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\">");
+                        continue;
                     }
-                    else
+                    string groupClass = group.Width < 100 ? "class=\"item-group-thin\"" : "class=\"item-group\"";
+
+                    string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
+                    string minWidth = $"min-width: {group.MinimumWidth}px;";
+                    string display = "display: " + (group.Orientation == EntityGroupOrientation.Vertical ? "block;" : "flex;");
+                    string groupStyle = $"style=\"{width}{minWidth}{display}\"";
+
+                    tab.HtmlTemplateBuilder.Append($"<div {groupClass} {groupStyle}>");
+                    if (!String.IsNullOrEmpty(group.Name) && group.ShowName)
                     {
-                        tab.HtmlTemplateBuilder.Append($"<div class=\"item-group\"><h3>{group.Name.HtmlEncode()}</h3>");
+                        tab.HtmlTemplateBuilder.Append($"<h3>{group.Name.HtmlEncode()}</h3>");
+                        if (!String.IsNullOrEmpty(group.Description))
+                        {
+                            tab.HtmlTemplateBuilder.Append($"<div class=\"form-hint\">{group.Description.HtmlEncode()}</div>");
+                        }
                     }
 
                     tab.HtmlTemplateBuilder.Append(group.HtmlTemplateBuilder);
@@ -2695,9 +2719,9 @@ public class ItemsService(
             {
                 query = $"""
                          UPDATE {WiserTableNames.WiserItem}
-                                                     SET ordering = ordering - 1
-                                                     WHERE parent_item_id = ?sourceParentId
-                                                     AND ordering > ?oldOrderNumber
+                                             SET ordering = ordering - 1
+                                             WHERE parent_item_id = ?sourceParentId
+                                             AND ordering > ?oldOrderNumber
                          """;
             }
 
@@ -2747,10 +2771,10 @@ public class ItemsService(
         {
             query = $"""
                      INSERT IGNORE INTO {linkTablePrefix}{WiserTableNames.WiserItemLink} (item_id, destination_item_id, type)
-                     SELECT source.id, destination.id, ?linkType
-                     FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
-                     JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
-                     WHERE source.id IN ({String.Join(",", sourceIds)})
+                                             SELECT source.id, destination.id, ?linkType
+                                             FROM {tablePrefix}{WiserTableNames.WiserItem} AS source
+                                             JOIN {destinationTablePrefix}{WiserTableNames.WiserItem} AS destination ON destination.id IN ({String.Join(",", destinationIds)})
+                                             WHERE source.id IN ({String.Join(",", sourceIds)})
                      """;
         }
 

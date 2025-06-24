@@ -438,7 +438,62 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="right-pane">
+                                                <div class="right-pane group-pane">
+                                                    <div class="pane-content">
+                                                        <div class="item-group" style="min-width: 300px; width: 30%; margin: 5px; padding: 20px 10px; display: grid; border-right: 2px solid white;">
+                                                            <h3>Groep instellingen</h3>
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label>Groep naam</label>
+                                                                    <span class="info" data-type="groupName"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <span class="k-widget k-input k-state-default">
+                                                                    <input id="groupName" type="text" class="textField k-input" maxlength="100" autocomplete="off" />
+                                                                </span>
+                                                            </div>
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label>Groep toelichting (optioneel)</label>
+                                                                    <span class="info" data-type="groupDescription"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <span class="k-widget k-input k-state-default">
+                                                                    <textarea id="groupDescription" class="textField" ></textarea>
+                                                                </span>
+                                                            </div>
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label>Breedte (in %)</label>
+                                                                    <span class="info" data-type="groupWidth"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <input id="groupWidth" type="number" class="numeric" value="" min="0" max="100" step="1" autocomplete="off" />
+                                                            </div>
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label>Minimale breedte (in pixels)</label>
+                                                                    <span class="info" data-type="minWidth"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <input id="minWidth" type="number" class="numeric" value="" max="65535" min="0" step="1" autocomplete="off" />
+                                                            </div>
+                                                            <div class="item">
+                                                                <h4>
+                                                                    <label for="orientation">Stapelrichting</label>
+                                                                    <span class="info" data-type="orientation"><ins class="icon-info-full"></ins></span>
+                                                                </h4>
+                                                                <select id="orientation" class="orientationCombobox">
+                                                                </select>
+                                                            </div>
+                                                            <div class="item">
+                                                                <span class="inline">
+                                                                    <label class="checkbox" data-invisible="RadioButton CheckBox Empty">
+                                                                        <input id="showGroupName" type="checkbox">
+                                                                        <span>Naam weergeven</span>
+                                                                    </label>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="right-pane property-pane">
                                                     <div class="pane-content flex-container">
                                                         <div class="item-group">
                                                             <h3>Algemene instellingen</h3>
@@ -479,9 +534,9 @@
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>
                                                                     <label>Groep</label>
-                                                                    <span class="info" data-type="groupName"><ins class="icon-info-full"></ins></span>
+                                                                    <span class="info" data-type="parentGroup"><ins class="icon-info-full"></ins></span>
                                                                 </h4>
-                                                                <select id="groupName"></select>
+                                                                <select id="parentGroup"></select>
                                                             </div>
                                                             <div class="item" style="width: 25%;">
                                                                 <h4>

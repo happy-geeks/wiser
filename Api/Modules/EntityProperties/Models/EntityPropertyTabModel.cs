@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Api.Modules.EntityProperties.Enums;
 
 namespace Api.Modules.EntityProperties.Models;
 
@@ -20,10 +21,10 @@ public class EntityPropertyTabModel
     /// <summary>
     /// Gets or sets all fields in this tab.
     /// </summary>
-    public List<EntityPropertyModel> Properties { get; set; } = [];
+    public List<EntityPropertyGroupModel> Properties { get; set; } = [];
 
     /// <summary>
-    /// This just indicates that the current item is a tab. This makes it easier for our javascript code to check if an item in the item is a tab or a field.
+    /// This just indicates that the current item is a tab. This makes it easier for our javascript code to check what it is working with.
     /// </summary>
-    public bool IsTab { get; set; } = true;
+    public EntityPropertyModelTypes Type { get; set; } = EntityPropertyModelTypes.Tab;
 }
