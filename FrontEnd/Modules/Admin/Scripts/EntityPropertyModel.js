@@ -8,7 +8,6 @@
         this.displayName = null;
         this.propertyName = null;
         this.overview = null;
-        this.groupId = null;
         this.groupName = null;
         this.inputType = null;
         this.explanation = null;

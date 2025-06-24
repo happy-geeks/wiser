@@ -34,7 +34,6 @@ public enum EntityPropertyInputTypes
     TimeLine,
     Empty,
     Qr,
-    Iframe,
-    Group
+    Iframe
 #pragma warning restore CS1591
 }

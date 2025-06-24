@@ -46,7 +46,8 @@ public class EntityPropertyHelper
             "empty" => EntityPropertyInputTypes.Empty,
             "qr" => EntityPropertyInputTypes.Qr,
             "iframe" => EntityPropertyInputTypes.Iframe,
-            "group" => EntityPropertyInputTypes.Group,
+            // Temporarily map group to Empty, until group input type is implemented.
+            "group" => EntityPropertyInputTypes.Empty,
             _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
         };
     }
