@@ -2412,6 +2412,8 @@ export class EntityTab {
         this.selectedTabOrProperty = dataItem;
 
         if (dataItem.type === "Group") {
+            //PROPERTY_GROUPS: Temporarily disabled code that would create or use property groups in wiser_entityproperty
+            return;
             $("#EntityTabStrip-2 .property-pane").hide();
             $("#EntityTabStrip-2 .group-pane").show();
         }
@@ -2609,12 +2611,14 @@ export class EntityTab {
         this.setEntityPropertiesToDefault();
         this.setEntityProperties(resultSet);
 
+        /* PROPERTY_GROUPS: Temporarily disabled code that would create or use property groups in wiser_entityproperty
         // Make sure all property groups exist in the database for this entity, since they were added later
         await Wiser.api({
             type: "PUT",
             url: `${this.base.settings.wiserApiRoot}entity-properties/${encodeURIComponent(this.entitiesCombobox.dataItem().name)}/create-property-groups`,
             contentType: "application/json"
         });
+        */
 
         // Make sure all groups and fields have proper ascending ordering numbers, otherwise dragging & dropping to change the order of fields won't work properly.
         await Wiser.api({

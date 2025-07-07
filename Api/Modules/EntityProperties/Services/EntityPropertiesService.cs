@@ -397,6 +397,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         }
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
 
+        /* PROPERTY_GROUPS: Temporarily disabled code that would create or use property groups in wiser_entityproperty
         // a new group name has been entered for this property, create it first
         if (entityProperty.Type == EntityPropertyModelTypes.Property && entityProperty.GroupID == 0)
         {
@@ -419,6 +420,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
             // now we have the new group, use that group id
             entityProperty.GroupID = newGroup.Id;
         }
+        */
 
         // if we are changing the name on a group entity, we need to update the group_name column on all properties in this group as well
         // in the future we might be able to get rid of the group_name column because we added the group_id
