@@ -61,8 +61,8 @@ public class OpenIddictTokenRequestHandler(
 
     private async ValueTask HandlePasswordAsync(OpenIddictServerEvents.HandleTokenRequestContext context)
     {
-        var subDomain = context.Transaction.Request?[HttpContextConstants.SubDomainKey]?.Value?.ToString();
-        logger.LogInformation($"User '{context.Request.Username}' is trying to authenticate for sub domain '{subDomain}'.");
+        var subDomain = (string)context.Transaction.Request?[HttpContextConstants.SubDomainKey];
+        logger.LogInformation("User '{RequestUsername}' is trying to authenticate for sub domain '{SubDomain}'.", context.Request.Username, subDomain);
         if (String.IsNullOrWhiteSpace(subDomain))
         {
             context.Reject("subdomain_missing", "No sub domain given");
@@ -77,16 +77,16 @@ public class OpenIddictTokenRequestHandler(
 
         ulong adminAccountId = 0;
         var adminAccountName = "";
-        var selectedUser = context.Transaction.Request?[HttpContextConstants.SelectedUserKey]?.Value?.ToString();
-        var isTestEnvironment = context.Transaction.Request?[HttpContextConstants.IsTestEnvironmentKey]?.Value?.ToString();
-        var totpPin = context.Transaction.Request?[HttpContextConstants.TotpPinKey]?.Value?.ToString();
-        var totpBackupCode = context.Transaction.Request?[HttpContextConstants.TotpBackupCodeKey]?.Value?.ToString();
+        var selectedUser = (string)context.Transaction.Request?[HttpContextConstants.SelectedUserKey];
+        var isTestEnvironment = (string)context.Transaction.Request?[HttpContextConstants.IsTestEnvironmentKey];
+        var totpPin = (string)context.Transaction.Request?[HttpContextConstants.TotpPinKey];
+        var totpBackupCode = (string)context.Transaction.Request?[HttpContextConstants.TotpBackupCodeKey];
         if (String.IsNullOrWhiteSpace(isTestEnvironment))
         {
             isTestEnvironment = "false";
         }
 
-        var isWiserFrontEndLoginEncrypted = context.Transaction.Request?[HttpContextConstants.IsWiserFrontEndLoginKey]?.Value?.ToString();
+        var isWiserFrontEndLoginEncrypted = (string)context.Transaction.Request?[HttpContextConstants.IsWiserFrontEndLoginKey];
         var isWiserFrontEndLogin = false;
         if (!String.IsNullOrWhiteSpace(isWiserFrontEndLoginEncrypted))
         {
