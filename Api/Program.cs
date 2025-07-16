@@ -198,6 +198,7 @@ builder.Services.AddOpenIddict()
         if (builder.Environment.IsDevelopment())
         {
             options.AddDevelopmentEncryptionCertificate().AddDevelopmentSigningCertificate();
+            options.DisableAccessTokenEncryption();
 
             options.UseAspNetCore().DisableTransportSecurityRequirement();
         }
