@@ -133,7 +133,14 @@ class Main {
     }
 
     async handlePostMessage(event) {
-        if (!event.data || !event.data.action || !this.crossOriginAllowed(event.origin)) {
+        console.log("handlePostMessage", event);
+        if (!event?.data?.action) {
+            console.warn("Post message ignored, because it was received without action", event);
+            return;
+        }
+
+        if (!this.crossOriginAllowed(event.origin)) {
+            console.warn("Post message ignored, because the origin is not allowed", event.origin);
             return;
         }
 
@@ -1319,6 +1326,8 @@ class Main {
      * @returns {boolean} Returns true if the origin is allowed, false otherwise.
      */
     crossOriginAllowed(origin) {
+        console.log("Checking cross-origin for:", origin);
+
         // First parse the origin to ensure it's a valid URL.
         const parsedOrigin = new URL(origin, window.location.origin);
         if (!parsedOrigin) {
@@ -1328,6 +1337,7 @@ class Main {
 
         // Check if the origin matches the current domain or is a subdomain of it, in which case we will always allow it.
         if (parsedOrigin.hostname === this.appSettings.currentDomain || parsedOrigin.host === this.appSettings.currentDomain || parsedOrigin.hostname.endsWith(`.${this.appSettings.currentDomain}`)) {
+            console.log("Origin allowed because it matches the current domain or is a subdomain.", origin);
             return true;
         }
 
@@ -1346,6 +1356,7 @@ class Main {
         // Check if the origin matches any of the allowed CORS origins.
         for (let allowedOrigin of this.appSettings.allowedCorsOrigins) {
             if (parsedOrigin.hostname === allowedOrigin || (allowedOrigin.startsWith("*.") && parsedOrigin.hostname.endsWith(allowedOrigin.substring(1)))) {
+                console.log("Origin allowed because it matches one of the allowed CORS origins.", origin, allowedOrigin);
                 return true;
             }
         }
