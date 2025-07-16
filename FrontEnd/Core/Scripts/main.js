@@ -133,7 +133,7 @@ class Main {
     }
 
     async handlePostMessage(event) {
-        if (!event.data || !event.data.action) {
+        if (!event.data || !event.data.action || !this.crossOriginAllowed(event.origin)) {
             return;
         }
 
@@ -143,6 +143,7 @@ class Main {
                 break;
             case "OpenItem": {
                 if (!event.data.actionData?.moduleId || (!event.data.actionData?.encryptedItemId && !event.data.actionData?.itemId)) {
+                    console.warn("OpenItem actionData is missing moduleId or itemId/encryptedItemId", event.data.actionData);
                     break;
                 }
 
@@ -159,7 +160,8 @@ class Main {
             }
             case "GetAccessToken": {
                 // Access tokens can only be requested by origins that share the same main domain and on test environments.
-                if (!event.source || (!event.origin.endsWith(`.${this.appSettings.currentDomain}`) && !this.appSettings.isTestEnvironment)) {
+                if (!event.source) {
+                    console.warn("GetAccessToken action denied, because it was received without a source.", event);
                     break;
                 }
 
@@ -191,7 +193,7 @@ class Main {
                 break;
             }
             case "OpenTenantManagement": {
-                this.vueApp.openTenantManagement();
+                await this.vueApp.openTenantManagement();
                 break;
             }
             case "OpenGenerateTotpBackupCodesPrompt": {
@@ -1309,6 +1311,48 @@ class Main {
 
         // Mount our app to the main HTML element.
         this.vueApp = this.vueApp.mount("#app");
+    }
+
+    /**
+     * Checks if the provided origin is allowed for cross-origin requests.
+     * @param {string} origin The origin to check, e.g., "https://example.com".
+     * @returns {boolean} Returns true if the origin is allowed, false otherwise.
+     */
+    crossOriginAllowed(origin) {
+        // First parse the origin to ensure it's a valid URL.
+        const parsedOrigin = new URL(origin, window.location.origin);
+        if (!parsedOrigin) {
+            console.warn("Invalid origin provided for cross-origin check.", origin);
+            return false;
+        }
+
+        // Check if the origin matches the current domain or is a subdomain of it, in which case we will always allow it.
+        if (parsedOrigin.hostname === this.appSettings.currentDomain || parsedOrigin.host === this.appSettings.currentDomain || parsedOrigin.hostname.endsWith(`.${this.appSettings.currentDomain}`)) {
+            return true;
+        }
+
+        // If the protocol is not HTTPS, we deny the origin.
+        if (parsedOrigin.protocol !== "https:") {
+            console.warn("Origin denied because it does not start with 'https://'.", origin);
+            return false;
+        }
+
+        // If there are no allowed CORS origins configured, we deny the origin.
+        if (!this.appSettings.allowedCorsOrigins || this.appSettings.allowedCorsOrigins.length === 0) {
+            console.warn("Origin denied because it's a different domain and the allowedCorsOrigins list is empty.", origin);
+            return false;
+        }
+
+        // Check if the origin matches any of the allowed CORS origins.
+        for (let allowedOrigin of this.appSettings.allowedCorsOrigins) {
+            if (parsedOrigin.hostname === allowedOrigin || (allowedOrigin.startsWith("*.") && parsedOrigin.hostname.endsWith(allowedOrigin.substring(1)))) {
+                return true;
+            }
+        }
+
+        // If we reach here, we were not able to find any match, so the origin is not allowed.
+        console.warn("Origin denied because it does not match any of the allowedCorsOrigins.", origin, this.appSettings.allowedCorsOrigins);
+        return false;
     }
 }
 

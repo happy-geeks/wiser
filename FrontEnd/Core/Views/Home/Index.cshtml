@@ -1,5 +1,6 @@
 ﻿@addTagHelper FrontEnd.Core.TagHelpers.WebpackScriptTagHelper, FrontEnd
 @using GeeksCoreLibrary.Core.Enums
+@using Newtonsoft.Json
 @model FrontEnd.Core.Models.BaseViewModel
 <style>
     [v-cloak] {
@@ -1161,7 +1162,8 @@
     "apiClientId": "@Model.Settings.ApiClientId",
     "apiClientSecret": "@Model.Settings.ApiClientSecret",
     "trackJsToken": "@Model.Settings.TrackJsToken",
-    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin"
+    "isWiserFrontEndLogin": "@Model.IsWiserFrontEndLogin",
+    "allowedCorsOrigins": @Html.Raw(JsonConvert.SerializeObject(Model.AllowedCorsOrigins))
 }
 </script>
 

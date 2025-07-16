@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 
 namespace FrontEnd.Core.Models;
@@ -26,4 +27,6 @@ public class BaseViewModel
     public string CurrentDomain { get; set; }
 
     public string IsWiserFrontEndLogin { get; set; }
+
+    public List<string> AllowedCorsOrigins { get; set; } = [];
 }

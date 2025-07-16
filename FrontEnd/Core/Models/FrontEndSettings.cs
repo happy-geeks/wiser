@@ -49,7 +49,7 @@ public class FrontEndSettings
 
     /// <summary>
     /// Gets or sets the host names that are used for the Wiser front-end. This should not include the sub domain.
-    /// This will be used to figure out the sub domain, which is needed to find out which tenant is being loaded.
+    /// This will be used to figure out the subdomain, which is needed to find out which tenant is being loaded.
     /// </summary>
     public List<string> WiserHostNames { get; set; } = [];
 
@@ -63,4 +63,9 @@ public class FrontEndSettings
     /// Gets or sets the directory where the plugins are located.
     /// </summary>
     public string PluginsDirectory { get; set; }
+
+    /// <summary>
+    /// A list of allowed CORS origins for the Wiser front-end, for example for which domains can be loaded as modules in iframes.
+    /// </summary>
+    public List<string> AllowedCorsOrigins { get; set; } = [];
 }

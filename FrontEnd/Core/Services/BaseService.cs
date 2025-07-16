@@ -84,6 +84,7 @@ public class BaseService(IHttpContextAccessor httpContextAccessor, IWebHostEnvir
         viewModel.ApiRoot = $"{frontEndSettings.ApiBaseUrl}api/v3/";
         viewModel.ApiRootV4 = $"{frontEndSettings.ApiBaseUrl}api/v4/";
         viewModel.IsWiserFrontEndLogin = "true".EncryptWithAesWithSalt(gclSettings.DefaultEncryptionKey, true, true);
+        viewModel.AllowedCorsOrigins = frontEndSettings.AllowedCorsOrigins;
 
         if (httpContextAccessor.HttpContext != null)
         {
