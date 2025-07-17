@@ -679,7 +679,6 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 EntityType = entityType
             }
         };
-        importData.Add(importItem);
 
         var isNewItem = true;
 
@@ -697,6 +696,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         for (var i = 0; i <= lineFields.Length - 1; i++)
         {
             var importColumnName = headerFields[i];
+            var lineValue = lineFields[i]?.Trim() ?? String.Empty;
 
             // Ignore ID column.
             if (importColumnName.Equals("id", StringComparison.OrdinalIgnoreCase))
@@ -718,7 +718,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 {
                     if (!String.IsNullOrWhiteSpace(importRequest.ImagesFileName))
                     {
-                        images.Add(new ImageUploadSettingsModel { PropertyName = propertyName, FilePath = lineFields[i], AllowMultipleImages = allowMultipleImages });
+                        images.Add(new ImageUploadSettingsModel { PropertyName = propertyName, FilePath = lineValue, AllowMultipleImages = allowMultipleImages });
                     }
                 }
                 else if (!String.IsNullOrWhiteSpace(propertyName))
@@ -730,7 +730,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                     }
                     else
                     {
-                        var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item, propertyName, lineFields[i], importResult, false);
+                        var value = await HandleComboBoxFieldAsync(comboBoxFields, languageCode, importItem, importItem.Item, propertyName, lineValue, importResult, false);
                         if (!HandleFieldValue(properties, propertyName, languageCode, importResult, importColumnName, ref value))
                         {
                             continue;
@@ -753,7 +753,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                 continue;
             }
 
-            foreach (var value in lineFields[i].Split(','))
+            foreach (var value in lineValue.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 if (String.IsNullOrWhiteSpace(value))
                 {
@@ -886,7 +886,6 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             }
         }
 
-        importResult.ItemsTotal += 1U;
 
         try
         {
@@ -920,6 +919,16 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                     }
                 }
             }
+
+            if (String.IsNullOrWhiteSpace(importItem.Item.Title) && String.IsNullOrWhiteSpace(importItem.Item.UniqueUuid) && importItem.Item.Details.Count == 0 && importItem.Links.Count == 0 && importItem.Files.Count == 0)
+            {
+                // Don't import empty items.
+                return;
+            }
+
+            importData.Add(importItem);
+
+            importResult.ItemsTotal += 1U;
 
             // No errors here means it was successful.
             importResult.Successful += 1U;
