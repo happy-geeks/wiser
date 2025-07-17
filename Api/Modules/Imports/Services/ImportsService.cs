@@ -879,13 +879,13 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
                     IsLinkProperty = true,
                     Key = propertyName,
                     Value = value,
-                    LanguageCode = languageCode
+                    LanguageCode = languageCode,
+                    LinkType = itemLink.Type
                 };
 
                 itemLink.SetDetail(itemDetail);
             }
         }
-
 
         try
         {
@@ -1075,7 +1075,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
     /// <param name="comboBoxFields">The complete list of all combobox fields of the specified entity type.</param>
     /// <param name="languageCode">The language code of the property/field.</param>
     /// <param name="importItem">The <see cref="ImportDataModel"/> of the row/item that is being handled.</param>
-    /// <param name="details">The list of <see cref="WiserItemDetailModel"/> to import.</param>
+    /// <param name="detailsItem">The list of <see cref="WiserItemDetailModel"/> to import.</param>
     /// <param name="propertyName">The name of the property/field to handle.</param>
     /// <param name="value">The value from the import file.</param>
     /// <param name="importResult">The <see cref="ImportResultModel"/> to store the final result in.</param>
@@ -1098,7 +1098,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         }
 
         await AddComboBoxValuesAsync(comboBoxField);
-        var allValues = value.Split(',');
+        var allValues = value?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
         var ids = new List<string>();
         var names = new List<string>();
 
@@ -1122,17 +1122,22 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
             names.Add(keyValuePair.Value);
         }
 
-        detailsItem.SetDetail(new WiserItemDetailModel
+        var displayNamesItemDetail = new WiserItemDetailModel
         {
             IsLinkProperty = isLinkProperty,
             Key = propertyName + "_input",
             Value = String.Join(",", names),
             LanguageCode = languageCode
-        });
+        };
+        detailsItem.SetDetail(displayNamesItemDetail);
 
         if (isLinkProperty || !comboBoxField.Options.Value<bool>("saveValueAsItemLink"))
         {
             value = String.Join(",", ids);
+            if (detailsItem is ItemLinkImportModel itemLinkImport)
+            {
+                displayNamesItemDetail.LinkType = itemLinkImport.Type;
+            }
         }
         else
         {
