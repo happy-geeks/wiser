@@ -664,7 +664,7 @@ public class ImportsService(IWiserItemsService wiserItemsService, IUsersService 
         List<ComboBoxDataModel> comboBoxFields,
         List<(string PropertyName, string LanguageCode, string InputType, JObject Options)> properties)
     {
-        if (lineFields.All(String.IsNullOrWhiteSpace))
+        if (lineFields.All(x => String.IsNullOrWhiteSpace(x) || x == "0"))
         {
             // Don't import empty rows.
             return;
