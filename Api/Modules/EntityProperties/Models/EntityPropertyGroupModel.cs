@@ -66,7 +66,7 @@ public class EntityPropertyGroupModel
     /// <summary>
     /// Gets or sets all fields in this group.
     /// </summary>
-    public List<EntityPropertyModel> Properties { get; set; } = new();
+    public List<EntityPropertyModel> Properties { get; set; } = [];
 
     /// <summary>
     /// This just indicates that the current item is a group. This makes it easier for our javascript code to check what it is working with.

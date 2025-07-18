@@ -66,13 +66,13 @@ public class BodyPartModel
         }
         set
         {
-            bool.TryParse(value, out bool valid);
+            Boolean.TryParse(value, out var valid);
             if (!valid)
             {
                 forceIndex = false;
                 return;
             }
-            forceIndex = bool.Parse(value);
+            forceIndex = Boolean.Parse(value);
         }
     }
     [XmlIgnore]
@@ -113,13 +113,13 @@ public class BodyPartModel
         }
         set
         {
-            bool.TryParse(value, out bool valid);
+            Boolean.TryParse(value, out var valid);
             if (!valid)
             {
                 singleItem = false;
                 return;
             }
-            singleItem = bool.Parse(value);
+            singleItem = Boolean.Parse(value);
         }
     }
     [XmlIgnore]
@@ -159,13 +159,13 @@ public class BodyPartModel
         }
         set
         {
-            bool.TryParse(value, out bool valid);
+            Boolean.TryParse(value, out var valid);
             if (!valid)
             {
                 evaluateLogicSnippets = false;
                 return;
             }
-            evaluateLogicSnippets = bool.Parse(value);
+            evaluateLogicSnippets = Boolean.Parse(value);
         }
     }
     

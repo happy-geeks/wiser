@@ -19,7 +19,6 @@ using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using MySqlConnector;
 using Constants = GeeksCoreLibrary.Modules.Languages.Models.Constants;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Api.Modules.EntityProperties.Services;
@@ -424,7 +423,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
 
         // if we are changing the name on a group entity, we need to update the group_name column on all properties in this group as well
         // in the future we might be able to get rid of the group_name column because we added the group_id
-        bool updateGroupNameOfProperties = false;
+        var updateGroupNameOfProperties = false;
         if (entityProperty.Type == EntityPropertyModelTypes.Group && entityProperty.DisplayName != entityProperty.GroupName)
         {
             updateGroupNameOfProperties = true;
@@ -1014,7 +1013,7 @@ public class EntityPropertiesService : IEntityPropertiesService, IScopedService
         // First we need to get the ordering number of the destination location.
         var whereClause = data.LinkType > 0 ? "link_type = ?linkType" : "entity_name = ?entityType";
 
-        string sqlFunction = data.DropPosition switch
+        var sqlFunction = data.DropPosition switch
         {
             TreeViewDropPositions.Before => "MIN",
             TreeViewDropPositions.After => "MAX",

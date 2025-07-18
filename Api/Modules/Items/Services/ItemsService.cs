@@ -1825,12 +1825,12 @@ public class ItemsService(
                     {
                         continue;
                     }
-                    string groupClass = group.Width < 100 ? "class=\"item-group-thin\"" : "class=\"item-group\"";
+                    var groupClass = group.Width < 100 ? "class=\"item-group-thin\"" : "class=\"item-group\"";
 
-                    string width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
-                    string minWidth = $"min-width: {group.MinimumWidth}px;";
-                    string display = "display: " + (group.Orientation == EntityGroupOrientation.Vertical ? "block;" : "flex;");
-                    string groupStyle = $"style=\"{width}{minWidth}{display}\"";
+                    var width = group.Width < 100 ? $"width: calc({group.Width}% - 32px); " : "";
+                    var minWidth = $"min-width: {group.MinimumWidth}px;";
+                    var display = "display: " + (group.Orientation == EntityGroupOrientation.Vertical ? "block;" : "flex;");
+                    var groupStyle = $"style=\"{width}{minWidth}{display}\"";
 
                     tab.HtmlTemplateBuilder.Append($"<div {groupClass} {groupStyle}>");
                     if (!String.IsNullOrEmpty(group.Name) && group.ShowName)

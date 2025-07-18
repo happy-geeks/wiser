@@ -1,13 +1,18 @@
-﻿using System.Text.Json.Serialization;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
 using JetBrains.Annotations;
 
-namespace Api.Modules.Templates.Models.Template.WtsModels;
+namespace Api.Modules.Templates.Models.Template.WtsModels.ResultSetConditionalModels;
 
+/// <summary>
+/// A model representing a condition in a result set that compares a value against a source.
+/// </summary>
 public class ResultSetConditionValueModel : ResultSetConditionModel
 {
+    /// <summary>
+    /// The source of the value to compare against.
+    /// </summary>
     [XmlIgnore]
     [WtsProperty(
         IsVisible = true,
@@ -17,15 +22,18 @@ public class ResultSetConditionValueModel : ResultSetConditionModel
         Description = "De bron van de waarde.",
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithValue"}
+        DependsOnValue = ["OnlyWithValue"]
     )]
     [CanBeNull]
-    public string Selector_Value
+    public string SelectorValue
     {
         get => GetSelector();
         set => SetSelector(value);
     }
 
+    /// <summary>
+    /// The expected value to compare against the source value.
+    /// </summary>
     [XmlIgnore]
     [CanBeNull]
     [WtsProperty(
@@ -35,13 +43,16 @@ public class ResultSetConditionValueModel : ResultSetConditionModel
         Description = "De verwachte waarde.",
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithValue"}
+        DependsOnValue = ["OnlyWithValue"]
     )]
-    public string ValueForComparison_Value 
+    public string ValueForComparisonValue
     {
         get => GetValue();
         set => SetValue(value);
     }
 
-    public override OnlyWithTypes type { get; set; } = OnlyWithTypes.OnlyWithValue;
+    /// <summary>
+    /// The type of condition this model represents.
+    /// </summary>
+    public override OnlyWithTypes Type { get; set; } = OnlyWithTypes.OnlyWithValue;
 }

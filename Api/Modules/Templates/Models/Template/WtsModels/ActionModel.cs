@@ -1,15 +1,13 @@
 using System;
-using System.Drawing;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
+using Api.Modules.Templates.Models.Template.WtsModels.ResultSetConditionalModels;
 using GeeksCoreLibrary.Core.Enums;
 using GeeksCoreLibrary.Core.Models;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
-using OpenIddict.Client;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member.
 
@@ -40,7 +38,7 @@ public abstract class ActionModel
                        """
     )]
     public int TimeId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the order ID. This determines the sequence in which different actions within the same timer are executed.
     /// </summary>
@@ -59,7 +57,7 @@ public abstract class ActionModel
             "
     )]
     public int Order { get; set; }
-    
+
     /// <summary>
     /// The action id is a combination between the time ID and order. This value has to be unique.
     /// </summary>
@@ -74,9 +72,9 @@ public abstract class ActionModel
         IsDisabled = true
     )]
     public string ActionId => ($"{TimeId}-{Order}");
-    
+
     private string resultSetName;
-    
+
     /// <summary>
     /// Gets or sets the name that will be used to store the result set. An empty string represents null.
     /// </summary>
@@ -92,13 +90,17 @@ public abstract class ActionModel
         get => resultSetName;
         set
         {
-            if (value == "") value = null;
+            if (value == "")
+            {
+                value = null;
+            }
+
             resultSetName = value;
-        } 
+        }
     }
-    
+
     private string useResultSet;
-    
+
     /// <summary>
     /// Gets or sets the name that will be used to get the result set. An empty string represents null.
     /// </summary>
@@ -115,11 +117,15 @@ public abstract class ActionModel
         get => useResultSet;
         set
             {
-                if (value == "") value = null;
+                if (value == "")
+                {
+                    value = null;
+                }
+
                 useResultSet = value;
-            } 
+            }
     }
-    
+
     /// <summary>
     /// Gets or sets if this data should be hashed.
     /// </summary>
@@ -131,9 +137,9 @@ public abstract class ActionModel
         Description = "Vink het vakje aan om de data te hashen.",
         DataComponent = DataComponents.KendoCheckBox
     )]
-    
+
     public bool HashData { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the hashing algorithm used. If HashData is false, this is set to null.
     /// </summary>
@@ -146,7 +152,7 @@ public abstract class ActionModel
         DataComponent = DataComponents.KendoDropDownList
     )]
     public HashAlgorithms HashAlgorithm { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the hash representation used. If HashData is false, this is set to null.
     /// </summary>
@@ -159,7 +165,7 @@ public abstract class ActionModel
         DataComponent = DataComponents.KendoDropDownList
     )]
     public HashRepresentations HashRepresentation { get; set; }
-    
+
     /// <summary>
     ///Gets or sets the hash setting used for XML file generation/loading. If HashData is false, this is set to null.
     /// </summary>
@@ -184,7 +190,7 @@ public abstract class ActionModel
             if (value == null)
             {
                 HashData = false;
-                
+
             }
             else
             {
@@ -203,11 +209,11 @@ public abstract class ActionModel
         Description = "Voer alleen de resultaatset uit die specifieke waarden/toestanden bevat. Het benodigde veld is afhankelijk van de oorsprong van de resultaatset, zie de WTS wiki voor meet informatie.",
         DataComponent = DataComponents.KendoDropDownList
     )]
-    
+
     public OnlyWithTypes OnlyWithTypes { get; set; }
-    
+
     private ResultSetConditionCodeModel onlyWithStatusCodeModel { get; set; }=new ResultSetConditionCodeModel();
-    
+
     [XmlIgnore]
     public ResultSetConditionCodeModel OnlyWithStatusCodeModel {
         get
@@ -216,7 +222,7 @@ public abstract class ActionModel
         }
         set=> onlyWithStatusCodeModel=value;
     }
-    
+
     [XmlElement("OnlyWithStatusCode")]
     [JsonIgnore]
     public XmlNode OnlyWithStatusCode
@@ -227,13 +233,16 @@ public abstract class ActionModel
         }
         set
         {
-            OnlyWithTypes? result = onlyWithStatusCodeModel.SetModel(value);
-            if (result!=null)OnlyWithTypes = result.Value;
+            var result = onlyWithStatusCodeModel.SetModel(value);
+            if (result!=null)
+            {
+                OnlyWithTypes = result.Value;
+            }
         }
     }
-    
+
     private ResultSetConditionSuccessStatusModel onlyWithSuccessStatusModel { get; set; }=new ResultSetConditionSuccessStatusModel();
-    
+
     [XmlIgnore]
     public ResultSetConditionSuccessStatusModel OnlyWithSuccessStatusModel {
         get
@@ -252,14 +261,17 @@ public abstract class ActionModel
         }
         set
         {
-            OnlyWithTypes? result = onlyWithSuccessStatusModel.SetModel(value);
-            if (result!=null) OnlyWithTypes = result.Value;
+            var result = onlyWithSuccessStatusModel.SetModel(value);
+            if (result!=null)
+            {
+                OnlyWithTypes = result.Value;
+            }
         }
     }
 
    [XmlIgnore]
     private ResultSetConditionValueModel onlyWithValueModel { get; set; }=new ResultSetConditionValueModel();
-   
+
     [XmlIgnore]
     public ResultSetConditionValueModel OnlyWithValueModel {
         get
@@ -268,7 +280,7 @@ public abstract class ActionModel
         }
         set=> onlyWithValueModel=value;
     }
-    
+
     [XmlElement("OnlyWithValue")]
     [JsonIgnore]
     public XmlNode OnlyWithValue
@@ -279,8 +291,11 @@ public abstract class ActionModel
         }
         set
         {
-            OnlyWithTypes? result = onlyWithValueModel.SetModel(value);
-            if (result!=null) OnlyWithTypes = result.Value;
+            var result = onlyWithValueModel.SetModel(value);
+            if (result!=null)
+            {
+                OnlyWithTypes = result.Value;
+            }
         }
     }
 
@@ -289,7 +304,7 @@ public abstract class ActionModel
 
     [XmlIgnore]
     private string comment { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the comment. Used for documentation purposes.
     /// </summary>
@@ -301,11 +316,15 @@ public abstract class ActionModel
         DataComponent = DataComponents.KendoTextBox
     )]
     [CanBeNull]
-    public string Comment 
+    public string Comment
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(comment)) return null;
+            if (String.IsNullOrWhiteSpace(comment))
+            {
+                return null;
+            }
+
             return comment;
         }
         set => comment = value;

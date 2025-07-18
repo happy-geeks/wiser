@@ -12,7 +12,7 @@ public class RenderPropertiesModel
     public RenderPropertiesModel(object model, string tab)
     {
         Tab = tab;
-        Properties = new List<PropertyModel>();
+        Properties = [];
 
         var type = model.GetType();
         foreach (var property in type.GetProperties())

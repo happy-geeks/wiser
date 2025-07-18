@@ -27,7 +27,7 @@ public class StyledOutputException : Exception
     /// <inheritdoc/>
     public override string ToString()
     {
-        var exceptionMessage = InnerException != null ? $"with the following message: {InnerException.Message}" : string.Empty;
+        var exceptionMessage = InnerException != null ? $"with the following message: {InnerException.Message}" : String.Empty;
         return $"{base.ToString()}{Environment.NewLine}{Environment.NewLine}StyledOutput Failed {exceptionMessage}";
     }
 }

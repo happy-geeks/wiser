@@ -165,7 +165,10 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             return false;
         }
 
-        if (!inUseStyleIds.Contains(id)) return false;
+        if (!inUseStyleIds.Contains(id))
+        {
+            return false;
+        }
 
         errorMsg = $"Wiser Styled Output with ID '{id}' is part of a cyclic reference, ids in use: {inUseStyleIds}";
         logger.LogError(errorMsg);
@@ -397,7 +400,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
             if (callingParentId < 0)
             {
-                for (int i = 0; i < timings.Keys.Count; ++i)
+                for (var i = 0; i < timings.Keys.Count; ++i)
                 {
                     var key = timings.Keys.ElementAt(i);
                     var runCount = timings[key].Count;
@@ -541,7 +544,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     {
         cachedStyles.Remove(id);
 
-        StyledOutputModel style = new StyledOutputModel();
+        var style = new StyledOutputModel();
 
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
@@ -715,12 +718,12 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
         var results = new Dictionary<ulong, string>();
 
-        query = query.Replace("{ids}", "(" + string.Join(",", itemIds) + ")");
+        query = query.Replace("{ids}", "(" + String.Join(",", itemIds) + ")");
 
         var dataTable = await clientDatabaseConnection.GetAsync(query);
         var result = dataTable.ToJsonArray(skipNullValues: true);
 
-        for (int i = 0; i < dataTable.Rows.Count; i++)
+        for (var i = 0; i < dataTable.Rows.Count; i++)
         {
             var builder = new StringBuilder();
             if (!String.IsNullOrEmpty(style.FormatBegin))

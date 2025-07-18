@@ -1,12 +1,11 @@
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
-using Api.Modules.Templates.Models.Template.WtsModels;
 using JetBrains.Annotations;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
-namespace Api.Modules.Templates.Models.Template;
+namespace Api.Modules.Templates.Models.Template.WtsModels;
 
 /// <summary>
 /// A model for the run scheme settings of the template.
@@ -61,7 +60,7 @@ public class RunScheme
         ConfigurationTab = ConfigurationTab.Timers,
         DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = new [] {"Continuous"},
+        DependsOnValue = ["Continuous"],
         KendoOptions = """
                        
                                       {
@@ -87,7 +86,7 @@ public class RunScheme
         ConfigurationTab = ConfigurationTab.Timers,
         DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = new [] {"Daily", "Weekly", "Monthly"},
+        DependsOnValue = ["Daily", "Weekly", "Monthly"],
         KendoOptions = """
                        
                                       {
@@ -112,7 +111,7 @@ public class RunScheme
         ConfigurationTab = ConfigurationTab.Timers,
         DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = new [] {"Continuous"},
+        DependsOnValue = ["Continuous"],
         KendoOptions = """
                        
                                       {
@@ -137,7 +136,7 @@ public class RunScheme
         ConfigurationTab = ConfigurationTab.Timers,
         DataComponent = DataComponents.KendoTimePicker,
         DependsOnField = "Type",
-        DependsOnValue = new [] {"Continuous"},
+        DependsOnValue = ["Continuous"],
         KendoOptions = """
                        
                                       {
@@ -206,7 +205,7 @@ public class RunScheme
                                    
                        """,
         DependsOnField = "Type",
-        DependsOnValue = new [] {"Weekly"}
+        DependsOnValue = ["Weekly"]
     )]
     public int? DayOfWeek { get; set; }
 

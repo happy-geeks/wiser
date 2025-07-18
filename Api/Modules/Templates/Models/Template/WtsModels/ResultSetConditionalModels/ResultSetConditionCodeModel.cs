@@ -1,13 +1,18 @@
-﻿using System.Text.Json.Serialization;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
 using JetBrains.Annotations;
 
-namespace Api.Modules.Templates.Models.Template.WtsModels;
+namespace Api.Modules.Templates.Models.Template.WtsModels.ResultSetConditionalModels;
 
-public class ResultSetConditionCodeModel: ResultSetConditionModel
+/// <summary>
+/// A model representing a condition for a result set based on a specific code.
+/// </summary>
+public class ResultSetConditionCodeModel : ResultSetConditionModel
 {
+    /// <summary>
+    /// The selector for the condition, which is the source of the value to be compared.
+    /// </summary>
     [XmlIgnore]
     [WtsProperty(
         IsVisible = true,
@@ -17,15 +22,18 @@ public class ResultSetConditionCodeModel: ResultSetConditionModel
         Description = "De bron van de waarde.",
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithStatusCode"}
+        DependsOnValue = ["OnlyWithStatusCode"]
     )]
     [CanBeNull]
-    public string Selector_Core
+    public string SelectorCore
     {
         get => GetSelector();
         set => SetSelector(value);
     }
 
+    /// <summary>
+    /// The value to be compared against the expected value.
+    /// </summary>
     [XmlIgnore]
     [CanBeNull]
     [WtsProperty(
@@ -35,7 +43,7 @@ public class ResultSetConditionCodeModel: ResultSetConditionModel
         Description = "De verwachte waarde.",
         DataComponent = DataComponents.KendoNumericTextBox,
         DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithStatusCode"},
+        DependsOnValue = ["OnlyWithStatusCode"],
         KendoOptions = @"
                {
                   ""format"": ""#"",
@@ -43,11 +51,14 @@ public class ResultSetConditionCodeModel: ResultSetConditionModel
                 }
             "
     )]
-    public string ValueForComparison_Core     
+    public string ValueForComparisonCore
     {
         get => GetValue();
         set => SetValue(value);
     }
 
-    public override OnlyWithTypes type { get; set; } = OnlyWithTypes.OnlyWithStatusCode;
+    /// <summary>
+    /// The type of condition this model represents, which is specifically for status codes.
+    /// </summary>
+    public override OnlyWithTypes Type { get; set; } = OnlyWithTypes.OnlyWithStatusCode;
 }

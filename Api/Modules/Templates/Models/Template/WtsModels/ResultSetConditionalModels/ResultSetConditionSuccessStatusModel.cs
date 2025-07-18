@@ -1,13 +1,18 @@
-﻿using System.Text.Json.Serialization;
-using System.Xml.Serialization;
+﻿using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
 using JetBrains.Annotations;
 
-namespace Api.Modules.Templates.Models.Template.WtsModels;
+namespace Api.Modules.Templates.Models.Template.WtsModels.ResultSetConditionalModels;
 
-public class ResultSetConditionSuccessStatusModel: ResultSetConditionModel
+/// <summary>
+/// A model representing a condition for a result set that checks for a successful status.
+/// </summary>
+public class ResultSetConditionSuccessStatusModel : ResultSetConditionModel
 {
+    /// <summary>
+    /// The selector for the condition, which is the source of the value to be compared.
+    /// </summary>
     [XmlIgnore]
     [WtsProperty(
         IsVisible = true,
@@ -17,15 +22,18 @@ public class ResultSetConditionSuccessStatusModel: ResultSetConditionModel
         Description = "De bron van de waarde.",
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithSuccessState"}
+        DependsOnValue = ["OnlyWithSuccessState"]
     )]
     [CanBeNull]
-    public string Selector_Status
+    public string SelectorStatus
     {
         get => GetSelector();
         set => SetSelector(value);
     }
 
+    /// <summary>
+    /// The value to be compared against the expected value for a successful status.
+    /// </summary>
     [XmlIgnore]
     [CanBeNull]
     [WtsProperty(
@@ -35,13 +43,16 @@ public class ResultSetConditionSuccessStatusModel: ResultSetConditionModel
         Description = "De verwachte waarde.",
         DataComponent = DataComponents.KendoTextBox,
         DependsOnField = "OnlyWithTypes",
-        DependsOnValue = new [] {"OnlyWithSuccessState"}
+        DependsOnValue = ["OnlyWithSuccessState"]
     )]
-    public string ValueForComparison_Status 
+    public string ValueForComparisonStatus
     {
         get => GetValue();
         set => SetValue(value);
     }
 
-    public override OnlyWithTypes type { get; set; } = OnlyWithTypes.OnlyWithSuccessState;
+    /// <summary>
+    /// The type of condition this model represents, which is specifically for successful states.
+    /// </summary>
+    public override OnlyWithTypes Type { get; set; } = OnlyWithTypes.OnlyWithSuccessState;
 }

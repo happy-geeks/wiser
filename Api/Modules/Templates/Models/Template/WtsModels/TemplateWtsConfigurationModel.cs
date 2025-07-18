@@ -1,10 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
-using Newtonsoft.Json;
 
 namespace Api.Modules.Templates.Models.Template.WtsModels;
 
@@ -18,13 +15,13 @@ public class TemplateWtsConfigurationModel
     /// Gets or sets the service name for the editor value of the template.
     /// </summary>
     [XmlElement("ServiceName"), WtsProperty(
-        IsVisible = true,
-        IsRequired = true,
-        Title = "Naam",
-        Description = "De naam van de service",
-        ConfigurationTab = ConfigurationTab.Service,
-        DataComponent = DataComponents.KendoTextBox
-    )]
+         IsVisible = true,
+         IsRequired = true,
+         Title = "Naam",
+         Description = "De naam van de service",
+         ConfigurationTab = ConfigurationTab.Service,
+         DataComponent = DataComponents.KendoTextBox
+     )]
     public string ServiceName { get; set; }
 
     /// <summary>
@@ -37,19 +34,22 @@ public class TemplateWtsConfigurationModel
          Description = "De connectiestring van de database",
          ConfigurationTab = ConfigurationTab.Service,
          DataComponent = DataComponents.KendoTextBox
-    )]
-    public string ConnectionString { get; set; }
-    
-    [WtsProperty(
-         IsVisible = true,
-         IsRequired = false,
-         Title = "Notificatie e-mails",
-         Description = "Stuurt een e-mail als de service faalt. Meerdere e-mailadressen kunnen worden gescheiden met een puntkomma.",
-         ConfigurationTab = ConfigurationTab.Service,
-         DataComponent = DataComponents.KendoTextBox
      )]
+    public string ConnectionString { get; set; }
+
+    /// <summary>
+    /// Gets or sets the service description for the editor value of the template.
+    /// </summary>
+    [WtsProperty(
+        IsVisible = true,
+        IsRequired = false,
+        Title = "Notificatie e-mails",
+        Description = "Stuurt een e-mail als de service faalt. Meerdere e-mailadressen kunnen worden gescheiden met een puntkomma.",
+        ConfigurationTab = ConfigurationTab.Service,
+        DataComponent = DataComponents.KendoTextBox
+    )]
     public string ServiceFailedNotificationEmails { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the log settings for the configuration (Global if not overridden).
     /// </summary>
@@ -100,7 +100,7 @@ public class TemplateWtsConfigurationModel
         ConfigurationTab = ConfigurationTab.Queries,
         DataComponent = DataComponents.KendoGrid,
         Title = "Query",
-        AllowEdit = true, 
+        AllowEdit = true,
         IdProperty = "Actionid",
         UseDataSource = true,
         KendoOptions = @"
@@ -120,16 +120,15 @@ public class TemplateWtsConfigurationModel
                   ]
                }
             "
-            
-        )]
+
+    )]
     public List<WtsQueryModel> Queries { get; set; }
+
+    private List<HttpApiModel> httpApis;
 
     /// <summary>
     /// Gets or sets the HTTP APIs in the configuration.
     /// </summary>
-    
-    private List<HttpApiModel> httpApis;
-    
     [XmlElement("HttpApi")]
     [WtsProperty(
         IsVisible = true,
@@ -137,7 +136,7 @@ public class TemplateWtsConfigurationModel
         DataComponent = DataComponents.KendoGrid,
         Title = "HTTP API's",
         Description = "",
-        AllowEdit = true, 
+        AllowEdit = true,
         IdProperty = "Actionid",
         UseDataSource = true,
         KendoOptions = @"

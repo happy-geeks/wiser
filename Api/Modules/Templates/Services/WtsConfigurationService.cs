@@ -1,7 +1,6 @@
+using System;
 using System.IO;
-using System.Linq;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Interfaces;
 using Api.Modules.Templates.Models.Template.WtsModels;
@@ -15,7 +14,7 @@ public class WtsConfigurationService : IWtsConfigurationService, IScopedService
     public TemplateWtsConfigurationModel ParseXmlToObject(string xml)
     {
         //Add a root element if an empty XML is recieved. Done to avoid errors on new files.
-        if (string.IsNullOrWhiteSpace(xml))
+        if (String.IsNullOrWhiteSpace(xml))
         {
             xml = "<Configuration></Configuration>";
         }

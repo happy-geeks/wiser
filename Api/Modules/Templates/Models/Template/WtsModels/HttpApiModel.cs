@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Xml.Serialization;
 using Api.Modules.Templates.Attributes;
 using Api.Modules.Templates.Enums;
 using JetBrains.Annotations;
-using OpenIddict.Abstractions;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -21,7 +22,7 @@ public class HttpApiModel : ActionModel
         DataComponent = DataComponents.KendoTextBox
     )]
     public string Url { get; set; }
-    
+
     [WtsProperty(
         IsVisible = true,
         IsRequired = true,
@@ -30,13 +31,13 @@ public class HttpApiModel : ActionModel
         //ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoDropDownList
     )]
-    public HttpMethods Method { get; set; }
-    
+    public HttpMethod Method { get; set; }
+
     public string OAuth { get; set; }//TODO: seemingly not present in documentation ask about how this one works/examples later
 
     [XmlIgnore]
     private bool? singleRequest;
-    
+
     [WtsProperty(
         IsVisible = true,
         Title = "Single request",
@@ -56,7 +57,7 @@ public class HttpApiModel : ActionModel
         }
         set => singleRequest = value;
     }
-    
+
     [XmlIgnore]
     private bool? ignoreSslValidationErrors;
     [XmlIgnore]
@@ -67,7 +68,7 @@ public class HttpApiModel : ActionModel
         //ConfigurationTab = ConfigurationTab.Actions,
         DataComponent = DataComponents.KendoCheckBox
     )]
-    
+
     public bool? IgnoreSslValidationErrors
     {
         get
@@ -80,10 +81,10 @@ public class HttpApiModel : ActionModel
         }
         set => ignoreSslValidationErrors = value;
     }
-    
+
     [XmlElement("IgnoreSslValidation")]
     [CanBeNull]
-    public string IgnoreSslValidationErrorsString 
+    public string IgnoreSslValidationErrorsString
     {
         get
         {
@@ -95,18 +96,18 @@ public class HttpApiModel : ActionModel
         }
         set
         {
-            bool.TryParse(value, out bool valid);
+            Boolean.TryParse(value, out var valid);
             if (!valid)
             {
                 ignoreSslValidationErrors = false;
                 return;
             }
-            ignoreSslValidationErrors = bool.Parse(value);
+            ignoreSslValidationErrors = Boolean.Parse(value);
         }
     }
-    
+
     private string nextUrlProperty;
-    
+
     [WtsProperty(
         IsVisible = true,
         IsRequired = false,
@@ -117,15 +118,15 @@ public class HttpApiModel : ActionModel
     public string NextUrlProperty {
         get
         {
-            if (string.IsNullOrWhiteSpace(nextUrlProperty))
+            if (String.IsNullOrWhiteSpace(nextUrlProperty))
             {
                 return null;
             }
             return nextUrlProperty;
         } set=>nextUrlProperty = value; }
 
-    private List<Header> headers { get; set; } = new List<Header>();
-    
+    private List<Header> headers { get; set; } = [];
+
     [WtsProperty(
         IsVisible = true,
         Title = "Headers",
@@ -154,11 +155,11 @@ public class HttpApiModel : ActionModel
         get => headers;
         set => headers = value;
     }
-    
+
     [XmlIgnore]
     [CanBeNull]
     private string timeout;
-    
+
     /// <summary>
     /// Gets or sets the timeout in seconds. If the integer is 0 it will be null instead.
     /// </summary>
@@ -179,13 +180,17 @@ public class HttpApiModel : ActionModel
     public string Timeout {
         get
         {
-            if(timeout == "0") return null;
+            if(timeout == "0")
+            {
+                return null;
+            }
+
             return timeout;
         }
         set => timeout = value;
     }
-    
+
     public BodyModel Body { get; set; }=new BodyModel();
-    
+
     public string ResultContentType { get; set; }
 }

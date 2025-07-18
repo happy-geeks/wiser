@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace Api.Modules.Products.Models;
+﻿namespace Api.Modules.Products.Models;
 
 /// <summary>
 /// Result object for product API refresh operation.
