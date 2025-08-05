@@ -72,8 +72,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="5.3.2507.4" />
-    <PackageReference Include="GeeksCoreLibrary.Modules.GclConverters.EvoPdf" Version="5.3.2507.4" />
+    <PackageReference Include="GeeksCoreLibrary" Version="5.3.2507.6" />
+    <PackageReference Include="GeeksCoreLibrary.Modules.GclConverters.EvoPdf" Version="5.3.2507.6" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.27.3" />
@@ -81,9 +81,9 @@
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
-    <PackageReference Include="NUglify" Version="1.21.15" />
+    <PackageReference Include="NUglify" Version="1.21.17" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="PDFsharp" Version="6.2.0" />
+    <PackageReference Include="PDFsharp" Version="6.2.1" />
     <PackageReference Include="PusherServer" Version="5.0.0" />
     <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="React.AspNet" Version="5.2.12" />
@@ -94,7 +94,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="9.0.3" />
     <PackageReference Include="OpenIddict" Version="7.0.0" />
     <PackageReference Include="OpenIddict.Server.AspNetCore" Version="7.0.0" />
-    <PackageReference Include="System.Drawing.Common" Version="9.0.7" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.8" />
     <PackageReference Include="System.Linq.Async" Version="6.0.3" />
     <PackageReference Include="Tinify" Version="1.8.1" />
   </ItemGroup>
