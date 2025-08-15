@@ -936,9 +936,9 @@ CREATE TABLE IF NOT EXISTS `wiser_products_api`  (
     `added_by` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     `hash` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL,
     `refresh_date` datetime NULL DEFAULT NULL,
-    PRIMARY KEY (`id`) USING BTREE
+    PRIMARY KEY (`id`) USING BTREE,
     UNIQUE INDEX `idx_unique`(`wiser_id` ASC, `version` ASC) USING BTREE,
-    INDEX `idx_wiser_id`(`wiser_id` ASC, `removed` ASC) USING BTREE,
+    INDEX `idx_wiser_id`(`wiser_id` ASC, `removed` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;
