@@ -70,9 +70,4 @@ public class ProductsServiceConstants
     /// The name used for the settings entity.
     /// </summary>
     public const string SettingsEntityName = "ProductsApiSettings";
-
-    /// <summary>
-    /// The property name used for the 'update service time' setting in global settings.
-    /// </summary>
-    public const string PropertyUpdateServiceTime = "update_service_time";
 }
