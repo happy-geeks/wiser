@@ -63,4 +63,14 @@ public interface IProductsService
     /// <param name="identity">The identity of the user performing this command.</param>
     /// <returns>Status 200(ok) or an exception if occured.</returns>
     public Task<ServiceResult<JToken>> SetDefaultSettingsOnAllProductsAsync(ClaimsIdentity identity);
+
+    /// <summary>
+    /// This function is used to get all the products that are out of date, this is used to find products that need to be refreshed.
+    /// </summary>
+    /// <param name="identity">The identity of the user performing this command.</param>
+    /// <param name="date">This is the date we check for, if non is given we use today.</param>
+    /// <returns>Status 200(ok) or an exception if occured.</returns>
+    public Task<ServiceResult<JToken>> GetOutOfDateCountAsync(ClaimsIdentity identity, DateTime? date = null);
+
+
 }

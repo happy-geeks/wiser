@@ -21,6 +21,7 @@ using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Razor.Compilation;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -217,6 +218,14 @@ public class ProductsService(
         // (To prevent extra tabs for costumers that don't use this feature.)
         await EnsureProductApiPropertiesAsync();
 
+        var isEnabled = await IsProductsApiEnabledAsync();
+
+        if (!isEnabled) return new ServiceResult<JToken>
+        {
+            StatusCode = HttpStatusCode.NotFound,
+            ErrorMessage = "Wiser product api is not enabled."
+        };
+
         var productsQuery = await GetGlobalSettingAsync(ProductsServiceConstants.PropertySelectProductsKey);
         if (productsQuery == null)
         {
@@ -241,6 +250,14 @@ public class ProductsService(
         // We do this here because we only want these properties present when the product api is used.
         // (To prevent extra tabs for costumers that don't use this feature.)
         await EnsureProductApiPropertiesAsync();
+
+        var isEnabled = await IsProductsApiEnabledAsync();
+
+        if (!isEnabled) return new ServiceResult<JToken>
+        {
+            StatusCode = HttpStatusCode.NotFound,
+            ErrorMessage = "Wiser product api is not enabled."
+        };
 
         // Check if for the requested ids there is a product version of the setting available in wiser_itemdetail (if not create it).
         await EnsureProductApiPropertyDetailsAsync(wiserIds);
@@ -634,6 +651,14 @@ ON DUPLICATE KEY UPDATE id=id;
     {
         await EnsureProductApiPropertiesAsync();
 
+        var isEnabled = await IsProductsApiEnabledAsync();
+
+        if (!isEnabled) return new ServiceResult<JToken>
+        {
+            StatusCode = HttpStatusCode.NotFound,
+            ErrorMessage = "Wiser product api is not enabled."
+        };
+
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
 
@@ -675,6 +700,66 @@ ON DUPLICATE KEY UPDATE id=id;
         return new ServiceResult<JToken>
         {
             StatusCode = HttpStatusCode.OK
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<JToken>> GetOutOfDateCountAsync(ClaimsIdentity identity, DateTime? date = null)
+    {
+        // It's possible that it's the first time running, so ensure we have the properties.
+        await EnsureProductApiPropertiesAsync();
+
+        var isEnabled = await IsProductsApiEnabledAsync();
+
+        if (!isEnabled) return new ServiceResult<JToken>
+        {
+            StatusCode = HttpStatusCode.NotFound,
+            ErrorMessage = "Wiser product api is not enabled."
+        };
+
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+
+        var productsQuery = await GetGlobalSettingAsync(ProductsServiceConstants.PropertySelectProductsKey);
+        if (productsQuery == null)
+        {
+            var errorMsg = "Wiser product api cannot find the productsQuery for the product api.";
+            logger.LogError(errorMsg);
+            throw new KeyNotFoundException(errorMsg);
+        }
+
+        var dataTable = await clientDatabaseConnection.GetAsync(productsQuery);
+        var wiserIds = dataTable.Rows.Cast<DataRow>().Select(product => product.Field<ulong>("id")).ToList();
+
+        // Now that we have all ids, check how many are out of date for the given date.
+        clientDatabaseConnection.ClearParameters();
+
+        var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
+
+        var getOutofDateQuery = $"""
+                               SELECT 
+                               item.id AS `wiser_id`,
+                               FROM {WiserTableNames.WiserItem} `item`
+                               LEFT JOIN (
+                                   SELECT  wiser_id, MAX(version) AS max_version
+                                   FROM {WiserTableNames.WiserProductsApi}
+                                   GROUP BY wiser_id
+                               ) latest_version ON latest_version.wiser_id = item.id
+                               LEFT JOIN {WiserTableNames.WiserProductsApi} apis ON apis.wiser_id = item.id AND apis.version = latest_version.max_version 
+                                
+                               WHERE item.entity_type = '{productEntityType}' 
+                                 AND apis.refresh_date < {date}) OR apis.refresh_date IS NULL
+                                 AND item.id IN ({String.Join(",", wiserIds)})
+                               """;
+
+        var dataTableOutOfData = await clientDatabaseConnection.GetAsync(getOutofDateQuery);
+
+        return new ServiceResult<JToken>
+        {
+            StatusCode = HttpStatusCode.OK,
+            ModelObject = new JObject
+            {
+                ["count"] = dataTableOutOfData.Rows.Count,
+            }
         };
     }
 
@@ -792,5 +877,21 @@ ON DUPLICATE KEY UPDATE id=id;
             logger.LogError(e, errorMsg);
             throw new ProductsApiException(errorMsg);
         }
+    }
+
+    /// <summary>
+    /// Helper function to check if the products api is enabled.
+    /// </summary>
+    private async Task<bool> IsProductsApiEnabledAsync()
+    {
+        var isEnabled = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyProductsApiEnabled);
+        if (isEnabled == null)
+        {
+            // No settings can be found, so it must be disabled.
+            return false;
+        }
+
+        // We have settings but what are they set to?
+        return bool.TryParse(isEnabled, out var enabled) && enabled;
     }
 }
