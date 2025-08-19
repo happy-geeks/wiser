@@ -706,7 +706,7 @@ ON DUPLICATE KEY UPDATE id=id;
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> GetOutOfDateCountAsync(ClaimsIdentity identity, DateTime? date = null)
     {
-        // Tt's possible that it's the first time running, so ensure we have the properties.
+        // It's possible that it's the first time running, so ensure we have the properties.
         await EnsureProductApiPropertiesAsync();
 
         var isEnabled = await IsProductsApiEnabledAsync();
