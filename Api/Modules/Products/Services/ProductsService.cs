@@ -706,7 +706,7 @@ ON DUPLICATE KEY UPDATE id=id;
     /// <inheritdoc />
     public async Task<ServiceResult<JToken>> GetOutOfDateCountAsync(ClaimsIdentity identity, DateTime? date = null)
     {
-        // it's possible that its the first time running, so ensure we have the properties.
+        // Tt's possible that it's the first time running, so ensure we have the properties.
         await EnsureProductApiPropertiesAsync();
 
         var isEnabled = await IsProductsApiEnabledAsync();
@@ -730,7 +730,7 @@ ON DUPLICATE KEY UPDATE id=id;
         var dataTable = await clientDatabaseConnection.GetAsync(productsQuery);
         var wiserIds = dataTable.Rows.Cast<DataRow>().Select(product => product.Field<ulong>("id")).ToList();
 
-        // now that we have all ids, check how many are out of date for the given date
+        // Now that we have all ids, check how many are out of date for the given date.
         clientDatabaseConnection.ClearParameters();
 
         var productEntityType = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyEntityName);
@@ -887,7 +887,7 @@ ON DUPLICATE KEY UPDATE id=id;
         var isEnabled = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyProductsApiEnabled);
         if (isEnabled == null)
         {
-            // Mo settings can be found, so it must be disabled.
+            // No settings can be found, so it must be disabled.
             return false;
         }
 
