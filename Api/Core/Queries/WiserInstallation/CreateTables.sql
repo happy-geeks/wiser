@@ -502,6 +502,7 @@ CREATE TABLE IF NOT EXISTS `wiser_user_roles`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
   `role_id` int NOT NULL,
+  `ip_addresses` json NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `idx_user_id`(`user_id`, `role_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
