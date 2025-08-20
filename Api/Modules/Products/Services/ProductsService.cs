@@ -727,8 +727,18 @@ ON DUPLICATE KEY UPDATE id=id;
             throw new KeyNotFoundException(errorMsg);
         }
 
-        var dataTable = await clientDatabaseConnection.GetAsync(productsQuery);
-        var wiserIds = dataTable.Rows.Cast<DataRow>().Select(product => product.Field<ulong>("id")).ToList();
+        // if we dont have a date, take now
+        date ??= DateTime.Now.Date;
+
+        var sqlDate = date.Value.ToString("yyyy-MM-dd HH:mm:ss");
+
+        var coolDown = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown);
+        if (coolDown == null)
+        {
+            var errorMsg = "Wiser product api cannot find the cool down setting for the product api.";
+            logger.LogError(errorMsg);
+            throw new KeyNotFoundException(errorMsg);
+        }
 
         // Now that we have all ids, check how many are out of date for the given date.
         clientDatabaseConnection.ClearParameters();
@@ -737,7 +747,7 @@ ON DUPLICATE KEY UPDATE id=id;
 
         var getOutofDateQuery = $"""
                                SELECT 
-                               item.id AS `wiser_id`,
+                               item.id AS `wiser_id`
                                FROM {WiserTableNames.WiserItem} `item`
                                LEFT JOIN (
                                    SELECT  wiser_id, MAX(version) AS max_version
@@ -747,8 +757,8 @@ ON DUPLICATE KEY UPDATE id=id;
                                LEFT JOIN {WiserTableNames.WiserProductsApi} apis ON apis.wiser_id = item.id AND apis.version = latest_version.max_version 
                                 
                                WHERE item.entity_type = '{productEntityType}' 
-                                 AND apis.refresh_date < {date}) OR apis.refresh_date IS NULL
-                                 AND item.id IN ({String.Join(",", wiserIds)})
+                                 AND (apis.refresh_date < DATE_SUB("{sqlDate}", INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL)
+                                 AND item.id IN ({productsQuery.TrimEnd(';')})
                                """;
 
         var dataTableOutOfData = await clientDatabaseConnection.GetAsync(getOutofDateQuery);
