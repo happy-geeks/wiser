@@ -73,7 +73,7 @@
 
   <ItemGroup>
     <PackageReference Include="GeeksCoreLibrary" Version="5.3.2508.1" />
-    <PackageReference Include="GeeksCoreLibrary.Modules.GclConverters.EvoPdf" Version="5.3.2507.4" />
+    <PackageReference Include="GeeksCoreLibrary.Modules.GclConverters.EvoPdf" Version="5.3.2508.1" />
     <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
     <PackageReference Include="JavaScriptEngineSwitcher.ChakraCore" Version="3.27.3" />
