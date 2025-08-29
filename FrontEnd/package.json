@@ -30,7 +30,7 @@
     "pretty": "^2.0.0",
     "pusher-js": "^8.4.0",
     "trackjs": "^3.10.4",
-    "vue": "^3.5.17",
+    "vue": "^3.5.20",
     "vuex": "^4.1.0",
     "webpack-manifest-plugin": "^5.0.1"
   },
