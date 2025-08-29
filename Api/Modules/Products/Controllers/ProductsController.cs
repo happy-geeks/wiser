@@ -102,4 +102,17 @@ public class ProductsController : ControllerBase
     {
         return (await productsService.SetDefaultSettingsOnAllProductsAsync((ClaimsIdentity) User.Identity)).GetHttpResponseMessage();
     }
+
+    /// <summary>
+    /// This function is used to check how many products are behind the given check date in regards to their update/check status.
+    /// </summary>
+    [HttpGet]
+    [Route("count-outdated-products")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOutOfDateCountAsync([FromQuery] DateTime? date = null)
+    {
+        return (await productsService.GetOutOfDateCountAsync((ClaimsIdentity)User.Identity, date)).GetHttpResponseMessage();
+    }
 }

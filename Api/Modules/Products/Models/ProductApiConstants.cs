@@ -5,6 +5,12 @@
 /// </summary>
 public class ProductsServiceConstants
 {
+
+    /// <summary>
+    /// The property name used for the products api being enabled.
+    /// </summary>
+    public const string PropertyProductsApiEnabled = "wiser_product_api_enabled";
+
     /// <summary>
     /// The property name used for datasource type on a product.
     /// </summary>
