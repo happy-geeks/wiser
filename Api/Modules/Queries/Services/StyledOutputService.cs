@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Api.Core.Helpers;
 using Api.Core.Models;
@@ -49,6 +50,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
     private int maxResultsPerPage;
 
     private bool performanceLogging = false;
+    private bool removeNotFoundElements = false;
     private const string ItemSeparatorString = ", ";
 
     private static readonly string[] AllowedFormats = ["JSON"];
@@ -379,6 +381,30 @@ public class StyledOutputService : IStyledOutputService, IScopedService
                     return inlineResult;
                 }
 
+                if (removeNotFoundElements)
+                {
+                    // Remove entire object if it has: "value": {something}
+                    itemValue = Regex.Replace(
+                        itemValue,
+                        @"\{\s*""key""[^}]+""value""\s*:\s*\{[^}]+\}\s*\},?",
+                        "",
+                        RegexOptions.Singleline
+                    );
+
+                    // Also remove array elements with "value": {something}
+                    itemValue = Regex.Replace(
+                        itemValue,
+                        @"\{\s*""value""\s*:\s*\{[^}]+\}\s*\},?",
+                        "",
+                        RegexOptions.Singleline
+                    );
+
+                    // clean up left over commas
+                    itemValue = Regex.Replace(itemValue, @",\s*,", ","); // collapse double commas
+                    itemValue = Regex.Replace(itemValue, @"\[\s*,", "["); // comma right after [
+                    itemValue = Regex.Replace(itemValue, @",\s*\]", "]"); // comma right before ]
+                }
+
                 combinedResult.Append(itemValue);
 
                 if (parsedObject != result.Children<JObject>().Last())
@@ -700,6 +726,7 @@ public class StyledOutputService : IStyledOutputService, IScopedService
             }
 
             performanceLogging = optionsObject.LogTiming;
+            removeNotFoundElements = optionsObject.RemoveNotFoundElements;
         }
 
         var query = await GetCachedQueryAsync(style.QueryId, identity);

@@ -14,4 +14,9 @@ public class StyledOutputOptionModel
     /// Gets or sets the log timing option, this adds logging values to the runtime and runcount columns.
     /// </summary>
     public bool LogTiming { get; set; }
+
+    /// <summary>
+    /// Gets or sets If we should remove elements that could not be found (including their keys).
+    /// </summary>
+    public bool RemoveNotFoundElements { get; set; }
 }
