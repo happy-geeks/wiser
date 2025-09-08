@@ -24,7 +24,7 @@
     "diff2html": "^3.4.52",
     "jshint": "^2.13.6",
     "jszip": "^3.10.1",
-    "luxon": "^3.7.1",
+    "luxon": "^3.7.2",
     "node-polyfill-webpack-plugin": "^4.1.0",
     "path-browserify": "^1.0.1",
     "pretty": "^2.0.0",
