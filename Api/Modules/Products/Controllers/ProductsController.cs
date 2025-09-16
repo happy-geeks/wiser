@@ -33,15 +33,21 @@ public class ProductsController : ControllerBase
     /// Get Product api result for all products, this function only retrieves the product api result, it does not generate it.
     /// </summary>
     /// <param name="date">Optional: Since this date we list the changes.</param>
+    /// <param name="changed_after">Optional: Alias for <paramref name="date"/>.</param>
     /// <param name="page">Optional: The page offset.</param>
     /// <returns>The list with all products that were found with the given parameters.</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAllAsync([FromQuery] DateTime? date = null, [FromQuery] int page = 0)
+    public async Task<IActionResult> GetAllAsync(
+        [FromQuery] DateTime? date = null,
+        [FromQuery] DateTime? changed_after = null,
+        [FromQuery] int page = 0)
     {
-        return (await productsService.GetAllProductsAsync((ClaimsIdentity) User.Identity, date, page)).GetHttpResponseMessage();
+        var effectiveDate = changed_after ?? date;
+
+        return (await productsService.GetAllProductsAsync((ClaimsIdentity)User.Identity, effectiveDate, page)).GetHttpResponseMessage();
     }
 
     /// <summary>

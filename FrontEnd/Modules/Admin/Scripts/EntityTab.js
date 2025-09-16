@@ -3017,7 +3017,7 @@ export class EntityTab {
             entityProperties.tabName = "";
         }
         entityProperties.groupName = this.groupNameComboBox.value();
-        entityProperties.groupId = getEntityGroupId(this.tabNameProperty.value(), this.groupNameComboBox.value());
+        entityProperties.groupId = this.getEntityGroupId(this.tabNameProperty.value(), this.groupNameComboBox.value());
         entityProperties.inputType = this.inputTypeSelector.value();
         entityProperties.displayName = $("#displayname").val();
         entityProperties.propertyName = $("#propertyname").val();
