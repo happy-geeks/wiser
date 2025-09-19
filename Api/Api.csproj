@@ -83,7 +83,7 @@
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
 
     <!-- 20250916 begin merge conflict -->
-    <PackageReference Include="Magick.NET-Q8-x64" Version="14.8.1" />
+    <PackageReference Include="Magick.NET-Q8-x64" Version="14.8.2" />
     <PackageReference Include="NUglify" Version="1.21.17" />
     <!-- 20250916 end merge conflict -->
 
