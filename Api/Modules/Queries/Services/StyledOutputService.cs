@@ -775,12 +775,6 @@ public class StyledOutputService : IStyledOutputService, IScopedService
 
             builder.Append(itemValue);
 
-            if (i != dataTable.Rows.Count - 1)
-            {
-                builder.Append(ItemSeparatorString);
-            }
-
-
             if (!String.IsNullOrWhiteSpace(style.FormatEnd))
             {
                 var formattedEnd = stringReplacementsService.DoReplacements(style.FormatEnd, result[i]);

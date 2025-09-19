@@ -280,7 +280,7 @@ public class ProductsService(
 
         var coolDownString = ignoreCoolDown
             ? ""
-            : $"AND apis.refresh_date < DATE_SUB(NOW(), INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL";
+            : $"AND (apis.refresh_date < DATE_SUB(NOW(), INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL)";
 
         var getApiDataQuery = $"""
                                SELECT 
