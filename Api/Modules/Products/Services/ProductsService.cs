@@ -894,14 +894,16 @@ ON DUPLICATE KEY UPDATE id=id;
     /// </summary>
     private async Task<bool> IsProductsApiEnabledAsync()
     {
-        var isEnabled = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyProductsApiEnabled);
-        if (isEnabled == null)
+        var isEnabledValue = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyProductsApiEnabled);
+        
+        return isEnabledValue switch
         {
             // No settings can be found, so it must be disabled.
-            return false;
-        }
-
-        // We have settings but what are they set to?
-        return bool.TryParse(isEnabled, out var enabled) && enabled;
+            null => false,
+            "1" => true,
+            "0" => false,
+            // If it's not 1 or 0, we try to parse it as a boolean.
+            _ => Boolean.TryParse(isEnabledValue, out var isEnabled) && isEnabled
+        };
     }
 }
