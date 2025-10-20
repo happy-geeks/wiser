@@ -81,6 +81,7 @@
     <PackageReference Include="JavaScriptEngineSwitcher.Extensions.MsDependencyInjection" Version="3.24.1" />
     <PackageReference Include="LibSassHost" Version="1.5.0" />
     <PackageReference Include="LibSassHost.Native.win-x64" Version="1.5.0" />
+    <PackageReference Include="Magick.NET-Q8-x64" Version="14.8.2" />
     <PackageReference Include="NUglify" Version="1.21.17" />
     <PackageReference Include="OpenIddict.AspNetCore" Version="7.1.0" />
     <PackageReference Include="PDFsharp" Version="6.2.2" />
@@ -96,6 +97,7 @@
     <PackageReference Include="OpenIddict.Server.AspNetCore" Version="7.1.0" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.9" />
     <PackageReference Include="System.Linq.Async" Version="6.0.3" />
+    <PackageReference Include="System.Private.Uri" Version="4.3.2" />
     <PackageReference Include="Tinify" Version="1.8.1" />
   </ItemGroup>
 
