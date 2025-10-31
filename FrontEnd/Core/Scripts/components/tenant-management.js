@@ -125,9 +125,14 @@ export default {
             this.loading = true;
             const result = await main.tenantsService.createDatabaseAndUser(this.newTenantData.dbClusterChoice, this.newTenantData.databaseSchema, this.newTenantData.databaseUsername, this.newTenantData.digitalOceanApiAccessToken);
             this.loading = false;
+            
             if (!result.success) {
                 this.message = result.message;
-                return result;
+                
+                return {
+                    ...result,
+                    success: false
+                };
             }
 
             for (let user of result.data.users) {
@@ -140,7 +145,11 @@ export default {
 
             this.newTenantData.databaseHost = result.data.cluster.database.connection.host;
             this.newTenantData.databasePort = result.data.cluster.database.connection.port;
-            return result;
+
+            return {
+                ...result,
+                success: true
+            };
         },
 
         async handleStep1() {
