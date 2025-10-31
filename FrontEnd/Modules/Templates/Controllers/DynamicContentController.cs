@@ -39,6 +39,9 @@ public class DynamicContentController(IBaseService baseService, IFrontEndDynamic
     [HttpPost, Route("{component}/DynamicContentTabPane")]
     public IActionResult DynamicContentTabPane(string component, [FromBody]DynamicContentOverviewModel data)
     {
+        if (!ModelState.IsValid)
+            return PartialView("Partials/DynamicContentTabPane", data);
+        
         var componentType = ReflectionHelper.GetComponentTypeByName(component);
         var viewModel = dynamicContentService.GenerateDynamicContentInformationViewModel(componentType, data.Data, data.ComponentMode);
 
@@ -49,6 +52,9 @@ public class DynamicContentController(IBaseService baseService, IFrontEndDynamic
     [HttpPost, Route("History")]
     public IActionResult History([FromBody]List<HistoryVersionModel> viewData)
     {
+        if (!ModelState.IsValid)
+            return PartialView("Partials/DynamicContentHistoryPane", viewData);
+        
         var viewModel = new DynamicContentHistoryPaneViewModel { History = []};
 
         foreach (var history in viewData)
@@ -73,6 +79,9 @@ public class DynamicContentController(IBaseService baseService, IFrontEndDynamic
     [HttpPost, Route("HistoryRow")]
     public IActionResult HistoryRow([FromBody]List<HistoryVersionModel> viewData)
     {
+        if (!ModelState.IsValid)
+            return PartialView("Partials/DynamicContentHistoryRows", viewData);
+        
         var viewModel = new DynamicContentHistoryPaneViewModel { History = []};
 
         foreach (var history in viewData)

@@ -17,6 +17,9 @@ public class CommunicationController(IBaseService baseService) : Controller
     [Route("Settings")]
     public IActionResult Settings([FromQuery]CommunicationSettingsViewModel viewModel)
     {
+        if (!ModelState.IsValid)
+            return View(viewModel);
+        
         viewModel ??= new CommunicationSettingsViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
 

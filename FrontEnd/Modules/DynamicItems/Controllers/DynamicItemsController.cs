@@ -10,6 +10,9 @@ public class DynamicItemsController(IBaseService baseService) : Controller
 {
     public IActionResult Index([FromQuery]DynamicItemsViewModel viewModel)
     {
+        if (!ModelState.IsValid)
+            return View(viewModel);
+        
         viewModel ??= new DynamicItemsViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
 

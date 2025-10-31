@@ -10,6 +10,9 @@ public class FileManagerController(IBaseService baseService) : Controller
 {
     public IActionResult Index([FromQuery]FileManagerViewModel viewModel)
     {
+        if (!ModelState.IsValid)
+            return View(viewModel);
+        
         viewModel ??= new FileManagerViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
 

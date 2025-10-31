@@ -9,6 +9,9 @@ public class ContentBuilderController(IBaseService baseService) : Controller
 {
     public IActionResult Index([FromQuery]ContentBuilderViewModel viewModel)
     {
+        if (!ModelState.IsValid)
+            return View(viewModel);
+        
         viewModel ??= new ContentBuilderViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
 
