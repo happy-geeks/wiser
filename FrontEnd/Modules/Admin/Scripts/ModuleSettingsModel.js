@@ -82,9 +82,18 @@
             }
 
             const sortedObject = {};
-            Object.keys(value).sort().forEach((sortedKey) => {
-                sortedObject[sortedKey] = value[sortedKey];
-            });
+            
+            Object.keys(value)
+                .sort((value1, value2) => {
+                    if (value1 > value2)
+                        return 1;
+                    
+                    if (value1 < value2)
+                        return -1;
+                    
+                    return 0;
+                })
+                .forEach((sortedKey) => sortedObject[sortedKey] = value[sortedKey]);
 
             return sortedObject;
         };
