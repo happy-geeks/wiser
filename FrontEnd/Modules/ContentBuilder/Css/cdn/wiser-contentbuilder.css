@@ -264,7 +264,7 @@ html { font-size: 100%; }
 .row .quote > p {margin-left:50px;font-size: 1.5em;}
 @media all and (max-width: 540px) {
     .row .quote > i, .quote > em {left: -15px;font-size:1.5em;}
-    .row .quote > small {margin-left:20px;ont-size: 1em;}
+    .row .quote > small {margin-left:20px;font-size: 1em;}
     .row .quote > p {margin-left:20px;font-size: 1.2em;}
 }
 
