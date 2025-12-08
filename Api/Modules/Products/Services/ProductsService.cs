@@ -270,17 +270,17 @@ public class ProductsService(
             throw new KeyNotFoundException(errorMsg);
         }
 
-        var coolDown = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown);
-        if (coolDown == null)
+        var coolDownParsed = int.TryParse(await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown), out var coolDown);
+        if (!coolDownParsed)
         {
-            var errorMsg = "Wiser product api cannot find the cool down setting for the product api.";
+            var errorMsg = "Invalid cool down setting used for the product api.";
             logger.LogError(errorMsg);
-            throw new KeyNotFoundException(errorMsg);
+            throw new ProductsApiException(errorMsg);
         }
 
         var coolDownString = ignoreCoolDown
             ? ""
-            : $"AND (apis.refresh_date < DATE_SUB(NOW(), INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL)";
+            : $"AND (apis.refresh_date < DATE_SUB(?date, INTERVAL ?coolDown MINUTE) OR apis.refresh_date IS NULL)";
 
         var getApiDataQuery = $"""
                                SELECT 
@@ -312,6 +312,9 @@ public class ProductsService(
                                LIMIT 256
                                """;
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        
+        clientDatabaseConnection.AddParameter("date",  DateTime.Now);
+        clientDatabaseConnection.AddParameter("coolDown",  coolDown);
         var dataTable = await clientDatabaseConnection.GetAsync(getApiDataQuery);
 
         var generatedData = new List<ProductApiModel>();
@@ -728,16 +731,14 @@ ON DUPLICATE KEY UPDATE id=id;
         }
 
         // if we dont have a date, take now
-        date ??= DateTime.Now.Date;
-
-        var sqlDate = date.Value.ToString("yyyy-MM-dd HH:mm:ss");
-
-        var coolDown = await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown);
-        if (coolDown == null)
+        date ??= DateTime.Now;
+        
+        var coolDownParsed = int.TryParse(await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown), out var coolDown);
+        if (!coolDownParsed)
         {
-            var errorMsg = "Wiser product api cannot find the cool down setting for the product api.";
+            var errorMsg = "Invalid cool down setting used for the product api.";
             logger.LogError(errorMsg);
-            throw new KeyNotFoundException(errorMsg);
+            throw new ProductsApiException(errorMsg);
         }
 
         // Now that we have all ids, check how many are out of date for the given date.
@@ -757,10 +758,12 @@ ON DUPLICATE KEY UPDATE id=id;
                                LEFT JOIN {WiserTableNames.WiserProductsApi} apis ON apis.wiser_id = item.id AND apis.version = latest_version.max_version 
                                 
                                WHERE item.entity_type = '{productEntityType}' 
-                                 AND (apis.refresh_date < DATE_SUB("{sqlDate}", INTERVAL {coolDown} MINUTE) OR apis.refresh_date IS NULL)
+                                 AND (apis.refresh_date < DATE_SUB(?date, INTERVAL ?coolDown MINUTE) OR apis.refresh_date IS NULL)
                                  AND item.id IN ({productsQuery.TrimEnd(';')})
                                """;
 
+        clientDatabaseConnection.AddParameter("date",  date);
+        clientDatabaseConnection.AddParameter("coolDown",  coolDown);
         var dataTableOutOfData = await clientDatabaseConnection.GetAsync(getOutofDateQuery);
 
         return new ServiceResult<JToken>
