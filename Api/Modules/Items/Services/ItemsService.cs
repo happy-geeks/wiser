@@ -2444,7 +2444,7 @@ public class ItemsService(
                                      JOIN {WiserTableNames.WiserEntity} AS entity ON entity.name = item.entity_type AND entity.show_in_tree_view = 1
                  
                                      JOIN {WiserTableNames.WiserItemLink} link_child ON link_child.destination_item_id = item.id AND link_child.type NOT IN ({linkTypesToHideFromTreeViewList})
-                                     JOIN {childPrefix}{WiserTableNames.WiserItem} AS child ON child.id = link_child.item_id AND child.moduleid = ?moduleId AND (?childEntityTypes = '' OR FIND_IN_SET(child.entity_type, ?childEntityTypes))
+                                     JOIN {childPrefix}{WiserTableNames.WiserItem} AS child FORCE INDEX (PRIMARY) ON child.id = link_child.item_id AND child.moduleid = ?moduleId AND (?childEntityTypes = '' OR FIND_IN_SET(child.entity_type, ?childEntityTypes))
                                      JOIN {WiserTableNames.WiserEntity} AS child_entity ON child_entity.name = child.entity_type AND child_entity.show_in_tree_view = 1 AND (entity.accepted_childtypes = '' OR FIND_IN_SET(child.entity_type, entity.accepted_childtypes))
                  
                                      # Check permissions. Default permissions are everything enabled, so if the user has no role or the role has no permissions on this item, they are allowed everything.
