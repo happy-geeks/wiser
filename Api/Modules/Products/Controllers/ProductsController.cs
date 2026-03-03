@@ -69,15 +69,16 @@ public class ProductsController : ControllerBase
     /// Refresh the product api result, this function updates the product api result but only 1.
     /// </summary>
     /// <param name="wiserId">the id of the wiser product we are trying to read.</param>
+    /// <param name="ignoreCooldown">Whether to ignore the cooldown (minimum time since last refresh)</param>
     /// <returns></returns>
     [HttpPost]
     [Route("refresh/{wiserId:int:required}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RefreshAsync(ulong wiserId)
+    public async Task<IActionResult> RefreshAsync(ulong wiserId, [FromQuery] bool ignoreCooldown = false)
     {
-        return (await productsService.RefreshProductAsync((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
+        return (await productsService.RefreshProductAsync((ClaimsIdentity) User.Identity, wiserId, ignoreCooldown)).GetHttpResponseMessage();
     }
 
     /// <summary>
