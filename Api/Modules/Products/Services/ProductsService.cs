@@ -241,7 +241,7 @@ public class ProductsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds, bool ignoreCoolDown = false)
+    public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds, bool ignoreCoolDown = false, bool forceNewVersion = true)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);
@@ -379,7 +379,7 @@ public class ProductsService(
         foreach (var t in processedData.Where(t => !t.Output.IsNullOrWhiteSpace()))
         {
             t.NewHash = t.Output.ToSha512Simple();
-            if (t.NewHash != t.OldHash)
+            if (t.NewHash != t.OldHash || forceNewVersion)
             {
                 var productApiModel = new ProductApiModel
                 {
@@ -774,6 +774,17 @@ ON DUPLICATE KEY UPDATE id=id;
                 ["count"] = dataTableOutOfData.Rows.Count,
             }
         };
+    }
+
+    /// <summary>
+    /// Forces a new version of the specified product by updating the version associated with the given wiser ID.
+    /// </summary>
+    /// <param name="identity">The claims identity of the user initiating the operation.</param>
+    /// <param name="wiserId">The unique identifier of the product for which the version will be updated.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a <see cref="ServiceResult{T}" /> with the updated version details as a JSON token.</returns>
+    public async Task<ServiceResult<JToken>> ForceNewVersionAsync(ClaimsIdentity identity, ulong wiserId)
+    {
+        return await RefreshProductsAsync(identity, [wiserId], ignoreCoolDown: true, forceNewVersion: true);
     }
 
     /// <summary>
