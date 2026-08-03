@@ -35,8 +35,9 @@ public interface IProductsService
     /// <param name="identity">The identity of the user performing this command.</param>
     /// <param name="wiserId">The id of the wiser product we are trying to read.</param>
     /// <param name="ignoreCooldown">Ignore the cooldown check when refreshing.</param>
+    /// <param name="forceNewVersion">Force the creation of a new version even if the latest version is not out of date.</param>
     /// <returns>Status 200(ok) or an exception if occured.</returns>
-    public Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserId, bool ignoreCooldown = false);
+    public Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserId, bool ignoreCooldown = false, bool forceNewVersion = false);
 
     /// <summary>
     /// Function used to Refresh products, this will run the query, styled output or static output and hash it.
@@ -73,4 +74,12 @@ public interface IProductsService
     public Task<ServiceResult<JToken>> GetOutOfDateCountAsync(ClaimsIdentity identity, DateTime? date = null);
 
 
+    /// <summary>
+    /// Forces a new version update for a specified product. Creation a new version for the product regardless of whether the current version is up to date or not.
+    /// This can be useful for testing or when a manual update is required.
+    /// </summary>
+    /// <param name="identity">The identity of the user performing this action.</param>
+    /// <param name="wiserId">The ID of the product for which the version update is being forced.</param>
+    /// <returns>The resulting API output, or an error if the operation fails.</returns>
+    public Task<ServiceResult<JToken>> ForceNewVersionAsync(ClaimsIdentity identity, ulong wiserId);
 }

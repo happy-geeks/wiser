@@ -82,6 +82,21 @@ public class ProductsController : ControllerBase
     }
 
     /// <summary>
+    /// Forces the creation of a new version for the specified product.
+    /// </summary>
+    /// <param name="wiserId">The unique identifier of the product for which a new version will be forced.</param>
+    /// <returns>An <see cref="IActionResult"/> representing the outcome of the operation.</returns>
+    [HttpPost]
+    [Route("force-new-version/{wiserId:int:required}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ForceNewVersionAsync(ulong wiserId)
+    {
+        return (await productsService.ForceNewVersionAsync((ClaimsIdentity) User.Identity, wiserId)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
     /// Refreshes the product api results, function will refresh the first 256 products that are not up to date based on the cooldown time and last refresh time.
     /// To update all products call this multiple times.
     /// The intended use for this function is to be called by a cron job at intervals so we throttle the amount of products we refresh at once.
