@@ -241,7 +241,7 @@ public class ProductsService(
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds, bool ignoreCoolDown = false, bool forceNewVersion = true)
+    public async Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserIds, bool ignoreCoolDown = false, bool forceNewVersion = false)
     {
         // First ensure we have our tables up to date.
         await databaseHelpersService.CheckAndUpdateTablesAsync([WiserTableNames.WiserProductsApi]);

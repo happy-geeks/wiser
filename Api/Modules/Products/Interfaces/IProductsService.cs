@@ -37,7 +37,7 @@ public interface IProductsService
     /// <param name="ignoreCooldown">Ignore the cooldown check when refreshing.</param>
     /// <param name="forceNewVersion">Force the creation of a new version even if the latest version is not out of date.</param>
     /// <returns>Status 200(ok) or an exception if occured.</returns>
-    public Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserId, bool ignoreCooldown = false, bool forceNewVersion = true);
+    public Task<ServiceResult<JToken>> RefreshProductsAsync(ClaimsIdentity identity, ICollection<ulong> wiserId, bool ignoreCooldown = false, bool forceNewVersion = false);
 
     /// <summary>
     /// Function used to Refresh products, this will run the query, styled output or static output and hash it.
