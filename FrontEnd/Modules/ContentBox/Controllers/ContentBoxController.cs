@@ -9,6 +9,9 @@ public class ContentBoxController(IBaseService baseService) : Controller
 {
     public IActionResult Index([FromQuery]ContentBoxViewModel viewModel)
     {
+        if (!ModelState.IsValid)
+            return View(viewModel);
+        
         viewModel ??= new ContentBoxViewModel();
         var defaultModel = baseService.CreateBaseViewModel();
 

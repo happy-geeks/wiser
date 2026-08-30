@@ -31,8 +31,6 @@ const moduleSettings = {
             // Data selector settings.
             this.useExportMode = false;
             this.allEntityTypes = [];
-            this.availableEntityTypes = [];
-            this.availableLinkTypes = [];
             this.selectedFields = [];
 
             // Selections.
