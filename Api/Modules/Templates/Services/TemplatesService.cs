@@ -2680,7 +2680,7 @@ public class TemplatesService : ITemplatesService, IScopedService
             var extraBracketToReplace = "";
             var parameters = match.Groups["parameters"].Value?.Trim('|');
 
-            if (parameters != null && parameters.StartsWith("{") && !parameters.EndsWith("}"))
+            if (parameters.StartsWith("{") && !parameters.EndsWith("}"))
             {
                 // This is a bit of a hack, because in some cases there will be values like "{price_currency|{culture}}" and our regex will return "{culture" without the last bracket.
                 // But if we change the regex to include that bracket, then it will often return too much, like "{price_currency|{culture}} <div></div>{otherVariable}" for example.
@@ -2688,8 +2688,8 @@ public class TemplatesService : ITemplatesService, IScopedService
                 extraBracketToReplace = "}";
             }
 
-            parameters = String.IsNullOrWhiteSpace(parameters) ? extraParameters : $"{extraParameters},{parameters}";
-            if (!String.IsNullOrEmpty(parameters))
+            parameters = string.IsNullOrWhiteSpace(parameters) ? extraParameters : $"{extraParameters},{parameters}";
+            if (!string.IsNullOrEmpty(parameters))
             {
                 parameters = $"({parameters})";
             }
@@ -2708,19 +2708,15 @@ public class TemplatesService : ITemplatesService, IScopedService
     /// <param name="html">The HTML from the JCL templates module.</param>
     /// <param name="forJson">Set to true if this is for JSON settings, so that quotes and such will be escaped.</param>
     /// <returns>The HTML for the GCL templates module.</returns>
-    private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html, bool forJson = false)
+    private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html, bool forJson)
     {
         var regex = new Regex("""<img[^>]*?(?:data=['\"\\]+(?<data>.*?)['\"\\]+[^>]*?)?contentid=['\"\\]+(?<contentId>\d+)['\"\\]+[^>]*?\/?>""");
-        var matches = regex.Matches(html);
-        foreach (Match match in matches)
+        var matches = regex.Matches(html).Where(match => match.Success);
+        
+        foreach (var match in matches)
         {
-            if (!match.Success)
-            {
-                continue;
-            }
-
             var dataAttribute = match.Groups["data"].Value;
-            if (!String.IsNullOrWhiteSpace(dataAttribute))
+            if (!string.IsNullOrWhiteSpace(dataAttribute))
             {
                 dataAttribute = $"data=\"{dataAttribute}\"";
             }
@@ -2864,16 +2860,12 @@ public class TemplatesService : ITemplatesService, IScopedService
     private static string ConvertDynamicComponentsFromLegacyToNewInHtml(string html)
     {
         var regex = new Regex("""<img[^>]*?(?:data=['"](?<data>.*?)['"][^>]*?)?contentid=['"](?<contentId>\d+)['"][^>]*?\/?>""", RegexOptions.Compiled | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(200));
-        var matches = regex.Matches(html);
-        foreach (Match match in matches)
+        var matches = regex.Matches(html).Where(match => match.Success);
+        
+        foreach (var match in matches)
         {
-            if (!match.Success)
-            {
-                continue;
-            }
-
             var dataAttribute = match.Groups["data"].Value;
-            if (!String.IsNullOrWhiteSpace(dataAttribute))
+            if (!string.IsNullOrWhiteSpace(dataAttribute))
             {
                 dataAttribute = $"data=\"{dataAttribute}\"";
             }
