@@ -499,7 +499,7 @@ public class QueriesService : IQueriesService, IScopedService
     }
 
     /// <summary>
-    /// Gets the query string for export operations, handling decryption and permissions.
+    /// Gets the query string for export operations, handling decryption and export module validation.
     /// </summary>
     /// <param name="identity">The identity of the authenticated user.</param>
     /// <param name="encryptedQueryId">The encrypted query ID.</param>
@@ -517,11 +517,11 @@ public class QueriesService : IQueriesService, IScopedService
             return ("", HttpStatusCode.BadRequest, "Invalid encrypted query ID.");
         }
 
-        // Get the query from the database
+        // Get the query from the database and check if it's enabled for export
         await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
         clientDatabaseConnection.ClearParameters();
         clientDatabaseConnection.AddParameter("id", queryId);
-        const string queryText = $"SELECT query FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+        const string queryText = $"SELECT query, show_in_export_module FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
         var dataTable = await clientDatabaseConnection.GetAsync(queryText);
 
         if (dataTable.Rows.Count == 0)
@@ -529,10 +529,11 @@ public class QueriesService : IQueriesService, IScopedService
             return ("", HttpStatusCode.NotFound, $"Wiser query with ID '{queryId}' does not exist.");
         }
 
-        // Check permissions
-        if ((await wiserItemsService.GetUserQueryPermissionsAsync(queryId, IdentityHelpers.GetWiserUserId(identity)) & AccessRights.Read) == AccessRights.Nothing)
+        // Check if the query is enabled for export module
+        var showInExportModule = Convert.ToBoolean(dataTable.Rows[0]["show_in_export_module"]);
+        if (!showInExportModule)
         {
-            return ("", HttpStatusCode.Unauthorized, $"Wiser user '{IdentityHelpers.GetUserName(identity)}' has no permission to execute this query.");
+            return ("", HttpStatusCode.Forbidden, "This query is not enabled for export operations.");
         }
 
         var query = dataTable.Rows[0].Field<string>("query");
