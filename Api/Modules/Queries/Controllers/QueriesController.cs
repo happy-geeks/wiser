@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Mime;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Api.Modules.Modules.Models;
 using Api.Modules.Queries.Interfaces;
 using Api.Modules.Queries.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -134,5 +137,65 @@ public class QueriesController : ControllerBase
     public async Task<IActionResult> GetQueryResultsAsJson(int id, [FromQuery] bool asKeyValuePair = false, [FromBody] List<KeyValuePair<string, object>> parameters = null)
     {
         return (await queriesService.GetQueryResultAsJsonAsync((ClaimsIdentity) User.Identity, id, asKeyValuePair, parameters)).GetHttpResponseMessage();
+    }
+
+    /// <summary>
+    /// Export query results to Excel or CSV format with streaming support for large datasets.
+    /// </summary>
+    /// <param name="encryptedQueryId">The encrypted ID from wiser_query.</param>
+    /// <param name="fileFormat">The format to export to (Excel or CSV).</param>
+    /// <param name="fileName">Optional: The name for the exported file.</param>
+    /// <returns>The exported file.</returns>
+    [HttpGet]
+    [Route("{encryptedQueryId}/export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", MediaTypeNames.Text.Csv)]
+    public async Task<IActionResult> ExportAsync(string encryptedQueryId, [FromQuery] ExportFileFormats fileFormat, [FromQuery] string fileName = null)
+    {
+        return fileFormat switch
+        {
+            ExportFileFormats.Csv => await ExportToCsvAsync(encryptedQueryId, fileName),
+            ExportFileFormats.Excel => await ExportToExcelAsync(encryptedQueryId, fileName),
+            _ => BadRequest($"Unsupported file format: {fileFormat}")
+        };
+    }
+
+    /// <summary>
+    /// Export query results to CSV format with streaming support.
+    /// </summary>
+    private async Task<IActionResult> ExportToCsvAsync(string encryptedQueryId, string fileName)
+    {
+        // Set response headers for CSV streaming
+        fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.csv" : Path.ChangeExtension(fileName, ".csv");
+        Response.ContentType = MediaTypeNames.Text.Csv;
+        Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+
+        var result = await queriesService.ExportToCsvAsync((ClaimsIdentity)User.Identity, encryptedQueryId, Response.Body);
+        if (result.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            // Reset response if there was an error
+            Response.Clear();
+            return result.GetHttpResponseMessage();
+        }
+
+        await Response.Body.FlushAsync();
+        return new EmptyResult();
+    }
+
+    /// <summary>
+    /// Export query results to Excel format.
+    /// </summary>
+    private async Task<IActionResult> ExportToExcelAsync(string encryptedQueryId, string fileName)
+    {
+        var result = await queriesService.ExportToExcelAsync((ClaimsIdentity)User.Identity, encryptedQueryId);
+        if (result.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            return result.GetHttpResponseMessage();
+        }
+
+        fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.xlsx" : Path.ChangeExtension(fileName, ".xlsx");
+        return File(result.ModelObject, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }
 }

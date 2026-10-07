@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Api.Core.Services;
@@ -74,4 +75,22 @@ public interface IQueriesService
     /// <param name="parameters">The parameters to set before executing the query.</param>
     /// <returns></returns>
     Task<ServiceResult<JToken>> GetQueryResultAsJsonAsync(ClaimsIdentity identity, int id, bool asKeyValuePair, List<KeyValuePair<string, object>> parameters);
+
+    /// <summary>
+    /// Export query results directly to a CSV stream for efficient streaming of large datasets.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="encryptedQueryId">The encrypted ID from wiser_query.</param>
+    /// <param name="outputStream">The stream to write CSV data to.</param>
+    /// <param name="separator">The character to use as field separator.</param>
+    /// <returns></returns>
+    Task<ServiceResult<bool>> ExportToCsvAsync(ClaimsIdentity identity, string encryptedQueryId, Stream outputStream, char separator = ';');
+
+    /// <summary>
+    /// Export query results to an Excel file with memory-efficient processing.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="encryptedQueryId">The encrypted ID from wiser_query.</param>
+    /// <returns></returns>
+    Task<ServiceResult<byte[]>> ExportToExcelAsync(ClaimsIdentity identity, string encryptedQueryId);
 }
