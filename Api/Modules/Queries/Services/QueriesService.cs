@@ -477,12 +477,13 @@ public class QueriesService : IQueriesService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<byte[]>> ExportToExcelAsync(ClaimsIdentity identity, string encryptedQueryId)
+    public async Task<ServiceResult<bool>> ExportToExcelAsync(ClaimsIdentity identity, string encryptedQueryId,
+        Stream outputStream)
     {
         var (query, statusCode, error) = await GetQueryForExportAsync(identity, encryptedQueryId);
         if (statusCode != HttpStatusCode.OK)
         {
-            return new ServiceResult<byte[]>
+            return new ServiceResult<bool>
             {
                 StatusCode = statusCode,
                 ErrorMessage = error
@@ -493,9 +494,9 @@ public class QueriesService : IQueriesService, IScopedService
         clientDatabaseConnection.ClearParameters();
 
         await using var dataReader = await clientDatabaseConnection.GetReaderAsync(query);
-        var excelBytes = excelService.DbDataReaderToExcel(dataReader);
+        await excelService.DbDataReaderToExcelAsync(dataReader, outputStream);
 
-        return new ServiceResult<byte[]>(excelBytes);
+        return new ServiceResult<bool>(true);
     }
 
     /// <summary>

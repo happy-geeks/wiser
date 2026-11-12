@@ -91,6 +91,8 @@ public interface IQueriesService
     /// </summary>
     /// <param name="identity">The identity of the authenticated user.</param>
     /// <param name="encryptedQueryId">The encrypted ID from wiser_query.</param>
+    /// <param name="outputStream"></param>
     /// <returns></returns>
-    Task<ServiceResult<byte[]>> ExportToExcelAsync(ClaimsIdentity identity, string encryptedQueryId);
+    Task<ServiceResult<bool>> ExportToExcelAsync(ClaimsIdentity identity, string encryptedQueryId,
+        Stream outputStream);
 }

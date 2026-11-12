@@ -189,13 +189,17 @@ public class QueriesController : ControllerBase
     /// </summary>
     private async Task<IActionResult> ExportToExcelAsync(string encryptedQueryId, string fileName)
     {
-        var result = await queriesService.ExportToExcelAsync((ClaimsIdentity)User.Identity, encryptedQueryId);
+        fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.csv" : Path.ChangeExtension(fileName, ".csv");
+        Response.ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+        
+        var result = await queriesService.ExportToExcelAsync((ClaimsIdentity)User.Identity, encryptedQueryId, Response.Body);
         if (result.StatusCode != System.Net.HttpStatusCode.OK)
         {
             return result.GetHttpResponseMessage();
         }
 
-        fileName = String.IsNullOrWhiteSpace(fileName) ? "Export.xlsx" : Path.ChangeExtension(fileName, ".xlsx");
-        return File(result.ModelObject, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        await Response.Body.FlushAsync();
+        return new EmptyResult();
     }
 }
