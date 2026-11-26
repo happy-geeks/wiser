@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>HappyHorizon.Wiser.FrontEnd</PackageId>
     <Version>3.7.2608.1</Version>
     <Authors>Happy Horizon B.V.</Authors>
@@ -40,7 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="GeeksCoreLibrary" Version="5.3.2605.2" />
+    <PackageReference Include="GeeksCoreLibrary" Version="5.4.2611.1" />
     <PackageReference Include="GoogleAuthenticator" Version="3.2.0" />
   </ItemGroup>
 
