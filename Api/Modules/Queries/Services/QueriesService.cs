@@ -455,7 +455,7 @@ public class QueriesService : IQueriesService, IScopedService
     }
 
     /// <inheritdoc />
-    public async Task<ServiceResult<bool>> ExportToCsvAsync(ClaimsIdentity identity, string encryptedQueryId, Stream outputStream, char separator = ';')
+    public async Task<ServiceResult<bool>> ExportToCsvAsync(ClaimsIdentity identity, string encryptedQueryId, Stream outputStream, char separator = ',')
     {
         var (query, statusCode, error) = await GetQueryForExportAsync(identity, encryptedQueryId);
         if (statusCode != HttpStatusCode.OK)

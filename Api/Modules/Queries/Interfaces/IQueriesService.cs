@@ -84,7 +84,7 @@ public interface IQueriesService
     /// <param name="outputStream">The stream to write CSV data to.</param>
     /// <param name="separator">The character to use as field separator.</param>
     /// <returns></returns>
-    Task<ServiceResult<bool>> ExportToCsvAsync(ClaimsIdentity identity, string encryptedQueryId, Stream outputStream, char separator = ';');
+    Task<ServiceResult<bool>> ExportToCsvAsync(ClaimsIdentity identity, string encryptedQueryId, Stream outputStream, char separator = ',');
 
     /// <summary>
     /// Export query results to an Excel file with memory-efficient processing.
