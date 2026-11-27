@@ -175,10 +175,9 @@ const exportModuleSettings = {
                     const queryId = dataItem.encryptedId;
                     fileName = `${dataItem.description}.${fileFormat.extension}`;
 
-                    result = await fetch(`${this.settings.getItemsUrl}/${fileFormat.value}?queryid=${encodeURIComponent(queryId)}&fileName=${encodeURIComponent(fileName)}`, {
-                        method: "POST",
+                    result = await fetch(`${this.settings.wiserApiRoot}queries/${encodeURIComponent(queryId)}/export?fileFormat=${fileFormat.value}&fileName=${encodeURIComponent(fileName)}`, {
+                        method: "GET",
                         headers: {
-                            "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem("accessToken")}`
                         }
                     });

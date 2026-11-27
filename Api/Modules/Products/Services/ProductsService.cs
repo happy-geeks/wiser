@@ -270,7 +270,7 @@ public class ProductsService(
             throw new KeyNotFoundException(errorMsg);
         }
 
-        var coolDownParsed = int.TryParse(await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown), out var coolDown);
+        var coolDownParsed = Int32.TryParse(await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown), out var coolDown);
         if (!coolDownParsed)
         {
             var errorMsg = "Invalid cool down setting used for the product api.";
@@ -733,7 +733,7 @@ ON DUPLICATE KEY UPDATE id=id;
         // if we dont have a date, take now
         date ??= DateTime.Now;
         
-        var coolDownParsed = int.TryParse(await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown), out var coolDown);
+        var coolDownParsed = Int32.TryParse(await GetGlobalSettingAsync(ProductsServiceConstants.PropertyMinimalRefreshCoolDown), out var coolDown);
         if (!coolDownParsed)
         {
             var errorMsg = "Invalid cool down setting used for the product api.";

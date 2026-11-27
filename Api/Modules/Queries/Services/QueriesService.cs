@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -18,6 +19,7 @@ using GeeksCoreLibrary.Core.Helpers;
 using GeeksCoreLibrary.Core.Interfaces;
 using GeeksCoreLibrary.Core.Models;
 using GeeksCoreLibrary.Modules.Databases.Interfaces;
+using GeeksCoreLibrary.Modules.Exports.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 
@@ -34,11 +36,13 @@ public class QueriesService : IQueriesService, IScopedService
     private readonly IServiceProvider serviceProvider;
     private readonly IBranchesService branchesService;
     private readonly IDatabaseHelpersService databaseHelpersService;
+    private readonly IExcelService excelService;
+    private readonly ICsvService csvService;
 
     /// <summary>
     /// Creates a new instance of <see cref="QueriesService"/>.
     /// </summary>
-    public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IServiceProvider serviceProvider, IBranchesService branchesService, IDatabaseHelpersService databaseHelpersService)
+    public QueriesService(IWiserTenantsService wiserTenantsService, IDatabaseConnection clientDatabaseConnection, IWiserItemsService wiserItemsService, IServiceProvider serviceProvider, IBranchesService branchesService, IDatabaseHelpersService databaseHelpersService, IExcelService excelService, ICsvService csvService)
     {
         this.wiserTenantsService = wiserTenantsService;
         this.clientDatabaseConnection = clientDatabaseConnection;
@@ -46,6 +50,8 @@ public class QueriesService : IQueriesService, IScopedService
         this.serviceProvider = serviceProvider;
         this.branchesService = branchesService;
         this.databaseHelpersService = databaseHelpersService;
+        this.excelService = excelService;
+        this.csvService = csvService;
     }
 
     /// <inheritdoc />
@@ -446,6 +452,93 @@ public class QueriesService : IQueriesService, IScopedService
         }
 
         return new ServiceResult<JToken>(combinedResult);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> ExportToCsvAsync(ClaimsIdentity identity, string encryptedQueryId, Stream outputStream, char separator = ',')
+    {
+        var (query, statusCode, error) = await GetQueryForExportAsync(identity, encryptedQueryId);
+        if (statusCode != HttpStatusCode.OK)
+        {
+            return new ServiceResult<bool>
+            {
+                StatusCode = statusCode,
+                ErrorMessage = error
+            };
+        }
+
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        clientDatabaseConnection.ClearParameters();
+
+        await using var dataReader = await clientDatabaseConnection.GetReaderAsync(query);
+        await csvService.DbDataReaderToCsvStreamAsync(dataReader, outputStream, separator.ToString());
+
+        return new ServiceResult<bool>(true);
+    }
+
+    /// <inheritdoc />
+    public async Task<ServiceResult<bool>> ExportToExcelAsync(ClaimsIdentity identity, string encryptedQueryId,
+        Stream outputStream)
+    {
+        var (query, statusCode, error) = await GetQueryForExportAsync(identity, encryptedQueryId);
+        if (statusCode != HttpStatusCode.OK)
+        {
+            return new ServiceResult<bool>
+            {
+                StatusCode = statusCode,
+                ErrorMessage = error
+            };
+        }
+
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        clientDatabaseConnection.ClearParameters();
+
+        await using var dataReader = await clientDatabaseConnection.GetReaderAsync(query);
+        await excelService.DbDataReaderToExcelAsync(dataReader, outputStream);
+
+        return new ServiceResult<bool>(true);
+    }
+
+    /// <summary>
+    /// Gets the query string for export operations, handling decryption and export module validation.
+    /// </summary>
+    /// <param name="identity">The identity of the authenticated user.</param>
+    /// <param name="encryptedQueryId">The encrypted query ID.</param>
+    /// <returns>A tuple containing the query string, status code, and error message if any.</returns>
+    private async Task<(string query, HttpStatusCode statusCode, string error)> GetQueryForExportAsync(ClaimsIdentity identity, string encryptedQueryId)
+    {
+        // Decrypt the query ID
+        int queryId;
+        try
+        {
+            queryId = await wiserTenantsService.DecryptValue<int>(encryptedQueryId, identity);
+        }
+        catch
+        {
+            return ("", HttpStatusCode.BadRequest, "Invalid encrypted query ID.");
+        }
+
+        // Get the query from the database and check if it's enabled for export
+        await clientDatabaseConnection.EnsureOpenConnectionForReadingAsync();
+        clientDatabaseConnection.ClearParameters();
+        clientDatabaseConnection.AddParameter("id", queryId);
+        const string queryText = $"SELECT query, show_in_export_module FROM {WiserTableNames.WiserQuery} WHERE id = ?id";
+        var dataTable = await clientDatabaseConnection.GetAsync(queryText);
+
+        if (dataTable.Rows.Count == 0)
+        {
+            return ("", HttpStatusCode.NotFound, $"Wiser query with ID '{queryId}' does not exist.");
+        }
+
+        // Check if the query is enabled for export module
+        var showInExportModule = Convert.ToBoolean(dataTable.Rows[0]["show_in_export_module"]);
+        if (!showInExportModule)
+        {
+            return ("", HttpStatusCode.Forbidden, "This query is not enabled for export operations.");
+        }
+
+        var query = dataTable.Rows[0].Field<string>("query");
+        return (query, HttpStatusCode.OK, null);
     }
 
     /// <summary>

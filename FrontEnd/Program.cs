@@ -89,6 +89,7 @@ builder.Services.AddTransient<IBaseService, BaseService>();
 builder.Services.AddTransient<IImportsService, ImportsService>();
 builder.Services.AddTransient<IFrontEndDynamicContentService, FrontEndDynamicContentService>();
 builder.Services.AddScoped<IExcelService, ExcelService>();
+builder.Services.AddScoped<ICsvService, CsvService>();
 builder.Services.AddSingleton<IWebPackService, WebPackService>();
 builder.Services.AddSingleton<IExternalApisService, ExternalApisService>();
 
